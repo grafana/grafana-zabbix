@@ -1,0 +1,133 @@
+
+<div class="editor-row">
+    <div  ng-repeat="target in panel.targets"
+         class="grafana-target"
+         ng-class="{'grafana-target-hidden': target.hide}"
+         ng-controller="ZabbixAPITargetCtrl"
+         ng-init="init()">
+
+    <div class="grafana-target-inner">
+        <ul class="grafana-target-controls">
+            <li class="dropdown">
+                <a  class="pointer dropdown-toggle"
+                    data-toggle="dropdown"
+                    tabindex="1">
+                    <i class="icon-cog"></i>
+                </a>
+                <ul class="dropdown-menu pull-right" role="menu">
+                    <li role="menuitem">
+                        <a  tabindex="1"
+                            ng-click="duplicate()">
+                            Duplicate
+                        </a>
+                    </li>
+                    <li role="menuitem">
+                        <a  tabindex="1"
+                            ng-click="moveMetricQuery($index, $index-1)">
+                            Move up
+                        </a>
+                    </li>
+                    <li role="menuitem">
+                        <a  tabindex="1"
+                            ng-click="moveMetricQuery($index, $index+1)">
+                            Move down
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a class="pointer" tabindex="1" ng-click="removeDataQuery(target)">
+                    <i class="icon-remove"></i>
+                </a>
+            </li>
+        </ul>
+
+        <ul class="grafana-segment-list">
+            <li class="grafana-target-segment" style="min-width: 15px; text-align: center">
+                {{targetLetters[$index]}}
+            </li>
+            <li>
+                <a  class="grafana-target-segment"
+                    ng-click="target.hide = !target.hide; targetBlur();"
+                    role="menuitem">
+                    <i class="icon-eye-open"></i>
+                </a>
+            </li>
+        </ul>
+
+        <ul class="grafana-segment-list" role="menu">
+            <li>
+                <input type="text" class="input-medium grafana-target-text-input" ng-model="target.alias"
+                       spellcheck='false' placeholder="alias" ng-blur="targetBlur()">
+            </li>
+            <!-- Select Host Group -->
+            <li>
+                <select style="width: 10em"
+                        class="input-medium grafana-target-segment-input"
+                        ng-change="selectHostGroup()"
+                        ng-model="target.hostGroup"
+                        bs-tooltip="target.hostGroup.name.length > 25 ? target.hostGroup.name : ''"
+                        ng-options="hostgroup.name for hostgroup in metric.hostGroupList" >
+                    <option value="">All</option>
+                </select>
+                <a bs-tooltip="target.errors.metric"
+                   style="color: rgb(229, 189, 28)"
+                   ng-show="target.errors.metric">
+                    <i class="icon-warning-sign"></i>
+                </a>
+            </li>
+            <!-- Select Host -->
+            <li>
+                <select style="width: 15em"
+                        class="input-medium grafana-target-segment-input"
+                        ng-change="selectHost()"
+                        ng-model="target.host"
+                        bs-tooltip="target.host.name.length > 25 ? target.host.name : ''"
+                        ng-options="host.name for host in metric.hostList" >
+                    <option value="">-- select host --</option>
+                </select>
+                <a bs-tooltip="target.errors.metric"
+                   style="color: rgb(229, 189, 28)"
+                   ng-show="target.errors.metric">
+                    <i class="icon-warning-sign"></i>
+                </a>
+            </li>
+            <!-- Select Application -->
+            <li>
+                <select style="width: 10em"
+                        class="input-medium grafana-target-segment-input"
+                        ng-change="selectApplication()"
+                        ng-model="target.application"
+                        bs-tooltip="target.application.name.length > 15 ? target.application.name : ''"
+                        ng-options="app.name for app in metric.applicationList" >
+                    <option value="">All</option>
+                </select>
+                <a bs-tooltip="target.errors.metric"
+                   style="color: rgb(229, 189, 28)"
+                   ng-show="target.errors.metric">
+                    <i class="icon-warning-sign"></i>
+                </a>
+            </li>
+            <!-- Select Item -->
+            <li>
+                <select style="width: 20em"
+                        class="input-medium grafana-target-segment-input"
+                        ng-change="selectItem()"
+                        ng-model="target.item"
+                        bs-tooltip="target.expandedName.length > 30 ? target.expandedName : ''"
+                        ng-options="item.expandedName for item in metric.itemList" >
+                    <option value="">--select item--</option>
+                </select>
+                <a bs-tooltip="target.errors.metric"
+                   style="color: rgb(229, 189, 28)"
+                   ng-show="target.errors.metric">
+                    <i class="icon-warning-sign"></i>
+                </a>
+            </li>
+        </ul>
+
+        <div class="clearfix"></div>
+
+    </div>
+    </div>
+</div>
