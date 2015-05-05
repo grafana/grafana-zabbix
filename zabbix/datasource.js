@@ -2,14 +2,14 @@ define([
   'angular',
   'lodash',
   'kbn',
-  './queryCtrl',
+  'moment'
 ],
 function (angular, _, kbn) {
   'use strict';
 
   var module = angular.module('grafana.services');
 
-  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv) {
+  module.factory('ZabbixAPIDatasource', function($q, $http, templateSrv) {
 
     function ZabbixAPIDatasource(datasource) {
       this.name             = datasource.name;
@@ -17,47 +17,18 @@ function (angular, _, kbn) {
       this.supportMetrics   = true;
       this.url              = datasource.url;
 
-      // from plugin.json file
+      // TODO: fix passing username and password from config.html
       this.username         = datasource.meta.username;
       this.password         = datasource.meta.password;
-      // No limits by default
-      this.limitmetrics     = datasource.meta.limitmetrics || 0;
+
+      // No datapoints limit by default
+      this.limitmetrics     = datasource.limitmetrics || 0;
 
       this.partials = datasource.partials || 'plugins/datasource/zabbix/partials';
       this.editorSrc = this.partials + '/query.editor.html';
-
       this.annotationEditorSrc = this.partials + '/annotations.editor.html';
       this.supportAnnotations = true;
-
-      // Get authentication token
-      var authRequestData = {
-        jsonrpc: '2.0',
-        method: 'user.login',
-        params: {
-            user: this.username,
-            password: this.password
-        },
-        auth: null,
-        id: 1
-      };
-      var zabbixDataSource = this;
-      this.doZabbixAPIRequest({'data': authRequestData})
-        .then(function (response) {
-          zabbixDataSource.auth = response.data.result;
-        });
     }
-
-
-    ZabbixAPIDatasource.prototype.doZabbixAPIRequest = function(options) {
-      options.url = this.url;
-      options.method = 'POST';
-      options.headers = {'Content-Type': 'application/json'};
-      return backendSrv.datasourceRequest(options);
-    };
-
-    ///////////////////////////////////////////////////////////////////////
-    /// Query methods
-    ///////////////////////////////////////////////////////////////////////
 
 
     ZabbixAPIDatasource.prototype.query = function(options) {
@@ -85,62 +56,81 @@ function (angular, _, kbn) {
       from = Math.ceil(from/1000);
       to = Math.ceil(to/1000);
 
-      return this.performTimeSeriesQuery(target_items, from, to)
-        .then(function (response) {
-          // Response should be in the format:
-          // data: [
-          //          {
-          //             target: "Metric name",
-          //             datapoints: [[<value>, <unixtime>], ...]
-          //          },
-          //          {
-          //             target: "Metric name",
-          //             datapoints: [[<value>, <unixtime>], ...]
-          //          },
-          //       ]
+      var performedQuery;
 
-          // Index returned datapoints by item/metric id
-          var indexed_result = _.groupBy(response.data.result, function (history_item) {
-            return history_item.itemid;
-          });
-
-          // Reduce timeseries to the same size for stacking and tooltip work properly
-          var min_length = _.min(_.map(indexed_result, function (history) {
-            return history.length;
-          }));
-          _.each(indexed_result, function (item) {
-            item.splice(0, item.length - min_length);
-          });
-
-          // Sort result as the same as targets for display
-          // stacked timeseries in proper order
-          var sorted_history = _.sortBy(indexed_result, function (value, key, list) {
-            return _.indexOf(_.map(target_items, 'itemid'), key);
-          });
-
-          var series = _.map(sorted_history,
-              // Foreach itemid index: iterate over the data points and
-              // normalize to Grafana response format.
-              function (history, index) {
-                return {
-                  // Lookup itemid:alias map
-                  //target: targets[itemid].alias,
-                  target: targets[index].alias,
-
-                  datapoints: _.map(history, function (p) {
-
-                    // Value must be a number for properly work
-                    var value = Number(p.value);
-
-                    // TODO: Correct time for proper stacking
-                    //var clock = Math.round(Number(p.clock) / 60) * 60;
-                    return [value, p.clock * 1000];
-                  })
-                };
-            })
-          return $q.when({data: series});
+      // Check authorization first
+      if (!this.auth) {
+        var self = this;
+        performedQuery = this.performZabbixAPILogin().then(function (response) {
+          self.auth = response;
+          return self.performTimeSeriesQuery(target_items, from, to);
         });
+      } else {
+        performedQuery = this.performTimeSeriesQuery(target_items, from, to);
+      }
+
+      return performedQuery.then(function (response) {
+        /**
+         * Response should be in the format:
+         * data: [
+         *          {
+         *             target: "Metric name",
+         *             datapoints: [[<value>, <unixtime>], ...]
+         *          },
+         *          {
+         *             target: "Metric name",
+         *             datapoints: [[<value>, <unixtime>], ...]
+         *          },
+         *       ]
+         */
+
+        // Index returned datapoints by item/metric id
+        var indexed_result = _.groupBy(response.data.result, function (history_item) {
+          return history_item.itemid;
+        });
+
+        // Reduce timeseries to the same size for stacking and tooltip work properly
+        var min_length = _.min(_.map(indexed_result, function (history) {
+          return history.length;
+        }));
+        _.each(indexed_result, function (item) {
+          item.splice(0, item.length - min_length);
+        });
+
+        // Sort result as the same as targets for display
+        // stacked timeseries in proper order
+        var sorted_history = _.sortBy(indexed_result, function (value, key, list) {
+          return _.indexOf(_.map(target_items, 'itemid'), key);
+        });
+
+        var series = _.map(sorted_history,
+          // Foreach itemid index: iterate over the data points and
+          // normalize to Grafana response format.
+          function (history, index) {
+            return {
+              // Lookup itemid:alias map
+              //target: targets[itemid].alias,
+              target: targets[index].alias,
+
+              datapoints: _.map(history, function (p) {
+
+                // Value must be a number for properly work
+                var value = Number(p.value);
+
+                // TODO: Correct time for proper stacking
+                //var clock = Math.round(Number(p.clock) / 60) * 60;
+                return [value, p.clock * 1000];
+              })
+            };
+          })
+        return $q.when({data: series});
+      });
     };
+
+
+    ///////////////////////////////////////////////////////////////////////
+    /// Query methods
+    ///////////////////////////////////////////////////////////////////////
 
 
     /**
@@ -179,7 +169,32 @@ function (angular, _, kbn) {
         options.data.params.time_till = end;
       }
 
-      return this.doZabbixAPIRequest(options);
+      return $http(options);
+    };
+
+
+    // Get authentication token
+    ZabbixAPIDatasource.prototype.performZabbixAPILogin = function() {
+      var options = {
+        url : this.url,
+        method : 'POST',
+        data: {
+          jsonrpc: '2.0',
+          method: 'user.login',
+          params: {
+            user: this.username,
+            password: this.password
+          },
+          auth: null,
+          id: 1
+        },
+      };
+      return $http(options).then(function (result) {
+        if (!result.data) {
+          return null;
+        }
+        return result.data.result;
+      });
     };
 
 
@@ -199,7 +214,7 @@ function (angular, _, kbn) {
           id: 1
         },
       };
-      return this.doZabbixAPIRequest(options).then(function (result) {
+      return $http(options).then(function (result) {
         if (!result.data) {
           return [];
         }
@@ -227,7 +242,7 @@ function (angular, _, kbn) {
       if (groupid) {
         options.data.params.groupids = groupid;
       }
-      return this.doZabbixAPIRequest(options).then(function (result) {
+      return $http(options).then(function (result) {
         if (!result.data) {
           return [];
         }
@@ -253,7 +268,7 @@ function (angular, _, kbn) {
           id: 1
         },
       };
-      return this.doZabbixAPIRequest(options).then(function (result) {
+      return $http(options).then(function (result) {
         if (!result.data) {
           return [];
         }
@@ -283,7 +298,7 @@ function (angular, _, kbn) {
       if (applicationid) {
         options.data.params.applicationids = applicationid;
       }
-      return this.doZabbixAPIRequest(options).then(function (result) {
+      return $http(options).then(function (result) {
         if (!result.data) {
           return [];
         }
@@ -315,7 +330,7 @@ function (angular, _, kbn) {
         },
       };
 
-      return this.doZabbixAPIRequest(tid_options).then(function(result) {
+      return $http(tid_options).then(function(result) {
         var obs = {};
         obs = _.indexBy(result.data.result, 'triggerid');
 
@@ -338,7 +353,7 @@ function (angular, _, kbn) {
           },
         };
 
-        return this.doZabbixAPIRequest(options).then(function(result2) {
+        return $http(options).then(function(result2) {
           var list = [];
           _.each(result2.data.result, function(e) {
             list.push({
@@ -352,7 +367,6 @@ function (angular, _, kbn) {
         });
       });
     };
-
 
     return ZabbixAPIDatasource;
   });
