@@ -16,5 +16,6 @@
   "username": "guest",
   "password": "",
 
-  "metrics": true
+  "metrics": true,
+  "annotations": true
 }

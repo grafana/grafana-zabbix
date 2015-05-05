@@ -23,11 +23,6 @@ function (angular, _, kbn) {
 
       // No datapoints limit by default
       this.limitmetrics     = datasource.limitmetrics || 0;
-
-      this.partials = datasource.partials || 'plugins/datasource/zabbix/partials';
-      this.editorSrc = this.partials + '/query.editor.html';
-      this.annotationEditorSrc = this.partials + '/annotations.editor.html';
-      this.supportAnnotations = true;
     }
 
 
