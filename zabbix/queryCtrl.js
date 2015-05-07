@@ -8,11 +8,6 @@ function (angular, _) {
   var module = angular.module('grafana.controllers');
   var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-  var hostGroupList = [];
-  var hostList = [];
-  var applicationList = [];
-  var itemList = [];
-
   module.controller('ZabbixAPITargetCtrl', function($scope) {
 
     $scope.init = function() {
@@ -26,7 +21,11 @@ function (angular, _) {
 
       // Update host group, host, application and item lists
       $scope.updateHostGroupList();
-      $scope.updateHostList();
+      if ($scope.target.hostGroup) {
+        $scope.updateHostList($scope.target.hostGroup.groupid);
+      } else {
+        $scope.updateHostList();
+      }
       if ($scope.target.host) {
         $scope.updateAppList($scope.target.host.hostid);
         if ($scope.target.application) {
