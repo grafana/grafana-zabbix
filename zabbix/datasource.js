@@ -14,16 +14,19 @@ function (angular, _, kbn) {
     function ZabbixAPIDatasource(datasource) {
       this.name             = datasource.name;
       this.type             = 'ZabbixAPIDatasource';
-      this.supportMetrics   = true;
+
       this.url              = datasource.url;
       this.username         = datasource.username;
       this.password         = datasource.password;
+
       // No datapoints limit by default
       this.limitmetrics     = datasource.limitmetrics || 0;
 
       this.partials = datasource.partials || 'plugins/datasource/zabbix/partials';
       this.editorSrc = this.partials + '/query.editor.html';
       this.annotationEditorSrc = this.partials + '/annotations.editor.html';
+
+      this.supportMetrics   = true;
       this.supportAnnotations = true;
     }
 
@@ -130,6 +133,38 @@ function (angular, _, kbn) {
     ///////////////////////////////////////////////////////////////////////
 
 
+    // Request data from Zabbix API
+    ZabbixAPIDatasource.prototype.doZabbixAPIRequest = function(request_data) {
+      var options = {
+        method: 'POST',
+        url: this.url,
+        data: request_data
+      };
+
+      var performedQuery;
+
+      // Check authorization first
+      if (!this.auth) {
+        var self = this;
+        performedQuery = this.performZabbixAPILogin().then(function (response) {
+          self.auth = response;
+          options.data.auth = response;
+          return $http(options);
+        });
+      } else {
+        performedQuery = $http(options);
+      }
+
+      // Handle response
+      return performedQuery.then(function (response) {
+        if (!response.data) {
+          return [];
+        }
+        return response.data.result;
+      });
+    };
+
+
     /**
      * Perform time series query to Zabbix API
      *
@@ -186,6 +221,7 @@ function (angular, _, kbn) {
           id: 1
         },
       };
+
       return $http(options).then(function (result) {
         if (!result.data) {
           return null;
@@ -197,110 +233,78 @@ function (angular, _, kbn) {
 
     // Get the list of host groups
     ZabbixAPIDatasource.prototype.performHostGroupSuggestQuery = function() {
-      var options = {
-        url : this.url,
-        method : 'POST',
-        data: {
-          jsonrpc: '2.0',
-          method: 'hostgroup.get',
-          params: {
-            output: ['name'],
-            sortfield: 'name'
-          },
-          auth: this.auth,
-          id: 1
+      var data = {
+        jsonrpc: '2.0',
+        method: 'hostgroup.get',
+        params: {
+          output: ['name'],
+          sortfield: 'name'
         },
+        auth: this.auth,
+        id: 1
       };
-      return $http(options).then(function (result) {
-        if (!result.data) {
-          return [];
-        }
-        return result.data.result;
-      });
+
+      return this.doZabbixAPIRequest(data);
     };
 
 
     // Get the list of hosts
     ZabbixAPIDatasource.prototype.performHostSuggestQuery = function(groupid) {
-      var options = {
-        url : this.url,
-        method : 'POST',
-        data: {
-          jsonrpc: '2.0',
-          method: 'host.get',
-          params: {
-            output: ['name'],
-            sortfield: 'name'
-          },
-          auth: this.auth,
-          id: 1
+      var data = {
+        jsonrpc: '2.0',
+        method: 'host.get',
+        params: {
+          output: ['name'],
+          sortfield: 'name'
         },
+        auth: this.auth,
+        id: 1
       };
       if (groupid) {
-        options.data.params.groupids = groupid;
+        data.params.groupids = groupid;
       }
-      return $http(options).then(function (result) {
-        if (!result.data) {
-          return [];
-        }
-        return result.data.result;
-      });
+
+      return this.doZabbixAPIRequest(data);
     };
 
 
     // Get the list of applications
     ZabbixAPIDatasource.prototype.performAppSuggestQuery = function(hostid) {
-      var options = {
-        url : this.url,
-        method : 'POST',
-        data: {
-          jsonrpc: '2.0',
-          method: 'application.get',
-          params: {
-            output: ['name'],
-            sortfield: 'name',
-            hostids: hostid
-          },
-          auth: this.auth,
-          id: 1
+      var data = {
+        jsonrpc: '2.0',
+        method: 'application.get',
+        params: {
+          output: ['name'],
+          sortfield: 'name',
+          hostids: hostid
         },
+        auth: this.auth,
+        id: 1
       };
-      return $http(options).then(function (result) {
-        if (!result.data) {
-          return [];
-        }
-        return result.data.result;
-      });
+
+      return this.doZabbixAPIRequest(data);
     };
 
 
     // Get the list of host items
     ZabbixAPIDatasource.prototype.performItemSuggestQuery = function(hostid, applicationid) {
-      var options = {
-        url : this.url,
-        method : 'POST',
-        data: {
-          jsonrpc: '2.0',
-          method: 'item.get',
-          params: {
-            output: ['name', 'key_', 'value_type', 'delay'],
-            sortfield: 'name',
-            hostids: hostid
-          },
-          auth: this.auth,
-          id: 1
+      var data = {
+        jsonrpc: '2.0',
+        method: 'item.get',
+        params: {
+          output: ['name', 'key_', 'value_type', 'delay'],
+          sortfield: 'name',
+          hostids: hostid
         },
+        auth: this.auth,
+        id: 1
       };
       // If application selected return only relative items
       if (applicationid) {
-        options.data.params.applicationids = applicationid;
+        data.params.applicationids = applicationid;
       }
-      return $http(options).then(function (result) {
-        if (!result.data) {
-          return [];
-        }
-        return result.data.result;
-      });
+
+      return this.doZabbixAPIRequest(data);
     };
 
 
