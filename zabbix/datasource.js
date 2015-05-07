@@ -56,20 +56,11 @@ function (angular, _, kbn) {
       from = Math.ceil(from/1000);
       to = Math.ceil(to/1000);
 
-      var performedQuery;
+           
 
-      // Check authorization first
-      if (!this.auth) {
-        var self = this;
-        performedQuery = this.performZabbixAPILogin().then(function (response) {
-          self.auth = response;
-          return self.performTimeSeriesQuery(target_items, from, to);
-        });
-      } else {
-        performedQuery = this.performTimeSeriesQuery(target_items, from, to);
-      }
-
-      return performedQuery.then(function (response) {
+      return this.performTimeSeriesQuery(target_items, from, to).then(function (response) {
+		  
+		  console.log(response);
         /**
          * Response should be in the format:
          * data: [
@@ -85,7 +76,7 @@ function (angular, _, kbn) {
          */
 
         // Index returned datapoints by item/metric id
-        var indexed_result = _.groupBy(response.data.result, function (history_item) {
+        var indexed_result = _.groupBy(response, function (history_item) {
           return history_item.itemid;
         });
 
@@ -177,10 +168,8 @@ function (angular, _, kbn) {
       // TODO: if different value types passed?
       //       Perform multiple api request.
       var hystory_type = items[0].value_type;
-      var options = {
-        method: 'POST',
-        url: this.url,
-        data: {
+     
+     var data = {
           jsonrpc: '2.0',
           method: 'history.get',
           params: {
@@ -194,14 +183,14 @@ function (angular, _, kbn) {
           },
           auth: this.auth,
           id: 1
-        },
-      };
+    };
+      
       // Relative queries (e.g. last hour) don't include an end time
       if (end) {
-        options.data.params.time_till = end;
+        data.params.time_till = end;
       }
 
-      return $http(options);
+      return this.doZabbixAPIRequest(data);
     };
 
 
