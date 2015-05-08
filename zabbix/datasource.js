@@ -35,6 +35,7 @@ function (angular, _, kbn) {
       // get from & to in seconds
       var from = kbn.parseDate(options.range.from).getTime();
       var to = kbn.parseDate(options.range.to).getTime();
+
       // Need for find target alias
       var targets = options.targets;
 
@@ -46,7 +47,6 @@ function (angular, _, kbn) {
         // Extract zabbix api item objects from targets
         var target_items = _.map(options.targets, 'item');
       } else {
-
         // No valid targets, return the empty dataset
         var d = $q.defer();
         d.resolve({ data: [] });
@@ -56,11 +56,7 @@ function (angular, _, kbn) {
       from = Math.ceil(from/1000);
       to = Math.ceil(to/1000);
 
-           
-
       return this.performTimeSeriesQuery(target_items, from, to).then(function (response) {
-		  
-		  console.log(response);
         /**
          * Response should be in the format:
          * data: [
@@ -165,26 +161,27 @@ function (angular, _, kbn) {
       var item_ids = items.map(function (item, index, array) {
         return item.itemid;
       });
+
       // TODO: if different value types passed?
       //       Perform multiple api request.
-      var hystory_type = items[0].value_type;
-     
-     var data = {
-          jsonrpc: '2.0',
-          method: 'history.get',
-          params: {
-              output: 'extend',
-              history: hystory_type,
-              itemids: item_ids,
-              sortfield: 'clock',
-              sortorder: 'ASC',
-              limit: this.limitmetrics,
-              time_from: start,
-          },
-          auth: this.auth,
-          id: 1
-    };
-      
+      var history_type = items[0].value_type;
+
+      var data = {
+        jsonrpc: '2.0',
+        method: 'history.get',
+        params: {
+          output: 'extend',
+          history: history_type,
+          itemids: item_ids,
+          sortfield: 'clock',
+          sortorder: 'ASC',
+          limit: this.limitmetrics,
+          time_from: start,
+        },
+        auth: this.auth,
+        id: 1
+      };
+
       // Relative queries (e.g. last hour) don't include an end time
       if (end) {
         data.params.time_till = end;
