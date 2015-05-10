@@ -314,7 +314,10 @@ function (angular, _, kbn) {
         params: {
           output: ['name', 'key_', 'value_type', 'delay'],
           sortfield: 'name',
-          hostids: hostid
+          hostids: hostid,
+          filter: {
+            value_type: [0,3]
+          }
         },
         auth: this.auth,
         id: 1
