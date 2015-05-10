@@ -20,7 +20,7 @@ function (angular, _, kbn) {
       this.password         = datasource.password;
 
       // No datapoints limit by default
-      this.limitmetrics     = datasource.limitmetrics || 0;
+      this.limitMetrics     = datasource.limitmetrics || 0;
 
       this.partials = datasource.partials || 'plugins/datasource/zabbix/partials';
       this.editorSrc = this.partials + '/query.editor.html';
@@ -282,8 +282,12 @@ function (angular, _, kbn) {
         method: 'item.get',
         params: {
           output: ['name', 'key_', 'value_type', 'delay'],
-          sortfield: 'name',
-          hostids: hostid
+		  webitems: true,                                      //Include web items in the result
+		  sortfield: 'name',
+          hostids: hostid,
+		  filter: { 
+			vale_type: [0,3]
+		 }		  
         },
         auth: this.auth,
         id: ++this.requestId
