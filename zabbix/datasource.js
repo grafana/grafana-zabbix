@@ -226,6 +226,7 @@ function (angular, _, kbn) {
         method: 'hostgroup.get',
         params: {
           output: ['name'],
+		  real_hosts: true,   //Return only host groups that contain hosts
           sortfield: 'name'
         },
         auth: this.auth,
