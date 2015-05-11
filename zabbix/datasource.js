@@ -315,6 +315,7 @@ function (angular, _, kbn) {
           output: ['name', 'key_', 'value_type', 'delay'],
           sortfield: 'name',
           hostids: hostid,
+          webitems: true, //Include web items in the result
           filter: {
             value_type: [0,3]
           }
