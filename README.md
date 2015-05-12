@@ -11,7 +11,7 @@ Useful metric editor with host group and application filtering:
 
 ### Grafana 1.9.x
 
-Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/releases) and unpack `zabbix` directory into `<your grafana installation>/plugins/datasource/`. Then edit Grafana config.js:
+Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/releases/latest) and unpack `zabbix` directory into `<your grafana installation>/plugins/datasource/`. Then edit Grafana config.js:
   * Add dependencies
   
     ```
