@@ -22,7 +22,7 @@ function (angular, _, kbn) {
       this.password         = datasource.meta.password;
 
       // No datapoints limit by default
-      this.limitmetrics     = datasource.limitmetrics || 0;
+      this.limitMetrics     = datasource.limitMetrics || 0;
     }
 
 
@@ -175,7 +175,7 @@ function (angular, _, kbn) {
             itemids: item_ids,
             sortfield: 'clock',
             sortorder: 'ASC',
-            limit: self.limitmetrics,
+            limit: self.limitMetrics,
             time_from: start,
           },
           auth: self.auth,
@@ -344,7 +344,7 @@ function (angular, _, kbn) {
           params: {
               output: ['triggerid', 'description'],
               itemids: annotation.aids.split(','), // TODO: validate / pull automatically from dashboard.
-              limit: self.limitmetrics,
+              limit: self.limitMetrics,
           },
           auth: self.auth,
           id: 1
@@ -367,7 +367,7 @@ function (angular, _, kbn) {
                 time_from: from,
                 time_till: to,
                 objectids: _.keys(obs),
-                limit: self.limitmetrics,
+                limit: self.limitMetrics,
             },
             auth: self.auth,
             id: 1
