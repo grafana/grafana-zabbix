@@ -9,12 +9,12 @@ function (angular, _, kbn) {
 
   var module = angular.module('grafana.services');
 
-  module.factory('ZabbixAPIDatasource', function($q, $http, templateSrv) {
+  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv) {
 
     function ZabbixAPIDatasource(datasource) {
       this.name             = datasource.name;
-      this.type             = 'ZabbixAPIDatasource';
-      this.supportMetrics   = true;
+      this.type             = 'zabbix';
+
       this.url              = datasource.url;
 
       // TODO: fix passing username and password from config.html
@@ -23,6 +23,11 @@ function (angular, _, kbn) {
 
       // No datapoints limit by default
       this.limitMetrics     = datasource.limitMetrics || 0;
+      this.supportMetrics   = true;
+      this.supportAnnotations = true;
+
+      // For testing
+      this.ds = datasource;
     }
 
 
@@ -133,10 +138,10 @@ function (angular, _, kbn) {
         performedQuery = this.performZabbixAPILogin().then(function (response) {
           self.auth = response;
           options.data.auth = response;
-          return $http(options);
+          return backendSrv.datasourceRequest(options);
         });
       } else {
-        performedQuery = $http(options);
+        performedQuery = backendSrv.datasourceRequest(options);
       }
 
       // Handle response
@@ -237,7 +242,7 @@ function (angular, _, kbn) {
         },
       };
 
-      return $http(options).then(function (result) {
+      return backendSrv.datasourceRequest(options).then(function (result) {
         if (!result.data) {
           return null;
         }
@@ -351,7 +356,7 @@ function (angular, _, kbn) {
         },
       };
 
-      return $http(tid_options).then(function(result) {
+      return backendSrv.datasourceRequest(tid_options).then(function(result) {
         var obs = {};
         obs = _.indexBy(result.data.result, 'triggerid');
 
@@ -374,7 +379,7 @@ function (angular, _, kbn) {
           },
         };
 
-        return $http(options).then(function(result2) {
+        return backendSrv.datasourceRequest(options).then(function(result2) {
           var list = [];
           _.each(result2.data.result, function(e) {
             list.push({
