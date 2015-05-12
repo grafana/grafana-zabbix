@@ -2,7 +2,7 @@ define([
   'angular',
   'lodash',
   'kbn',
-  'moment'
+  './queryCtrl',
 ],
 function (angular, _, kbn) {
   'use strict';
