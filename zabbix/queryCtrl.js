@@ -21,7 +21,11 @@ function (angular, _) {
 
       // Update host group, host, application and item lists
       $scope.updateHostGroupList();
-      $scope.updateHostList();
+      if ($scope.target.hostGroup) {
+        $scope.updateHostList($scope.target.hostGroup.groupid);
+      } else {
+        $scope.updateHostList();
+      }
       if ($scope.target.host) {
         $scope.updateAppList($scope.target.host.hostid);
         if ($scope.target.application) {
@@ -131,7 +135,6 @@ function (angular, _) {
         $scope.metric.hostGroupList = series;
         if ($scope.target.hostGroup) {
           $scope.target.hostGroup = $scope.metric.hostGroupList.filter(function (item, index, array) {
-
             // Find selected host in metric.hostList
             return (item.groupid == $scope.target.hostGroup.groupid);
           }).pop();
@@ -146,11 +149,13 @@ function (angular, _) {
     $scope.updateHostList = function(groupid) {
       $scope.datasource.performHostSuggestQuery(groupid).then(function (series) {
         $scope.metric.hostList = series;
-        $scope.target.host = $scope.metric.hostList.filter(function (item, index, array) {
 
-          // Find selected host in metric.hostList
-          return (item.hostid == $scope.target.host.hostid);
-        }).pop();
+        if ($scope.target.host) {
+          $scope.target.host = $scope.metric.hostList.filter(function (item, index, array) {
+            // Find selected host in metric.hostList
+            return (item.hostid == $scope.target.host.hostid);
+          }).pop();
+        }
       });
     };
 
@@ -163,7 +168,6 @@ function (angular, _) {
         $scope.metric.applicationList = series;
         if ($scope.target.application) {
           $scope.target.application = $scope.metric.applicationList.filter(function (item, index, array) {
-
             // Find selected application in metric.hostList
             return (item.applicationid == $scope.target.application.applicationid);
           }).pop();
@@ -188,11 +192,12 @@ function (angular, _) {
               item.expandedName = expandItemName(item);
             }
           });
-          $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
-
-            // Find selected item in metric.hostList
-            return (item.itemid == $scope.target.item.itemid);
-          }).pop();
+          if ($scope.target.item) {
+            $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
+              // Find selected item in metric.hostList
+              return (item.itemid == $scope.target.item.itemid);
+            }).pop();
+          }
         });
       } else {
         $scope.metric.itemList = [];
