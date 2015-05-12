@@ -35,9 +35,11 @@ function (angular, _, kbn) {
       // get from & to in seconds
       var from = kbn.parseDate(options.range.from).getTime();
       var to = kbn.parseDate(options.range.to).getTime();
+
       // Need for find target alias
       var targets = options.targets;
 
+      // TODO: remove undefined targets from request
       // Check that all targets defined
       var targetsDefined = options.targets.every(function (target, index, array) {
         return target.item;
@@ -46,7 +48,6 @@ function (angular, _, kbn) {
         // Extract zabbix api item objects from targets
         var target_items = _.map(options.targets, 'item');
       } else {
-
         // No valid targets, return the empty dataset
         var d = $q.defer();
         d.resolve({ data: [] });
@@ -56,20 +57,7 @@ function (angular, _, kbn) {
       from = Math.ceil(from/1000);
       to = Math.ceil(to/1000);
 
-      var performedQuery;
-
-      // Check authorization first
-      if (!this.auth) {
-        var self = this;
-        performedQuery = this.performZabbixAPILogin().then(function (response) {
-          self.auth = response;
-          return self.performTimeSeriesQuery(target_items, from, to);
-        });
-      } else {
-        performedQuery = this.performTimeSeriesQuery(target_items, from, to);
-      }
-
-      return performedQuery.then(function (response) {
+      return this.performTimeSeriesQuery(target_items, from, to).then(function (response) {
         /**
          * Response should be in the format:
          * data: [
@@ -85,9 +73,7 @@ function (angular, _, kbn) {
          */
 
         // Index returned datapoints by item/metric id
-        var indexed_result = _.groupBy(response.data.result, function (history_item) {
-          return history_item.itemid;
-        });
+        var indexed_result = _.groupBy(response, 'itemid');
 
         // Reduce timeseries to the same size for stacking and tooltip work properly
         var min_length = _.min(_.map(indexed_result, function (history) {
@@ -137,6 +123,9 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.doZabbixAPIRequest = function(request_data) {
       var options = {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         url: this.url,
         data: request_data
       };
@@ -171,37 +160,68 @@ function (angular, _, kbn) {
      * @param items: array of zabbix api item objects
      */
     ZabbixAPIDatasource.prototype.performTimeSeriesQuery = function(items, start, end) {
-      var item_ids = items.map(function (item, index, array) {
-        return item.itemid;
-      });
-      // TODO: if different value types passed?
-      //       Perform multiple api request.
-      var hystory_type = items[0].value_type;
-      var options = {
-        method: 'POST',
-        url: this.url,
-        data: {
+
+      // Group items by value type for separate requests
+      var items_by_value_type = _.groupBy(items, 'value_type');
+
+      var self = this;
+      var apiRequests = [];
+
+      // Prepare requests for each value type
+      _.each(items_by_value_type, function (value, key, list) {
+        var item_ids = _.map(value, 'itemid');
+        var history_type = key;
+        var data = {
           jsonrpc: '2.0',
           method: 'history.get',
           params: {
-              output: 'extend',
-              history: hystory_type,
-              itemids: item_ids,
-              sortfield: 'clock',
-              sortorder: 'ASC',
-              limit: this.limitmetrics,
-              time_from: start,
+            output: 'extend',
+            history: history_type,
+            itemids: item_ids,
+            sortfield: 'clock',
+            sortorder: 'ASC',
+            limit: self.limitmetrics,
+            time_from: start,
           },
-          auth: this.auth,
+          auth: self.auth,
           id: 1
-        },
-      };
-      // Relative queries (e.g. last hour) don't include an end time
-      if (end) {
-        options.data.params.time_till = end;
-      }
+        };
 
-      return $http(options);
+        // Relative queries (e.g. last hour) don't include an end time
+        if (end) {
+          data.params.time_till = end;
+        }
+
+        apiRequests.push(self.doZabbixAPIRequest(data));
+      });
+
+      return this.handleMultipleRequest(apiRequests);
+    };
+
+
+    // Handle multiple request
+    ZabbixAPIDatasource.prototype.handleMultipleRequest = function(apiRequests) {
+      var history = [];
+      var performedQuery = null;
+
+      // Build chain of api requests and put all history data into single array
+      _.each(apiRequests, function (apiRequest) {
+        if(!performedQuery) {
+          performedQuery = apiRequest.then(function (response) {
+            history = history.concat(response);
+            return history;
+          });
+        } else {
+          performedQuery = performedQuery.then(function () {
+            return apiRequest.then(function (response) {
+              history = history.concat(response);
+              return history;
+            });
+          });
+        }
+      });
+
+      return performedQuery;
     };
 
 
@@ -238,6 +258,7 @@ function (angular, _, kbn) {
         method: 'hostgroup.get',
         params: {
           output: ['name'],
+          real_hosts: true, //Return only host groups that contain hosts
           sortfield: 'name'
         },
         auth: this.auth,
@@ -294,7 +315,11 @@ function (angular, _, kbn) {
         params: {
           output: ['name', 'key_', 'value_type', 'delay'],
           sortfield: 'name',
-          hostids: hostid
+          hostids: hostid,
+          webitems: true, //Include web items in the result
+          filter: {
+            value_type: [0,3]
+          }
         },
         auth: this.auth,
         id: 1
