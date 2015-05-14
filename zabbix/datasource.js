@@ -39,14 +39,14 @@ function (angular, _, kbn) {
       // Need for find target alias
       var targets = options.targets;
 
-      // TODO: remove undefined targets from request
-      // Check that all targets defined
-      var targetsDefined = options.targets.every(function (target, index, array) {
-        return target.item;
+      // Remove undefined and hidden targets
+      var displayedTargets = _.filter(targets, function (target) {
+        return (!target.hide && target.item);
       });
-      if (targetsDefined) {
+
+      if (displayedTargets.length) {
         // Extract zabbix api item objects from targets
-        var target_items = _.map(options.targets, 'item');
+        var target_items = _.map(displayedTargets, 'item');
       } else {
         // No valid targets, return the empty dataset
         var d = $q.defer();
@@ -75,13 +75,15 @@ function (angular, _, kbn) {
         // Index returned datapoints by item/metric id
         var indexed_result = _.groupBy(response, 'itemid');
 
+        // TODO: realize correct timeseries reduce
+        /*
         // Reduce timeseries to the same size for stacking and tooltip work properly
         var min_length = _.min(_.map(indexed_result, function (history) {
           return history.length;
         }));
         _.each(indexed_result, function (item) {
           item.splice(0, item.length - min_length);
-        });
+        });*/
 
         // Sort result as the same as targets for display
         // stacked timeseries in proper order
@@ -120,7 +122,7 @@ function (angular, _, kbn) {
 
 
     // Request data from Zabbix API
-    ZabbixAPIDatasource.prototype.doZabbixAPIRequest = function(request_data) {
+    ZabbixAPIDatasource.prototype.performZabbixAPIRequest = function(request_data) {
       var options = {
         method: 'POST',
         headers: {
@@ -192,7 +194,7 @@ function (angular, _, kbn) {
           data.params.time_till = end;
         }
 
-        apiRequests.push(self.doZabbixAPIRequest(data));
+        apiRequests.push(self.performZabbixAPIRequest(data));
       });
 
       return this.handleMultipleRequest(apiRequests);
@@ -265,7 +267,7 @@ function (angular, _, kbn) {
         id: 1
       };
 
-      return this.doZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest(data);
     };
 
 
@@ -285,7 +287,7 @@ function (angular, _, kbn) {
         data.params.groupids = groupid;
       }
 
-      return this.doZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest(data);
     };
 
 
@@ -303,7 +305,7 @@ function (angular, _, kbn) {
         id: 1
       };
 
-      return this.doZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest(data);
     };
 
 
@@ -329,7 +331,7 @@ function (angular, _, kbn) {
         data.params.applicationids = applicationid;
       }
 
-      return this.doZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest(data);
     };
 
 
