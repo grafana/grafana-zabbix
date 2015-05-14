@@ -6,7 +6,7 @@ function (angular, _) {
   'use strict';
 
   var module = angular.module('grafana.controllers');
-  var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   module.controller('ZabbixAPITargetCtrl', function($scope) {
 
@@ -35,10 +35,20 @@ function (angular, _) {
         }
       }
 
+      setItemAlias();
+
       $scope.target.errors = validateTarget($scope.target);
     };
 
+    // Take alias from item name by default
+    function setItemAlias() {
+      if (!$scope.target.alias && $scope.target.item) {
+        $scope.target.alias = $scope.target.item.expandedName;
+      }
+    };
+
     $scope.targetBlur = function() {
+      setItemAlias();
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
         $scope.oldTarget = angular.copy($scope.target);
@@ -105,6 +115,7 @@ function (angular, _) {
 
     // Call when item selected
     $scope.selectItem = function() {
+      setItemAlias();
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
         $scope.oldTarget = angular.copy($scope.target);
