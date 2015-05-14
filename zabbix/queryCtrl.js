@@ -65,16 +65,17 @@ function (angular, _) {
 
     // Call when host selected
     $scope.selectHost = function() {
+      if ($scope.target.host) {
+        // Update item list
+        if ($scope.target.application) {
+          $scope.updateItemList($scope.target.host.hostid, $scope.target.application.applicationid);
+        } else {
+          $scope.updateItemList($scope.target.host.hostid, null);
+        }
 
-      // Update item list
-      if ($scope.target.application) {
-        $scope.updateItemList($scope.target.host.hostid, $scope.target.application.applicationid);
-      } else {
-        $scope.updateItemList($scope.target.host.hostid, null);
+        // Update application list
+        $scope.updateAppList($scope.target.host.hostid);
       }
-
-      // Update application list
-      $scope.updateAppList($scope.target.host.hostid);
 
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
