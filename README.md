@@ -40,4 +40,33 @@ Download latest release and unpack into `<your grafana installation>/plugins/dat
     ```
     
 ### Grafana 2.0.x
-Now in development.
+Download source code and put `zabbix` directory into `<your grafana-2 installation>/public/app/plugins/datasource/`.
+  * Edit plugin.json (located in `zabbix` directory) and set your `username` and `password`
+  
+    ```
+    {
+      "pluginType": "datasource",
+      "name": "Zabbix",
+
+      "type": "zabbix",
+      "serviceName": "ZabbixAPIDatasource",
+
+      "module": "plugins/datasource/zabbix/datasource",
+
+      "partials": {
+        "config": "app/plugins/datasource/zabbix/partials/config.html",
+        "query": "app/plugins/datasource/zabbix/partials/query.editor.html",
+        "annotations": "app/plugins/datasource/zabbix/partials/annotations.editor.html"
+      },
+
+      "username": "guest",
+      "password": "",
+
+      "metrics": true,
+      "annotations": true
+    }
+
+    ```
+  * Restart grafana server.
+  * Add zabbix datasource in Grafana's "Data Sources" menu (see [Data Sources docs](http://docs.grafana.org/datasources/graphite/) for more info) and setup your Zabbix API url.
+  * **Important!** Change `Access` to `direct`!
