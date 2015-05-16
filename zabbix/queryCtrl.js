@@ -35,10 +35,20 @@ function (angular, _) {
         }
       }
 
+      setItemAlias();
+
       $scope.target.errors = validateTarget($scope.target);
     };
 
+    // Take alias from item name by default
+    function setItemAlias() {
+      if (!$scope.target.alias && $scope.target.item) {
+        $scope.target.alias = $scope.target.item.expandedName;
+      }
+    };
+
     $scope.targetBlur = function() {
+      setItemAlias();
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
         $scope.oldTarget = angular.copy($scope.target);
@@ -65,16 +75,17 @@ function (angular, _) {
 
     // Call when host selected
     $scope.selectHost = function() {
+      if ($scope.target.host) {
+        // Update item list
+        if ($scope.target.application) {
+          $scope.updateItemList($scope.target.host.hostid, $scope.target.application.applicationid);
+        } else {
+          $scope.updateItemList($scope.target.host.hostid, null);
+        }
 
-      // Update item list
-      if ($scope.target.application) {
-        $scope.updateItemList($scope.target.host.hostid, $scope.target.application.applicationid);
-      } else {
-        $scope.updateItemList($scope.target.host.hostid, null);
+        // Update application list
+        $scope.updateAppList($scope.target.host.hostid);
       }
-
-      // Update application list
-      $scope.updateAppList($scope.target.host.hostid);
 
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
@@ -104,6 +115,7 @@ function (angular, _) {
 
     // Call when item selected
     $scope.selectItem = function() {
+      setItemAlias();
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
         $scope.oldTarget = angular.copy($scope.target);
