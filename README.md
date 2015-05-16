@@ -1,17 +1,18 @@
 # grafana-zabbix
-
 #### Zabbix API datasource for Grafana dashboard
 
 Display your Zabbix data directly in Grafana dashboards!   
 Useful metric editor with host group and application filtering:
 
-![grafana - zabbix datasource](https://cloud.githubusercontent.com/assets/4932851/7441162/4f6af788-f0e4-11e4-887b-34d987d00c40.png)
+![alt tag](https://cloud.githubusercontent.com/assets/4932851/7454206/34bf9f8c-f27a-11e4-8e96-a73829f188c4.png)
+![alt tag](https://cloud.githubusercontent.com/assets/4932851/7441162/4f6af788-f0e4-11e4-887b-34d987d00c40.png)
+
 
 ## Installation
 
 ### Grafana 1.9.x
 
-Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/releases/latest) and unpack `zabbix` directory into `<your grafana installation>/plugins/datasource/`. Then edit Grafana config.js:
+Download latest release and unpack into `<your grafana installation>/plugins/datasource/`. Then edit Grafana config.js:
   * Add dependencies
   
     ```
@@ -36,4 +37,33 @@ Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/rele
     ```
     
 ### Grafana 2.0.x
-Now in development.
+Download source code and put `zabbix` directory into `<your grafana-2 installation>/public/app/plugins/datasource/`.
+  * Edit plugin.json (located in `zabbix` directory) and set your `username` and `password`
+  
+    ```
+    {
+      "pluginType": "datasource",
+      "name": "Zabbix",
+
+      "type": "zabbix",
+      "serviceName": "ZabbixAPIDatasource",
+
+      "module": "plugins/datasource/zabbix/datasource",
+
+      "partials": {
+        "config": "app/plugins/datasource/zabbix/partials/config.html",
+        "query": "app/plugins/datasource/zabbix/partials/query.editor.html",
+        "annotations": "app/plugins/datasource/zabbix/partials/annotations.editor.html"
+      },
+
+      "username": "guest",
+      "password": "",
+
+      "metrics": true,
+      "annotations": true
+    }
+
+    ```
+  * Restart grafana server.
+  * Add zabbix datasource in Grafana's "Data Sources" menu (see [Data Sources docs](http://docs.grafana.org/datasources/graphite/) for more info) and setup your Zabbix API url.
+  * **Important!** Change `Access` to `direct`!
