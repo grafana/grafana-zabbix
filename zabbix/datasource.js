@@ -12,8 +12,8 @@ function (angular, _, kbn) {
   module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv) {
 
     function ZabbixAPIDatasource(datasource) {
-      this.name             = datasource.name;
       this.type             = 'zabbix';
+      this.name             = datasource.name;
 
       this.url              = datasource.url;
 
