@@ -1,10 +1,12 @@
 # grafana-zabbix
-#### Zabbix API datasource for Grafana dashboard
+## Zabbix API datasource for Grafana dashboard
 
 Display your Zabbix data directly in Grafana dashboards!   
-Useful metric editor with host group and application filtering:
 
 ![alt tag](https://cloud.githubusercontent.com/assets/4932851/7454206/34bf9f8c-f27a-11e4-8e96-a73829f188c4.png)
+
+Useful metric editor with host group and application filtering:
+
 ![alt tag](https://cloud.githubusercontent.com/assets/4932851/7441162/4f6af788-f0e4-11e4-887b-34d987d00c40.png)
 
 
@@ -12,7 +14,7 @@ Useful metric editor with host group and application filtering:
 
 ### Grafana 1.9.x
 
-Download latest release and unpack into `<your grafana installation>/plugins/datasource/`. Then edit Grafana config.js:
+Download latest 1.x.x release and unpack into `<your grafana installation>/plugins/datasource/`. Then edit Grafana config.js:
   * Add dependencies
   
     ```
@@ -37,7 +39,7 @@ Download latest release and unpack into `<your grafana installation>/plugins/dat
     ```
     
 ### Grafana 2.0.x
-Download source code and put `zabbix` directory into `<your grafana-2 installation>/public/app/plugins/datasource/`.
+Download source code from master branch and put `zabbix` directory into `<your grafana-2 installation>/public/app/plugins/datasource/`.
   * Edit plugin.json (located in `zabbix` directory) and set your `username` and `password`
   
     ```
