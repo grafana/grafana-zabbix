@@ -85,14 +85,20 @@ function (angular, _, kbn) {
 
 
     // Request data from Zabbix API
-    ZabbixAPIDatasource.prototype.performZabbixAPIRequest = function(request_data) {
+    ZabbixAPIDatasource.prototype.performZabbixAPIRequest = function(method, params) {
       var options = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         url: this.url,
-        data: request_data
+        data: {
+          jsonrpc: '2.0',
+          method: method,
+          params: params,
+          auth: this.auth,
+          id: 1
+        }
       };
 
       var performedQuery;
@@ -125,28 +131,22 @@ function (angular, _, kbn) {
      * @param items: array of zabbix api item objects
      */
     ZabbixAPIDatasource.prototype.performTimeSeriesQuery = function(items, start, end) {
-      var data = {
-        jsonrpc: '2.0',
-        method: 'history.get',
-        params: {
-          output: 'extend',
-          history: items.value_type,
-          itemids: items.itemid,
-          sortfield: 'clock',
-          sortorder: 'ASC',
-          limit: this.limitmetrics,
-          time_from: start,
-        },
-        auth: this.auth,
-        id: 1
+      var params = {
+        output: 'extend',
+        history: items.value_type,
+        itemids: items.itemid,
+        sortfield: 'clock',
+        sortorder: 'ASC',
+        limit: this.limitmetrics,
+        time_from: start,
       };
 
       // Relative queries (e.g. last hour) don't include an end time
       if (end) {
-        data.params.time_till = end;
+        params.time_till = end;
       }
 
-      return this.performZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest('history.get', params);
     };
 
 
@@ -178,83 +178,62 @@ function (angular, _, kbn) {
 
     // Get the list of host groups
     ZabbixAPIDatasource.prototype.performHostGroupSuggestQuery = function() {
-      var data = {
-        jsonrpc: '2.0',
-        method: 'hostgroup.get',
-        params: {
-          output: ['name'],
-          real_hosts: true, //Return only host groups that contain hosts
-          sortfield: 'name'
-        },
-        auth: this.auth,
-        id: 1
+      var params = {
+        output: ['name'],
+        real_hosts: true, //Return only host groups that contain hosts
+        sortfield: 'name'
       };
 
-      return this.performZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest('hostgroup.get', params);
     };
 
 
     // Get the list of hosts
     ZabbixAPIDatasource.prototype.performHostSuggestQuery = function(groupid) {
-      var data = {
-        jsonrpc: '2.0',
-        method: 'host.get',
-        params: {
-          output: ['name'],
-          sortfield: 'name'
-        },
-        auth: this.auth,
-        id: 1
+      var params = {
+        output: ['name'],
+        sortfield: 'name'
       };
+      // Return only hosts in given group
       if (groupid) {
-        data.params.groupids = groupid;
+        params.groupids = groupid;
       }
-
-      return this.performZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest('host.get', params);
     };
 
 
     // Get the list of applications
     ZabbixAPIDatasource.prototype.performAppSuggestQuery = function(hostid) {
-      var data = {
-        jsonrpc: '2.0',
-        method: 'application.get',
-        params: {
-          output: ['name'],
-          sortfield: 'name',
-          hostids: hostid
-        },
-        auth: this.auth,
-        id: 1
+      var params = {
+        output: ['name'],
+        sortfield: 'name',
+        hostids: hostid
       };
 
-      return this.performZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest('application.get', params);
     };
 
 
     // Get the list of host items
     ZabbixAPIDatasource.prototype.performItemSuggestQuery = function(hostid, applicationid) {
-      var data = {
-        jsonrpc: '2.0',
-        method: 'item.get',
-        params: {
-          output: ['name', 'key_', 'value_type', 'delay'],
-          sortfield: 'name',
-          hostids: hostid,
-          webitems: true, //Include web items in the result
-          filter: {
-            value_type: [0,3]
-          }
-        },
-        auth: this.auth,
-        id: 1
+      var params = {
+        output: ['name', 'key_', 'value_type', 'delay'],
+        sortfield: 'name',
+        hostids: hostid,
+
+        //Include web items in the result
+        webitems: true,
+        // Return only numeric items
+        filter: {
+          value_type: [0,3]
+        }
       };
       // If application selected return only relative items
       if (applicationid) {
-        data.params.applicationids = applicationid;
+        params.applicationids = applicationid;
       }
 
-      return this.performZabbixAPIRequest(data);
+      return this.performZabbixAPIRequest('item.get', params);
     };
 
 
