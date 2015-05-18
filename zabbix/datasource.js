@@ -33,22 +33,20 @@ function (angular, _, kbn) {
 
     ZabbixAPIDatasource.prototype.query = function(options) {
       // get from & to in seconds
-      var from = kbn.parseDate(options.range.from).getTime();
-      var to = kbn.parseDate(options.range.to).getTime();
+      var from = Math.ceil(kbn.parseDate(options.range.from).getTime() / 1000);
+      var to = Math.ceil(kbn.parseDate(options.range.to).getTime() / 1000);
 
-      from = Math.ceil(from/1000);
-      to = Math.ceil(to/1000);
-
+      // Create request for each target
       var promises = _.map(options.targets, function(target) {
+
         // Remove undefined and hidden targets
         if (target.hide || !target.item) {
           return [];
         }
 
-        var self = this;
-        return this.performTimeSeriesQuery(target.item, from, to).then(function (response) {
-          return self.handleZabbixAPIResponse(response, target)
-        });
+        // Perform request and then handle result
+        return this.performTimeSeriesQuery(target.item, from, to).then(_.partial(
+          this.handleZabbixAPIResponse, target));
       }, this);
 
       return $q.all(promises).then(function(results) {
@@ -58,7 +56,7 @@ function (angular, _, kbn) {
 
 
     // Request data from Zabbix API
-    ZabbixAPIDatasource.prototype.handleZabbixAPIResponse = function(response, target) {
+    ZabbixAPIDatasource.prototype.handleZabbixAPIResponse = function(target, response) {
       /**
        * Response should be in the format:
        * data: [
@@ -74,16 +72,10 @@ function (angular, _, kbn) {
        */
 
       var series = {
-        // Lookup itemid:alias map
         target: target.alias,
-
         datapoints: _.map(response, function (p) {
-
           // Value must be a number for properly work
           var value = Number(p.value);
-
-          // TODO: Correct time for proper stacking
-          //var clock = Math.round(Number(p.clock) / 60) * 60;
           return [value, p.clock * 1000];
         })
       };
@@ -155,32 +147,6 @@ function (angular, _, kbn) {
       }
 
       return this.performZabbixAPIRequest(data);
-    };
-
-
-    // Handle multiple request
-    ZabbixAPIDatasource.prototype.handleMultipleRequest = function(apiRequests) {
-      var history = [];
-      var performedQuery = null;
-
-      // Build chain of api requests and put all history data into single array
-      _.each(apiRequests, function (apiRequest) {
-        if(!performedQuery) {
-          performedQuery = apiRequest.then(function (response) {
-            history = history.concat(response);
-            return history;
-          });
-        } else {
-          performedQuery = performedQuery.then(function () {
-            return apiRequest.then(function (response) {
-              history = history.concat(response);
-              return history;
-            });
-          });
-        }
-      });
-
-      return performedQuery;
     };
 
 
