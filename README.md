@@ -90,4 +90,5 @@ before
 require_once dirname(__FILE__).'/include/func.inc.php';
 require_once dirname(__FILE__).'/include/classes/core/CHttpRequest.php';
 ```
-See [full listing](https://gist.github.com/alexanderzobnin/f2348f318d7a93466a0c).
+[Full fix listing](https://gist.github.com/alexanderzobnin/f2348f318d7a93466a0c).
+For more info see zabbix issues [ZBXNEXT-1377](https://support.zabbix.com/browse/ZBXNEXT-1377) and [ZBX-8459](https://support.zabbix.com/browse/ZBX-8459).
