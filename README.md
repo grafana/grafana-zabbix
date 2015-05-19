@@ -71,3 +71,23 @@ Download source code from master branch and put `zabbix` directory into `<your g
   * **Important!** Change `Access` to `direct`!
 
 ![2015-05-18 12-46-03 grafana - zabbix org - mozilla firefox](https://cloud.githubusercontent.com/assets/4932851/7678429/b42a9cda-fd5c-11e4-84a3-07aa765769d3.png)
+
+#### Note for Zabbix 2.2 or before
+Zabbix API (api_jsonrpc.php) before zabbix 2.4 don't allow cross-domain requests (CORS). And you can get HTTP error 412 (Precondition Failed).
+To fix it add this code to api_jsonrpc.php immediately after the copyright
+```
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Max-Age: 1000');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+	return;
+}
+```
+before 
+```
+require_once dirname(__FILE__).'/include/func.inc.php';
+require_once dirname(__FILE__).'/include/classes/core/CHttpRequest.php';
+```
+[Full fix listing](https://gist.github.com/alexanderzobnin/f2348f318d7a93466a0c)
