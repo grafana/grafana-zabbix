@@ -12,19 +12,12 @@ function (angular, _, kbn) {
   module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv) {
 
     function ZabbixAPIDatasource(datasource) {
-      this.type             = 'zabbix';
       this.name             = datasource.name;
-
       this.url              = datasource.url;
 
       // TODO: fix passing username and password from config.html
       this.username         = datasource.meta.username;
       this.password         = datasource.meta.password;
-
-      // No datapoints limit by default
-      this.limitMetrics     = datasource.limitMetrics || 0;
-      this.supportMetrics   = true;
-      this.supportAnnotations = true;
 
       // For testing
       this.ds = datasource;
@@ -137,8 +130,7 @@ function (angular, _, kbn) {
         itemids: items.itemid,
         sortfield: 'clock',
         sortorder: 'ASC',
-        limit: this.limitmetrics,
-        time_from: start,
+        time_from: start
       };
 
       // Relative queries (e.g. last hour) don't include an end time
@@ -238,63 +230,45 @@ function (angular, _, kbn) {
 
 
     ZabbixAPIDatasource.prototype.annotationQuery = function(annotation, rangeUnparsed) {
-      var from = kbn.parseDate(rangeUnparsed.from).getTime();
-      var to = kbn.parseDate(rangeUnparsed.to).getTime();
+      var from = Math.ceil(kbn.parseDate(rangeUnparsed.from).getTime() / 1000);
+      var to = Math.ceil(kbn.parseDate(rangeUnparsed.to).getTime() / 1000);
       var self = this;
-      from = Math.ceil(from/1000);
-      to = Math.ceil(to/1000);
 
-      var tid_options = {
-        method: 'POST',
-        url: self.url + '',
-        data: {
-          jsonrpc: '2.0',
-          method: 'trigger.get',
-          params: {
-              output: ['triggerid', 'description'],
-              itemids: annotation.aids.split(','), // TODO: validate / pull automatically from dashboard.
-              limit: self.limitmetrics,
-          },
-          auth: self.auth,
-          id: 1
+      var params = {
+        output: ['triggerid', 'description'],
+        search: {
+          'description': annotation.query
         },
       };
 
-      return backendSrv.datasourceRequest(tid_options).then(function(result) {
-        var obs = {};
-        obs = _.indexBy(result.data.result, 'triggerid');
+      return this.performZabbixAPIRequest('trigger.get', params).then(function (result) {
+        if(result) {
+          var obs = {};
+          obs = _.indexBy(result, 'triggerid');
 
-        var options = {
-          method: 'POST',
-          url: self.url + '',
-          data: {
-            jsonrpc: '2.0',
-            method: 'event.get',
-            params: {
-                output: 'extend',
-                sortorder: 'DESC',
-                time_from: from,
-                time_till: to,
-                objectids: _.keys(obs),
-                limit: self.limitmetrics,
-            },
-            auth: self.auth,
-            id: 1
-          },
-        };
+          var params = {
+            output: 'extend',
+            sortorder: 'DESC',
+            time_from: from,
+            time_till: to,
+            objectids: _.keys(obs)
+          };
 
-        return backendSrv.datasourceRequest(options).then(function(result2) {
-          var list = [];
-          _.each(result2.data.result, function(e) {
-            list.push({
-              annotation: annotation,
-              time: e.clock * 1000,
-              title: obs[e.objectid].description,
-              text: e.eventid,
+          return self.performZabbixAPIRequest('event.get', params).then(function (result) {
+            var events = [];
+            _.each(result, function(e) {
+              events.push({
+                annotation: annotation,
+                time: e.clock * 1000,
+                title: obs[e.objectid].description,
+                text: e.eventid,
+              });
             });
+            return events;
           });
-          return list;
-        });
+        } else {
+          return [];
+        }
       });
     };
 
