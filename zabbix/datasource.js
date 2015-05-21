@@ -229,6 +229,52 @@ function (angular, _, kbn) {
     };
 
 
+    // For templated query
+    ZabbixAPIDatasource.prototype.metricFindQuery = function (query) {
+      var interpolated;
+      try {
+        interpolated = templateSrv.replace(query);
+      }
+      catch (err) {
+        return $q.reject(err);
+      }
+
+      var parts = interpolated.split('.');
+      var template = {
+        'group': parts[0],
+        'host': parts[1],
+        'item': parts[2]
+      };
+
+      var params = {
+        output: ['name'],
+        sortfield: 'name',
+        // Case insensitive search
+        search: {
+          name : template.group
+        }
+      };
+
+      var self = this;
+      return this.performZabbixAPIRequest('hostgroup.get', params)
+        .then(function (result) {
+          var groupid = null;
+          if (result.length && template.group) {
+            groupid = result[0].groupid;
+          }
+          return self.performHostSuggestQuery(groupid)
+            .then(function (result) {
+              return _.map(result, function (host) {
+                return {
+                  text: host.name,
+                  expandable: false
+                };
+              });
+            });
+        });
+    };
+
+
     ZabbixAPIDatasource.prototype.annotationQuery = function(annotation, rangeUnparsed) {
       var from = Math.ceil(kbn.parseDate(rangeUnparsed.from).getTime() / 1000);
       var to = Math.ceil(kbn.parseDate(rangeUnparsed.to).getTime() / 1000);
