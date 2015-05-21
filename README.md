@@ -1,7 +1,7 @@
 # grafana-zabbix
 ## Zabbix API datasource for Grafana dashboard
 
-Display your Zabbix data directly in Grafana dashboards!   
+Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!   
 
 ![alt tag](https://cloud.githubusercontent.com/assets/4932851/7454206/34bf9f8c-f27a-11e4-8e96-a73829f188c4.png)
 
