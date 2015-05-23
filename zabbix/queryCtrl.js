@@ -8,7 +8,7 @@ function (angular, _) {
   var module = angular.module('grafana.controllers');
   var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  module.controller('ZabbixAPIQueryCtrl', function($scope) {
+  module.controller('ZabbixAPIQueryCtrl', function($scope, $sce, templateSrv) {
 
     $scope.init = function() {
       $scope.targetLetters = targetLetters;
@@ -161,6 +161,14 @@ function (angular, _) {
     $scope.updateHostList = function(groupid) {
       $scope.datasource.performHostSuggestQuery(groupid).then(function (series) {
         $scope.metric.hostList = series;
+
+        // Add  templated variables
+        _.each(templateSrv.variables, function(variable) {
+          $scope.metric.hostList.push({
+            'name': '$' + variable.name,
+            'hostid': 0
+          })
+        });
 
         if ($scope.target.host) {
           $scope.target.host = $scope.metric.hostList.filter(function (item, index, array) {

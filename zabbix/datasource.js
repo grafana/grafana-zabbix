@@ -183,7 +183,7 @@ function (angular, _, kbn) {
     // Get the list of hosts
     ZabbixAPIDatasource.prototype.performHostSuggestQuery = function(groupid) {
       var params = {
-        output: ['name'],
+        output: ['name', 'host'],
         sortfield: 'name'
       };
       // Return only hosts in given group
@@ -229,22 +229,65 @@ function (angular, _, kbn) {
     };
 
 
+    ZabbixAPIDatasource.prototype.findZabbixGroup = function (group) {
+      var params = {
+        output: ['name'],
+        search: {
+          name: group
+        },
+        searchWildcardsEnabled: true
+      }
+      return this.performZabbixAPIRequest('hostgroup.get', params);
+    };
+
+
+    ZabbixAPIDatasource.prototype.findZabbixHost = function (hostname) {
+      var params = {
+        output: ['host', 'name'],
+        search: {
+          host: hostname,
+          name: hostname
+        },
+        searchWildcardsEnabled: true,
+        searchByAny: true
+      }
+      return this.performZabbixAPIRequest('host.get', params);
+    };
+
+
+    ZabbixAPIDatasource.prototype.findZabbixApp = function (application) {
+      var params = {
+        output: ['name'],
+        search: {
+          name: application
+        },
+        searchWildcardsEnabled: true
+      }
+      return this.performZabbixAPIRequest('application.get', params);
+    };
+
     // For templated query
     ZabbixAPIDatasource.prototype.metricFindQuery = function (query) {
       var interpolated;
       try {
-        interpolated = templateSrv.replace(query);
+        interpolated = encodeURIComponent(templateSrv.replace(query));
       }
       catch (err) {
         return $q.reject(err);
       }
 
-      var parts = interpolated.split('.');
-      var template = {
-        'group': parts[0],
-        'host': parts[1],
-        'item': parts[2]
-      };
+      // Split query. Query structure:
+      // group.host.app.key
+      var parts = [];
+      _.each(query.split('.'), function (part) {
+        part = templateSrv.replace(part);
+        if (part[0] === '{') {
+          parts.push(part.slice(1, -1).split(','));
+        } else {
+          parts.push(part);
+        }
+      });
+      var template = _.object(['group', 'host', 'app', 'key'], parts)
 
       var params = {
         output: ['name'],
@@ -255,23 +298,97 @@ function (angular, _, kbn) {
         }
       };
 
-      var self = this;
-      return this.performZabbixAPIRequest('hostgroup.get', params)
-        .then(function (result) {
-          var groupid = null;
-          if (result.length && template.group) {
-            groupid = result[0].groupid;
-          }
-          return self.performHostSuggestQuery(groupid)
-            .then(function (result) {
-              return _.map(result, function (host) {
-                return {
-                  text: host.name,
-                  expandable: false
-                };
-              });
+      // Get items
+      if (parts.length === 4) {
+        var params = {
+          output: ['name', 'key_'],
+          sortfield: 'name',
+        };
+        if (template.group != '*' && template.group) {
+          params.group = template.group;
+        }
+        if (template.host != '*' && template.host) {
+          params.host = template.host;
+        }
+        if (template.application != '*' && template.application) {
+          params.application = template.app;
+        }
+        return this.performZabbixAPIRequest('item.get', params)
+          .then(function (result) {
+            return _.map(result, function (item) {
+              return {
+                text: item.key_,
+                expandable: false
+              };
             });
-        });
+          });
+      }
+      // Get applications
+      else if (parts.length === 3) {
+        return this.appFindQuery(template);
+      }
+      // Return empty object
+      else {
+        var d = $q.defer();
+        d.resolve({ data: [] });
+        return d.promise;
+      }
+    };
+
+    ZabbixAPIDatasource.prototype.appFindQuery = function(template) {
+      var params = {
+        output: ['name'],
+        sortfield: 'name'
+      };
+      var promises = [];
+      if (template.group != '*' && template.group) {
+        if (_.isArray(template.group)) {
+          _.each(template.group, function (group) {
+            promises.push(this.findZabbixGroup(group));
+          }, this);
+        } else {
+          promises.push(this.findZabbixGroup(template.group));
+        }
+      }
+      if (template.host != '*' && template.host) {
+        if (_.isArray(template.host)) {
+          _.each(template.host, function (host) {
+            promises.push(this.findZabbixHost(host));
+          }, this);
+        } else {
+          promises.push(this.findZabbixHost(template.host));
+        }
+      }
+
+      var self = this;
+      return $q.all(promises).then(function (results) {
+        results = _.flatten(results);
+        var groupids = _.map(_.filter(results, function (object) {
+          return object.groupid;
+        }), 'groupid');
+        var hostids = _.map(_.filter(results, function (object) {
+          return object.hostid;
+        }), 'hostid');
+
+        var params = {
+          output: ['name']
+        }
+        if (hostids) {
+          params.hostids = hostids;
+        } else if (groupids) {
+          params.groupids = groupids;
+        }
+
+        return self.performZabbixAPIRequest('application.get', params)
+          .then(function (result) {
+            return _.map(result, function (app) {
+              return {
+                text: app.name,
+                expandable: false
+              };
+            });
+          });
+      });
     };
 
 
