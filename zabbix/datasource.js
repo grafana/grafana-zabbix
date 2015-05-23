@@ -282,6 +282,8 @@ function (angular, _, kbn) {
       _.each(query.split('.'), function (part) {
         part = templateSrv.replace(part);
         if (part[0] === '{') {
+          // Convert multiple mettrics to array
+          // "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
           parts.push(part.slice(1, -1).split(','));
         } else {
           parts.push(part);
@@ -300,28 +302,7 @@ function (angular, _, kbn) {
 
       // Get items
       if (parts.length === 4) {
-        var params = {
-          output: ['name', 'key_'],
-          sortfield: 'name',
-        };
-        if (template.group != '*' && template.group) {
-          params.group = template.group;
-        }
-        if (template.host != '*' && template.host) {
-          params.host = template.host;
-        }
-        if (template.application != '*' && template.application) {
-          params.application = template.app;
-        }
-        return this.performZabbixAPIRequest('item.get', params)
-          .then(function (result) {
-            return _.map(result, function (item) {
-              return {
-                text: item.key_,
-                expandable: false
-              };
-            });
-          });
+        return this.itemFindQuery(template);
       }
       // Get applications
       else if (parts.length === 3) {
@@ -335,12 +316,11 @@ function (angular, _, kbn) {
       }
     };
 
-    ZabbixAPIDatasource.prototype.appFindQuery = function(template) {
-      var params = {
-        output: ['name'],
-        sortfield: 'name'
-      };
+
+    ZabbixAPIDatasource.prototype.itemFindQuery = function(template) {
       var promises = [];
+
+      // Get groupids from names
       if (template.group != '*' && template.group) {
         if (_.isArray(template.group)) {
           _.each(template.group, function (group) {
@@ -350,6 +330,79 @@ function (angular, _, kbn) {
           promises.push(this.findZabbixGroup(template.group));
         }
       }
+      // Get hostids from names
+      if (template.host != '*' && template.host) {
+        if (_.isArray(template.host)) {
+          _.each(template.host, function (host) {
+            promises.push(this.findZabbixHost(host));
+          }, this);
+        } else {
+          promises.push(this.findZabbixHost(template.host));
+        }
+      }
+      // Get applicationids from names
+      if (template.app != '*' && template.app) {
+        if (_.isArray(template.app)) {
+          _.each(template.app, function (app) {
+            promises.push(this.findZabbixHost(app));
+          }, this);
+        } else {
+          promises.push(this.findZabbixHost(template.app));
+        }
+      }
+
+      var self = this;
+      return $q.all(promises).then(function (results) {
+        results = _.flatten(results);
+        var groupids = _.map(_.filter(results, function (object) {
+          return object.groupid;
+        }), 'groupid');
+        var hostids = _.map(_.filter(results, function (object) {
+          return object.hostid;
+        }), 'hostid');
+        var applicationids = _.map(_.filter(results, function (object) {
+          return object.applicationid;
+        }), 'applicationid');
+
+        var params = {
+          output: ['name', 'key_'],
+          sortfield: 'name',
+        };
+        if (applicationids.length) {
+          params.applicationids = applicationids;
+        }
+        if (hostids.length) {
+          params.hostids = hostids;
+        } else if (groupids.length) {
+          params.groupids = groupids;
+        }
+        return self.performZabbixAPIRequest('item.get', params)
+          .then(function (result) {
+            return _.map(result, function (item) {
+              return {
+                text: item.key_,
+                expandable: false
+              };
+            });
+          });
+      });
+    };
+
+
+    ZabbixAPIDatasource.prototype.appFindQuery = function(template) {
+      var promises = [];
+
+      // Get groupids from names
+      if (template.group != '*' && template.group) {
+        if (_.isArray(template.group)) {
+          _.each(template.group, function (group) {
+            promises.push(this.findZabbixGroup(group));
+          }, this);
+        } else {
+          promises.push(this.findZabbixGroup(template.group));
+        }
+      }
+      // Get hostids from names
       if (template.host != '*' && template.host) {
         if (_.isArray(template.host)) {
           _.each(template.host, function (host) {
@@ -373,9 +426,9 @@ function (angular, _, kbn) {
         var params = {
           output: ['name']
         }
-        if (hostids) {
+        if (hostids.length) {
           params.hostids = hostids;
-        } else if (groupids) {
+        } else if (groupids.length) {
           params.groupids = groupids;
         }
 
