@@ -266,16 +266,22 @@ function (angular, _, kbn) {
       return this.performZabbixAPIRequest('application.get', params);
     };
 
+
+    ZabbixAPIDatasource.prototype.findZabbixItem = function (host, key) {
+      var params = {
+        output: ['name', 'key_', 'value_type'],
+        host: host,
+        search: {
+          key_: key
+        },
+        searchWildcardsEnabled: true
+      }
+      return this.performZabbixAPIRequest('application.get', params);
+    };
+
+
     // For templated query
     ZabbixAPIDatasource.prototype.metricFindQuery = function (query) {
-      var interpolated;
-      try {
-        interpolated = encodeURIComponent(templateSrv.replace(query));
-      }
-      catch (err) {
-        return $q.reject(err);
-      }
-
       // Split query. Query structure:
       // group.host.app.key
       var parts = [];
@@ -307,6 +313,14 @@ function (angular, _, kbn) {
       // Get applications
       else if (parts.length === 3) {
         return this.appFindQuery(template);
+      }
+      // Get hosts
+      else if (parts.length === 2) {
+        return this.hostFindQuery(template);
+      }
+      // Get groups
+      else if (parts.length === 1) {
+        return this.groupFindQuery(template);
       }
       // Return empty object
       else {
@@ -437,6 +451,86 @@ function (angular, _, kbn) {
             return _.map(result, function (app) {
               return {
                 text: app.name,
+                expandable: false
+              };
+            });
+          });
+      });
+    };
+
+
+    ZabbixAPIDatasource.prototype.hostFindQuery = function(template) {
+      var promises = [];
+
+      // Get groupids from names
+      if (template.group != '*' && template.group) {
+        if (_.isArray(template.group)) {
+          _.each(template.group, function (group) {
+            promises.push(this.findZabbixGroup(group));
+          }, this);
+        } else {
+          promises.push(this.findZabbixGroup(template.group));
+        }
+      }
+
+      var self = this;
+      return $q.all(promises).then(function (results) {
+        results = _.flatten(results);
+        var groupids = _.map(_.filter(results, function (object) {
+          return object.groupid;
+        }), 'groupid');
+
+        var params = {
+          output: ['name', 'host']
+        }
+        if (groupids.length) {
+          params.groupids = groupids;
+        }
+
+        return self.performZabbixAPIRequest('host.get', params)
+          .then(function (result) {
+            return _.map(result, function (host) {
+              return {
+                text: host.name,
+                expandable: false
+              };
+            });
+          });
+      });
+    };
+
+
+    ZabbixAPIDatasource.prototype.groupFindQuery = function(template) {
+      var promises = [];
+
+      // Get groupids from names
+      if (_.isArray(template.group)) {
+        _.each(template.group, function (group) {
+          promises.push(this.findZabbixGroup(group));
+        }, this);
+      } else {
+        promises.push(this.findZabbixGroup(template.group));
+      }
+
+      var self = this;
+      return $q.all(promises).then(function (results) {
+        results = _.flatten(results);
+        var groupids = _.map(_.filter(results, function (object) {
+          return object.groupid;
+        }), 'groupid');
+
+        var params = {
+          output: ['name', 'host']
+        }
+        if (groupids.length) {
+          params.groupids = groupids;
+        }
+
+        return self.performZabbixAPIRequest('hostgroup.get', params)
+          .then(function (result) {
+            return _.map(result, function (hostgroup) {
+              return {
+                text: hostgroup.name,
                 expandable: false
               };
             });
