@@ -217,6 +217,12 @@ function (angular, _) {
               item.name = expandItemName(item);
             }
           });
+          if ($scope.target.item) {
+          $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
+            // Find selected item in metric.hostList
+            return (item.name == $scope.target.item.name);
+          }).pop();
+        }
         });
       } else {
         if ($scope.target.item) {

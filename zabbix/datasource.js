@@ -31,25 +31,57 @@ function (angular, _, kbn) {
 
       // Create request for each target
       var promises = _.map(options.targets, function(target) {
-
         // Remove undefined and hidden targets
         if (target.hide || !target.item) {
           return [];
         }
 
-        // Perform request and then handle result
-        return this.performTimeSeriesQuery(target.item, from, to).then(_.partial(
-          this.handleZabbixAPIResponse, target));
+        if (!target.item.templated) {
+
+          // Perform request and then handle result
+          return this.performTimeSeriesQuery(target.item, from, to).then(_.partial(
+            this.handleZabbixAPIResponse, target.alias));
+        } else {
+          // Handle templated target
+
+          var item_key = templateSrv.replace(target.item.name);
+          var hostname = templateSrv.replace(target.host.name);
+
+          var keys = [];
+          if (item_key[0] === '{') {
+            // Convert multiple mettrics to array
+            // "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
+            keys= item_key.slice(1, -1).split(',');
+          } else {
+            keys.push(item_key);
+          }
+
+          var self = this;
+
+          var results = [];
+          _.each(keys, function (key) {
+            results.push(this.findZabbixItem(hostname, key).then(function (items) {
+              if (items.length) {
+                var item = items[0];
+                return self.performTimeSeriesQuery(item, from, to).then(_.partial(
+                  self.handleZabbixAPIResponse, item.name));
+              } else {
+                return [];
+              }
+            }));
+          }, this);
+          return results;
+        }
       }, this);
 
-      return $q.all(promises).then(function(results) {
+      return $q.all(_.flatten(promises)).then(function(results) {
         return { data: _.flatten(results) };
       });
     };
 
 
     // Request data from Zabbix API
-    ZabbixAPIDatasource.prototype.handleZabbixAPIResponse = function(target, response) {
+    ZabbixAPIDatasource.prototype.handleZabbixAPIResponse = function(alias, response) {
       /**
        * Response should be in the format:
        * data: [
@@ -65,7 +97,7 @@ function (angular, _, kbn) {
        */
 
       var series = {
-        target: target.alias,
+        target: alias,
         datapoints: _.map(response, function (p) {
           // Value must be a number for properly work
           var value = Number(p.value);
@@ -274,9 +306,10 @@ function (angular, _, kbn) {
         search: {
           key_: key
         },
-        searchWildcardsEnabled: true
+        searchWildcardsEnabled: true,
+        searchByAny: true
       }
-      return this.performZabbixAPIRequest('application.get', params);
+      return this.performZabbixAPIRequest('item.get', params);
     };
 
 
@@ -361,7 +394,7 @@ function (angular, _, kbn) {
             promises.push(this.findZabbixHost(app));
           }, this);
         } else {
-          promises.push(this.findZabbixHost(template.app));
+          promises.push(this.findZabbixApp(template.app));
         }
       }
 
