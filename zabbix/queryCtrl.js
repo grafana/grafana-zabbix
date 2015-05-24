@@ -189,13 +189,6 @@ function (angular, _) {
       $scope.datasource.performAppSuggestQuery(hostid).then(function (series) {
         $scope.metric.applicationList = $scope.metric.applicationList.concat(series);
 
-        // Add  templated variables
-        _.each(templateSrv.variables, function(variable) {
-          $scope.metric.applicationList.push({
-            name: '$' + variable.name
-          })
-        });
-
         if ($scope.target.application) {
           $scope.target.application = $scope.metric.applicationList.filter(function (item, index, array) {
             // Find selected application in metric.hostList
@@ -225,13 +218,13 @@ function (angular, _) {
             }
           });
         });
-      }
-
-      if ($scope.target.item) {
-        $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
-          // Find selected item in metric.hostList
-          return (item.name == $scope.target.item.name);
-        }).pop();
+      } else {
+        if ($scope.target.item) {
+          $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
+            // Find selected item in metric.hostList
+            return (item.name == $scope.target.item.name);
+          }).pop();
+        }
       }
     };
 
