@@ -143,12 +143,16 @@ function (angular, _) {
      * Update list of host groups
      */
     $scope.updateHostGroupList = function() {
+      $scope.metric.hostGroupList = [];
+      addTemplatedVariables($scope.metric.hostGroupList);
+
       $scope.datasource.performHostGroupSuggestQuery().then(function (series) {
-        $scope.metric.hostGroupList = series;
+        $scope.metric.hostGroupList = $scope.metric.hostGroupList.concat(series);
+
         if ($scope.target.hostGroup) {
           $scope.target.hostGroup = $scope.metric.hostGroupList.filter(function (item, index, array) {
             // Find selected host in metric.hostList
-            return (item.groupid == $scope.target.hostGroup.groupid);
+            return (item.name == $scope.target.hostGroup.name);
           }).pop();
         }
       });
@@ -159,21 +163,16 @@ function (angular, _) {
      * Update list of hosts
      */
     $scope.updateHostList = function(groupid) {
-      $scope.datasource.performHostSuggestQuery(groupid).then(function (series) {
-        $scope.metric.hostList = series;
+      $scope.metric.hostList = [];
+      addTemplatedVariables($scope.metric.hostList);
 
-        // Add  templated variables
-        _.each(templateSrv.variables, function(variable) {
-          $scope.metric.hostList.push({
-            'name': '$' + variable.name,
-            'hostid': 0
-          })
-        });
+      $scope.datasource.performHostSuggestQuery(groupid).then(function (series) {
+        $scope.metric.hostList = $scope.metric.hostList.concat(series);
 
         if ($scope.target.host) {
           $scope.target.host = $scope.metric.hostList.filter(function (item, index, array) {
             // Find selected host in metric.hostList
-            return (item.hostid == $scope.target.host.hostid);
+            return (item.name == $scope.target.host.name);
           }).pop();
         }
       });
@@ -184,12 +183,23 @@ function (angular, _) {
      * Update list of host applications
      */
     $scope.updateAppList = function(hostid) {
+      $scope.metric.applicationList = [];
+      addTemplatedVariables($scope.metric.applicationList);
+
       $scope.datasource.performAppSuggestQuery(hostid).then(function (series) {
-        $scope.metric.applicationList = series;
+        $scope.metric.applicationList = $scope.metric.applicationList.concat(series);
+
+        // Add  templated variables
+        _.each(templateSrv.variables, function(variable) {
+          $scope.metric.applicationList.push({
+            name: '$' + variable.name
+          })
+        });
+
         if ($scope.target.application) {
           $scope.target.application = $scope.metric.applicationList.filter(function (item, index, array) {
             // Find selected application in metric.hostList
-            return (item.applicationid == $scope.target.application.applicationid);
+            return (item.name == $scope.target.application.name);
           }).pop();
         }
       });
@@ -200,28 +210,39 @@ function (angular, _) {
      * Update list of items
      */
     $scope.updateItemList = function(hostid, applicationid) {
+      $scope.metric.itemList = [];
+      addTemplatedVariables($scope.metric.itemList);
 
       // Update only if host selected
       if (hostid) {
         $scope.datasource.performItemSuggestQuery(hostid, applicationid).then(function (series) {
-          $scope.metric.itemList = series;
+          $scope.metric.itemList = $scope.metric.itemList.concat(series);
 
           // Expand item parameters
           $scope.metric.itemList.forEach(function (item, index, array) {
             if (item && item.key_ && item.name) {
-              item.expandedName = expandItemName(item);
+              item.name = expandItemName(item);
             }
           });
-          if ($scope.target.item) {
-            $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
-              // Find selected item in metric.hostList
-              return (item.itemid == $scope.target.item.itemid);
-            }).pop();
-          }
         });
-      } else {
-        $scope.metric.itemList = [];
       }
+
+      if ($scope.target.item) {
+        $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
+          // Find selected item in metric.hostList
+          return (item.name == $scope.target.item.name);
+        }).pop();
+      }
+    };
+
+
+    function addTemplatedVariables(metricList) {
+      _.each(templateSrv.variables, function(variable) {
+        metricList.push({
+          name: '$' + variable.name,
+          templated: true
+        })
+      });
     };
 
 

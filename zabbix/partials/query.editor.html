@@ -106,8 +106,8 @@
                     class="tight-form-input input-medium"
                     ng-change="selectItem()"
                     ng-model="target.item"
-                    bs-tooltip="target.expandedName.length > 30 ? target.expandedName : ''"
-                    ng-options="item.expandedName for item in metric.itemList" >
+                    bs-tooltip="target.name.length > 30 ? target.name : ''"
+                    ng-options="item.name for item in metric.itemList" >
                 <option value="">--select item--</option>
             </select>
             <a bs-tooltip="target.errors.metric"
