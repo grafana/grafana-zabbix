@@ -47,30 +47,24 @@ function (angular, _, kbn) {
           var item_key = templateSrv.replace(target.item.name);
           var hostname = templateSrv.replace(target.host.name);
 
-          var keys = [];
-          if (item_key[0] === '{') {
-            // Convert multiple mettrics to array
-            // "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
-            keys= item_key.slice(1, -1).split(',');
-          } else {
-            keys.push(item_key);
-          }
+          // extract all keys
+          var pattern = /([\w.]+(?:\[[^\[]*\])|[\w.]+)/g;
+          var keys = item_key.match(pattern);
 
           var self = this;
 
-          var results = [];
-          _.each(keys, function (key) {
-            results.push(this.findZabbixItem(hostname, key).then(function (items) {
+          return _.map(keys, function (key) {
+            return this.findZabbixItem(hostname, key).then(function (items) {
               if (items.length) {
                 var item = items[0];
+                var itemname = expandItemName(item);
                 return self.performTimeSeriesQuery(item, from, to).then(_.partial(
-                  self.handleZabbixAPIResponse, item.name));
+                  self.handleZabbixAPIResponse, itemname));
               } else {
                 return [];
               }
-            }));
+            });
           }, this);
-          return results;
         }
       }, this);
 
@@ -358,7 +352,7 @@ function (angular, _, kbn) {
       // Return empty object
       else {
         var d = $q.defer();
-        d.resolve({ data: [] });
+        d.resolve([]);
         return d.promise;
       }
     };
@@ -618,3 +612,26 @@ function (angular, _, kbn) {
     return ZabbixAPIDatasource;
   });
 });
+
+
+/**
+ * Expand item parameters, for example:
+ * CPU $2 time ($3) --> CPU system time (avg1)
+ *
+ * @param item: zabbix api item object
+ * @return: expanded item name (string)
+ */
+function expandItemName(item) {
+  var name = item.name;
+  var key = item.key_;
+
+  // extract params from key:
+  // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
+  var key_params = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']')).split(',');
+
+  // replace item parameters
+  for (var i = key_params.length; i >= 1; i--) {
+    name = name.replace('$' + i, key_params[i - 1]);
+  };
+  return name;
+};
