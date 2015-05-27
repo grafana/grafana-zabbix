@@ -51,18 +51,13 @@ function (angular, _, kbn) {
           var pattern = /([\w.]+(?:\[[^\[]*\])|[\w.]+)/g;
           var keys = item_key.match(pattern);
 
-          var self = this;
-
           return _.map(keys, function (key) {
+            var self = this;
             return this.findZabbixItem(hostname, key).then(function (items) {
-              if (items.length) {
-                var item = items[0];
-                var itemname = expandItemName(item);
+              return $q.all(_.map(items, function (item) {
                 return self.performTimeSeriesQuery(item, from, to).then(_.partial(
-                  self.handleZabbixAPIResponse, itemname));
-              } else {
-                return [];
-              }
+                  self.handleZabbixAPIResponse, expandItemName(item)));
+              }, this));
             });
           }, this);
         }
