@@ -47,30 +47,69 @@ function (angular, _, kbn) {
           var item_key = templateSrv.replace(target.item.name);
           var hostname = templateSrv.replace(target.host.name);
 
-          // extract all keys
-          var pattern = /([\w.]+(?:\[[^\[]*\])|[\w.]+)/g;
-          var keys = item_key.match(pattern);
+          // Extract zabbix hosts
+          var host_pattern = /([\w\.\s]+)/g;
+          var hosts = hostname.match(host_pattern);
 
-          return _.map(keys, function (key) {
-            var self = this;
-            return this.findZabbixItem(hostname, key).then(function (items) {
-              return $q.all(_.map(items, function (item) {
-                return self.performTimeSeriesQuery(item, from, to).then(_.partial(
-                  self.handleZabbixAPIResponse, expandItemName(item)));
-              }, this));
+          // Extract zabbix keys
+          var key_pattern = /([\w\.]+(?:\[[^\[]*\])|[\w\.]+)/g;
+          var keys = item_key.match(key_pattern);
+
+          // Find items by keys and perform queries
+          var self = this;
+          return $q.all(_.map(hosts, function (hostname) {
+            return $q.all(_.map(keys, function (key) {
+              return this.findZabbixItem(hostname, key);
+            }, this));
+          }, this)).then(function (items) {
+            items = _.flatten(items);
+            return self.performTimeSeriesQuery(items, from, to)
+              .then(_.partial(self.handleZabbixAPIResponse, items));
             });
-          }, this);
         }
       }, this);
 
-      return $q.all(_.flatten(promises)).then(function(results) {
+      return $q.all(_.flatten(promises)).then(function (results) {
         return { data: _.flatten(results) };
       });
     };
 
 
+    /**
+     * Perform time series query to Zabbix API
+     *
+     * @param items: array of zabbix api item objects
+     */
+    ZabbixAPIDatasource.prototype.performTimeSeriesQuery = function(items, start, end) {
+      // Group items by value type
+      var grouped_items = _.groupBy(items, 'value_type');
+
+      // Perform request for each value type
+      return $q.all(_.map(grouped_items, function (items, value_type) {
+        var itemids = _.map(items, 'itemid');
+        var params = {
+          output: 'extend',
+          history: value_type,
+          itemids: itemids,
+          sortfield: 'clock',
+          sortorder: 'ASC',
+          time_from: start
+        };
+
+        // Relative queries (e.g. last hour) don't include an end time
+        if (end) {
+          params.time_till = end;
+        }
+
+        return this.performZabbixAPIRequest('history.get', params);
+      }, this)).then(function (results) {
+        return _.flatten(results);
+      });
+    };
+
+
     // Request data from Zabbix API
-    ZabbixAPIDatasource.prototype.handleZabbixAPIResponse = function(alias, response) {
+    ZabbixAPIDatasource.prototype.handleZabbixAPIResponse = function(items, response) {
       /**
        * Response should be in the format:
        * data: [
@@ -85,16 +124,21 @@ function (angular, _, kbn) {
        *       ]
        */
 
-      var series = {
-        target: alias,
-        datapoints: _.map(response, function (p) {
-          // Value must be a number for properly work
-          var value = Number(p.value);
-          return [value, p.clock * 1000];
-        })
-      };
+      // Group items and history by itemid
+      var indexed_items = _.indexBy(items, 'itemid');
+      var grouped_history = _.groupBy(response, 'itemid');
 
-      return $q.when(series);
+      return $q.when(_.map(grouped_history, function (history, itemid) {
+        var series = {
+          target: expandItemName(indexed_items[itemid]),
+          datapoints: _.map(history, function (p) {
+            // Value must be a number for properly work
+            var value = Number(p.value);
+            return [value, p.clock * 1000];
+          })
+        };
+        return series;
+      }));
     };
 
 
@@ -136,30 +180,6 @@ function (angular, _, kbn) {
         }
         return response.data.result;
       });
-    };
-
-
-    /**
-     * Perform time series query to Zabbix API
-     *
-     * @param items: array of zabbix api item objects
-     */
-    ZabbixAPIDatasource.prototype.performTimeSeriesQuery = function(items, start, end) {
-      var params = {
-        output: 'extend',
-        history: items.value_type,
-        itemids: items.itemid,
-        sortfield: 'clock',
-        sortorder: 'ASC',
-        time_from: start
-      };
-
-      // Relative queries (e.g. last hour) don't include an end time
-      if (end) {
-        params.time_till = end;
-      }
-
-      return this.performZabbixAPIRequest('history.get', params);
     };
 
 
