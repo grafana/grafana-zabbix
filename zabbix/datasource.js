@@ -64,7 +64,7 @@ function (angular, _, kbn) {
           var itemname_pattern = /([^{},]+)/g;
           var itemnames = itemname.match(itemname_pattern);
 
-          if (itemnames.length < this.limitmetrics) {
+          if (itemnames && (itemnames.length < this.limitmetrics)) {
             // Find items by item names and perform queries
             var self = this;
             return $q.all(_.map(hosts, function (hostname) {
@@ -388,33 +388,15 @@ function (angular, _, kbn) {
 
       // Get hostids from names
       if (template.host && template.host != '*') {
-        if (_.isArray(template.host)) {
-          _.each(template.host, function (host) {
-            promises.push(this.findZabbixHost(host));
-          }, this);
-        } else {
-          promises.push(this.findZabbixHost(template.host));
-        }
+        promises.push(this.findZabbixHost(template.host));
       }
       // Get groupids from names
       else if (template.group && template.group != '*') {
-        if (_.isArray(template.group)) {
-          _.each(template.group, function (group) {
-            promises.push(this.findZabbixGroup(group));
-          }, this);
-        } else {
-          promises.push(this.findZabbixGroup(template.group));
-        }
+        promises.push(this.findZabbixGroup(template.group));
       }
       // Get applicationids from names
       if (template.app && template.app != '*') {
-        if (_.isArray(template.app)) {
-          _.each(template.app, function (app) {
-            promises.push(this.findZabbixApp(app));
-          }, this);
-        } else {
-          promises.push(this.findZabbixApp(template.app));
-        }
+        promises.push(this.findZabbixApp(template.app));
       }
 
       var self = this;
@@ -460,24 +442,12 @@ function (angular, _, kbn) {
       var promises = [];
 
       // Get groupids from names
-      if (template.group != '*' && template.group) {
-        if (_.isArray(template.group)) {
-          _.each(template.group, function (group) {
-            promises.push(this.findZabbixGroup(group));
-          }, this);
-        } else {
-          promises.push(this.findZabbixGroup(template.group));
-        }
+      if (template.group && template.group != '*') {
+        promises.push(this.findZabbixGroup(template.group));
       }
       // Get hostids from names
-      if (template.host != '*' && template.host) {
-        if (_.isArray(template.host)) {
-          _.each(template.host, function (host) {
-            promises.push(this.findZabbixHost(host));
-          }, this);
-        } else {
-          promises.push(this.findZabbixHost(template.host));
-        }
+      if (template.host && template.host != '*') {
+        promises.push(this.findZabbixHost(template.host));
       }
 
       var self = this;
@@ -517,18 +487,12 @@ function (angular, _, kbn) {
       var promises = [];
 
       // Get groupids from names
-      if (template.group != '*' && template.group) {
-        if (_.isArray(template.group)) {
-          _.each(template.group, function (group) {
-            promises.push(this.findZabbixGroup(group));
-          }, this);
-        } else {
-          promises.push(this.findZabbixGroup(template.group));
-        }
+      if (template.group && template.group != '*') {
+        promises.push(this.findZabbixGroup(template.group));
       }
 
       var self = this;
-      return $q.all(promises).then(function (results) {
+      return this.findZabbixGroup(template.group).then(function (results) {
         results = _.flatten(results);
         var groupids = _.map(_.filter(results, function (object) {
           return object.groupid;
@@ -556,19 +520,8 @@ function (angular, _, kbn) {
 
 
     ZabbixAPIDatasource.prototype.groupFindQuery = function(template) {
-      var promises = [];
-
-      // Get groupids from names
-      if (_.isArray(template.group)) {
-        _.each(template.group, function (group) {
-          promises.push(this.findZabbixGroup(group));
-        }, this);
-      } else {
-        promises.push(this.findZabbixGroup(template.group));
-      }
-
       var self = this;
-      return $q.all(promises).then(function (results) {
+      return this.findZabbixGroup(template.group).then(function (results) {
         results = _.flatten(results);
         var groupids = _.map(_.filter(results, function (object) {
           return object.groupid;
