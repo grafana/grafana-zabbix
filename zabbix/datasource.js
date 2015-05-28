@@ -47,23 +47,23 @@ function (angular, _, kbn) {
         } else {
           // Handle templated target
 
-          var item_key = templateSrv.replace(target.item.name);
+          var itemname = templateSrv.replace(target.item.name);
           var hostname = templateSrv.replace(target.host.name);
 
           // Extract zabbix hosts
           var host_pattern = /([\w\.\s]+)/g;
           var hosts = hostname.match(host_pattern);
 
-          // Extract zabbix keys
-          var key_pattern = /([\w\.]+(?:\[[^\[]*\])|[\w\.]+)/g;
-          var keys = item_key.match(key_pattern);
+          // Extract item names
+          var itemname_pattern = /([^{},]+)/g;
+          var itemnames = itemname.match(itemname_pattern);
 
-          if (keys.length < this.limitmetrics) {
-            // Find items by keys and perform queries
+          if (itemnames.length < this.limitmetrics) {
+            // Find items by item names and perform queries
             var self = this;
             return $q.all(_.map(hosts, function (hostname) {
-              return $q.all(_.map(keys, function (key) {
-                return this.findZabbixItem(hostname, key);
+              return $q.all(_.map(itemnames, function (name) {
+                return this.findZabbixItem(hostname, name);
               }, this));
             }, this)).then(function (items) {
               items = _.flatten(items);
@@ -315,17 +315,16 @@ function (angular, _, kbn) {
     };
 
 
-    ZabbixAPIDatasource.prototype.findZabbixItem = function (host, key) {
+    ZabbixAPIDatasource.prototype.findZabbixItem = function (host, itemname) {
       var params = {
         output: ['name', 'key_', 'value_type'],
-        host: host,
-        search: {
-          key_: key
-        },
-        searchWildcardsEnabled: true,
-        searchByAny: true
+        host: host
       }
-      return this.performZabbixAPIRequest('item.get', params);
+      return this.performZabbixAPIRequest('item.get', params).then(function (items) {
+        return _.filter(items, function (item) {
+          return expandItemName(item) == itemname;
+        });
+      });
     };
 
 
@@ -443,7 +442,8 @@ function (angular, _, kbn) {
           .then(function (result) {
             return _.map(result, function (item) {
               return {
-                text: item.key_,
+                //text: item.key_,
+                text: expandItemName(item),
                 expandable: false
               };
             });
