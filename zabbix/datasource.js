@@ -42,8 +42,14 @@ function (angular, _, kbn) {
         if (!target.item.templated) {
 
           // Perform request and then handle result
-          return this.performTimeSeriesQuery(target.item, from, to).then(_.partial(
-            this.handleZabbixAPIResponse, target.alias));
+          var item = [target.item];
+          var alias = [{
+            itemid: target.item.itemid,
+            key_: '',
+            name: target.alias
+          }];
+          return this.performTimeSeriesQuery(item, from, to).then(_.partial(
+            this.handleZabbixAPIResponse, alias));
         } else {
           // Handle templated target
 
