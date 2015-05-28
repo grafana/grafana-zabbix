@@ -19,6 +19,9 @@ function (angular, _, kbn) {
       this.username         = datasource.meta.username;
       this.password         = datasource.meta.password;
 
+      // Limit metrics per panel
+      this.limitmetrics = datasource.meta.limitmetrics || 20;
+
       // For testing
       this.ds = datasource;
     }
@@ -55,17 +58,21 @@ function (angular, _, kbn) {
           var key_pattern = /([\w\.]+(?:\[[^\[]*\])|[\w\.]+)/g;
           var keys = item_key.match(key_pattern);
 
-          // Find items by keys and perform queries
-          var self = this;
-          return $q.all(_.map(hosts, function (hostname) {
-            return $q.all(_.map(keys, function (key) {
-              return this.findZabbixItem(hostname, key);
-            }, this));
-          }, this)).then(function (items) {
-            items = _.flatten(items);
-            return self.performTimeSeriesQuery(items, from, to)
-              .then(_.partial(self.handleZabbixAPIResponse, items));
-            });
+          if (keys.length < this.limitmetrics) {
+            // Find items by keys and perform queries
+            var self = this;
+            return $q.all(_.map(hosts, function (hostname) {
+              return $q.all(_.map(keys, function (key) {
+                return this.findZabbixItem(hostname, key);
+              }, this));
+            }, this)).then(function (items) {
+              items = _.flatten(items);
+              return self.performTimeSeriesQuery(items, from, to)
+                .then(_.partial(self.handleZabbixAPIResponse, items));
+              });
+          } else {
+            return [];
+          }
         }
       }, this);
 
@@ -108,7 +115,7 @@ function (angular, _, kbn) {
     };
 
 
-    // Request data from Zabbix API
+    // Convert Zabbix API data to Grafana format
     ZabbixAPIDatasource.prototype.handleZabbixAPIResponse = function(items, response) {
       /**
        * Response should be in the format:
