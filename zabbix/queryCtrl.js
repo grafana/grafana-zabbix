@@ -43,7 +43,7 @@ function (angular, _) {
     // Take alias from item name by default
     function setItemAlias() {
       if (!$scope.target.alias && $scope.target.item) {
-        $scope.target.alias = $scope.target.item.expandedName;
+        $scope.target.alias = expandItemName($scope.target.item);
       }
     };
 
