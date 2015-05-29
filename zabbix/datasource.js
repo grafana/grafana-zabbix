@@ -288,6 +288,10 @@ function (angular, _, kbn) {
       if (applicationids) {
         params.applicationids = applicationids;
       }
+      // Return host property for multiple hosts
+      if (!hostids || (_.isArray(hostids) && hostids.length  > 1)) {
+        params.selectHosts = ['name'];
+      }
 
       return this.performZabbixAPIRequest('item.get', params);
     };
@@ -429,9 +433,9 @@ function (angular, _, kbn) {
         return self.performItemSuggestQuery(hostids, applicationids, groupids)
           .then(function (result) {
             return _.map(result, function (item) {
+              var itemname = expandItemName(item)
               return {
-                //text: item.key_,
-                text: expandItemName(item),
+                text: (item.hosts ? item.hosts[0].name + ': ' : '') + itemname,
                 expandable: false
               };
             });
