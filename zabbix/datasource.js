@@ -287,6 +287,7 @@ function (angular, _, kbn) {
         search: {
           name: group
         },
+        searchByAny: true,
         searchWildcardsEnabled: true
       }
       return this.performZabbixAPIRequest('hostgroup.get', params);
@@ -300,8 +301,8 @@ function (angular, _, kbn) {
           host: hostname,
           name: hostname
         },
-        searchWildcardsEnabled: true,
-        searchByAny: true
+        searchByAny: true,
+        searchWildcardsEnabled: true
       }
       return this.performZabbixAPIRequest('host.get', params);
     };
@@ -313,6 +314,7 @@ function (angular, _, kbn) {
         search: {
           name: application
         },
+        searchByAny: true,
         searchWildcardsEnabled: true,
       }
       return this.performZabbixAPIRequest('application.get', params);
@@ -520,30 +522,13 @@ function (angular, _, kbn) {
 
 
     ZabbixAPIDatasource.prototype.groupFindQuery = function(template) {
-      var self = this;
-      return this.findZabbixGroup(template.group).then(function (results) {
-        results = _.flatten(results);
-        var groupids = _.map(_.filter(results, function (object) {
-          return object.groupid;
-        }), 'groupid');
-
-        var params = {
-          output: ['name', 'host'],
-          sortfield: 'name'
-        }
-        if (groupids.length) {
-          params.groupids = groupids;
-        }
-
-        return self.performZabbixAPIRequest('hostgroup.get', params)
-          .then(function (result) {
-            return _.map(result, function (hostgroup) {
-              return {
-                text: hostgroup.name,
-                expandable: false
-              };
-            });
-          });
+      return this.performHostGroupSuggestQuery().then(function (result) {
+        return _.map(result, function (hostgroup) {
+          return {
+            text: hostgroup.name,
+            expandable: false
+          };
+        });
       });
     };
 

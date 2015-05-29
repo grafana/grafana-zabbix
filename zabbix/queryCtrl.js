@@ -152,7 +152,7 @@ function (angular, _) {
         if ($scope.target.hostGroup) {
           $scope.target.hostGroup = $scope.metric.hostGroupList.filter(function (item, index, array) {
             // Find selected host in metric.hostList
-            return (item.name == $scope.target.hostGroup.name);
+            return item.name == $scope.target.hostGroup.name;
           }).pop();
         }
       });
@@ -172,7 +172,7 @@ function (angular, _) {
         if ($scope.target.host) {
           $scope.target.host = $scope.metric.hostList.filter(function (item, index, array) {
             // Find selected host in metric.hostList
-            return (item.name == $scope.target.host.name);
+            return item.name == $scope.target.host.name;
           }).pop();
         }
       });
@@ -192,7 +192,7 @@ function (angular, _) {
         if ($scope.target.application) {
           $scope.target.application = $scope.metric.applicationList.filter(function (item, index, array) {
             // Find selected application in metric.hostList
-            return (item.name == $scope.target.application.name);
+            return item.name == $scope.target.application.name;
           }).pop();
         }
       });
@@ -220,7 +220,7 @@ function (angular, _) {
           if ($scope.target.item) {
           $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
             // Find selected item in metric.hostList
-            return (item.name == $scope.target.item.name);
+            return item.name == $scope.target.item.name;
           }).pop();
         }
         });
