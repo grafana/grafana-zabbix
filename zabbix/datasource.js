@@ -61,14 +61,21 @@ function (angular, _, kbn) {
           var hosts = hostname.match(host_pattern);
 
           // Extract item names
+          var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
           var itemname_pattern = /([^{},]+)/g;
-          var itemnames = itemname.match(itemname_pattern);
+          // Remove hostnames from item name
+          // [hostname]: itemname --> itemname
+          var itemnames = itemname.replace(delete_hostname_pattern, '').match(itemname_pattern);
+          //var aliases = itemname.match(itemname_pattern);
 
           if (itemnames && (itemnames.length < this.limitmetrics)) {
             // Find items by item names and perform queries
             var self = this;
             return $q.all(_.map(hosts, function (hostname) {
-              return this.findZabbixItem(hostname, itemnames);
+              if (hosts.length > 1) {
+                var selectHosts = true;
+              }
+              return this.findZabbixItem(hostname, itemnames, selectHosts);
             }, this)).then(function (items) {
               items = _.flatten(items);
               return self.performTimeSeriesQuery(items, from, to)
@@ -140,8 +147,9 @@ function (angular, _, kbn) {
       var grouped_history = _.groupBy(response, 'itemid');
 
       return $q.when(_.map(grouped_history, function (history, itemid) {
+        var item = indexed_items[itemid];
         var series = {
-          target: expandItemName(indexed_items[itemid]),
+          target: (item.hosts ? '['+item.hosts[0].name+']: ' : '') + expandItemName(item),
           datapoints: _.map(history, function (p) {
             // Value must be a number for properly work
             var value = Number(p.value);
@@ -337,10 +345,13 @@ function (angular, _, kbn) {
     };
 
 
-    ZabbixAPIDatasource.prototype.findZabbixItem = function (host, itemnames) {
+    ZabbixAPIDatasource.prototype.findZabbixItem = function (host, itemnames, /* optional */ selectHosts) {
       var params = {
         output: ['name', 'key_', 'value_type'],
         host: host
+      };
+      if (selectHosts) {
+        params.selectHosts = ['name'];
       }
       return this.performZabbixAPIRequest('item.get', params).then(function (items) {
         return _.filter(items, function (item) {
@@ -435,7 +446,7 @@ function (angular, _, kbn) {
             return _.map(result, function (item) {
               var itemname = expandItemName(item)
               return {
-                text: (item.hosts ? item.hosts[0].name + ': ' : '') + itemname,
+                text: (item.hosts ? '['+item.hosts[0].name+']: ' : '') + itemname,
                 expandable: false
               };
             });
