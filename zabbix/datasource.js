@@ -233,48 +233,60 @@ function (angular, _, kbn) {
 
 
     // Get the list of hosts
-    ZabbixAPIDatasource.prototype.performHostSuggestQuery = function(groupid) {
+    ZabbixAPIDatasource.prototype.performHostSuggestQuery = function(groupids) {
       var params = {
         output: ['name', 'host'],
-        sortfield: 'name'
+        sortfield: 'name',
+        // Return only hosts that have items with numeric type of information.
+        with_simple_graph_items: true
       };
       // Return only hosts in given group
-      if (groupid) {
-        params.groupids = groupid;
+      if (groupids) {
+        params.groupids = groupids;
       }
       return this.performZabbixAPIRequest('host.get', params);
     };
 
 
     // Get the list of applications
-    ZabbixAPIDatasource.prototype.performAppSuggestQuery = function(hostid) {
+    ZabbixAPIDatasource.prototype.performAppSuggestQuery = function(hostids, /* optional */ groupids) {
       var params = {
         output: ['name'],
-        sortfield: 'name',
-        hostids: hostid
+        sortfield: 'name'
       };
+      if (hostids) {
+        params.hostids = hostids;
+      }
+      else if (groupids) {
+        params.groupids = groupids;
+      }
 
       return this.performZabbixAPIRequest('application.get', params);
     };
 
 
     // Get the list of host items
-    ZabbixAPIDatasource.prototype.performItemSuggestQuery = function(hostid, applicationid) {
+    ZabbixAPIDatasource.prototype.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
       var params = {
         output: ['name', 'key_', 'value_type', 'delay'],
         sortfield: 'name',
-        hostids: hostid,
-
         //Include web items in the result
         webitems: true,
         // Return only numeric items
         filter: {
           value_type: [0,3]
-        }
+        },
+        searchByAny: true
       };
+      if (hostids) {
+        params.hostids = hostids;
+      }
+      else if (groupids) {
+        params.groupids = groupids;
+      }
       // If application selected return only relative items
-      if (applicationid) {
-        params.applicationids = applicationid;
+      if (applicationids) {
+        params.applicationids = applicationids;
       }
 
       return this.performZabbixAPIRequest('item.get', params);
@@ -414,19 +426,7 @@ function (angular, _, kbn) {
           return object.applicationid;
         }), 'applicationid');
 
-        var params = {
-          output: ['name', 'key_'],
-          sortfield: 'name',
-        };
-        if (applicationids.length) {
-          params.applicationids = applicationids;
-        }
-        if (hostids.length) {
-          params.hostids = hostids;
-        } else if (groupids.length) {
-          params.groupids = groupids;
-        }
-        return self.performZabbixAPIRequest('item.get', params)
+        return self.performItemSuggestQuery(hostids, applicationids, groupids)
           .then(function (result) {
             return _.map(result, function (item) {
               return {
@@ -443,13 +443,13 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.appFindQuery = function(template) {
       var promises = [];
 
-      // Get groupids from names
-      if (template.group && template.group != '*') {
-        promises.push(this.findZabbixGroup(template.group));
-      }
       // Get hostids from names
       if (template.host && template.host != '*') {
         promises.push(this.findZabbixHost(template.host));
+      }
+      // Get groupids from names
+      else if (template.group && template.group != '*') {
+        promises.push(this.findZabbixGroup(template.group));
       }
 
       var self = this;
@@ -462,17 +462,7 @@ function (angular, _, kbn) {
           return object.hostid;
         }), 'hostid');
 
-        var params = {
-          output: ['name'],
-          sortfield: 'name'
-        }
-        if (hostids.length) {
-          params.hostids = hostids;
-        } else if (groupids.length) {
-          params.groupids = groupids;
-        }
-
-        return self.performZabbixAPIRequest('application.get', params)
+        return self.performAppSuggestQuery(hostids, groupids)
           .then(function (result) {
             return _.map(result, function (app) {
               return {
@@ -486,13 +476,6 @@ function (angular, _, kbn) {
 
 
     ZabbixAPIDatasource.prototype.hostFindQuery = function(template) {
-      var promises = [];
-
-      // Get groupids from names
-      if (template.group && template.group != '*') {
-        promises.push(this.findZabbixGroup(template.group));
-      }
-
       var self = this;
       return this.findZabbixGroup(template.group).then(function (results) {
         results = _.flatten(results);
@@ -500,23 +483,14 @@ function (angular, _, kbn) {
           return object.groupid;
         }), 'groupid');
 
-        var params = {
-          output: ['name', 'host'],
-          sortfield: 'name'
-        }
-        if (groupids.length) {
-          params.groupids = groupids;
-        }
-
-        return self.performZabbixAPIRequest('host.get', params)
-          .then(function (result) {
-            return _.map(result, function (host) {
-              return {
-                text: host.name,
-                expandable: false
-              };
-            });
+        return self.performHostSuggestQuery(groupids).then(function (result) {
+          return _.map(result, function (host) {
+            return {
+              text: host.name,
+              expandable: false
+            };
           });
+        });
       });
     };
 
