@@ -59,7 +59,7 @@
                   ng-change="selectHostGroup()"
                   ng-model="target.hostGroup"
                   bs-tooltip="target.hostGroup.name.length > 25 ? target.hostGroup.name : ''"
-                  ng-options="hostgroup.name for hostgroup in metric.hostGroupList" >
+                  ng-options="hostgroup.name for hostgroup in metric.groupList" >
               <option value="">All</option>
           </select>
           <a bs-tooltip="target.errors.metric"

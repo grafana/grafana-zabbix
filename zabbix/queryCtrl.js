@@ -20,20 +20,9 @@ function (angular, _) {
       };
 
       // Update host group, host, application and item lists
-      $scope.updateHostGroupList();
-      if ($scope.target.hostGroup) {
-        $scope.updateHostList($scope.target.hostGroup.groupid);
-      } else {
-        $scope.updateHostList();
-      }
-      if ($scope.target.host) {
-        $scope.updateAppList($scope.target.host.hostid);
-        if ($scope.target.application) {
-          $scope.updateItemList($scope.target.host.hostid, $scope.target.application.applicationid);
-        } else {
-          $scope.updateItemList($scope.target.host.hostid, null);
-        }
-      }
+      $scope.updateGroupList();
+      $scope.updateHostList()
+      $scope.updateItemList();
 
       setItemAlias();
 
@@ -58,13 +47,8 @@ function (angular, _) {
 
     // Call when host group selected
     $scope.selectHostGroup = function() {
-
-      // Update host list
-      if ($scope.target.hostGroup) {
-        $scope.updateHostList($scope.target.hostGroup.groupid);
-      } else {
-        $scope.updateHostList('');
-      }
+      $scope.updateHostList()
+      $scope.updateAppList();
 
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
@@ -75,17 +59,8 @@ function (angular, _) {
 
     // Call when host selected
     $scope.selectHost = function() {
-      if ($scope.target.host) {
-        // Update item list
-        if ($scope.target.application) {
-          $scope.updateItemList($scope.target.host.hostid, $scope.target.application.applicationid);
-        } else {
-          $scope.updateItemList($scope.target.host.hostid, null);
-        }
-
-        // Update application list
-        $scope.updateAppList($scope.target.host.hostid);
-      }
+      $scope.updateItemList();
+      $scope.updateAppList();
 
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
@@ -97,13 +72,7 @@ function (angular, _) {
 
     // Call when application selected
     $scope.selectApplication = function() {
-
-      // Update item list
-      if ($scope.target.application) {
-        $scope.updateItemList($scope.target.host.hostid, $scope.target.application.applicationid);
-      } else {
-        $scope.updateItemList($scope.target.host.hostid, null);
-      }
+      $scope.updateItemList();
 
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
@@ -142,15 +111,15 @@ function (angular, _) {
     /**
      * Update list of host groups
      */
-    $scope.updateHostGroupList = function() {
-      $scope.metric.hostGroupList = [];
-      addTemplatedVariables($scope.metric.hostGroupList);
+    $scope.updateGroupList = function() {
+      $scope.metric.groupList = [];
+      addTemplatedVariables($scope.metric.groupList);
 
       $scope.datasource.performHostGroupSuggestQuery().then(function (series) {
-        $scope.metric.hostGroupList = $scope.metric.hostGroupList.concat(series);
+        $scope.metric.groupList = $scope.metric.groupList.concat(series);
 
         if ($scope.target.hostGroup) {
-          $scope.target.hostGroup = $scope.metric.hostGroupList.filter(function (item, index, array) {
+          $scope.target.hostGroup = $scope.metric.groupList.filter(function (item, index, array) {
             // Find selected host in metric.hostList
             return item.name == $scope.target.hostGroup.name;
           }).pop();
@@ -162,10 +131,11 @@ function (angular, _) {
     /**
      * Update list of hosts
      */
-    $scope.updateHostList = function(groupid) {
+    $scope.updateHostList = function() {
       $scope.metric.hostList = [];
       addTemplatedVariables($scope.metric.hostList);
 
+      var groupid = $scope.target.hostGroup ? $scope.target.hostGroup.groupid: null;
       $scope.datasource.performHostSuggestQuery(groupid).then(function (series) {
         $scope.metric.hostList = $scope.metric.hostList.concat(series);
 
@@ -182,11 +152,13 @@ function (angular, _) {
     /**
      * Update list of host applications
      */
-    $scope.updateAppList = function(hostid) {
+    $scope.updateAppList = function() {
       $scope.metric.applicationList = [];
       addTemplatedVariables($scope.metric.applicationList);
 
-      $scope.datasource.performAppSuggestQuery(hostid).then(function (series) {
+      var hostid = $scope.target.host ? $scope.target.host.hostid : null;
+      var groupid = $scope.target.hostGroup ? $scope.target.hostGroup.groupid: null;
+      $scope.datasource.performAppSuggestQuery(hostid, groupid).then(function (series) {
         $scope.metric.applicationList = $scope.metric.applicationList.concat(series);
 
         if ($scope.target.application) {
@@ -202,36 +174,30 @@ function (angular, _) {
     /**
      * Update list of items
      */
-    $scope.updateItemList = function(hostid, applicationid) {
+    $scope.updateItemList = function() {
       $scope.metric.itemList = [];
       addTemplatedVariables($scope.metric.itemList);
 
-      // Update only if host selected
-      if (hostid) {
-        $scope.datasource.performItemSuggestQuery(hostid, applicationid).then(function (series) {
-          $scope.metric.itemList = $scope.metric.itemList.concat(series);
+      var groupids = $scope.target.hostGroup ? $scope.target.hostGroup.groupid: null;
+      var hostids = $scope.target.host ? $scope.target.host.hostid : null;
+      var applicationids = $scope.target.application ? $scope.target.application.applicationid : null;
 
-          // Expand item parameters
-          $scope.metric.itemList.forEach(function (item, index, array) {
-            if (item && item.key_ && item.name) {
-              item.name = expandItemName(item);
-            }
-          });
-          if ($scope.target.item) {
-          $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
-            // Find selected item in metric.hostList
-            return item.name == $scope.target.item.name;
-          }).pop();
-        }
+      $scope.datasource.performItemSuggestQuery(hostids, applicationids, groupids).then(function (series) {
+        $scope.metric.itemList = $scope.metric.itemList.concat(series);
+
+        // Expand item parameters
+        $scope.metric.itemList.forEach(function (item, index, array) {
+          if (item && item.key_ && item.name) {
+            item.name = expandItemName(item);
+          }
         });
-      } else {
         if ($scope.target.item) {
-          $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
-            // Find selected item in metric.hostList
-            return (item.name == $scope.target.item.name);
-          }).pop();
-        }
+        $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
+          // Find selected item in metric.hostList
+          return item.name == $scope.target.item.name;
+        }).pop();
       }
+      });
     };
 
 

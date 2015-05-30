@@ -49,7 +49,7 @@ function (angular, _, kbn) {
             name: target.alias
           }];
           return this.performTimeSeriesQuery(item, from, to).then(_.partial(
-            this.handleZabbixAPIResponse, alias));
+            this.handleHistoryResponse, alias));
         } else {
           // Handle templated target
 
@@ -73,13 +73,14 @@ function (angular, _, kbn) {
             var self = this;
             return $q.all(_.map(hosts, function (hostname) {
               if (hosts.length > 1) {
+                // Select the host that the item belongs for multiple hosts request
                 var selectHosts = true;
               }
               return this.findZabbixItem(hostname, itemnames, selectHosts);
             }, this)).then(function (items) {
               items = _.flatten(items);
               return self.performTimeSeriesQuery(items, from, to)
-                .then(_.partial(self.handleZabbixAPIResponse, items));
+                .then(_.partial(self.handleHistoryResponse, items));
               });
           } else {
             return [];
@@ -127,7 +128,7 @@ function (angular, _, kbn) {
 
 
     // Convert Zabbix API data to Grafana format
-    ZabbixAPIDatasource.prototype.handleZabbixAPIResponse = function(items, response) {
+    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, response) {
       /**
        * Response should be in the format:
        * data: [
