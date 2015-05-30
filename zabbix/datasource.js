@@ -247,7 +247,9 @@ function (angular, _, kbn) {
         output: ['name', 'host'],
         sortfield: 'name',
         // Return only hosts that have items with numeric type of information.
-        with_simple_graph_items: true
+        with_simple_graph_items: true,
+        // Return only monitored hosts.
+        monitored_hosts: true
       };
       // Return only hosts in given group
       if (groupids) {
@@ -285,6 +287,8 @@ function (angular, _, kbn) {
         filter: {
           value_type: [0,3]
         },
+        // Return only enabled items
+        monitored: true,
         searchByAny: true
       };
       if (hostids) {
