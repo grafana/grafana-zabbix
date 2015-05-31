@@ -21,7 +21,8 @@ function (angular, _) {
 
       // Update host group, host, application and item lists
       $scope.updateGroupList();
-      $scope.updateHostList()
+      $scope.updateHostList();
+      $scope.updateAppList();
       $scope.updateItemList();
 
       setItemAlias();

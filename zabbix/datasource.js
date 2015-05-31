@@ -71,13 +71,12 @@ function (angular, _, kbn) {
           if (itemnames && (itemnames.length < this.limitmetrics)) {
             // Find items by item names and perform queries
             var self = this;
-            return $q.all(_.map(hosts, function (hostname) {
-              if (hosts.length > 1) {
-                // Select the host that the item belongs for multiple hosts request
-                var selectHosts = true;
-              }
-              return this.findZabbixItem(hostname, itemnames, selectHosts);
-            }, this)).then(function (items) {
+            // TODO: do one query.
+            if (hosts.length > 1) {
+              // Select the host that the item belongs for multiple hosts request
+              var selectHosts = true;
+            }
+            return this.findZabbixItem(hosts, itemnames, selectHosts).then(function (items) {
               items = _.flatten(items);
               return self.performTimeSeriesQuery(items, from, to)
                 .then(_.partial(self.handleHistoryResponse, items));
@@ -150,6 +149,7 @@ function (angular, _, kbn) {
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
         var series = {
+          // TODO: remove []
           target: (item.hosts ? '['+item.hosts[0].name+']: ' : '') + expandItemName(item),
           datapoints: _.map(history, function (p) {
             // Value must be a number for properly work
@@ -323,12 +323,12 @@ function (angular, _, kbn) {
     };
 
 
-    ZabbixAPIDatasource.prototype.findZabbixHost = function (hostname) {
+    ZabbixAPIDatasource.prototype.findZabbixHost = function (hostnames) {
       var params = {
         output: ['host', 'name'],
         search: {
-          host: hostname,
-          name: hostname
+          host: hostnames,
+          name: hostnames
         },
         searchByAny: true,
         searchWildcardsEnabled: true
@@ -350,17 +350,21 @@ function (angular, _, kbn) {
     };
 
 
-    ZabbixAPIDatasource.prototype.findZabbixItem = function (host, itemnames, /* optional */ selectHosts) {
-      var params = {
-        output: ['name', 'key_', 'value_type'],
-        host: host
-      };
-      if (selectHosts) {
-        params.selectHosts = ['name'];
-      }
-      return this.performZabbixAPIRequest('item.get', params).then(function (items) {
-        return _.filter(items, function (item) {
-          return _.contains(itemnames, expandItemName(item));
+    ZabbixAPIDatasource.prototype.findZabbixItem = function (hosts, itemnames, /* optional */ selectHosts) {
+      var self = this;
+      return this.findZabbixHost(hosts).then(function (hosts) {
+        var hostids = _.map(hosts, 'hostid');
+        var params = {
+          output: ['name', 'key_', 'value_type'],
+          hostids: hostids
+        };
+        if (selectHosts) {
+          params.selectHosts = ['name'];
+        }
+        return self.performZabbixAPIRequest('item.get', params).then(function (items) {
+          return _.filter(items, function (item) {
+            return _.contains(itemnames, expandItemName(item));
+          });
         });
       });
     };
@@ -451,6 +455,7 @@ function (angular, _, kbn) {
             return _.map(result, function (item) {
               var itemname = expandItemName(item)
               return {
+                // TODO: select only unique names
                 text: (item.hosts ? '['+item.hosts[0].name+']: ' : '') + itemname,
                 expandable: false
               };
