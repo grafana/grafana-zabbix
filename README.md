@@ -5,11 +5,11 @@ Read more in Grafana-Zabbix [wiki](https://github.com/alexanderzobnin/grafana-za
 
 Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
 
-![alt tag](https://cloud.githubusercontent.com/assets/4932851/7454206/34bf9f8c-f27a-11e4-8e96-a73829f188c4.png)
+![2015-05-31 17-51-00 grafana - zabbix datasource - google chrome](https://cloud.githubusercontent.com/assets/4932851/7902354/fdf66368-07bf-11e5-991d-1e9892b2d0b0.png)
 
 Useful metric editor with host group and application filtering:
 
-![alt tag](https://cloud.githubusercontent.com/assets/4932851/7441162/4f6af788-f0e4-11e4-887b-34d987d00c40.png)
+![2015-05-31 17-53-23](https://cloud.githubusercontent.com/assets/4932851/7902360/156a9366-07c0-11e5-905b-4c21b52f1f44.png)
 
 
 ## Installation
