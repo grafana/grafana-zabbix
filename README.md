@@ -1,4 +1,4 @@
-# grafana-zabbix
+# Grafana-Zabbix
 ## Zabbix API datasource for Grafana dashboard
 
 Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!   
