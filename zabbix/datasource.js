@@ -27,13 +27,22 @@ function (angular, _, kbn) {
     }
 
 
+    /**
+     * Calls for each panel in dashboard.
+     * @param  {Object} options   Query options. Contains time range, targets
+     *                            and other info.
+     * @return {Object}           Grafana metrics object with timeseries data
+     *                            for each target.
+     */
     ZabbixAPIDatasource.prototype.query = function(options) {
+
       // get from & to in seconds
       var from = Math.ceil(kbn.parseDate(options.range.from).getTime() / 1000);
       var to = Math.ceil(kbn.parseDate(options.range.to).getTime() / 1000);
 
       // Create request for each target
       var promises = _.map(options.targets, function(target) {
+
         // Remove undefined and hidden targets
         if (target.hide || !target.item) {
           return [];
@@ -51,7 +60,9 @@ function (angular, _, kbn) {
           return this.performTimeSeriesQuery(item, from, to).then(_.partial(
             this.handleHistoryResponse, alias));
         } else {
-          // Handle templated target
+          /**
+           *      Handle templated target
+           */
 
           var itemname = templateSrv.replace(target.item.name);
           var hostname = templateSrv.replace(target.host.name);
@@ -60,25 +71,31 @@ function (angular, _, kbn) {
           var host_pattern = /([\w\.\s]+)/g;
           var hosts = hostname.match(host_pattern);
 
+          // Remove hostnames from item names and then
           // Extract item names
-          var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
-          var itemname_pattern = /([^{},]+)/g;
-          // Remove hostnames from item name
           // [hostname]: itemname --> itemname
-          var itemnames = itemname.replace(delete_hostname_pattern, '').match(itemname_pattern);
+          var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
+          var itemname_pattern = /([^{},]+)/g;          
+          var itemnames = itemname.replace(delete_hostname_pattern, '')
+                            .match(itemname_pattern);
           //var aliases = itemname.match(itemname_pattern);
 
-          if (itemnames && (itemnames.length < this.limitmetrics)) {
+          // Don't perform query for high number of items
+          // to prevent Grafana slowdown
+          if (itemnames && (itemnames.length < this.limitmetrics)) {                        
+
+            // Select the host that the item belongs for multiple hosts request
+            if (hosts.length > 1) {              
+              var selectHosts = true;
+            }            
+
             // Find items by item names and perform queries
             var self = this;
-            if (hosts.length > 1) {
-              // Select the host that the item belongs for multiple hosts request
-              var selectHosts = true;
-            }
-            return this.findZabbixItem(hosts, itemnames, selectHosts).then(function (items) {
-              items = _.flatten(items);
-              return self.performTimeSeriesQuery(items, from, to)
-                .then(_.partial(self.handleHistoryResponse, items));
+            return this.findZabbixItem(hosts, itemnames, selectHosts)
+              .then(function (items) {
+                items = _.flatten(items);
+                return self.performTimeSeriesQuery(items, from, to)
+                  .then(_.partial(self.handleHistoryResponse, items));
               });
           } else {
             return [];
@@ -93,9 +110,11 @@ function (angular, _, kbn) {
 
 
     /**
-     * Perform time series query to Zabbix API
-     *
-     * @param items: array of zabbix api item objects
+     * Perform time series query from Zabbix API
+     * @param  {Array}  items Array of Zabbix item objects
+     * @param  {Number} start Time in seconds
+     * @param  {Number} end   Time in seconds
+     * @return {Array}        Array of Zabbix history objects
      */
     ZabbixAPIDatasource.prototype.performTimeSeriesQuery = function(items, start, end) {
       // Group items by value type
@@ -125,8 +144,17 @@ function (angular, _, kbn) {
     };
 
 
-    // Convert Zabbix API data to Grafana format
-    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, response) {
+    /**
+     * Convert Zabbix API data to Grafana format
+     * @param  {Array} items      Array of Zabbix Items
+     * @param  {Array} history    Array of Zabbix History
+     * @return {Array}            Array of timeseries in Grafana format
+     *                            {
+     *                               target: "Metric name",
+     *                               datapoints: [[<value>, <unixtime>], ...]
+     *                            }
+     */
+    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, history) {
       /**
        * Response should be in the format:
        * data: [
@@ -143,7 +171,7 @@ function (angular, _, kbn) {
 
       // Group items and history by itemid
       var indexed_items = _.indexBy(items, 'itemid');
-      var grouped_history = _.groupBy(response, 'itemid');
+      var grouped_history = _.groupBy(history, 'itemid');
 
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
@@ -359,11 +387,12 @@ function (angular, _, kbn) {
         if (selectHosts) {
           params.selectHosts = ['name'];
         }
-        return self.performZabbixAPIRequest('item.get', params).then(function (items) {
-          return _.filter(items, function (item) {
-            return _.contains(itemnames, expandItemName(item));
+        return self.performZabbixAPIRequest('item.get', params)
+          .then(function (items) {
+            return _.filter(items, function (item) {
+              return _.contains(itemnames, expandItemName(item));
+            });
           });
-        });
       });
     };
 
@@ -542,34 +571,36 @@ function (angular, _, kbn) {
         },
       };
 
-      return this.performZabbixAPIRequest('trigger.get', params).then(function (result) {
-        if(result) {
-          var obs = {};
-          obs = _.indexBy(result, 'triggerid');
+      return this.performZabbixAPIRequest('trigger.get', params)
+        .then(function (result) {
+          if(result) {
+            var obs = {};
+            obs = _.indexBy(result, 'triggerid');
 
-          var params = {
-            output: 'extend',
-            sortorder: 'DESC',
-            time_from: from,
-            time_till: to,
-            objectids: _.keys(obs)
-          };
+            var params = {
+              output: 'extend',
+              sortorder: 'DESC',
+              time_from: from,
+              time_till: to,
+              objectids: _.keys(obs)
+            };
 
-          return self.performZabbixAPIRequest('event.get', params).then(function (result) {
-            var events = [];
-            _.each(result, function(e) {
-              events.push({
-                annotation: annotation,
-                time: e.clock * 1000,
-                title: obs[e.objectid].description,
-                text: e.eventid,
-              });
+            return self.performZabbixAPIRequest('event.get', params)
+              .then(function (result) {
+                var events = [];
+                _.each(result, function(e) {
+                  events.push({
+                    annotation: annotation,
+                    time: e.clock * 1000,
+                    title: obs[e.objectid].description,
+                    text: e.eventid,
+                  });
+                });
+                return events;
             });
-            return events;
-          });
-        } else {
-          return [];
-        }
+          } else {
+            return [];
+          }
       });
     };
 
