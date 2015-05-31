@@ -71,7 +71,6 @@ function (angular, _, kbn) {
           if (itemnames && (itemnames.length < this.limitmetrics)) {
             // Find items by item names and perform queries
             var self = this;
-            // TODO: do one query.
             if (hosts.length > 1) {
               // Select the host that the item belongs for multiple hosts request
               var selectHosts = true;
@@ -149,8 +148,7 @@ function (angular, _, kbn) {
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
         var series = {
-          // TODO: remove []
-          target: (item.hosts ? '['+item.hosts[0].name+']: ' : '') + expandItemName(item),
+          target: (item.hosts ? item.hosts[0].name+': ' : '') + expandItemName(item),
           datapoints: _.map(history, function (p) {
             // Value must be a number for properly work
             var value = Number(p.value);
