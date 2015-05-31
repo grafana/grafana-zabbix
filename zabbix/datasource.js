@@ -454,7 +454,7 @@ function (angular, _, kbn) {
               var itemname = expandItemName(item)
               return {
                 // TODO: select only unique names
-                text: (item.hosts ? '['+item.hosts[0].name+']: ' : '') + itemname,
+                text: itemname,
                 expandable: false
               };
             });
