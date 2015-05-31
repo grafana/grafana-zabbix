@@ -159,12 +159,15 @@ function (angular, _) {
       var hostid = $scope.target.host ? $scope.target.host.hostid : null;
       var groupid = $scope.target.hostGroup ? $scope.target.hostGroup.groupid: null;
       $scope.datasource.performAppSuggestQuery(hostid, groupid).then(function (series) {
-        $scope.metric.applicationList = $scope.metric.applicationList.concat(series);
+        var apps = _.map(_.uniq(_.map(series, 'name')), function (appname) {
+          return {name: appname};
+        });
+        $scope.metric.applicationList = $scope.metric.applicationList.concat(apps);
 
         if ($scope.target.application) {
-          $scope.target.application = $scope.metric.applicationList.filter(function (item, index, array) {
+          $scope.target.application = $scope.metric.applicationList.filter(function (app) {
             // Find selected application in metric.hostList
-            return item.name == $scope.target.application.name;
+            return app.name == $scope.target.application.name;
           }).pop();
         }
       });
@@ -180,23 +183,27 @@ function (angular, _) {
 
       var groupids = $scope.target.hostGroup ? $scope.target.hostGroup.groupid: null;
       var hostids = $scope.target.host ? $scope.target.host.hostid : null;
-      var applicationids = $scope.target.application ? $scope.target.application.applicationid : null;
+      var application = $scope.target.application || null;
 
-      $scope.datasource.performItemSuggestQuery(hostids, applicationids, groupids).then(function (series) {
-        $scope.metric.itemList = $scope.metric.itemList.concat(series);
+      // Get application ids from name
+      $scope.datasource.findZabbixApp(application).then(function (result) {
+        var applicationids = _.map(result, 'applicationid');
+        $scope.datasource.performItemSuggestQuery(hostids, applicationids, groupids).then(function (series) {
+          $scope.metric.itemList = $scope.metric.itemList.concat(series);
 
-        // Expand item parameters
-        $scope.metric.itemList.forEach(function (item, index, array) {
-          if (item && item.key_ && item.name) {
-            item.name = expandItemName(item);
+          // Expand item parameters
+          $scope.metric.itemList.forEach(function (item, index, array) {
+            if (item && item.key_ && item.name) {
+              item.name = expandItemName(item);
+            }
+          });
+          if ($scope.target.item) {
+            $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
+              // Find selected item in metric.hostList
+              return item.name == $scope.target.item.name;
+            }).pop();
           }
         });
-        if ($scope.target.item) {
-        $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
-          // Find selected item in metric.hostList
-          return item.name == $scope.target.item.name;
-        }).pop();
-      }
       });
     };
 
