@@ -11,6 +11,12 @@ function (angular, _, kbn) {
 
   module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv) {
 
+    /**
+     * Datasource initialization. Calls when you refresh page, add
+     * or modify datasource.
+     *
+     * @param {Object} datasource Grafana datasource object.
+     */
     function ZabbixAPIDatasource(datasource) {
       this.name             = datasource.name;
       this.url              = datasource.url;
@@ -29,6 +35,7 @@ function (angular, _, kbn) {
 
     /**
      * Calls for each panel in dashboard.
+     *
      * @param  {Object} options   Query options. Contains time range, targets
      *                            and other info.
      * @return {Object}           Grafana metrics object with timeseries data
@@ -67,27 +74,28 @@ function (angular, _, kbn) {
           var itemname = templateSrv.replace(target.item.name);
           var hostname = templateSrv.replace(target.host.name);
 
-          // Extract zabbix hosts
-          var host_pattern = /([\w\.\s]+)/g;
+          // Extract zabbix hosts from hosts string:
+          // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
+          var host_pattern = /([^{},]+)/g;
           var hosts = hostname.match(host_pattern);
 
           // Remove hostnames from item names and then
           // Extract item names
-          // [hostname]: itemname --> itemname
+          // "hostname: itemname" --> "itemname"
           var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
-          var itemname_pattern = /([^{},]+)/g;          
+          var itemname_pattern = /([^{},]+)/g;
           var itemnames = itemname.replace(delete_hostname_pattern, '')
                             .match(itemname_pattern);
           //var aliases = itemname.match(itemname_pattern);
 
           // Don't perform query for high number of items
           // to prevent Grafana slowdown
-          if (itemnames && (itemnames.length < this.limitmetrics)) {                        
+          if (itemnames && (itemnames.length < this.limitmetrics)) {
 
             // Select the host that the item belongs for multiple hosts request
-            if (hosts.length > 1) {              
+            if (hosts.length > 1) {
               var selectHosts = true;
-            }            
+            }
 
             // Find items by item names and perform queries
             var self = this;
@@ -111,6 +119,7 @@ function (angular, _, kbn) {
 
     /**
      * Perform time series query from Zabbix API
+     *
      * @param  {Array}  items Array of Zabbix item objects
      * @param  {Number} start Time in seconds
      * @param  {Number} end   Time in seconds
@@ -146,6 +155,7 @@ function (angular, _, kbn) {
 
     /**
      * Convert Zabbix API data to Grafana format
+     *
      * @param  {Array} items      Array of Zabbix Items
      * @param  {Array} history    Array of Zabbix History
      * @return {Array}            Array of timeseries in Grafana format
@@ -222,6 +232,7 @@ function (angular, _, kbn) {
       // Handle response
       return performedQuery.then(function (response) {
         if (!response.data) {
+          // TODO: handle "auth token expired" error
           return [];
         }
         return response.data.result;
