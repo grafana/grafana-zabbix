@@ -30,6 +30,7 @@ function (angular, _, kbn) {
 
       // For testing
       this.ds = datasource;
+      this.auth = 'testauth'
     }
 
 
@@ -216,10 +217,10 @@ function (angular, _, kbn) {
       };
 
       var performedQuery;
+      var self = this;
 
       // Check authorization first
       if (!this.auth) {
-        var self = this;
         performedQuery = this.performZabbixAPILogin().then(function (response) {
           self.auth = response;
           options.data.auth = response;
@@ -232,8 +233,21 @@ function (angular, _, kbn) {
       // Handle response
       return performedQuery.then(function (response) {
         if (!response.data) {
-          // TODO: handle "auth token expired" error
           return [];
+        }
+        else if (response.data.error) {
+          // Handle Zabbix API errors
+
+          if (response.data.error.data == "Session terminated, re-login, please.") {
+            // Handle "Session terminated, re-login, please." error
+            return self.performZabbixAPILogin().then(function (response) {
+              self.auth = response;
+              options.data.auth = response;
+              return backendSrv.datasourceRequest(options);
+            }).then(function (response) {
+              return response.data.result;
+            });
+          }
         }
         return response.data.result;
       });
@@ -270,8 +284,11 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.performHostGroupSuggestQuery = function() {
       var params = {
         output: ['name'],
-        real_hosts: true, //Return only host groups that contain hosts
-        sortfield: 'name'
+        sortfield: 'name',
+        // Return only host groups that contain hosts
+        real_hosts: true,
+        // Return only host groups that contain monitored hosts.
+        monitored_hosts: true
       };
 
       return this.performZabbixAPIRequest('hostgroup.get', params);
