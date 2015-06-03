@@ -73,18 +73,13 @@ function (angular, _, kbn) {
 
           // Extract zabbix hosts from hosts string:
           // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
-          var host_pattern = /([^{},]+)/g;
-          var hosts = hostname.match(host_pattern);
+          var hosts = splitMetrics(hostname);
 
           // Remove hostnames from item names and then
           // extract item names
           // "hostname: itemname" --> "itemname"
           var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
-          var remove_brackets_pattern = /^{|}$/g;
-          var itemname_split_pattern = /(,(?!\s))/g;
-          var itemnames = itemname.replace(delete_hostname_pattern, '')
-                                  .replace(remove_brackets_pattern, '')
-                                  .split(itemname_split_pattern);
+          var itemnames = splitMetrics(itemname.replace(delete_hostname_pattern, ''));
           //var aliases = itemname.match(itemname_pattern);
 
           // Don't perform query for high number of items
@@ -433,21 +428,12 @@ function (angular, _, kbn) {
         if (part[0] === '{') {
           // Convert multiple mettrics to array
           // "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
-          parts.push(part.slice(1, -1).split(','));
+          parts.push(splitMetrics(part));
         } else {
           parts.push(part);
         }
       });
       var template = _.object(['group', 'host', 'app', 'key'], parts)
-
-      var params = {
-        output: ['name'],
-        sortfield: 'name',
-        // Case insensitive search
-        search: {
-          name : template.group
-        }
-      };
 
       // Get items
       if (parts.length === 4) {
@@ -633,6 +619,20 @@ function (angular, _, kbn) {
     return ZabbixAPIDatasource;
   });
 });
+
+
+/**
+ * Convert multiple mettrics to array
+ * "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
+ *
+ * @param  {string} metrics   "{metric1,metcic2,...,metricN}"
+ * @return {Array}            [metric1, metcic2,..., metricN]
+ */
+function splitMetrics(metrics) {
+  var remove_brackets_pattern = /^{|}$/g;
+  var metric_split_pattern = /(,(?!\s))/g;
+  return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern)
+}
 
 
 /**
