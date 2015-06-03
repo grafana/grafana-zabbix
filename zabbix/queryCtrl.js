@@ -30,12 +30,16 @@ function (angular, _) {
       $scope.target.errors = validateTarget($scope.target);
     };
 
-    // Take alias from item name by default
+
+    /**
+     * Take alias from item name by default
+     */
     function setItemAlias() {
       if (!$scope.target.alias && $scope.target.item) {
         $scope.target.alias = expandItemName($scope.target.item);
       }
     };
+
 
     $scope.targetBlur = function() {
       setItemAlias();
@@ -46,7 +50,10 @@ function (angular, _) {
       }
     };
 
-    // Call when host group selected
+
+    /**
+     * Call when host group selected
+     */
     $scope.selectHostGroup = function() {
       $scope.updateHostList()
       $scope.updateAppList();
@@ -58,7 +65,10 @@ function (angular, _) {
       }
     };
 
-    // Call when host selected
+
+    /**
+     * Call when host selected
+     */
     $scope.selectHost = function() {
       $scope.updateItemList();
       $scope.updateAppList();
@@ -71,7 +81,9 @@ function (angular, _) {
     };
 
 
-    // Call when application selected
+    /**
+     * Call when application selected
+     */
     $scope.selectApplication = function() {
       $scope.updateItemList();
 
@@ -83,7 +95,9 @@ function (angular, _) {
     };
 
 
-    // Call when item selected
+    /**
+     * Call when item selected
+     */
     $scope.selectItem = function() {
       setItemAlias();
       $scope.target.errors = validateTarget($scope.target);
@@ -209,6 +223,11 @@ function (angular, _) {
     };
 
 
+    /**
+     * Add templated variables to list of available metrics
+     *
+     * @param {Array} metricList List of metrics which variables add to
+     */
     function addTemplatedVariables(metricList) {
       _.each(templateSrv.variables, function(variable) {
         metricList.push({
@@ -223,8 +242,8 @@ function (angular, _) {
      * Expand item parameters, for example:
      * CPU $2 time ($3) --> CPU system time (avg1)
      *
-     * @param item: zabbix api item object
-     * @return: expanded item name (string)
+     * @param  {Object} item Zabbix item object
+     * @return {string}      expanded item name
      */
     function expandItemName(item) {
       var name = item.name;

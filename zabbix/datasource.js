@@ -25,12 +25,8 @@ function (angular, _, kbn) {
       this.username         = datasource.meta.username;
       this.password         = datasource.meta.password;
 
-      // Limit metrics per panel
-      this.limitmetrics = datasource.meta.limitmetrics || 20;
-
-      // For testing
-      this.ds = datasource;
-      this.auth = 'testauth'
+      // Limit metrics per panel for templated request
+      this.limitmetrics = datasource.meta.limitmetrics || 50;
     }
 
 
@@ -81,12 +77,14 @@ function (angular, _, kbn) {
           var hosts = hostname.match(host_pattern);
 
           // Remove hostnames from item names and then
-          // Extract item names
+          // extract item names
           // "hostname: itemname" --> "itemname"
           var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
-          var itemname_pattern = /([^{},]+)/g;
+          var remove_brackets_pattern = /^{|}$/g;
+          var itemname_split_pattern = /(,(?!\s))/g;
           var itemnames = itemname.replace(delete_hostname_pattern, '')
-                            .match(itemname_pattern);
+                                  .replace(remove_brackets_pattern, '')
+                                  .split(itemname_split_pattern);
           //var aliases = itemname.match(itemname_pattern);
 
           // Don't perform query for high number of items
