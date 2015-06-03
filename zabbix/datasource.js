@@ -630,7 +630,7 @@ function (angular, _, kbn) {
  */
 function splitMetrics(metrics) {
   var remove_brackets_pattern = /^{|}$/g;
-  var metric_split_pattern = /(,(?!\s))/g;
+  var metric_split_pattern = /,(?!\s)/g;
   return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern)
 }
 
