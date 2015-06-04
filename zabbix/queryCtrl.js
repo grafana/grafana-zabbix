@@ -150,9 +150,9 @@ function (angular, _) {
       $scope.metric.hostList = [];
       addTemplatedVariables($scope.metric.hostList);
 
-      var groupid = $scope.target.hostGroup ? $scope.target.hostGroup.groupid: null;
-      $scope.datasource.performHostSuggestQuery(groupid).then(function (series) {
-        $scope.metric.hostList = $scope.metric.hostList.concat(series);
+      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : [];
+      $scope.datasource.hostFindQuery(groups).then(function (hosts) {
+        $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
 
         if ($scope.target.host) {
           $scope.target.host = $scope.metric.hostList.filter(function (item, index, array) {
@@ -171,10 +171,10 @@ function (angular, _) {
       $scope.metric.applicationList = [];
       addTemplatedVariables($scope.metric.applicationList);
 
-      var hostid = $scope.target.host ? $scope.target.host.hostid : null;
-      var groupid = $scope.target.hostGroup ? $scope.target.hostGroup.groupid: null;
-      $scope.datasource.performAppSuggestQuery(hostid, groupid).then(function (series) {
-        var apps = _.map(_.uniq(_.map(series, 'name')), function (appname) {
+      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : [];
+      var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : [];
+      $scope.datasource.appFindQuery(hosts, groups).then(function (apps) {
+        var apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
           return {name: appname};
         });
         $scope.metric.applicationList = $scope.metric.applicationList.concat(apps);
@@ -196,29 +196,24 @@ function (angular, _) {
       $scope.metric.itemList = [];
       addTemplatedVariables($scope.metric.itemList);
 
-      var groupids = $scope.target.hostGroup ? $scope.target.hostGroup.groupid: null;
-      var hostids = $scope.target.host ? $scope.target.host.hostid : null;
-      var application = $scope.target.application || null;
+      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : [];
+      var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : [];
+      var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : [];
+      $scope.datasource.itemFindQuery(groups, hosts, apps).then(function (items) {
+        $scope.metric.itemList = $scope.metric.itemList.concat(items);
 
-      // Get application ids from name
-      $scope.datasource.findZabbixApp(application).then(function (result) {
-        var applicationids = _.map(result, 'applicationid');
-        $scope.datasource.performItemSuggestQuery(hostids, applicationids, groupids).then(function (series) {
-          $scope.metric.itemList = $scope.metric.itemList.concat(series);
-
-          // Expand item parameters
-          $scope.metric.itemList.forEach(function (item, index, array) {
-            if (item && item.key_ && item.name) {
-              item.name = expandItemName(item);
-            }
-          });
-          if ($scope.target.item) {
-            $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
-              // Find selected item in metric.hostList
-              return item.name == $scope.target.item.name;
-            }).pop();
+        // Expand item parameters
+        $scope.metric.itemList.forEach(function (item, index, array) {
+          if (item && item.key_ && item.name) {
+            item.name = expandItemName(item);
           }
         });
+        if ($scope.target.item) {
+          $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
+            // Find selected item in metric.hostList
+            return item.name == $scope.target.item.name;
+          }).pop();
+        }
       });
     };
 
@@ -276,3 +271,17 @@ function (angular, _) {
   });
 
 });
+
+
+/**
+ * Convert multiple mettrics to array
+ * "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
+ *
+ * @param  {string} metrics   "{metric1,metcic2,...,metricN}"
+ * @return {Array}            [metric1, metcic2,..., metricN]
+ */
+function splitMetrics(metrics) {
+  var remove_brackets_pattern = /^{|}$/g;
+  var metric_split_pattern = /,(?!\s)/g;
+  return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern)
+}
