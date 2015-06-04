@@ -408,10 +408,16 @@ function (angular, _, kbn) {
     };
 
 
-    // For templated query
+    /**
+     * For templated query
+     *
+     * @param  {string} query Query from Templating
+     * @return {string}       Metric name - group, host, app or item or list
+     *                        of metrics in "{metric1,metcic2,...,metricN}" format.
+     */
     ZabbixAPIDatasource.prototype.metricFindQuery = function (query) {
       // Split query. Query structure:
-      // group.host.app.key
+      // group.host.app.item
       var parts = [];
       _.each(query.split('.'), function (part) {
         part = templateSrv.replace(part);
@@ -423,7 +429,7 @@ function (angular, _, kbn) {
           parts.push(part);
         }
       });
-      var template = _.object(['group', 'host', 'app', 'key'], parts)
+      var template = _.object(['group', 'host', 'app', 'item'], parts)
 
       // Get items
       if (parts.length === 4) {
@@ -480,6 +486,19 @@ function (angular, _, kbn) {
     };
 
 
+    /**
+     * Find items from templated request
+     *
+     * @param  {object} template Template object in format:
+     *                           {
+     *                             group: [groupnames],
+     *                             host: [hostnames],
+     *                             app: [appnames],
+     *                             item: [itemnames]
+     *                           }
+     *
+     * @return {Array}           Array of Zabbix API item objects
+     */
     ZabbixAPIDatasource.prototype.itemFindQuery = function(template) {
       var promises = [];
 
