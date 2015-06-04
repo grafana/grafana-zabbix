@@ -112,7 +112,7 @@ function (angular, _, kbn) {
 
 
     /**
-     * Perform time series query from Zabbix API
+     * Perform history query from Zabbix API
      *
      * @param  {Array}  items Array of Zabbix item objects
      * @param  {Number} start Time in seconds
@@ -192,7 +192,13 @@ function (angular, _, kbn) {
     };
 
 
-    // Request data from Zabbix API
+    /**
+     * Request data from Zabbix API
+     *
+     * @param  {string} method Zabbix API method name
+     * @param  {object} params method params
+     * @return {object}        result
+     */
     ZabbixAPIDatasource.prototype.performZabbixAPIRequest = function(method, params) {
       var options = {
         method: 'POST',
@@ -209,36 +215,20 @@ function (angular, _, kbn) {
         }
       };
 
-      var performedQuery;
       var self = this;
-
-      // Check authorization first
-      if (!this.auth) {
-        performedQuery = this.performZabbixAPILogin().then(function (response) {
-          self.auth = response;
-          options.data.auth = response;
-          return backendSrv.datasourceRequest(options);
-        });
-      } else {
-        performedQuery = backendSrv.datasourceRequest(options);
-      }
-
-      // Handle response
-      return performedQuery.then(function (response) {
+      return backendSrv.datasourceRequest(options).then(function (response) {
         if (!response.data) {
           return [];
         }
         else if (response.data.error) {
           // Handle Zabbix API errors
 
-          if (response.data.error.data == "Session terminated, re-login, please.") {
-            // Handle "Session terminated, re-login, please." error
+          if (response.data.error.data == "Session terminated, re-login, please." ||
+              response.data.error.data == 'Not authorised.') {
+            // Handle auth errors
             return self.performZabbixAPILogin().then(function (response) {
               self.auth = response;
-              options.data.auth = response;
-              return backendSrv.datasourceRequest(options);
-            }).then(function (response) {
-              return response.data.result;
+              return self.performZabbixAPIRequest(method, params);
             });
           }
         }
