@@ -223,9 +223,9 @@ function (angular, _, kbn) {
         else if (response.data.error) {
           // Handle Zabbix API errors
 
+          // Handle auth errors
           if (response.data.error.data == "Session terminated, re-login, please." ||
               response.data.error.data == 'Not authorised.') {
-            // Handle auth errors
             return self.performZabbixAPILogin().then(function (response) {
               self.auth = response;
               return self.performZabbixAPIRequest(method, params);
@@ -427,19 +427,49 @@ function (angular, _, kbn) {
 
       // Get items
       if (parts.length === 4) {
-        return this.itemFindQuery(template);
+        return this.itemFindQuery(template).then(function (result) {
+          return _.map(result, function (item) {
+            var itemname = expandItemName(item)
+            return {
+              // TODO: select only unique names
+              text: itemname,
+              expandable: false
+            };
+          });
+        });
       }
       // Get applications
       else if (parts.length === 3) {
-        return this.appFindQuery(template);
+        return this.appFindQuery(template).then(function (result) {
+          return _.map(result, function (app) {
+            return {
+              text: app.name,
+              expandable: false
+            };
+          });
+        });
       }
       // Get hosts
       else if (parts.length === 2) {
-        return this.hostFindQuery(template);
+        return this.hostFindQuery(template).then(function (result) {
+          return _.map(result, function (host) {
+            return {
+              text: host.name,
+              expandable: false
+            };
+          });
+        });
       }
       // Get groups
       else if (parts.length === 1) {
-        return this.groupFindQuery(template);
+        return this.performHostGroupSuggestQuery().then(function (result) {
+          return _.map(result, function (hostgroup) {
+            return {
+              text: hostgroup.name,
+              expandable: false
+            };
+          });
+        });
       }
       // Return empty object
       else {
@@ -479,17 +509,7 @@ function (angular, _, kbn) {
           return object.applicationid;
         }), 'applicationid');
 
-        return self.performItemSuggestQuery(hostids, applicationids, groupids)
-          .then(function (result) {
-            return _.map(result, function (item) {
-              var itemname = expandItemName(item)
-              return {
-                // TODO: select only unique names
-                text: itemname,
-                expandable: false
-              };
-            });
-          });
+        return self.performItemSuggestQuery(hostids, applicationids, groupids);
       });
     };
 
@@ -516,15 +536,7 @@ function (angular, _, kbn) {
           return object.hostid;
         }), 'hostid');
 
-        return self.performAppSuggestQuery(hostids, groupids)
-          .then(function (result) {
-            return _.map(result, function (app) {
-              return {
-                text: app.name,
-                expandable: false
-              };
-            });
-          });
+        return self.performAppSuggestQuery(hostids, groupids);
       });
     };
 
@@ -537,26 +549,7 @@ function (angular, _, kbn) {
           return object.groupid;
         }), 'groupid');
 
-        return self.performHostSuggestQuery(groupids).then(function (result) {
-          return _.map(result, function (host) {
-            return {
-              text: host.name,
-              expandable: false
-            };
-          });
-        });
-      });
-    };
-
-
-    ZabbixAPIDatasource.prototype.groupFindQuery = function(template) {
-      return this.performHostGroupSuggestQuery().then(function (result) {
-        return _.map(result, function (hostgroup) {
-          return {
-            text: hostgroup.name,
-            expandable: false
-          };
-        });
+        return self.performHostSuggestQuery(groupids);
       });
     };
 
