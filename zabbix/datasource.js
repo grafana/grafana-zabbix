@@ -52,7 +52,8 @@ function (angular, _, kbn) {
           return [];
         }
 
-        if (!target.item.templated) {
+        // From !target.item.templated for testing
+        if (false) {
 
           // Perform request and then handle result
           var item = [target.item];
