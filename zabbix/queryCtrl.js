@@ -174,6 +174,7 @@ function (angular, _) {
       var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : [];
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : [];
       $scope.datasource.appFindQuery(hosts, groups).then(function (apps) {
+        // TODO: work with app names, not objects
         var apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
           return {name: appname};
         });
@@ -200,7 +201,11 @@ function (angular, _) {
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : [];
       var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : [];
       $scope.datasource.itemFindQuery(groups, hosts, apps).then(function (items) {
-        $scope.metric.itemList = $scope.metric.itemList.concat(items);
+        // Show only unique item names
+        var uniq_items = _.uniq(items, function (item) {
+          return expandItemName(item);
+        });
+        $scope.metric.itemList = $scope.metric.itemList.concat(uniq_items);
 
         // Expand item parameters
         $scope.metric.itemList.forEach(function (item, index, array) {
