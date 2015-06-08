@@ -48,61 +48,51 @@ function (angular, _, kbn) {
       var promises = _.map(options.targets, function(target) {
 
         // Remove undefined and hidden targets
-        if (target.hide || !target.item) {
+        if (target.hide) {
           return [];
         }
 
-        // From !target.item.templated for testing
-        if (false) {
+        var groupname = target.hostGroup ? templateSrv.replace(target.hostGroup.name) : undefined;
+        var hostname = target.host ? templateSrv.replace(target.host.name) : undefined;
+        var appname = target.application ? templateSrv.replace(target.application.name) : undefined;
+        var itemname = target.item ? templateSrv.replace(target.item.name) : undefined;
 
-          // Perform request and then handle result
-          var item = [target.item];
-          var alias = [{
-            itemid: target.item.itemid,
-            key_: '',
-            name: target.alias
-          }];
-          return this.performTimeSeriesQuery(item, from, to).then(_.partial(
-            this.handleHistoryResponse, alias));
-        } else {
-          /**
-           *      Handle templated target
-           */
+        // Extract zabbix hosts from hosts string:
+        // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
+        var hosts = hostname ? splitMetrics(hostname) : undefined;
 
-          var itemname = templateSrv.replace(target.item.name);
-          var hostname = templateSrv.replace(target.host.name);
+        var groups = groupname ? splitMetrics(groupname) : undefined;
+        var apps = appname ? splitMetrics(appname) : undefined;
 
-          // Extract zabbix hosts from hosts string:
-          // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
-          var hosts = splitMetrics(hostname);
+        // Remove hostnames from item names and then
+        // extract item names
+        // "hostname: itemname" --> "itemname"
+        var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
+        var itemnames = itemname ? splitMetrics(itemname.replace(delete_hostname_pattern, '')) : [];
+        //var aliases = itemname.match(itemname_pattern);
 
-          // Remove hostnames from item names and then
-          // extract item names
-          // "hostname: itemname" --> "itemname"
-          var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
-          var itemnames = splitMetrics(itemname.replace(delete_hostname_pattern, ''));
-          //var aliases = itemname.match(itemname_pattern);
+        // Don't perform query for high number of items
+        // to prevent Grafana slowdown
+        if (itemnames.length < this.limitmetrics) {
 
-          // Don't perform query for high number of items
-          // to prevent Grafana slowdown
-          if (itemnames && (itemnames.length < this.limitmetrics)) {
-
-            // Select the host that the item belongs for multiple hosts request
-            if (hosts.length > 1) {
-              var selectHosts = true;
-            }
-
-            // Find items by item names and perform queries
-            var self = this;
-            return this.findZabbixItem(hosts, itemnames, selectHosts)
-              .then(function (items) {
-                items = _.flatten(items);
-                return self.performTimeSeriesQuery(items, from, to)
+          // Find items by item names and perform queries
+          var self = this;
+          return this.itemFindQuery(groups, hosts, apps)
+            .then(function (items) {
+              if (itemnames.length) {
+                return _.filter(items, function (item) {
+                  return _.contains(itemnames, expandItemName(item));
+                });
+              } else {
+                return items;
+              }
+            }).then(function (items) {
+              items = _.flatten(items);
+              return self.performTimeSeriesQuery(items, from, to)
                   .then(_.partial(self.handleHistoryResponse, items));
-              });
-          } else {
-            return [];
-          }
+            });
+        } else {
+          return [];
         }
       }, this);
 
@@ -394,7 +384,8 @@ function (angular, _, kbn) {
         var hostids = _.map(hosts, 'hostid');
         var params = {
           output: ['name', 'key_', 'value_type'],
-          hostids: hostids
+          hostids: hostids,
+          searchWildcardsEnabled: true
         };
         if (selectHosts) {
           params.selectHosts = ['name'];
@@ -519,15 +510,21 @@ function (angular, _, kbn) {
       var self = this;
       return $q.all(promises).then(function (results) {
         results = _.flatten(results);
-        var groupids = _.map(_.filter(results, function (object) {
-          return object.groupid;
-        }), 'groupid');
-        var hostids = _.map(_.filter(results, function (object) {
-          return object.hostid;
-        }), 'hostid');
-        var applicationids = _.map(_.filter(results, function (object) {
-          return object.applicationid;
-        }), 'applicationid');
+        if (groups) {
+          var groupids = _.map(_.filter(results, function (object) {
+            return object.groupid;
+          }), 'groupid');
+        }
+        if (hosts) {
+          var hostids = _.map(_.filter(results, function (object) {
+            return object.hostid;
+          }), 'hostid');
+        }
+        if (apps) {
+          var applicationids = _.map(_.filter(results, function (object) {
+            return object.applicationid;
+          }), 'applicationid');
+        }
 
         return self.performItemSuggestQuery(hostids, applicationids, groupids);
       });
@@ -549,12 +546,16 @@ function (angular, _, kbn) {
       var self = this;
       return $q.all(promises).then(function (results) {
         results = _.flatten(results);
-        var groupids = _.map(_.filter(results, function (object) {
-          return object.groupid;
-        }), 'groupid');
-        var hostids = _.map(_.filter(results, function (object) {
-          return object.hostid;
-        }), 'hostid');
+        if (groups) {
+          var groupids = _.map(_.filter(results, function (object) {
+            return object.groupid;
+          }), 'groupid');
+        }
+        if (hosts) {
+          var hostids = _.map(_.filter(results, function (object) {
+            return object.hostid;
+          }), 'hostid');
+        }
 
         return self.performAppSuggestQuery(hostids, groupids);
       });

@@ -57,6 +57,7 @@ function (angular, _) {
     $scope.selectHostGroup = function() {
       $scope.updateHostList()
       $scope.updateAppList();
+      $scope.updateItemList();
 
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
@@ -70,8 +71,8 @@ function (angular, _) {
      * Call when host selected
      */
     $scope.selectHost = function() {
-      $scope.updateItemList();
       $scope.updateAppList();
+      $scope.updateItemList();
 
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
@@ -150,7 +151,7 @@ function (angular, _) {
       $scope.metric.hostList = [];
       addTemplatedVariables($scope.metric.hostList);
 
-      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : [];
+      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : undefined;
       $scope.datasource.hostFindQuery(groups).then(function (hosts) {
         $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
 
@@ -171,8 +172,8 @@ function (angular, _) {
       $scope.metric.applicationList = [];
       addTemplatedVariables($scope.metric.applicationList);
 
-      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : [];
-      var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : [];
+      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : undefined;
+      var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       $scope.datasource.appFindQuery(hosts, groups).then(function (apps) {
         // TODO: work with app names, not objects
         var apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
@@ -197,9 +198,9 @@ function (angular, _) {
       $scope.metric.itemList = [];
       addTemplatedVariables($scope.metric.itemList);
 
-      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : [];
-      var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : [];
-      var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : [];
+      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : undefined;
+      var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
+      var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
       $scope.datasource.itemFindQuery(groups, hosts, apps).then(function (items) {
         // Show only unique item names
         var uniq_items = _.uniq(items, function (item) {
