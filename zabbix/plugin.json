@@ -16,7 +16,7 @@
   "username": "guest",
   "password": "",
 
-  "limitmetrics": 20,
+  "limitmetrics": 50,
 
   "metrics": true,
   "annotations": true
