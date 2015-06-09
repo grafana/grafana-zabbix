@@ -46,7 +46,7 @@
         <!-- Alias -->
         <li>
           <input type="text"
-                 class="tight-form-input input-large"
+                 class="tight-form-input input-medium"
                  ng-model="target.alias"
                  spellcheck='false'
                  placeholder="alias"
@@ -54,13 +54,13 @@
         </li>
         <!-- Select Host Group -->
         <li>
-          <select style="width: 10em"
+          <select style="width: 12em"
                   class="tight-form-input input-small"
                   ng-change="selectHostGroup()"
-                  ng-model="target.hostGroup"
-                  bs-tooltip="target.hostGroup.name.length > 25 ? target.hostGroup.name : ''"
-                  ng-options="hostgroup.name for hostgroup in metric.hostGroupList" >
-              <option value="">All</option>
+                  ng-model="target.group"
+                  bs-tooltip="target.group.name.length > 25 ? target.group.name : ''"
+                  ng-options="group.visible_name ? group.visible_name : group.name for group in metric.groupList track by group.name" >
+              <option value="">-- Select host group --</option>
           </select>
           <a bs-tooltip="target.errors.metric"
              style="color: rgb(229, 189, 28)"
@@ -75,8 +75,8 @@
                     ng-change="selectHost()"
                     ng-model="target.host"
                     bs-tooltip="target.host.name.length > 25 ? target.host.name : ''"
-                    ng-options="host.name for host in metric.hostList" >
-                <option value="">-- select host --</option>
+                    ng-options="host.visible_name ? host.visible_name : host.name for host in metric.hostList track by host.name" >
+                <option value="">-- Select host --</option>
             </select>
             <a bs-tooltip="target.errors.metric"
                style="color: rgb(229, 189, 28)"
@@ -86,13 +86,13 @@
         </li>
         <!-- Select Application -->
         <li>
-            <select style="width: 12em"
+            <select style="width: 15em"
                     class="tight-form-input input-medium"
                     ng-change="selectApplication()"
                     ng-model="target.application"
                     bs-tooltip="target.application.name.length > 15 ? target.application.name : ''"
-                    ng-options="app.name for app in metric.applicationList" >
-                <option value="">All</option>
+                    ng-options="app.visible_name ? app.visible_name : app.name for app in metric.applicationList track by app.name" >
+                <option value="">-- Select application --</option>
             </select>
             <a bs-tooltip="target.errors.metric"
                style="color: rgb(229, 189, 28)"
@@ -106,9 +106,9 @@
                     class="tight-form-input input-medium"
                     ng-change="selectItem()"
                     ng-model="target.item"
-                    bs-tooltip="target.expandedName.length > 30 ? target.expandedName : ''"
-                    ng-options="item.expandedName for item in metric.itemList" >
-                <option value="">--select item--</option>
+                    bs-tooltip="target.item.name.length > 25 ? target.item.name : ''"
+                    ng-options="item.name for item in metric.itemList track by item.name" >
+                <option value="">-- Select item --</option>
             </select>
             <a bs-tooltip="target.errors.metric"
                style="color: rgb(229, 189, 28)"
