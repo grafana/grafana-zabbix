@@ -35,6 +35,7 @@ function (angular, _, kbn) {
      *
      * @param  {Object} options   Query options. Contains time range, targets
      *                            and other info.
+     *
      * @return {Object}           Grafana metrics object with timeseries data
      *                            for each target.
      */
@@ -110,6 +111,7 @@ function (angular, _, kbn) {
      * @param  {Array}  items Array of Zabbix item objects
      * @param  {Number} start Time in seconds
      * @param  {Number} end   Time in seconds
+     *
      * @return {Array}        Array of Zabbix history objects
      */
     ZabbixAPIDatasource.prototype.performTimeSeriesQuery = function(items, start, end) {
@@ -145,6 +147,7 @@ function (angular, _, kbn) {
      *
      * @param  {Array} items      Array of Zabbix Items
      * @param  {Array} history    Array of Zabbix History
+     *
      * @return {Array}            Array of timeseries in Grafana format
      *                            {
      *                               target: "Metric name",
@@ -175,6 +178,7 @@ function (angular, _, kbn) {
         var series = {
           target: (item.hosts ? item.hosts[0].name+': ' : '') + expandItemName(item),
           datapoints: _.map(history, function (p) {
+
             // Value must be a number for properly work
             var value = Number(p.value);
             return [value, p.clock * 1000];
@@ -190,7 +194,8 @@ function (angular, _, kbn) {
      *
      * @param  {string} method Zabbix API method name
      * @param  {object} params method params
-     * @return {object}        result
+     *
+     * @return {object}        data.result field or []
      */
     ZabbixAPIDatasource.prototype.performZabbixAPIRequest = function(method, params) {
       var options = {
@@ -213,8 +218,8 @@ function (angular, _, kbn) {
         if (!response.data) {
           return [];
         }
+        // Handle Zabbix API errors
         else if (response.data.error) {
-          // Handle Zabbix API errors
 
           // Handle auth errors
           if (response.data.error.data == "Session terminated, re-login, please." ||
@@ -306,7 +311,15 @@ function (angular, _, kbn) {
     };
 
 
-    // Get the list of host items
+    /**
+     * Items request
+     *
+     * @param  {string or Array} hostids          ///////////////////////////
+     * @param  {string or Array} applicationids   // Zabbix API parameters //
+     * @param  {string or Array} groupids         ///////////////////////////
+     *
+     * @return {string or Array}                  Array of Zabbix API item objects
+     */
     ZabbixAPIDatasource.prototype.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
       var params = {
         output: ['name', 'key_', 'value_type', 'delay'],
@@ -321,16 +334,19 @@ function (angular, _, kbn) {
         monitored: true,
         searchByAny: true
       };
+
+      // Filter by hosts or by groups
       if (hostids) {
         params.hostids = hostids;
-      }
-      else if (groupids) {
+      } else if (groupids) {
         params.groupids = groupids;
       }
+
       // If application selected return only relative items
       if (applicationids) {
         params.applicationids = applicationids;
       }
+
       // Return host property for multiple hosts
       if (!hostids || (_.isArray(hostids) && hostids.length  > 1)) {
         params.selectHosts = ['name'];
@@ -340,6 +356,12 @@ function (angular, _, kbn) {
     };
 
 
+    /**
+     * Find groups by names
+     *
+     * @param  {string or array} group group names
+     * @return {array}                 array of Zabbix API hostgroup objects
+     */
     ZabbixAPIDatasource.prototype.findZabbixGroup = function (group) {
       var params = {
         output: ['name'],
@@ -353,6 +375,12 @@ function (angular, _, kbn) {
     };
 
 
+    /**
+     * Find hosts by names
+     *
+     * @param  {string or array} hostnames hosts names
+     * @return {array}                     array of Zabbix API host objects
+     */
     ZabbixAPIDatasource.prototype.findZabbixHost = function (hostnames) {
       var params = {
         output: ['host', 'name'],
@@ -367,6 +395,12 @@ function (angular, _, kbn) {
     };
 
 
+    /**
+     * Find applications by names
+     *
+     * @param  {string or array} application applications names
+     * @return {array}                       array of Zabbix API application objects
+     */
     ZabbixAPIDatasource.prototype.findZabbixApp = function (application) {
       var params = {
         output: ['name'],
