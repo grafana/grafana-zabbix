@@ -47,53 +47,55 @@ function (angular, _, kbn) {
       // Create request for each target
       var promises = _.map(options.targets, function(target) {
 
-        // Remove undefined and hidden targets
-        if (target.hide || !target.group || !target.host || !target.application || !target.item) {
+        // Don't show undefined and hidden targets
+        if (target.hide || !target.group || !target.host
+                        || !target.application || !target.item) {
           return [];
         }
 
-        var groupname = target.group ? templateSrv.replace(target.group.name) : undefined;
-        var hostname = target.host ? templateSrv.replace(target.host.name) : undefined;
-        var appname = target.application ? templateSrv.replace(target.application.name) : undefined;
-        var itemname = target.item ? templateSrv.replace(target.item.name) : undefined;
+        // Replace templated variables
+        var groupname = templateSrv.replace(target.group.name);
+        var hostname  = templateSrv.replace(target.host.name);
+        var appname   = templateSrv.replace(target.application.name);
+        var itemname  = templateSrv.replace(target.item.name);
 
-        // Extract zabbix hosts from hosts string:
+        // Extract zabbix groups, hosts and apps from string:
         // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
-        var hosts = hostname ? splitMetrics(hostname) : undefined;
-
-        var groups = groupname ? splitMetrics(groupname) : undefined;
-        var apps = appname ? splitMetrics(appname) : undefined;
+        var groups = splitMetrics(groupname);
+        var hosts  = splitMetrics(hostname);
+        var apps   = splitMetrics(appname);
 
         // Remove hostnames from item names and then
         // extract item names
         // "hostname: itemname" --> "itemname"
         var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
-        var itemnames = itemname ? splitMetrics(itemname.replace(delete_hostname_pattern, '')) : [];
-        //var aliases = itemname.match(itemname_pattern);
+        var itemnames = splitMetrics(itemname.replace(delete_hostname_pattern, ''));
 
-        // Don't perform query for high number of items
-        // to prevent Grafana slowdown
-        if (itemnames.length < this.limitmetrics) {
+        // Find items by item names and perform queries
+        var self = this;
+        return this.itemFindQuery(groups, hosts, apps)
+          .then(function (items) {
+            if (itemnames == 'All') {
+              return items;
+            } else {
 
-          // Find items by item names and perform queries
-          var self = this;
-          return this.itemFindQuery(groups, hosts, apps)
-            .then(function (items) {
-              if (itemnames != 'All') {
-                return _.filter(items, function (item) {
-                  return _.contains(itemnames, expandItemName(item));
-                });
-              } else {
-                return items;
-              }
-            }).then(function (items) {
+              // Filtering items
+              return _.filter(items, function (item) {
+                return _.contains(itemnames, expandItemName(item));
+              });
+            }
+          }).then(function (items) {
+
+            // Don't perform query for high number of items
+            // to prevent Grafana slowdown
+            if (items.length > self.limitmetrics) {
+              return [];
+            } else {
               items = _.flatten(items);
               return self.performTimeSeriesQuery(items, from, to)
-                  .then(_.partial(self.handleHistoryResponse, items));
-            });
-        } else {
-          return [];
-        }
+                .then(_.partial(self.handleHistoryResponse, items));
+            }
+          });
       }, this);
 
       return $q.all(_.flatten(promises)).then(function (results) {
