@@ -71,5 +71,8 @@ require_once dirname(__FILE__).'/include/classes/core/CHttpRequest.php';
 [Full fix listing](https://gist.github.com/alexanderzobnin/f2348f318d7a93466a0c).
 For more info see zabbix issues [ZBXNEXT-1377](https://support.zabbix.com/browse/ZBXNEXT-1377) and [ZBX-8459](https://support.zabbix.com/browse/ZBX-8459).
 
+#### Note about browser cache
+After updating plugin, clear browser cache. See details for [Chrome](https://support.google.com/chrome/answer/95582), [Firefox](https://support.mozilla.org/en-US/kb/how-clear-firefox-cache). You need to clear cache only, not cookies, history and other data.
+
 ## Troubleshooting
 See [Grafana troubleshooting](http://docs.grafana.org/installation/troubleshooting/) for general connection issues. If you have a problem with Zabbix datasource, you should open a [support issue](https://github.com/alexanderzobnin/grafana-zabbix/issues). Before you do that please search the existing closed or open issues.
