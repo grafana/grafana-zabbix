@@ -59,7 +59,7 @@
                   ng-change="selectHostGroup()"
                   ng-model="target.group"
                   bs-tooltip="target.group.name.length > 25 ? target.group.name : ''"
-                  ng-options="group.visible_name ? group.visible_name : group.name for group in metric.groupList" >
+                  ng-options="group.visible_name ? group.visible_name : group.name for group in metric.groupList track by group.name" >
               <option value="">-- Select host group --</option>
           </select>
           <a bs-tooltip="target.errors.metric"
@@ -75,7 +75,7 @@
                     ng-change="selectHost()"
                     ng-model="target.host"
                     bs-tooltip="target.host.name.length > 25 ? target.host.name : ''"
-                    ng-options="host.visible_name ? host.visible_name : host.name for host in metric.hostList" >
+                    ng-options="host.visible_name ? host.visible_name : host.name for host in metric.hostList track by host.name" >
                 <option value="">-- Select host --</option>
             </select>
             <a bs-tooltip="target.errors.metric"
@@ -91,7 +91,7 @@
                     ng-change="selectApplication()"
                     ng-model="target.application"
                     bs-tooltip="target.application.name.length > 15 ? target.application.name : ''"
-                    ng-options="app.visible_name ? app.visible_name : app.name for app in metric.applicationList" >
+                    ng-options="app.visible_name ? app.visible_name : app.name for app in metric.applicationList track by app.name" >
                 <option value="">-- Select application --</option>
             </select>
             <a bs-tooltip="target.errors.metric"
@@ -107,7 +107,7 @@
                     ng-change="selectItem()"
                     ng-model="target.item"
                     bs-tooltip="target.name.length > 30 ? target.name : ''"
-                    ng-options="item.name for item in metric.itemList" >
+                    ng-options="item.name for item in metric.itemList track by item.name" >
                 <option value="">-- Select item --</option>
             </select>
             <a bs-tooltip="target.errors.metric"

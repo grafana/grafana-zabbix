@@ -131,15 +131,8 @@ function (angular, _) {
       $scope.metric.groupList = [{name: '*', visible_name: 'All'}];
       addTemplatedVariables($scope.metric.groupList);
 
-      $scope.datasource.performHostGroupSuggestQuery().then(function (series) {
-        $scope.metric.groupList = $scope.metric.groupList.concat(series);
-
-        if ($scope.target.group) {
-          $scope.target.group = $scope.metric.groupList.filter(function (item, index, array) {
-            // Find selected host in metric.hostList
-            return item.name == $scope.target.group.name;
-          }).pop();
-        }
+      $scope.datasource.performHostGroupSuggestQuery().then(function (groups) {
+        $scope.metric.groupList = $scope.metric.groupList.concat(groups);
       });
     };
 
@@ -154,13 +147,6 @@ function (angular, _) {
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       $scope.datasource.hostFindQuery(groups).then(function (hosts) {
         $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
-
-        if ($scope.target.host) {
-          $scope.target.host = $scope.metric.hostList.filter(function (item, index, array) {
-            // Find selected host in metric.hostList
-            return item.name == $scope.target.host.name;
-          }).pop();
-        }
       });
     };
 
@@ -180,13 +166,6 @@ function (angular, _) {
           return {name: appname};
         });
         $scope.metric.applicationList = $scope.metric.applicationList.concat(apps);
-
-        if ($scope.target.application) {
-          $scope.target.application = $scope.metric.applicationList.filter(function (app) {
-            // Find selected application in metric.hostList
-            return app.name == $scope.target.application.name;
-          }).pop();
-        }
       });
     };
 
@@ -214,12 +193,6 @@ function (angular, _) {
             item.name = expandItemName(item);
           }
         });
-        if ($scope.target.item) {
-          $scope.target.item = $scope.metric.itemList.filter(function (item, index, array) {
-            // Find selected item in metric.hostList
-            return item.name == $scope.target.item.name;
-          }).pop();
-        }
       });
     };
 
