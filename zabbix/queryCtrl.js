@@ -182,17 +182,12 @@ function (angular, _) {
       var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
       $scope.datasource.itemFindQuery(groups, hosts, apps).then(function (items) {
         // Show only unique item names
-        var uniq_items = _.uniq(items, function (item) {
+        var uniq_items = _.map(_.uniq(items, function (item) {
           return expandItemName(item);
+        }), function (item) {
+          return {name: expandItemName(item)}
         });
         $scope.metric.itemList = $scope.metric.itemList.concat(uniq_items);
-
-        // Expand item parameters
-        $scope.metric.itemList.forEach(function (item, index, array) {
-          if (item && item.key_ && item.name) {
-            item.name = expandItemName(item);
-          }
-        });
       });
     };
 
