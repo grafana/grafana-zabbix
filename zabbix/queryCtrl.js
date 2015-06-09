@@ -128,16 +128,16 @@ function (angular, _) {
      * Update list of host groups
      */
     $scope.updateGroupList = function() {
-      $scope.metric.groupList = [];
+      $scope.metric.groupList = [{name: '*', visible_name: 'All'}];
       addTemplatedVariables($scope.metric.groupList);
 
       $scope.datasource.performHostGroupSuggestQuery().then(function (series) {
         $scope.metric.groupList = $scope.metric.groupList.concat(series);
 
-        if ($scope.target.hostGroup) {
-          $scope.target.hostGroup = $scope.metric.groupList.filter(function (item, index, array) {
+        if ($scope.target.group) {
+          $scope.target.group = $scope.metric.groupList.filter(function (item, index, array) {
             // Find selected host in metric.hostList
-            return item.name == $scope.target.hostGroup.name;
+            return item.name == $scope.target.group.name;
           }).pop();
         }
       });
@@ -148,10 +148,10 @@ function (angular, _) {
      * Update list of hosts
      */
     $scope.updateHostList = function() {
-      $scope.metric.hostList = [];
+      $scope.metric.hostList = [{name: '*', visible_name: 'All'}];
       addTemplatedVariables($scope.metric.hostList);
 
-      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : undefined;
+      var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       $scope.datasource.hostFindQuery(groups).then(function (hosts) {
         $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
 
@@ -169,10 +169,10 @@ function (angular, _) {
      * Update list of host applications
      */
     $scope.updateAppList = function() {
-      $scope.metric.applicationList = [];
+      $scope.metric.applicationList = [{name: '*', visible_name: 'All'}];
       addTemplatedVariables($scope.metric.applicationList);
 
-      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : undefined;
+      var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       $scope.datasource.appFindQuery(hosts, groups).then(function (apps) {
         // TODO: work with app names, not objects
@@ -195,10 +195,10 @@ function (angular, _) {
      * Update list of items
      */
     $scope.updateItemList = function() {
-      $scope.metric.itemList = [];
+      $scope.metric.itemList = [{name: 'All'}];;
       addTemplatedVariables($scope.metric.itemList);
 
-      var groups = $scope.target.hostGroup ? splitMetrics(templateSrv.replace($scope.target.hostGroup.name)) : undefined;
+      var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
       $scope.datasource.itemFindQuery(groups, hosts, apps).then(function (items) {

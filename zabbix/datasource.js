@@ -48,11 +48,11 @@ function (angular, _, kbn) {
       var promises = _.map(options.targets, function(target) {
 
         // Remove undefined and hidden targets
-        if (target.hide) {
+        if (target.hide || !target.group || !target.host || !target.application || !target.item) {
           return [];
         }
 
-        var groupname = target.hostGroup ? templateSrv.replace(target.hostGroup.name) : undefined;
+        var groupname = target.group ? templateSrv.replace(target.group.name) : undefined;
         var hostname = target.host ? templateSrv.replace(target.host.name) : undefined;
         var appname = target.application ? templateSrv.replace(target.application.name) : undefined;
         var itemname = target.item ? templateSrv.replace(target.item.name) : undefined;
@@ -79,7 +79,7 @@ function (angular, _, kbn) {
           var self = this;
           return this.itemFindQuery(groups, hosts, apps)
             .then(function (items) {
-              if (itemnames.length) {
+              if (itemnames != 'All') {
                 return _.filter(items, function (item) {
                   return _.contains(itemnames, expandItemName(item));
                 });
@@ -499,11 +499,11 @@ function (angular, _, kbn) {
         promises.push(this.findZabbixHost(hosts));
       }
       // Get groupids from names
-      else if (groups && groups != '*') {
+      else if (groups) {
         promises.push(this.findZabbixGroup(groups));
       }
       // Get applicationids from names
-      if (apps && apps != '*') {
+      if (apps) {
         promises.push(this.findZabbixApp(apps));
       }
 
@@ -515,7 +515,7 @@ function (angular, _, kbn) {
             return object.groupid;
           }), 'groupid');
         }
-        if (hosts) {
+        if (hosts && hosts != '*') {
           var hostids = _.map(_.filter(results, function (object) {
             return object.hostid;
           }), 'hostid');
@@ -539,7 +539,7 @@ function (angular, _, kbn) {
         promises.push(this.findZabbixHost(hosts));
       }
       // Get groupids from names
-      else if (groups && groups != '*') {
+      else if (groups) {
         promises.push(this.findZabbixGroup(groups));
       }
 
@@ -551,7 +551,7 @@ function (angular, _, kbn) {
             return object.groupid;
           }), 'groupid');
         }
-        if (hosts) {
+        if (hosts && hosts != '*') {
           var hostids = _.map(_.filter(results, function (object) {
             return object.hostid;
           }), 'hostid');
