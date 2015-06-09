@@ -415,7 +415,8 @@ function (angular, _, kbn) {
 
 
     /**
-     * For templated query
+     * For templated query.
+     * Find metrics from templated request.
      *
      * @param  {string} query Query from Templating
      * @return {string}       Metric name - group, host, app or item or list
@@ -443,7 +444,6 @@ function (angular, _, kbn) {
           return _.map(result, function (item) {
             var itemname = expandItemName(item)
             return {
-              // TODO: select only unique names
               text: itemname,
               expandable: false
             };
@@ -483,7 +483,7 @@ function (angular, _, kbn) {
           });
         });
       }
-      // Return empty object
+      // Return empty object for invalid request
       else {
         var d = $q.defer();
         d.resolve([]);
@@ -493,17 +493,14 @@ function (angular, _, kbn) {
 
 
     /**
-     * Find items from templated request
+     * Find items belongs to passed groups, hosts and
+     * applications
      *
-     * @param  {object} template Template object in format:
-     *                           {
-     *                             group: [groupnames],
-     *                             host: [hostnames],
-     *                             app: [appnames],
-     *                             item: [itemnames]
-     *                           }
+     * @param  {string or array} groups
+     * @param  {string or array} hosts
+     * @param  {string or array} apps
      *
-     * @return {Array}           Array of Zabbix API item objects
+     * @return {array}  array of Zabbix API item objects
      */
     ZabbixAPIDatasource.prototype.itemFindQuery = function(groups, hosts, apps) {
       var promises = [];
@@ -545,6 +542,14 @@ function (angular, _, kbn) {
     };
 
 
+    /**
+     * Find applications belongs to passed groups and hosts
+     *
+     * @param  {string or array} hosts
+     * @param  {string or array} groups
+     *
+     * @return {array}  array of Zabbix API application objects
+     */
     ZabbixAPIDatasource.prototype.appFindQuery = function(hosts, groups) {
       var promises = [];
 
@@ -576,6 +581,12 @@ function (angular, _, kbn) {
     };
 
 
+    /**
+     * Find hosts belongs to passed groups
+     *
+     * @param  {string or array} groups
+     * @return {array}  array of Zabbix API host objects
+     */
     ZabbixAPIDatasource.prototype.hostFindQuery = function(groups) {
       var self = this;
       return this.findZabbixGroup(groups).then(function (results) {
