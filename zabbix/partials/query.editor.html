@@ -46,7 +46,7 @@
         <!-- Alias -->
         <li>
           <input type="text"
-                 class="tight-form-input input-large"
+                 class="tight-form-input input-medium"
                  ng-model="target.alias"
                  spellcheck='false'
                  placeholder="alias"
@@ -54,7 +54,7 @@
         </li>
         <!-- Select Host Group -->
         <li>
-          <select style="width: 10em"
+          <select style="width: 12em"
                   class="tight-form-input input-small"
                   ng-change="selectHostGroup()"
                   ng-model="target.group"
@@ -86,7 +86,7 @@
         </li>
         <!-- Select Application -->
         <li>
-            <select style="width: 12em"
+            <select style="width: 15em"
                     class="tight-form-input input-medium"
                     ng-change="selectApplication()"
                     ng-model="target.application"
@@ -106,7 +106,7 @@
                     class="tight-form-input input-medium"
                     ng-change="selectItem()"
                     ng-model="target.item"
-                    bs-tooltip="target.name.length > 30 ? target.name : ''"
+                    bs-tooltip="target.item.name.length > 25 ? target.item.name : ''"
                     ng-options="item.name for item in metric.itemList track by item.name" >
                 <option value="">-- Select item --</option>
             </select>
