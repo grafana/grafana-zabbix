@@ -414,28 +414,6 @@ function (angular, _, kbn) {
     };
 
 
-    ZabbixAPIDatasource.prototype.findZabbixItem = function (hosts, itemnames, /* optional */ selectHosts) {
-      var self = this;
-      return this.findZabbixHost(hosts).then(function (hosts) {
-        var hostids = _.map(hosts, 'hostid');
-        var params = {
-          output: ['name', 'key_', 'value_type'],
-          hostids: hostids,
-          searchWildcardsEnabled: true
-        };
-        if (selectHosts) {
-          params.selectHosts = ['name'];
-        }
-        return self.performZabbixAPIRequest('item.get', params)
-          .then(function (items) {
-            return _.filter(items, function (item) {
-              return _.contains(itemnames, expandItemName(item));
-            });
-          });
-      });
-    };
-
-
     /**
      * For templated query
      *
