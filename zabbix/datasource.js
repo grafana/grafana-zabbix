@@ -185,7 +185,9 @@ function (angular, _, kbn) {
           })
         };
         return series;
-      }));
+      })).then(function (result) {
+        return _.sortBy(result, 'target');
+      });
     };
 
 
