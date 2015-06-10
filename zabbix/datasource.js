@@ -617,31 +617,37 @@ function (angular, _, kbn) {
         search: {
           'description': annotation.query
         },
+        searchWildcardsEnabled: true,
+        expandDescription: true
       };
 
       return this.performZabbixAPIRequest('trigger.get', params)
         .then(function (result) {
           if(result) {
-            var obs = {};
-            obs = _.indexBy(result, 'triggerid');
-
+            var objects = _.indexBy(result, 'triggerid');
             var params = {
               output: 'extend',
-              sortorder: 'DESC',
               time_from: from,
               time_till: to,
-              objectids: _.keys(obs)
+              objectids: _.keys(objects),
+              select_acknowledges: 'extend'
             };
 
             return self.performZabbixAPIRequest('event.get', params)
               .then(function (result) {
                 var events = [];
                 _.each(result, function(e) {
+                  var formatted_acknowledges = '\n';
+                  var acknowledges = _.each(_.map(e.acknowledges, function (ack) {
+                    return ack.name + ' ' + ack.surname + '(' + ack.alias + '): ' + ack.message;
+                  }), function (ack) {
+                    formatted_acknowledges = formatted_acknowledges.concat(ack, '\n')
+                  });
                   events.push({
                     annotation: annotation,
                     time: e.clock * 1000,
-                    title: obs[e.objectid].description,
-                    text: e.eventid,
+                    title: Number(e.value) ? 'Problem' : 'OK',
+                    text: objects[e.objectid].description + (acknowledges.length ? formatted_acknowledges : ''),
                   });
                 });
                 return events;
