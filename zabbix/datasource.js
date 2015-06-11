@@ -637,19 +637,12 @@ function (angular, _, kbn) {
               .then(function (result) {
                 var events = [];
                 _.each(result, function(e) {
-                  var formatted_acknowledges = "<br><br>Acknowledges:<br><table border='1'><tr><td>Time</td><td>User</td><td>Message</td></tr>";
-                  var acknowledges = _.each(_.map(e.acknowledges, function (ack) {
-                    return '<tr><td>' + ack.clock + '</td><td>' + ack.name + ' ' + ack.surname + ' (' + ack.alias + ')' + '</td><td>' + ack.message + '</td></tr>';
-                  }), function (ack) {
-                    formatted_acknowledges = formatted_acknowledges.concat(ack)
-                  });
-                  formatted_acknowledges = formatted_acknowledges.concat('</table>')
-
+                  var formatted_acknowledges = formatAcknowledges(e.acknowledges);;
                   events.push({
                     annotation: annotation,
                     time: e.clock * 1000,
                     title: Number(e.value) ? 'Problem' : 'OK',
-                    text: objects[e.objectid].description + (acknowledges.length ? formatted_acknowledges : ''),
+                    text: objects[e.objectid].description + formatted_acknowledges,
                   });
                 });
                 return events;
@@ -699,4 +692,38 @@ function expandItemName(item) {
     name = name.replace('$' + i, key_params[i - 1]);
   };
   return name;
-};
+}
+
+
+/**
+ * Convert Date object to local time in format
+ * YYYY-MM-DD HH:mm:ss
+ *
+ * @param  {Date} date Date object
+ * @return {string} formatted local time YYYY-MM-DD HH:mm:ss
+ */
+function getShortTime(date) {
+  var MM = date.getMonth() < 10 ? '0' + date.getMonth() : date.getMonth();
+  var DD = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
+  var HH = date.getHours() < 10 ? '0' + date.getHours() : date.getHours();
+  var mm = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
+  var ss = date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds();
+  return date.getFullYear() + '-' + MM + '-' + DD + ' ' + HH + ':' + mm + ':' + ss;
+}
+
+
+function formatAcknowledges(acknowledges) {
+  if (acknowledges.length) {
+    var formatted_acknowledges = '<br><br>Acknowledges:<br><table border="1"><tr><td><b>Time</b></td><td><b>User</b></td><td><b>Comments</b></td></tr>';
+    _.each(_.map(acknowledges, function (ack) {
+      var time = new Date(ack.clock * 1000);
+      return '<tr><td><i>' + getShortTime(time) + '</i></td><td>' + ack.alias + ' (' + ack.name+ ' ' + ack.surname + ')' + '</td><td>' + ack.message + '</td></tr>';
+    }), function (ack) {
+      formatted_acknowledges = formatted_acknowledges.concat(ack)
+    });
+    formatted_acknowledges = formatted_acknowledges.concat('</table>')
+    return formatted_acknowledges;
+  } else {
+    return '';
+  }
+}
