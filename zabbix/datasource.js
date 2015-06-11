@@ -633,6 +633,11 @@ function (angular, _, kbn) {
               select_acknowledges: 'extend'
             };
 
+            // Show problem events only
+            if (!annotation.showOkEvents) {
+              params.value = 1;
+            }
+
             return self.performZabbixAPIRequest('event.get', params)
               .then(function (result) {
                 var events = [];
@@ -712,9 +717,15 @@ function getShortTime(date) {
 }
 
 
+/**
+ * Format acknowledges.
+ *
+ * @param  {array} acknowledges array of Zabbix acknowledge objects
+ * @return {string} HTML-formatted table
+ */
 function formatAcknowledges(acknowledges) {
   if (acknowledges.length) {
-    var formatted_acknowledges = '<br><br>Acknowledges:<br><table border="1"><tr><td><b>Time</b></td><td><b>User</b></td><td><b>Comments</b></td></tr>';
+    var formatted_acknowledges = '<br><br>Acknowledges:<br><table><tr><td><b>Time</b></td><td><b>User</b></td><td><b>Comments</b></td></tr>';
     _.each(_.map(acknowledges, function (ack) {
       var time = new Date(ack.clock * 1000);
       return '<tr><td><i>' + getShortTime(time) + '</i></td><td>' + ack.alias + ' (' + ack.name+ ' ' + ack.surname + ')' + '</td><td>' + ack.message + '</td></tr>';
