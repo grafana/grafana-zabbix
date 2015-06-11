@@ -637,12 +637,13 @@ function (angular, _, kbn) {
               .then(function (result) {
                 var events = [];
                 _.each(result, function(e) {
-                  var formatted_acknowledges = '<br>';
+                  var formatted_acknowledges = "<br><br>Acknowledges:<br><table border='1'><tr><td>Time</td><td>User</td><td>Message</td></tr>";
                   var acknowledges = _.each(_.map(e.acknowledges, function (ack) {
-                    return '<b>' + ack.name + ' ' + ack.surname + ' (' + ack.alias + '): </b>' + ack.message;
+                    return '<tr><td>' + ack.clock + '</td><td>' + ack.name + ' ' + ack.surname + ' (' + ack.alias + ')' + '</td><td>' + ack.message + '</td></tr>';
                   }), function (ack) {
-                    formatted_acknowledges = formatted_acknowledges.concat(ack, '<br>')
+                    formatted_acknowledges = formatted_acknowledges.concat(ack)
                   });
+                  formatted_acknowledges = formatted_acknowledges.concat('</table>')
 
                   events.push({
                     annotation: annotation,
