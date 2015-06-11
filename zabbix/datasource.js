@@ -637,12 +637,13 @@ function (angular, _, kbn) {
               .then(function (result) {
                 var events = [];
                 _.each(result, function(e) {
-                  var formatted_acknowledges = '\n';
+                  var formatted_acknowledges = '<br>';
                   var acknowledges = _.each(_.map(e.acknowledges, function (ack) {
-                    return ack.name + ' ' + ack.surname + '(' + ack.alias + '): ' + ack.message;
+                    return '<b>' + ack.name + ' ' + ack.surname + ' (' + ack.alias + '): </b>' + ack.message;
                   }), function (ack) {
-                    formatted_acknowledges = formatted_acknowledges.concat(ack, '\n')
+                    formatted_acknowledges = formatted_acknowledges.concat(ack, '<br>')
                   });
+
                   events.push({
                     annotation: annotation,
                     time: e.clock * 1000,
