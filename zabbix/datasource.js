@@ -25,6 +25,9 @@ function (angular, _, kbn) {
       this.username         = datasource.meta.username;
       this.password         = datasource.meta.password;
 
+      // Use trends instead history since specified time
+      this.trendsFrom = datasource.meta.trendsFrom || '7d';
+
       // Limit metrics per panel for templated request
       this.limitmetrics = datasource.meta.limitmetrics || 50;
     }
@@ -44,7 +47,7 @@ function (angular, _, kbn) {
       // get from & to in seconds
       var from = Math.ceil(kbn.parseDate(options.range.from).getTime() / 1000);
       var to = Math.ceil(kbn.parseDate(options.range.to).getTime() / 1000);
-      var getTrendsFrom = Math.ceil(kbn.parseDate('now-7d').getTime() / 1000);
+      var useTrendsFrom = Math.ceil(kbn.parseDate('now-' + this.trendsFrom).getTime() / 1000);
 
       // Create request for each target
       var promises = _.map(options.targets, function(target) {
@@ -95,7 +98,7 @@ function (angular, _, kbn) {
             } else {
               items = _.flatten(items);
 
-              if (from > getTrendsFrom) {
+              if (from > useTrendsFrom) {
                 return self.performTimeSeriesQuery(items, from, to)
                     .then(_.partial(self.handleHistoryResponse, items));
               } else {
