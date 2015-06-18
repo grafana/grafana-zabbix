@@ -26,6 +26,7 @@ function (angular, _, kbn) {
       this.password         = datasource.meta.password;
 
       // Use trends instead history since specified time
+      this.trends = datasource.meta.trends;
       this.trendsFrom = datasource.meta.trendsFrom || '7d';
 
       // Limit metrics per panel for templated request
@@ -98,12 +99,12 @@ function (angular, _, kbn) {
             } else {
               items = _.flatten(items);
 
-              if (from > useTrendsFrom) {
-                return self.performTimeSeriesQuery(items, from, to)
-                    .then(_.partial(self.handleHistoryResponse, items));
-              } else {
+              if ((from < useTrendsFrom) && self.trends) {                
                 return self.getTrends(items, from, to)
                   .then(_.partial(self.handleTrendResponse, items));
+              } else {
+                return self.performTimeSeriesQuery(items, from, to)
+                  .then(_.partial(self.handleHistoryResponse, items));
               }
             }
           });
