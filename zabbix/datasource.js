@@ -287,7 +287,8 @@ function (angular, _, kbn) {
 
           // Handle auth errors
           if (response.data.error.data == "Session terminated, re-login, please." ||
-              response.data.error.data == 'Not authorised.') {
+              response.data.error.data == "Not authorised." || 
+              response.data.error.data == "Not authorized") {
             return self.performZabbixAPILogin().then(function (response) {
               self.auth = response;
               return self.performZabbixAPIRequest(method, params);
