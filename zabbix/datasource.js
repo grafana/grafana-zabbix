@@ -44,6 +44,7 @@ function (angular, _, kbn) {
       // get from & to in seconds
       var from = Math.ceil(kbn.parseDate(options.range.from).getTime() / 1000);
       var to = Math.ceil(kbn.parseDate(options.range.to).getTime() / 1000);
+      var getTrendsFrom = Math.ceil(kbn.parseDate('now-7d').getTime() / 1000);
 
       // Create request for each target
       var promises = _.map(options.targets, function(target) {
@@ -93,8 +94,14 @@ function (angular, _, kbn) {
               return [];
             } else {
               items = _.flatten(items);
-              return self.getTrends(items, from, to)
-                .then(_.partial(self.handleTrendResponse, items));
+
+              if (from > getTrendsFrom) {
+                return self.performTimeSeriesQuery(items, from, to)
+                    .then(_.partial(self.handleHistoryResponse, items));
+              } else {
+                return self.getTrends(items, from, to)
+                  .then(_.partial(self.handleTrendResponse, items));
+              }
             }
           });
       }, this);
