@@ -93,8 +93,8 @@ function (angular, _, kbn) {
               return [];
             } else {
               items = _.flatten(items);
-              return self.performTimeSeriesQuery(items, from, to)
-                .then(_.partial(self.handleHistoryResponse, items));
+              return self.getTrends(items, from, to)
+                .then(_.partial(self.handleTrendResponse, items));
             }
           });
       }, this);
@@ -138,6 +138,58 @@ function (angular, _, kbn) {
         return this.performZabbixAPIRequest('history.get', params);
       }, this)).then(function (results) {
         return _.flatten(results);
+      });
+    };
+
+
+    ZabbixAPIDatasource.prototype.getTrends = function(items, start, end) {
+      // Group items by value type
+      var grouped_items = _.groupBy(items, 'value_type');
+
+      // Perform request for each value type
+      return $q.all(_.map(grouped_items, function (items, value_type) {
+        var itemids = _.map(items, 'itemid');
+        var params = {
+          output: 'extend',
+          trend: value_type,
+          itemids: itemids,
+          sortfield: 'clock',
+          sortorder: 'ASC',
+          time_from: start
+        };
+
+        // Relative queries (e.g. last hour) don't include an end time
+        if (end) {
+          params.time_till = end;
+        }
+
+        return this.performZabbixAPIRequest('trend.get', params);
+      }, this)).then(function (results) {
+        return _.flatten(results);
+      });
+    };
+
+
+    ZabbixAPIDatasource.prototype.handleTrendResponse = function(items, trends) {
+
+      // Group items and trends by itemid
+      var indexed_items = _.indexBy(items, 'itemid');
+      var grouped_history = _.groupBy(trends, 'itemid');
+
+      return $q.when(_.map(grouped_history, function (trends, itemid) {
+        var item = indexed_items[itemid];
+        var series = {
+          target: (item.hosts ? item.hosts[0].name+': ' : '') + expandItemName(item),
+          datapoints: _.map(trends, function (p) {
+
+            // Value must be a number for properly work
+            var value = Number(p.value_avg);
+            return [value, p.clock * 1000];
+          })
+        };
+        return series;
+      })).then(function (result) {
+        return _.sortBy(result, 'target');
       });
     };
 
