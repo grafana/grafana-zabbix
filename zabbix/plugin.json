@@ -16,6 +16,7 @@
   "username": "guest",
   "password": "",
 
+  "trendsFrom": "7d",
   "limitmetrics": 50,
 
   "metrics": true,
