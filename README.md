@@ -50,6 +50,21 @@ Download source code from master branch and put `zabbix` directory into `<your g
   * **Important!** Change `Access` to `direct`!
     ![2015-05-18 12-46-03 grafana - zabbix org - mozilla firefox](https://cloud.githubusercontent.com/assets/4932851/7678429/b42a9cda-fd5c-11e4-84a3-07aa765769d3.png)
 
+#### Trends support
+If you use patch for trends support ([ZBXNEXT-1193](https://support.zabbix.com/browse/ZBXNEXT-1193)), you don't need to do anything - trends support is enabled by default in `plugin.json` file:
+
+```
+  "trends": true,
+  "trendsFrom": "7d",
+```
+
+`trendsFrom` option define period when switch to trends from history.
+
+If you don't use trend patch, change `trends` to `false`:
+```
+  "trends": false,
+```
+
 #### Note for Zabbix 2.2 or less
 Zabbix API (api_jsonrpc.php) before zabbix 2.4 don't allow cross-domain requests (CORS). And you can get HTTP error 412 (Precondition Failed).
 To fix it add this code to api_jsonrpc.php immediately after the copyright
