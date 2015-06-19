@@ -82,7 +82,16 @@ function (angular, _, kbn) {
         return this.itemFindQuery(groups, hosts, apps)
           .then(function (items) {
             if (itemnames == 'All') {
-              return items;
+
+              // Filter items by regex
+              if (target.itemFilter) {
+                var item_pattern = new RegExp(target.itemFilter);
+                return _.filter(items, function (item) {
+                  return item_pattern.test(expandItemName(item));
+                });
+              } else {
+                return items;
+              }
             } else {
 
               // Filtering items
@@ -99,7 +108,7 @@ function (angular, _, kbn) {
             } else {
               items = _.flatten(items);
 
-              if ((from < useTrendsFrom) && self.trends) {                
+              if ((from < useTrendsFrom) && self.trends) {
                 return self.getTrends(items, from, to)
                   .then(_.partial(self.handleTrendResponse, items));
               } else {
@@ -288,7 +297,7 @@ function (angular, _, kbn) {
 
           // Handle auth errors
           if (response.data.error.data == "Session terminated, re-login, please." ||
-              response.data.error.data == "Not authorised." || 
+              response.data.error.data == "Not authorised." ||
               response.data.error.data == "Not authorized") {
             return self.performZabbixAPILogin().then(function (response) {
               self.auth = response;
