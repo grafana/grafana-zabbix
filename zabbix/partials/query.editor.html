@@ -102,7 +102,7 @@
         </li>
         <!-- Select Item -->
         <li>
-            <select style="width: 25em"
+            <select style="width: 20em"
                     class="tight-form-input input-medium"
                     ng-change="selectItem()"
                     ng-model="target.item"
@@ -115,6 +115,15 @@
                ng-show="target.errors.metric">
                 <i class="icon-warning-sign"></i>
             </a>
+        </li>
+        <!-- Item filter -->
+        <li>
+          <input type="text"
+                 class="tight-form-input input-large"
+                 ng-model="target.itemFilter"
+                 spellcheck='false'
+                 placeholder="Item filter (regex)"
+                 ng-blur="targetBlur()">
         </li>
       </ul>
 
