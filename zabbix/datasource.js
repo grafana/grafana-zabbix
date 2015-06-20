@@ -81,6 +81,19 @@ function (angular, _, kbn) {
         var self = this;
         return this.itemFindQuery(groups, hosts, apps)
           .then(function (items) {
+
+            // Filter hosts by regex
+            if (target.host.visible_name == 'All') {
+              if (target.hostFilter && _.every(items, _.identity.hosts)) {
+                var host_pattern = new RegExp(target.hostFilter);
+                items = _.filter(items, function (item) {
+                  return _.some(item.hosts, function (host) {
+                    return host_pattern.test(host.name);
+                  });
+                });
+              }
+            }
+
             if (itemnames == 'All') {
 
               // Filter items by regex
