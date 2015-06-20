@@ -49,13 +49,13 @@
                  class="tight-form-input input-medium"
                  ng-model="target.alias"
                  spellcheck='false'
-                 placeholder="alias"
+                 placeholder="Alias"
                  ng-blur="targetBlur()">
         </li>
         <!-- Select Host Group -->
+        <li class="tight-form-item input-small" style="width: 5em">Group</li>
         <li>
-          <select style="width: 12em"
-                  class="tight-form-input input-small"
+          <select class="tight-form-input input-large"
                   ng-change="selectHostGroup()"
                   ng-model="target.group"
                   bs-tooltip="target.group.name.length > 25 ? target.group.name : ''"
@@ -69,9 +69,9 @@
           </a>
         </li>
         <!-- Select Host -->
+        <li class="tight-form-item input-small" style="width: 3em">Host</li>
         <li>
-            <select style="width: 15em"
-                    class="tight-form-input input-medium"
+            <select class="tight-form-input input-large"
                     ng-change="selectHost()"
                     ng-model="target.host"
                     bs-tooltip="target.host.name.length > 25 ? target.host.name : ''"
@@ -84,10 +84,36 @@
                 <i class="icon-warning-sign"></i>
             </a>
         </li>
-        <!-- Select Application -->
+        <!-- Host filter -->
+        <li class="tight-form-item">
+          Filter
+          <i class="fa fa-question-circle" bs-tooltip="'Filtering hosts by regex. Select All in items and specify regex for host names.'"></i>
+        </li>
         <li>
-            <select style="width: 15em"
-                    class="tight-form-input input-medium"
+          <input type="text"
+                 class="tight-form-input input-large"
+                 ng-model="target.hostFilter"
+                 spellcheck='false'
+                 placeholder="Host filter (regex)"
+                 ng-blur="targetBlur()">
+        </li>
+      </ul>
+
+      <div class="clearfix"></div>
+    </div>
+
+    <div class="tight-form">
+      <ul class="tight-form-list" role="menu">
+        <li class="tight-form-item" style="min-width: 15px; text-align: center">&nbsp</li>
+        <li class="tight-form-item">
+          <i class="fa fa-eye invisible"></i>
+        </li>
+        <li class="tight-form-item" style="width: 135px">&nbsp</li>
+
+        <!-- Select Application -->
+        <li class="tight-form-item input-small" style="width: 5em">Application</li>
+        <li>
+            <select class="tight-form-input input-large"
                     ng-change="selectApplication()"
                     ng-model="target.application"
                     bs-tooltip="target.application.name.length > 15 ? target.application.name : ''"
@@ -101,9 +127,9 @@
             </a>
         </li>
         <!-- Select Item -->
+        <li class="tight-form-item input-small" style="width: 3em">Item</li>
         <li>
-            <select style="width: 20em"
-                    class="tight-form-input input-medium"
+            <select class="tight-form-input input-large"
                     ng-change="selectItem()"
                     ng-model="target.item"
                     bs-tooltip="target.item.name.length > 25 ? target.item.name : ''"
@@ -117,6 +143,10 @@
             </a>
         </li>
         <!-- Item filter -->
+        <li class="tight-form-item">
+          Filter
+          <i class="fa fa-question-circle" bs-tooltip="'Filtering items by regex. Select All in items and specify regex for item names.'"></i>
+        </li>
         <li>
           <input type="text"
                  class="tight-form-input input-large"
@@ -126,17 +156,21 @@
                  ng-blur="targetBlur()">
         </li>
         <!-- Scale -->
+        <li class="tight-form-item">
+          Scale
+          <i class="fa fa-question-circle" bs-tooltip="'Set a custom multiplier for series values, for example -1 to invert series'"></i>
+        </li>
         <li>
           <input type="text"
                  class="tight-form-input input-small"
                  ng-model="target.scale"
                  spellcheck='false'
-                 placeholder="Set scale"
+                 placeholder="1"
                  ng-blur="targetBlur()">
         </li>
       </ul>
-
       <div class="clearfix"></div>
     </div>
+
   </div>
 </div>
