@@ -26,6 +26,10 @@ Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
 
 ##### Templated dashboards support
 ##### Annotations support
+ * Display zabbix events on graphs:
+![Annotations](https://cloud.githubusercontent.com/assets/4932851/8269358/622ec3be-17ad-11e5-8023-eba137369cfe.png)
+ * Show acknowledges for problems:  
+![Acknowledges](https://cloud.githubusercontent.com/assets/4932851/8269375/e6d8706a-17ad-11e5-8e2d-2d707d8ee67f.png)
 
 Read more about Grafana features at [grafana.org](http://grafana.org)
 
