@@ -1,15 +1,18 @@
 # Grafana-Zabbix
+
 ## Zabbix API datasource for Grafana dashboard
+
+[![Donate](https://cloud.githubusercontent.com/assets/4932851/8266321/38511d84-1731-11e5-826b-7f29bbebfbd8.png)](https://money.yandex.ru/embed/shop.xml?account=41001684402290&quickpay=shop&payment-type-choice=on&writer=seller&targets=Grafana-Zabbix&targets-hint=&default-sum=100&button-text=04&comment=on&hint=Your+suggestions&mail=on&successURL=)
 
 Read more in Grafana-Zabbix [wiki](https://github.com/alexanderzobnin/grafana-zabbix/wiki).
 
 Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
 
-![2015-05-31 17-51-00 grafana - zabbix datasource - google chrome](https://cloud.githubusercontent.com/assets/4932851/7902354/fdf66368-07bf-11e5-991d-1e9892b2d0b0.png)
+![Dashboard](https://cloud.githubusercontent.com/assets/4932851/8267599/857563e6-1771-11e5-83da-6b18b54f624c.png)
 
 Useful metric editor with host group and application filtering:
 
-![2015-05-31 17-53-23](https://cloud.githubusercontent.com/assets/4932851/7902360/156a9366-07c0-11e5-905b-4c21b52f1f44.png)
+![Query editor](https://cloud.githubusercontent.com/assets/4932851/7902360/156a9366-07c0-11e5-905b-4c21b52f1f44.png)
 
 
 ## Installation
@@ -58,7 +61,10 @@ If you use patch for trends support ([ZBXNEXT-1193](https://support.zabbix.com/b
   "trendsFrom": "7d",
 ```
 
-`trendsFrom` option define period when switch to trends from history.
+`trendsFrom` option define period when switch to trends from history. You can set the time in Grafana format: `7d` for 7 days or for example `2d` for 2 days. Valid time specificators are:  
+`h` - hours  
+`d` - days  
+`M` - mounths
 
 If you don't use trend patch, change `trends` to `false`:
 ```
