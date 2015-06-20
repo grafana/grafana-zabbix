@@ -110,10 +110,10 @@ function (angular, _, kbn) {
 
               if ((from < useTrendsFrom) && self.trends) {
                 return self.getTrends(items, from, to)
-                  .then(_.partial(self.handleTrendResponse, items));
+                  .then(_.partial(self.handleTrendResponse, items, target.scale));
               } else {
                 return self.performTimeSeriesQuery(items, from, to)
-                  .then(_.partial(self.handleHistoryResponse, items));
+                  .then(_.partial(self.handleHistoryResponse, items, target.scale));
               }
             }
           });
@@ -190,7 +190,7 @@ function (angular, _, kbn) {
     };
 
 
-    ZabbixAPIDatasource.prototype.handleTrendResponse = function(items, trends) {
+    ZabbixAPIDatasource.prototype.handleTrendResponse = function(items, scale, trends) {
 
       // Group items and trends by itemid
       var indexed_items = _.indexBy(items, 'itemid');
@@ -204,6 +204,11 @@ function (angular, _, kbn) {
 
             // Value must be a number for properly work
             var value = Number(p.value_avg);
+
+            // Apply scale
+            if (scale) {
+              value *= scale;
+            }
             return [value, p.clock * 1000];
           })
         };
@@ -226,7 +231,7 @@ function (angular, _, kbn) {
      *                               datapoints: [[<value>, <unixtime>], ...]
      *                            }
      */
-    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, history) {
+    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, scale, history) {
       /**
        * Response should be in the format:
        * data: [
@@ -253,6 +258,11 @@ function (angular, _, kbn) {
 
             // Value must be a number for properly work
             var value = Number(p.value);
+
+            // Apply scale
+            if (scale) {
+              value *= scale;
+            }
             return [value, p.clock * 1000];
           })
         };
