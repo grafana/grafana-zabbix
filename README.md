@@ -2,7 +2,7 @@
 
 ## Zabbix API datasource for Grafana dashboard
 
-[![Donate](https://cloud.githubusercontent.com/assets/4932851/8266299/465f88a8-1730-11e5-9d89-379edd81967a.png)](https://money.yandex.ru/embed/shop.xml?account=41001684402290&quickpay=shop&payment-type-choice=off&writer=seller&targets=Grafana-Zabbix&targets-hint=&default-sum=100&button-text=03&comment=on&hint=%D0%92%D0%B0%D1%88%D0%B8+%D0%BF%D0%BE%D0%B6%D0%B5%D0%BB%D0%B0%D0%BD%D0%B8%D1%8F&mail=on)
+[![Donate](https://cloud.githubusercontent.com/assets/4932851/8266321/38511d84-1731-11e5-826b-7f29bbebfbd8.png)](https://money.yandex.ru/embed/shop.xml?account=41001684402290&quickpay=shop&payment-type-choice=off&writer=seller&targets=Grafana-Zabbix&targets-hint=&default-sum=100&button-text=03&comment=on&hint=%D0%92%D0%B0%D1%88%D0%B8+%D0%BF%D0%BE%D0%B6%D0%B5%D0%BB%D0%B0%D0%BD%D0%B8%D1%8F&mail=on)
 
 Read more in Grafana-Zabbix [wiki](https://github.com/alexanderzobnin/grafana-zabbix/wiki).
 
