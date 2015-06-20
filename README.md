@@ -8,7 +8,7 @@ Read more in Grafana-Zabbix [wiki](https://github.com/alexanderzobnin/grafana-za
 
 Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
 
-![Dashboard](https://cloud.githubusercontent.com/assets/4932851/8268516/38b8350e-1791-11e5-83e6-64870d81f176.png)
+![Dashboard](https://cloud.githubusercontent.com/assets/4932851/8269101/9e6ee67e-17a3-11e5-85de-fe9dcc2dd375.png)
 
 Useful metric editor with host group and application filtering:
 
