@@ -58,7 +58,10 @@ If you use patch for trends support ([ZBXNEXT-1193](https://support.zabbix.com/b
   "trendsFrom": "7d",
 ```
 
-`trendsFrom` option define period when switch to trends from history.
+`trendsFrom` option define period when switch to trends from history. You can set the time in Grafana format: `7d` for 7 days or for example `2d` for 2 days. Valid time specificators are:  
+`h` - hours  
+`d` - days  
+`M` - mounths
 
 If you don't use trend patch, change `trends` to `false`:
 ```
