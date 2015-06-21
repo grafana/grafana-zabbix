@@ -4,10 +4,11 @@
 
 [![Donate](https://cloud.githubusercontent.com/assets/4932851/8266321/38511d84-1731-11e5-826b-7f29bbebfbd8.png)](https://money.yandex.ru/embed/shop.xml?account=41001684402290&quickpay=shop&payment-type-choice=on&writer=seller&targets=Grafana-Zabbix&targets-hint=&default-sum=100&button-text=04&comment=on&hint=Your+suggestions&mail=on&successURL=)
 
-[**Features**](#features)  
-[**Installation**](#installation)  
-[**Troubleshooting**](#troubleshooting)  
-[**User's Guide**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage)  
+#### Content
+- [**Features**](#features)  
+- [**Installation**](#installation)  
+- [**Troubleshooting**](#troubleshooting)  
+- [**User's Guide**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage)  
 Read more in Grafana-Zabbix [wiki](https://github.com/alexanderzobnin/grafana-zabbix/wiki).
 
 Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
