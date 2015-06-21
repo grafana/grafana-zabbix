@@ -7,6 +7,7 @@
 [**Features**](#features)  
 [**Installation**](#installation)  
 [**Troubleshooting**](#troubleshooting)  
+[**User's Guide**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage)  
 Read more in Grafana-Zabbix [wiki](https://github.com/alexanderzobnin/grafana-zabbix/wiki).
 
 Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
