@@ -463,7 +463,7 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.findZabbixGroup = function (group) {
       var params = {
         output: ['name'],
-        search: {
+        filter: {
           name: group
         },
         searchByAny: true,
@@ -482,7 +482,7 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.findZabbixHost = function (hostnames) {
       var params = {
         output: ['host', 'name'],
-        search: {
+        filter: {
           host: hostnames,
           name: hostnames
         },
@@ -502,7 +502,7 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.findZabbixApp = function (application) {
       var params = {
         output: ['name'],
-        search: {
+        filter: {
           name: application
         },
         searchByAny: true,
