@@ -463,11 +463,12 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.findZabbixGroup = function (group) {
       var params = {
         output: ['name'],
-        filter: {
+        searchByAny: true
+      };
+      if (group != '*') {
+        params.filter = {
           name: group
-        },
-        searchByAny: true,
-        searchWildcardsEnabled: true
+        };
       }
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
@@ -482,12 +483,12 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.findZabbixHost = function (hostnames) {
       var params = {
         output: ['host', 'name'],
-        filter: {
-          host: hostnames,
+        searchByAny: true
+      };
+      if (hostnames != '*') {
+        params.filter = {
           name: hostnames
-        },
-        searchByAny: true,
-        searchWildcardsEnabled: true
+        };
       }
       return this.performZabbixAPIRequest('host.get', params);
     };
@@ -502,12 +503,13 @@ function (angular, _, kbn) {
     ZabbixAPIDatasource.prototype.findZabbixApp = function (application) {
       var params = {
         output: ['name'],
-        filter: {
-          name: application
-        },
-        searchByAny: true,
-        searchWildcardsEnabled: true,
+        searchByAny: true
       }
+      if (application != '*') {
+        params.filter = {
+          name: application
+        };
+      };
       return this.performZabbixAPIRequest('application.get', params);
     };
 
