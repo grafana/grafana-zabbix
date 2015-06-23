@@ -17,8 +17,9 @@ Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
   - [Query editor](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#query-editor)
     - [Filters](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#filters)
     - [Scale](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#scale)
-  - [Templated queries](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#templated-queries)
+  - [Templates](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#templates)
     - [Templated variable editor](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#templated-variable-editor)
+    - [Creating templated dashboard](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#creating-templated-dashboard)
   - [Annotations](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#annotations)
 4. [**Troubleshooting**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Troubleshooting)
 
