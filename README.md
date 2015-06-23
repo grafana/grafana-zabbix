@@ -27,7 +27,7 @@ Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
 #### Flexible metric editor
  * hosts and items filtering:
  
-![Query editor](https://cloud.githubusercontent.com/assets/4932851/8269157/9509dd66-17a6-11e5-8547-95adc2298942.png)
+[![regex_filter](https://cloud.githubusercontent.com/assets/4932851/8312766/5eb34480-19e7-11e5-925f-452a99ec0ab6.gif)](https://cloud.githubusercontent.com/assets/4932851/8312766/5eb34480-19e7-11e5-925f-452a99ec0ab6.gif)
 
  * Custom scale for each target:
 
@@ -35,6 +35,8 @@ Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
 
 #### Templated dashboards support
 Group, host, application or item names can be replaced with a template variable. This allows you to create generic dashboards that can quickly be changed to show stats for a specific cluster, server or application.
+
+[![templated_dashboard](https://cloud.githubusercontent.com/assets/4932851/8312492/7f286c38-19e5-11e5-8c19-1b9e97292b06.gif)](https://cloud.githubusercontent.com/assets/4932851/8312492/7f286c38-19e5-11e5-8c19-1b9e97292b06.gif)
 
 #### Annotations support
  * Display zabbix events on graphs:
