@@ -123,10 +123,10 @@ function (angular, _, kbn) {
 
               if ((from < useTrendsFrom) && self.trends) {
                 return self.getTrends(items, from, to)
-                  .then(_.partial(self.handleTrendResponse, items, target.scale));
+                  .then(_.partial(self.handleTrendResponse, items, target.alias, target.scale));
               } else {
                 return self.performTimeSeriesQuery(items, from, to)
-                  .then(_.partial(self.handleHistoryResponse, items, target.scale));
+                  .then(_.partial(self.handleHistoryResponse, items, target.alias, target.scale));
               }
             }
           });
@@ -203,7 +203,7 @@ function (angular, _, kbn) {
     };
 
 
-    ZabbixAPIDatasource.prototype.handleTrendResponse = function(items, scale, trends) {
+    ZabbixAPIDatasource.prototype.handleTrendResponse = function(items, alias, scale, trends) {
 
       // Group items and trends by itemid
       var indexed_items = _.indexBy(items, 'itemid');
@@ -227,7 +227,13 @@ function (angular, _, kbn) {
         };
         return series;
       })).then(function (result) {
-        return _.sortBy(result, 'target');
+        // Add alias or sort targets
+        if (result.length == 1) {
+          result[0].target = alias;
+          return result;
+        } else {
+          return _.sortBy(result, 'target');
+        }
       });
     };
 
@@ -244,7 +250,7 @@ function (angular, _, kbn) {
      *                               datapoints: [[<value>, <unixtime>], ...]
      *                            }
      */
-    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, scale, history) {
+    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, alias, scale, history) {
       /**
        * Response should be in the format:
        * data: [
@@ -281,7 +287,13 @@ function (angular, _, kbn) {
         };
         return series;
       })).then(function (result) {
-        return _.sortBy(result, 'target');
+        // Add alias or sort targets
+        if (result.length == 1) {
+          result[0].target = alias;
+          return result;
+        } else {
+          return _.sortBy(result, 'target');
+        }
       });
     };
 
