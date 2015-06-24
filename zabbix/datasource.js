@@ -120,13 +120,14 @@ function (angular, _, kbn) {
               return [];
             } else {
               items = _.flatten(items);
+              var alias = itemnames === 'All' ? undefined : target.alias;
 
               if ((from < useTrendsFrom) && self.trends) {
                 return self.getTrends(items, from, to)
-                  .then(_.partial(self.handleTrendResponse, items, target.alias, target.scale));
+                  .then(_.partial(self.handleTrendResponse, items, alias, target.scale));
               } else {
                 return self.performTimeSeriesQuery(items, from, to)
-                  .then(_.partial(self.handleHistoryResponse, items, target.alias, target.scale));
+                  .then(_.partial(self.handleHistoryResponse, items, alias, target.scale));
               }
             }
           });
@@ -212,7 +213,7 @@ function (angular, _, kbn) {
       return $q.when(_.map(grouped_history, function (trends, itemid) {
         var item = indexed_items[itemid];
         var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '') + expandItemName(item),
+          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : expandItemName(item)),
           datapoints: _.map(trends, function (p) {
 
             // Value must be a number for properly work
@@ -227,13 +228,7 @@ function (angular, _, kbn) {
         };
         return series;
       })).then(function (result) {
-        // Add alias or sort targets
-        if (result.length == 1) {
-          result[0].target = alias;
-          return result;
-        } else {
-          return _.sortBy(result, 'target');
-        }
+        return _.sortBy(result, 'target');
       });
     };
 
@@ -272,7 +267,7 @@ function (angular, _, kbn) {
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
         var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '') + expandItemName(item),
+          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : expandItemName(item)),
           datapoints: _.map(history, function (p) {
 
             // Value must be a number for properly work
@@ -287,13 +282,7 @@ function (angular, _, kbn) {
         };
         return series;
       })).then(function (result) {
-        // Add alias or sort targets
-        if (result.length == 1) {
-          result[0].target = alias;
-          return result;
-        } else {
-          return _.sortBy(result, 'target');
-        }
+        return _.sortBy(result, 'target');
       });
     };
 
