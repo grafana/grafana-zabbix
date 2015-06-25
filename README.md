@@ -46,3 +46,4 @@ Group, host, application or item names can be replaced with a template variable.
 ![Acknowledges](https://cloud.githubusercontent.com/assets/4932851/8269375/e6d8706a-17ad-11e5-8e2d-2d707d8ee67f.png)
 
 Read more about Grafana features at [grafana.org](http://grafana.org)
+
