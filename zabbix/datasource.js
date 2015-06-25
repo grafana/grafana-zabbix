@@ -120,7 +120,7 @@ function (angular, _, kbn) {
               return [];
             } else {
               items = _.flatten(items);
-              var alias = itemnames === 'All' ? undefined : target.alias;
+              var alias = itemnames === 'All' ? undefined : templateSrv.replace(target.alias);
 
               if ((from < useTrendsFrom) && self.trends) {
                 return self.getTrends(items, from, to)
