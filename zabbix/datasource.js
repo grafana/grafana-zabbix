@@ -120,7 +120,7 @@ function (angular, _, kbn) {
               return [];
             } else {
               items = _.flatten(items);
-              var alias = itemnames === 'All' ? undefined : templateSrv.replace(target.alias);
+              var alias = target.item.name === 'All' ? undefined : templateSrv.replace(target.alias);
 
               if ((from < useTrendsFrom) && self.trends) {
                 return self.getTrends(items, from, to)
@@ -467,9 +467,16 @@ function (angular, _, kbn) {
         searchByAny: true
       };
       if (group != '*') {
-        params.filter = {
-          name: group
-        };
+        if (_.isArray(group)) {
+          params.filter = {
+            name: group
+          };
+        } else {
+          params.search = {
+            name: group
+          };
+          params.searchWildcardsEnabled = true;
+        }
       }
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
@@ -575,7 +582,7 @@ function (angular, _, kbn) {
       }
       // Get groups
       else if (parts.length === 1) {
-        return this.performHostGroupSuggestQuery().then(function (result) {
+        return this.findZabbixGroup(template.group).then(function (result) {
           return _.map(result, function (hostgroup) {
             return {
               text: hostgroup.name,
