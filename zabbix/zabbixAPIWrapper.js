@@ -289,42 +289,33 @@ function (angular, _) {
 
 
     /**
-     * Find groups by names
+     * Get groups by names
      *
      * @param  {string or array} group group names
      * @return {array}                 array of Zabbix API hostgroup objects
      */
-    this.findZabbixGroup = function (group) {
+    this.getGroupByName = function (group) {
       var params = {
-        output: ['name'],
-        searchByAny: true
+        output: ['name']
       };
       if (group != '*') {
-        if (_.isArray(group)) {
-          params.filter = {
-            name: group
-          };
-        } else {
-          params.search = {
-            name: group
-          };
-          params.searchWildcardsEnabled = true;
-        }
+        params.filter = {
+          name: group
+        };
       }
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
 
 
     /**
-     * Find hosts by names
+     * Get hosts by names
      *
      * @param  {string or array} hostnames hosts names
      * @return {array}                     array of Zabbix API host objects
      */
-    this.findZabbixHost = function (hostnames) {
+    this.getHostByName = function (hostnames) {
       var params = {
-        output: ['host', 'name'],
-        searchByAny: true
+        output: ['host', 'name']
       };
       if (hostnames != '*') {
         params.filter = {
@@ -336,15 +327,14 @@ function (angular, _) {
 
 
     /**
-     * Find applications by names
+     * Get applications by names
      *
      * @param  {string or array} application applications names
      * @return {array}                       array of Zabbix API application objects
      */
-    this.findZabbixApp = function (application) {
+    this.getAppByName = function (application) {
       var params = {
-        output: ['name'],
-        searchByAny: true
+        output: ['name']
       }
       if (application != '*') {
         params.filter = {
@@ -356,7 +346,7 @@ function (angular, _) {
 
 
     /**
-     * Find items belongs to passed groups, hosts and
+     * Get items belongs to passed groups, hosts and
      * applications
      *
      * @param  {string or array} groups
@@ -369,15 +359,15 @@ function (angular, _) {
 
       // Get hostids from names
       if (hosts && hosts != '*') {
-        promises.push(this.findZabbixHost(hosts));
+        promises.push(this.getHostByName(hosts));
       }
       // Get groupids from names
       else if (groups) {
-        promises.push(this.findZabbixGroup(groups));
+        promises.push(this.getGroupByName(groups));
       }
       // Get applicationids from names
       if (apps) {
-        promises.push(this.findZabbixApp(apps));
+        promises.push(this.getAppByName(apps));
       }
 
       var self = this;
@@ -416,11 +406,11 @@ function (angular, _) {
 
       // Get hostids from names
       if (hosts && hosts != '*') {
-        promises.push(this.findZabbixHost(hosts));
+        promises.push(this.getHostByName(hosts));
       }
       // Get groupids from names
       else if (groups) {
-        promises.push(this.findZabbixGroup(groups));
+        promises.push(this.getGroupByName(groups));
       }
 
       var self = this;
@@ -450,7 +440,7 @@ function (angular, _) {
      */
     this.hostFindQuery = function(groups) {
       var self = this;
-      return this.findZabbixGroup(groups).then(function (results) {
+      return this.getGroupByName(groups).then(function (results) {
         results = _.flatten(results);
         var groupids = _.map(_.filter(results, function (object) {
           return object.groupid;
