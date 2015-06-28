@@ -1,6 +1,7 @@
 define([
   'angular',
-  'lodash'
+  'lodash',
+  './zabbixAPIWrapper'
 ],
 function (angular, _) {
   'use strict';
@@ -8,7 +9,7 @@ function (angular, _) {
   var module = angular.module('grafana.controllers');
   var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  module.controller('ZabbixAPIQueryCtrl', function($scope, $sce, templateSrv) {
+  module.controller('ZabbixAPIQueryCtrl', function($scope, $sce, templateSrv, zabbix) {
 
     $scope.init = function() {
       $scope.targetLetters = targetLetters;
@@ -131,7 +132,7 @@ function (angular, _) {
       $scope.metric.groupList = [{name: '*', visible_name: 'All'}];
       addTemplatedVariables($scope.metric.groupList);
 
-      $scope.datasource.performHostGroupSuggestQuery().then(function (groups) {
+      zabbix.performHostGroupSuggestQuery().then(function (groups) {
         $scope.metric.groupList = $scope.metric.groupList.concat(groups);
       });
     };
@@ -145,7 +146,7 @@ function (angular, _) {
       addTemplatedVariables($scope.metric.hostList);
 
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
-      $scope.datasource.hostFindQuery(groups).then(function (hosts) {
+      zabbix.hostFindQuery(groups).then(function (hosts) {
         $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
       });
     };
@@ -160,7 +161,7 @@ function (angular, _) {
 
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
-      $scope.datasource.appFindQuery(hosts, groups).then(function (apps) {
+      zabbix.appFindQuery(hosts, groups).then(function (apps) {
         // TODO: work with app names, not objects
         var apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
           return {name: appname};
@@ -180,7 +181,7 @@ function (angular, _) {
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
-      $scope.datasource.itemFindQuery(groups, hosts, apps).then(function (items) {
+      zabbix.itemFindQuery(groups, hosts, apps).then(function (items) {
         // Show only unique item names
         var uniq_items = _.map(_.uniq(items, function (item) {
           return expandItemName(item);
