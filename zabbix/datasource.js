@@ -104,7 +104,7 @@ function (angular, _, kbn) {
               if (target.itemFilter) {
                 var item_pattern = new RegExp(target.itemFilter);
                 return _.filter(items, function (item) {
-                  return item_pattern.test(expandItemName(item));
+                  return item_pattern.test(zabbix.expandItemName(item));
                 });
               } else {
                 return items;
@@ -113,7 +113,7 @@ function (angular, _, kbn) {
 
               // Filtering items
               return _.filter(items, function (item) {
-                return _.contains(itemnames, expandItemName(item));
+                return _.contains(itemnames, zabbix.expandItemName(item));
               });
             }
           }).then(function (items) {
@@ -152,7 +152,7 @@ function (angular, _, kbn) {
       return $q.when(_.map(grouped_history, function (trends, itemid) {
         var item = indexed_items[itemid];
         var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : expandItemName(item)),
+          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : zabbix.expandItemName(item)),
           datapoints: _.map(trends, function (p) {
 
             // Value must be a number for properly work
@@ -206,7 +206,7 @@ function (angular, _, kbn) {
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
         var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : expandItemName(item)),
+          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : zabbix.expandItemName(item)),
           datapoints: _.map(history, function (p) {
 
             // Value must be a number for properly work
@@ -252,9 +252,9 @@ function (angular, _, kbn) {
 
       // Get items
       if (parts.length === 4) {
-        return this.itemFindQuery(template.group, template.host, template.app).then(function (result) {
+        return zabbix.itemFindQuery(template.group, template.host, template.app).then(function (result) {
           return _.map(result, function (item) {
-            var itemname = expandItemName(item)
+            var itemname = zabbix.expandItemName(item)
             return {
               text: itemname,
               expandable: false
@@ -264,7 +264,7 @@ function (angular, _, kbn) {
       }
       // Get applications
       else if (parts.length === 3) {
-        return this.appFindQuery(template.host, template.group).then(function (result) {
+        return zabbix.appFindQuery(template.host, template.group).then(function (result) {
           return _.map(result, function (app) {
             return {
               text: app.name,
@@ -275,7 +275,7 @@ function (angular, _, kbn) {
       }
       // Get hosts
       else if (parts.length === 2) {
-        return this.hostFindQuery(template.group).then(function (result) {
+        return zabbix.hostFindQuery(template.group).then(function (result) {
           return _.map(result, function (host) {
             return {
               text: host.name,
@@ -286,7 +286,7 @@ function (angular, _, kbn) {
       }
       // Get groups
       else if (parts.length === 1) {
-        return this.findZabbixGroup(template.group).then(function (result) {
+        return zabbix.findZabbixGroup(template.group).then(function (result) {
           return _.map(result, function (hostgroup) {
             return {
               text: hostgroup.name,
@@ -376,29 +376,6 @@ function splitMetrics(metrics) {
   var remove_brackets_pattern = /^{|}$/g;
   var metric_split_pattern = /,(?!\s)/g;
   return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern)
-}
-
-
-/**
- * Expand item parameters, for example:
- * CPU $2 time ($3) --> CPU system time (avg1)
- *
- * @param item: zabbix api item object
- * @return: expanded item name (string)
- */
-function expandItemName(item) {
-  var name = item.name;
-  var key = item.key_;
-
-  // extract params from key:
-  // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
-  var key_params = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']')).split(',');
-
-  // replace item parameters
-  for (var i = key_params.length; i >= 1; i--) {
-    name = name.replace('$' + i, key_params[i - 1]);
-  };
-  return name;
 }
 
 

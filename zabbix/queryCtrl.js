@@ -37,7 +37,7 @@ function (angular, _) {
      */
     function setItemAlias() {
       if (!$scope.target.alias && $scope.target.item) {
-        $scope.target.alias = expandItemName($scope.target.item);
+        $scope.target.alias = zabbix.expandItemName($scope.target.item);
       }
     };
 
@@ -184,9 +184,9 @@ function (angular, _) {
       zabbix.itemFindQuery(groups, hosts, apps).then(function (items) {
         // Show only unique item names
         var uniq_items = _.map(_.uniq(items, function (item) {
-          return expandItemName(item);
+          return zabbix.expandItemName(item);
         }), function (item) {
-          return {name: expandItemName(item)}
+          return {name: zabbix.expandItemName(item)}
         });
         $scope.metric.itemList = $scope.metric.itemList.concat(uniq_items);
       });
@@ -205,31 +205,6 @@ function (angular, _) {
           templated: true
         })
       });
-    };
-
-
-    /**
-     * Expand item parameters, for example:
-     * CPU $2 time ($3) --> CPU system time (avg1)
-     *
-     * @param  {Object} item Zabbix item object
-     * @return {string}      expanded item name
-     */
-    function expandItemName(item) {
-      var name = item.name;
-      var key = item.key_;
-
-      if (key) {
-        // extract params from key:
-        // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
-        var key_params = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']')).split(',');
-
-        // replace item parameters
-        for (var i = key_params.length; i >= 1; i--) {
-          name = name.replace('$' + i, key_params[i - 1]);
-        };
-      }
-      return name;
     };
 
 
