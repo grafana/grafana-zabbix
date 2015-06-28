@@ -1,6 +1,7 @@
 define([
   'angular',
-  'lodash'
+  'lodash',
+  './zabbixAPIWrapper'
 ],
 function (angular, _) {
   'use strict';
@@ -8,7 +9,7 @@ function (angular, _) {
   var module = angular.module('grafana.controllers');
   var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  module.controller('ZabbixAPIQueryCtrl', function($scope, $sce, templateSrv) {
+  module.controller('ZabbixAPIQueryCtrl', function($scope, $sce, templateSrv, zabbix) {
 
     $scope.init = function() {
       $scope.targetLetters = targetLetters;
@@ -36,7 +37,7 @@ function (angular, _) {
      */
     function setItemAlias() {
       if (!$scope.target.alias && $scope.target.item) {
-        $scope.target.alias = expandItemName($scope.target.item);
+        $scope.target.alias = zabbix.expandItemName($scope.target.item);
       }
     };
 
@@ -131,7 +132,7 @@ function (angular, _) {
       $scope.metric.groupList = [{name: '*', visible_name: 'All'}];
       addTemplatedVariables($scope.metric.groupList);
 
-      $scope.datasource.performHostGroupSuggestQuery().then(function (groups) {
+      zabbix.performHostGroupSuggestQuery().then(function (groups) {
         $scope.metric.groupList = $scope.metric.groupList.concat(groups);
       });
     };
@@ -145,7 +146,7 @@ function (angular, _) {
       addTemplatedVariables($scope.metric.hostList);
 
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
-      $scope.datasource.hostFindQuery(groups).then(function (hosts) {
+      zabbix.hostFindQuery(groups).then(function (hosts) {
         $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
       });
     };
@@ -160,8 +161,7 @@ function (angular, _) {
 
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
-      $scope.datasource.appFindQuery(hosts, groups).then(function (apps) {
-        // TODO: work with app names, not objects
+      zabbix.appFindQuery(hosts, groups).then(function (apps) {
         var apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
           return {name: appname};
         });
@@ -180,12 +180,12 @@ function (angular, _) {
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
-      $scope.datasource.itemFindQuery(groups, hosts, apps).then(function (items) {
+      zabbix.itemFindQuery(groups, hosts, apps).then(function (items) {
         // Show only unique item names
         var uniq_items = _.map(_.uniq(items, function (item) {
-          return expandItemName(item);
+          return zabbix.expandItemName(item);
         }), function (item) {
-          return {name: expandItemName(item)}
+          return {name: zabbix.expandItemName(item)}
         });
         $scope.metric.itemList = $scope.metric.itemList.concat(uniq_items);
       });
@@ -204,31 +204,6 @@ function (angular, _) {
           templated: true
         })
       });
-    };
-
-
-    /**
-     * Expand item parameters, for example:
-     * CPU $2 time ($3) --> CPU system time (avg1)
-     *
-     * @param  {Object} item Zabbix item object
-     * @return {string}      expanded item name
-     */
-    function expandItemName(item) {
-      var name = item.name;
-      var key = item.key_;
-
-      if (key) {
-        // extract params from key:
-        // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
-        var key_params = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']')).split(',');
-
-        // replace item parameters
-        for (var i = key_params.length; i >= 1; i--) {
-          name = name.replace('$' + i, key_params[i - 1]);
-        };
-      }
-      return name;
     };
 
 
