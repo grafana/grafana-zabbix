@@ -9,6 +9,9 @@ function (angular, _) {
 
   module.service('zabbix', function($q, backendSrv) {
 
+    /**
+     * Initialize API parameters.
+     */
     this.init = function(api_url, username, password) {
       this.url        = api_url;
       this.username   = username;
@@ -26,7 +29,6 @@ function (angular, _) {
      *
      * @param  {string} method Zabbix API method name
      * @param  {object} params method params
-     *
      * @return {object}        data.result field or []
      */
     this.performZabbixAPIRequest = function(method, params) {
@@ -68,7 +70,11 @@ function (angular, _) {
     };
 
 
-    // Get authentication token
+    /**
+     * Get authentication token.
+     *
+     * @return {string}  auth token
+     */
     this.performZabbixAPILogin = function() {
       var options = {
         url : this.url,
@@ -106,7 +112,6 @@ function (angular, _) {
      * @param  {Array}  items Array of Zabbix item objects
      * @param  {Number} start Time in seconds
      * @param  {Number} end   Time in seconds
-     *
      * @return {Array}        Array of Zabbix history objects
      */
     this.getHistory = function(items, start, end) {
@@ -137,6 +142,15 @@ function (angular, _) {
     };
 
 
+    /**
+     * Perform trends query from Zabbix API
+     * Use trends api extension from ZBXNEXT-1193 patch.
+     *
+     * @param  {Array}  items Array of Zabbix item objects
+     * @param  {Number} start Time in seconds
+     * @param  {Number} end   Time in seconds
+     * @return {Array}        Array of Zabbix trend objects
+     */
     this.getTrends = function(items, start, end) {
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
@@ -165,7 +179,11 @@ function (angular, _) {
     };
 
 
-    // Get the list of host groups
+    /**
+     * Get the list of host groups
+     *
+     * @return {array}          array of Zabbix hostgroup objects
+     */
     this.performHostGroupSuggestQuery = function() {
       var params = {
         output: ['name'],
@@ -180,7 +198,12 @@ function (angular, _) {
     };
 
 
-    // Get the list of hosts
+    /**
+     * Get the list of hosts
+     *
+     * @param  {array} groupids
+     * @return {array}          array of Zabbix host objects
+     */
     this.performHostSuggestQuery = function(groupids) {
       var params = {
         output: ['name', 'host'],
@@ -198,7 +221,13 @@ function (angular, _) {
     };
 
 
-    // Get the list of applications
+    /**
+     * Get the list of applications
+     *
+     * @param  {array} hostids
+     * @param  {array} groupids
+     * @return {array}          array of Zabbix application objects
+     */
     this.performAppSuggestQuery = function(hostids, /* optional */ groupids) {
       var params = {
         output: ['name'],
@@ -221,7 +250,6 @@ function (angular, _) {
      * @param  {string or Array} hostids          ///////////////////////////
      * @param  {string or Array} applicationids   // Zabbix API parameters //
      * @param  {string or Array} groupids         ///////////////////////////
-     *
      * @return {string or Array}                  Array of Zabbix API item objects
      */
     this.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
@@ -334,7 +362,6 @@ function (angular, _) {
      * @param  {string or array} groups
      * @param  {string or array} hosts
      * @param  {string or array} apps
-     *
      * @return {array}  array of Zabbix API item objects
      */
     this.itemFindQuery = function(groups, hosts, apps) {
@@ -382,7 +409,6 @@ function (angular, _) {
      *
      * @param  {string or array} hosts
      * @param  {string or array} groups
-     *
      * @return {array}  array of Zabbix API application objects
      */
     this.appFindQuery = function(hosts, groups) {

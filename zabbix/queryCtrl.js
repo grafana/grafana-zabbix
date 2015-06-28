@@ -162,7 +162,6 @@ function (angular, _) {
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       zabbix.appFindQuery(hosts, groups).then(function (apps) {
-        // TODO: work with app names, not objects
         var apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
           return {name: appname};
         });
