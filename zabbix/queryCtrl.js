@@ -37,7 +37,7 @@ function (angular, _) {
      */
     function setItemAlias() {
       if (!$scope.target.alias && $scope.target.item) {
-        $scope.target.alias = zabbix.expandItemName($scope.target.item);
+        $scope.target.alias = $scope.target.item.name;
       }
     };
 
