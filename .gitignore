@@ -2,3 +2,5 @@
 *.sublime-project
 
 .idea/
+
+*.bat
