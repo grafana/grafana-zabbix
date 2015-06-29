@@ -308,6 +308,24 @@ function (angular, _) {
 
 
     /**
+     * Search group by name.
+     *
+     * @param  {string} group group name
+     * @return {array}        groups
+     */
+    this.searchGroup = function (group) {
+      var params = {
+        output: ['name'],
+        search: {
+          name: group
+        },
+        searchWildcardsEnabled: true
+      };
+      return this.performZabbixAPIRequest('hostgroup.get', params);
+    };
+
+
+    /**
      * Get hosts by names
      *
      * @param  {string or array} hostnames hosts names

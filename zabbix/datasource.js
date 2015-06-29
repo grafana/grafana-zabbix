@@ -286,7 +286,7 @@ function (angular, _, kbn) {
       }
       // Get groups
       else if (parts.length === 1) {
-        return zabbix.findZabbixGroup(template.group).then(function (result) {
+        return zabbix.getGroupByName(template.group).then(function (result) {
           return _.map(result, function (hostgroup) {
             return {
               text: hostgroup.name,
