@@ -218,11 +218,9 @@
     <div class="grafana-info-box span6" ng-if="editorHelpIndex === 1">
       <h5>Max data points</h5>
       <ul>
-        <li>Every graphite request is issued with a maxDataPoints parameter</li>
-        <li>Graphite uses this parameter to consolidate the real number of values down to this number</li>
+        <li>Grafana-Zabbix plugin uses maxDataPoints parameter to consolidate the real number of values down to this number</li>
         <li>If there are more real values, then by default they will be consolidated using averages</li>
         <li>This could hide real peaks and max values in your series</li>
-        <li>You can change how point consolidation is made using the consolidateBy graphite function</li>
         <li>Point consolidation will effect series legend values (min,max,total,current)</li>
         <li>If you override maxDataPoint and set a high value performance can be severely effected</li>
       </ul>
