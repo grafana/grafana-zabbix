@@ -138,7 +138,17 @@ function (angular, _, kbn) {
       }, this);
 
       return $q.all(_.flatten(promises)).then(function (results) {
-        return { data: _.flatten(results) };
+        var timeseries_data = _.flatten(results);
+        var data = _.map(timeseries_data, function (timeseries) {
+
+          // Series downsampling
+          if (timeseries.datapoints.length > options.maxDataPoints) {
+            var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
+            timeseries.datapoints = downsampleSeries(timeseries.datapoints, to, ms_interval);
+          }
+          return timeseries;
+        });
+        return { data: data };
       });
     };
 
@@ -416,4 +426,46 @@ function formatAcknowledges(acknowledges) {
   } else {
     return '';
   }
+}
+
+
+/**
+ * Downsample datapoints series
+ *
+ * @param   {array}     datapoints        [[<value>, <unixtime>], ...]
+ * @param   {integer}   time_to           Panel time to
+ * @param   {integer}   ms_interval       Interval in milliseconds for grouping datapoints
+ * @return  {array}     [[<value>, <unixtime>], ...]
+ */
+function downsampleSeries(datapoints, time_to, ms_interval) {
+  var downsampledSeries = new Array();
+  var timeWindow = {
+    from: time_to * 1000 - ms_interval,
+    to: time_to * 1000
+  };
+
+  var points_sum = 0;
+  var points_num = 0;
+  var value_avg = 0;
+  for (var i = datapoints.length - 1; i >= 0; i -= 1) {
+    if (timeWindow.from < datapoints[i][1] && datapoints[i][1] <= timeWindow.to) {
+      points_sum += datapoints[i][0];
+      points_num++;
+    }
+    else {
+      value_avg = points_num ? points_sum / points_num : 0;
+      downsampledSeries.push([value_avg, timeWindow.to]);
+
+      // Shift time window
+      timeWindow.to = timeWindow.from;
+      timeWindow.from -= ms_interval;
+
+      points_sum = 0;
+      points_num = 0;
+
+      // Process point again
+      i++;
+    }
+  }
+  return downsampledSeries.reverse();
 }
