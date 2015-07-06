@@ -124,7 +124,9 @@ function (angular, _, kbn) {
               return [];
             } else {
               items = _.flatten(items);
-              var alias = target.item.name === 'All' ? undefined : templateSrv.replace(target.alias);
+
+              // Use alias only for single metric, otherwise use item names
+              var alias = items.length > 1 ? undefined : templateSrv.replace(target.alias);
 
               if ((from < useTrendsFrom) && self.trends) {
                 return zabbix.getTrends(items, from, to)
