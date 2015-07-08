@@ -31,7 +31,6 @@ function (angular, _) {
       $scope.target.errors = validateTarget($scope.target);
     };
 
-
     /**
      * Take alias from item name by default
      */
@@ -39,8 +38,7 @@ function (angular, _) {
       if (!$scope.target.alias && $scope.target.item) {
         $scope.target.alias = $scope.target.item.name;
       }
-    };
-
+    }
 
     $scope.targetBlur = function() {
       setItemAlias();
@@ -51,12 +49,11 @@ function (angular, _) {
       }
     };
 
-
     /**
      * Call when host group selected
      */
     $scope.selectHostGroup = function() {
-      $scope.updateHostList()
+      $scope.updateHostList();
       $scope.updateAppList();
       $scope.updateItemList();
 
@@ -66,7 +63,6 @@ function (angular, _) {
         $scope.get_data();
       }
     };
-
 
     /**
      * Call when host selected
@@ -82,7 +78,6 @@ function (angular, _) {
       }
     };
 
-
     /**
      * Call when application selected
      */
@@ -96,7 +91,6 @@ function (angular, _) {
       }
     };
 
-
     /**
      * Call when item selected
      */
@@ -109,12 +103,10 @@ function (angular, _) {
       }
     };
 
-
     $scope.duplicate = function() {
       var clone = angular.copy($scope.target);
       $scope.panel.targets.push(clone);
     };
-
 
     $scope.moveMetricQuery = function(fromIndex, toIndex) {
       _.move($scope.panel.targets, fromIndex, toIndex);
@@ -123,7 +115,6 @@ function (angular, _) {
     //////////////////////////////
     // SUGGESTION QUERIES
     //////////////////////////////
-
 
     /**
      * Update list of host groups
@@ -136,7 +127,6 @@ function (angular, _) {
         $scope.metric.groupList = $scope.metric.groupList.concat(groups);
       });
     };
-
 
     /**
      * Update list of hosts
@@ -151,7 +141,6 @@ function (angular, _) {
       });
     };
 
-
     /**
      * Update list of host applications
      */
@@ -162,19 +151,18 @@ function (angular, _) {
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       zabbix.appFindQuery(hosts, groups).then(function (apps) {
-        var apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
+        apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
           return {name: appname};
         });
         $scope.metric.applicationList = $scope.metric.applicationList.concat(apps);
       });
     };
 
-
     /**
      * Update list of items
      */
     $scope.updateItemList = function() {
-      $scope.metric.itemList = [{name: 'All'}];;
+      $scope.metric.itemList = [{name: 'All'}];
       addTemplatedVariables($scope.metric.itemList);
 
       var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
@@ -185,12 +173,11 @@ function (angular, _) {
         var uniq_items = _.map(_.uniq(items, function (item) {
           return zabbix.expandItemName(item);
         }), function (item) {
-          return {name: zabbix.expandItemName(item)}
+          return {name: zabbix.expandItemName(item)};
         });
         $scope.metric.itemList = $scope.metric.itemList.concat(uniq_items);
       });
     };
-
 
     /**
      * Add templated variables to list of available metrics
@@ -202,10 +189,9 @@ function (angular, _) {
         metricList.push({
           name: '$' + variable.name,
           templated: true
-        })
+        });
       });
-    };
-
+    }
 
     //////////////////////////////
     // VALIDATION
@@ -213,14 +199,15 @@ function (angular, _) {
 
     function validateTarget(target) {
       var errs = {};
-
+      if (!target) {
+        errs = 'Not defined';
+      }
       return errs;
     }
 
   });
 
 });
-
 
 /**
  * Convert multiple mettrics to array
@@ -230,7 +217,8 @@ function (angular, _) {
  * @return {Array}            [metric1, metcic2,..., metricN]
  */
 function splitMetrics(metrics) {
+  'use strict';
   var remove_brackets_pattern = /^{|}$/g;
   var metric_split_pattern = /,(?!\s)/g;
-  return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern)
+  return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern);
 }

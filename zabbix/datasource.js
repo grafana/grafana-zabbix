@@ -1,3 +1,4 @@
+'use strict';
 define([
   'angular',
   'lodash',
@@ -6,7 +7,7 @@ define([
   './queryCtrl'
 ],
 function (angular, _, kbn) {
-  'use strict';
+  //'use strict';
 
   var module = angular.module('grafana.services');
 
@@ -36,7 +37,6 @@ function (angular, _, kbn) {
       // Initialize Zabbix API
       zabbix.init(this.url, this.username, this.password);
     }
-
 
     /**
      * Calls for each panel in dashboard.
@@ -87,7 +87,7 @@ function (angular, _, kbn) {
           .then(function (items) {
 
             // Filter hosts by regex
-            if (target.host.visible_name == 'All') {
+            if (target.host.visible_name === 'All') {
               if (target.hostFilter && _.every(items, _.identity.hosts)) {
                 var host_pattern = new RegExp(target.hostFilter);
                 items = _.filter(items, function (item) {
@@ -98,7 +98,7 @@ function (angular, _, kbn) {
               }
             }
 
-            if (itemnames == 'All') {
+            if (itemnames === 'All') {
 
               // Filter items by regex
               if (target.itemFilter) {
@@ -154,7 +154,6 @@ function (angular, _, kbn) {
       });
     };
 
-
     ZabbixAPIDatasource.prototype.handleTrendResponse = function(items, alias, scale, trends) {
 
       // Group items and trends by itemid
@@ -182,7 +181,6 @@ function (angular, _, kbn) {
         return _.sortBy(result, 'target');
       });
     };
-
 
     /**
      * Convert Zabbix API data to Grafana format
@@ -237,7 +235,6 @@ function (angular, _, kbn) {
       });
     };
 
-
     /**
      * For templated query.
      * Find metrics from templated request.
@@ -260,13 +257,13 @@ function (angular, _, kbn) {
           parts.push(part);
         }
       });
-      var template = _.object(['group', 'host', 'app', 'item'], parts)
+      var template = _.object(['group', 'host', 'app', 'item'], parts);
 
       // Get items
       if (parts.length === 4) {
         return zabbix.itemFindQuery(template.group, template.host, template.app).then(function (result) {
           return _.map(result, function (item) {
-            var itemname = zabbix.expandItemName(item)
+            var itemname = zabbix.expandItemName(item);
             return {
               text: itemname,
               expandable: false
@@ -315,11 +312,9 @@ function (angular, _, kbn) {
       }
     };
 
-
     /////////////////
     // Annotations //
     /////////////////
-
 
     ZabbixAPIDatasource.prototype.annotationQuery = function(annotation, rangeUnparsed) {
       var from = Math.ceil(kbn.parseDate(rangeUnparsed.from).getTime() / 1000);
@@ -356,7 +351,7 @@ function (angular, _, kbn) {
               .then(function (result) {
                 var events = [];
                 _.each(result, function(e) {
-                  var formatted_acknowledges = formatAcknowledges(e.acknowledges);;
+                  var formatted_acknowledges = formatAcknowledges(e.acknowledges);
                   events.push({
                     annotation: annotation,
                     time: e.clock * 1000,
@@ -365,17 +360,16 @@ function (angular, _, kbn) {
                   });
                 });
                 return events;
-            });
+              });
           } else {
             return [];
           }
-      });
+        });
     };
 
     return ZabbixAPIDatasource;
   });
 });
-
 
 /**
  * Convert multiple mettrics to array
@@ -387,9 +381,8 @@ function (angular, _, kbn) {
 function splitMetrics(metrics) {
   var remove_brackets_pattern = /^{|}$/g;
   var metric_split_pattern = /,(?!\s)/g;
-  return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern)
+  return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern);
 }
-
 
 /**
  * Convert Date object to local time in format
@@ -407,7 +400,6 @@ function getShortTime(date) {
   return date.getFullYear() + '-' + MM + '-' + DD + ' ' + HH + ':' + mm + ':' + ss;
 }
 
-
 /**
  * Format acknowledges.
  *
@@ -416,20 +408,21 @@ function getShortTime(date) {
  */
 function formatAcknowledges(acknowledges) {
   if (acknowledges.length) {
-    var formatted_acknowledges = '<br><br>Acknowledges:<br><table><tr><td><b>Time</b></td><td><b>User</b></td><td><b>Comments</b></td></tr>';
+    var formatted_acknowledges = '<br><br>Acknowledges:<br><table><tr><td><b>Time</b></td>'
+      + '<td><b>User</b></td><td><b>Comments</b></td></tr>';
     _.each(_.map(acknowledges, function (ack) {
       var time = new Date(ack.clock * 1000);
-      return '<tr><td><i>' + getShortTime(time) + '</i></td><td>' + ack.alias + ' (' + ack.name+ ' ' + ack.surname + ')' + '</td><td>' + ack.message + '</td></tr>';
+      return '<tr><td><i>' + getShortTime(time) + '</i></td><td>' + ack.alias
+        + ' (' + ack.name + ' ' + ack.surname + ')' + '</td><td>' + ack.message + '</td></tr>';
     }), function (ack) {
-      formatted_acknowledges = formatted_acknowledges.concat(ack)
+      formatted_acknowledges = formatted_acknowledges.concat(ack);
     });
-    formatted_acknowledges = formatted_acknowledges.concat('</table>')
+    formatted_acknowledges = formatted_acknowledges.concat('</table>');
     return formatted_acknowledges;
   } else {
     return '';
   }
 }
-
 
 /**
  * Downsample datapoints series
@@ -440,7 +433,7 @@ function formatAcknowledges(acknowledges) {
  * @return  {array}     [[<value>, <unixtime>], ...]
  */
 function downsampleSeries(datapoints, time_to, ms_interval) {
-  var downsampledSeries = new Array();
+  var downsampledSeries = [];
   var timeWindow = {
     from: time_to * 1000 - ms_interval,
     to: time_to * 1000

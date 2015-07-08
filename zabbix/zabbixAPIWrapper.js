@@ -16,13 +16,11 @@ function (angular, _) {
       this.url        = api_url;
       this.username   = username;
       this.password   = password;
-    }
-
+    };
 
     //////////////////
     // Core methods //
     //////////////////
-
 
     /**
      * Request data from Zabbix API
@@ -56,9 +54,9 @@ function (angular, _) {
         else if (response.data.error) {
 
           // Handle auth errors
-          if (response.data.error.data == "Session terminated, re-login, please." ||
-              response.data.error.data == "Not authorised." ||
-              response.data.error.data == "Not authorized") {
+          if (response.data.error.data === "Session terminated, re-login, please." ||
+              response.data.error.data === "Not authorised." ||
+              response.data.error.data === "Not authorized") {
             return self.performZabbixAPILogin().then(function (response) {
               self.auth = response;
               return self.performZabbixAPIRequest(method, params);
@@ -68,7 +66,6 @@ function (angular, _) {
         return response.data.result;
       });
     };
-
 
     /**
      * Get authentication token.
@@ -99,12 +96,9 @@ function (angular, _) {
       });
     };
 
-
-
     /////////////////////////
     // API method wrappers //
     /////////////////////////
-
 
     /**
      * Perform history query from Zabbix API
@@ -140,7 +134,6 @@ function (angular, _) {
         return _.flatten(results);
       });
     };
-
 
     /**
      * Perform trends query from Zabbix API
@@ -178,7 +171,6 @@ function (angular, _) {
       });
     };
 
-
     /**
      * Get the list of host groups
      *
@@ -196,7 +188,6 @@ function (angular, _) {
 
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
-
 
     /**
      * Get the list of hosts
@@ -220,7 +211,6 @@ function (angular, _) {
       return this.performZabbixAPIRequest('host.get', params);
     };
 
-
     /**
      * Get the list of applications
      *
@@ -242,7 +232,6 @@ function (angular, _) {
 
       return this.performZabbixAPIRequest('application.get', params);
     };
-
 
     /**
      * Items request
@@ -287,7 +276,6 @@ function (angular, _) {
       return this.performZabbixAPIRequest('item.get', params);
     };
 
-
     /**
      * Get groups by names
      *
@@ -298,14 +286,13 @@ function (angular, _) {
       var params = {
         output: ['name']
       };
-      if (group != '*') {
+      if (group !== '*') {
         params.filter = {
           name: group
         };
       }
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
-
 
     /**
      * Search group by name.
@@ -324,7 +311,6 @@ function (angular, _) {
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
 
-
     /**
      * Get hosts by names
      *
@@ -335,14 +321,13 @@ function (angular, _) {
       var params = {
         output: ['host', 'name']
       };
-      if (hostnames != '*') {
+      if (hostnames !== '*') {
         params.filter = {
           name: hostnames
         };
       }
       return this.performZabbixAPIRequest('host.get', params);
     };
-
 
     /**
      * Get applications by names
@@ -353,15 +338,14 @@ function (angular, _) {
     this.getAppByName = function (application) {
       var params = {
         output: ['name']
-      }
-      if (application != '*') {
+      };
+      if (application !== '*') {
         params.filter = {
           name: application
         };
-      };
+      }
       return this.performZabbixAPIRequest('application.get', params);
     };
-
 
     /**
      * Get items belongs to passed groups, hosts and
@@ -376,7 +360,7 @@ function (angular, _) {
       var promises = [];
 
       // Get hostids from names
-      if (hosts && hosts != '*') {
+      if (hosts && hosts !== '*') {
         promises.push(this.getHostByName(hosts));
       }
       // Get groupids from names
@@ -391,18 +375,21 @@ function (angular, _) {
       var self = this;
       return $q.all(promises).then(function (results) {
         results = _.flatten(results);
+        var groupids;
+        var hostids;
+        var applicationids;
         if (groups) {
-          var groupids = _.map(_.filter(results, function (object) {
+          groupids = _.map(_.filter(results, function (object) {
             return object.groupid;
           }), 'groupid');
         }
-        if (hosts && hosts != '*') {
-          var hostids = _.map(_.filter(results, function (object) {
+        if (hosts && hosts !== '*') {
+          hostids = _.map(_.filter(results, function (object) {
             return object.hostid;
           }), 'hostid');
         }
         if (apps) {
-          var applicationids = _.map(_.filter(results, function (object) {
+          applicationids = _.map(_.filter(results, function (object) {
             return object.applicationid;
           }), 'applicationid');
         }
@@ -410,7 +397,6 @@ function (angular, _) {
         return self.performItemSuggestQuery(hostids, applicationids, groupids);
       });
     };
-
 
     /**
      * Find applications belongs to passed groups and hosts
@@ -423,7 +409,7 @@ function (angular, _) {
       var promises = [];
 
       // Get hostids from names
-      if (hosts && hosts != '*') {
+      if (hosts && hosts !== '*') {
         promises.push(this.getHostByName(hosts));
       }
       // Get groupids from names
@@ -434,13 +420,15 @@ function (angular, _) {
       var self = this;
       return $q.all(promises).then(function (results) {
         results = _.flatten(results);
+        var groupids;
+        var hostids;
         if (groups) {
-          var groupids = _.map(_.filter(results, function (object) {
+          groupids = _.map(_.filter(results, function (object) {
             return object.groupid;
           }), 'groupid');
         }
-        if (hosts && hosts != '*') {
-          var hostids = _.map(_.filter(results, function (object) {
+        if (hosts && hosts !== '*') {
+          hostids = _.map(_.filter(results, function (object) {
             return object.hostid;
           }), 'hostid');
         }
@@ -448,7 +436,6 @@ function (angular, _) {
         return self.performAppSuggestQuery(hostids, groupids);
       });
     };
-
 
     /**
      * Find hosts belongs to passed groups
@@ -468,7 +455,6 @@ function (angular, _) {
       });
     };
 
-
     /**
      * Expand item parameters, for example:
      * CPU $2 time ($3) --> CPU system time (avg1)
@@ -487,9 +473,9 @@ function (angular, _) {
       // replace item parameters
       for (var i = key_params.length; i >= 1; i--) {
         name = name.replace('$' + i, key_params[i - 1]);
-      };
+      }
       return name;
-    }
+    };
 
   });
 });
