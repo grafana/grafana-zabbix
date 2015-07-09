@@ -11,7 +11,7 @@ function (angular, _, kbn) {
 
   var module = angular.module('grafana.services');
 
-  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, zabbix) {
+  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, ZabbixAPI) {
 
     /**
      * Datasource initialization. Calls when you refresh page, add
@@ -35,7 +35,7 @@ function (angular, _, kbn) {
       this.limitmetrics = datasource.meta.limitmetrics || 50;
 
       // Initialize Zabbix API
-      zabbix.init(this.url, this.username, this.password);
+      this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password);
     }
 
     /**
@@ -83,7 +83,7 @@ function (angular, _, kbn) {
 
         // Find items by item names and perform queries
         var self = this;
-        return zabbix.itemFindQuery(groups, hosts, apps)
+        return this.zabbixAPI.itemFindQuery(groups, hosts, apps)
           .then(function (items) {
 
             // Filter hosts by regex
@@ -98,13 +98,13 @@ function (angular, _, kbn) {
               }
             }
 
-            if (itemnames === 'All') {
+            if (itemnames == 'All') {
 
               // Filter items by regex
               if (target.itemFilter) {
                 var item_pattern = new RegExp(target.itemFilter);
                 return _.filter(items, function (item) {
-                  return item_pattern.test(zabbix.expandItemName(item));
+                  return item_pattern.test(self.zabbixAPI.expandItemName(item));
                 });
               } else {
                 return items;
@@ -113,7 +113,7 @@ function (angular, _, kbn) {
 
               // Filtering items
               return _.filter(items, function (item) {
-                return _.contains(itemnames, zabbix.expandItemName(item));
+                return _.contains(itemnames, self.zabbixAPI.expandItemName(item));
               });
             }
           }).then(function (items) {
@@ -129,11 +129,11 @@ function (angular, _, kbn) {
               var alias = items.length > 1 ? undefined : templateSrv.replace(target.alias);
 
               if ((from < useTrendsFrom) && self.trends) {
-                return zabbix.getTrends(items, from, to)
-                  .then(_.partial(self.handleTrendResponse, items, alias, target.scale));
+                return self.zabbixAPI.getTrends(items, from, to)
+                  .then(_.bind(self.handleTrendResponse, self, items, alias, target.scale));
               } else {
-                return zabbix.getHistory(items, from, to)
-                  .then(_.partial(self.handleHistoryResponse, items, alias, target.scale));
+                return self.zabbixAPI.getHistory(items, from, to)
+                  .then(_.bind(self.handleHistoryResponse, self, items, alias, target.scale));
               }
             }
           });
@@ -154,16 +154,18 @@ function (angular, _, kbn) {
       });
     };
 
-    ZabbixAPIDatasource.prototype.handleTrendResponse = function(items, alias, scale, trends) {
+    ZabbixAPIDatasource.prototype.handleTrendResponse = function (items, alias, scale, trends) {
 
       // Group items and trends by itemid
       var indexed_items = _.indexBy(items, 'itemid');
       var grouped_history = _.groupBy(trends, 'itemid');
 
+      var self = this;
       return $q.when(_.map(grouped_history, function (trends, itemid) {
         var item = indexed_items[itemid];
         var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : zabbix.expandItemName(item)),
+          target: (item.hosts ? item.hosts[0].name+': ' : '')
+            + (alias ? alias : self.zabbixAPI.expandItemName(item)),
           datapoints: _.map(trends, function (p) {
 
             // Value must be a number for properly work
@@ -213,10 +215,12 @@ function (angular, _, kbn) {
       var indexed_items = _.indexBy(items, 'itemid');
       var grouped_history = _.groupBy(history, 'itemid');
 
+      var self = this;
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
         var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : zabbix.expandItemName(item)),
+          target: (item.hosts ? item.hosts[0].name+': ' : '')
+            + (alias ? alias : self.zabbixAPI.expandItemName(item)),
           datapoints: _.map(history, function (p) {
 
             // Value must be a number for properly work
@@ -261,9 +265,9 @@ function (angular, _, kbn) {
 
       // Get items
       if (parts.length === 4) {
-        return zabbix.itemFindQuery(template.group, template.host, template.app).then(function (result) {
+        return this.zabbixAPI.itemFindQuery(template.group, template.host, template.app).then(function (result) {
           return _.map(result, function (item) {
-            var itemname = zabbix.expandItemName(item);
+            var itemname = this.zabbixAPI.expandItemName(item);
             return {
               text: itemname,
               expandable: false
@@ -273,7 +277,7 @@ function (angular, _, kbn) {
       }
       // Get applications
       else if (parts.length === 3) {
-        return zabbix.appFindQuery(template.host, template.group).then(function (result) {
+        return this.zabbixAPI.appFindQuery(template.host, template.group).then(function (result) {
           return _.map(result, function (app) {
             return {
               text: app.name,
@@ -284,7 +288,7 @@ function (angular, _, kbn) {
       }
       // Get hosts
       else if (parts.length === 2) {
-        return zabbix.hostFindQuery(template.group).then(function (result) {
+        return this.zabbixAPI.hostFindQuery(template.group).then(function (result) {
           return _.map(result, function (host) {
             return {
               text: host.name,
@@ -295,7 +299,7 @@ function (angular, _, kbn) {
       }
       // Get groups
       else if (parts.length === 1) {
-        return zabbix.getGroupByName(template.group).then(function (result) {
+        return this.zabbixAPI.getGroupByName(template.group).then(function (result) {
           return _.map(result, function (hostgroup) {
             return {
               text: hostgroup.name,
@@ -330,7 +334,7 @@ function (angular, _, kbn) {
         expandDescription: true
       };
 
-      return this.performZabbixAPIRequest('trigger.get', params)
+      return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
         .then(function (result) {
           if(result) {
             var objects = _.indexBy(result, 'triggerid');
@@ -347,7 +351,7 @@ function (angular, _, kbn) {
               params.value = 1;
             }
 
-            return self.performZabbixAPIRequest('event.get', params)
+            return self.zabbixAPI.performZabbixAPIRequest('event.get', params)
               .then(function (result) {
                 var events = [];
                 _.each(result, function(e) {

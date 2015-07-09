@@ -7,16 +7,16 @@ function (angular, _) {
 
   var module = angular.module('grafana.services');
 
-  module.service('zabbix', function($q, backendSrv) {
+  module.factory('ZabbixAPI', function($q, backendSrv) {
 
-    /**
-     * Initialize API parameters.
-     */
-    this.init = function(api_url, username, password) {
+    function ZabbixAPI(api_url, username, password) {
+      // Initialize API parameters.
       this.url        = api_url;
       this.username   = username;
       this.password   = password;
-    };
+    }
+
+    var p = ZabbixAPI.prototype;
 
     //////////////////
     // Core methods //
@@ -29,7 +29,7 @@ function (angular, _) {
      * @param  {object} params method params
      * @return {object}        data.result field or []
      */
-    this.performZabbixAPIRequest = function(method, params) {
+    p.performZabbixAPIRequest = function(method, params) {
       var options = {
         method: 'POST',
         headers: {
@@ -72,7 +72,7 @@ function (angular, _) {
      *
      * @return {string}  auth token
      */
-    this.performZabbixAPILogin = function() {
+    p.performZabbixAPILogin = function() {
       var options = {
         url : this.url,
         method : 'POST',
@@ -108,7 +108,7 @@ function (angular, _) {
      * @param  {Number} end   Time in seconds
      * @return {Array}        Array of Zabbix history objects
      */
-    this.getHistory = function(items, start, end) {
+    p.getHistory = function(items, start, end) {
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
 
@@ -144,7 +144,7 @@ function (angular, _) {
      * @param  {Number} end   Time in seconds
      * @return {Array}        Array of Zabbix trend objects
      */
-    this.getTrends = function(items, start, end) {
+    p.getTrends = function(items, start, end) {
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
 
@@ -176,7 +176,7 @@ function (angular, _) {
      *
      * @return {array}          array of Zabbix hostgroup objects
      */
-    this.performHostGroupSuggestQuery = function() {
+    p.performHostGroupSuggestQuery = function() {
       var params = {
         output: ['name'],
         sortfield: 'name',
@@ -195,7 +195,7 @@ function (angular, _) {
      * @param  {array} groupids
      * @return {array}          array of Zabbix host objects
      */
-    this.performHostSuggestQuery = function(groupids) {
+    p.performHostSuggestQuery = function(groupids) {
       var params = {
         output: ['name', 'host'],
         sortfield: 'name',
@@ -218,7 +218,7 @@ function (angular, _) {
      * @param  {array} groupids
      * @return {array}          array of Zabbix application objects
      */
-    this.performAppSuggestQuery = function(hostids, /* optional */ groupids) {
+    p.performAppSuggestQuery = function(hostids, /* optional */ groupids) {
       var params = {
         output: ['name'],
         sortfield: 'name'
@@ -241,7 +241,7 @@ function (angular, _) {
      * @param  {string or Array} groupids         ///////////////////////////
      * @return {string or Array}                  Array of Zabbix API item objects
      */
-    this.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
+    p.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
       var params = {
         output: ['name', 'key_', 'value_type', 'delay'],
         sortfield: 'name',
@@ -282,7 +282,7 @@ function (angular, _) {
      * @param  {string or array} group group names
      * @return {array}                 array of Zabbix API hostgroup objects
      */
-    this.getGroupByName = function (group) {
+    p.getGroupByName = function (group) {
       var params = {
         output: ['name']
       };
@@ -300,7 +300,7 @@ function (angular, _) {
      * @param  {string} group group name
      * @return {array}        groups
      */
-    this.searchGroup = function (group) {
+    p.searchGroup = function (group) {
       var params = {
         output: ['name'],
         search: {
@@ -317,7 +317,7 @@ function (angular, _) {
      * @param  {string or array} hostnames hosts names
      * @return {array}                     array of Zabbix API host objects
      */
-    this.getHostByName = function (hostnames) {
+    p.getHostByName = function (hostnames) {
       var params = {
         output: ['host', 'name']
       };
@@ -335,7 +335,7 @@ function (angular, _) {
      * @param  {string or array} application applications names
      * @return {array}                       array of Zabbix API application objects
      */
-    this.getAppByName = function (application) {
+    p.getAppByName = function (application) {
       var params = {
         output: ['name']
       };
@@ -356,7 +356,7 @@ function (angular, _) {
      * @param  {string or array} apps
      * @return {array}  array of Zabbix API item objects
      */
-    this.itemFindQuery = function(groups, hosts, apps) {
+    p.itemFindQuery = function(groups, hosts, apps) {
       var promises = [];
 
       // Get hostids from names
@@ -405,7 +405,7 @@ function (angular, _) {
      * @param  {string or array} groups
      * @return {array}  array of Zabbix API application objects
      */
-    this.appFindQuery = function(hosts, groups) {
+    p.appFindQuery = function(hosts, groups) {
       var promises = [];
 
       // Get hostids from names
@@ -443,7 +443,7 @@ function (angular, _) {
      * @param  {string or array} groups
      * @return {array}  array of Zabbix API host objects
      */
-    this.hostFindQuery = function(groups) {
+    p.hostFindQuery = function(groups) {
       var self = this;
       return this.getGroupByName(groups).then(function (results) {
         results = _.flatten(results);
@@ -462,7 +462,7 @@ function (angular, _) {
      * @param item: zabbix api item object
      * @return: expanded item name (string)
      */
-    this.expandItemName = function(item) {
+    p.expandItemName = function(item) {
       var name = item.name;
       var key = item.key_;
 
@@ -477,5 +477,8 @@ function (angular, _) {
       return name;
     };
 
+    return ZabbixAPI;
+
   });
+
 });
