@@ -1,6 +1,7 @@
 define([
   'angular',
-  'lodash'
+  'lodash',
+  './helperFunctions'
 ],
 function (angular, _) {
   'use strict';
@@ -8,7 +9,7 @@ function (angular, _) {
   var module = angular.module('grafana.controllers');
   var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  module.controller('ZabbixAPIQueryCtrl', function($scope, $sce, templateSrv) {
+  module.controller('ZabbixAPIQueryCtrl', function($scope, $sce, templateSrv, zabbixHelperSrv) {
 
     $scope.init = function() {
       $scope.targetLetters = targetLetters;
@@ -134,7 +135,7 @@ function (angular, _) {
       $scope.metric.hostList = [{name: '*', visible_name: 'All'}];
       addTemplatedVariables($scope.metric.hostList);
 
-      var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
+      var groups = $scope.target.group ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       $scope.datasource.zabbixAPI.hostFindQuery(groups).then(function (hosts) {
         $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
       });
@@ -147,8 +148,8 @@ function (angular, _) {
       $scope.metric.applicationList = [{name: '*', visible_name: 'All'}];
       addTemplatedVariables($scope.metric.applicationList);
 
-      var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
-      var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
+      var groups = $scope.target.group ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
+      var hosts = $scope.target.host ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       $scope.datasource.zabbixAPI.appFindQuery(hosts, groups).then(function (apps) {
         apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
           return {name: appname};
@@ -164,9 +165,9 @@ function (angular, _) {
       $scope.metric.itemList = [{name: 'All'}];
       addTemplatedVariables($scope.metric.itemList);
 
-      var groups = $scope.target.group ? splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
-      var hosts = $scope.target.host ? splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
-      var apps = $scope.target.application ? splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
+      var groups = $scope.target.group ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
+      var hosts = $scope.target.host ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
+      var apps = $scope.target.application ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
       $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps).then(function (items) {
         // Show only unique item names
         var uniq_items = _.map(_.uniq(items, function (item) {
@@ -207,17 +208,3 @@ function (angular, _) {
   });
 
 });
-
-/**
- * Convert multiple mettrics to array
- * "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
- *
- * @param  {string} metrics   "{metric1,metcic2,...,metricN}"
- * @return {Array}            [metric1, metcic2,..., metricN]
- */
-function splitMetrics(metrics) {
-  'use strict';
-  var remove_brackets_pattern = /^{|}$/g;
-  var metric_split_pattern = /,(?!\s)/g;
-  return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern);
-}
