@@ -239,8 +239,11 @@ function (angular, _, kbn) {
       });
     };
 
+    ////////////////
+    // Templating //
+    ////////////////
+
     /**
-     * For templated query.
      * Find metrics from templated request.
      *
      * @param  {string} query Query from Templating
@@ -264,16 +267,18 @@ function (angular, _, kbn) {
       var template = _.object(['group', 'host', 'app', 'item'], parts);
 
       // Get items
+      var self = this;
       if (parts.length === 4) {
-        return this.zabbixAPI.itemFindQuery(template.group, template.host, template.app).then(function (result) {
-          return _.map(result, function (item) {
-            var itemname = this.zabbixAPI.expandItemName(item);
-            return {
-              text: itemname,
-              expandable: false
-            };
+        return this.zabbixAPI.itemFindQuery(template.group, template.host, template.app)
+          .then(function (result) {
+            return _.map(result, function (item) {
+              var itemname = self.zabbixAPI.expandItemName(item);
+              return {
+                text: itemname,
+                expandable: false
+              };
+            });
           });
-        });
       }
       // Get applications
       else if (parts.length === 3) {

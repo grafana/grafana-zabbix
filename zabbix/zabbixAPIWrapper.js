@@ -286,7 +286,7 @@ function (angular, _) {
       var params = {
         output: ['name']
       };
-      if (group !== '*') {
+      if (group[0] !== '*') {
         params.filter = {
           name: group
         };
@@ -321,7 +321,7 @@ function (angular, _) {
       var params = {
         output: ['host', 'name']
       };
-      if (hostnames !== '*') {
+      if (hostnames[0] !== '*') {
         params.filter = {
           name: hostnames
         };
@@ -339,7 +339,7 @@ function (angular, _) {
       var params = {
         output: ['name']
       };
-      if (application !== '*') {
+      if (application[0] !== '*') {
         params.filter = {
           name: application
         };
@@ -360,7 +360,7 @@ function (angular, _) {
       var promises = [];
 
       // Get hostids from names
-      if (hosts && hosts !== '*') {
+      if (hosts && hosts[0] !== '*') {
         promises.push(this.getHostByName(hosts));
       }
       // Get groupids from names
@@ -383,7 +383,7 @@ function (angular, _) {
             return object.groupid;
           }), 'groupid');
         }
-        if (hosts && hosts !== '*') {
+        if (hosts && hosts[0] !== '*') {
           hostids = _.map(_.filter(results, function (object) {
             return object.hostid;
           }), 'hostid');
@@ -409,7 +409,7 @@ function (angular, _) {
       var promises = [];
 
       // Get hostids from names
-      if (hosts && hosts !== '*') {
+      if (hosts && hosts[0] !== '*') {
         promises.push(this.getHostByName(hosts));
       }
       // Get groupids from names
@@ -427,7 +427,7 @@ function (angular, _) {
             return object.groupid;
           }), 'groupid');
         }
-        if (hosts && hosts !== '*') {
+        if (hosts && hosts[0] !== '*') {
           hostids = _.map(_.filter(results, function (object) {
             return object.hostid;
           }), 'hostid');
