@@ -33,7 +33,7 @@ function (angular, _, kbn) {
       this.trendsFrom = datasource.meta.trendsFrom || '7d';
 
       // Limit metrics per panel for templated request
-      this.limitmetrics = datasource.meta.limitmetrics || 50;
+      this.limitmetrics = datasource.meta.limitmetrics || 100;
 
       // Initialize Zabbix API
       this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password);
