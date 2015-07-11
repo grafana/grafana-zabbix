@@ -7,8 +7,105 @@ function (angular, _) {
 
   var module = angular.module('grafana.services');
 
-  module.service('zabbixHelperSrv', function() {
+  module.service('zabbixHelperSrv', function($q) {
     var self = this;
+
+    /**
+     * Convert Zabbix API history.get response to Grafana format
+     *
+     * @param  {Array} items      Array of Zabbix Items
+     * @param  {Array} history    Array of Zabbix History
+     *
+     * @return {Array}            Array of timeseries in Grafana format
+     *                            {
+     *                               target: "Metric name",
+     *                               datapoints: [[<value>, <unixtime>], ...]
+     *                            }
+     */
+    this.handleHistoryResponse = function(items, alias, scale, history) {
+      /**
+       * Response should be in the format:
+       * data: [
+       *          {
+       *             target: "Metric name",
+       *             datapoints: [[<value>, <unixtime>], ...]
+       *          },
+       *          {
+       *             target: "Metric name",
+       *             datapoints: [[<value>, <unixtime>], ...]
+       *          },
+       *       ]
+       */
+
+      // Group items and history by itemid
+      var indexed_items = _.indexBy(items, 'itemid');
+      var grouped_history = _.groupBy(history, 'itemid');
+
+      var self = this;
+      return $q.when(_.map(grouped_history, function (history, itemid) {
+        var item = indexed_items[itemid];
+        var series = {
+          target: (item.hosts ? item.hosts[0].name+': ' : '')
+            + (alias ? alias : self.zabbixAPI.expandItemName(item)),
+          datapoints: _.map(history, function (p) {
+
+            // Value must be a number for properly work
+            var value = Number(p.value);
+
+            // Apply scale
+            if (scale) {
+              value *= scale;
+            }
+            return [value, p.clock * 1000];
+          })
+        };
+        return series;
+      })).then(function (result) {
+        return _.sortBy(result, 'target');
+      });
+    };
+
+    /**
+     * Convert Zabbix API trends.get response to Grafana format
+     *
+     * @param  {Array} items      Array of Zabbix Items
+     * @param  {Array} trends     Array of Zabbix Trends
+     *
+     * @return {Array}            Array of timeseries in Grafana format
+     *                            {
+     *                               target: "Metric name",
+     *                               datapoints: [[<value>, <unixtime>], ...]
+     *                            }
+     */
+    this.handleTrendResponse = function (items, alias, scale, trends) {
+
+      // Group items and trends by itemid
+      var indexed_items = _.indexBy(items, 'itemid');
+      var grouped_trends = _.groupBy(trends, 'itemid');
+
+      var self = this;
+      return $q.when(_.map(grouped_trends, function (trends, itemid) {
+        var item = indexed_items[itemid];
+        var series = {
+          target: (item.hosts ? item.hosts[0].name+': ' : '')
+            + (alias ? alias : self.zabbixAPI.expandItemName(item)),
+          datapoints: _.map(trends, function (p) {
+
+            // Value must be a number for properly work
+            var value = Number(p.value_avg);
+
+            // Apply scale
+            if (scale) {
+              value *= scale;
+            }
+            return [value, p.clock * 1000];
+          })
+        };
+        return series;
+      })).then(function (result) {
+        return _.sortBy(result, 'target');
+      });
+    };
 
     /**
      * Convert multiple mettrics to array

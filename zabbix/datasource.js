@@ -131,10 +131,10 @@ function (angular, _, kbn) {
 
               if ((from < useTrendsFrom) && self.trends) {
                 return self.zabbixAPI.getTrends(items, from, to)
-                  .then(_.bind(self.handleTrendResponse, self, items, alias, target.scale));
+                  .then(_.bind(zabbixHelperSrv.handleTrendResponse, self, items, alias, target.scale));
               } else {
                 return self.zabbixAPI.getHistory(items, from, to)
-                  .then(_.bind(self.handleHistoryResponse, self, items, alias, target.scale));
+                  .then(_.bind(zabbixHelperSrv.handleHistoryResponse, self, items, alias, target.scale));
               }
             }
           });
@@ -152,91 +152,6 @@ function (angular, _, kbn) {
           return timeseries;
         });
         return { data: data };
-      });
-    };
-
-    ZabbixAPIDatasource.prototype.handleTrendResponse = function (items, alias, scale, trends) {
-
-      // Group items and trends by itemid
-      var indexed_items = _.indexBy(items, 'itemid');
-      var grouped_history = _.groupBy(trends, 'itemid');
-
-      var self = this;
-      return $q.when(_.map(grouped_history, function (trends, itemid) {
-        var item = indexed_items[itemid];
-        var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '')
-            + (alias ? alias : self.zabbixAPI.expandItemName(item)),
-          datapoints: _.map(trends, function (p) {
-
-            // Value must be a number for properly work
-            var value = Number(p.value_avg);
-
-            // Apply scale
-            if (scale) {
-              value *= scale;
-            }
-            return [value, p.clock * 1000];
-          })
-        };
-        return series;
-      })).then(function (result) {
-        return _.sortBy(result, 'target');
-      });
-    };
-
-    /**
-     * Convert Zabbix API data to Grafana format
-     *
-     * @param  {Array} items      Array of Zabbix Items
-     * @param  {Array} history    Array of Zabbix History
-     *
-     * @return {Array}            Array of timeseries in Grafana format
-     *                            {
-     *                               target: "Metric name",
-     *                               datapoints: [[<value>, <unixtime>], ...]
-     *                            }
-     */
-    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, alias, scale, history) {
-      /**
-       * Response should be in the format:
-       * data: [
-       *          {
-       *             target: "Metric name",
-       *             datapoints: [[<value>, <unixtime>], ...]
-       *          },
-       *          {
-       *             target: "Metric name",
-       *             datapoints: [[<value>, <unixtime>], ...]
-       *          },
-       *       ]
-       */
-
-      // Group items and history by itemid
-      var indexed_items = _.indexBy(items, 'itemid');
-      var grouped_history = _.groupBy(history, 'itemid');
-
-      var self = this;
-      return $q.when(_.map(grouped_history, function (history, itemid) {
-        var item = indexed_items[itemid];
-        var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '')
-            + (alias ? alias : self.zabbixAPI.expandItemName(item)),
-          datapoints: _.map(history, function (p) {
-
-            // Value must be a number for properly work
-            var value = Number(p.value);
-
-            // Apply scale
-            if (scale) {
-              value *= scale;
-            }
-            return [value, p.clock * 1000];
-          })
-        };
-        return series;
-      })).then(function (result) {
-        return _.sortBy(result, 'target');
       });
     };
 
