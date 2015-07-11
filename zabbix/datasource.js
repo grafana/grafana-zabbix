@@ -90,7 +90,10 @@ function (angular, _, kbn) {
             // Filter hosts by regex
             if (target.host.visible_name === 'All') {
               if (target.hostFilter && _.every(items, _.identity.hosts)) {
-                var host_pattern = new RegExp(target.hostFilter);
+
+                // Use templated variables in filter
+                var pattern = templateSrv.replace(target.hostFilter);
+                var host_pattern = new RegExp(pattern);
                 items = _.filter(items, function (item) {
                   return _.some(item.hosts, function (host) {
                     return host_pattern.test(host.name);
@@ -103,7 +106,10 @@ function (angular, _, kbn) {
 
               // Filter items by regex
               if (target.itemFilter) {
-                var item_pattern = new RegExp(target.itemFilter);
+
+                // Use templated variables in filter
+                var pattern = templateSrv.replace(target.itemFilter);
+                var item_pattern = new RegExp(pattern);
                 return _.filter(items, function (item) {
                   return item_pattern.test(zabbixHelperSrv.expandItemName(item));
                 });
