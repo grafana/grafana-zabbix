@@ -12,7 +12,7 @@ function (angular, _, kbn) {
 
   var module = angular.module('grafana.services');
 
-  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, ZabbixAPI, zabbixHelperSrv) {
+  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, alertSrv, ZabbixAPI, zabbixHelperSrv) {
 
     /**
      * Datasource initialization. Calls when you refresh page, add
@@ -122,6 +122,9 @@ function (angular, _, kbn) {
             // Don't perform query for high number of items
             // to prevent Grafana slowdown
             if (items.length > self.limitmetrics) {
+              var message = "Try to increase limitmetrics parameter in datasource config.<br>"
+                + "Current limitmetrics value is " + self.limitmetrics;
+              alertSrv.set("Metrics limit exceeded", message, "warning", 10000);
               return [];
             } else {
               items = _.flatten(items);
