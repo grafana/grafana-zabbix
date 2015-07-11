@@ -105,7 +105,7 @@ function (angular, _, kbn) {
               if (target.itemFilter) {
                 var item_pattern = new RegExp(target.itemFilter);
                 return _.filter(items, function (item) {
-                  return item_pattern.test(self.zabbixAPI.expandItemName(item));
+                  return item_pattern.test(zabbixHelperSrv.expandItemName(item));
                 });
               } else {
                 return items;
@@ -114,7 +114,7 @@ function (angular, _, kbn) {
 
               // Filtering items
               return _.filter(items, function (item) {
-                return _.contains(itemnames, self.zabbixAPI.expandItemName(item));
+                return _.contains(itemnames, zabbixHelperSrv.expandItemName(item));
               });
             }
           }).then(function (items) {
@@ -131,10 +131,10 @@ function (angular, _, kbn) {
 
               if ((from < useTrendsFrom) && self.trends) {
                 return self.zabbixAPI.getTrends(items, from, to)
-                  .then(_.bind(zabbixHelperSrv.handleTrendResponse, self, items, alias, target.scale));
+                  .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale));
               } else {
                 return self.zabbixAPI.getHistory(items, from, to)
-                  .then(_.bind(zabbixHelperSrv.handleHistoryResponse, self, items, alias, target.scale));
+                  .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
               }
             }
           });
@@ -183,12 +183,11 @@ function (angular, _, kbn) {
       var template = _.object(['group', 'host', 'app', 'item'], parts);
 
       // Get items
-      var self = this;
       if (parts.length === 4) {
         return this.zabbixAPI.itemFindQuery(template.group, template.host, template.app)
           .then(function (result) {
             return _.map(result, function (item) {
-              var itemname = self.zabbixAPI.expandItemName(item);
+              var itemname = zabbixHelperSrv.expandItemName(item);
               return {
                 text: itemname,
                 expandable: false

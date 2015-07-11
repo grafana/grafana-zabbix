@@ -171,9 +171,9 @@ function (angular, _) {
       $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps).then(function (items) {
         // Show only unique item names
         var uniq_items = _.map(_.uniq(items, function (item) {
-          return $scope.datasource.zabbixAPI.expandItemName(item);
+          return zabbixHelperSrv.expandItemName(item);
         }), function (item) {
-          return {name: $scope.datasource.zabbixAPI.expandItemName(item)};
+          return {name: zabbixHelperSrv.expandItemName(item)};
         });
         $scope.metric.itemList = $scope.metric.itemList.concat(uniq_items);
       });

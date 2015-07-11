@@ -46,7 +46,7 @@ function (angular, _) {
         var item = indexed_items[itemid];
         var series = {
           target: (item.hosts ? item.hosts[0].name+': ' : '')
-            + (alias ? alias : self.zabbixAPI.expandItemName(item)),
+            + (alias ? alias : self.expandItemName(item)),
           datapoints: _.map(history, function (p) {
 
             // Value must be a number for properly work
@@ -88,7 +88,7 @@ function (angular, _) {
         var item = indexed_items[itemid];
         var series = {
           target: (item.hosts ? item.hosts[0].name+': ' : '')
-            + (alias ? alias : self.zabbixAPI.expandItemName(item)),
+            + (alias ? alias : self.expandItemName(item)),
           datapoints: _.map(trends, function (p) {
 
             // Value must be a number for properly work
@@ -105,6 +105,28 @@ function (angular, _) {
       })).then(function (result) {
         return _.sortBy(result, 'target');
       });
+    };
+
+    /**
+     * Expand item parameters, for example:
+     * CPU $2 time ($3) --> CPU system time (avg1)
+     *
+     * @param item: zabbix api item object
+     * @return: expanded item name (string)
+     */
+    this.expandItemName = function(item) {
+      var name = item.name;
+      var key = item.key_;
+
+      // extract params from key:
+      // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
+      var key_params = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']')).split(',');
+
+      // replace item parameters
+      for (var i = key_params.length; i >= 1; i--) {
+        name = name.replace('$' + i, key_params[i - 1]);
+      }
+      return name;
     };
 
     /**
