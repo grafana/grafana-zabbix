@@ -118,6 +118,42 @@ function (angular, _) {
     /////////////////////////
 
     /**
+     * Request version of the Zabbix API.
+     *
+     * @return {string} Zabbix API version
+     */
+    p.getZabbixAPIVersion = function() {
+      var options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        url: this.url,
+        data: {
+          jsonrpc: '2.0',
+          method: 'apiinfo.version',
+          params: [],
+          id: 1
+        }
+      };
+
+      if (this.basicAuth || this.withCredentials) {
+        options.withCredentials = true;
+      }
+      if (this.basicAuth) {
+        options.headers = options.headers || {};
+        options.headers.Authorization = this.basicAuth;
+      }
+
+      return backendSrv.datasourceRequest(options).then(function (result) {
+        if (!result.data) {
+          return null;
+        }
+        return result.data.result;
+      });
+    };
+
+    /**
      * Perform history query from Zabbix API
      *
      * @param  {Array}  items Array of Zabbix item objects

@@ -42,6 +42,21 @@ function (angular, _, kbn) {
     }
 
     /**
+     * Test connection to Zabbix API
+     *
+     * @return {object} Connection status and Zabbix API version
+     */
+    ZabbixAPIDatasource.prototype.testDatasource = function() {
+      return this.zabbixAPI.getZabbixAPIVersion().then(function (apiVersion) {
+        return {
+          status: "success",
+          title: "Success",
+          message: "Zabbix API version: " + apiVersion
+        };
+      });
+    };
+
+    /**
      * Calls for each panel in dashboard.
      *
      * @param  {Object} options   Query options. Contains time range, targets
