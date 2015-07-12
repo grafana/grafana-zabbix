@@ -1,16 +1,18 @@
+'use strict';
 define([
   'angular',
   'lodash',
   'kbn',
   './zabbixAPIWrapper',
+  './helperFunctions',
   './queryCtrl'
 ],
 function (angular, _, kbn) {
-  'use strict';
+  //'use strict';
 
   var module = angular.module('grafana.services');
 
-  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, zabbix) {
+  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, alertSrv, ZabbixAPI, zabbixHelperSrv) {
 
     /**
      * Datasource initialization. Calls when you refresh page, add
@@ -21,6 +23,8 @@ function (angular, _, kbn) {
     function ZabbixAPIDatasource(datasource) {
       this.name             = datasource.name;
       this.url              = datasource.url;
+      this.basicAuth        = datasource.basicAuth;
+      this.withCredentials  = datasource.withCredentials;
 
       // TODO: fix passing username and password from config.html
       this.username         = datasource.meta.username;
@@ -31,12 +35,11 @@ function (angular, _, kbn) {
       this.trendsFrom = datasource.meta.trendsFrom || '7d';
 
       // Limit metrics per panel for templated request
-      this.limitmetrics = datasource.meta.limitmetrics || 50;
+      this.limitmetrics = datasource.meta.limitmetrics || 100;
 
       // Initialize Zabbix API
-      zabbix.init(this.url, this.username, this.password);
+      this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
     }
-
 
     /**
      * Calls for each panel in dashboard.
@@ -71,28 +74,27 @@ function (angular, _, kbn) {
 
         // Extract zabbix groups, hosts and apps from string:
         // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
-        var groups = splitMetrics(groupname);
-        var hosts  = splitMetrics(hostname);
-        var apps   = splitMetrics(appname);
+        var groups = zabbixHelperSrv.splitMetrics(groupname);
+        var hosts  = zabbixHelperSrv.splitMetrics(hostname);
+        var apps   = zabbixHelperSrv.splitMetrics(appname);
 
         // Remove hostnames from item names and then
         // extract item names
         // "hostname: itemname" --> "itemname"
         var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
-        var itemnames = splitMetrics(itemname.replace(delete_hostname_pattern, ''));
+        var itemnames = zabbixHelperSrv.splitMetrics(itemname.replace(delete_hostname_pattern, ''));
 
         // Find items by item names and perform queries
         var self = this;
-        return zabbix.itemFindQuery(groups, hosts, apps)
+        return this.zabbixAPI.itemFindQuery(groups, hosts, apps)
           .then(function (items) {
 
             // Filter hosts by regex
-            if (target.host.visible_name == 'All') {
+            if (target.host.visible_name === 'All') {
               if (target.hostFilter && _.every(items, _.identity.hosts)) {
 
                 // Use templated variables in filter
-                var pattern = templateSrv.replace(target.hostFilter);
-                var host_pattern = new RegExp(pattern);
+                var host_pattern = new RegExp(templateSrv.replace(target.hostFilter));
                 items = _.filter(items, function (item) {
                   return _.some(item.hosts, function (host) {
                     return host_pattern.test(host.name);
@@ -101,16 +103,15 @@ function (angular, _, kbn) {
               }
             }
 
-            if (itemnames == 'All') {
+            if (itemnames[0] === 'All') {
 
               // Filter items by regex
               if (target.itemFilter) {
 
                 // Use templated variables in filter
-                var pattern = templateSrv.replace(target.itemFilter);
-                var item_pattern = new RegExp(pattern);
+                var item_pattern = new RegExp(templateSrv.replace(target.itemFilter));
                 return _.filter(items, function (item) {
-                  return item_pattern.test(zabbix.expandItemName(item));
+                  return item_pattern.test(zabbixHelperSrv.expandItemName(item));
                 });
               } else {
                 return items;
@@ -119,7 +120,7 @@ function (angular, _, kbn) {
 
               // Filtering items
               return _.filter(items, function (item) {
-                return _.contains(itemnames, zabbix.expandItemName(item));
+                return _.contains(itemnames, zabbixHelperSrv.expandItemName(item));
               });
             }
           }).then(function (items) {
@@ -127,19 +128,22 @@ function (angular, _, kbn) {
             // Don't perform query for high number of items
             // to prevent Grafana slowdown
             if (items.length > self.limitmetrics) {
+              var message = "Try to increase limitmetrics parameter in datasource config.<br>"
+                + "Current limitmetrics value is " + self.limitmetrics;
+              alertSrv.set("Metrics limit exceeded", message, "warning", 10000);
               return [];
             } else {
               items = _.flatten(items);
 
               // Use alias only for single metric, otherwise use item names
-              var alias = items.length > 1 ? undefined : templateSrv.replace(target.alias);
+              var alias = target.item.name === 'All' || itemnames.length > 1 ? undefined : templateSrv.replace(target.alias);
 
               if ((from < useTrendsFrom) && self.trends) {
-                return zabbix.getTrends(items, from, to)
-                  .then(_.partial(self.handleTrendResponse, items, alias, target.scale));
+                return self.zabbixAPI.getTrends(items, from, to)
+                  .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale));
               } else {
-                return zabbix.getHistory(items, from, to)
-                  .then(_.partial(self.handleHistoryResponse, items, alias, target.scale));
+                return self.zabbixAPI.getHistory(items, from, to)
+                  .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
               }
             }
           });
@@ -152,7 +156,7 @@ function (angular, _, kbn) {
           // Series downsampling
           if (timeseries.datapoints.length > options.maxDataPoints) {
             var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
-            timeseries.datapoints = downsampleSeries(timeseries.datapoints, to, ms_interval);
+            timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval);
           }
           return timeseries;
         });
@@ -160,92 +164,11 @@ function (angular, _, kbn) {
       });
     };
 
-
-    ZabbixAPIDatasource.prototype.handleTrendResponse = function(items, alias, scale, trends) {
-
-      // Group items and trends by itemid
-      var indexed_items = _.indexBy(items, 'itemid');
-      var grouped_history = _.groupBy(trends, 'itemid');
-
-      return $q.when(_.map(grouped_history, function (trends, itemid) {
-        var item = indexed_items[itemid];
-        var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : zabbix.expandItemName(item)),
-          datapoints: _.map(trends, function (p) {
-
-            // Value must be a number for properly work
-            var value = Number(p.value_avg);
-
-            // Apply scale
-            if (scale) {
-              value *= scale;
-            }
-            return [value, p.clock * 1000];
-          })
-        };
-        return series;
-      })).then(function (result) {
-        return _.sortBy(result, 'target');
-      });
-    };
-
+    ////////////////
+    // Templating //
+    ////////////////
 
     /**
-     * Convert Zabbix API data to Grafana format
-     *
-     * @param  {Array} items      Array of Zabbix Items
-     * @param  {Array} history    Array of Zabbix History
-     *
-     * @return {Array}            Array of timeseries in Grafana format
-     *                            {
-     *                               target: "Metric name",
-     *                               datapoints: [[<value>, <unixtime>], ...]
-     *                            }
-     */
-    ZabbixAPIDatasource.prototype.handleHistoryResponse = function(items, alias, scale, history) {
-      /**
-       * Response should be in the format:
-       * data: [
-       *          {
-       *             target: "Metric name",
-       *             datapoints: [[<value>, <unixtime>], ...]
-       *          },
-       *          {
-       *             target: "Metric name",
-       *             datapoints: [[<value>, <unixtime>], ...]
-       *          },
-       *       ]
-       */
-
-      // Group items and history by itemid
-      var indexed_items = _.indexBy(items, 'itemid');
-      var grouped_history = _.groupBy(history, 'itemid');
-
-      return $q.when(_.map(grouped_history, function (history, itemid) {
-        var item = indexed_items[itemid];
-        var series = {
-          target: (item.hosts ? item.hosts[0].name+': ' : '') + (alias ? alias : zabbix.expandItemName(item)),
-          datapoints: _.map(history, function (p) {
-
-            // Value must be a number for properly work
-            var value = Number(p.value);
-
-            // Apply scale
-            if (scale) {
-              value *= scale;
-            }
-            return [value, p.clock * 1000];
-          })
-        };
-        return series;
-      })).then(function (result) {
-        return _.sortBy(result, 'target');
-      });
-    };
-
-
-    /**
-     * For templated query.
      * Find metrics from templated request.
      *
      * @param  {string} query Query from Templating
@@ -261,28 +184,29 @@ function (angular, _, kbn) {
         if (part[0] === '{') {
           // Convert multiple mettrics to array
           // "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
-          parts.push(splitMetrics(part));
+          parts.push(zabbixHelperSrv.splitMetrics(part));
         } else {
           parts.push(part);
         }
       });
-      var template = _.object(['group', 'host', 'app', 'item'], parts)
+      var template = _.object(['group', 'host', 'app', 'item'], parts);
 
       // Get items
       if (parts.length === 4) {
-        return zabbix.itemFindQuery(template.group, template.host, template.app).then(function (result) {
-          return _.map(result, function (item) {
-            var itemname = zabbix.expandItemName(item)
-            return {
-              text: itemname,
-              expandable: false
-            };
+        return this.zabbixAPI.itemFindQuery(template.group, template.host, template.app)
+          .then(function (result) {
+            return _.map(result, function (item) {
+              var itemname = zabbixHelperSrv.expandItemName(item);
+              return {
+                text: itemname,
+                expandable: false
+              };
+            });
           });
-        });
       }
       // Get applications
       else if (parts.length === 3) {
-        return zabbix.appFindQuery(template.host, template.group).then(function (result) {
+        return this.zabbixAPI.appFindQuery(template.host, template.group).then(function (result) {
           return _.map(result, function (app) {
             return {
               text: app.name,
@@ -293,7 +217,7 @@ function (angular, _, kbn) {
       }
       // Get hosts
       else if (parts.length === 2) {
-        return zabbix.hostFindQuery(template.group).then(function (result) {
+        return this.zabbixAPI.hostFindQuery(template.group).then(function (result) {
           return _.map(result, function (host) {
             return {
               text: host.name,
@@ -304,7 +228,7 @@ function (angular, _, kbn) {
       }
       // Get groups
       else if (parts.length === 1) {
-        return zabbix.getGroupByName(template.group).then(function (result) {
+        return this.zabbixAPI.getGroupByName(template.group).then(function (result) {
           return _.map(result, function (hostgroup) {
             return {
               text: hostgroup.name,
@@ -321,11 +245,9 @@ function (angular, _, kbn) {
       }
     };
 
-
     /////////////////
     // Annotations //
     /////////////////
-
 
     ZabbixAPIDatasource.prototype.annotationQuery = function(annotation, rangeUnparsed) {
       var from = Math.ceil(kbn.parseDate(rangeUnparsed.from).getTime() / 1000);
@@ -341,7 +263,7 @@ function (angular, _, kbn) {
         expandDescription: true
       };
 
-      return this.performZabbixAPIRequest('trigger.get', params)
+      return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
         .then(function (result) {
           if(result) {
             var objects = _.indexBy(result, 'triggerid');
@@ -358,11 +280,11 @@ function (angular, _, kbn) {
               params.value = 1;
             }
 
-            return self.performZabbixAPIRequest('event.get', params)
+            return self.zabbixAPI.performZabbixAPIRequest('event.get', params)
               .then(function (result) {
                 var events = [];
                 _.each(result, function(e) {
-                  var formatted_acknowledges = formatAcknowledges(e.acknowledges);;
+                  var formatted_acknowledges = zabbixHelperSrv.formatAcknowledges(e.acknowledges);
                   events.push({
                     annotation: annotation,
                     time: e.clock * 1000,
@@ -371,109 +293,13 @@ function (angular, _, kbn) {
                   });
                 });
                 return events;
-            });
+              });
           } else {
             return [];
           }
-      });
+        });
     };
 
     return ZabbixAPIDatasource;
   });
 });
-
-
-/**
- * Convert multiple mettrics to array
- * "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
- *
- * @param  {string} metrics   "{metric1,metcic2,...,metricN}"
- * @return {Array}            [metric1, metcic2,..., metricN]
- */
-function splitMetrics(metrics) {
-  var remove_brackets_pattern = /^{|}$/g;
-  var metric_split_pattern = /,(?!\s)/g;
-  return metrics.replace(remove_brackets_pattern, '').split(metric_split_pattern)
-}
-
-
-/**
- * Convert Date object to local time in format
- * YYYY-MM-DD HH:mm:ss
- *
- * @param  {Date} date Date object
- * @return {string} formatted local time YYYY-MM-DD HH:mm:ss
- */
-function getShortTime(date) {
-  var MM = date.getMonth() < 10 ? '0' + date.getMonth() : date.getMonth();
-  var DD = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
-  var HH = date.getHours() < 10 ? '0' + date.getHours() : date.getHours();
-  var mm = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
-  var ss = date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds();
-  return date.getFullYear() + '-' + MM + '-' + DD + ' ' + HH + ':' + mm + ':' + ss;
-}
-
-
-/**
- * Format acknowledges.
- *
- * @param  {array} acknowledges array of Zabbix acknowledge objects
- * @return {string} HTML-formatted table
- */
-function formatAcknowledges(acknowledges) {
-  if (acknowledges.length) {
-    var formatted_acknowledges = '<br><br>Acknowledges:<br><table><tr><td><b>Time</b></td><td><b>User</b></td><td><b>Comments</b></td></tr>';
-    _.each(_.map(acknowledges, function (ack) {
-      var time = new Date(ack.clock * 1000);
-      return '<tr><td><i>' + getShortTime(time) + '</i></td><td>' + ack.alias + ' (' + ack.name+ ' ' + ack.surname + ')' + '</td><td>' + ack.message + '</td></tr>';
-    }), function (ack) {
-      formatted_acknowledges = formatted_acknowledges.concat(ack)
-    });
-    formatted_acknowledges = formatted_acknowledges.concat('</table>')
-    return formatted_acknowledges;
-  } else {
-    return '';
-  }
-}
-
-
-/**
- * Downsample datapoints series
- *
- * @param   {array}     datapoints        [[<value>, <unixtime>], ...]
- * @param   {integer}   time_to           Panel time to
- * @param   {integer}   ms_interval       Interval in milliseconds for grouping datapoints
- * @return  {array}     [[<value>, <unixtime>], ...]
- */
-function downsampleSeries(datapoints, time_to, ms_interval) {
-  var downsampledSeries = new Array();
-  var timeWindow = {
-    from: time_to * 1000 - ms_interval,
-    to: time_to * 1000
-  };
-
-  var points_sum = 0;
-  var points_num = 0;
-  var value_avg = 0;
-  for (var i = datapoints.length - 1; i >= 0; i -= 1) {
-    if (timeWindow.from < datapoints[i][1] && datapoints[i][1] <= timeWindow.to) {
-      points_sum += datapoints[i][0];
-      points_num++;
-    }
-    else {
-      value_avg = points_num ? points_sum / points_num : 0;
-      downsampledSeries.push([value_avg, timeWindow.to]);
-
-      // Shift time window
-      timeWindow.to = timeWindow.from;
-      timeWindow.from -= ms_interval;
-
-      points_sum = 0;
-      points_num = 0;
-
-      // Process point again
-      i++;
-    }
-  }
-  return downsampledSeries.reverse();
-}

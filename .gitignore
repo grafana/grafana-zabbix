@@ -4,3 +4,8 @@
 .idea/
 
 *.bat
+
+# Grafana linter config
+.jshintrc
+.jscs.json
+.jsfmtrc
