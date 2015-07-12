@@ -7,22 +7,22 @@ function (angular, _) {
 
   var module = angular.module('grafana.services');
 
-  module.service('zabbix', function($q, backendSrv) {
+  module.factory('ZabbixAPI', function($q, backendSrv) {
 
-    /**
-     * Initialize API parameters.
-     */
-    this.init = function(api_url, username, password) {
-      this.url        = api_url;
-      this.username   = username;
-      this.password   = password;
+    function ZabbixAPI(api_url, username, password, basicAuth, withCredentials) {
+      // Initialize API parameters.
+      this.url              = api_url;
+      this.username         = username;
+      this.password         = password;
+      this.basicAuth        = basicAuth;
+      this.withCredentials  = withCredentials;
     }
 
+    var p = ZabbixAPI.prototype;
 
     //////////////////
     // Core methods //
     //////////////////
-
 
     /**
      * Request data from Zabbix API
@@ -31,7 +31,7 @@ function (angular, _) {
      * @param  {object} params method params
      * @return {object}        data.result field or []
      */
-    this.performZabbixAPIRequest = function(method, params) {
+    p.performZabbixAPIRequest = function(method, params) {
       var options = {
         method: 'POST',
         headers: {
@@ -47,6 +47,13 @@ function (angular, _) {
         }
       };
 
+      if (this.basicAuth || this.withCredentials) {
+        options.withCredentials = true;
+      }
+      if (this.basicAuth) {
+        options.headers.Authorization = this.basicAuth;
+      }
+
       var self = this;
       return backendSrv.datasourceRequest(options).then(function (response) {
         if (!response.data) {
@@ -56,9 +63,9 @@ function (angular, _) {
         else if (response.data.error) {
 
           // Handle auth errors
-          if (response.data.error.data == "Session terminated, re-login, please." ||
-              response.data.error.data == "Not authorised." ||
-              response.data.error.data == "Not authorized") {
+          if (response.data.error.data === "Session terminated, re-login, please." ||
+              response.data.error.data === "Not authorised." ||
+              response.data.error.data === "Not authorized") {
             return self.performZabbixAPILogin().then(function (response) {
               self.auth = response;
               return self.performZabbixAPIRequest(method, params);
@@ -69,13 +76,12 @@ function (angular, _) {
       });
     };
 
-
     /**
      * Get authentication token.
      *
      * @return {string}  auth token
      */
-    this.performZabbixAPILogin = function() {
+    p.performZabbixAPILogin = function() {
       var options = {
         url : this.url,
         method : 'POST',
@@ -91,6 +97,14 @@ function (angular, _) {
         },
       };
 
+      if (this.basicAuth || this.withCredentials) {
+        options.withCredentials = true;
+      }
+      if (this.basicAuth) {
+        options.headers = options.headers || {};
+        options.headers.Authorization = this.basicAuth;
+      }
+
       return backendSrv.datasourceRequest(options).then(function (result) {
         if (!result.data) {
           return null;
@@ -99,12 +113,9 @@ function (angular, _) {
       });
     };
 
-
-
     /////////////////////////
     // API method wrappers //
     /////////////////////////
-
 
     /**
      * Perform history query from Zabbix API
@@ -114,7 +125,7 @@ function (angular, _) {
      * @param  {Number} end   Time in seconds
      * @return {Array}        Array of Zabbix history objects
      */
-    this.getHistory = function(items, start, end) {
+    p.getHistory = function(items, start, end) {
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
 
@@ -141,7 +152,6 @@ function (angular, _) {
       });
     };
 
-
     /**
      * Perform trends query from Zabbix API
      * Use trends api extension from ZBXNEXT-1193 patch.
@@ -151,7 +161,7 @@ function (angular, _) {
      * @param  {Number} end   Time in seconds
      * @return {Array}        Array of Zabbix trend objects
      */
-    this.getTrends = function(items, start, end) {
+    p.getTrends = function(items, start, end) {
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
 
@@ -178,13 +188,12 @@ function (angular, _) {
       });
     };
 
-
     /**
      * Get the list of host groups
      *
      * @return {array}          array of Zabbix hostgroup objects
      */
-    this.performHostGroupSuggestQuery = function() {
+    p.performHostGroupSuggestQuery = function() {
       var params = {
         output: ['name'],
         sortfield: 'name',
@@ -197,14 +206,13 @@ function (angular, _) {
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
 
-
     /**
      * Get the list of hosts
      *
      * @param  {array} groupids
      * @return {array}          array of Zabbix host objects
      */
-    this.performHostSuggestQuery = function(groupids) {
+    p.performHostSuggestQuery = function(groupids) {
       var params = {
         output: ['name', 'host'],
         sortfield: 'name',
@@ -220,7 +228,6 @@ function (angular, _) {
       return this.performZabbixAPIRequest('host.get', params);
     };
 
-
     /**
      * Get the list of applications
      *
@@ -228,7 +235,7 @@ function (angular, _) {
      * @param  {array} groupids
      * @return {array}          array of Zabbix application objects
      */
-    this.performAppSuggestQuery = function(hostids, /* optional */ groupids) {
+    p.performAppSuggestQuery = function(hostids, /* optional */ groupids) {
       var params = {
         output: ['name'],
         sortfield: 'name'
@@ -243,7 +250,6 @@ function (angular, _) {
       return this.performZabbixAPIRequest('application.get', params);
     };
 
-
     /**
      * Items request
      *
@@ -252,7 +258,7 @@ function (angular, _) {
      * @param  {string or Array} groupids         ///////////////////////////
      * @return {string or Array}                  Array of Zabbix API item objects
      */
-    this.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
+    p.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
       var params = {
         output: ['name', 'key_', 'value_type', 'delay'],
         sortfield: 'name',
@@ -287,18 +293,17 @@ function (angular, _) {
       return this.performZabbixAPIRequest('item.get', params);
     };
 
-
     /**
      * Get groups by names
      *
      * @param  {string or array} group group names
      * @return {array}                 array of Zabbix API hostgroup objects
      */
-    this.getGroupByName = function (group) {
+    p.getGroupByName = function (group) {
       var params = {
         output: ['name']
       };
-      if (group != '*') {
+      if (group[0] !== '*') {
         params.filter = {
           name: group
         };
@@ -306,14 +311,13 @@ function (angular, _) {
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
 
-
     /**
      * Search group by name.
      *
      * @param  {string} group group name
      * @return {array}        groups
      */
-    this.searchGroup = function (group) {
+    p.searchGroup = function (group) {
       var params = {
         output: ['name'],
         search: {
@@ -324,18 +328,17 @@ function (angular, _) {
       return this.performZabbixAPIRequest('hostgroup.get', params);
     };
 
-
     /**
      * Get hosts by names
      *
      * @param  {string or array} hostnames hosts names
      * @return {array}                     array of Zabbix API host objects
      */
-    this.getHostByName = function (hostnames) {
+    p.getHostByName = function (hostnames) {
       var params = {
         output: ['host', 'name']
       };
-      if (hostnames != '*') {
+      if (hostnames[0] !== '*') {
         params.filter = {
           name: hostnames
         };
@@ -343,25 +346,23 @@ function (angular, _) {
       return this.performZabbixAPIRequest('host.get', params);
     };
 
-
     /**
      * Get applications by names
      *
      * @param  {string or array} application applications names
      * @return {array}                       array of Zabbix API application objects
      */
-    this.getAppByName = function (application) {
+    p.getAppByName = function (application) {
       var params = {
         output: ['name']
-      }
-      if (application != '*') {
+      };
+      if (application[0] !== '*') {
         params.filter = {
           name: application
         };
-      };
+      }
       return this.performZabbixAPIRequest('application.get', params);
     };
-
 
     /**
      * Get items belongs to passed groups, hosts and
@@ -372,11 +373,11 @@ function (angular, _) {
      * @param  {string or array} apps
      * @return {array}  array of Zabbix API item objects
      */
-    this.itemFindQuery = function(groups, hosts, apps) {
+    p.itemFindQuery = function(groups, hosts, apps) {
       var promises = [];
 
       // Get hostids from names
-      if (hosts && hosts != '*') {
+      if (hosts && hosts[0] !== '*') {
         promises.push(this.getHostByName(hosts));
       }
       // Get groupids from names
@@ -391,18 +392,21 @@ function (angular, _) {
       var self = this;
       return $q.all(promises).then(function (results) {
         results = _.flatten(results);
+        var groupids;
+        var hostids;
+        var applicationids;
         if (groups) {
-          var groupids = _.map(_.filter(results, function (object) {
+          groupids = _.map(_.filter(results, function (object) {
             return object.groupid;
           }), 'groupid');
         }
-        if (hosts && hosts != '*') {
-          var hostids = _.map(_.filter(results, function (object) {
+        if (hosts && hosts[0] !== '*') {
+          hostids = _.map(_.filter(results, function (object) {
             return object.hostid;
           }), 'hostid');
         }
         if (apps) {
-          var applicationids = _.map(_.filter(results, function (object) {
+          applicationids = _.map(_.filter(results, function (object) {
             return object.applicationid;
           }), 'applicationid');
         }
@@ -411,7 +415,6 @@ function (angular, _) {
       });
     };
 
-
     /**
      * Find applications belongs to passed groups and hosts
      *
@@ -419,11 +422,11 @@ function (angular, _) {
      * @param  {string or array} groups
      * @return {array}  array of Zabbix API application objects
      */
-    this.appFindQuery = function(hosts, groups) {
+    p.appFindQuery = function(hosts, groups) {
       var promises = [];
 
       // Get hostids from names
-      if (hosts && hosts != '*') {
+      if (hosts && hosts[0] !== '*') {
         promises.push(this.getHostByName(hosts));
       }
       // Get groupids from names
@@ -434,13 +437,15 @@ function (angular, _) {
       var self = this;
       return $q.all(promises).then(function (results) {
         results = _.flatten(results);
+        var groupids;
+        var hostids;
         if (groups) {
-          var groupids = _.map(_.filter(results, function (object) {
+          groupids = _.map(_.filter(results, function (object) {
             return object.groupid;
           }), 'groupid');
         }
-        if (hosts && hosts != '*') {
-          var hostids = _.map(_.filter(results, function (object) {
+        if (hosts && hosts[0] !== '*') {
+          hostids = _.map(_.filter(results, function (object) {
             return object.hostid;
           }), 'hostid');
         }
@@ -449,14 +454,13 @@ function (angular, _) {
       });
     };
 
-
     /**
      * Find hosts belongs to passed groups
      *
      * @param  {string or array} groups
      * @return {array}  array of Zabbix API host objects
      */
-    this.hostFindQuery = function(groups) {
+    p.hostFindQuery = function(groups) {
       var self = this;
       return this.getGroupByName(groups).then(function (results) {
         results = _.flatten(results);
@@ -468,28 +472,8 @@ function (angular, _) {
       });
     };
 
-
-    /**
-     * Expand item parameters, for example:
-     * CPU $2 time ($3) --> CPU system time (avg1)
-     *
-     * @param item: zabbix api item object
-     * @return: expanded item name (string)
-     */
-    this.expandItemName = function(item) {
-      var name = item.name;
-      var key = item.key_;
-
-      // extract params from key:
-      // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
-      var key_params = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']')).split(',');
-
-      // replace item parameters
-      for (var i = key_params.length; i >= 1; i--) {
-        name = name.replace('$' + i, key_params[i - 1]);
-      };
-      return name;
-    }
+    return ZabbixAPI;
 
   });
+
 });

@@ -16,10 +16,10 @@
   "username": "guest",
   "password": "",
 
-  "trends": true,
+  "trends": false,
   "trendsFrom": "7d",
 
-  "limitmetrics": 50,
+  "limitmetrics": 100,
 
   "metrics": true,
   "annotations": true
