@@ -26,16 +26,15 @@ function (angular, _, kbn) {
       this.basicAuth        = datasource.basicAuth;
       this.withCredentials  = datasource.withCredentials;
 
-      // TODO: fix passing username and password from config.html
-      this.username         = datasource.meta.username;
-      this.password         = datasource.meta.password;
+      this.username         = datasource.jsonData.username || datasource.meta.username;
+      this.password         = datasource.jsonData.password || datasource.meta.password;
 
       // Use trends instead history since specified time
-      this.trends = datasource.meta.trends;
-      this.trendsFrom = datasource.meta.trendsFrom || '7d';
+      this.trends           = datasource.jsonData.trends || datasource.meta.trends;
+      this.trendsFrom       = datasource.jsonData.trendsFrom || datasource.meta.trendsFrom || '7d';
 
       // Limit metrics per panel for templated request
-      this.limitmetrics = datasource.meta.limitmetrics || 100;
+      this.limitmetrics     = datasource.jsonData.limitMetrics || datasource.meta.limitmetrics || 100;
 
       // Initialize Zabbix API
       this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
