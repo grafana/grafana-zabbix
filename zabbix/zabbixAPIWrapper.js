@@ -9,11 +9,13 @@ function (angular, _) {
 
   module.factory('ZabbixAPI', function($q, backendSrv) {
 
-    function ZabbixAPI(api_url, username, password) {
+    function ZabbixAPI(api_url, username, password, basicAuth, withCredentials) {
       // Initialize API parameters.
-      this.url        = api_url;
-      this.username   = username;
-      this.password   = password;
+      this.url              = api_url;
+      this.username         = username;
+      this.password         = password;
+      this.basicAuth        = basicAuth;
+      this.withCredentials  = withCredentials;
     }
 
     var p = ZabbixAPI.prototype;
@@ -44,6 +46,13 @@ function (angular, _) {
           id: 1
         }
       };
+
+      if (this.basicAuth || this.withCredentials) {
+        options.withCredentials = true;
+      }
+      if (this.basicAuth) {
+        options.headers.Authorization = this.basicAuth;
+      }
 
       var self = this;
       return backendSrv.datasourceRequest(options).then(function (response) {
@@ -87,6 +96,14 @@ function (angular, _) {
           id: 1
         },
       };
+
+      if (this.basicAuth || this.withCredentials) {
+        options.withCredentials = true;
+      }
+      if (this.basicAuth) {
+        options.headers = options.headers || {};
+        options.headers.Authorization = this.basicAuth;
+      }
 
       return backendSrv.datasourceRequest(options).then(function (result) {
         if (!result.data) {

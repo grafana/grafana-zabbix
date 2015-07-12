@@ -23,6 +23,8 @@ function (angular, _, kbn) {
     function ZabbixAPIDatasource(datasource) {
       this.name             = datasource.name;
       this.url              = datasource.url;
+      this.basicAuth        = datasource.basicAuth;
+      this.withCredentials  = datasource.withCredentials;
 
       // TODO: fix passing username and password from config.html
       this.username         = datasource.meta.username;
@@ -36,7 +38,7 @@ function (angular, _, kbn) {
       this.limitmetrics = datasource.meta.limitmetrics || 100;
 
       // Initialize Zabbix API
-      this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password);
+      this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
     }
 
     /**
