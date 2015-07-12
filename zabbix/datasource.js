@@ -46,12 +46,23 @@ function (angular, _, kbn) {
      * @return {object} Connection status and Zabbix API version
      */
     ZabbixAPIDatasource.prototype.testDatasource = function() {
+      var self = this;
       return this.zabbixAPI.getZabbixAPIVersion().then(function (apiVersion) {
-        return {
-          status: "success",
-          title: "Success",
-          message: "Zabbix API version: " + apiVersion
-        };
+        return self.zabbixAPI.performZabbixAPILogin().then(function (auth) {
+          if (auth) {
+            return {
+              status: "success",
+              title: "Success",
+              message: "Zabbix API version: " + apiVersion
+            };
+          } else {
+            return {
+              status: "error",
+              title: "Invalid user name or password",
+              message: "Zabbix API version: " + apiVersion
+            };
+          }
+        });
       });
     };
 
