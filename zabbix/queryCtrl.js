@@ -14,10 +14,10 @@ function (angular, _) {
     $scope.init = function() {
       $scope.targetLetters = targetLetters;
       $scope.metric = {
-        hostGroupList: ["Loading..."],
-        hostList: ["Loading..."],
-        applicationList: ["Loading..."],
-        itemList: ["Loading..."]
+        hostGroupList: [],
+        hostList: [{name: '*', visible_name: 'All'}],
+        applicationList: [{name: '*', visible_name: 'All'}],
+        itemList: [{name: 'All'}]
       };
 
       // Update host group, host, application and item lists
@@ -120,10 +120,9 @@ function (angular, _) {
      * Update list of host groups
      */
     $scope.updateGroupList = function() {
-      $scope.metric.groupList = [{name: '*', visible_name: 'All'}];
-      addTemplatedVariables($scope.metric.groupList);
-
       $scope.datasource.zabbixAPI.performHostGroupSuggestQuery().then(function (groups) {
+        $scope.metric.groupList = [{name: '*', visible_name: 'All'}];
+        addTemplatedVariables($scope.metric.groupList);
         $scope.metric.groupList = $scope.metric.groupList.concat(groups);
       });
     };
@@ -132,51 +131,54 @@ function (angular, _) {
      * Update list of hosts
      */
     $scope.updateHostList = function() {
-      $scope.metric.hostList = [{name: '*', visible_name: 'All'}];
-      addTemplatedVariables($scope.metric.hostList);
-
       var groups = $scope.target.group ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
-      $scope.datasource.zabbixAPI.hostFindQuery(groups).then(function (hosts) {
-        $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
-      });
+      if (groups) {
+        $scope.datasource.zabbixAPI.hostFindQuery(groups).then(function (hosts) {
+          $scope.metric.hostList = [{name: '*', visible_name: 'All'}];
+          addTemplatedVariables($scope.metric.hostList);
+          $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
+        });
+      }
     };
 
     /**
      * Update list of host applications
      */
     $scope.updateAppList = function() {
-      $scope.metric.applicationList = [{name: '*', visible_name: 'All'}];
-      addTemplatedVariables($scope.metric.applicationList);
-
       var groups = $scope.target.group ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
-      $scope.datasource.zabbixAPI.appFindQuery(hosts, groups).then(function (apps) {
-        apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
-          return {name: appname};
+      if (groups && hosts) {
+        $scope.datasource.zabbixAPI.appFindQuery(hosts, groups).then(function (apps) {
+          apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
+            return {name: appname};
+          });
+          $scope.metric.applicationList = [{name: '*', visible_name: 'All'}];
+          addTemplatedVariables($scope.metric.applicationList);
+          $scope.metric.applicationList = $scope.metric.applicationList.concat(apps);
         });
-        $scope.metric.applicationList = $scope.metric.applicationList.concat(apps);
-      });
+      }
     };
 
     /**
      * Update list of items
      */
     $scope.updateItemList = function() {
-      $scope.metric.itemList = [{name: 'All'}];
-      addTemplatedVariables($scope.metric.itemList);
-
       var groups = $scope.target.group ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
       var hosts = $scope.target.host ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
       var apps = $scope.target.application ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
-      $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps).then(function (items) {
-        // Show only unique item names
-        var uniq_items = _.map(_.uniq(items, function (item) {
-          return zabbixHelperSrv.expandItemName(item);
-        }), function (item) {
-          return {name: zabbixHelperSrv.expandItemName(item)};
+      if (groups && hosts && apps) {
+        $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps).then(function (items) {
+          // Show only unique item names
+          var uniq_items = _.map(_.uniq(items, function (item) {
+            return zabbixHelperSrv.expandItemName(item);
+          }), function (item) {
+            return {name: zabbixHelperSrv.expandItemName(item)};
+          });
+          $scope.metric.itemList = [{name: 'All'}];
+          addTemplatedVariables($scope.metric.itemList);
+          $scope.metric.itemList = $scope.metric.itemList.concat(uniq_items);
         });
-        $scope.metric.itemList = $scope.metric.itemList.concat(uniq_items);
-      });
+      }
     };
 
     /**
