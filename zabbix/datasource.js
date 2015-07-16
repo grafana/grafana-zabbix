@@ -26,15 +26,25 @@ function (angular, _, kbn) {
       this.basicAuth        = datasource.basicAuth;
       this.withCredentials  = datasource.withCredentials;
 
-      this.username         = datasource.jsonData.username || datasource.meta.username;
-      this.password         = datasource.jsonData.password || datasource.meta.password;
+      if (datasource.jsonData) {
+        this.username         = datasource.jsonData.username;
+        this.password         = datasource.jsonData.password;
 
-      // Use trends instead history since specified time
-      this.trends           = datasource.jsonData.trends || datasource.meta.trends;
-      this.trendsFrom       = datasource.jsonData.trendsFrom || datasource.meta.trendsFrom || '7d';
+        // Use trends instead history since specified time
+        this.trends           = datasource.jsonData.trends;
+        this.trendsFrom       = datasource.jsonData.trendsFrom || '7d';
 
-      // Limit metrics per panel for templated request
-      this.limitmetrics     = datasource.jsonData.limitMetrics || datasource.meta.limitmetrics || 100;
+        // Limit metrics per panel for templated request
+        this.limitmetrics     = datasource.jsonData.limitMetrics || 100;
+      } else {
+        // DEPRECATED. Loads settings from plugin.json file.
+        // For backward compatibility only.
+        this.username         = datasource.meta.username;
+        this.password         = datasource.meta.password;
+        this.trends           = datasource.meta.trends;
+        this.trendsFrom       = datasource.meta.trendsFrom || '7d';
+        this.limitmetrics     = datasource.meta.limitmetrics || 100;
+      }
 
       // Initialize Zabbix API
       this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
