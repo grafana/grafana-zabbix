@@ -339,7 +339,7 @@ function (angular, _) {
       var params = {
         output: ['name']
       };
-      if (group[0] !== '*') {
+      if (group && group[0] !== '*') {
         params.filter = {
           name: group
         };
@@ -374,7 +374,7 @@ function (angular, _) {
       var params = {
         output: ['host', 'name']
       };
-      if (hostnames[0] !== '*') {
+      if (hostnames && hostnames[0] !== '*') {
         params.filter = {
           name: hostnames
         };
@@ -392,7 +392,7 @@ function (angular, _) {
       var params = {
         output: ['name']
       };
-      if (application[0] !== '*') {
+      if (application && application[0] !== '*') {
         params.filter = {
           name: application
         };
