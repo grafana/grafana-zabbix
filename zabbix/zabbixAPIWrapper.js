@@ -421,7 +421,7 @@ function (angular, _) {
         promises.push(this.getGroupByName(groups));
       }
       // Get applicationids from names
-      if (apps) {
+      if (apps && apps[0] !== '*') {
         promises.push(this.getAppByName(apps));
       }
 
@@ -441,7 +441,7 @@ function (angular, _) {
             return object.hostid;
           }), 'hostid');
         }
-        if (apps) {
+        if (apps && apps[0] !== '*') {
           applicationids = _.map(_.filter(results, function (object) {
             return object.applicationid;
           }), 'applicationid');
