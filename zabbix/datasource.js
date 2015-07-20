@@ -1,4 +1,3 @@
-'use strict';
 define([
   'angular',
   'lodash',
@@ -8,7 +7,7 @@ define([
   './queryCtrl'
 ],
 function (angular, _, kbn) {
-  //'use strict';
+  'use strict';
 
   var module = angular.module('grafana.services');
 
