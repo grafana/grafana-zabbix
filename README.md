@@ -2,7 +2,7 @@
 
 ## Zabbix datasource for Grafana dashboard
 
-#### [Grafana-Zabbix 2.0.0](https://github.com/alexanderzobnin/grafana-zabbix/releases/tag/v2.0.0) released!
+#### Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/releases/latest)
 
 Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
 
