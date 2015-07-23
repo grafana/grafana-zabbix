@@ -118,6 +118,42 @@ function (angular, _) {
     /////////////////////////
 
     /**
+     * Request version of the Zabbix API.
+     *
+     * @return {string} Zabbix API version
+     */
+    p.getZabbixAPIVersion = function() {
+      var options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        url: this.url,
+        data: {
+          jsonrpc: '2.0',
+          method: 'apiinfo.version',
+          params: [],
+          id: 1
+        }
+      };
+
+      if (this.basicAuth || this.withCredentials) {
+        options.withCredentials = true;
+      }
+      if (this.basicAuth) {
+        options.headers = options.headers || {};
+        options.headers.Authorization = this.basicAuth;
+      }
+
+      return backendSrv.datasourceRequest(options).then(function (result) {
+        if (!result.data) {
+          return null;
+        }
+        return result.data.result;
+      });
+    };
+
+    /**
      * Perform history query from Zabbix API
      *
      * @param  {Array}  items Array of Zabbix item objects
@@ -303,7 +339,7 @@ function (angular, _) {
       var params = {
         output: ['name']
       };
-      if (group[0] !== '*') {
+      if (group && group[0] !== '*') {
         params.filter = {
           name: group
         };
@@ -338,7 +374,7 @@ function (angular, _) {
       var params = {
         output: ['host', 'name']
       };
-      if (hostnames[0] !== '*') {
+      if (hostnames && hostnames[0] !== '*') {
         params.filter = {
           name: hostnames
         };
@@ -356,7 +392,7 @@ function (angular, _) {
       var params = {
         output: ['name']
       };
-      if (application[0] !== '*') {
+      if (application && application[0] !== '*') {
         params.filter = {
           name: application
         };
@@ -385,7 +421,7 @@ function (angular, _) {
         promises.push(this.getGroupByName(groups));
       }
       // Get applicationids from names
-      if (apps) {
+      if (apps && apps[0] !== '*') {
         promises.push(this.getAppByName(apps));
       }
 
@@ -405,7 +441,7 @@ function (angular, _) {
             return object.hostid;
           }), 'hostid');
         }
-        if (apps) {
+        if (apps && apps[0] !== '*') {
           applicationids = _.map(_.filter(results, function (object) {
             return object.applicationid;
           }), 'applicationid');

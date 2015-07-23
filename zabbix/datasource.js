@@ -1,4 +1,3 @@
-'use strict';
 define([
   'angular',
   'lodash',
@@ -8,7 +7,7 @@ define([
   './queryCtrl'
 ],
 function (angular, _, kbn) {
-  //'use strict';
+  'use strict';
 
   var module = angular.module('grafana.services');
 
@@ -26,20 +25,55 @@ function (angular, _, kbn) {
       this.basicAuth        = datasource.basicAuth;
       this.withCredentials  = datasource.withCredentials;
 
-      // TODO: fix passing username and password from config.html
-      this.username         = datasource.meta.username;
-      this.password         = datasource.meta.password;
+      if (datasource.jsonData) {
+        this.username         = datasource.jsonData.username;
+        this.password         = datasource.jsonData.password;
 
-      // Use trends instead history since specified time
-      this.trends = datasource.meta.trends;
-      this.trendsFrom = datasource.meta.trendsFrom || '7d';
+        // Use trends instead history since specified time
+        this.trends           = datasource.jsonData.trends;
+        this.trendsFrom       = datasource.jsonData.trendsFrom || '7d';
 
-      // Limit metrics per panel for templated request
-      this.limitmetrics = datasource.meta.limitmetrics || 100;
+        // Limit metrics per panel for templated request
+        this.limitmetrics     = datasource.jsonData.limitMetrics || 100;
+      } else {
+        // DEPRECATED. Loads settings from plugin.json file.
+        // For backward compatibility only.
+        this.username         = datasource.meta.username;
+        this.password         = datasource.meta.password;
+        this.trends           = datasource.meta.trends;
+        this.trendsFrom       = datasource.meta.trendsFrom || '7d';
+        this.limitmetrics     = datasource.meta.limitmetrics || 100;
+      }
 
       // Initialize Zabbix API
       this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
     }
+
+    /**
+     * Test connection to Zabbix API
+     *
+     * @return {object} Connection status and Zabbix API version
+     */
+    ZabbixAPIDatasource.prototype.testDatasource = function() {
+      var self = this;
+      return this.zabbixAPI.getZabbixAPIVersion().then(function (apiVersion) {
+        return self.zabbixAPI.performZabbixAPILogin().then(function (auth) {
+          if (auth) {
+            return {
+              status: "success",
+              title: "Success",
+              message: "Zabbix API version: " + apiVersion
+            };
+          } else {
+            return {
+              status: "error",
+              title: "Invalid user name or password",
+              message: "Zabbix API version: " + apiVersion
+            };
+          }
+        });
+      });
+    };
 
     /**
      * Calls for each panel in dashboard.
