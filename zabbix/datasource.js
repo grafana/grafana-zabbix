@@ -115,7 +115,7 @@ function (angular, _, kbn) {
         // Remove hostnames from item names and then
         // extract item names
         // "hostname: itemname" --> "itemname"
-        var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
+        var delete_hostname_pattern = /(?:\[[\w\.]+]:\s)/g;
         var itemnames = zabbixHelperSrv.splitMetrics(itemname.replace(delete_hostname_pattern, ''));
 
         // Find items by item names and perform queries
@@ -323,7 +323,7 @@ function (angular, _, kbn) {
                     annotation: annotation,
                     time: e.clock * 1000,
                     title: Number(e.value) ? 'Problem' : 'OK',
-                    text: objects[e.objectid].description + formatted_acknowledges,
+                    text: objects[e.objectid].description + formatted_acknowledges
                   });
                 });
                 return events;

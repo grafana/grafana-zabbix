@@ -14,6 +14,8 @@ function (angular, _) {
      * Convert Zabbix API history.get response to Grafana format
      *
      * @param  {Array} items      Array of Zabbix Items
+     * @param alias
+     * @param scale
      * @param  {Array} history    Array of Zabbix History
      *
      * @return {Array}            Array of timeseries in Grafana format
@@ -44,7 +46,7 @@ function (angular, _) {
       var self = this;
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
-        var series = {
+        return {
           target: (item.hosts ? item.hosts[0].name+': ' : '')
             + (alias ? alias : self.expandItemName(item)),
           datapoints: _.map(history, function (p) {
@@ -59,7 +61,6 @@ function (angular, _) {
             return [value, p.clock * 1000];
           })
         };
-        return series;
       })).then(function (result) {
         return _.sortBy(result, 'target');
       });
@@ -69,6 +70,8 @@ function (angular, _) {
      * Convert Zabbix API trends.get response to Grafana format
      *
      * @param  {Array} items      Array of Zabbix Items
+     * @param alias
+     * @param scale
      * @param  {Array} trends     Array of Zabbix Trends
      *
      * @return {Array}            Array of timeseries in Grafana format
@@ -86,7 +89,7 @@ function (angular, _) {
       var self = this;
       return $q.when(_.map(grouped_trends, function (trends, itemid) {
         var item = indexed_items[itemid];
-        var series = {
+        return {
           target: (item.hosts ? item.hosts[0].name+': ' : '')
             + (alias ? alias : self.expandItemName(item)),
           datapoints: _.map(trends, function (p) {
@@ -101,7 +104,6 @@ function (angular, _) {
             return [value, p.clock * 1000];
           })
         };
-        return series;
       })).then(function (result) {
         return _.sortBy(result, 'target');
       });
@@ -112,7 +114,7 @@ function (angular, _) {
      * CPU $2 time ($3) --> CPU system time (avg1)
      *
      * @param item: zabbix api item object
-     * @return: expanded item name (string)
+     * @return {string} expanded item name (string)
      */
     this.expandItemName = function(item) {
       var name = item.name;

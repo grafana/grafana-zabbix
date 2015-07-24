@@ -1,7 +1,7 @@
 define([
   'angular',
-  'lodash',
-],
+  'lodash'
+  ],
 function (angular, _) {
   'use strict';
 
@@ -94,7 +94,7 @@ function (angular, _) {
           },
           auth: null,
           id: 1
-        },
+        }
       };
 
       if (this.basicAuth || this.withCredentials) {
