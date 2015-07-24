@@ -508,6 +508,25 @@ function (angular, _) {
       });
     };
 
+    p.getITService = function(/* optional */ serviceids) {
+      var params = {
+        output: 'extend',
+        serviceids: serviceids
+      };
+      return this.performZabbixAPIRequest('service.get', params);
+    };
+
+    p.getSLA = function(serviceids, from, to) {
+      var params = {
+        serviceids: serviceids,
+        intervals: [{
+          from: from,
+          to: to
+        }]
+      };
+      return this.performZabbixAPIRequest('service.getsla', params);
+    };
+
     return ZabbixAPI;
 
   });
