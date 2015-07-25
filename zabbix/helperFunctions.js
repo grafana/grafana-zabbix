@@ -110,6 +110,24 @@ function (angular, _) {
     };
 
     /**
+     * Convert Zabbix API service.getsla response to Grafana format
+     *
+     * @param itservice
+     * @param slaProperty
+     * @param slaObject
+     * @returns {{target: *, datapoints: *[]}}
+     */
+    this.handleSLAResponse = function (itservice, slaProperty, slaObject) {
+      var targetSLA = slaObject[itservice.serviceid].sla[0];
+      return {
+        target: itservice.name,
+        datapoints: [
+          [targetSLA[slaProperty.property], targetSLA.to * 1000]
+        ]
+      };
+    };
+
+    /**
      * Expand item parameters, for example:
      * CPU $2 time ($3) --> CPU system time (avg1)
      *
