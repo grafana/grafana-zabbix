@@ -13,20 +13,31 @@ function (angular, _) {
 
     $scope.init = function() {
       $scope.targetLetters = targetLetters;
-      $scope.metric = {
-        hostGroupList: [],
-        hostList: [{name: '*', visible_name: 'All'}],
-        applicationList: [{name: '*', visible_name: 'All'}],
-        itemList: [{name: 'All'}]
-      };
+      if ($scope.target.ITService) {
+        $scope.slaPropertyList = [
+          "sla",
+          "okTime",
+          "problemTime",
+          "downtimeTime"
+        ];
+        $scope.itserviceList = [{name: "test"}];
+        $scope.updateITServiceList();
+      } else {
+        $scope.metric = {
+          hostGroupList: [],
+          hostList: [{name: '*', visible_name: 'All'}],
+          applicationList: [{name: '*', visible_name: 'All'}],
+          itemList: [{name: 'All'}]
+        };
 
-      // Update host group, host, application and item lists
-      $scope.updateGroupList();
-      $scope.updateHostList();
-      $scope.updateAppList();
-      $scope.updateItemList();
+        // Update host group, host, application and item lists
+        $scope.updateGroupList();
+        $scope.updateHostList();
+        $scope.updateAppList();
+        $scope.updateItemList();
 
-      setItemAlias();
+        setItemAlias();
+      }
 
       $scope.target.errors = validateTarget($scope.target);
     };
@@ -42,6 +53,17 @@ function (angular, _) {
 
     $scope.targetBlur = function() {
       setItemAlias();
+      $scope.target.errors = validateTarget($scope.target);
+      if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
+        $scope.oldTarget = angular.copy($scope.target);
+        $scope.get_data();
+      }
+    };
+
+    /**
+     * Call when IT service is selected.
+     */
+    $scope.selectITService = function() {
       $scope.target.errors = validateTarget($scope.target);
       if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
         $scope.oldTarget = angular.copy($scope.target);
@@ -115,6 +137,17 @@ function (angular, _) {
     //////////////////////////////
     // SUGGESTION QUERIES
     //////////////////////////////
+
+
+    /**
+     * Update list of IT services
+     */
+    $scope.updateITServiceList = function() {
+      $scope.datasource.zabbixAPI.getITService().then(function (iteservices) {
+        $scope.itserviceList = [];
+        $scope.itserviceList = $scope.itserviceList.concat(iteservices);
+      });
+    };
 
     /**
      * Update list of host groups

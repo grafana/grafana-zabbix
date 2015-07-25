@@ -51,16 +51,26 @@
         </li>
       </ul>
 
+      <!-- IT Service editor -->
       <ul class="tight-form-list" role="menu" ng-show="target.ITService">
-        <!-- Select IT Service -->
-        <li class="tight-form-item input-small" style="width: 5em">IT Service</li>
+        <li class="tight-form-item input-small">IT Service</li>
         <li>
-          <input type="text"
-                 class="tight-form-input input-medium"
-                 ng-model="target.itservice"
-                 spellcheck='false'
-                 placeholder="IT Service"
-                 ng-blur="targetBlur()">
+          <select class="tight-form-input input-large"
+                  ng-change="selectITService()"
+                  ng-model="target.itservice"
+                  bs-tooltip="target.itservice.name.length > 25 ? target.itservice.name : ''"
+                  ng-options="itservice.name for itservice in itserviceList track by itservice.name">
+            <option value="">-- Select IT service --</option>
+          </select>
+        </li>
+        <li class="tight-form-item input-small">SLA property</li>
+        <li>
+          <select class="tight-form-input input-medium"
+                  ng-change="selectSLAProperty()"
+                  ng-model="target.slaProperty"
+                  ng-options="slaProperty for slaProperty in slaPropertyList track by slaProperty">
+            <option value="">-- SLA property --</option>
+          </select>
         </li>
       </ul>
 
