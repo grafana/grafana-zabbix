@@ -147,7 +147,7 @@
         <li class="tight-form-item input-small" style="width: 5em">Application</li>
         <li>
           <select class="tight-form-input input-large"
-                  ng-select="selectApplication()"
+                  ng-change="selectApplication()"
                   ng-model="target.application"
                   bs-tooltip="target.application.name.length > 15 ? target.application.name : ''"
                   ng-options="app.visible_name ? app.visible_name : app.name for app in metric.applicationList track by app.name">
