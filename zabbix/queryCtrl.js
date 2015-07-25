@@ -15,10 +15,10 @@ function (angular, _) {
       $scope.targetLetters = targetLetters;
       if ($scope.target.ITService) {
         $scope.slaPropertyList = [
-          "sla",
-          "okTime",
-          "problemTime",
-          "downtimeTime"
+          {name: "SLA", property: "sla"},
+          {name: "OK time", property: "okTime"},
+          {name: "Problem time", property: "problemTime"},
+          {name: "Down time", property: "downtimeTime"}
         ];
         $scope.itserviceList = [{name: "test"}];
         $scope.updateITServiceList();

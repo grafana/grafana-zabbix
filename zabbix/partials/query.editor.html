@@ -68,7 +68,7 @@
           <select class="tight-form-input input-medium"
                   ng-change="selectSLAProperty()"
                   ng-model="target.slaProperty"
-                  ng-options="slaProperty for slaProperty in slaPropertyList track by slaProperty">
+                  ng-options="slaProperty.name for slaProperty in slaPropertyList track by slaProperty.name">
             <option value="">-- SLA property --</option>
           </select>
         </li>
