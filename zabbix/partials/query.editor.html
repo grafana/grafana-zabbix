@@ -19,11 +19,11 @@
               <!-- Switch to IT Services editor -->
               <li role="menuitem" ng-hide="target.ITService">
                 <a class="pointer" tabindex="1"
-                   ng-click="target.ITService = true">IT Services</a>
+                   ng-click="switchEditorMode()">IT Services</a>
               </li>
               <li role="menuitem" ng-show="target.ITService">
                 <a class="pointer" tabindex="1"
-                   ng-click="target.ITService = false">Items</a>
+                   ng-click="switchEditorMode()">Items</a>
               </li>
               <li role="menuitem"><a tabindex="1" ng-click="duplicate()">Duplicate</a></li>
               <li role="menuitem"><a tabindex="1" ng-click="moveMetricQuery($index, $index-1)">Move up</a></li>

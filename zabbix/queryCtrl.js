@@ -42,6 +42,11 @@ function (angular, _) {
       $scope.target.errors = validateTarget($scope.target);
     };
 
+    $scope.switchEditorMode = function() {
+      $scope.target.ITService = !$scope.target.ITService;
+      $scope.init();
+    };
+
     /**
      * Take alias from item name by default
      */
