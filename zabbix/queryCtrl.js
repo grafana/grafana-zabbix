@@ -202,7 +202,8 @@ define([
       $scope.updateItemList = function () {
         var groups = $scope.target.group ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
         var hosts = $scope.target.host ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
-        var apps = $scope.target.application ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
+        var apps = $scope.target.application ?
+                     zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
         if (groups && hosts && apps) {
           $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps).then(function (items) {
             // Show only unique item names
