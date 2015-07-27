@@ -245,8 +245,8 @@ function (angular, _) {
     /**
      * Get the list of hosts
      *
-     * @param  {array} groupids
-     * @return {array}          array of Zabbix host objects
+     * @param  {string|string[]} groupids
+     * @return {Object}          array of Zabbix host objects
      */
     p.performHostSuggestQuery = function(groupids) {
       var params = {
@@ -269,7 +269,7 @@ function (angular, _) {
      *
      * @param  {array} hostids
      * @param  {array} groupids
-     * @return {array}          array of Zabbix application objects
+     * @return {Object}          array of Zabbix application objects
      */
     p.performAppSuggestQuery = function(hostids, /* optional */ groupids) {
       var params = {
@@ -289,10 +289,10 @@ function (angular, _) {
     /**
      * Items request
      *
-     * @param  {string or Array} hostids          ///////////////////////////
-     * @param  {string or Array} applicationids   // Zabbix API parameters //
-     * @param  {string or Array} groupids         ///////////////////////////
-     * @return {string or Array}                  Array of Zabbix API item objects
+     * @param  {string|string[]} hostids          ///////////////////////////
+     * @param  {string|string[]} applicationids   // Zabbix API parameters //
+     * @param  {string|string[]} groupids         ///////////////////////////
+     * @return {string|string[]}                  Array of Zabbix API item objects
      */
     p.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
       var params = {
@@ -506,6 +506,25 @@ function (angular, _) {
 
         return self.performHostSuggestQuery(groupids);
       });
+    };
+
+    p.getITService = function(/* optional */ serviceids) {
+      var params = {
+        output: 'extend',
+        serviceids: serviceids
+      };
+      return this.performZabbixAPIRequest('service.get', params);
+    };
+
+    p.getSLA = function(serviceids, from, to) {
+      var params = {
+        serviceids: serviceids,
+        intervals: [{
+          from: from,
+          to: to
+        }]
+      };
+      return this.performZabbixAPIRequest('service.getsla', params);
     };
 
     return ZabbixAPI;
