@@ -13,7 +13,7 @@ define([
 
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
-        if ($scope.target.ITService) {
+        if ($scope.target.mode === 1) {
           $scope.slaPropertyList = [
             {name: "Status", property: "status"},
             {name: "SLA", property: "sla"},
@@ -43,8 +43,14 @@ define([
         $scope.target.errors = validateTarget($scope.target);
       };
 
-      $scope.switchEditorMode = function () {
-        $scope.target.ITService = !$scope.target.ITService;
+      /**
+       * Switch query editor to specified mode.
+       * Modes:
+       *  0 - items
+       *  1 - IT services
+       */
+      $scope.switchEditorMode = function (mode) {
+        $scope.target.mode = mode;
         $scope.init();
       };
 
