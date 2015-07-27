@@ -64,13 +64,13 @@
             <option value="">-- Select IT service --</option>
           </select>
         </li>
-        <li class="tight-form-item input-small">SLA property</li>
+        <li class="tight-form-item input-medium">IT service property</li>
         <li>
           <select class="tight-form-input input-medium"
                   ng-change="selectSLAProperty()"
                   ng-model="target.slaProperty"
                   ng-options="slaProperty.name for slaProperty in slaPropertyList track by slaProperty.name">
-            <option value="">-- SLA property --</option>
+            <option value="">-- Property --</option>
           </select>
         </li>
       </ul>
@@ -244,6 +244,11 @@
           max data points
         </a>
       </li>
+      <li class="tight-form-item">
+        <a ng-click="toggleEditorHelp(2)" bs-tooltip="'click to show helpful info'" data-placement="bottom">
+          IT service property
+        </a>
+      </li>
     </ul>
     <div class="clearfix"></div>
   </div>
@@ -264,6 +269,16 @@
         <li>If you override maxDataPoint and set a high value performance can be severely effected</li>
       </ul>
     </div>
-
+    <div class="grafana-info-box span6" ng-if="editorHelpIndex === 2">
+      <h5>IT service property</h5>
+      <ul>
+        <li>Zabbix returns the following availability information about IT service</li>
+        <li>Status - current status of the IT service</li>
+        <li>SLA - SLA for the given time interval</li>
+        <li>OK time - time the service was in OK state, in seconds</li>
+        <li>Problem time - time the service was in problem state, in seconds</li>
+        <li>Down time - time the service was in scheduled downtime, in seconds</li>
+      </ul>
+    </div>
   </div>
 </div>
