@@ -15,6 +15,7 @@ define([
         $scope.targetLetters = targetLetters;
         if ($scope.target.ITService) {
           $scope.slaPropertyList = [
+            {name: "Status", property: "status"},
             {name: "SLA", property: "sla"},
             {name: "OK time", property: "okTime"},
             {name: "Problem time", property: "problemTime"},

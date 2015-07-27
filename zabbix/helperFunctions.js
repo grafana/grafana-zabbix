@@ -119,13 +119,23 @@ function (angular, _) {
      */
     this.handleSLAResponse = function (itservice, slaProperty, slaObject) {
       var targetSLA = slaObject[itservice.serviceid].sla[0];
-      return {
-        target: itservice.name + ' ' + slaProperty.name,
-        datapoints: [
-          [targetSLA[slaProperty.property], targetSLA.from * 1000],
-          [targetSLA[slaProperty.property], targetSLA.to * 1000]
-        ]
-      };
+      if (slaProperty.property === 'status') {
+        var targetStatus = slaObject[itservice.serviceid].status;
+        return {
+          target: itservice.name + ' ' + slaProperty.name,
+          datapoints: [
+            [targetStatus, targetSLA.to * 1000]
+          ]
+        };
+      } else {
+        return {
+          target: itservice.name + ' ' + slaProperty.name,
+          datapoints: [
+            [targetSLA[slaProperty.property], targetSLA.from * 1000],
+            [targetSLA[slaProperty.property], targetSLA.to * 1000]
+          ]
+        };
+      }
     };
 
     /**
