@@ -246,6 +246,11 @@
       </li>
       <li class="tight-form-item">
         <a ng-click="toggleEditorHelp(2)" bs-tooltip="'click to show helpful info'" data-placement="bottom">
+          IT services
+        </a>
+      </li>
+      <li class="tight-form-item">
+        <a ng-click="toggleEditorHelp(3)" bs-tooltip="'click to show helpful info'" data-placement="bottom">
           IT service property
         </a>
       </li>
@@ -269,7 +274,15 @@
         <li>If you override maxDataPoint and set a high value performance can be severely effected</li>
       </ul>
     </div>
+
     <div class="grafana-info-box span6" ng-if="editorHelpIndex === 2">
+      <h5>IT services</h5>
+      <p>
+        Select "IT services" in targets menu to activate IT services mode.
+      </p>
+    </div>
+
+    <div class="grafana-info-box span6" ng-if="editorHelpIndex === 3">
       <h5>IT service property</h5>
       <ul>
         <li>Zabbix returns the following availability information about IT service</li>
