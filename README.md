@@ -2,6 +2,8 @@
 
 ## Zabbix datasource for Grafana dashboard
 
+#### Grafana-Zabbix [Live demo](http://104.207.131.68:3000/) site.
+
 #### Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/releases/latest)
 
 Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
