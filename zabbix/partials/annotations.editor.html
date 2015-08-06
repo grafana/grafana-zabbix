@@ -4,9 +4,42 @@
       <tip>Example: Lack of free swap space</tip>
     </h5>
     <div class="editor-option">
-      <input type="text" class="span10"
-             ng-model="currentAnnotation.query"
+      <label class="small">Name</label>
+      <input type="text" class="tight-form-input input-large"
+             ng-model="currentAnnotation.group"
              placeholder="Lack of free swap space">
+      <div class="tight-form">
+        <ul class="tight-form-list" role="menu">
+          <!-- Host Group -->
+          <li class="tight-form-item input-small" style="width: 5em">Group</li>
+          <li>
+            <input type="text" class="tight-form-input input-large"
+                   ng-model="currentAnnotation.group"
+                   placeholder="Lack of free swap space">
+          </li>
+          <!-- Host -->
+          <li class="tight-form-item input-small" style="width: 3em">Host</li>
+          <li>
+            <input type="text" class="tight-form-input input-large"
+                   ng-model="currentAnnotation.host"
+                   placeholder="Lack of free swap space">
+          </li>
+          <!-- Trigger filter -->
+          <li class="tight-form-item">
+            Trigger
+            <i class="fa fa-question-circle"
+               bs-tooltip="'Filtering hosts by regex. Select All in items and specify regex for host names.'"></i>
+          </li>
+          <li>
+            <input type="text" class="tight-form-input input-large"
+                   ng-model="currentAnnotation.trigger"
+                   spellcheck='false'
+                   placeholder="Trigger filter (regex)"
+                   ng-blur="targetBlur()">
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
     </div>
   </div>
 </div>
