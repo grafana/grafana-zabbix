@@ -131,6 +131,21 @@
                  placeholder="Host filter (regex)"
                  ng-blur="targetBlur()">
         </li>
+        <!-- Downsampling function -->
+        <li class="tight-form-item input-medium">Downsampling</li>
+        <li>
+          <select class="tight-form-input input-small"
+                  ng-change="targetBlur()"
+                  ng-model="target.downsampleFunction"
+                  bs-tooltip="'Downsampling function'"
+                  ng-options="func.name for func in downsampleFunctionList track by func.name">
+          </select>
+          <a bs-tooltip="target.errors.metric"
+             style="color: rgb(229, 189, 28)"
+             ng-show="target.errors.metric">
+            <i class="icon-warning-sign"></i>
+          </a>
+        </li>
       </ul>
 
       <div class="clearfix"></div>
