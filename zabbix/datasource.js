@@ -102,10 +102,10 @@ function (angular, _, kbn) {
           }
 
           // Replace templated variables
-          var groupname = templateSrv.replace(target.group.name);
-          var hostname = templateSrv.replace(target.host.name);
-          var appname = templateSrv.replace(target.application.name);
-          var itemname = templateSrv.replace(target.item.name);
+          var groupname = templateSrv.replace(target.group.name, options.scopedVars);
+          var hostname = templateSrv.replace(target.host.name, options.scopedVars);
+          var appname = templateSrv.replace(target.application.name, options.scopedVars);
+          var itemname = templateSrv.replace(target.item.name, options.scopedVars);
 
           // Extract zabbix groups, hosts and apps from string:
           // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
@@ -129,7 +129,7 @@ function (angular, _, kbn) {
                 if (target.hostFilter && _.every(items, _.identity.hosts)) {
 
                   // Use templated variables in filter
-                  var host_pattern = new RegExp(templateSrv.replace(target.hostFilter));
+                  var host_pattern = new RegExp(templateSrv.replace(target.hostFilter, options.scopedVars));
                   items = _.filter(items, function (item) {
                     return _.some(item.hosts, function (host) {
                       return host_pattern.test(host.name);
@@ -144,7 +144,7 @@ function (angular, _, kbn) {
                 if (target.itemFilter) {
 
                   // Use templated variables in filter
-                  var item_pattern = new RegExp(templateSrv.replace(target.itemFilter));
+                  var item_pattern = new RegExp(templateSrv.replace(target.itemFilter, options.scopedVars));
                   return _.filter(items, function (item) {
                     return item_pattern.test(zabbixHelperSrv.expandItemName(item));
                   });
@@ -171,7 +171,7 @@ function (angular, _, kbn) {
                 items = _.flatten(items);
 
                 // Use alias only for single metric, otherwise use item names
-                var alias = target.item.name === 'All' || itemnames.length > 1 ? undefined : templateSrv.replace(target.alias);
+                var alias = target.item.name === 'All' || itemnames.length > 1 ? undefined : templateSrv.replace(target.alias, options.scopedVars);
 
                 if ((from < useTrendsFrom) && self.trends) {
                   return self.zabbixAPI.getTrends(items, from, to)
