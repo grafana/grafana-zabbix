@@ -171,15 +171,32 @@ function (angular, _, kbn) {
                 items = _.flatten(items);
 
                 // Use alias only for single metric, otherwise use item names
-                var alias = target.item.name === 'All' || itemnames.length > 1 ? undefined : templateSrv.replace(target.alias, options.scopedVars);
+                var alias = target.item.name === 'All' || itemnames.length > 1 ?
+                              undefined : templateSrv.replace(target.alias, options.scopedVars);
 
+                var history;
                 if ((from < useTrendsFrom) && self.trends) {
-                  return self.zabbixAPI.getTrends(items, from, to)
-                    .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale));
+                  var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                  history = self.zabbixAPI.getTrends(items, from, to)
+                    .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
                 } else {
-                  return self.zabbixAPI.getHistory(items, from, to)
+                  history = self.zabbixAPI.getHistory(items, from, to)
                     .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
                 }
+
+                return history.then(function (timeseries) {
+                    var timeseries_data = _.flatten(timeseries);
+                    return _.map(timeseries_data, function (timeseries) {
+
+                      // Series downsampling
+                      if (timeseries.datapoints.length > options.maxDataPoints) {
+                        var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
+                        var downsampleFunc = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                        timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
+                      }
+                      return timeseries;
+                    });
+                  });
               }
             });
         } else {
@@ -195,16 +212,7 @@ function (angular, _, kbn) {
 
       return $q.all(_.flatten(promises)).then(function (results) {
         var timeseries_data = _.flatten(results);
-        var data = _.map(timeseries_data, function (timeseries) {
-
-          // Series downsampling
-          if (timeseries.datapoints.length > options.maxDataPoints) {
-            var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
-            timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval);
-          }
-          return timeseries;
-        });
-        return { data: data };
+        return { data: timeseries_data };
       });
     };
 

@@ -24,6 +24,16 @@ define([
           $scope.itserviceList = [{name: "test"}];
           $scope.updateITServiceList();
         } else {
+          $scope.downsampleFunctionList = [
+            {name: "avg", value: "avg"},
+            {name: "min", value: "min"},
+            {name: "max", value: "max"}
+          ];
+
+          // Set avg by default
+          if (!$scope.target.downsampleFunction) {
+            $scope.target.downsampleFunction = $scope.downsampleFunctionList[0];
+          }
           $scope.metric = {
             hostGroupList: [],
             hostList: [{name: '*', visible_name: 'All'}],
