@@ -72,6 +72,7 @@ function (angular, _) {
      * @param  {Array} items      Array of Zabbix Items
      * @param alias
      * @param scale
+     * @param  {string} points    Point value to return: min, max or avg
      * @param  {Array} trends     Array of Zabbix Trends
      *
      * @return {Array}            Array of timeseries in Grafana format
@@ -80,7 +81,7 @@ function (angular, _) {
      *                               datapoints: [[<value>, <unixtime>], ...]
      *                            }
      */
-    this.handleTrendResponse = function (items, alias, scale, trends) {
+    this.handleTrendResponse = function (items, alias, scale, points, trends) {
 
       // Group items and trends by itemid
       var indexed_items = _.indexBy(items, 'itemid');
@@ -95,7 +96,16 @@ function (angular, _) {
           datapoints: _.map(trends, function (p) {
 
             // Value must be a number for properly work
-            var value = Number(p.value_avg);
+            var value;
+            if (points === "min") {
+              value = Number(p.value_min);
+            }
+            else if (points === "max") {
+              value = Number(p.value_max);
+            }
+            else {
+              value = Number(p.value_avg);
+            }
 
             // Apply scale
             if (scale) {
@@ -219,6 +229,7 @@ function (angular, _) {
      * @param   {Object[]}     datapoints        [[<value>, <unixtime>], ...]
      * @param   {integer}   time_to           Panel time to
      * @param   {integer}   ms_interval       Interval in milliseconds for grouping datapoints
+     * @param   {string}    func              Value to return: min, max or avg
      * @return  {Object[]}     [[<value>, <unixtime>], ...]
      */
     this.downsampleSeries = function(datapoints, time_to, ms_interval, func) {

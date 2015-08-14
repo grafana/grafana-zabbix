@@ -171,21 +171,20 @@ function (angular, _, kbn) {
                 items = _.flatten(items);
 
                 // Use alias only for single metric, otherwise use item names
-                var alias = target.item.name === 'All' || itemnames.length > 1 ? undefined : templateSrv.replace(target.alias, options.scopedVars);
+                var alias = target.item.name === 'All' || itemnames.length > 1 ?
+                              undefined : templateSrv.replace(target.alias, options.scopedVars);
 
                 var history;
-                var handleFunction;
                 if ((from < useTrendsFrom) && self.trends) {
-                  history = self.zabbixAPI.getTrends(items, from, to);
-                  handleFunction = zabbixHelperSrv.handleTrendResponse;
+                  var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                  history = self.zabbixAPI.getTrends(items, from, to)
+                    .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
                 } else {
-                  history = self.zabbixAPI.getHistory(items, from, to);
-                  handleFunction = zabbixHelperSrv.handleHistoryResponse;
+                  history = self.zabbixAPI.getHistory(items, from, to)
+                    .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
                 }
 
-                return history
-                  .then(_.bind(handleFunction, zabbixHelperSrv, items, alias, target.scale))
-                  .then(function (timeseries) {
+                return history.then(function (timeseries) {
                     var timeseries_data = _.flatten(timeseries);
                     return _.map(timeseries_data, function (timeseries) {
 
