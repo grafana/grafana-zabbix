@@ -1,37 +1,31 @@
 <div class="editor-row">
   <div class="section">
     <h5>Zabbix trigger
-      <tip>Example: Lack of free swap space</tip>
     </h5>
     <div class="editor-option">
-      <label class="small">Name</label>
-      <input type="text" class="tight-form-input input-large"
-             ng-model="currentAnnotation.group"
-             placeholder="Lack of free swap space">
       <div class="tight-form">
         <ul class="tight-form-list" role="menu">
           <!-- Host Group -->
-          <li class="tight-form-item input-small" style="width: 5em">Group</li>
+          <li class="tight-form-item input-small" style="width: 4em">Group</li>
           <li>
-            <input type="text" class="tight-form-input input-large"
-                   ng-model="currentAnnotation.group"
-                   placeholder="Lack of free swap space">
+            <input type="text" class="tight-form-input input-medium"
+                   ng-model="currentAnnotation.group">
           </li>
           <!-- Host -->
           <li class="tight-form-item input-small" style="width: 3em">Host</li>
           <li>
-            <input type="text" class="tight-form-input input-large"
-                   ng-model="currentAnnotation.host"
-                   placeholder="Lack of free swap space">
+            <input type="text" class="tight-form-input input-medium"
+                   ng-model="currentAnnotation.host">
           </li>
           <!-- Trigger filter -->
-          <li class="tight-form-item">
+          <li class="tight-form-item input-small">
             Trigger
             <i class="fa fa-question-circle"
-               bs-tooltip="'Filtering hosts by regex. Select All in items and specify regex for host names.'"></i>
+               bs-tooltip="'Zabbix trigger name or regex for search. Example: Lack of free swap space'"></i>
           </li>
           <li>
             <input type="text" class="tight-form-input input-large"
+                   style="width: 20em"
                    ng-model="currentAnnotation.trigger"
                    spellcheck='false'
                    placeholder="Trigger filter (regex)"

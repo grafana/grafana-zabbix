@@ -301,11 +301,17 @@ function (angular, _, kbn) {
       var params = {
         output: ['triggerid', 'description'],
         search: {
-          'description': annotation.query
+          'description': annotation.trigger
         },
         searchWildcardsEnabled: true,
         expandDescription: true
       };
+      if (annotation.host) {
+        params.host = annotation.host;
+      }
+      else if (annotation.group) {
+        params.group = annotation.group;
+      }
 
       return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
         .then(function (result) {
