@@ -2,39 +2,24 @@
   <div class="section">
     <h5>Zabbix trigger
     </h5>
-    <div class="editor-option">
-      <div class="tight-form">
-        <ul class="tight-form-list" role="menu">
-          <!-- Host Group -->
-          <li class="tight-form-item input-small" style="width: 4em">Group</li>
-          <li>
-            <input type="text" class="tight-form-input input-medium"
-                   ng-model="currentAnnotation.group">
-          </li>
-          <!-- Host -->
-          <li class="tight-form-item input-small" style="width: 3em">Host</li>
-          <li>
-            <input type="text" class="tight-form-input input-medium"
-                   ng-model="currentAnnotation.host">
-          </li>
-          <!-- Trigger filter -->
-          <li class="tight-form-item input-small">
-            Trigger
-            <i class="fa fa-question-circle"
-               bs-tooltip="'Zabbix trigger name or regex for search. Example: Lack of free swap space'"></i>
-          </li>
-          <li>
-            <input type="text" class="tight-form-input input-large"
-                   style="width: 20em"
-                   ng-model="currentAnnotation.trigger"
-                   spellcheck='false'
-                   placeholder="Trigger filter (regex)"
-                   ng-blur="targetBlur()">
-          </li>
-        </ul>
-        <div class="clearfix"></div>
-      </div>
-    </div>
+  </div>
+</div>
+
+<div class="editor-row">
+  <div class="editor-option">
+    <label class="small">Group</label>
+    <input type="text" class="input-medium" ng-model='currentAnnotation.group'></input>
+  </div>
+  <div class="editor-option">
+    <label class="small">Host</label>
+    <input type="text" class="input-medium" ng-model='currentAnnotation.host'></input>
+  </div>
+  <div class="editor-option">
+    <label class="small">Trigger
+      <tip>Trigger name for search. Wildcards are supports. Examples: Lack of free swap space, Lack of*.
+      </tip>
+    </label>
+    <input type="text" style="width: 25em" ng-model='currentAnnotation.trigger' placeholder="Trigger name"></input>
   </div>
 </div>
 
