@@ -309,11 +309,17 @@ function (angular, _, kbn) {
       var params = {
         output: ['triggerid', 'description'],
         search: {
-          'description': annotation.query
+          'description': annotation.trigger
         },
         searchWildcardsEnabled: true,
         expandDescription: true
       };
+      if (annotation.host) {
+        params.host = templateSrv.replace(annotation.host);
+      }
+      else if (annotation.group) {
+        params.group = templateSrv.replace(annotation.group);
+      }
 
       return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
         .then(function (result) {

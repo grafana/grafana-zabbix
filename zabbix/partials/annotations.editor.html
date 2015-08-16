@@ -1,13 +1,25 @@
 <div class="editor-row">
   <div class="section">
     <h5>Zabbix trigger
-      <tip>Example: Lack of free swap space</tip>
     </h5>
-    <div class="editor-option">
-      <input type="text" class="span10"
-             ng-model="currentAnnotation.query"
-             placeholder="Lack of free swap space">
-    </div>
+  </div>
+</div>
+
+<div class="editor-row">
+  <div class="editor-option">
+    <label class="small">Group</label>
+    <input type="text" class="input-medium" ng-model='currentAnnotation.group'></input>
+  </div>
+  <div class="editor-option">
+    <label class="small">Host</label>
+    <input type="text" class="input-medium" ng-model='currentAnnotation.host'></input>
+  </div>
+  <div class="editor-option">
+    <label class="small">Trigger
+      <tip>Trigger name for search. Wildcards are supports. Examples: Lack of free swap space, Lack of*.
+      </tip>
+    </label>
+    <input type="text" style="width: 25em" ng-model='currentAnnotation.trigger' placeholder="Trigger name"></input>
   </div>
 </div>
 
