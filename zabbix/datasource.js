@@ -307,10 +307,10 @@ function (angular, _, kbn) {
         expandDescription: true
       };
       if (annotation.host) {
-        params.host = annotation.host;
+        params.host = templateSrv.replace(annotation.host);
       }
       else if (annotation.group) {
-        params.group = annotation.group;
+        params.group = templateSrv.replace(annotation.group);
       }
 
       return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
