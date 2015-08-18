@@ -94,7 +94,7 @@ function (angular, _, kbn) {
       // Create request for each target
       var promises = _.map(options.targets, function(target) {
 
-        if (!target.ITService) {
+        if (!target.mode || target.mode === 0) {
           // Don't show undefined and hidden targets
           if (target.hide || !target.group || !target.host
             || !target.application || !target.item) {
@@ -199,7 +199,10 @@ function (angular, _, kbn) {
                   });
               }
             });
-        } else {
+        }
+
+        // IT services mode
+        else if (target.mode === 1) {
           // Don't show undefined and hidden targets
           if (target.hide || !target.itservice || !target.slaProperty) {
             return [];
@@ -207,6 +210,11 @@ function (angular, _, kbn) {
             return this.zabbixAPI.getSLA(target.itservice.serviceid, from, to)
               .then(_.bind(zabbixHelperSrv.handleSLAResponse, zabbixHelperSrv, target.itservice, target.slaProperty));
           }
+        }
+
+        // Text metrics mode
+        else if (target.mode === 2) {
+          return [];
         }
       }, this);
 
