@@ -13,7 +13,7 @@ define([
 
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
-        if (!$scope.target.mode || $scope.target.mode === 0) {
+        if (!$scope.target.mode || $scope.target.mode !== 1) {
           $scope.downsampleFunctionList = [
             {name: "avg", value: "avg"},
             {name: "min", value: "min"},
@@ -224,8 +224,9 @@ define([
         var hosts = $scope.target.host ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
         var apps = $scope.target.application ?
                      zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
+        var itemtype = $scope.target.mode === 2 ? "text" : "numeric";
         if (groups && hosts && apps) {
-          $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps).then(function (items) {
+          $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps, itemtype).then(function (items) {
             // Show only unique item names
             var uniq_items = _.map(_.uniq(items, function (item) {
               return zabbixHelperSrv.expandItemName(item);

@@ -294,7 +294,7 @@ function (angular, _) {
      * @param  {string|string[]} groupids         ///////////////////////////
      * @return {string|string[]}                  Array of Zabbix API item objects
      */
-    p.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
+    p.performItemSuggestQuery = function(hostids, applicationids, groupids, itemtype) {
       var params = {
         output: ['name', 'key_', 'value_type', 'delay'],
         sortfield: 'name',
@@ -302,12 +302,16 @@ function (angular, _) {
         webitems: true,
         // Return only numeric items
         filter: {
-          value_type: [0,3]
+          value_type: [0, 3]
         },
         // Return only enabled items
         monitored: true,
         searchByAny: true
       };
+
+      if (itemtype === "text") {
+        params.filter.value_type = [1, 2, 4];
+      }
 
       // Filter by hosts or by groups
       if (hostids) {
@@ -409,7 +413,7 @@ function (angular, _) {
      * @param  {string or array} apps
      * @return {array}  array of Zabbix API item objects
      */
-    p.itemFindQuery = function(groups, hosts, apps) {
+    p.itemFindQuery = function(groups, hosts, apps, itemtype) {
       var promises = [];
 
       // Get hostids from names
@@ -447,7 +451,7 @@ function (angular, _) {
           }), 'applicationid');
         }
 
-        return self.performItemSuggestQuery(hostids, applicationids, groupids);
+        return self.performItemSuggestQuery(hostids, applicationids, groupids, itemtype);
       });
     };
 
