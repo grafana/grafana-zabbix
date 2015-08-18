@@ -13,17 +13,7 @@ define([
 
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
-        if ($scope.target.mode === 1) {
-          $scope.slaPropertyList = [
-            {name: "Status", property: "status"},
-            {name: "SLA", property: "sla"},
-            {name: "OK time", property: "okTime"},
-            {name: "Problem time", property: "problemTime"},
-            {name: "Down time", property: "downtimeTime"}
-          ];
-          $scope.itserviceList = [{name: "test"}];
-          $scope.updateITServiceList();
-        } else {
+        if (!$scope.target.mode || $scope.target.mode !== 1) {
           $scope.downsampleFunctionList = [
             {name: "avg", value: "avg"},
             {name: "min", value: "min"},
@@ -34,12 +24,14 @@ define([
           if (!$scope.target.downsampleFunction) {
             $scope.target.downsampleFunction = $scope.downsampleFunctionList[0];
           }
-          $scope.metric = {
-            hostGroupList: [],
-            hostList: [{name: '*', visible_name: 'All'}],
-            applicationList: [{name: '*', visible_name: 'All'}],
-            itemList: [{name: 'All'}]
-          };
+          if (!$scope.metric) {
+            $scope.metric = {
+              hostGroupList: [],
+              hostList: [{name: '*', visible_name: 'All'}],
+              applicationList: [{name: '*', visible_name: 'All'}],
+              itemList: [{name: 'All'}]
+            };
+          }
 
           // Update host group, host, application and item lists
           $scope.updateGroupList();
@@ -48,6 +40,17 @@ define([
           $scope.updateItemList();
 
           setItemAlias();
+        }
+        else if ($scope.target.mode === 1) {
+          $scope.slaPropertyList = [
+            {name: "Status", property: "status"},
+            {name: "SLA", property: "sla"},
+            {name: "OK time", property: "okTime"},
+            {name: "Problem time", property: "problemTime"},
+            {name: "Down time", property: "downtimeTime"}
+          ];
+          $scope.itserviceList = [{name: "test"}];
+          $scope.updateITServiceList();
         }
 
         $scope.target.errors = validateTarget($scope.target);
@@ -221,8 +224,9 @@ define([
         var hosts = $scope.target.host ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
         var apps = $scope.target.application ?
                      zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.application.name)) : undefined;
+        var itemtype = $scope.target.mode === 2 ? "text" : "numeric";
         if (groups && hosts && apps) {
-          $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps).then(function (items) {
+          $scope.datasource.zabbixAPI.itemFindQuery(groups, hosts, apps, itemtype).then(function (items) {
             // Show only unique item names
             var uniq_items = _.map(_.uniq(items, function (item) {
               return zabbixHelperSrv.expandItemName(item);
