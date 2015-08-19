@@ -72,6 +72,12 @@ function (angular, _, kbn) {
             };
           }
         });
+      }, function(error) {
+        return {
+          status: "error",
+          title: "Connection failed",
+          message: "Could not connect to " + error.config.url
+        };
       });
     };
 
