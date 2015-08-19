@@ -21,13 +21,13 @@
                 <a class="pointer" tabindex="1"
                    ng-click="switchEditorMode(0)">Numeric metrics</a>
               </li>
-              <li role="menuitem" ng-show="target.mode != 1">
-                <a class="pointer" tabindex="1"
-                   ng-click="switchEditorMode(1)">IT services</a>
-              </li>
               <li role="menuitem" ng-show="target.mode != 2">
                 <a class="pointer" tabindex="1"
                    ng-click="switchEditorMode(2)">Text metrics</a>
+              </li>
+              <li role="menuitem" ng-show="target.mode != 1">
+                <a class="pointer" tabindex="1"
+                   ng-click="switchEditorMode(1)">IT services</a>
               </li>
               <li class="divider" role="menuitem"></li>
               <li role="menuitem"><a tabindex="1" ng-click="duplicate()">Duplicate</a></li>
@@ -81,7 +81,7 @@
 
       <ul class="tight-form-list" role="menu" ng-hide="target.mode == 1">
         <!-- Alias -->
-        <li>
+        <li ng-hide="target.mode == 2">
           <input type="text"
                  class="tight-form-input input-medium"
                  ng-model="target.alias"
@@ -163,7 +163,9 @@
         <li class="tight-form-item">
           <i class="fa fa-eye invisible"></i>
         </li>
-        <li class="tight-form-item" style="width: 135px">&nbsp</li>
+        <li class="tight-form-item" style="width: 135px" ng-hide="target.mode == 2">
+          &nbsp
+        </li>
 
         <!-- Select Application -->
         <li class="tight-form-item input-small" style="width: 5em">Application</li>
@@ -210,6 +212,28 @@
                  spellcheck='false'
                  placeholder="Item filter (regex)"
                  ng-blur="targetBlur()">
+        </li>
+        <!-- Text metric regex -->
+        <li class="tight-form-item" ng-show="target.mode == 2">
+          Text filter&nbsp;
+          <i class="fa fa-question-circle"
+             bs-tooltip="'Use regex to extract a part of the returned value.'"></i>
+        </li>
+        <li ng-show="target.mode == 2">
+          <input type="text"
+                 class="tight-form-input input-large" style="width: 20em"
+                 ng-model="target.textFilter"
+                 spellcheck='false'
+                 placeholder="Text filter (regex)"
+                 ng-blur="targetBlur()">
+        </li>
+        <li class="tight-form-item" ng-show="target.mode == 2">
+          Use capture groups&nbsp;
+          <input class="cr1" id="target.useCaptureGroups" type="checkbox"
+                 ng-model="target.useCaptureGroups"
+                 ng-checked="target.useCaptureGroups"
+                 ng-change="targetBlur()">
+          <label for="target.useCaptureGroups" class="cr1"></label>
         </li>
         <!-- Scale -->
         <li class="tight-form-item" ng-hide="target.mode == 2">
