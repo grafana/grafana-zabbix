@@ -1,7 +1,7 @@
 define([
   'angular',
-  'lodash',
-],
+  'lodash'
+  ],
 function (angular, _) {
   'use strict';
 
@@ -94,7 +94,7 @@ function (angular, _) {
           },
           auth: null,
           id: 1
-        },
+        }
       };
 
       if (this.basicAuth || this.withCredentials) {
@@ -245,8 +245,8 @@ function (angular, _) {
     /**
      * Get the list of hosts
      *
-     * @param  {array} groupids
-     * @return {array}          array of Zabbix host objects
+     * @param  {string|string[]} groupids
+     * @return {Object}          array of Zabbix host objects
      */
     p.performHostSuggestQuery = function(groupids) {
       var params = {
@@ -269,7 +269,7 @@ function (angular, _) {
      *
      * @param  {array} hostids
      * @param  {array} groupids
-     * @return {array}          array of Zabbix application objects
+     * @return {Object}          array of Zabbix application objects
      */
     p.performAppSuggestQuery = function(hostids, /* optional */ groupids) {
       var params = {
@@ -289,12 +289,12 @@ function (angular, _) {
     /**
      * Items request
      *
-     * @param  {string or Array} hostids          ///////////////////////////
-     * @param  {string or Array} applicationids   // Zabbix API parameters //
-     * @param  {string or Array} groupids         ///////////////////////////
-     * @return {string or Array}                  Array of Zabbix API item objects
+     * @param  {string|string[]} hostids          ///////////////////////////
+     * @param  {string|string[]} applicationids   // Zabbix API parameters //
+     * @param  {string|string[]} groupids         ///////////////////////////
+     * @return {string|string[]}                  Array of Zabbix API item objects
      */
-    p.performItemSuggestQuery = function(hostids, applicationids, /* optional */ groupids) {
+    p.performItemSuggestQuery = function(hostids, applicationids, groupids, itemtype) {
       var params = {
         output: ['name', 'key_', 'value_type', 'delay'],
         sortfield: 'name',
@@ -302,12 +302,16 @@ function (angular, _) {
         webitems: true,
         // Return only numeric items
         filter: {
-          value_type: [0,3]
+          value_type: [0, 3]
         },
         // Return only enabled items
         monitored: true,
         searchByAny: true
       };
+
+      if (itemtype === "text") {
+        params.filter.value_type = [1, 2, 4];
+      }
 
       // Filter by hosts or by groups
       if (hostids) {
@@ -409,7 +413,7 @@ function (angular, _) {
      * @param  {string or array} apps
      * @return {array}  array of Zabbix API item objects
      */
-    p.itemFindQuery = function(groups, hosts, apps) {
+    p.itemFindQuery = function(groups, hosts, apps, itemtype) {
       var promises = [];
 
       // Get hostids from names
@@ -447,7 +451,7 @@ function (angular, _) {
           }), 'applicationid');
         }
 
-        return self.performItemSuggestQuery(hostids, applicationids, groupids);
+        return self.performItemSuggestQuery(hostids, applicationids, groupids, itemtype);
       });
     };
 
@@ -506,6 +510,25 @@ function (angular, _) {
 
         return self.performHostSuggestQuery(groupids);
       });
+    };
+
+    p.getITService = function(/* optional */ serviceids) {
+      var params = {
+        output: 'extend',
+        serviceids: serviceids
+      };
+      return this.performZabbixAPIRequest('service.get', params);
+    };
+
+    p.getSLA = function(serviceids, from, to) {
+      var params = {
+        serviceids: serviceids,
+        intervals: [{
+          from: from,
+          to: to
+        }]
+      };
+      return this.performZabbixAPIRequest('service.getsla', params);
     };
 
     return ZabbixAPI;

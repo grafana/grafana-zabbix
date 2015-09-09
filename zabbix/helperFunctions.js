@@ -14,6 +14,8 @@ function (angular, _) {
      * Convert Zabbix API history.get response to Grafana format
      *
      * @param  {Array} items      Array of Zabbix Items
+     * @param alias
+     * @param scale
      * @param  {Array} history    Array of Zabbix History
      *
      * @return {Array}            Array of timeseries in Grafana format
@@ -44,7 +46,7 @@ function (angular, _) {
       var self = this;
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
-        var series = {
+        return {
           target: (item.hosts ? item.hosts[0].name+': ' : '')
             + (alias ? alias : self.expandItemName(item)),
           datapoints: _.map(history, function (p) {
@@ -59,7 +61,6 @@ function (angular, _) {
             return [value, p.clock * 1000];
           })
         };
-        return series;
       })).then(function (result) {
         return _.sortBy(result, 'target');
       });
@@ -69,6 +70,9 @@ function (angular, _) {
      * Convert Zabbix API trends.get response to Grafana format
      *
      * @param  {Array} items      Array of Zabbix Items
+     * @param alias
+     * @param scale
+     * @param  {string} points    Point value to return: min, max or avg
      * @param  {Array} trends     Array of Zabbix Trends
      *
      * @return {Array}            Array of timeseries in Grafana format
@@ -77,7 +81,7 @@ function (angular, _) {
      *                               datapoints: [[<value>, <unixtime>], ...]
      *                            }
      */
-    this.handleTrendResponse = function (items, alias, scale, trends) {
+    this.handleTrendResponse = function (items, alias, scale, points, trends) {
 
       // Group items and trends by itemid
       var indexed_items = _.indexBy(items, 'itemid');
@@ -86,13 +90,22 @@ function (angular, _) {
       var self = this;
       return $q.when(_.map(grouped_trends, function (trends, itemid) {
         var item = indexed_items[itemid];
-        var series = {
+        return {
           target: (item.hosts ? item.hosts[0].name+': ' : '')
             + (alias ? alias : self.expandItemName(item)),
           datapoints: _.map(trends, function (p) {
 
             // Value must be a number for properly work
-            var value = Number(p.value_avg);
+            var value;
+            if (points === "min") {
+              value = Number(p.value_min);
+            }
+            else if (points === "max") {
+              value = Number(p.value_max);
+            }
+            else {
+              value = Number(p.value_avg);
+            }
 
             // Apply scale
             if (scale) {
@@ -101,10 +114,38 @@ function (angular, _) {
             return [value, p.clock * 1000];
           })
         };
-        return series;
       })).then(function (result) {
         return _.sortBy(result, 'target');
       });
+    };
+
+    /**
+     * Convert Zabbix API service.getsla response to Grafana format
+     *
+     * @param itservice
+     * @param slaProperty
+     * @param slaObject
+     * @returns {{target: *, datapoints: *[]}}
+     */
+    this.handleSLAResponse = function (itservice, slaProperty, slaObject) {
+      var targetSLA = slaObject[itservice.serviceid].sla[0];
+      if (slaProperty.property === 'status') {
+        var targetStatus = slaObject[itservice.serviceid].status;
+        return {
+          target: itservice.name + ' ' + slaProperty.name,
+          datapoints: [
+            [targetStatus, targetSLA.to * 1000]
+          ]
+        };
+      } else {
+        return {
+          target: itservice.name + ' ' + slaProperty.name,
+          datapoints: [
+            [targetSLA[slaProperty.property], targetSLA.from * 1000],
+            [targetSLA[slaProperty.property], targetSLA.to * 1000]
+          ]
+        };
+      }
     };
 
     /**
@@ -112,7 +153,7 @@ function (angular, _) {
      * CPU $2 time ($3) --> CPU system time (avg1)
      *
      * @param item: zabbix api item object
-     * @return: expanded item name (string)
+     * @return {string} expanded item name (string)
      */
     this.expandItemName = function(item) {
       var name = item.name;
@@ -185,12 +226,13 @@ function (angular, _) {
     /**
      * Downsample datapoints series
      *
-     * @param   {array}     datapoints        [[<value>, <unixtime>], ...]
+     * @param   {Object[]}     datapoints        [[<value>, <unixtime>], ...]
      * @param   {integer}   time_to           Panel time to
      * @param   {integer}   ms_interval       Interval in milliseconds for grouping datapoints
-     * @return  {array}     [[<value>, <unixtime>], ...]
+     * @param   {string}    func              Value to return: min, max or avg
+     * @return  {Object[]}     [[<value>, <unixtime>], ...]
      */
-    this.downsampleSeries = function(datapoints, time_to, ms_interval) {
+    this.downsampleSeries = function(datapoints, time_to, ms_interval, func) {
       var downsampledSeries = [];
       var timeWindow = {
         from: time_to * 1000 - ms_interval,
@@ -200,14 +242,28 @@ function (angular, _) {
       var points_sum = 0;
       var points_num = 0;
       var value_avg = 0;
+      var frame = [];
+
       for (var i = datapoints.length - 1; i >= 0; i -= 1) {
         if (timeWindow.from < datapoints[i][1] && datapoints[i][1] <= timeWindow.to) {
           points_sum += datapoints[i][0];
           points_num++;
+          frame.push(datapoints[i][0]);
         }
         else {
           value_avg = points_num ? points_sum / points_num : 0;
-          downsampledSeries.push([value_avg, timeWindow.to]);
+
+          if (func === "max") {
+            downsampledSeries.push([_.max(frame), timeWindow.to]);
+          }
+          else if (func === "min") {
+            downsampledSeries.push([_.min(frame), timeWindow.to]);
+          }
+
+          // avg by default
+          else {
+            downsampledSeries.push([value_avg, timeWindow.to]);
+          }
 
           // Shift time window
           timeWindow.to = timeWindow.from;
@@ -215,6 +271,7 @@ function (angular, _) {
 
           points_sum = 0;
           points_num = 0;
+          frame = [];
 
           // Process point again
           i++;

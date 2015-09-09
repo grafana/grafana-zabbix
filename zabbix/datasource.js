@@ -72,6 +72,12 @@ function (angular, _, kbn) {
             };
           }
         });
+      }, function(error) {
+        return {
+          status: "error",
+          title: "Connection failed",
+          message: "Could not connect to " + error.config.url
+        };
       });
     };
 
@@ -94,107 +100,153 @@ function (angular, _, kbn) {
       // Create request for each target
       var promises = _.map(options.targets, function(target) {
 
-        // Don't show undefined and hidden targets
-        if (target.hide || !target.group || !target.host
-                        || !target.application || !target.item) {
-          return [];
+        if (target.mode !== 1) {
+          // Don't show undefined and hidden targets
+          if (target.hide || !target.group || !target.host
+            || !target.application || !target.item) {
+            return [];
+          }
+
+          // Replace templated variables
+          var groupname = templateSrv.replace(target.group.name, options.scopedVars);
+          var hostname = templateSrv.replace(target.host.name, options.scopedVars);
+          var appname = templateSrv.replace(target.application.name, options.scopedVars);
+          var itemname = templateSrv.replace(target.item.name, options.scopedVars);
+
+          // Extract zabbix groups, hosts and apps from string:
+          // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
+          var groups = zabbixHelperSrv.splitMetrics(groupname);
+          var hosts = zabbixHelperSrv.splitMetrics(hostname);
+          var apps = zabbixHelperSrv.splitMetrics(appname);
+
+          // Remove hostnames from item names and then
+          // extract item names
+          // "hostname: itemname" --> "itemname"
+          var delete_hostname_pattern = /(?:\[[\w\.]+]:\s)/g;
+          var itemnames = zabbixHelperSrv.splitMetrics(itemname.replace(delete_hostname_pattern, ''));
+
+          var self = this;
+
+          // Query numeric data
+          if (!target.mode) {
+
+            // Find items by item names and perform queries
+            return this.zabbixAPI.itemFindQuery(groups, hosts, apps)
+              .then(function (items) {
+
+                // Filter hosts by regex
+                if (target.host.visible_name === 'All') {
+                  if (target.hostFilter && _.every(items, _.identity.hosts)) {
+
+                    // Use templated variables in filter
+                    var host_pattern = new RegExp(templateSrv.replace(target.hostFilter, options.scopedVars));
+                    items = _.filter(items, function (item) {
+                      return _.some(item.hosts, function (host) {
+                        return host_pattern.test(host.name);
+                      });
+                    });
+                  }
+                }
+
+                if (itemnames[0] === 'All') {
+
+                  // Filter items by regex
+                  if (target.itemFilter) {
+
+                    // Use templated variables in filter
+                    var item_pattern = new RegExp(templateSrv.replace(target.itemFilter, options.scopedVars));
+                    return _.filter(items, function (item) {
+                      return item_pattern.test(zabbixHelperSrv.expandItemName(item));
+                    });
+                  } else {
+                    return items;
+                  }
+                } else {
+
+                  // Filtering items
+                  return _.filter(items, function (item) {
+                    return _.contains(itemnames, zabbixHelperSrv.expandItemName(item));
+                  });
+                }
+              }).then(function (items) {
+
+                // Don't perform query for high number of items
+                // to prevent Grafana slowdown
+                if (items.length > self.limitmetrics) {
+                  var message = "Try to increase limitmetrics parameter in datasource config.<br>"
+                    + "Current limitmetrics value is " + self.limitmetrics;
+                  alertSrv.set("Metrics limit exceeded", message, "warning", 10000);
+                  return [];
+                } else {
+                  items = _.flatten(items);
+
+                  // Use alias only for single metric, otherwise use item names
+                  var alias = target.item.name === 'All' || itemnames.length > 1 ?
+                                undefined : templateSrv.replace(target.alias, options.scopedVars);
+
+                  var history;
+                  if ((from < useTrendsFrom) && self.trends) {
+                    var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                    history = self.zabbixAPI.getTrends(items, from, to)
+                      .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
+                  } else {
+                    history = self.zabbixAPI.getHistory(items, from, to)
+                      .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
+                  }
+
+                  return history.then(function (timeseries) {
+                      var timeseries_data = _.flatten(timeseries);
+                      return _.map(timeseries_data, function (timeseries) {
+
+                        // Series downsampling
+                        if (timeseries.datapoints.length > options.maxDataPoints) {
+                          var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
+                          var downsampleFunc = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                          timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
+                        }
+                        return timeseries;
+                      });
+                    });
+                }
+              });
+          }
+
+          // Query text data
+          else if (target.mode === 2) {
+
+            // Find items by item names and perform queries
+            return this.zabbixAPI.itemFindQuery(groups, hosts, apps, "text")
+              .then(function (items) {
+                items = _.filter(items, function (item) {
+                  return _.contains(itemnames, zabbixHelperSrv.expandItemName(item));
+                });
+                return self.zabbixAPI.getHistory(items, from, to).then(function(history) {
+                  return {
+                    target: target.item.name,
+                    datapoints: _.map(history, function (p) {
+                      return [p.value, p.clock * 1000];
+                    })
+                  };
+                });
+              });
+          }
         }
 
-        // Replace templated variables
-        var groupname = templateSrv.replace(target.group.name);
-        var hostname  = templateSrv.replace(target.host.name);
-        var appname   = templateSrv.replace(target.application.name);
-        var itemname  = templateSrv.replace(target.item.name);
-
-        // Extract zabbix groups, hosts and apps from string:
-        // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
-        var groups = zabbixHelperSrv.splitMetrics(groupname);
-        var hosts  = zabbixHelperSrv.splitMetrics(hostname);
-        var apps   = zabbixHelperSrv.splitMetrics(appname);
-
-        // Remove hostnames from item names and then
-        // extract item names
-        // "hostname: itemname" --> "itemname"
-        var delete_hostname_pattern = /(?:\[[\w\.]+\]\:\s)/g;
-        var itemnames = zabbixHelperSrv.splitMetrics(itemname.replace(delete_hostname_pattern, ''));
-
-        // Find items by item names and perform queries
-        var self = this;
-        return this.zabbixAPI.itemFindQuery(groups, hosts, apps)
-          .then(function (items) {
-
-            // Filter hosts by regex
-            if (target.host.visible_name === 'All') {
-              if (target.hostFilter && _.every(items, _.identity.hosts)) {
-
-                // Use templated variables in filter
-                var host_pattern = new RegExp(templateSrv.replace(target.hostFilter));
-                items = _.filter(items, function (item) {
-                  return _.some(item.hosts, function (host) {
-                    return host_pattern.test(host.name);
-                  });
-                });
-              }
-            }
-
-            if (itemnames[0] === 'All') {
-
-              // Filter items by regex
-              if (target.itemFilter) {
-
-                // Use templated variables in filter
-                var item_pattern = new RegExp(templateSrv.replace(target.itemFilter));
-                return _.filter(items, function (item) {
-                  return item_pattern.test(zabbixHelperSrv.expandItemName(item));
-                });
-              } else {
-                return items;
-              }
-            } else {
-
-              // Filtering items
-              return _.filter(items, function (item) {
-                return _.contains(itemnames, zabbixHelperSrv.expandItemName(item));
-              });
-            }
-          }).then(function (items) {
-
-            // Don't perform query for high number of items
-            // to prevent Grafana slowdown
-            if (items.length > self.limitmetrics) {
-              var message = "Try to increase limitmetrics parameter in datasource config.<br>"
-                + "Current limitmetrics value is " + self.limitmetrics;
-              alertSrv.set("Metrics limit exceeded", message, "warning", 10000);
-              return [];
-            } else {
-              items = _.flatten(items);
-
-              // Use alias only for single metric, otherwise use item names
-              var alias = target.item.name === 'All' || itemnames.length > 1 ? undefined : templateSrv.replace(target.alias);
-
-              if ((from < useTrendsFrom) && self.trends) {
-                return self.zabbixAPI.getTrends(items, from, to)
-                  .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale));
-              } else {
-                return self.zabbixAPI.getHistory(items, from, to)
-                  .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
-              }
-            }
-          });
+        // IT services mode
+        else if (target.mode === 1) {
+          // Don't show undefined and hidden targets
+          if (target.hide || !target.itservice || !target.slaProperty) {
+            return [];
+          } else {
+            return this.zabbixAPI.getSLA(target.itservice.serviceid, from, to)
+              .then(_.bind(zabbixHelperSrv.handleSLAResponse, zabbixHelperSrv, target.itservice, target.slaProperty));
+          }
+        }
       }, this);
 
       return $q.all(_.flatten(promises)).then(function (results) {
         var timeseries_data = _.flatten(results);
-        var data = _.map(timeseries_data, function (timeseries) {
-
-          // Series downsampling
-          if (timeseries.datapoints.length > options.maxDataPoints) {
-            var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
-            timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval);
-          }
-          return timeseries;
-        });
-        return { data: data };
+        return { data: timeseries_data };
       });
     };
 
@@ -291,11 +343,17 @@ function (angular, _, kbn) {
       var params = {
         output: ['triggerid', 'description'],
         search: {
-          'description': annotation.query
+          'description': annotation.trigger
         },
         searchWildcardsEnabled: true,
         expandDescription: true
       };
+      if (annotation.host) {
+        params.host = templateSrv.replace(annotation.host);
+      }
+      else if (annotation.group) {
+        params.group = templateSrv.replace(annotation.group);
+      }
 
       return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
         .then(function (result) {
@@ -323,7 +381,7 @@ function (angular, _, kbn) {
                     annotation: annotation,
                     time: e.clock * 1000,
                     title: Number(e.value) ? 'Problem' : 'OK',
-                    text: objects[e.objectid].description + formatted_acknowledges,
+                    text: objects[e.objectid].description + formatted_acknowledges
                   });
                 });
                 return events;
