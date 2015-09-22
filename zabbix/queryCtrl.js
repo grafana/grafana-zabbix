@@ -266,6 +266,8 @@ define([
         return errs;
       }
 
+      $scope.init();
+
     });
 
   });
