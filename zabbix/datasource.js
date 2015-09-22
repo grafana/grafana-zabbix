@@ -2,6 +2,7 @@ define([
   'angular',
   'lodash',
   'kbn',
+  './directives',
   './zabbixAPIWrapper',
   './helperFunctions',
   './queryCtrl'
