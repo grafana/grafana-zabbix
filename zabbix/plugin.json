@@ -5,12 +5,10 @@
   "type": "zabbix",
   "serviceName": "ZabbixAPIDatasource",
 
-  "module": "plugins/datasource/zabbix/datasource",
+  "module": "app/plugins/datasource/zabbix/datasource",
 
   "partials": {
     "config": "app/plugins/datasource/zabbix/partials/config.html",
-    "query": "app/plugins/datasource/zabbix/partials/query.editor.html",
-    "annotations": "app/plugins/datasource/zabbix/partials/annotations.editor.html"
   },
 
   "username": "guest",
