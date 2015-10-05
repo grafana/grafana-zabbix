@@ -8,7 +8,7 @@
   "module": "app/plugins/datasource/zabbix/datasource",
 
   "partials": {
-    "config": "app/plugins/datasource/zabbix/partials/config.html",
+    "config": "app/plugins/datasource/zabbix/partials/config.html"
   },
 
   "username": "guest",
