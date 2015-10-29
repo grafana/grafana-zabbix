@@ -348,14 +348,19 @@ function (angular, _) {
         // map/index macros by the macro name
         macros = _.indexBy(macros, 'macro');
 
-        // return items replaced by macros
-        var regexp = RegExp ('\\b(' + Object.keys (macros).join ('|') + ')\\b', 'g');
-        return _.each(items, function(i) {
-          i.name = i.name.replace(new RegExp('{','g'), '_')
-            .replace(new RegExp('}','g'), '_')
-            .replace(new RegExp('\\$','g'), '_')
-            .replace(regexp, function (_, word) { return macros[word].value; });
-        });
+        if (_.keys(macros).length) {
+          // return items replaced by macros if we have a list
+          var regexp = RegExp ('\\b(' + Object.keys (macros).join ('|') + ')\\b', 'g');
+          return _.each(items, function(i) {
+            i.name = i.name.replace(new RegExp('{','g'), '_')
+              .replace(new RegExp('}','g'), '_')
+              .replace(new RegExp('\\$','g'), '_')
+              .replace(regexp, function (_, word) { return macros[word].value; });
+          });
+        }
+        else {
+          return items;
+        }
       });
     };
 
