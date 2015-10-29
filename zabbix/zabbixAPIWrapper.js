@@ -295,6 +295,7 @@ function (angular, _) {
      * @return {string|string[]}                  Array of Zabbix API item objects
      */
     p.performItemSuggestQuery = function(hostids, applicationids, groupids, itemtype) {
+      var promises = [];
       var params = {
         output: ['name', 'key_', 'value_type', 'delay'],
         sortfield: 'name',
@@ -308,6 +309,9 @@ function (angular, _) {
         monitored: true,
         searchByAny: true
       };
+      var macroparams = {
+        output: ['macro', 'value']
+      };
 
       if (itemtype === "text") {
         params.filter.value_type = [1, 2, 4];
@@ -316,8 +320,10 @@ function (angular, _) {
       // Filter by hosts or by groups
       if (hostids) {
         params.hostids = hostids;
+        macroparams.hostids = hostids;
       } else if (groupids) {
         params.groupids = groupids;
+        macroparams.groupids = groupids;
       }
 
       // If application selected return only relative items
@@ -330,7 +336,27 @@ function (angular, _) {
         params.selectHosts = ['name'];
       }
 
-      return this.performZabbixAPIRequest('item.get', params);
+      // Query macro values to populate item placeholders.
+      promises.push(this.performZabbixAPIRequest('usermacro.get', macroparams));
+      promises.push(this.performZabbixAPIRequest('item.get', params));
+      var self = this;
+      return $q.all(promises).then(function (results) {
+        var macros = results[0];
+        var items  = results[1];
+        // normalize macros to not use special chars
+        macros = _.each(macros, function(v) {v.macro=v.macro.replace('{', '_').replace('}', '_').replace('$', '_');});
+        // map/index macros by the macro name
+        macros = _.indexBy(macros, 'macro');
+
+        // return items replaced by macros
+        var regexp = RegExp ('\\b(' + Object.keys (macros).join ('|') + ')\\b', 'g');
+        return _.each(items, function(i) {
+          i.name = i.name.replace(new RegExp('{','g'), '_')
+            .replace(new RegExp('}','g'), '_')
+            .replace(new RegExp('\\$','g'), '_')
+            .replace(regexp, function (_, word) { return macros[word].value; });
+        });
+      });
     };
 
     /**
