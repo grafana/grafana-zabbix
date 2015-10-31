@@ -11,14 +11,6 @@
     "config": "app/plugins/datasource/zabbix/partials/config.html"
   },
 
-  "username": "guest",
-  "password": "",
-
-  "trends": false,
-  "trendsFrom": "7d",
-
-  "limitmetrics": 100,
-
   "metrics": true,
   "annotations": true
 }
