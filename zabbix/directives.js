@@ -14,4 +14,8 @@ define([
       return {templateUrl: 'app/plugins/datasource/zabbix/partials/query.options.html'};
     });
 
+    module.directive('annotationsQueryEditorZabbix', function() {
+      return {templateUrl: 'app/plugins/datasource/zabbix/partials/annotations.editor.html'};
+    });
+
   });
