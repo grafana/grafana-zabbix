@@ -1,4 +1,5 @@
 <section class="grafana-metric-options">
+
   <div class="tight-form">
     <ul class="tight-form-list">
       <li class="tight-form-item tight-form-item-icon">
@@ -20,7 +21,7 @@
     </ul>
     <div class="clearfix"></div>
   </div>
-  <div class="tight-form">
+  <div class="tight-form last">
     <ul class="tight-form-list">
       <li class="tight-form-item tight-form-item-icon">
         <i class="fa fa-info-circle"></i>
@@ -48,7 +49,7 @@
 <div class="editor-row">
   <div class="pull-left" style="margin-top: 30px;">
 
-    <div class="grafana-info-box span6" ng-if="editorHelpIndex === 1">
+    <div class="grafana-info-box span8" ng-if="editorHelpIndex === 1">
       <h5>Max data points</h5>
       <ul>
         <li>Grafana-Zabbix plugin uses maxDataPoints parameter to consolidate the real number of values down to this
@@ -61,14 +62,14 @@
       </ul>
     </div>
 
-    <div class="grafana-info-box span6" ng-if="editorHelpIndex === 2">
+    <div class="grafana-info-box span8" ng-if="editorHelpIndex === 2">
       <h5>IT services</h5>
-      <p>
-        Select "IT services" in targets menu to activate IT services mode.
-      </p>
+      <ul>
+        <li>Select "IT services" in targets menu to activate IT services mode.</li>
+      </ul>
     </div>
 
-    <div class="grafana-info-box span6" ng-if="editorHelpIndex === 3">
+    <div class="grafana-info-box span8" ng-if="editorHelpIndex === 3">
       <h5>IT service property</h5>
       <ul>
         <li>Zabbix returns the following availability information about IT service</li>
