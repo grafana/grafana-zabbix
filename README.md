@@ -14,17 +14,8 @@ Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
 
 #### [Documentation](https://github.com/alexanderzobnin/grafana-zabbix/wiki)
 1. [**Overview**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Overview)
-2. [**Installation**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Installation)
-  - [Grafana 1.9.x](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Installation#grafana-19x)
-  - [Grafana 2.x.x](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Installation#grafana-20x)
+2. [**Installation**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Installation#grafana-21x-and-25x)
 3. [**User’s Guide**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage)
-  - [Query editor](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#query-editor)
-    - [Filters](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#filters)
-    - [Scale](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#scale)
-  - [Templates](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#templates)
-    - [Templated variable editor](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#templated-variable-editor)
-    - [Creating templated dashboard](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#creating-templated-dashboard)
-  - [Annotations](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage#annotations)
 4. [**Troubleshooting**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Troubleshooting)
 
 ## Features
