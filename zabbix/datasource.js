@@ -365,7 +365,8 @@ function (angular, _, dateMath) {
               time_from: from,
               time_till: to,
               objectids: _.keys(objects),
-              select_acknowledges: 'extend'
+              select_acknowledges: 'extend',
+              selectHosts: 'extend'
             };
 
             // Show problem events only
@@ -376,12 +377,19 @@ function (angular, _, dateMath) {
             return self.zabbixAPI.performZabbixAPIRequest('event.get', params)
               .then(function (result) {
                 var events = [];
+
+                var title ='';
+                if (options.annotation.showHostname) {
+                  title += e.hosts[0]['name'] + ': ';
+                }
+                title += Number(e.value) ? 'Problem' : 'OK';
+
                 _.each(result, function(e) {
                   var formatted_acknowledges = zabbixHelperSrv.formatAcknowledges(e.acknowledges);
                   events.push({
                     annotation: options.annotation,
                     time: e.clock * 1000,
-                    title: Number(e.value) ? 'Problem' : 'OK',
+                    title: title,
                     text: objects[e.objectid].description + formatted_acknowledges
                   });
                 });
