@@ -336,24 +336,24 @@ function (angular, _, dateMath) {
     // Annotations //
     /////////////////
 
-    ZabbixAPIDatasource.prototype.annotationQuery = function(annotation, rangeUnparsed) {
-      var from = Math.ceil(dateMath.parse(rangeUnparsed.from) / 1000);
-      var to = Math.ceil(dateMath.parse(rangeUnparsed.to) / 1000);
+    ZabbixAPIDatasource.prototype.annotationQuery = function(options) {
+      var from = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
+      var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
       var self = this;
 
       var params = {
         output: ['triggerid', 'description'],
         search: {
-          'description': annotation.trigger
+          'description': options.annotation.trigger
         },
         searchWildcardsEnabled: true,
         expandDescription: true
       };
-      if (annotation.host) {
-        params.host = templateSrv.replace(annotation.host);
+      if (options.annotation.host) {
+        params.host = templateSrv.replace(options.annotation.host);
       }
-      else if (annotation.group) {
-        params.group = templateSrv.replace(annotation.group);
+      else if (options.annotation.group) {
+        params.group = templateSrv.replace(options.annotation.group);
       }
 
       return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
@@ -369,7 +369,7 @@ function (angular, _, dateMath) {
             };
 
             // Show problem events only
-            if (!annotation.showOkEvents) {
+            if (!options.annotation.showOkEvents) {
               params.value = 1;
             }
 
@@ -379,7 +379,7 @@ function (angular, _, dateMath) {
                 _.each(result, function(e) {
                   var formatted_acknowledges = zabbixHelperSrv.formatAcknowledges(e.acknowledges);
                   events.push({
-                    annotation: annotation,
+                    annotation: options.annotation,
                     time: e.clock * 1000,
                     title: Number(e.value) ? 'Problem' : 'OK',
                     text: objects[e.objectid].description + formatted_acknowledges
