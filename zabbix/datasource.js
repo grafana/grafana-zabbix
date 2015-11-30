@@ -341,8 +341,15 @@ function (angular, _, dateMath) {
       var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
       var self = this;
 
+      // Remove events below the chose severity
+      var severities = [];
+      for (var i = 5; i >= options.annotation.minseverity; i--) {
+        severities.push(i);
+      }
       var params = {
-        output: ['triggerid', 'description'],
+        output: ['triggerid', 'description', 'priority'],
+        preservekeys: 1,
+        filter: { 'priority': severities },
         search: {
           'description': options.annotation.trigger
         },
@@ -359,7 +366,7 @@ function (angular, _, dateMath) {
       return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
         .then(function (result) {
           if(result) {
-            var objects = _.indexBy(result, 'triggerid');
+            var objects = result;
             var params = {
               output: 'extend',
               time_from: from,
@@ -385,6 +392,9 @@ function (angular, _, dateMath) {
                 title += Number(e.value) ? 'Problem' : 'OK';
 
                 _.each(result, function(e) {
+                  // Hide acknowledged events
+                  if (e.acknowledges.length > 0 && options.annotation.showAcknowledged) { return; }
+
                   var formatted_acknowledges = zabbixHelperSrv.formatAcknowledges(e.acknowledges);
                   events.push({
                     annotation: options.annotation,
