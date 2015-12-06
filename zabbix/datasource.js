@@ -195,7 +195,7 @@ function (angular, _, dateMath) {
                       .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
                   }
 
-                  return history.then(function (timeseries) {
+                  var timeseries = history.then(function (timeseries) {
                       var timeseries_data = _.flatten(timeseries);
                       return _.map(timeseries_data, function (timeseries) {
 
@@ -208,7 +208,32 @@ function (angular, _, dateMath) {
                         return timeseries;
                       });
                     });
-                }
+                    var aggregateFunc = target.aggregateFunction ? target.aggregateFunction.value : "no";
+                    if (aggregateFunc == "no" || items.length == 0) {
+                      return timeseries;
+                    }
+                    return timeseries.then(function (timeseries) {
+                      var aggregateLabel = target.aggregateLabel || "Total" ;
+                      var aggregatedOnly = target.aggregatedOnly || false;
+                      function expand_vars(string, pattern, ref_prefix, matched_name) {
+                        pattern.exec(matched_name).forEach(function (value, indx) {
+                          string = string.replace(ref_prefix+indx+"]", value);
+                        });
+                        return string;
+                      }
+                      if (target.itemFilter) {
+                        var item_name = timeseries[0].target.replace(/[\w\.]+:\s/, "");
+                        var item_pattern = new RegExp(templateSrv.replace(target.itemFilter, options.scopedVars));
+                        aggregateLabel = expand_vars(aggregateLabel, item_pattern, "$I[", item_name);
+                      }
+                      if (target.hostFilter) {
+                        var host_name = items[0].hosts ? items[0].hosts[0].name : target.host.name;
+                        var host_pattern = new RegExp(templateSrv.replace(target.hostFilter, options.scopedVars));
+                        aggregateLabel = expand_vars(aggregateLabel, host_pattern, "$H[", host_name);
+                      }
+                      return zabbixHelperSrv.aggregateMetrics(timeseries, aggregateFunc, aggregateLabel, aggregatedOnly);
+                    });
+                  }
               });
           }
 

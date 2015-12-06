@@ -24,6 +24,19 @@ define([
           if (!$scope.target.downsampleFunction) {
             $scope.target.downsampleFunction = $scope.downsampleFunctionList[0];
           }
+
+          // Aggregate
+          $scope.aggregateFunctionList = [
+            {name: "no", value: "no"},
+            {name: "sum", value: "sum"},
+            {name: "avg", value: "avg"},
+            {name: "min", value: "min"},
+            {name: "max", value: "max"}
+          ];
+          if (!$scope.target.aggregateFunction) {
+            $scope.target.aggregateFunction = $scope.aggregateFunctionList[0];
+          }
+
           if (!$scope.metric) {
             $scope.metric = {
               hostGroupList: [],
