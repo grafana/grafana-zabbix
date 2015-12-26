@@ -1,0 +1,221 @@
+<div class="editor-row">
+  <div class="section tight-form-container" style="margin-bottom: 20px">
+    <h5>Select triggers</h5>
+    <div class="tight-form">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 80px">
+          Group
+        </li>
+        <li>
+          <select class="tight-form-input input-large"
+                  ng-model="panel.triggers.group"
+                  ng-options="g.name for g in metric.groupList track by g.name"
+                  ng-change="groupChanged()">
+          </select>
+        </li>
+        <li class="tight-form-item" style="width: 50px">
+          Host
+        </li>
+        <li>
+          <select class="tight-form-input input-large last"
+                  ng-model="panel.triggers.host"
+                  ng-options="h.name for h in metric.hostList track by h.name"
+                  ng-change="hostChanged()">
+          </select>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+    <div class="tight-form">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 80px">
+          Application
+        </li>
+        <li>
+          <select class="tight-form-input input-large"
+                  ng-model="panel.triggers.application"
+                  ng-options="app.name for app in metric.applicationList track by app.name"
+                  ng-change="appChanged()">
+          </select>
+        </li>
+        <li class="tight-form-item" style="width: 50px">
+          Trigger
+        </li>
+        <li>
+          <input  type="text"
+                  class="input-large tight-form-input last"
+                  placeholder="trigger name"
+                  ng-model="panel.triggers.name"
+                  empty-to-null
+                  ng-blur="get_data()">
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+  <div class="section">
+    <h5>Data source</h5>
+    <div class="section tight-form-container" style="margin-bottom: 20px">
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li>
+            <select class="tight-form-input input-large last"
+                    ng-model="panel.datasource"
+                    ng-options="ds for ds in datasources"
+                    ng-change="datasourceChanged()">
+            </select>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+    </div>
+  </div>
+</div>
+
+<div class="editor-row">
+  <div class="section">
+    <h5>Options</h5>
+    <div class="tight-form-container" style="margin-bottom: 20px">
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>Acknowledged</strong>
+          </li>
+          <li>
+            <select class="input-medium tight-form-input"
+                    ng-model="panel.showTriggers"
+                    ng-options="f for f in ackFilters"
+                    ng-change="get_data()">
+            </select>
+          </li>
+          <li class="tight-form-item" style="width: 13em">
+            <strong>Limit triggers number to</strong>
+          </li>
+          <li>
+            <input  class="input-small tight-form-input last"
+                    type="number"
+                    ng-model="panel.limit"
+                    ng-model-onblur
+                    ng-change="get_data()">
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>Sort by</strong>
+          </li>
+          <li>
+            <select class="input-medium tight-form-input"
+                    ng-model="panel.sortTriggersBy"
+                    ng-options="f.text for f in sortByFields track by f.value"
+                    ng-change="get_data()">
+            </select>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>Show fields</strong>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="panel.hostField">Host</label>
+            <input  class="cr1"
+                    id="panel.hostField"
+                    type="checkbox"
+                    ng-model="panel.hostField"
+                    ng-checked="panel.hostField">
+            <label for="panel.hostField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="panel.severityField">Severity</label>
+            <input  class="cr1"
+                    id="panel.severityField"
+                    type="checkbox"
+                    ng-model="panel.severityField"
+                    ng-checked="panel.severityField">
+            <label for="panel.severityField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="panel.lastChangeField">Last change</label>
+            <input  class="cr1"
+                    id="panel.lastChangeField"
+                    type="checkbox"
+                    ng-model="panel.lastChangeField"
+                    ng-checked="panel.lastChangeField">
+            <label for="panel.lastChangeField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="panel.ageField">Age</label>
+            <input  class="cr1"
+                    id="panel.ageField"
+                    type="checkbox"
+                    ng-model="panel.ageField"
+                    ng-checked="panel.ageField">
+            <label for="panel.ageField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item last">
+            <label class="checkbox-label" for="panel.infoField">Info</label>
+            <input  class="cr1"
+                    id="panel.infoField"
+                    type="checkbox"
+                    ng-model="panel.infoField"
+                    ng-checked="panel.infoField">
+            <label for="panel.infoField" class="cr1"></label>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <h5>Customize triggers severity and colors</h5>
+    <div class="tight-form"
+         ng-repeat="trigger in panel.triggerSeverity"
+         ng-class="{last: $last}"
+         ng-style="{background:trigger.color}">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 10px; color: #101010">
+          {{ trigger.priority }}
+        </li>
+        <li>
+          <input  class="tight-form-input input-medium"
+                  type="text"
+                  style="color: #101010"
+                  empty-to-null
+                  ng-model="trigger.severity"
+                  ng-style="{background:trigger.color}"
+                  ng-model-onblur
+                  ng-change="get_data()">
+        </li>
+        <li data-trigger-index="{{trigger.priority}}">
+          &nbsp;
+          <i class="pointer fa fa-eyedropper trigger-color"
+             style="color: #101010"
+             ng-click="openTriggerColorSelector($event)">&nbsp;</i>
+          <input  type="text"
+                  class="tight-form-input input-small"
+                  style="color: #101010"
+                  empty-to-null
+                  ng-model="trigger.color"
+                  ng-style="{background:trigger.color}"
+                  ng-model-onblur
+                  ng-change="get_data()">
+        </li>
+        <li class="tight-form-item last" style="width: 28px">
+          <label class="checkbox-label" for="{{ 'trigger-show-' + $index }}"></label>
+            <input  class="cr1"
+                    ng-attr-id="{{ 'trigger-show-' + $index }}"
+                    type="checkbox"
+                    ng-model="trigger.show"
+                    ng-checked="trigger.show"
+                    ng-change="get_data()">
+            <label for="{{ 'trigger-show-' + $index }}" class="cr1"></label>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</div>

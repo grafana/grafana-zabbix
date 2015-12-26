@@ -1,0 +1,13 @@
+<div class="graph-legend-popover">
+	<a 	class="close"
+			href=""
+			ng-click="dismiss();">×</a>
+
+	<div class="editor-row">
+		<i 	ng-repeat="color in colors" class="pointer"
+				ng-class="{'fa fa-circle-o': color === trigger.color,'fa fa-circle': color !== trigger.color}"
+				ng-style="{color:color}"
+				ng-click="changeTriggerSeverityColor(trigger, color);dismiss();">&nbsp;</i>
+	</div>
+</div>
+

@@ -531,6 +531,52 @@ function (angular, _) {
       return this.performZabbixAPIRequest('service.getsla', params);
     };
 
+    p.getTriggers = function(limit, sortfield, groupids, hostids, applicationids, name) {
+      var params = {
+        output: 'extend',
+        expandDescription: true,
+        expandData: true,
+        monitored: true,
+        //only_true: true,
+        filter: {
+          value: 1
+        },
+        search : {
+          description: name
+        },
+        searchWildcardsEnabled: false,
+        groupids: groupids,
+        hostids: hostids,
+        applicationids: applicationids,
+        limit: limit,
+        sortfield: 'lastchange',
+        sortorder: 'DESC'
+      };
+
+      if (sortfield) {
+        params.sortfield = sortfield;
+      }
+
+      return this.performZabbixAPIRequest('trigger.get', params);
+    };
+
+    p.getAcknowledges = function(triggerids, from) {
+      var params = {
+        output: 'extend',
+        objectids: triggerids,
+        acknowledged: true,
+        select_acknowledges: 'extend',
+        sortfield: 'clock',
+        sortorder: 'DESC',
+        time_from: from
+      };
+
+      return this.performZabbixAPIRequest('event.get', params)
+        .then(function (events) {
+          return _.flatten(_.map(events, 'acknowledges'));
+        });
+    };
+
     return ZabbixAPI;
 
   });

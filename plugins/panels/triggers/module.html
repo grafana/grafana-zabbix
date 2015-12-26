@@ -1,0 +1,118 @@
+<grafana-panel>
+  <div style="padding-top: 10px">
+    <table class="table table-bordered zbx-trigger-table">
+      <thead>
+        <tr>
+          <th ng-if="panel.hostField">Host</th>
+          <th ng-if="panel.severityField">Severity</th>
+          <th style="width: 50%">Issue</th>
+          <th ng-if="panel.lastChangeField">Last change</th>
+          <th ng-if="panel.ageField">Age</th>
+          <th ng-if="panel.infoField">Info</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class=""
+            ng-repeat="trigger in triggerList"
+            style="background-color: {{trigger.color}}">
+          <td ng-if="panel.hostField">
+            <div>
+              <span><strong>{{trigger.host}}</strong></span>
+            </div>
+          </td>
+          <td ng-if="panel.severityField">
+            <div>
+              {{trigger.severity}}
+            </div>
+          </td>
+          <td>
+            <div>
+              {{trigger.description}}
+              <a  ng-if="trigger.comments"
+                  class="pointer"
+                  style="float: right;"
+                  data-toggle="collapse"
+                  data-target="#comments-{{trigger.triggerid}}"
+                  bs-tooltip="'Show additional trigger description'"
+                  data-placement="top">
+                <i class="fa fa-file-text-o"></i>
+              </a>
+            </div>
+
+            <!-- Trigger comments -->
+            <div  class="collapse"
+                  id="comments-{{trigger.triggerid}}"
+                  ng-if="trigger.comments">
+              <div>
+                <small>{{trigger.comments}}</small>
+              </div>
+            </div>
+
+            <!-- Trigger acknowledges -->
+            <div  class="collapse"
+                  id="acknowledges-{{trigger.triggerid}}"
+                  ng-if="trigger.acknowledges">
+              <div style="padding-top: 12px;">
+                <table class="table table-condensed table-striped table-bordered zbx-table-ack"
+                       style="background-color: initial">
+                  <thead>
+                    <tr>
+                      <th><small>Time</small></th>
+                      <th><small>User</small></th>
+                      <th><small>Comments</small></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-repeat="ack in trigger.acknowledges">
+                      <td>
+                        <small>{{ack.time}}</small>
+                      </td>
+                      <td>
+                        <small>{{ack.user}}</small>
+                      </td>
+                      <td>
+                        <small>{{ack.message}}</small>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </td>
+          <td ng-if="panel.lastChangeField">
+            {{trigger.lastchange}}
+          </td>
+          <td ng-if="panel.ageField">
+            {{trigger.age}}
+          </td>
+          <td ng-if="panel.infoField">
+
+            <!-- Trigger Url -->
+            <a  class="zbx-trigger-info"
+                ng-if="trigger.url"
+                href="{{trigger.url}}"
+                target="_blank">
+              <i class="fa fa-external-link"></i>
+            </a>
+
+            <!-- Trigger state -->
+            <span class="zbx-trigger-info"
+                  ng-if="trigger.state === '1'"
+                  bs-tooltip="'{{trigger.error}}'">
+              <i class="fa fa-question-circle"></i>
+            </span>
+
+            <!-- Trigger acknowledges -->
+            <a  class="zbx-trigger-info"
+                ng-if="trigger.acknowledges"
+                bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'"
+                data-toggle="collapse"
+                data-target="#acknowledges-{{trigger.triggerid}}">
+              <i class="fa fa-comments"></i>
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</grafana-panel>

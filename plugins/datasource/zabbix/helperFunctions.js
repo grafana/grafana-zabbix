@@ -279,5 +279,33 @@ function (angular, _) {
       }
       return downsampledSeries.reverse();
     };
+
+    /**
+     * Convert event age from Unix format (milliseconds sins 1970)
+     * to Zabbix format (like at Last 20 issues panel).
+     * @param  {Date}           AgeUnix time in Unix format
+     * @return {string}         Formatted time
+     */
+    this.toZabbixAgeFormat = function(ageUnix) {
+      var age = new Date(+ageUnix);
+      var ageZabbix = age.getSeconds() + 's';
+      if (age.getMinutes()) {
+        ageZabbix = age.getMinutes() + 'm ' + ageZabbix;
+      }
+      if (age.getHours()) {
+        ageZabbix = age.getHours() + 'h ' + ageZabbix;
+      }
+      if (age.getDate() - 1) {
+        ageZabbix = age.getDate() - 1 + 'd ' + ageZabbix;
+      }
+      if (age.getMonth()) {
+        ageZabbix = age.getMonth() + 'M ' + ageZabbix;
+      }
+      if (age.getYear() - 70) {
+        ageZabbix = age.getYear() -70 + 'y ' + ageZabbix;
+      }
+      return ageZabbix;
+    };
+
   });
 });

@@ -1,0 +1,8 @@
+{
+  "pluginType": "panel",
+
+  "name": "Zabbix triggers",
+  "type": "triggers",
+
+  "module": "app/plugins/panels/triggers/module"
+}
