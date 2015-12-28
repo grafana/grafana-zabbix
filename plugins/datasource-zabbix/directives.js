@@ -7,15 +7,15 @@ define([
     var module = angular.module('grafana.directives');
 
     module.directive('metricQueryEditorZabbix', function() {
-      return {controller: 'ZabbixAPIQueryCtrl', templateUrl: 'app/plugins/datasource/zabbix/partials/query.editor.html'};
+      return {controller: 'ZabbixAPIQueryCtrl', templateUrl: 'public/plugins/zabbix/partials/query.editor.html'};
     });
 
     module.directive('metricQueryOptionsZabbix', function() {
-      return {templateUrl: 'app/plugins/datasource/zabbix/partials/query.options.html'};
+      return {templateUrl: 'public/plugins/zabbix/partials/query.options.html'};
     });
 
     module.directive('annotationsQueryEditorZabbix', function() {
-      return {templateUrl: 'app/plugins/datasource/zabbix/partials/annotations.editor.html'};
+      return {templateUrl: 'public/plugins/zabbix/partials/annotations.editor.html'};
     });
 
   });

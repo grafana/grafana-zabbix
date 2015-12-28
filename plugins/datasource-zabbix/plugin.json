@@ -5,10 +5,15 @@
   "type": "zabbix",
   "serviceName": "ZabbixAPIDatasource",
 
-  "module": "app/plugins/datasource/zabbix/datasource",
+  "module": "plugins/zabbix/datasource",
 
   "partials": {
-    "config": "app/plugins/datasource/zabbix/partials/config.html"
+    "config": "public/plugins/zabbix/partials/config.html"
+  },
+
+  "staticRoot": {
+    "url": "zabbix",
+    "path": "."
   },
 
   "metrics": true,

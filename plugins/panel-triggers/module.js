@@ -18,7 +18,7 @@ define([
   'jquery',
   'app/core/config',
   'app/features/panel/panel_meta',
-  'app/plugins/datasource/zabbix/helperFunctions',
+  '../zabbix/helperFunctions',
 ],
 function (angular, app, _, $, config, PanelMeta) {
   'use strict';
@@ -29,7 +29,7 @@ function (angular, app, _, $, config, PanelMeta) {
   module.directive('grafanaPanelTriggers', function() {
     return {
       controller: 'TriggersPanelCtrl',
-      templateUrl: 'app/plugins/panels/triggers/module.html',
+      templateUrl: 'public/plugins/triggers/module.html',
     };
   });
 
@@ -42,7 +42,7 @@ function (angular, app, _, $, config, PanelMeta) {
       fullscreen: true,
     });
 
-    $scope.panelMeta.addEditorTab('Options', 'app/plugins/panels/triggers/editor.html');
+    $scope.panelMeta.addEditorTab('Options', 'public/plugins/triggers/editor.html');
 
     $scope.ackFilters = [
       'all triggers',
@@ -257,7 +257,7 @@ function (angular, app, _, $, config, PanelMeta) {
       popoverSrv.show({
         element: el,
         placement: 'top',
-        templateUrl:  'app/plugins/panels/triggers/trigger.colorpicker.html',
+        templateUrl:  'public/plugins/triggers/trigger.colorpicker.html',
         scope: popoverScope
       });
     };

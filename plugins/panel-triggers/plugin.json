@@ -4,5 +4,10 @@
   "name": "Zabbix triggers",
   "type": "triggers",
 
-  "module": "app/plugins/panels/triggers/module"
+  "module": "plugins/triggers/module",
+
+  "staticRoot": {
+    "url": "triggers",
+    "path": "."
+  }
 }
