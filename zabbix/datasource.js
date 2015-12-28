@@ -385,13 +385,13 @@ function (angular, _, dateMath) {
               .then(function (result) {
                 var events = [];
 
-                var title ='';
-                if (options.annotation.showHostname) {
-                  title += e.hosts[0]['name'] + ': ';
-                }
-                title += Number(e.value) ? 'Problem' : 'OK';
-
                 _.each(result, function(e) {
+                  var title ='';
+                  if (options.annotation.showHostname) {
+                    title += e.hosts[0]['name'] + ': ';
+                  }
+                  title += Number(e.value) ? 'Problem' : 'OK';
+
                   // Hide acknowledged events
                   if (e.acknowledges.length > 0 && options.annotation.showAcknowledged) { return; }
 
