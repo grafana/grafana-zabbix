@@ -337,8 +337,8 @@ function (angular, _, dateMath) {
     /////////////////
 
     ZabbixAPIDatasource.prototype.annotationQuery = function(options) {
-      var from = Math.ceil(dateMath.parse(options.range.from) / 1000);
-      var to = Math.ceil(dateMath.parse(options.range.to) / 1000);
+      var from = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
+      var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
       var annotation = options.annotation;
       var self = this;
 
