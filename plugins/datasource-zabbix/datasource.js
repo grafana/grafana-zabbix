@@ -339,12 +339,12 @@ function (angular, _, dateMath) {
     ZabbixAPIDatasource.prototype.annotationQuery = function(options) {
       var from = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
       var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
-      var annotation = options.annotation;
+      var annotation = annotation;
       var self = this;
 
       // Remove events below the chose severity
       var severities = [];
-      for (var i = 5; i >= options.annotation.minseverity; i--) {
+      for (var i = 5; i >= annotation.minseverity; i--) {
         severities.push(i);
       }
       var params = {
@@ -352,16 +352,16 @@ function (angular, _, dateMath) {
         preservekeys: 1,
         filter: { 'priority': severities },
         search: {
-          'description': options.annotation.trigger
+          'description': annotation.trigger
         },
         searchWildcardsEnabled: true,
         expandDescription: true
       };
-      if (options.annotation.host) {
-        params.host = templateSrv.replace(options.annotation.host);
+      if (annotation.host) {
+        params.host = templateSrv.replace(annotation.host);
       }
-      else if (options.annotation.group) {
-        params.group = templateSrv.replace(options.annotation.group);
+      else if (annotation.group) {
+        params.group = templateSrv.replace(annotation.group);
       }
 
       return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
@@ -378,7 +378,7 @@ function (angular, _, dateMath) {
             };
 
             // Show problem events only
-            if (!options.annotation.showOkEvents) {
+            if (!annotation.showOkEvents) {
               params.value = 1;
             }
 
@@ -388,17 +388,17 @@ function (angular, _, dateMath) {
 
                 _.each(result, function(e) {
                   var title ='';
-                  if (options.annotation.showHostname) {
-                    title += e.hosts[0]['name'] + ': ';
+                  if (annotation.showHostname) {
+                    title += e.hosts[0].name + ': ';
                   }
                   title += Number(e.value) ? 'Problem' : 'OK';
 
                   // Hide acknowledged events
-                  if (e.acknowledges.length > 0 && options.annotation.showAcknowledged) { return; }
+                  if (e.acknowledges.length > 0 && annotation.showAcknowledged) { return; }
 
                   var formatted_acknowledges = zabbixHelperSrv.formatAcknowledges(e.acknowledges);
                   events.push({
-                    annotation: options.annotation,
+                    annotation: annotation,
                     time: e.clock * 1000,
                     title: title,
                     text: objects[e.objectid].description + formatted_acknowledges
