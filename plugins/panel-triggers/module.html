@@ -1,118 +1,132 @@
-<grafana-panel>
-  <div style="padding-top: 10px">
-    <table class="table table-bordered zbx-trigger-table">
-      <thead>
-        <tr>
-          <th ng-if="panel.hostField">Host</th>
-          <th ng-if="panel.severityField">Severity</th>
-          <th style="width: 50%">Issue</th>
-          <th ng-if="panel.lastChangeField">Last change</th>
-          <th ng-if="panel.ageField">Age</th>
-          <th ng-if="panel.infoField">Info</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class=""
-            ng-repeat="trigger in triggerList"
-            style="background-color: {{trigger.color}}">
-          <td ng-if="panel.hostField">
-            <div>
-              <span><strong>{{trigger.host}}</strong></span>
-            </div>
-          </td>
-          <td ng-if="panel.severityField">
-            <div>
-              {{trigger.severity}}
-            </div>
-          </td>
-          <td>
-            <div>
-              {{trigger.description}}
-              <a  ng-if="trigger.comments"
-                  class="pointer"
-                  style="float: right;"
-                  data-toggle="collapse"
-                  data-target="#comments-{{trigger.triggerid}}"
-                  bs-tooltip="'Show additional trigger description'"
-                  data-placement="top">
-                <i class="fa fa-file-text-o"></i>
-              </a>
-            </div>
+<div class="table-panel-wrapper">
+  <grafana-panel>
+    <div class="table-panel-container">
+      <div class="table-panel-header-bg"></div>
+      <div class="table-panel-scroll">
+        <table class="table-panel-table">
+          <thead>
+            <tr>
+              <th ng-if="panel.hostField" style="width: 15%">
+                <div class="table-panel-table-header-inner pointer">
+                  Host
+                </div>
+              </th>
+              <th ng-if="panel.severityField" style="width: 120px">
+                <div class="table-panel-table-header-inner pointer">Severity</div>
+              </th>
+              <th>
+                <div class="table-panel-table-header-inner pointer">Issue</div>
+              </th>
+              <th ng-if="panel.lastChangeField" style="width: 180px">
+                <div class="table-panel-table-header-inner pointer">Last change</div>
+              </th>
+              <th ng-if="panel.ageField" style="width: 180px">
+                <div class="table-panel-table-header-inner pointer">Age</div>
+              </th>
+              <th ng-if="panel.infoField" style="width: 100px">
+                <div class="table-panel-table-header-inner pointer">Info</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="trigger in triggerList">
+              <td ng-if="panel.hostField">
+                <div>
+                  <span><strong>{{trigger.host}}</strong></span>
+                </div>
+              </td>
+              <td ng-if="panel.severityField" style="background-color: {{trigger.color}}; color: white">
+                <div>
+                  {{trigger.severity}}
+                </div>
+              </td>
+              <td style="background-color: {{trigger.color}}; color: white">
+                <div>
+                  {{trigger.description}}
+                  <a  ng-if="trigger.comments"
+                      class="pointer"
+                      style="float: right; padding-right: 8px"
+                      data-toggle="collapse"
+                      data-target="#comments-{{trigger.triggerid}}"
+                      bs-tooltip="'Show additional trigger description'"
+                      data-placement="top">
+                    <i class="fa fa-file-text-o"></i>
+                  </a>
+                </div>
 
-            <!-- Trigger comments -->
-            <div  class="collapse"
-                  id="comments-{{trigger.triggerid}}"
-                  ng-if="trigger.comments">
-              <div>
-                <small>{{trigger.comments}}</small>
-              </div>
-            </div>
+                <!-- Trigger comments -->
+                <div  class="collapse"
+                      id="comments-{{trigger.triggerid}}"
+                      ng-if="trigger.comments">
+                  <div>
+                    <small>{{trigger.comments}}</small>
+                  </div>
+                </div>
 
-            <!-- Trigger acknowledges -->
-            <div  class="collapse"
-                  id="acknowledges-{{trigger.triggerid}}"
-                  ng-if="trigger.acknowledges">
-              <div style="padding-top: 12px;">
-                <table class="table table-condensed table-striped table-bordered zbx-table-ack"
-                       style="background-color: initial">
-                  <thead>
-                    <tr>
-                      <th><small>Time</small></th>
-                      <th><small>User</small></th>
-                      <th><small>Comments</small></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr ng-repeat="ack in trigger.acknowledges">
-                      <td>
-                        <small>{{ack.time}}</small>
-                      </td>
-                      <td>
-                        <small>{{ack.user}}</small>
-                      </td>
-                      <td>
-                        <small>{{ack.message}}</small>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </td>
-          <td ng-if="panel.lastChangeField">
-            {{trigger.lastchange}}
-          </td>
-          <td ng-if="panel.ageField">
-            {{trigger.age}}
-          </td>
-          <td ng-if="panel.infoField">
+                <!-- Trigger acknowledges -->
+                <div  class="collapse"
+                      id="acknowledges-{{trigger.triggerid}}"
+                      ng-if="trigger.acknowledges">
+                  <div style="padding-top: 12px;">
+                    <table class="table table-condensed">
+                      <thead>
+                        <tr>
+                          <th><small>Time</small></th>
+                          <th><small>User</small></th>
+                          <th><small>Comments</small></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr ng-repeat="ack in trigger.acknowledges">
+                          <td>
+                            <small>{{ack.time}}</small>
+                          </td>
+                          <td>
+                            <small>{{ack.user}}</small>
+                          </td>
+                          <td>
+                            <small>{{ack.message}}</small>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </td>
+              <td ng-if="panel.lastChangeField">
+                {{trigger.lastchange}}
+              </td>
+              <td ng-if="panel.ageField">
+                {{trigger.age}}
+              </td>
+              <td ng-if="panel.infoField">
 
-            <!-- Trigger Url -->
-            <a  class="zbx-trigger-info"
-                ng-if="trigger.url"
-                href="{{trigger.url}}"
-                target="_blank">
-              <i class="fa fa-external-link"></i>
-            </a>
+                <!-- Trigger Url -->
+                <a  ng-if="trigger.url"
+                    href="{{trigger.url}}"
+                    target="_blank">
+                  <i class="fa fa-external-link"></i>
+                </a>
 
-            <!-- Trigger state -->
-            <span class="zbx-trigger-info"
-                  ng-if="trigger.state === '1'"
-                  bs-tooltip="'{{trigger.error}}'">
-              <i class="fa fa-question-circle"></i>
-            </span>
+                <!-- Trigger state -->
+                <span ng-if="trigger.state === '1'"
+                      bs-tooltip="'{{trigger.error}}'">
+                  <i class="fa fa-question-circle"></i>
+                </span>
 
-            <!-- Trigger acknowledges -->
-            <a  class="zbx-trigger-info"
-                ng-if="trigger.acknowledges"
-                bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'"
-                data-toggle="collapse"
-                data-target="#acknowledges-{{trigger.triggerid}}">
-              <i class="fa fa-comments"></i>
-            </a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</grafana-panel>
+                <!-- Trigger acknowledges -->
+                <a  ng-if="trigger.acknowledges"
+                    bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'"
+                    data-toggle="collapse"
+                    data-target="#acknowledges-{{trigger.triggerid}}">
+                  <i class="fa fa-comments"></i>
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="table-panel-footer"></div>
+  </grafana-panel>
+</div>
