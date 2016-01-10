@@ -1,0 +1,24 @@
+site_name: Grafana-Zabbix Documentation
+#site_url: http://docs.grafana-zabbix.org/
+#site_url: /
+site_description: Documentation for Grafana-Zabbix, Zabbix monitoring system plugin bundle for Grafana
+repo_url: https://github.com/alexanderzobnin/grafana-zabbix/
+copyright: Copyright &copy; 2014-2015, Alexander Zobnin
+
+docs_dir: sources
+theme: readthedocs
+
+pages:
+- Project:
+    - 'About Grafana-Zabbix': 'index.md'
+    - 'Feature Highlights': 'features.md'
+- Installation:
+    - 'Installation and Configuration': 'installation/index.md'
+    - 'Troubleshooting': 'installation/troubleshooting.md'
+- User Guides:
+    - 'Getting Started': 'guides/gettingstarted.md'
+- Reference:
+    - 'Zabbix Datasource': 'reference/datasource-zabbix.md'
+    - 'Triggers Panel': 'reference/panel-triggers.md'
+- Tutorials:
+    - 'Building Host Dashboard': 'tutorials/host_dashboard.md'
