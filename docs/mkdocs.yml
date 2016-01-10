@@ -11,6 +11,7 @@ theme: readthedocs
 pages:
 - Project:
     - 'About Grafana-Zabbix': 'index.md'
+    - 'Feature Highlights': 'features.md'
 - Installation:
     - 'Installation and Configuration': 'installation/index.md'
     - 'Troubleshooting': 'installation/troubleshooting.md'
