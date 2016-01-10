@@ -41,6 +41,11 @@
           IT service property
         </a>
       </li>
+      <li class="tight-form-item">
+        <a ng-click="toggleEditorHelp(4)" bs-tooltip="'click to show helpful info'" data-placement="bottom">
+          Text filter
+        </a>
+      </li>
     </ul>
     <div class="clearfix"></div>
   </div>
@@ -78,6 +83,13 @@
         <li>OK time - time the service was in OK state, in seconds</li>
         <li>Problem time - time the service was in problem state, in seconds</li>
         <li>Down time - time the service was in scheduled downtime, in seconds</li>
+      </ul>
+    </div>
+
+    <div class="grafana-info-box span8" ng-if="editorHelpIndex === 4">
+      <h5>Text filter</h5>
+      <ul>
+        <li>Use regex to extract a part of the returned value.</li>
       </ul>
     </div>
   </div>

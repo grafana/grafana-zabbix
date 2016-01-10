@@ -76,7 +76,7 @@
 
   <ul class="tight-form-list" role="menu" ng-hide="target.mode == 1">
     <!-- Alias -->
-    <li>
+    <li ng-hide="target.mode == 2">
       <input type="text"
              class="tight-form-input input-medium"
              ng-model="target.alias"
@@ -154,11 +154,7 @@
 
 <div class="tight-form" ng-hide="target.mode == 1">
   <ul class="tight-form-list" role="menu">
-    <li class="tight-form-item" style="min-width: 15px; text-align: center">&nbsp</li>
-    <li class="tight-form-item">
-      <i class="fa fa-eye invisible"></i>
-    </li>
-    <li class="tight-form-item" style="width: 135px">&nbsp</li>
+    <li class="tight-form-item" style="width: 44px">&nbsp</li>
 
     <!-- Select Application -->
     <li class="tight-form-item input-small" style="width: 5em">Application</li>
@@ -219,6 +215,33 @@
              spellcheck='false'
              placeholder="1"
              ng-blur="targetBlur()">
+    </li>
+  </ul>
+
+  <div class="clearfix"></div>
+</div>
+<div class="tight-form" ng-hide="target.mode == 1">
+  <ul class="tight-form-list" role="menu">
+    <li class="tight-form-item" style="width: 44px">&nbsp</li>
+    <!-- Text metric regex -->
+    <li class="tight-form-item" ng-show="target.mode == 2">
+      Text filter
+    </li>
+    <li ng-show="target.mode == 2">
+      <input type="text"
+             class="tight-form-input input-large" style="width: 20em"
+             ng-model="target.textFilter"
+             spellcheck='false'
+             placeholder="Text filter (regex)"
+             ng-blur="targetBlur()">
+    </li>
+    <li class="tight-form-item" ng-show="target.mode == 2">
+      Use capture groups&nbsp;
+      <input class="cr1" id="target.useCaptureGroups" type="checkbox"
+             ng-model="target.useCaptureGroups"
+             ng-checked="target.useCaptureGroups"
+             ng-change="targetBlur()">
+      <label for="target.useCaptureGroups" class="cr1"></label>
     </li>
   </ul>
 

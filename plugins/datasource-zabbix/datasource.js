@@ -225,7 +225,22 @@ function (angular, _, dateMath) {
                   return {
                     target: target.item.name,
                     datapoints: _.map(history, function (p) {
-                      return [p.value, p.clock * 1000];
+                      var value = p.value;
+                      if (target.textFilter) {
+                        var text_extract_pattern = new RegExp(templateSrv.replace(target.textFilter, options.scopedVars));
+                        //var text_extract_pattern = new RegExp(target.textFilter);
+                        var result = text_extract_pattern.exec(value);
+                        if (result) {
+                          if (target.useCaptureGroups) {
+                            value = result[1];
+                          } else {
+                            value = result[0];
+                          }
+                        } else {
+                          value = null;
+                        }
+                      }
+                      return [value, p.clock * 1000];
                     })
                   };
                 });
