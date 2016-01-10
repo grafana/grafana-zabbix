@@ -127,7 +127,7 @@ function (angular, app, _, $, config, PanelMeta) {
         var applicationids = $scope.panel.triggers.application.value;
 
         // Get triggers
-        return zabbix.getTriggers($scope.panel.limit,
+        return zabbix.getTriggers(null,
                                   $scope.panel.sortTriggersBy.value,
                                   groupid,
                                   hostid,
@@ -180,6 +180,9 @@ function (angular, app, _, $, config, PanelMeta) {
               $scope.triggerList = _.filter($scope.triggerList, function (trigger) {
                 return $scope.panel.triggerSeverity[trigger.priority].show;
               });
+
+              // Limit triggers number
+              $scope.triggerList  = _.first($scope.triggerList, $scope.panel.limit);
 
               $scope.panelRenderingComplete();
             });
