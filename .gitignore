@@ -9,3 +9,6 @@
 .jshintrc
 .jscs.json
 .jsfmtrc
+
+# Builded docs
+docs/site/
