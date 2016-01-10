@@ -4,16 +4,15 @@ page_description: Introduction to Grafana-Zabbix.
 # About Grafana-Zabbix
 
 Grafana-Zabbix is a plugin bundle for Grafana allowing to visualize monitoring data from Zabbix
-and create dashboards for analyzing metrics and realtime monitoring.
+and create dashboards for analyzing metrics and realtime monitoring. The main goals of this project
+is extend Zabbix capabilities for monitoring data visualization and provide quick and powerful way
+to create dashboards. It is possible due both Grafana and Grafana-Zabbix plugin features.
 
 ## Community Resources, Feedback, and Support
 
-Thousands of organizations large and small rely on Grafana, and we have a vibrant and active community that constantly inspires us.
-
-Please don't hesitate to [open a new issue on Github](https://github.com/grafana/grafana/issues)
-with your suggestions, ideas, and bug reports.
-
-Most of the new features and improvements that go into Grafana come from our users. We greatly value your feedback and suggestions; we consider them paramount to making the product better!
+This project is being started as a simple plugin for Grafana. But many powerful features and
+improvements come from community. So don't hesitate to give any feedback and together we will make
+this tool better.
 
 If you have any troubles with Grafana or you just want clarification on a feature, there are
 a number of ways to get help:
