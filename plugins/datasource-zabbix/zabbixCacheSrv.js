@@ -34,8 +34,20 @@ function (angular, _) {
 
     var p = ZabbixCache.prototype;
 
+    p.getGroups = function() {
+      return this._groups;
+    };
+
     p.getHosts = function() {
       return this._hosts;
+    };
+
+    p.getApplications = function() {
+      return this._applications;
+    };
+
+    p.getItems = function() {
+      return this._items;
     };
 
     /**
