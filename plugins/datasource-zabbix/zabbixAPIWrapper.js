@@ -113,6 +113,55 @@ function (angular, _) {
       });
     };
 
+    //////////////////////////
+    // High-level functions //
+    //////////////////////////
+
+    p.getGroups = function() {
+      var params = {
+        output: ['name'],
+        sortfield: 'name',
+        selectHosts: []
+      };
+
+      return this.performZabbixAPIRequest('hostgroup.get', params);
+    };
+
+    p.getHosts = function() {
+      var params = {
+        output: ['name', 'host'],
+        sortfield: 'name'
+      };
+
+      return this.performZabbixAPIRequest('host.get', params);
+    };
+
+    p.getApplications = function() {
+      var params = {
+        output: ['name'],
+        sortfield: 'name'
+      };
+
+      return this.performZabbixAPIRequest('application.get', params);
+    };
+
+    p.getItems = function() {
+      var params = {
+        output: ['name', 'key_', 'value_type'],
+        sortfield: 'name',
+        //Include web items in the result
+        webitems: true,
+        // Return only numeric items
+        filter: {
+          value_type: [0, 3]
+        },
+        // Return only enabled items
+        monitored: true
+      };
+
+      return this.performZabbixAPIRequest('item.get', params);
+    };
+
     /////////////////////////
     // API method wrappers //
     /////////////////////////

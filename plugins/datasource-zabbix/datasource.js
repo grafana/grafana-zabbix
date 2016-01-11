@@ -5,6 +5,7 @@ define([
   './directives',
   './zabbixAPIWrapper',
   './helperFunctions',
+  './zabbixCacheSrv',
   './queryCtrl'
 ],
 function (angular, _, dateMath) {
@@ -12,7 +13,8 @@ function (angular, _, dateMath) {
 
   var module = angular.module('grafana.services');
 
-  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, alertSrv, ZabbixAPI, zabbixHelperSrv) {
+  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, alertSrv,
+                                                  ZabbixAPI, zabbixHelperSrv, ZabbixCache) {
 
     /**
      * Datasource initialization. Calls when you refresh page, add
@@ -48,6 +50,10 @@ function (angular, _, dateMath) {
 
       // Initialize Zabbix API
       this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
+
+      // Initialize cache service
+      this.zabbixCache = new ZabbixCache(this.zabbixAPI);
+      console.log(this.zabbixCache);
     }
 
     /**
