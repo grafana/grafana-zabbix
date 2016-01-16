@@ -10,15 +10,21 @@ function (angular, _) {
   module.factory('ZabbixCache', function($q) {
 
     function ZabbixCache(zabbixAPI, lifetime) {
+      var self = this;
+
       this.zabbixAPI = zabbixAPI;
       this.lifetime = lifetime;
 
-      this._groups        = [];
-      this._hosts         = [];
-      this._applications  = [];
-      this._items         = [];
+      this._groups        = undefined;
+      this._hosts         = undefined;
+      this._applications  = undefined;
+      this._items         = undefined;
 
-      this.refresh();
+      this._initialized = undefined;
+
+      this.refresh().then(function () {
+        self._initialized = true;
+      });
     }
 
     var p = ZabbixCache.prototype;
@@ -32,7 +38,7 @@ function (angular, _) {
         this.zabbixAPI.getItems()
       ];
 
-      $q.all(promises).then(function (results) {
+      return $q.all(promises).then(function (results) {
         if (results.length) {
           self._groups = results[0];
 

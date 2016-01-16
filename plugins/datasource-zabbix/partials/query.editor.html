@@ -76,7 +76,7 @@
 
   <ul class="tight-form-list" role="menu" ng-hide="target.mode == 1">
     <!-- Alias -->
-    <li ng-hide="target.mode == 2">
+    <li>
       <input type="text"
              class="tight-form-input input-medium"
              ng-model="target.alias"
@@ -84,52 +84,31 @@
              placeholder="Alias"
              ng-blur="targetBlur()">
     </li>
+
     <!-- Select Host Group -->
     <li class="tight-form-item input-small" style="width: 5em">Group</li>
     <li>
-      <select class="tight-form-input input-large"
-              ng-change="selectHostGroup()"
-              ng-model="target.group"
-              bs-tooltip="target.group.name.length > 25 ? target.group.name : ''"
-              ng-options="group.visible_name ? group.visible_name : group.name for group in metric.groupList track by group.name">
-        <option value="">-- Select host group --</option>
-      </select>
-      <a bs-tooltip="target.errors.metric"
-         style="color: rgb(229, 189, 28)"
-         ng-show="target.errors.metric">
-        <i class="fa fa-warning"></i>
-      </a>
+      <input type="text"
+        ng-model="target.groupFilter"
+        bs-typeahead="getGroupNames"
+        ng-blur="render()"
+        data-min-length=0
+        data-items=100
+        class="input-medium tight-form-input" >
     </li>
+
     <!-- Select Host -->
     <li class="tight-form-item input-small" style="width: 3em">Host</li>
     <li>
-      <select class="tight-form-input input-large"
-              ng-change="selectHost()"
-              ng-model="target.host"
-              bs-tooltip="target.host.name.length > 25 ? target.host.name : ''"
-              ng-options="host.visible_name ? host.visible_name : host.name for host in metric.hostList track by host.name">
-        <option value="">-- Select host --</option>
-      </select>
-      <a bs-tooltip="target.errors.metric"
-         style="color: rgb(229, 189, 28)"
-         ng-show="target.errors.metric">
-        <i class="icon-warning-sign"></i>
-      </a>
-    </li>
-    <!-- Host filter -->
-    <li class="tight-form-item" ng-hide="target.mode == 2">
-      Filter
-      <i class="fa fa-question-circle"
-         bs-tooltip="'Filtering hosts by regex. Select All in items and specify regex for host names.'"></i>
-    </li>
-    <li ng-hide="target.mode == 2">
       <input type="text"
-             class="tight-form-input input-large"
-             ng-model="target.hostFilter"
-             spellcheck='false'
-             placeholder="Host filter (regex)"
-             ng-blur="targetBlur()">
+        ng-model="target.hostFilter"
+        bs-typeahead="getHostNames"
+        ng-blur="render()"
+        data-min-length=0
+        data-items=100
+        class="input-large tight-form-input" >
     </li>
+
     <!-- Downsampling function -->
     <li class="tight-form-item input-medium" ng-hide="target.mode == 2">
       Downsampling
@@ -154,54 +133,32 @@
 
 <div class="tight-form" ng-hide="target.mode == 1">
   <ul class="tight-form-list" role="menu">
-    <li class="tight-form-item" style="width: 44px">&nbsp</li>
+    <li class="tight-form-item" style="width: 194px">&nbsp</li>
 
     <!-- Select Application -->
     <li class="tight-form-item input-small" style="width: 5em">Application</li>
     <li>
-      <select class="tight-form-input input-large"
-              ng-change="selectApplication()"
-              ng-model="target.application"
-              bs-tooltip="target.application.name.length > 15 ? target.application.name : ''"
-              ng-options="app.visible_name ? app.visible_name : app.name for app in metric.applicationList track by app.name">
-        <option value="">-- Select application --</option>
-      </select>
-      <a bs-tooltip="target.errors.metric"
-         style="color: rgb(229, 189, 28)"
-         ng-show="target.errors.metric">
-        <i class="icon-warning-sign"></i>
-      </a>
+      <input type="text"
+        ng-model="target.applicationFilter"
+        bs-typeahead="getApplicationNames"
+        ng-blur="render()"
+        data-min-length=0
+        data-items=100
+        class="input-medium tight-form-input" >
     </li>
+
     <!-- Select Item -->
     <li class="tight-form-item input-small" style="width: 3em">Item</li>
     <li>
-      <select class="tight-form-input input-large"
-              ng-change="selectItem()"
-              ng-model="target.item"
-              bs-tooltip="target.item.name.length > 25 ? target.item.name : ''"
-              ng-options="item.name for item in metric.itemList track by item.name">
-        <option value="">-- Select item --</option>
-      </select>
-      <a bs-tooltip="target.errors.metric"
-         style="color: rgb(229, 189, 28)"
-         ng-show="target.errors.metric">
-        <i class="icon-warning-sign"></i>
-      </a>
-    </li>
-    <!-- Item filter -->
-    <li class="tight-form-item" ng-hide="target.mode == 2">
-      Filter
-      <i class="fa fa-question-circle"
-         bs-tooltip="'Filtering items by regex. Select All in items and specify regex for item names.'"></i>
-    </li>
-    <li ng-hide="target.mode == 2">
       <input type="text"
-             class="tight-form-input input-large"
-             ng-model="target.itemFilter"
-             spellcheck='false'
-             placeholder="Item filter (regex)"
-             ng-blur="targetBlur()">
+        ng-model="target.itemFilter"
+        bs-typeahead="getItemNames"
+        ng-blur="render()"
+        data-min-length=0
+        data-items=100
+        class="input-large tight-form-input" >
     </li>
+
     <!-- Scale -->
     <li class="tight-form-item" ng-hide="target.mode == 2">
       Scale
@@ -220,7 +177,7 @@
 
   <div class="clearfix"></div>
 </div>
-<div class="tight-form" ng-hide="target.mode == 1">
+<div class="tight-form" ng-show="target.mode == 2">
   <ul class="tight-form-list" role="menu">
     <li class="tight-form-item" style="width: 44px">&nbsp</li>
     <!-- Text metric regex -->

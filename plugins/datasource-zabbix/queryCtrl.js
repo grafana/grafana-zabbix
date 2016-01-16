@@ -11,8 +11,12 @@ define([
 
     module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv, zabbixHelperSrv) {
 
+      var zabbixCache = $scope.datasource.zabbixCache;
+
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
+        $scope.metric = {};
+
         if (!$scope.target.mode || $scope.target.mode !== 1) {
           $scope.downsampleFunctionList = [
             {name: "avg", value: "avg"},
@@ -24,20 +28,22 @@ define([
           if (!$scope.target.downsampleFunction) {
             $scope.target.downsampleFunction = $scope.downsampleFunctionList[0];
           }
-          if (!$scope.metric) {
-            $scope.metric = {
-              hostGroupList: [],
-              hostList: [{name: '*', visible_name: 'All'}],
-              applicationList: [{name: '*', visible_name: 'All'}],
-              itemList: [{name: 'All'}]
-            };
+
+          if (zabbixCache._initialized) {
+            $scope.getMetricsFromCache();
+            console.log("Cached", $scope.metric);
+          } else {
+            zabbixCache.refresh().then(function () {
+              $scope.getMetricsFromCache();
+              console.log("From server", $scope.metric);
+            });
           }
 
           // Update host group, host, application and item lists
-          $scope.updateGroupList();
+          /*$scope.updateGroupList();
           $scope.updateHostList();
           $scope.updateAppList();
-          $scope.updateItemList();
+          $scope.updateItemList();*/
 
           setItemAlias();
         }
@@ -56,11 +62,32 @@ define([
         $scope.target.errors = validateTarget($scope.target);
       };
 
+      $scope.getMetricsFromCache = function () {
+        $scope.metric = {
+          groupList: zabbixCache.getGroups(),
+          hostList: zabbixCache.getHosts(),
+          applicationList: zabbixCache.getApplications(),
+          itemList: zabbixCache.getItems()
+        };
+      };
+
+      // Get list of metric names for bs-typeahead directive
+      function getMetricNames(scope, metricList) {
+        return _.map(scope.metric[metricList], 'name');
+      }
+
+      // Map functions
+      $scope.getGroupNames = _.partial(getMetricNames, $scope, 'groupList');
+      $scope.getHostNames = _.partial(getMetricNames, $scope, 'hostList');
+      $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'applicationList');
+      $scope.getItemNames = _.partial(getMetricNames, $scope, 'itemList');
+
       /**
        * Switch query editor to specified mode.
        * Modes:
        *  0 - items
        *  1 - IT services
+       *  2 - Text metrics
        */
       $scope.switchEditorMode = function (mode) {
         $scope.target.mode = mode;
