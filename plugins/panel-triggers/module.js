@@ -94,7 +94,7 @@ function (angular, app, _, $, config, PanelMeta) {
 
       // Get zabbix data sources
       var datasources = _.filter(datasourceSrv.getMetricSources(), function(datasource) {
-        return datasource.meta.type === 'zabbix';
+        return datasource.meta.id === 'zabbix';
       });
       $scope.datasources = _.map(datasources, 'name');
 
