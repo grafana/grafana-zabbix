@@ -34,6 +34,7 @@ function (angular, _, dateMath) {
 
     // Initialize cache service
     this.zabbixCache = new ZabbixCache(this.zabbixAPI);
+    console.log(this.zabbixCache);
 
     /**
      * Test connection to Zabbix API

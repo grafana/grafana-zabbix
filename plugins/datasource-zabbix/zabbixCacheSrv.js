@@ -7,11 +7,9 @@ function (angular, _) {
 
   var module = angular.module('grafana.services');
 
-  module.factory('ZabbixCache', function($q, backendSrv) {
+  module.factory('ZabbixCache', function($q) {
 
     function ZabbixCache(zabbixAPI, lifetime) {
-      var self = this;
-
       this.zabbixAPI = zabbixAPI;
       this.lifetime = lifetime;
 
