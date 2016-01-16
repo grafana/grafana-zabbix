@@ -14,20 +14,19 @@ function (angular, _, dateMath) {
   function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv,
                                 ZabbixAPI, zabbixHelperSrv) {
 
+    // General data source settings
     this.name             = instanceSettings.name;
     this.url              = instanceSettings.url;
     this.basicAuth        = instanceSettings.basicAuth;
     this.withCredentials  = instanceSettings.withCredentials;
 
+    // Zabbix API credentials
     this.username         = instanceSettings.jsonData.username;
     this.password         = instanceSettings.jsonData.password;
 
     // Use trends instead history since specified time
     this.trends           = instanceSettings.jsonData.trends;
     this.trendsFrom       = instanceSettings.jsonData.trendsFrom || '7d';
-
-    // Limit metrics per panel for templated request
-    this.limitmetrics     = instanceSettings.jsonData.limitMetrics || 100;
 
     // Initialize Zabbix API
     this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
@@ -152,45 +151,35 @@ function (angular, _, dateMath) {
                   });
                 }
               }).then(function (items) {
+                items = _.flatten(items);
 
-                // Don't perform query for high number of items
-                // to prevent Grafana slowdown
-                if (items.length > self.limitmetrics) {
-                  var message = "Try to increase limitmetrics parameter in datasource config.<br>"
-                    + "Current limitmetrics value is " + self.limitmetrics;
-                  alertSrv.set("Metrics limit exceeded", message, "warning", 10000);
-                  return [];
+                // Use alias only for single metric, otherwise use item names
+                var alias = target.item.name === 'All' || itemnames.length > 1 ?
+                              undefined : templateSrv.replace(target.alias, options.scopedVars);
+
+                var history;
+                if ((from < useTrendsFrom) && self.trends) {
+                  var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                  history = self.zabbixAPI.getTrends(items, from, to)
+                    .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
                 } else {
-                  items = _.flatten(items);
-
-                  // Use alias only for single metric, otherwise use item names
-                  var alias = target.item.name === 'All' || itemnames.length > 1 ?
-                                undefined : templateSrv.replace(target.alias, options.scopedVars);
-
-                  var history;
-                  if ((from < useTrendsFrom) && self.trends) {
-                    var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
-                    history = self.zabbixAPI.getTrends(items, from, to)
-                      .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
-                  } else {
-                    history = self.zabbixAPI.getHistory(items, from, to)
-                      .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
-                  }
-
-                  return history.then(function (timeseries) {
-                      var timeseries_data = _.flatten(timeseries);
-                      return _.map(timeseries_data, function (timeseries) {
-
-                        // Series downsampling
-                        if (timeseries.datapoints.length > options.maxDataPoints) {
-                          var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
-                          var downsampleFunc = target.downsampleFunction ? target.downsampleFunction.value : "avg";
-                          timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
-                        }
-                        return timeseries;
-                      });
-                    });
+                  history = self.zabbixAPI.getHistory(items, from, to)
+                    .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
                 }
+
+                return history.then(function (timeseries) {
+                  var timeseries_data = _.flatten(timeseries);
+                  return _.map(timeseries_data, function (timeseries) {
+
+                    // Series downsampling
+                    if (timeseries.datapoints.length > options.maxDataPoints) {
+                      var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
+                      var downsampleFunc = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                      timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
+                    }
+                    return timeseries;
+                  });
+                });
               });
           }
 
