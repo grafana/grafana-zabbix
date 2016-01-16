@@ -19,25 +19,15 @@ function (angular, _, dateMath) {
     this.basicAuth        = instanceSettings.basicAuth;
     this.withCredentials  = instanceSettings.withCredentials;
 
-    if (instanceSettings.jsonData) {
-      this.username         = instanceSettings.jsonData.username;
-      this.password         = instanceSettings.jsonData.password;
+    this.username         = instanceSettings.jsonData.username;
+    this.password         = instanceSettings.jsonData.password;
 
-      // Use trends instead history since specified time
-      this.trends           = instanceSettings.jsonData.trends;
-      this.trendsFrom       = instanceSettings.jsonData.trendsFrom || '7d';
+    // Use trends instead history since specified time
+    this.trends           = instanceSettings.jsonData.trends;
+    this.trendsFrom       = instanceSettings.jsonData.trendsFrom || '7d';
 
-      // Limit metrics per panel for templated request
-      this.limitmetrics     = instanceSettings.jsonData.limitMetrics || 100;
-    } else {
-      // DEPRECATED. Loads settings from plugin.json file.
-      // For backward compatibility only.
-      this.username         = instanceSettings.meta.username;
-      this.password         = instanceSettings.meta.password;
-      this.trends           = instanceSettings.meta.trends;
-      this.trendsFrom       = instanceSettings.meta.trendsFrom || '7d';
-      this.limitmetrics     = instanceSettings.meta.limitmetrics || 100;
-    }
+    // Limit metrics per panel for templated request
+    this.limitmetrics     = instanceSettings.jsonData.limitMetrics || 100;
 
     // Initialize Zabbix API
     this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
