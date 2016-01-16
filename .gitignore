@@ -6,9 +6,9 @@
 *.bat
 
 # Grafana linter config
-.jshintrc
-.jscs.json
-.jsfmtrc
+# .jshintrc
+# .jscs.json
+# .jsfmtrc
 
 # Builded docs
 docs/site/
