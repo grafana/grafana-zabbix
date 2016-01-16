@@ -5,6 +5,7 @@ define([
   './directives',
   './zabbixAPIWrapper',
   './helperFunctions',
+  './zabbixCacheSrv',
   './queryCtrl'
 ],
 function (angular, _, dateMath) {
@@ -12,7 +13,7 @@ function (angular, _, dateMath) {
 
   /** @ngInject */
   function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv,
-                                ZabbixAPI, zabbixHelperSrv) {
+                                ZabbixAPI, zabbixHelperSrv, ZabbixCache) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -30,6 +31,9 @@ function (angular, _, dateMath) {
 
     // Initialize Zabbix API
     this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
+
+    // Initialize cache service
+    this.zabbixCache = new ZabbixCache(this.zabbixAPI);
 
     /**
      * Test connection to Zabbix API

@@ -113,6 +113,49 @@ function (angular, _) {
       });
     };
 
+    //////////////////////////
+    // High-level functions //
+    //////////////////////////
+
+    p.getGroups = function() {
+      var params = {
+        output: ['name'],
+        sortfield: 'name'
+      };
+
+      return this.performZabbixAPIRequest('hostgroup.get', params);
+    };
+
+    p.getHosts = function() {
+      var params = {
+        output: ['name', 'host'],
+        sortfield: 'name',
+        selectGroups: []
+      };
+
+      return this.performZabbixAPIRequest('host.get', params);
+    };
+
+    p.getApplications = function() {
+      var params = {
+        output: ['name'],
+        sortfield: 'name',
+        selectHosts: []
+      };
+
+      return this.performZabbixAPIRequest('application.get', params);
+    };
+
+    p.getItems = function() {
+      var params = {
+        output: ['name', 'key_', 'value_type', 'hostid', 'status', 'state'],
+        sortfield: 'name',
+        selectApplications: []
+      };
+
+      return this.performZabbixAPIRequest('item.get', params);
+    };
+
     /////////////////////////
     // API method wrappers //
     /////////////////////////
