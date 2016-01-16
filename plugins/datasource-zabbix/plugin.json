@@ -1,20 +1,11 @@
 {
-  "pluginType": "datasource",
+  "type": "datasource",
   "name": "Zabbix",
+  "id": "zabbix",
 
-  "type": "zabbix",
-  "serviceName": "ZabbixAPIDatasource",
+  "module": "plugins/zabbix/module",
 
-  "module": "plugins/zabbix/datasource",
-
-  "partials": {
-    "config": "public/plugins/zabbix/partials/config.html"
-  },
-
-  "staticRoot": {
-    "url": "zabbix",
-    "path": "."
-  },
+  "staticRoot": ".",
 
   "metrics": true,
   "annotations": true

@@ -10,52 +10,44 @@ define([
 function (angular, _, dateMath) {
   'use strict';
 
-  var module = angular.module('grafana.services');
+  /** @ngInject */
+  function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv,
+                                ZabbixAPI, zabbixHelperSrv) {
 
-  module.factory('ZabbixAPIDatasource', function($q, backendSrv, templateSrv, alertSrv, ZabbixAPI, zabbixHelperSrv) {
+    this.name             = instanceSettings.name;
+    this.url              = instanceSettings.url;
+    this.basicAuth        = instanceSettings.basicAuth;
+    this.withCredentials  = instanceSettings.withCredentials;
 
-    /**
-     * Datasource initialization. Calls when you refresh page, add
-     * or modify datasource.
-     *
-     * @param {Object} datasource Grafana datasource object.
-     */
-    function ZabbixAPIDatasource(datasource) {
-      this.name             = datasource.name;
-      this.url              = datasource.url;
-      this.basicAuth        = datasource.basicAuth;
-      this.withCredentials  = datasource.withCredentials;
+    if (instanceSettings.jsonData) {
+      this.username         = instanceSettings.jsonData.username;
+      this.password         = instanceSettings.jsonData.password;
 
-      if (datasource.jsonData) {
-        this.username         = datasource.jsonData.username;
-        this.password         = datasource.jsonData.password;
+      // Use trends instead history since specified time
+      this.trends           = instanceSettings.jsonData.trends;
+      this.trendsFrom       = instanceSettings.jsonData.trendsFrom || '7d';
 
-        // Use trends instead history since specified time
-        this.trends           = datasource.jsonData.trends;
-        this.trendsFrom       = datasource.jsonData.trendsFrom || '7d';
-
-        // Limit metrics per panel for templated request
-        this.limitmetrics     = datasource.jsonData.limitMetrics || 100;
-      } else {
-        // DEPRECATED. Loads settings from plugin.json file.
-        // For backward compatibility only.
-        this.username         = datasource.meta.username;
-        this.password         = datasource.meta.password;
-        this.trends           = datasource.meta.trends;
-        this.trendsFrom       = datasource.meta.trendsFrom || '7d';
-        this.limitmetrics     = datasource.meta.limitmetrics || 100;
-      }
-
-      // Initialize Zabbix API
-      this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
+      // Limit metrics per panel for templated request
+      this.limitmetrics     = instanceSettings.jsonData.limitMetrics || 100;
+    } else {
+      // DEPRECATED. Loads settings from plugin.json file.
+      // For backward compatibility only.
+      this.username         = instanceSettings.meta.username;
+      this.password         = instanceSettings.meta.password;
+      this.trends           = instanceSettings.meta.trends;
+      this.trendsFrom       = instanceSettings.meta.trendsFrom || '7d';
+      this.limitmetrics     = instanceSettings.meta.limitmetrics || 100;
     }
+
+    // Initialize Zabbix API
+    this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
 
     /**
      * Test connection to Zabbix API
      *
      * @return {object} Connection status and Zabbix API version
      */
-    ZabbixAPIDatasource.prototype.testDatasource = function() {
+    this.testDatasource = function() {
       var self = this;
       return this.zabbixAPI.getZabbixAPIVersion().then(function (apiVersion) {
         return self.zabbixAPI.performZabbixAPILogin().then(function (auth) {
@@ -91,7 +83,7 @@ function (angular, _, dateMath) {
      * @return {Object}           Grafana metrics object with timeseries data
      *                            for each target.
      */
-    ZabbixAPIDatasource.prototype.query = function(options) {
+    this.query = function(options) {
 
       // get from & to in seconds
       var from = Math.ceil(dateMath.parse(options.range.from) / 1000);
@@ -277,7 +269,7 @@ function (angular, _, dateMath) {
      * @return {string}       Metric name - group, host, app or item or list
      *                        of metrics in "{metric1,metcic2,...,metricN}" format.
      */
-    ZabbixAPIDatasource.prototype.metricFindQuery = function (query) {
+    this.metricFindQuery = function (query) {
       // Split query. Query structure:
       // group.host.app.item
       var parts = [];
@@ -351,7 +343,7 @@ function (angular, _, dateMath) {
     // Annotations //
     /////////////////
 
-    ZabbixAPIDatasource.prototype.annotationQuery = function(options) {
+    this.annotationQuery = function(options) {
       var from = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
       var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
       var annotation = annotation;
@@ -427,6 +419,8 @@ function (angular, _, dateMath) {
         });
     };
 
-    return ZabbixAPIDatasource;
-  });
+  }
+
+  return ZabbixAPIDatasource;
+
 });

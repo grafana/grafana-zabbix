@@ -26,15 +26,8 @@ function (angular, app, _, $, config, PanelMeta) {
   var module = angular.module('grafana.panels.triggers', []);
   app.useModule(module);
 
-  module.directive('grafanaPanelTriggers', function() {
-    return {
-      controller: 'TriggersPanelCtrl',
-      templateUrl: 'public/plugins/triggers/module.html',
-    };
-  });
-
-  module.controller('TriggersPanelCtrl', function($q, $scope, $element, datasourceSrv, panelSrv,
-                                                  templateSrv, zabbixHelperSrv, popoverSrv) {
+  /** @ngInject */
+  function TriggerPanelCtrl($q, $scope, $element, datasourceSrv, panelSrv, templateSrv, zabbixHelperSrv, popoverSrv) {
 
     $scope.panelMeta = new PanelMeta({
       panelName: 'Zabbix triggers',
@@ -299,5 +292,17 @@ function (angular, app, _, $, config, PanelMeta) {
     };
 
     $scope.init();
-  });
+  }
+
+  function triggerPanelDirective() {
+    return {
+      controller: TriggerPanelCtrl,
+      templateUrl: 'public/plugins/triggers/module.html',
+    };
+  }
+
+  return {
+    panel: triggerPanelDirective
+  };
+
 });
