@@ -1,13 +1,8 @@
 {
-  "pluginType": "panel",
-
+  "type": "panel",
   "name": "Zabbix triggers",
-  "type": "triggers",
+  "id": "triggers",
 
   "module": "plugins/triggers/module",
-
-  "staticRoot": {
-    "url": "triggers",
-    "path": "."
-  }
+  "staticRoot": "."
 }
