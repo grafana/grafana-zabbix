@@ -73,14 +73,20 @@ define([
 
       // Get list of metric names for bs-typeahead directive
       function getMetricNames(scope, metricList) {
-        return _.map(scope.metric[metricList], 'name');
+        return _.uniq(_.map(scope.metric[metricList], 'name'));
       }
 
       // Map functions
       $scope.getGroupNames = _.partial(getMetricNames, $scope, 'groupList');
       $scope.getHostNames = _.partial(getMetricNames, $scope, 'hostList');
       $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'applicationList');
-      $scope.getItemNames = _.partial(getMetricNames, $scope, 'itemList');
+
+      $scope.getItemNames = function () {
+        var expandedItems = _.map($scope.metric.itemList, function (item) {
+          return zabbixHelperSrv.expandItemName(item);
+        });
+        return _.uniq(expandedItems);
+      };
 
       /**
        * Switch query editor to specified mode.
