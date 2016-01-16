@@ -1,7 +1,7 @@
 define([
   'angular',
   'lodash'
-  ],
+],
 function (angular, _) {
   'use strict';
 
@@ -11,9 +11,22 @@ function (angular, _) {
 
     function ZabbixCache(zabbixAPI, lifetime) {
       var self = this;
+
       this.zabbixAPI = zabbixAPI;
       this.lifetime = lifetime;
 
+      this._groups        = [];
+      this._hosts         = [];
+      this._applications  = [];
+      this._items         = [];
+
+      this.refresh();
+    }
+
+    var p = ZabbixCache.prototype;
+
+    p.refresh = function () {
+      var self = this;
       var promises = [
         this.zabbixAPI.getGroups(),
         this.zabbixAPI.getHosts(),
@@ -22,17 +35,23 @@ function (angular, _) {
       ];
 
       $q.all(promises).then(function (results) {
-        console.log(results);
         if (results.length) {
           self._groups = results[0];
-          self._hosts = results[1];
+
+          self._hosts = _.forEach(results[1], function(host) {
+            host.groups = _.map(host.groups, 'groupid');
+            return host;
+          });
+
           self._applications = groupApplications(results[2]);
-          self._items = results[3];
+
+          self._items = _.forEach(results[3], function(item) {
+            item.applications = _.map(item.applications, 'applicationid');
+            return item;
+          });
         }
       });
-    }
-
-    var p = ZabbixCache.prototype;
+    };
 
     p.getGroups = function() {
       return this._groups;
@@ -52,14 +71,13 @@ function (angular, _) {
 
     /**
      * Group Zabbix applications by name
-     * @param  {[type]} applications [description]
-     * @return {[type]}              [description]
      */
     function groupApplications(applications) {
       return _.map(_.groupBy(applications, 'name'), function (value, key) {
         return {
           name: key,
-          ids: _.map(value, 'applicationid')
+          applicationids: _.map(value, 'applicationid'),
+          hostids: _.uniq(_.map(_.flatten(value, 'hosts'), 'hostid'))
         };
       });
     }

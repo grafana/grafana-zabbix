@@ -120,8 +120,7 @@ function (angular, _) {
     p.getGroups = function() {
       var params = {
         output: ['name'],
-        sortfield: 'name',
-        selectHosts: []
+        sortfield: 'name'
       };
 
       return this.performZabbixAPIRequest('hostgroup.get', params);
@@ -130,7 +129,8 @@ function (angular, _) {
     p.getHosts = function() {
       var params = {
         output: ['name', 'host'],
-        sortfield: 'name'
+        sortfield: 'name',
+        selectGroups: []
       };
 
       return this.performZabbixAPIRequest('host.get', params);
@@ -139,7 +139,8 @@ function (angular, _) {
     p.getApplications = function() {
       var params = {
         output: ['name'],
-        sortfield: 'name'
+        sortfield: 'name',
+        selectHosts: []
       };
 
       return this.performZabbixAPIRequest('application.get', params);
@@ -147,16 +148,9 @@ function (angular, _) {
 
     p.getItems = function() {
       var params = {
-        output: ['name', 'key_', 'value_type'],
+        output: ['name', 'key_', 'value_type', 'hostid', 'status', 'state'],
         sortfield: 'name',
-        //Include web items in the result
-        webitems: true,
-        // Return only numeric items
-        filter: {
-          value_type: [0, 3]
-        },
-        // Return only enabled items
-        monitored: true
+        selectApplications: []
       };
 
       return this.performZabbixAPIRequest('item.get', params);
