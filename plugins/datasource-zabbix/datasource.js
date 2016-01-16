@@ -83,9 +83,10 @@ function (angular, _, dateMath) {
       var promises = _.map(options.targets, function(target) {
 
         if (target.mode !== 1) {
+
           // Don't show undefined and hidden targets
-          if (target.hide || !target.group || !target.host
-            || !target.application || !target.item) {
+          if (target.hide || !target.group || !target.host ||
+              !target.application || !target.item) {
             return [];
           }
 
