@@ -28,5 +28,20 @@ function (angular, _) {
       }
       return name;
     };
+
+    // Pattern for testing regex
+    var regexPattern = /^\/(.*)\/([gmi]*)$/m;
+
+    this.isRegex = function (str) {
+      return regexPattern.test(str);
+    };
+
+    this.buildRegex = function (str) {
+      var matches = str.match(regexPattern);
+      var pattern = matches[1];
+      var flags = matches[2] !== "" ? matches[2] : undefined;
+      return new RegExp(pattern, flags);
+    };
+
   });
 });

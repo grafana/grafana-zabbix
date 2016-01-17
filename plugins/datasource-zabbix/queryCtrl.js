@@ -1,7 +1,8 @@
 define([
     'angular',
     'lodash',
-    './helperFunctions'
+    './helperFunctions',
+    './utils'
   ],
   function (angular, _) {
     'use strict';
@@ -9,7 +10,7 @@ define([
     var module = angular.module('grafana.controllers');
     var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv, zabbixHelperSrv) {
+    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv, zabbixHelperSrv, Utils) {
 
       var zabbixCache = $scope.datasource.zabbixCache;
 
@@ -76,11 +77,33 @@ define([
         return _.uniq(_.map(scope.metric[metricList], 'name'));
       }
 
-      // Map functions
+      // Map functions for bs-typeahead
       $scope.getGroupNames = _.partial(getMetricNames, $scope, 'groupList');
       $scope.getHostNames = _.partial(getMetricNames, $scope, 'hostList');
       $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'applicationList');
       $scope.getItemNames = _.partial(getMetricNames, $scope, 'itemList');
+
+      $scope.onTargetPartChange = function (targetPart) {
+        var regexStyle = {'color': '#CCA300'};
+        targetPart.isRegex = Utils.isRegex(targetPart.filter);
+        targetPart.style = targetPart.isRegex ? regexStyle : {};
+      };
+
+      $scope.parseTarget = function() {
+        var regexStyle = {'color': '#CCA300'};
+
+        $scope.target.groupIsRegex = Utils.isRegex($scope.target.groupFilter);
+        $scope.groupStyle = $scope.target.groupIsRegex ? regexStyle : {};
+
+        $scope.target.hostIsRegex = Utils.isRegex($scope.target.hostFilter);
+        $scope.hostStyle = $scope.target.hostIsRegex ? regexStyle : {};
+
+        $scope.target.applicationIsRegex = Utils.isRegex($scope.target.applicationFilter);
+        $scope.applicationsStyle = $scope.target.applicationIsRegex ? regexStyle : {};
+
+        $scope.target.itemIsRegex = Utils.isRegex($scope.target.itemFilter);
+        $scope.itemStyle = $scope.target.itemIsRegex ? regexStyle : {};
+      };
 
       /**
        * Switch query editor to specified mode.

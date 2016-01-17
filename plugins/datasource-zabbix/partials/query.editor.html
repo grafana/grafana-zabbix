@@ -89,24 +89,28 @@
     <li class="tight-form-item input-small" style="width: 5em">Group</li>
     <li>
       <input type="text"
-        ng-model="target.groupFilter"
+        ng-model="target.group.filter"
         bs-typeahead="getGroupNames"
-        ng-blur="render()"
+        ng-change="onTargetPartChange(target.group)"
+        ng-blur="parseTarget()"
         data-min-length=0
         data-items=100
-        class="input-medium tight-form-input" >
+        class="input-medium tight-form-input"
+        ng-style="target.group.style">
     </li>
 
     <!-- Select Host -->
     <li class="tight-form-item input-small" style="width: 3em">Host</li>
     <li>
       <input type="text"
-        ng-model="target.hostFilter"
+        ng-model="target.host.filter"
         bs-typeahead="getHostNames"
-        ng-blur="render()"
+        ng-change="onTargetPartChange(target.host)"
+        ng-blur="parseTarget()"
         data-min-length=0
         data-items=100
-        class="input-large tight-form-input" >
+        class="input-large tight-form-input"
+        ng-style="target.host.style">
     </li>
 
     <!-- Downsampling function -->
@@ -139,24 +143,28 @@
     <li class="tight-form-item input-small" style="width: 5em">Application</li>
     <li>
       <input type="text"
-        ng-model="target.applicationFilter"
+        ng-model="target.application.filter"
         bs-typeahead="getApplicationNames"
-        ng-blur="render()"
+        ng-change="onTargetPartChange(target.application)"
+        ng-blur="parseTarget()"
         data-min-length=0
         data-items=100
-        class="input-medium tight-form-input" >
+        class="input-medium tight-form-input"
+        ng-style="target.application.style">
     </li>
 
     <!-- Select Item -->
     <li class="tight-form-item input-small" style="width: 3em">Item</li>
     <li>
       <input type="text"
-        ng-model="target.itemFilter"
+        ng-model="target.item.filter"
         bs-typeahead="getItemNames"
-        ng-blur="render()"
+        ng-change="onTargetPartChange(target.item)"
+        ng-blur="parseTarget()"
         data-min-length=0
         data-items=100
-        class="input-large tight-form-input" >
+        class="input-large tight-form-input"
+        ng-style="target.item.style">
     </li>
 
     <!-- Scale -->
