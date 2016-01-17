@@ -80,13 +80,7 @@ define([
       $scope.getGroupNames = _.partial(getMetricNames, $scope, 'groupList');
       $scope.getHostNames = _.partial(getMetricNames, $scope, 'hostList');
       $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'applicationList');
-
-      $scope.getItemNames = function () {
-        var expandedItems = _.map($scope.metric.itemList, function (item) {
-          return zabbixHelperSrv.expandItemName(item);
-        });
-        return _.uniq(expandedItems);
-      };
+      $scope.getItemNames = _.partial(getMetricNames, $scope, 'itemList');
 
       /**
        * Switch query editor to specified mode.
