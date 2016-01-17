@@ -1,7 +1,6 @@
 define([
     'angular',
     'lodash',
-    './helperFunctions',
     './utils'
   ],
   function (angular, _) {
@@ -10,7 +9,7 @@ define([
     var module = angular.module('grafana.controllers');
     var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv, zabbixHelperSrv, Utils) {
+    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv, Utils) {
 
       var zabbixCache = $scope.datasource.zabbixCache;
 
