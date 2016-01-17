@@ -4,6 +4,7 @@ define([
   'app/core/utils/datemath',
   './directives',
   './zabbixAPIWrapper',
+  './utils',
   './helperFunctions',
   './zabbixCacheSrv',
   './queryCtrl'
@@ -13,7 +14,7 @@ function (angular, _, dateMath) {
 
   /** @ngInject */
   function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv,
-                                ZabbixAPI, zabbixHelperSrv, ZabbixCache) {
+                                ZabbixAPI, Utils, zabbixHelperSrv, ZabbixCache) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -78,6 +79,7 @@ function (angular, _, dateMath) {
      *                            for each target.
      */
     this.query = function(options) {
+      var self = this;
 
       // get from & to in seconds
       var from = Math.ceil(dateMath.parse(options.range.from) / 1000);
@@ -89,104 +91,153 @@ function (angular, _, dateMath) {
 
         if (target.mode !== 1) {
 
-          // Don't show undefined and hidden targets
-          if (target.hide || !target.group || !target.host ||
-              !target.application || !target.item) {
+          // Don't show hidden targets
+          if (target.hide) {
             return [];
           }
 
           // Replace templated variables
-          var groupname = templateSrv.replace(target.group.name, options.scopedVars);
-          var hostname = templateSrv.replace(target.host.name, options.scopedVars);
-          var appname = templateSrv.replace(target.application.name, options.scopedVars);
-          var itemname = templateSrv.replace(target.item.name, options.scopedVars);
-
-          // Extract zabbix groups, hosts and apps from string:
-          // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
-          var groups = zabbixHelperSrv.splitMetrics(groupname);
-          var hosts = zabbixHelperSrv.splitMetrics(hostname);
-          var apps = zabbixHelperSrv.splitMetrics(appname);
-
-          // Remove hostnames from item names and then
-          // extract item names
-          // "hostname: itemname" --> "itemname"
-          var delete_hostname_pattern = /(?:\[[\w\.]+]:\s)/g;
-          var itemnames = zabbixHelperSrv.splitMetrics(itemname.replace(delete_hostname_pattern, ''));
-
-          var self = this;
+          var groupFilter = templateSrv.replace(target.group.filter, options.scopedVars);
+          var hostFilter = templateSrv.replace(target.host.filter, options.scopedVars);
+          var appFilter = templateSrv.replace(target.application.filter, options.scopedVars);
+          var itemFilter = templateSrv.replace(target.item.filter, options.scopedVars);
 
           // Query numeric data
           if (!target.mode) {
 
             // Find items by item names and perform queries
-            return this.zabbixAPI.itemFindQuery(groups, hosts, apps)
-              .then(function (items) {
+            var groups = [];
+            var hosts = [];
+            var apps = [];
+            var items = [];
 
-                // Filter hosts by regex
-                if (target.host.visible_name === 'All') {
-                  if (target.hostFilter && _.every(items, _.identity.hosts)) {
+            if (target.host.isRegex) {
 
-                    // Use templated variables in filter
-                    var host_pattern = new RegExp(templateSrv.replace(target.hostFilter, options.scopedVars));
-                    items = _.filter(items, function (item) {
-                      return _.some(item.hosts, function (host) {
-                        return host_pattern.test(host.name);
-                      });
-                    });
-                  }
-                }
-
-                if (itemnames[0] === 'All') {
-
-                  // Filter items by regex
-                  if (target.itemFilter) {
-
-                    // Use templated variables in filter
-                    var item_pattern = new RegExp(templateSrv.replace(target.itemFilter, options.scopedVars));
-                    return _.filter(items, function (item) {
-                      return item_pattern.test(zabbixHelperSrv.expandItemName(item));
-                    });
-                  } else {
-                    return items;
-                  }
-                } else {
-
-                  // Filtering items
-                  return _.filter(items, function (item) {
-                    return _.contains(itemnames, zabbixHelperSrv.expandItemName(item));
-                  });
-                }
-              }).then(function (items) {
-                items = _.flatten(items);
-
-                // Use alias only for single metric, otherwise use item names
-                var alias = target.item.name === 'All' || itemnames.length > 1 ?
-                              undefined : templateSrv.replace(target.alias, options.scopedVars);
-
-                var history;
-                if ((from < useTrendsFrom) && self.trends) {
-                  var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
-                  history = self.zabbixAPI.getTrends(items, from, to)
-                    .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
-                } else {
-                  history = self.zabbixAPI.getHistory(items, from, to)
-                    .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
-                }
-
-                return history.then(function (timeseries) {
-                  var timeseries_data = _.flatten(timeseries);
-                  return _.map(timeseries_data, function (timeseries) {
-
-                    // Series downsampling
-                    if (timeseries.datapoints.length > options.maxDataPoints) {
-                      var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
-                      var downsampleFunc = target.downsampleFunction ? target.downsampleFunction.value : "avg";
-                      timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
-                    }
-                    return timeseries;
-                  });
+              // Filter groups
+              if (target.group.isRegex) {
+                var groupPattern = Utils.buildRegex(groupFilter);
+                groups = _.filter(self.zabbixCache.getGroups(), function (groupObj) {
+                  return groupPattern.test(groupObj.name);
                 });
+              } else {
+                var findedGroup = _.find(self.zabbixCache.getGroups(), {'name': groupFilter});
+                if (findedGroup) {
+                  groups.push(findedGroup);
+                } else {
+                  groups = undefined;
+                }
+              }
+              if (groups) {
+                var groupids = _.map(groups, 'groupid');
+                hosts = _.filter(self.zabbixCache.getHosts(), function (hostObj) {
+                  return _.intersection(groupids, hostObj.groups).length;
+                });
+              } else {
+                // No groups finded
+                return [];
+              }
+
+              // Filter hosts
+              var hostPattern = Utils.buildRegex(hostFilter);
+              hosts = _.filter(hosts, function (hostObj) {
+                return hostPattern.test(hostObj.name);
               });
+            } else {
+              var findedHost = _.find(self.zabbixCache.getHosts(), {'name': hostFilter});
+              if (findedHost) {
+                hosts.push(findedHost);
+              } else {
+                // No hosts finded
+                return [];
+              }
+            }
+            console.log(hosts);
+
+            // Find items belongs to selected hosts
+            items = _.filter(self.zabbixCache.getItems(), function (itemObj) {
+              return _.contains(_.map(hosts, 'hostid'), itemObj.hostid);
+            });
+
+            if (target.item.isRegex) {
+
+              // Filter applications
+              if (target.application.isRegex) {
+                var appPattern = Utils.buildRegex(appFilter);
+                apps = _.filter(self.zabbixCache.getApplications(), function (appObj) {
+                  return appPattern.test(appObj.name);
+                });
+              }
+              // Don't use application filter if it empty
+              else if (appFilter === "") {
+                apps = undefined;
+              }
+              else {
+                var findedApp = _.find(self.zabbixCache.getApplications(), {'name': appFilter});
+                if (findedApp) {
+                  apps.push(findedApp);
+                } else {
+                  // No applications finded
+                  return [];
+                }
+              }
+
+              // Find items belongs to selected applications
+              if (apps) {
+                var appids = _.flatten(_.map(apps, 'applicationids'));
+                items = _.filter(items, function (itemObj) {
+                  return _.intersection(appids, itemObj.applications).length;
+                });
+              }
+
+              if (items) {
+                var itemPattern = Utils.buildRegex(itemFilter);
+                items = _.filter(items, function (itemObj) {
+                  return itemPattern.test(itemObj.name);
+                });
+              } else {
+                // No items finded
+                return [];
+              }
+            } else {
+              items = _.filter(items, {'name': hostFilter});
+              if (!items.length) {
+                // No items finded
+                return [];
+              }
+            }
+            console.log(items);
+
+            //items = _.flatten(items);
+
+            // Use alias only for single metric, otherwise use item names
+            var alias;
+            if (items.length === 1) {
+              alias = templateSrv.replace(target.alias, options.scopedVars);
+            }
+
+            var history;
+            if ((from < useTrendsFrom) && self.trends) {
+              var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+              history = self.zabbixAPI.getTrends(items, from, to)
+                .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
+            } else {
+              history = self.zabbixAPI.getHistory(items, from, to)
+                .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
+            }
+
+            return history.then(function (timeseries) {
+              var timeseries_data = _.flatten(timeseries);
+              return _.map(timeseries_data, function (timeseries) {
+
+                // Series downsampling
+                if (timeseries.datapoints.length > options.maxDataPoints) {
+                  var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
+                  var downsampleFunc = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                  timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
+                }
+                return timeseries;
+              });
+            });
           }
 
           // Query text data
