@@ -92,7 +92,7 @@
         ng-model="target.group.filter"
         bs-typeahead="getGroupNames"
         ng-change="onTargetPartChange(target.group)"
-        ng-blur="parseTarget()"
+        ng-blur="onGroupBlur()"
         data-min-length=0
         data-items=100
         class="input-medium tight-form-input"
@@ -106,7 +106,7 @@
         ng-model="target.host.filter"
         bs-typeahead="getHostNames"
         ng-change="onTargetPartChange(target.host)"
-        ng-blur="parseTarget()"
+        ng-blur="onHostBlur()"
         data-min-length=0
         data-items=100
         class="input-large tight-form-input"
@@ -146,7 +146,7 @@
         ng-model="target.application.filter"
         bs-typeahead="getApplicationNames"
         ng-change="onTargetPartChange(target.application)"
-        ng-blur="parseTarget()"
+        ng-blur="onApplicationBlur()"
         data-min-length=0
         data-items=100
         class="input-medium tight-form-input"

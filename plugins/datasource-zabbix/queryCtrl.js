@@ -30,21 +30,18 @@ define([
             $scope.target.downsampleFunction = $scope.downsampleFunctionList[0];
           }
 
+          // Load metrics from cache
           if (zabbixCache._initialized) {
             $scope.getMetricsFromCache();
+            $scope.initFilters();
             console.log("Cached", $scope.metric);
           } else {
             zabbixCache.refresh().then(function () {
               $scope.getMetricsFromCache();
+              $scope.initFilters();
               console.log("From server", $scope.metric);
             });
           }
-
-          // Update host group, host, application and item lists
-          /*$scope.updateGroupList();
-          $scope.updateHostList();
-          $scope.updateAppList();
-          $scope.updateItemList();*/
 
           setItemAlias();
         }
@@ -63,6 +60,12 @@ define([
         $scope.target.errors = validateTarget($scope.target);
       };
 
+      $scope.initFilters = function () {
+        $scope.onGroupBlur();
+        $scope.onHostBlur();
+        $scope.onApplicationBlur();
+      };
+
       $scope.getMetricsFromCache = function () {
         $scope.metric = {
           groupList: zabbixCache.getGroups(),
@@ -79,9 +82,104 @@ define([
 
       // Map functions for bs-typeahead
       $scope.getGroupNames = _.partial(getMetricNames, $scope, 'groupList');
-      $scope.getHostNames = _.partial(getMetricNames, $scope, 'hostList');
-      $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'applicationList');
-      $scope.getItemNames = _.partial(getMetricNames, $scope, 'itemList');
+      $scope.getHostNames = _.partial(getMetricNames, $scope, 'filteredHosts');
+      $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'filteredApplications');
+      $scope.getItemNames = _.partial(getMetricNames, $scope, 'filteredItems');
+
+      $scope.filterHosts = function () {
+        var group = $scope.target.group;
+        var groups = [];
+        var hosts = [];
+
+        // Filter groups by regex
+        if (group.isRegex) {
+          var filterPattern = Utils.buildRegex(group.filter);
+          groups = _.filter($scope.metric.groupList, function (groupObj) {
+            return filterPattern.test(groupObj.name);
+          });
+        }
+        // Find hosts in selected group
+        else {
+          var finded = _.find($scope.metric.groupList, {'name': group.filter});
+          if (finded) {
+            groups.push(finded);
+          } else {
+            groups = undefined;
+          }
+        }
+
+        if (groups) {
+          var groupids = _.map(groups, 'groupid');
+          hosts = _.filter($scope.metric.hostList, function (hostObj) {
+            return _.intersection(groupids, hostObj.groups).length;
+          });
+        }
+        return hosts;
+      };
+
+      $scope.filterApplications = function () {
+        var host = $scope.target.host;
+        var hosts = [];
+        var apps = [];
+
+        // Filter hosts by regex
+        if (host.isRegex) {
+          var filterPattern = Utils.buildRegex(host.filter);
+          hosts = _.filter($scope.metric.hostList, function (hostObj) {
+            return filterPattern.test(hostObj.name);
+          });
+        }
+        // Find applications in selected host
+        else {
+          var finded = _.find($scope.metric.hostList, {'name': host.filter});
+          if (finded) {
+            hosts.push(finded);
+          } else {
+            hosts = undefined;
+          }
+        }
+
+        if (hosts) {
+          var hostsids = _.map(hosts, 'hostid');
+          apps = _.filter($scope.metric.applicationList, function (appObj) {
+            return _.intersection(hostsids, appObj.hosts).length;
+          });
+        }
+
+        return apps;
+      };
+
+      $scope.filterItems = function () {
+        var app = $scope.target.application;
+        var apps = [];
+        var items = [];
+
+        // Filter applications by regex
+        if (app.isRegex) {
+          var filterPattern = Utils.buildRegex(app.filter);
+          apps = _.filter($scope.metric.applicationList, function (appObj) {
+            return filterPattern.test(appObj.name);
+          });
+        }
+        // Find items in selected application
+        else {
+          var finded = _.find($scope.metric.applicationList, {'name': app.filter});
+          if (finded) {
+            apps.push(finded);
+          } else {
+            apps = undefined;
+          }
+        }
+
+        if (apps) {
+          var appids = _.flatten(_.map(apps, 'applicationids'));
+          items = _.filter($scope.metric.itemList, function (itemObj) {
+            return _.intersection(appids, itemObj.applications).length;
+          });
+        }
+
+        return items;
+      };
 
       $scope.onTargetPartChange = function (targetPart) {
         var regexStyle = {'color': '#CCA300'};
@@ -89,20 +187,23 @@ define([
         targetPart.style = targetPart.isRegex ? regexStyle : {};
       };
 
+      // Handle group blur and filter hosts
+      $scope.onGroupBlur = function() {
+        $scope.metric.filteredHosts = $scope.filterHosts();
+      };
+
+      // Handle host blur and filter applications
+      $scope.onHostBlur = function() {
+        $scope.metric.filteredApplications = $scope.filterApplications();
+      };
+
+      // Handle application blur and filter items
+      $scope.onApplicationBlur = function() {
+        $scope.metric.filteredItems = $scope.filterItems();
+      };
+
       $scope.parseTarget = function() {
-        var regexStyle = {'color': '#CCA300'};
-
-        $scope.target.groupIsRegex = Utils.isRegex($scope.target.groupFilter);
-        $scope.groupStyle = $scope.target.groupIsRegex ? regexStyle : {};
-
-        $scope.target.hostIsRegex = Utils.isRegex($scope.target.hostFilter);
-        $scope.hostStyle = $scope.target.hostIsRegex ? regexStyle : {};
-
-        $scope.target.applicationIsRegex = Utils.isRegex($scope.target.applicationFilter);
-        $scope.applicationsStyle = $scope.target.applicationIsRegex ? regexStyle : {};
-
-        $scope.target.itemIsRegex = Utils.isRegex($scope.target.itemFilter);
-        $scope.itemStyle = $scope.target.itemIsRegex ? regexStyle : {};
+        // Parse target
       };
 
       /**
