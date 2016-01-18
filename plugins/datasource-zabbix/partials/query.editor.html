@@ -160,7 +160,7 @@
         ng-model="target.item.filter"
         bs-typeahead="getItemNames"
         ng-change="onTargetPartChange(target.item)"
-        ng-blur="parseTarget()"
+        ng-blur="onItemBlur()"
         data-min-length=0
         data-items=100
         class="input-large tight-form-input"

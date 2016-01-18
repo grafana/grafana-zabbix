@@ -55,8 +55,6 @@ define([
           $scope.itserviceList = [{name: "test"}];
           $scope.updateITServiceList();
         }
-
-        $scope.target.errors = validateTarget($scope.target);
       };
 
       $scope.initFilters = function () {
@@ -189,21 +187,35 @@ define([
       // Handle group blur and filter hosts
       $scope.onGroupBlur = function() {
         $scope.metric.filteredHosts = $scope.filterHosts();
+        $scope.parseTarget();
+        $scope.get_data();
       };
 
       // Handle host blur and filter applications
       $scope.onHostBlur = function() {
         $scope.metric.filteredApplications = $scope.filterApplications();
+        $scope.parseTarget();
+        $scope.get_data();
       };
 
       // Handle application blur and filter items
       $scope.onApplicationBlur = function() {
         $scope.metric.filteredItems = $scope.filterItems();
+        $scope.parseTarget();
+        $scope.get_data();
+      };
+
+      $scope.onItemBlur = function () {
+        $scope.parseTarget();
+        $scope.get_data();
       };
 
       $scope.parseTarget = function() {
         // Parse target
       };
+
+      // Validate target and set validation info
+      $scope.validateTarget = function () {};
 
       /**
        * Switch query editor to specified mode.
@@ -228,7 +240,6 @@ define([
 
       $scope.targetBlur = function () {
         setItemAlias();
-        $scope.target.errors = validateTarget($scope.target);
         if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
           $scope.oldTarget = angular.copy($scope.target);
           $scope.get_data();
@@ -239,7 +250,6 @@ define([
        * Call when IT service is selected.
        */
       $scope.selectITService = function () {
-        $scope.target.errors = validateTarget($scope.target);
         if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
           $scope.oldTarget = angular.copy($scope.target);
           $scope.get_data();
@@ -277,18 +287,6 @@ define([
             templated: true
           });
         });
-      }
-
-      //////////////////////////////
-      // VALIDATION
-      //////////////////////////////
-
-      function validateTarget(target) {
-        var errs = {};
-        if (!target) {
-          errs = 'Not defined';
-        }
-        return errs;
       }
 
       $scope.init();
