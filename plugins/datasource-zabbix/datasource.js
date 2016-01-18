@@ -151,7 +151,6 @@ function (angular, _, dateMath) {
                 return [];
               }
             }
-            console.log(hosts);
 
             // Find items belongs to selected hosts
             items = _.filter(self.zabbixCache.getItems(), function (itemObj) {
@@ -205,9 +204,11 @@ function (angular, _, dateMath) {
                 return [];
               }
             }
-            console.log(items);
 
-            //items = _.flatten(items);
+            // Set host as host name for each item
+            items = _.each(items, function (itemObj) {
+              itemObj.host = _.find(hosts, {'hostid': itemObj.hostid}).name;
+            });
 
             // Use alias only for single metric, otherwise use item names
             var alias;
@@ -217,10 +218,12 @@ function (angular, _, dateMath) {
 
             var history;
             if ((from < useTrendsFrom) && self.trends) {
+              // Use trends
               var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
               history = self.zabbixAPI.getTrends(items, from, to)
                 .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
             } else {
+              // Use history
               history = self.zabbixAPI.getHistory(items, from, to)
                 .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
             }
