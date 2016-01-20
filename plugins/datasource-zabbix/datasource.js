@@ -330,7 +330,7 @@ function (angular, _, dateMath) {
     this.annotationQuery = function(options) {
       var from = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
       var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
-      var annotation = annotation;
+      var annotation = options.annotation;
       var self = this;
 
       // Remove events below the chose severity
