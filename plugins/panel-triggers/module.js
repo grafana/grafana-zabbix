@@ -48,6 +48,12 @@ function (angular, app, _, $, config, PanelMeta) {
       { text: 'severity',     value: 'priority' }
     ];
 
+    $scope.showEventsFields = [
+      { text: 'all events',     value: [0,1] },
+      { text: 'Ok events',      value: 0 },
+      { text: 'Problem events', value: 1 }
+    ];
+
     var grafanaDefaultSeverity = [
       { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },
       { priority: 1, severity: 'Information',     color: '#82B5D8', show: true },
@@ -72,6 +78,7 @@ function (angular, app, _, $, config, PanelMeta) {
       limit: 10,
       showTriggers: 'all triggers',
       sortTriggersBy: { text: 'last change', value: 'lastchange' },
+      showEvents: { text: 'Problem events', value: '1' },
       triggerSeverity: grafanaDefaultSeverity
     };
 
@@ -125,7 +132,8 @@ function (angular, app, _, $, config, PanelMeta) {
                                   groupid,
                                   hostid,
                                   applicationids,
-                                  $scope.panel.triggers.name)
+                                  $scope.panel.triggers.name,
+                                  $scope.panel.showEvents.value)
           .then(function(triggers) {
             var promises = _.map(triggers, function (trigger) {
               var lastchange = new Date(trigger.lastchange * 1000);

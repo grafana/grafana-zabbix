@@ -112,6 +112,16 @@
                     ng-change="get_data()">
             </select>
           </li>
+          <li class="tight-form-item" style="width: 13em">
+            <strong>Show events</strong>
+          </li>
+          <li>
+            <select class="input-medium tight-form-input"
+                    ng-model="panel.showEvents"
+                    ng-options="f.text for f in showEventsFields track by f.value"
+                    ng-change="get_data()">
+            </select>
+          </li>
         </ul>
         <div class="clearfix"></div>
       </div>
