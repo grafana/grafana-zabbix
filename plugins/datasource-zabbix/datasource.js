@@ -13,8 +13,7 @@ function (angular, _, dateMath) {
   'use strict';
 
   /** @ngInject */
-  function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv,
-                                ZabbixAPI, Utils, zabbixHelperSrv, ZabbixCache) {
+  function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv, ZabbixAPI, Utils, zabbixHelperSrv, ZabbixCache) {
 
     // General data source settings
     this.name             = instanceSettings.name;
