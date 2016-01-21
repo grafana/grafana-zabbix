@@ -1,4 +1,4 @@
-<div class="tight-form">
+<div class="tight-form last">
   <ul class="tight-form-list pull-right">
     <li class="tight-form-item small" ng-show="target.datasource">
       <em>{{target.datasource}}</em>
@@ -84,6 +84,14 @@
              placeholder="Alias"
              ng-blur="targetBlur()">
     </li>
+  </ul>
+  <div class="clearfix"></div>
+</div>
+
+<div ng-hide="target.mode == 1">
+<h5>Metric definition</h5>
+<div class="tight-form">
+  <ul class="tight-form-list" role="menu">
     <!-- Select Host Group -->
     <li class="tight-form-item input-small" style="width: 5em">Group</li>
     <li>
@@ -130,35 +138,13 @@
              placeholder="Host filter (regex)"
              ng-blur="targetBlur()">
     </li>
-    <!-- Downsampling function -->
-    <li class="tight-form-item input-medium" ng-hide="target.mode == 2">
-      Downsampling
-    </li>
-    <li ng-hide="target.mode == 2">
-      <select class="tight-form-input input-small"
-              ng-change="targetBlur()"
-              ng-model="target.downsampleFunction"
-              bs-tooltip="'Downsampling function'"
-              ng-options="func.name for func in downsampleFunctionList track by func.name">
-      </select>
-      <a bs-tooltip="target.errors.metric"
-         style="color: rgb(229, 189, 28)"
-         ng-show="target.errors.metric">
-        <i class="icon-warning-sign"></i>
-      </a>
-    </li>
   </ul>
 
   <div class="clearfix"></div>
 </div>
 
-<div class="tight-form" ng-hide="target.mode == 1">
+<div class="tight-form last">
   <ul class="tight-form-list" role="menu">
-    <li class="tight-form-item" style="min-width: 15px; text-align: center">&nbsp</li>
-    <li class="tight-form-item">
-      <i class="fa fa-eye invisible"></i>
-    </li>
-    <li class="tight-form-item" style="width: 135px">&nbsp</li>
 
     <!-- Select Application -->
     <li class="tight-form-item input-small" style="width: 5em">Application</li>
@@ -206,22 +192,78 @@
              placeholder="Item filter (regex)"
              ng-blur="targetBlur()">
     </li>
-    <!-- Scale -->
-    <li class="tight-form-item" ng-hide="target.mode == 2">
-      Scale
-      <i class="fa fa-question-circle"
-         bs-tooltip="'Set a custom multiplier for series values, for example -1 to invert series'"></i>
-    </li>
-    <li ng-hide="target.mode == 2">
-      <input type="text"
-             class="tight-form-input input-small"
-             ng-model="target.scale"
-             spellcheck='false'
-             placeholder="1"
-             ng-blur="targetBlur()">
-    </li>
   </ul>
 
   <div class="clearfix"></div>
 </div>
+</div>
 
+<div ng-hide="target.mode == 2">
+  <h5>Metric options</h5>
+  <div class="tight-form">
+    <ul class="tight-form-list" role="menu">
+      <!-- Downsampling function -->
+      <li class="tight-form-item" style="width: 7em;">Downsampling</li>
+      <li>
+        <select class="tight-form-input input-small"
+                ng-change="targetBlur()"
+                ng-model="target.downsampleFunction"
+                bs-tooltip="'Downsampling function'"
+                ng-options="func.name for func in downsampleFunctionList track by func.name">
+        </select>
+      </li>
+
+      <!-- Scale -->
+      <li class="tight-form-item input-small">Scale
+        <i class="fa fa-question-circle"
+           bs-tooltip="'Set a custom multiplier for series values, for example -1 to invert series'"></i>
+      </li>
+      <li>
+        <input type="text"
+               class="tight-form-input input-small"
+               ng-model="target.scale"
+               spellcheck='false'
+               placeholder="1"
+               ng-blur="targetBlur()">
+      </li>
+    </ul>
+    <div class="clearfix"></div>
+  </div>
+
+  <div class="tight-form" ng-hide="target.mode == 1">
+  <ul class="tight-form-list" role="menu">
+      <!-- Aggregate -->
+      <li class="tight-form-item" style="width: 7em;">Aggregate</li>
+      <li>
+        <select class="tight-form-input input-small"
+                ng-change="targetBlur()"
+                ng-model="target.aggregateFunction"
+                bs-tooltip="'Aggregate function'"
+                ng-options="func.name for func in aggregateFunctionList track by func.name">
+        </select>
+      </li>
+      <li class="tight-form-item input-medium">Aggregate name
+        <i class="fa fa-question-circle"
+           bs-tooltip="'You can use $H[1] and $I[1] for Host and Item regex backreferences'"></i>
+      </li>
+      <li>
+        <input type="text"
+               class="tight-form-input input-medium"
+               ng-model="target.aggregateLabel"
+               placeholder="Total"
+               ng-blur="targetBlur()">
+      </li>
+      <li class="tight-form-item input-medium">
+        <label class="checkbox-label" for="target.aggregatedOnly">Aggregated only</label>
+        <input type="checkbox"
+               class="cr1"
+               id="target.aggregatedOnly"
+               ng-model="target.aggregatedOnly"
+               ng-checked="target.aggregatedOnly"
+               ng-change="targetBlur()">
+        <label for="target.aggregatedOnly" class="cr1"></label>
+      </li>
+    </ul>
+    <div class="clearfix"></div>
+  </div>
+</div>

@@ -49,6 +49,7 @@ function (angular, _) {
         return {
           target: (item.hosts ? item.hosts[0].name+': ' : '')
             + (alias ? alias : self.expandItemName(item)),
+          delay: item.delay ? Number(item.delay)*1000 : undefined,
           datapoints: _.map(history, function (p) {
 
             // Value must be a number for properly work
@@ -279,5 +280,91 @@ function (angular, _) {
       }
       return downsampledSeries.reverse();
     };
+
+    /**
+     * Aggregate datapoints series
+     *
+     * @param   [{target: *,  datapoints: *[]}]    metrics     Grafana metrics list
+     * @param   {string}      func                             Aggregate function to apply: avg, min or max
+     * @param   {string}      label                            Label for aggregated metric
+     * @param   {boolean}     aggregated_only                  Return only aggregated metric
+     * @return  [{target: *,  datapoints: *[]}]                Aggregated metrics list
+     */
+    this.aggregateMetrics = function(metrics, func, label, aggregated_only) {
+
+      function sum (list) {
+        return list.reduce(function(s, a) { return s + Number(a) }, 0);
+      }
+
+      function avg (list) {
+        return sum(list) / (list.length || 1);
+      }
+
+      var aggregateFunc = {
+        "sum": sum, "avg": avg, "min": _.min, "max": _.max
+      }[func];
+
+      function get_timestamp(metric) {
+        for (var i=0; i < metric.datapoints.length; i++ ) {
+          if (metric.datapoints[i].timestamp_used == true) {
+            continue;
+          }
+          return metric.datapoints[i][1];
+        }
+        return NaN;
+      }
+
+      function get_datapoint(metric, timestamp) {
+        var delay = metric.delay;
+        if (metric.datapoints.length > 1) {
+          delay = Math.min(delay, metric.datapoints[1][1] - metric.datapoints[0][1] - 1000);
+        }
+        while (metric.datapoints.length > 0) {
+          if (metric.datapoints[0][1] > timestamp) {
+            return [0, timestamp];
+          }
+          if (metric.datapoints[0][1] + delay <= timestamp) {
+            metric.datapoints.shift();
+            continue;
+          }
+          if (timestamp < metric.datapoints[0][1] + delay) {
+            metric.datapoints[0].timestamp_used = true;
+            return [metric.datapoints[0][0], timestamp];
+          }
+        }
+        return [0, timestamp];
+      }
+
+      var aggregated = [];
+      metrics.forEach(function (metric) {
+        aggregated.push({ "target": metric.target, "datapoints": []});
+      })
+      aggregated.push({"target": label, "datapoints": []});
+
+      var timestamp = 0;
+      while ( true ) {
+
+        timestamp = _.map(metrics, get_timestamp).sort()[0];
+
+        if (isNaN(timestamp) == true) {
+          break;
+        }
+
+        var datapoint;
+        var values = [];
+        metrics.forEach(function (metric, indx) {
+          datapoint = get_datapoint(metric, timestamp)
+          aggregated[indx].datapoints.push(datapoint);
+          values.push(datapoint[0]);
+        });
+        aggregated[metrics.length].datapoints.push([aggregateFunc(values), timestamp]);
+      }
+
+      if (aggregated_only) {
+        aggregated.splice(0, metrics.length);
+      }
+      return aggregated;
+    }
+
   });
 });
