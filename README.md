@@ -42,4 +42,19 @@ Group, host, application or item names can be replaced with a template variable.
  * Show acknowledges for problems:  
 ![Acknowledges](https://cloud.githubusercontent.com/assets/4932851/8269375/e6d8706a-17ad-11e5-8e2d-2d707d8ee67f.png)
 
+### Dockerized Grafana with Zabbix datasource
+
+    # create /var/lib/grafana as persistent volume storage
+    docker run -d -v /var/lib/grafana --name grafana-xxl-storage busybox:latest
+
+    # start grafana-xxl
+    docker run \
+      -d \
+      -p 3000:3000 \
+      --name grafana-xxl \
+      --volumes-from grafana-xxl-storage \
+      monitoringartist/grafana-xxl
+      
+Visit [Grafana XXL project](https://github.com/monitoringartist/grafana-xxl) for more details.      
+
 Read more about Grafana features at [grafana.org](http://grafana.org)
