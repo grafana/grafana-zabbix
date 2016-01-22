@@ -46,6 +46,23 @@ function (angular, _, dateMath) {
         this.limitmetrics     = datasource.meta.limitmetrics || 100;
       }
 
+      // append suffix (default "api_jsonrpc.php") to url
+      if (datasource.meta.suffix) {
+          var suf_len = datasource.meta.suffix.length;
+          if (this.url.substr(-suf_len, suf_len) !=  datasource.meta.suffix) {
+              var suf_slash = (datasource.meta.suffix.substr(0, 1) == '/');
+              var url_slash = (this.url.substr(-1, 1) == '/');
+
+              if (suf_slash && url_slash) {
+                  this.url = this.url + datasource.meta.suffix.substr(1);
+              } else if (!suf_slash && !url_slash) {
+                  this.url = this.url + '/' + datasource.meta.suffix;
+              } else {
+                  this.url = this.url + datasource.meta.suffix;
+              }
+          }
+      }
+
       // Initialize Zabbix API
       this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
     }

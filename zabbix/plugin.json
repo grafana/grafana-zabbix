@@ -12,5 +12,6 @@
   },
 
   "metrics": true,
-  "annotations": true
+  "annotations": true,
+  "suffix": "api_jsonrpc.php"
 }
