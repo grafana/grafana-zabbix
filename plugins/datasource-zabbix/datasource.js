@@ -4,6 +4,7 @@ define([
   'app/core/utils/datemath',
   './directives',
   './zabbixAPIWrapper',
+  './zabbixAPIService',
   './utils',
   './helperFunctions',
   './zabbixCacheSrv',
@@ -13,7 +14,8 @@ function (angular, _, dateMath) {
   'use strict';
 
   /** @ngInject */
-  function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv, ZabbixAPI, Utils, zabbixHelperSrv, ZabbixCache) {
+  function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv,
+                               ZabbixAPI, Utils, zabbixHelperSrv, ZabbixCache, ZabbixAPIService) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -43,27 +45,36 @@ function (angular, _, dateMath) {
      */
     this.testDatasource = function() {
       var self = this;
-      return this.zabbixAPI.getZabbixAPIVersion().then(function (apiVersion) {
-        return self.zabbixAPI.performZabbixAPILogin().then(function (auth) {
+      return this.zabbixAPI.getVersion().then(function (version) {
+        return self.zabbixAPI.login().then(function (auth) {
           if (auth) {
             return {
               status: "success",
               title: "Success",
-              message: "Zabbix API version: " + apiVersion
+              message: "Zabbix API version: " + version
             };
           } else {
             return {
               status: "error",
               title: "Invalid user name or password",
-              message: "Zabbix API version: " + apiVersion
+              message: "Zabbix API version: " + version
             };
           }
+        }, function(error) {
+          console.log(error);
+          return {
+            status: "error",
+            title: "Connection failed",
+            message: error
+          };
         });
-      }, function(error) {
+      },
+      function(error) {
+        console.log(error);
         return {
           status: "error",
           title: "Connection failed",
-          message: "Could not connect to " + error.config.url
+          message: "Could not connect to given url"
         };
       });
     };
