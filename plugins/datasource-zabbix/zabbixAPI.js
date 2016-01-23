@@ -32,7 +32,21 @@ function (angular, _) {
     p.request = function(method, params) {
       var self = this;
       if (this.auth) {
-        return ZabbixAPIService._request(this.url, method, params, this.requestOptions, this.auth);
+        return ZabbixAPIService._request(this.url, method, params, this.requestOptions, this.auth)
+          .then(function(result) {
+            return result;
+          },
+
+          // Handle errors
+          function(error) {
+            if (error.message === "Session terminated, re-login, please.") {
+              return ZabbixAPIService.login(self.url, self.username, self.password, self.requestOptions)
+                .then(function(auth) {
+                  self.auth = auth;
+                  return ZabbixAPIService._request(self.url, method, params, self.requestOptions, self.auth);
+                });
+            }
+          });
       } else {
 
         // Login first
