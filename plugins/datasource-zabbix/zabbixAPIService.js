@@ -86,12 +86,12 @@ function (angular) {
   // Define zabbix API exception type
   function ZabbixException(error) {
     this.code = error.code;
-    this.message = error.message;
-    this.data = error.data;
+    this.errorType = error.message;
+    this.message = error.data;
   }
 
   ZabbixException.prototype.toString = function() {
-    return this.name + " " + this.message;
+    return this.errorType + ": " + this.message;
   };
 
 });

@@ -3,8 +3,7 @@ define([
   'lodash',
   'app/core/utils/datemath',
   './directives',
-  './zabbixAPIWrapper',
-  './zabbixAPIService',
+  './zabbixAPI',
   './utils',
   './helperFunctions',
   './zabbixCacheSrv',
@@ -15,7 +14,7 @@ function (angular, _, dateMath) {
 
   /** @ngInject */
   function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv,
-                               ZabbixAPI, Utils, zabbixHelperSrv, ZabbixCache, ZabbixAPIService) {
+                               ZabbixAPI, Utils, zabbixHelperSrv, ZabbixCache) {
 
     // General data source settings
     this.name             = instanceSettings.name;
