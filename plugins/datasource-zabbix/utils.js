@@ -1,13 +1,10 @@
 define([
-  'angular',
   'lodash'
 ],
-function (angular, _) {
+function () {
   'use strict';
 
-  var module = angular.module('grafana.services');
-
-  module.service('Utils', function() {
+  function utils() {
 
     /**
      * Expand Zabbix item name
@@ -43,5 +40,7 @@ function (angular, _) {
       return new RegExp(pattern, flags);
     };
 
-  });
+  }
+
+  return new utils();
 });

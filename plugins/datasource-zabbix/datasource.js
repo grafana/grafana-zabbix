@@ -2,19 +2,19 @@ define([
   'angular',
   'lodash',
   'app/core/utils/datemath',
+  './queryBuilder',
   './directives',
   './zabbixAPI',
-  './utils',
   './helperFunctions',
-  './zabbixCacheSrv',
+  './zabbixCache',
   './queryCtrl'
 ],
-function (angular, _, dateMath) {
+function (angular, _, dateMath, QueryBuilder) {
   'use strict';
 
   /** @ngInject */
-  function ZabbixAPIDatasource(instanceSettings, $q, backendSrv, templateSrv, alertSrv,
-                               ZabbixAPI, Utils, zabbixHelperSrv, ZabbixCache) {
+  function ZabbixAPIDatasource(instanceSettings, $q, templateSrv, alertSrv,
+                               ZabbixAPI, zabbixHelperSrv, ZabbixCache) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -35,7 +35,13 @@ function (angular, _, dateMath) {
 
     // Initialize cache service
     this.zabbixCache = new ZabbixCache(this.zabbixAPI);
-    console.log(this.zabbixCache);
+
+    // Initialize query builder
+    this.queryBuilder = new QueryBuilder(this.zabbixCache);
+
+    ////////////////////////
+    // Datasource methods //
+    ////////////////////////
 
     /**
      * Test connection to Zabbix API
@@ -79,7 +85,7 @@ function (angular, _, dateMath) {
     };
 
     /**
-     * Calls for each panel in dashboard.
+     * Query panel data. Calls for each panel in dashboard.
      *
      * @param  {Object} options   Query options. Contains time range, targets
      *                            and other info.
@@ -112,112 +118,9 @@ function (angular, _, dateMath) {
           var itemFilter = templateSrv.replace(target.item.filter, options.scopedVars);
 
           // Query numeric data
-          if (!target.mode) {
+          if (!target.mode || target.mode === 0) {
 
-            // Find items by item names and perform queries
-            var groups = [];
-            var hosts = [];
-            var apps = [];
-            var items = [];
-
-            if (target.host.isRegex) {
-
-              // Filter groups
-              if (target.group.isRegex) {
-                var groupPattern = Utils.buildRegex(groupFilter);
-                groups = _.filter(self.zabbixCache.getGroups(), function (groupObj) {
-                  return groupPattern.test(groupObj.name);
-                });
-              } else {
-                var findedGroup = _.find(self.zabbixCache.getGroups(), {'name': groupFilter});
-                if (findedGroup) {
-                  groups.push(findedGroup);
-                } else {
-                  groups = undefined;
-                }
-              }
-              if (groups) {
-                var groupids = _.map(groups, 'groupid');
-                hosts = _.filter(self.zabbixCache.getHosts(), function (hostObj) {
-                  return _.intersection(groupids, hostObj.groups).length;
-                });
-              } else {
-                // No groups finded
-                return [];
-              }
-
-              // Filter hosts
-              var hostPattern = Utils.buildRegex(hostFilter);
-              hosts = _.filter(hosts, function (hostObj) {
-                return hostPattern.test(hostObj.name);
-              });
-            } else {
-              var findedHost = _.find(self.zabbixCache.getHosts(), {'name': hostFilter});
-              if (findedHost) {
-                hosts.push(findedHost);
-              } else {
-                // No hosts finded
-                return [];
-              }
-            }
-
-            // Find items belongs to selected hosts
-            items = _.filter(self.zabbixCache.getItems(), function (itemObj) {
-              return _.contains(_.map(hosts, 'hostid'), itemObj.hostid);
-            });
-
-            if (target.item.isRegex) {
-
-              // Filter applications
-              if (target.application.isRegex) {
-                var appPattern = Utils.buildRegex(appFilter);
-                apps = _.filter(self.zabbixCache.getApplications(), function (appObj) {
-                  return appPattern.test(appObj.name);
-                });
-              }
-              // Don't use application filter if it empty
-              else if (appFilter === "") {
-                apps = undefined;
-              }
-              else {
-                var findedApp = _.find(self.zabbixCache.getApplications(), {'name': appFilter});
-                if (findedApp) {
-                  apps.push(findedApp);
-                } else {
-                  // No applications finded
-                  return [];
-                }
-              }
-
-              // Find items belongs to selected applications
-              if (apps) {
-                var appids = _.flatten(_.map(apps, 'applicationids'));
-                items = _.filter(items, function (itemObj) {
-                  return _.intersection(appids, itemObj.applications).length;
-                });
-              }
-
-              if (items) {
-                var itemPattern = Utils.buildRegex(itemFilter);
-                items = _.filter(items, function (itemObj) {
-                  return itemPattern.test(itemObj.name);
-                });
-              } else {
-                // No items finded
-                return [];
-              }
-            } else {
-              items = _.filter(items, {'name': hostFilter});
-              if (!items.length) {
-                // No items finded
-                return [];
-              }
-            }
-
-            // Set host as host name for each item
-            items = _.each(items, function (itemObj) {
-              itemObj.host = _.find(hosts, {'hostid': itemObj.hostid}).name;
-            });
+            var items = self.queryBuilder.build(groupFilter, hostFilter, appFilter, itemFilter);
 
             // Use alias only for single metric, otherwise use item names
             var alias;

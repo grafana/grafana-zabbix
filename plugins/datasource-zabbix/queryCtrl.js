@@ -3,13 +3,13 @@ define([
     'lodash',
     './utils'
   ],
-  function (angular, _) {
+  function (angular, _, Utils) {
     'use strict';
 
     var module = angular.module('grafana.controllers');
     var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv, Utils) {
+    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv) {
 
       var zabbixCache = $scope.datasource.zabbixCache;
 

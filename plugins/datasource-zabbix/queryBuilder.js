@@ -1,15 +1,14 @@
 define([
   'angular',
   'lodash',
-  './zabbixCacheSrv',
   './utils'
 ],
-function (angular, _) {
+function (angular, _, utils) {
   'use strict';
 
-  var module = angular.module('grafana.services');
+  function QueryBuilder(zabbixCacheInstance) {
 
-  module.service('QueryBuilderSrv', function(ZabbixCache, Utils) {
+    this.cache = zabbixCacheInstance;
 
     this.build = function (groupFilter, hostFilter, appFilter, itemFilter) {
 
@@ -19,16 +18,16 @@ function (angular, _) {
       var apps = [];
       var items = [];
 
-      if (Utils.isRegex(hostFilter)) {
+      if (utils.isRegex(hostFilter)) {
 
         // Filter groups
-        if (Utils.isRegex(groupFilter)) {
-          var groupPattern = Utils.buildRegex(groupFilter);
-          groups = _.filter(ZabbixCache.getGroups(), function (groupObj) {
+        if (utils.isRegex(groupFilter)) {
+          var groupPattern = utils.buildRegex(groupFilter);
+          groups = _.filter(this.cache.getGroups(), function (groupObj) {
             return groupPattern.test(groupObj.name);
           });
         } else {
-          var findedGroup = _.find(ZabbixCache.getGroups(), {'name': groupFilter});
+          var findedGroup = _.find(this.cache.getGroups(), {'name': groupFilter});
           if (findedGroup) {
             groups.push(findedGroup);
           } else {
@@ -37,7 +36,7 @@ function (angular, _) {
         }
         if (groups) {
           var groupids = _.map(groups, 'groupid');
-          hosts = _.filter(ZabbixCache.getHosts(), function (hostObj) {
+          hosts = _.filter(this.cache.getHosts(), function (hostObj) {
             return _.intersection(groupids, hostObj.groups).length;
           });
         } else {
@@ -46,12 +45,12 @@ function (angular, _) {
         }
 
         // Filter hosts
-        var hostPattern = Utils.buildRegex(hostFilter);
+        var hostPattern = utils.buildRegex(hostFilter);
         hosts = _.filter(hosts, function (hostObj) {
           return hostPattern.test(hostObj.name);
         });
       } else {
-        var findedHost = _.find(ZabbixCache.getHosts(), {'name': hostFilter});
+        var findedHost = _.find(this.cache.getHosts(), {'name': hostFilter});
         if (findedHost) {
           hosts.push(findedHost);
         } else {
@@ -61,16 +60,16 @@ function (angular, _) {
       }
 
       // Find items belongs to selected hosts
-      items = _.filter(ZabbixCache.getItems(), function (itemObj) {
+      items = _.filter(this.cache.getItems(), function (itemObj) {
         return _.contains(_.map(hosts, 'hostid'), itemObj.hostid);
       });
 
-      if (Utils.isRegex(itemFilter)) {
+      if (utils.isRegex(itemFilter)) {
 
         // Filter applications
-        if (Utils.isRegex(appFilter)) {
-          var appPattern = Utils.buildRegex(appFilter);
-          apps = _.filter(ZabbixCache.getApplications(), function (appObj) {
+        if (utils.isRegex(appFilter)) {
+          var appPattern = utils.buildRegex(appFilter);
+          apps = _.filter(this.cache.getApplications(), function (appObj) {
             return appPattern.test(appObj.name);
           });
         }
@@ -79,7 +78,7 @@ function (angular, _) {
           apps = undefined;
         }
         else {
-          var findedApp = _.find(ZabbixCache.getApplications(), {'name': appFilter});
+          var findedApp = _.find(this.cache.getApplications(), {'name': appFilter});
           if (findedApp) {
             apps.push(findedApp);
           } else {
@@ -97,7 +96,7 @@ function (angular, _) {
         }
 
         if (items) {
-          var itemPattern = Utils.buildRegex(itemFilter);
+          var itemPattern = utils.buildRegex(itemFilter);
           items = _.filter(items, function (itemObj) {
             return itemPattern.test(itemObj.name);
           });
@@ -118,40 +117,11 @@ function (angular, _) {
         itemObj.host = _.find(hosts, {'hostid': itemObj.hostid}).name;
       });
 
-      // Use alias only for single metric, otherwise use item names
-      var alias;
-      if (items.length === 1) {
-        alias = templateSrv.replace(alias, options.scopedVars);
-      }
-
-      var history;
-      if ((from < useTrendsFrom) && self.trends) {
-        // Use trends
-        var points = downsampleFunction ? downsampleFunction.value : "avg";
-        history = self.zabbixAPI.getTrends(items, from, to)
-          .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, scale, points));
-      } else {
-        // Use history
-        history = self.zabbixAPI.getHistory(items, from, to)
-          .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, scale));
-      }
-
-      return history.then(function (timeseries) {
-        var timeseries_data = _.flatten(timeseries);
-        return _.map(timeseries_data, function (timeseries) {
-
-          // Series downsampling
-          if (timeseries.datapoints.length > options.maxDataPoints) {
-            var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
-            var downsampleFunc = downsampleFunction ? downsampleFunction.value : "avg";
-            timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
-          }
-          return timeseries;
-        });
-      });
-
-      return itemFilter;
+      return items;
     };
 
-  });
+  }
+
+  return QueryBuilder;
+
 });

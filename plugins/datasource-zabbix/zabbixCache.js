@@ -3,14 +3,14 @@ define([
   'lodash',
   './utils'
 ],
-function (angular, _) {
+function (angular, _, utils) {
   'use strict';
 
   var module = angular.module('grafana.services');
 
   // Use factory() instead service() for multiple datasources support.
   // Each datasource instance must initialize its own cache.
-  module.factory('ZabbixCache', function($q, Utils) {
+  module.factory('ZabbixCache', function($q) {
 
     function ZabbixCache(zabbixAPI, ttl) {
       var self = this;
@@ -105,7 +105,7 @@ function (angular, _) {
       return _.forEach(items, function(item) {
         item.applications = _.map(item.applications, 'applicationid');
         item.item = item.name;
-        item.name = Utils.expandItemName(item.item, item.key_);
+        item.name = utils.expandItemName(item.item, item.key_);
         return item;
       });
     }
