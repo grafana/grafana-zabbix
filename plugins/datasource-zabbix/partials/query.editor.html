@@ -76,14 +76,14 @@
 
   <ul class="tight-form-list" role="menu" ng-hide="target.mode == 1">
     <!-- Alias -->
-    <li>
+    <!-- <li>
       <input type="text"
              class="tight-form-input input-medium"
              ng-model="target.alias"
              spellcheck='false'
              placeholder="Alias"
              ng-blur="targetBlur()">
-    </li>
+    </li> -->
 
     <!-- Select Host Group -->
     <li class="tight-form-item input-small" style="width: 5em">Group</li>
@@ -114,7 +114,7 @@
     </li>
 
     <!-- Downsampling function -->
-    <li class="tight-form-item input-medium" ng-hide="target.mode == 2">
+    <!-- <li class="tight-form-item input-medium" ng-hide="target.mode == 2">
       Downsampling
     </li>
     <li ng-hide="target.mode == 2">
@@ -129,7 +129,7 @@
          ng-show="target.errors.metric">
         <i class="icon-warning-sign"></i>
       </a>
-    </li>
+    </li> -->
   </ul>
 
   <div class="clearfix"></div>
@@ -137,7 +137,7 @@
 
 <div class="tight-form" ng-hide="target.mode == 1">
   <ul class="tight-form-list" role="menu">
-    <li class="tight-form-item" style="width: 194px">&nbsp</li>
+    <li class="tight-form-item" style="width: 44px">&nbsp</li>
 
     <!-- Select Application -->
     <li class="tight-form-item input-small" style="width: 5em">Application</li>
@@ -168,7 +168,7 @@
     </li>
 
     <!-- Scale -->
-    <li class="tight-form-item" ng-hide="target.mode == 2">
+    <!-- <li class="tight-form-item" ng-hide="target.mode == 2">
       Scale
       <i class="fa fa-question-circle"
          bs-tooltip="'Set a custom multiplier for series values, for example -1 to invert series'"></i>
@@ -180,7 +180,7 @@
              spellcheck='false'
              placeholder="1"
              ng-blur="targetBlur()">
-    </li>
+    </li> -->
   </ul>
 
   <div class="clearfix"></div>
