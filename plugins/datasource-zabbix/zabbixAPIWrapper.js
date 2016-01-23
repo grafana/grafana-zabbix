@@ -1,21 +1,26 @@
 define([
   'angular',
-  'lodash'
+  'lodash',
+  './zabbixAPIService'
   ],
 function (angular, _) {
   'use strict';
 
   var module = angular.module('grafana.services');
 
-  module.factory('ZabbixAPI', function($q, backendSrv) {
+  module.factory('ZabbixAPI', function($q, backendSrv, ZabbixAPIService) {
 
+    // Initialize Zabbix API.
     function ZabbixAPI(api_url, username, password, basicAuth, withCredentials) {
-      // Initialize API parameters.
       this.url              = api_url;
       this.username         = username;
       this.password         = password;
-      this.basicAuth        = basicAuth;
-      this.withCredentials  = withCredentials;
+      this.auth             = null;
+
+      this.requestOptions = {
+        basicAuth: basicAuth,
+        withCredentials: withCredentials
+      };
     }
 
     var p = ZabbixAPI.prototype;
@@ -23,6 +28,21 @@ function (angular, _) {
     //////////////////
     // Core methods //
     //////////////////
+
+    p.request = function(method, params) {
+      var self = this;
+      if (this.auth) {
+        return ZabbixAPIService._request(this.url, method, params, this.requestOptions, this.auth);
+      } else {
+
+        // Login first
+        return ZabbixAPIService.login(this.url, this.username, this.password, this.requestOptions)
+          .then(function(auth) {
+            self.auth = auth;
+            return ZabbixAPIService._request(self.url, method, params, self.requestOptions, self.auth);
+          });
+      }
+    };
 
     /**
      * Request data from Zabbix API
@@ -123,7 +143,10 @@ function (angular, _) {
         sortfield: 'name'
       };
 
-      return this.performZabbixAPIRequest('hostgroup.get', params);
+      return this.request('hostgroup.get', params).then(function(result) {
+        console.log("getGroups", result);
+        return result;
+      });
     };
 
     p.getHosts = function() {
@@ -133,7 +156,7 @@ function (angular, _) {
         selectGroups: []
       };
 
-      return this.performZabbixAPIRequest('host.get', params);
+      return this.request('host.get', params);
     };
 
     p.getApplications = function() {
@@ -143,7 +166,7 @@ function (angular, _) {
         selectHosts: []
       };
 
-      return this.performZabbixAPIRequest('application.get', params);
+      return this.request('application.get', params);
     };
 
     p.getItems = function() {
@@ -153,7 +176,7 @@ function (angular, _) {
         selectApplications: []
       };
 
-      return this.performZabbixAPIRequest('item.get', params);
+      return this.request('item.get', params);
     };
 
     /////////////////////////
@@ -225,7 +248,7 @@ function (angular, _) {
           params.time_till = end;
         }
 
-        return this.performZabbixAPIRequest('history.get', params);
+        return this.request('history.get', params);
       }, this)).then(function (results) {
         return _.flatten(results);
       });
@@ -261,7 +284,7 @@ function (angular, _) {
           params.time_till = end;
         }
 
-        return this.performZabbixAPIRequest('trend.get', params);
+        return this.request('trend.get', params);
       }, this)).then(function (results) {
         return _.flatten(results);
       });

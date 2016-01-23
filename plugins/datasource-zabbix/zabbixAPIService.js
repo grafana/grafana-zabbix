@@ -73,6 +73,14 @@ function (angular) {
       return this._request(api_url, 'user.login', params, options, null);
     };
 
+    /**
+     * Get Zabbix API version
+     * Matches the version of Zabbix starting from Zabbix 2.0.4
+     */
+    this.getVersion = function(api_url, options) {
+      return this._request(api_url, 'apiinfo.version', [], options);
+    };
+
   });
 
   // Define zabbix API exception type
