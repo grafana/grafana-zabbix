@@ -149,8 +149,7 @@ function (angular, _, dateMath) {
               });
             }
 
-            return getHistory.then(function (timeseries) {
-              var timeseries_data = _.flatten(timeseries);
+            return getHistory.then(function (timeseries_data) {
               return _.map(timeseries_data, function (timeseries) {
 
                 // Series downsampling
@@ -212,10 +211,11 @@ function (angular, _, dateMath) {
         }
       }, this);
 
-      return $q.all(_.flatten(promises)).then(function (results) {
-        var timeseries_data = _.flatten(results);
-        return { data: timeseries_data };
-      });
+      return $q.all(_.flatten(promises))
+        .then(_.flatten)
+        .then(function (timeseries_data) {
+          return { data: timeseries_data };
+        });
     };
 
     ////////////////
