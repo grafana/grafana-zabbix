@@ -9,12 +9,12 @@ define([
   './zabbixCache',
   './queryCtrl'
 ],
-function (angular, _, dateMath, QueryBuilder) {
+function (angular, _, dateMath) {
   'use strict';
 
   /** @ngInject */
   function ZabbixAPIDatasource(instanceSettings, $q, templateSrv, alertSrv,
-                               ZabbixAPI, zabbixHelperSrv, ZabbixCache) {
+                               ZabbixAPI, zabbixHelperSrv, ZabbixCache, QueryBuilder) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -38,6 +38,8 @@ function (angular, _, dateMath, QueryBuilder) {
 
     // Initialize query builder
     this.queryBuilder = new QueryBuilder(this.zabbixCache);
+
+    console.log(this.zabbixCache);
 
     ////////////////////////
     // Datasource methods //
@@ -128,19 +130,26 @@ function (angular, _, dateMath, QueryBuilder) {
               alias = templateSrv.replace(target.alias, options.scopedVars);
             }
 
-            var history;
+            // Add hostname for items from multiple hosts
+            var addHostName = target.host.isRegex;
+
+            var getHistory;
             if ((from < useTrendsFrom) && self.trends) {
+
               // Use trends
-              var points = target.downsampleFunction ? target.downsampleFunction.value : "avg";
-              history = self.zabbixAPI.getTrends(items, from, to)
-                .then(_.bind(zabbixHelperSrv.handleTrendResponse, zabbixHelperSrv, items, alias, target.scale, points));
+              var valueType = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+              getHistory = self.zabbixAPI.getTrends(items, from, to).then(function(history) {
+                return self.queryBuilder.handleTrends(history, addHostName, valueType);
+              });
             } else {
+
               // Use history
-              history = self.zabbixAPI.getHistory(items, from, to)
-                .then(_.bind(zabbixHelperSrv.handleHistoryResponse, zabbixHelperSrv, items, alias, target.scale));
+              getHistory = self.zabbixAPI.getHistory(items, from, to).then(function(history) {
+                return self.queryBuilder.handleHistory(history, addHostName);
+              });
             }
 
-            return history.then(function (timeseries) {
+            return getHistory.then(function (timeseries) {
               var timeseries_data = _.flatten(timeseries);
               return _.map(timeseries_data, function (timeseries) {
 

@@ -70,6 +70,14 @@ function (angular, _, utils) {
       return this._items;
     };
 
+    p.getHost = function(hostid) {
+      return _.find(this._hosts, {'hostid': hostid});
+    };
+
+    p.getItem = function(itemid) {
+      return _.find(this._items, {'itemid': itemid});
+    };
+
     /**
      * Convert host.get response to cache format
      * host.groups - array of group ids

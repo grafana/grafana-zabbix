@@ -118,12 +118,14 @@ function (angular, _) {
     /**
      * Perform history query from Zabbix API
      *
-     * @param  {Array}  items Array of Zabbix item objects
-     * @param  {Number} start Time in seconds
-     * @param  {Number} end   Time in seconds
-     * @return {Array}        Array of Zabbix history objects
+     * @param  {Array}  items       Array of Zabbix item objects
+     * @param  {Number} time_from   Time in seconds
+     * @param  {Number} time_till   Time in seconds
+     * @return {Array}  Array of Zabbix history objects
      */
-    p.getHistory = function(items, start, end) {
+    p.getHistory = function(items, time_from, time_till) {
+      var self = this;
+
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
 
@@ -136,30 +138,30 @@ function (angular, _) {
           itemids: itemids,
           sortfield: 'clock',
           sortorder: 'ASC',
-          time_from: start
+          time_from: time_from
         };
 
         // Relative queries (e.g. last hour) don't include an end time
-        if (end) {
-          params.time_till = end;
+        if (time_till) {
+          params.time_till = time_till;
         }
 
-        return this.request('history.get', params);
-      }, this)).then(function (results) {
-        return _.flatten(results);
-      });
+        return self.request('history.get', params);
+      })).then(_.flatten);
     };
 
     /**
      * Perform trends query from Zabbix API
      * Use trends api extension from ZBXNEXT-1193 patch.
      *
-     * @param  {Array}  items Array of Zabbix item objects
-     * @param  {Number} start Time in seconds
-     * @param  {Number} end   Time in seconds
-     * @return {Array}        Array of Zabbix trend objects
+     * @param  {Array}  items       Array of Zabbix item objects
+     * @param  {Number} time_from   Time in seconds
+     * @param  {Number} time_till   Time in seconds
+     * @return {Array}  Array of Zabbix trend objects
      */
-    p.getTrends = function(items, start, end) {
+    p.getTrends = function(items, time_from, time_till) {
+      var self = this;
+
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
 
@@ -172,18 +174,16 @@ function (angular, _) {
           itemids: itemids,
           sortfield: 'clock',
           sortorder: 'ASC',
-          time_from: start
+          time_from: time_from
         };
 
         // Relative queries (e.g. last hour) don't include an end time
-        if (end) {
-          params.time_till = end;
+        if (time_till) {
+          params.time_till = time_till;
         }
 
-        return this.request('trend.get', params);
-      }, this)).then(function (results) {
-        return _.flatten(results);
-      });
+        return self.request('trend.get', params);
+      })).then(_.flatten);
     };
 
     p.getITService = function(/* optional */ serviceids) {
