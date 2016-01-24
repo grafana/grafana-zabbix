@@ -2,6 +2,7 @@ define([
   'angular',
   'lodash',
   'app/core/utils/datemath',
+  './utils',
   './queryProcessor',
   './directives',
   './zabbixAPI',
@@ -10,7 +11,7 @@ define([
   './zabbixCache',
   './queryCtrl'
 ],
-function (angular, _, dateMath) {
+function (angular, _, dateMath, utils) {
   'use strict';
 
   /** @ngInject */
@@ -141,15 +142,15 @@ function (angular, _, dateMath) {
 
             return getHistory.then(function (timeseries_data) {
               return _.map(timeseries_data, function (timeseries) {
+                var groupBuInterval = utils.parseInterval(options.interval);
 
                 // Series downsampling
                 if (timeseries.datapoints.length > options.maxDataPoints) {
-                  var ms_interval = Math.floor((to - from) / options.maxDataPoints) * 1000;
-                  var downsampleFunc = target.downsampleFunction ? target.downsampleFunction.value : "avg";
-                  timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
+                  timeseries.datapoints = DataProcessingService.groupBy(timeseries.datapoints,
+                                                                        groupBuInterval,
+                                                                        DataProcessingService.AVERAGE);
                 }
-                var groupBuInterval = 60000;
-                timeseries.datapoints = DataProcessingService.groupBy(timeseries.datapoints, groupBuInterval, DataProcessingService.AVERAGE);
+
                 return timeseries;
               });
             });

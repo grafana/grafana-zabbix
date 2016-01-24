@@ -1,7 +1,8 @@
 define([
-  'lodash'
+  'lodash',
+  'moment'
 ],
-function () {
+function (_, moment) {
   'use strict';
 
   function utils() {
@@ -38,6 +39,12 @@ function () {
       var pattern = matches[1];
       var flags = matches[2] !== "" ? matches[2] : undefined;
       return new RegExp(pattern, flags);
+    };
+
+    this.parseInterval = function(interval) {
+      var intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)/g;
+      var momentInterval = intervalPattern.exec(interval);
+      return moment.duration(Number(momentInterval[1]), momentInterval[2]).valueOf();
     };
 
   }
