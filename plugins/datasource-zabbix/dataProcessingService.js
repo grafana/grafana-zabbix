@@ -95,5 +95,13 @@ function (angular, _, moment) {
       return sum / values.length;
     };
 
+    this.MIN = function(values) {
+      return _.min(values);
+    };
+
+    this.MAX = function(values) {
+      return _.max(values);
+    };
+
   });
 });
