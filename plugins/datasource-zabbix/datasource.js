@@ -2,7 +2,7 @@ define([
   'angular',
   'lodash',
   'app/core/utils/datemath',
-  './queryBuilder',
+  './queryProcessor',
   './directives',
   './zabbixAPI',
   './helperFunctions',
@@ -14,7 +14,7 @@ function (angular, _, dateMath) {
 
   /** @ngInject */
   function ZabbixAPIDatasource(instanceSettings, $q, templateSrv, alertSrv,
-                               ZabbixAPI, zabbixHelperSrv, ZabbixCache, QueryBuilder) {
+                               ZabbixAPI, zabbixHelperSrv, ZabbixCache, QueryProcessor) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -37,7 +37,7 @@ function (angular, _, dateMath) {
     this.zabbixCache = new ZabbixCache(this.zabbixAPI);
 
     // Initialize query builder
-    this.queryBuilder = new QueryBuilder(this.zabbixCache);
+    this.queryProcessor = new QueryProcessor(this.zabbixCache);
 
     console.log(this.zabbixCache);
 
@@ -47,7 +47,6 @@ function (angular, _, dateMath) {
 
     /**
      * Test connection to Zabbix API
-     *
      * @return {object} Connection status and Zabbix API version
      */
     this.testDatasource = function() {
@@ -88,12 +87,8 @@ function (angular, _, dateMath) {
 
     /**
      * Query panel data. Calls for each panel in dashboard.
-     *
-     * @param  {Object} options   Query options. Contains time range, targets
-     *                            and other info.
-     *
-     * @return {Object}           Grafana metrics object with timeseries data
-     *                            for each target.
+     * @param  {Object} options   Contains time range, targets and other info.
+     * @return {Object} Grafana metrics object with timeseries data for each target.
      */
     this.query = function(options) {
       var self = this;
@@ -122,7 +117,7 @@ function (angular, _, dateMath) {
           // Query numeric data
           if (!target.mode || target.mode === 0) {
 
-            var items = self.queryBuilder.build(groupFilter, hostFilter, appFilter, itemFilter);
+            var items = self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter);
 
             // Use alias only for single metric, otherwise use item names
             var alias;
@@ -139,13 +134,13 @@ function (angular, _, dateMath) {
               // Use trends
               var valueType = target.downsampleFunction ? target.downsampleFunction.value : "avg";
               getHistory = self.zabbixAPI.getTrends(items, from, to).then(function(history) {
-                return self.queryBuilder.handleTrends(history, addHostName, valueType);
+                return self.queryProcessor.handleTrends(history, addHostName, valueType);
               });
             } else {
 
               // Use history
               getHistory = self.zabbixAPI.getHistory(items, from, to).then(function(history) {
-                return self.queryBuilder.handleHistory(history, addHostName);
+                return self.queryProcessor.handleHistory(history, addHostName);
               });
             }
 

@@ -8,9 +8,9 @@ function (angular, _, utils) {
 
   var module = angular.module('grafana.services');
 
-  module.factory('QueryBuilder', function() {
+  module.factory('QueryProcessor', function() {
 
-    function QueryBuilder(zabbixCacheInstance) {
+    function QueryProcessor(zabbixCacheInstance) {
       var self = this;
 
       this.cache = zabbixCacheInstance;
@@ -205,7 +205,7 @@ function (angular, _, utils) {
       }
     }
 
-    return QueryBuilder;
+    return QueryProcessor;
   });
 
 });
