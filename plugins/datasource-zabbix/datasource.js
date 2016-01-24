@@ -6,6 +6,7 @@ define([
   './directives',
   './zabbixAPI',
   './helperFunctions',
+  './dataProcessingService',
   './zabbixCache',
   './queryCtrl'
 ],
@@ -13,8 +14,8 @@ function (angular, _, dateMath) {
   'use strict';
 
   /** @ngInject */
-  function ZabbixAPIDatasource(instanceSettings, $q, templateSrv, alertSrv,
-                               ZabbixAPI, zabbixHelperSrv, ZabbixCache, QueryProcessor) {
+  function ZabbixAPIDatasource(instanceSettings, $q, templateSrv, alertSrv, zabbixHelperSrv,
+                               ZabbixAPI, ZabbixCache, QueryProcessor, DataProcessingService) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -119,12 +120,6 @@ function (angular, _, dateMath) {
 
             var items = self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter);
 
-            // Use alias only for single metric, otherwise use item names
-            var alias;
-            if (items.length === 1) {
-              alias = templateSrv.replace(target.alias, options.scopedVars);
-            }
-
             // Add hostname for items from multiple hosts
             var addHostName = target.host.isRegex;
 
@@ -153,6 +148,8 @@ function (angular, _, dateMath) {
                   var downsampleFunc = target.downsampleFunction ? target.downsampleFunction.value : "avg";
                   timeseries.datapoints = zabbixHelperSrv.downsampleSeries(timeseries.datapoints, to, ms_interval, downsampleFunc);
                 }
+                var groupBuInterval = 60000;
+                timeseries.datapoints = DataProcessingService.groupBy(timeseries.datapoints, groupBuInterval, DataProcessingService.AVERAGE);
                 return timeseries;
               });
             });
