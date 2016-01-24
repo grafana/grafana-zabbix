@@ -113,7 +113,7 @@ function (angular, _, utils) {
             return [];
           }
         } else {
-          items = _.filter(items, {'name': hostFilter});
+          items = _.filter(items, {'name': itemFilter});
           if (!items.length) {
             // No items finded
             return [];
