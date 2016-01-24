@@ -160,8 +160,26 @@ define([
 
       $scope.filterItems = function () {
         var app = $scope.target.application;
+        var host = $scope.target.host;
+        var hosts = [];
         var apps = [];
         var items = [];
+
+        // Filter hosts by regex
+        if (host.isRegex) {
+          var hostFilterPattern = Utils.buildRegex(host.filter);
+          hosts = _.filter($scope.metric.hostList, function (hostObj) {
+            return hostFilterPattern.test(hostObj.name);
+          });
+        }
+        else {
+          var findedHosts = _.find($scope.metric.hostList, {'name': host.filter});
+          if (findedHosts) {
+            hosts.push(findedHosts);
+          } else {
+            hosts = undefined;
+          }
+        }
 
         // Filter applications by regex
         if (app.isRegex) {
@@ -171,12 +189,19 @@ define([
           });
         }
         // Find items in selected application
-        else {
+        else if (app.filter) {
           var finded = _.find($scope.metric.applicationList, {'name': app.filter});
           if (finded) {
             apps.push(finded);
           } else {
             apps = undefined;
+          }
+        } else {
+          apps = undefined;
+          if (hosts) {
+            items = _.filter($scope.metric.itemList, function (itemObj) {
+              return _.find(hosts, {'hostid': itemObj.hostid });
+            });
           }
         }
 
@@ -185,6 +210,13 @@ define([
           items = _.filter($scope.metric.itemList, function (itemObj) {
             return _.intersection(appids, itemObj.applications).length;
           });
+          items = _.filter(items, function (itemObj) {
+            return _.find(hosts, {'hostid': itemObj.hostid });
+          });
+        }
+
+        if (true) {
+          items = _.filter(items, {'status': '0'});
         }
 
         return items;
