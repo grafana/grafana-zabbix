@@ -17,7 +17,19 @@ define([
         $scope.targetLetters = targetLetters;
         $scope.metric = {};
 
-        if (!$scope.target.mode || $scope.target.mode !== 1) {
+        // Load default values
+        var targetDefaults = {
+          mode: 0,
+          group: { filter: "" },
+          host: { filter: "" },
+          application: { filter: "" },
+          item: { filter: "" }
+        };
+        _.defaults($scope.target, targetDefaults);
+
+        if ($scope.target.mode ===0 ||
+            $scope.target.mode === 2) {
+
           $scope.downsampleFunctionList = [
             {name: "avg", value: "avg"},
             {name: "min", value: "min"},
