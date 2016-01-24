@@ -215,7 +215,7 @@ define([
           });
         }
 
-        if (true) {
+        if (!$scope.target.showDisabledItems) {
           items = _.filter(items, {'status': '0'});
         }
 

@@ -112,6 +112,13 @@
         class="input-large tight-form-input"
         ng-style="target.host.style">
     </li>
+    <li class="tight-form-item" ng-hide="target.mode == 2">
+      Show disabled items&nbsp;
+      <editor-checkbox text=""
+        model="target.showDisabledItems"
+        change="onApplicationBlur()">
+      </editor-checkbox>
+    </li>
 
     <!-- Downsampling function -->
     <!-- <li class="tight-form-item input-medium" ng-hide="target.mode == 2">
