@@ -173,6 +173,9 @@
         class="input-large tight-form-input"
         ng-style="target.item.style">
     </li>
+    <li class="tight-form-item query-keyword">Options</li>
+    <li class="dropdown" dropdown-typeahead="optionsMenu" dropdown-typeahead-on-select="addSelectPart(selectParts, $item, $subItem)">
+    </li>
 
     <!-- Scale -->
     <!-- <li class="tight-form-item" ng-hide="target.mode == 2">

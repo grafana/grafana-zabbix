@@ -17,6 +17,22 @@ define([
         $scope.targetLetters = targetLetters;
         $scope.metric = {};
 
+        $scope.optionsMenu = [
+          {text: "Transformations", submenu: [
+            {text: "groupBy", value: null},
+            {text: "scale", value: null}
+          ]},
+          {text: "Aggregations", submenu: [
+            {text: "sum", value: null},
+            {text: "average", value: null},
+            {text: "min", value: null},
+            {text: "max", value: null}
+          ]},
+          {text: "Alias", submenu: [
+            {text: "set alias", value: null},
+          ]},
+        ];
+
         // Load default values
         var targetDefaults = {
           mode: 0,
