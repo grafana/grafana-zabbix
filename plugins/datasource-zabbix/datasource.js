@@ -145,10 +145,11 @@ function (angular, _, dateMath, utils) {
                 var groupBuInterval = utils.parseInterval(options.interval);
 
                 // Series downsampling
-                if (timeseries.datapoints.length > options.maxDataPoints) {
-                  timeseries.datapoints = DataProcessingService.groupBy(timeseries.datapoints,
-                                                                        groupBuInterval,
-                                                                        DataProcessingService.AVERAGE);
+                var dp = timeseries.datapoints;
+                if (false) {
+                  dp = DataProcessingService.groupBy(dp, groupBuInterval,
+                                                     DataProcessingService.AVERAGE);
+                  timeseries.datapoints = dp;
                 }
 
                 return timeseries;
@@ -204,10 +205,22 @@ function (angular, _, dateMath, utils) {
         }
       }, this);
 
+      // Data for panel (all targets)
       return $q.all(_.flatten(promises))
         .then(_.flatten)
         .then(function (timeseries_data) {
-          return { data: timeseries_data };
+          var data = _.map(timeseries_data, function(timeseries) {
+
+            // Series downsampling
+            var DPS = DataProcessingService;
+            var groupBuInterval = utils.parseInterval(options.interval);
+            if (timeseries.datapoints.length > options.maxDataPoints) {
+              timeseries.datapoints = DPS.groupBy(timeseries.datapoints, groupBuInterval,
+                                                  DPS.AVERAGE);
+            }
+            return timeseries;
+          });
+          return { data: data };
         });
     };
 
