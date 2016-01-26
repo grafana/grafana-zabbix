@@ -17,7 +17,6 @@ define([
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
         $scope.metric = {};
-        $scope.target.functions = [];
 
         // Load default values
         var targetDefaults = {
@@ -25,7 +24,8 @@ define([
           group: { filter: "" },
           host: { filter: "" },
           application: { filter: "" },
-          item: { filter: "" }
+          item: { filter: "" },
+          functions: [],
         };
         _.defaults($scope.target, targetDefaults);
 
