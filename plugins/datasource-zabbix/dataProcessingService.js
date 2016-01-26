@@ -10,6 +10,7 @@ function (angular, _, moment, utils) {
   var module = angular.module('grafana.services');
 
   module.service('DataProcessingService', function() {
+    var self = this;
 
     /**
      * Downsample datapoints series
@@ -103,6 +104,21 @@ function (angular, _, moment, utils) {
 
     this.MAX = function(values) {
       return _.max(values);
+    };
+
+    this.aggregationFunctions = {
+      avg: this.AVERAGE,
+      min: this.MIN,
+      max: this.MAX,
+    };
+
+    this.groupByWrapper = function(interval, groupFunc, datapoints) {
+      var groupByCallback = self.aggregationFunctions[groupFunc];
+      return self.groupBy(interval, groupByCallback, datapoints);
+    };
+
+    this.metricFunctions = {
+      groupBy: this.groupByWrapper,
     };
 
   });

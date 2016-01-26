@@ -153,6 +153,15 @@ function (angular, _, dateMath, utils) {
                   timeseries.datapoints = dp;
                 }
 
+                var functions = _.map(target.functions, function(func) {
+                  return func.bindFunction(DataProcessingService.metricFunctions);
+                });
+                if (functions.length) {
+                  //console.log(functions);
+                  dp = functions[0](dp);
+                  timeseries.datapoints = dp;
+                }
+
                 return timeseries;
               });
             });

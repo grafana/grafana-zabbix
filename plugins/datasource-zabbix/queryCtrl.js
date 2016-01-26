@@ -262,6 +262,7 @@ define([
 
       $scope.targetChanged = function() {
         console.log($scope.target.functions);
+        $scope.get_data();
       };
 
       // Validate target and set validation info

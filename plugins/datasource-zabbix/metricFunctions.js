@@ -103,6 +103,21 @@ function (_, $) {
     this.updateText();
   }
 
+  FuncInstance.prototype.bindFunction = function(metricFunctions) {
+    var func = metricFunctions[this.def.name];
+    if (func) {
+
+      // Bind function arguments
+      var bindedFunc = func;
+      for (var i = 0; i < this.params.length; i++) {
+        bindedFunc = _.partial(bindedFunc, this.params[i]);
+      }
+      return bindedFunc;
+    } else {
+      throw { message: 'Method not found ' + this.def.name };
+    }
+  };
+
   FuncInstance.prototype.render = function(metricExp) {
     var str = this.def.name + '(';
     var parameters = _.map(this.params, function(value, index) {
