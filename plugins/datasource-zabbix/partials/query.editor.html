@@ -174,7 +174,11 @@
         ng-style="target.item.style">
     </li>
     <li class="tight-form-item query-keyword">Options</li>
-    <li class="dropdown" dropdown-typeahead="optionsMenu" dropdown-typeahead-on-select="addSelectPart(selectParts, $item, $subItem)">
+    <li ng-repeat="func in target.functions">
+      <span metric-function-editor class="tight-form-item tight-form-func">
+      </span>
+    </li>
+    <li class="dropdown" add-metric-function>
     </li>
 
     <!-- Scale -->
@@ -195,6 +199,16 @@
 
   <div class="clearfix"></div>
 </div>
+<div class="tight-form" ng-hide="target.mode == 1" ng-if="target.options">
+  <ul class="tight-form-list" role="menu">
+    <li class="tight-form-item" style="width: 44px">&nbsp</li>
+
+    <!-- Select Application -->
+    <li class="tight-form-item query-keyword" style="width: 5em">Options</li>
+  </ul>
+  <div class="clearfix"></div>
+</div>
+
 <div class="tight-form" ng-show="target.mode == 2">
   <ul class="tight-form-list" role="menu">
     <li class="tight-form-item" style="width: 44px">&nbsp</li>

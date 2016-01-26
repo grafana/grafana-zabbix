@@ -1,9 +1,10 @@
 define([
     'angular',
     'lodash',
+    './metricFunctions',
     './utils'
   ],
-  function (angular, _, Utils) {
+  function (angular, _, metricFunctions, Utils) {
     'use strict';
 
     var module = angular.module('grafana.controllers');
@@ -16,22 +17,7 @@ define([
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
         $scope.metric = {};
-
-        $scope.optionsMenu = [
-          {text: "Transformations", submenu: [
-            {text: "groupBy", value: null},
-            {text: "scale", value: null}
-          ]},
-          {text: "Aggregations", submenu: [
-            {text: "sum", value: null},
-            {text: "average", value: null},
-            {text: "min", value: null},
-            {text: "max", value: null}
-          ]},
-          {text: "Alias", submenu: [
-            {text: "set alias", value: null},
-          ]},
-        ];
+        $scope.target.functions = [];
 
         // Load default values
         var targetDefaults = {
@@ -274,8 +260,44 @@ define([
         // Parse target
       };
 
+      $scope.targetChanged = function() {
+        console.log($scope.target.functions);
+      };
+
       // Validate target and set validation info
       $scope.validateTarget = function () {};
+
+      $scope.addFunction = function(funcDef) {
+        var newFunc = metricFunctions.createFuncInstance(funcDef, { withDefaultParams: true });
+        newFunc.added = true;
+        $scope.target.functions.push(newFunc);
+
+        $scope.moveAliasFuncLast();
+
+        if (!newFunc.params.length && newFunc.added) {
+          $scope.targetChanged();
+        }
+      };
+
+      $scope.removeFunction = function(func) {
+        $scope.target.functions = _.without($scope.target.functions, func);
+        $scope.targetChanged();
+      };
+
+      $scope.moveAliasFuncLast = function() {
+        var aliasFunc = _.find($scope.target.functions, function(func) {
+          return func.def.name === 'alias' ||
+            func.def.name === 'aliasByNode' ||
+            func.def.name === 'aliasByMetric';
+        });
+
+        if (aliasFunc) {
+          $scope.target.functions = _.without($scope.target.functions, aliasFunc);
+          $scope.target.functions.push(aliasFunc);
+        }
+      };
+
+      $scope.functionChanged = function() {};
 
       /**
        * Switch query editor to specified mode.

@@ -9,7 +9,9 @@ define([
   './helperFunctions',
   './dataProcessingService',
   './zabbixCache',
-  './queryCtrl'
+  './queryCtrl',
+  './addMetricFunction',
+  './metricFunctionEditor'
 ],
 function (angular, _, dateMath, utils) {
   'use strict';
