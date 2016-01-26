@@ -1,9 +1,10 @@
 define([
   'angular',
   'lodash',
-  'moment'
+  'moment',
+  './utils'
 ],
-function (angular, _, moment) {
+function (angular, _, moment, utils) {
   'use strict';
 
   var module = angular.module('grafana.services');
@@ -65,7 +66,8 @@ function (angular, _, moment) {
      * Group points by given time interval
      * datapoints: [[<value>, <unixtime>], ...]
      */
-    this.groupBy = function(datapoints, ms_interval, groupByCallback) {
+    this.groupBy = function(interval, groupByCallback, datapoints) {
+      var ms_interval = utils.parseInterval(interval);
       var frames = _.groupBy(datapoints, function(point) {
         var group_time = Number(moment.utc(point[1]).startOf('minute').valueOf());
         group_time = Math.ceil(point[1] / ms_interval) * ms_interval;

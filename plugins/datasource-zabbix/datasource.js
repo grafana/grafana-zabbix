@@ -144,12 +144,11 @@ function (angular, _, dateMath, utils) {
 
             return getHistory.then(function (timeseries_data) {
               return _.map(timeseries_data, function (timeseries) {
-                var groupBuInterval = utils.parseInterval(options.interval);
 
-                // Series downsampling
+                // Metric data processing
                 var dp = timeseries.datapoints;
                 if (false) {
-                  dp = DataProcessingService.groupBy(dp, groupBuInterval,
+                  dp = DataProcessingService.groupBy(dp, options.interval,
                                                      DataProcessingService.AVERAGE);
                   timeseries.datapoints = dp;
                 }
@@ -215,10 +214,8 @@ function (angular, _, dateMath, utils) {
 
             // Series downsampling
             var DPS = DataProcessingService;
-            var groupBuInterval = utils.parseInterval(options.interval);
             if (timeseries.datapoints.length > options.maxDataPoints) {
-              timeseries.datapoints = DPS.groupBy(timeseries.datapoints, groupBuInterval,
-                                                  DPS.AVERAGE);
+              timeseries.datapoints = DPS.groupBy(options.interval, DPS.AVERAGE, timeseries.datapoints);
             }
             return timeseries;
           });
