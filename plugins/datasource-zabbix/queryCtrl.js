@@ -47,7 +47,7 @@ define([
           if (zabbixCache._initialized) {
             $scope.getMetricsFromCache();
             $scope.initFilters();
-            console.log("Cached", $scope.metric);
+            //console.log("Cached", $scope.metric);
           } else {
             zabbixCache.refresh().then(function () {
               $scope.getMetricsFromCache();
