@@ -261,7 +261,7 @@ define([
       };
 
       $scope.targetChanged = function() {
-        console.log($scope.target.functions);
+        //console.log($scope.target);
         $scope.get_data();
       };
 

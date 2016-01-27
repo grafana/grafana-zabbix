@@ -3,6 +3,7 @@ define([
   'lodash',
   'app/core/utils/datemath',
   './utils',
+  './metricFunctions',
   './queryProcessor',
   './directives',
   './zabbixAPI',
@@ -13,7 +14,7 @@ define([
   './addMetricFunction',
   './metricFunctionEditor'
 ],
-function (angular, _, dateMath, utils) {
+function (angular, _, dateMath, utils, metricFunctions) {
   'use strict';
 
   /** @ngInject */
@@ -145,22 +146,21 @@ function (angular, _, dateMath, utils) {
             return getHistory.then(function (timeseries_data) {
               return _.map(timeseries_data, function (timeseries) {
 
-                // Metric data processing
-                var dp = timeseries.datapoints;
-                if (false) {
-                  dp = DataProcessingService.groupBy(dp, options.interval,
-                                                     DataProcessingService.AVERAGE);
-                  timeseries.datapoints = dp;
-                }
-
-                var functions = _.map(target.functions, function(func) {
+                // Filter only transform functions
+                var transformFunctions = _.map(metricFunctions.getCategories()['Transform'], 'name');
+                var transFuncDefs = _.filter(target.functions, function(func) {
+                  return _.contains(transformFunctions, func.def.name);
+                });
+                var functions = _.map(transFuncDefs, function(func) {
                   return func.bindFunction(DataProcessingService.metricFunctions);
                 });
-                if (functions.length) {
-                  //console.log(functions);
-                  dp = functions[0](dp);
-                  timeseries.datapoints = dp;
+
+                // Metric data processing
+                var dp = timeseries.datapoints;
+                for (var i = 0; i < functions.length; i++) {
+                  dp = functions[i](dp);
                 }
+                timeseries.datapoints = dp;
 
                 return timeseries;
               });

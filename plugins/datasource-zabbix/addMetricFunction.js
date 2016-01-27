@@ -92,6 +92,7 @@ function (angular, _, $, metricFunctions) {
   }
 
   function createFunctionDropDownMenu(categories) {
+    console.log(categories);
     return _.map(categories, function(list, category) {
       return {
         text: category,

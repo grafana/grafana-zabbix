@@ -2,9 +2,10 @@ define([
   'angular',
   'lodash',
   'moment',
-  './utils'
+  './utils',
+  './metricFunctions'
 ],
-function (angular, _, moment, utils) {
+function (angular, _, moment, utils, metricFunctions) {
   'use strict';
 
   var module = angular.module('grafana.services');
