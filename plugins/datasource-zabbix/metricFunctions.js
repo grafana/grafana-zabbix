@@ -65,10 +65,37 @@ function (_, $) {
   });
 
   addFuncDef({
-    name: "holtWintersConfidenceBands",
+    name: 'sum',
     category: categories.Aggregate,
-    params: [{ name: "delta", type: 'int' }],
-    defaultParams: [3]
+    params: [],
+    defaultParams: [],
+  });
+
+  addFuncDef({
+    name: 'average',
+    category: categories.Aggregate,
+    params: [
+      { name: 'interval', type: 'string' }
+    ],
+    defaultParams: ['1m'],
+  });
+
+  addFuncDef({
+    name: 'min',
+    category: categories.Aggregate,
+    params: [
+      { name: 'interval', type: 'string' }
+    ],
+    defaultParams: ['1m'],
+  });
+
+  addFuncDef({
+    name: 'max',
+    category: categories.Aggregate,
+    params: [
+      { name: 'interval', type: 'string' }
+    ],
+    defaultParams: ['1m'],
   });
 
   addFuncDef({

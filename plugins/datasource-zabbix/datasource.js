@@ -144,7 +144,7 @@ function (angular, _, dateMath, utils, metricFunctions) {
             }
 
             return getHistory.then(function (timeseries_data) {
-              return _.map(timeseries_data, function (timeseries) {
+              timeseries_data = _.map(timeseries_data, function (timeseries) {
 
                 // Filter only transform functions
                 var transformFunctions = _.map(metricFunctions.getCategories()['Transform'], 'name');
@@ -164,6 +164,27 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
                 return timeseries;
               });
+
+              // Aggregations
+              var aggregationFunctions = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
+              var aggFuncDefs = _.filter(target.functions, function(func) {
+                return _.contains(aggregationFunctions, func.def.name);
+              });
+              var functions = _.map(aggFuncDefs, function(func) {
+                return func.bindFunction(DataProcessingService.metricFunctions);
+              });
+              var dp = _.map(timeseries_data, 'datapoints');
+
+              if (functions.length) {
+                for (var i = 0; i < functions.length; i++) {
+                  dp = functions[i](dp);
+                }
+                timeseries_data = {
+                  target: 'agg',
+                  datapoints: dp
+                };
+              }
+              return timeseries_data;
             });
           }
 
@@ -219,9 +240,9 @@ function (angular, _, dateMath, utils, metricFunctions) {
       return $q.all(_.flatten(promises))
         .then(_.flatten)
         .then(function (timeseries_data) {
-          var data = _.map(timeseries_data, function(timeseries) {
 
-            // Series downsampling
+          // Series downsampling
+          var data = _.map(timeseries_data, function(timeseries) {
             var DPS = DataProcessingService;
             if (timeseries.datapoints.length > options.maxDataPoints) {
               timeseries.datapoints = DPS.groupBy(options.interval, DPS.AVERAGE, timeseries.datapoints);

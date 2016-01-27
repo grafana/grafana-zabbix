@@ -2,10 +2,9 @@ define([
   'angular',
   'lodash',
   'moment',
-  './utils',
-  './metricFunctions'
+  './utils'
 ],
-function (angular, _, moment, utils, metricFunctions) {
+function (angular, _, moment, utils) {
   'use strict';
 
   var module = angular.module('grafana.services');
@@ -118,8 +117,16 @@ function (angular, _, moment, utils, metricFunctions) {
       return self.groupBy(interval, groupByCallback, datapoints);
     };
 
+    this.aggregateWrapper = function(groupByCallback, interval, datapoints) {
+      var flattenedPoints = _.flatten(datapoints, true);
+      return self.groupBy(interval, groupByCallback, flattenedPoints);
+    };
+
     this.metricFunctions = {
       groupBy: this.groupByWrapper,
+      average: _.partial(this.aggregateWrapper, this.AVERAGE),
+      min: _.partial(this.aggregateWrapper, this.MIN),
+      max: _.partial(this.aggregateWrapper, this.MAX),
     };
 
   });
