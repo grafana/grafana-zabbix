@@ -17,7 +17,7 @@ function (_, $) {
     funcDef.defaultParams = funcDef.defaultParams || [];
 
     if (funcDef.category) {
-      funcDef.category.push(funcDef);
+      categories[funcDef.category].push(funcDef);
     }
     index[funcDef.name] = funcDef;
     index[funcDef.shortName || funcDef.name] = funcDef;
@@ -33,14 +33,14 @@ function (_, $) {
 
   addFuncDef({
     name: 'scaleToSeconds',
-    category: categories.Transform,
+    category: 'Transform',
     params: [{ name: 'seconds', type: 'int' }],
     defaultParams: [1],
   });
 
   addFuncDef({
     name: 'groupBy',
-    category: categories.Transform,
+    category: 'Transform',
     params: [
       { name: 'interval', type: 'string'},
       { name: 'function', type: 'string', options: ['avg', 'min', 'max'] }
@@ -50,30 +50,21 @@ function (_, $) {
 
   addFuncDef({
     name: 'perSecond',
-    category: categories.Transform,
+    category: 'Transform',
     params: [{ name: "max value", type: "int", optional: true }],
     defaultParams: [],
   });
 
   addFuncDef({
-    name: 'aggregate',
-    category: categories.Aggregate,
-    params: [
-      { name: 'function', type: 'string', options: ['sum', 'avg', 'min', 'max'] }
-    ],
-    defaultParams: ['sum'],
-  });
-
-  addFuncDef({
     name: 'sum',
-    category: categories.Aggregate,
+    category: 'Aggregate',
     params: [],
     defaultParams: [],
   });
 
   addFuncDef({
     name: 'average',
-    category: categories.Aggregate,
+    category: 'Aggregate',
     params: [
       { name: 'interval', type: 'string' }
     ],
@@ -82,7 +73,7 @@ function (_, $) {
 
   addFuncDef({
     name: 'min',
-    category: categories.Aggregate,
+    category: 'Aggregate',
     params: [
       { name: 'interval', type: 'string' }
     ],
@@ -91,7 +82,7 @@ function (_, $) {
 
   addFuncDef({
     name: 'max',
-    category: categories.Aggregate,
+    category: 'Aggregate',
     params: [
       { name: 'interval', type: 'string' }
     ],
@@ -100,7 +91,7 @@ function (_, $) {
 
   addFuncDef({
     name: 'alias',
-    category: categories.Alias,
+    category: 'Alias',
     params: [
       { name: 'alias', type: 'string'}
     ],
@@ -110,7 +101,7 @@ function (_, $) {
   addFuncDef({
     name: 'averageSeries',
     shortName: 'avg',
-    category: categories.Alias,
+    category: 'Alias',
     params: optionalSeriesRefArgs,
     defaultParams: [''],
   });
