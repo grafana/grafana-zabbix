@@ -152,7 +152,8 @@ function (angular, _, dateMath, utils, metricFunctions) {
                   return _.contains(transformFunctions, func.def.name);
                 });
                 var functions = _.map(transFuncDefs, function(func) {
-                  return func.bindFunction(DataProcessingService.metricFunctions);
+                  var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
+                  return funcInstance.bindFunction(DataProcessingService.metricFunctions);
                 });
 
                 // Metric data processing
@@ -171,7 +172,8 @@ function (angular, _, dateMath, utils, metricFunctions) {
                 return _.contains(aggregationFunctions, func.def.name);
               });
               var functions = _.map(aggFuncDefs, function(func) {
-                return func.bindFunction(DataProcessingService.metricFunctions);
+                var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
+                return funcInstance.bindFunction(DataProcessingService.metricFunctions);
               });
               var dp = _.map(timeseries_data, 'datapoints');
 

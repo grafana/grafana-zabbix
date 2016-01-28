@@ -269,7 +269,7 @@ define([
       $scope.validateTarget = function () {};
 
       $scope.addFunction = function(funcDef) {
-        var newFunc = metricFunctions.createFuncInstance(funcDef, { withDefaultParams: true });
+        var newFunc = metricFunctions.createFuncInstance(funcDef);
         newFunc.added = true;
         $scope.target.functions.push(newFunc);
 

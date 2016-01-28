@@ -110,11 +110,14 @@ function (_, $) {
     categories[catName] = _.sortBy(funcList, 'name');
   });
 
-  function FuncInstance(funcDef, options) {
+  function FuncInstance(funcDef, params) {
     this.def = funcDef;
-    this.params = [];
 
-    if (options && options.withDefaultParams) {
+    if (params) {
+      this.params = params;
+    } else {
+      // Create with default params
+      this.params = [];
       this.params = funcDef.defaultParams.slice(0);
     }
 
@@ -200,14 +203,14 @@ function (_, $) {
   };
 
   return {
-    createFuncInstance: function(funcDef, options) {
+    createFuncInstance: function(funcDef, params) {
       if (_.isString(funcDef)) {
         if (!index[funcDef]) {
           throw { message: 'Method not found ' + name };
         }
         funcDef = index[funcDef];
       }
-      return new FuncInstance(funcDef, options);
+      return new FuncInstance(funcDef, params);
     },
 
     getFuncDef: function(name) {
