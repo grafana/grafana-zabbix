@@ -23,21 +23,6 @@ function (_, $) {
     index[funcDef.shortName || funcDef.name] = funcDef;
   }
 
-  var optionalSeriesRefArgs = [
-    { name: 'other', type: 'value_or_series', optional: true },
-    { name: 'other', type: 'value_or_series', optional: true },
-    { name: 'other', type: 'value_or_series', optional: true },
-    { name: 'other', type: 'value_or_series', optional: true },
-    { name: 'other', type: 'value_or_series', optional: true }
-  ];
-
-  addFuncDef({
-    name: 'scaleToSeconds',
-    category: 'Transform',
-    params: [{ name: 'seconds', type: 'int' }],
-    defaultParams: [1],
-  });
-
   addFuncDef({
     name: 'groupBy',
     category: 'Transform',
@@ -46,13 +31,6 @@ function (_, $) {
       { name: 'function', type: 'string', options: ['avg', 'min', 'max'] }
     ],
     defaultParams: ['1m', 'avg'],
-  });
-
-  addFuncDef({
-    name: 'perSecond',
-    category: 'Transform',
-    params: [{ name: "max value", type: "int", optional: true }],
-    defaultParams: [],
   });
 
   addFuncDef({
@@ -96,14 +74,6 @@ function (_, $) {
       { name: 'alias', type: 'string'}
     ],
     defaultParams: [],
-  });
-
-  addFuncDef({
-    name: 'averageSeries',
-    shortName: 'avg',
-    category: 'Alias',
-    params: optionalSeriesRefArgs,
-    defaultParams: [''],
   });
 
   _.each(categories, function(funcList, catName) {
