@@ -57,7 +57,7 @@ define([
             zabbixCache.refresh().then(function () {
               $scope.getMetricsFromCache();
               $scope.initFilters();
-              console.log("From server", $scope.metric);
+              //console.log("From server", $scope.metric);
             });
           }
 

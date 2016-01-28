@@ -122,72 +122,74 @@ function (angular, _, dateMath, utils, metricFunctions) {
           // Query numeric data
           if (!target.mode || target.mode === 0) {
 
-            var items = self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter);
+            // Build query in asynchronous manner
+            return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter)
+              .then(function(items) {
+                // Add hostname for items from multiple hosts
+                var addHostName = target.host.isRegex;
 
-            // Add hostname for items from multiple hosts
-            var addHostName = target.host.isRegex;
+                var getHistory;
+                if ((from < useTrendsFrom) && self.trends) {
 
-            var getHistory;
-            if ((from < useTrendsFrom) && self.trends) {
+                  // Use trends
+                  var valueType = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                  getHistory = self.zabbixAPI.getTrends(items, from, to).then(function(history) {
+                    return self.queryProcessor.handleTrends(history, addHostName, valueType);
+                  });
+                } else {
 
-              // Use trends
-              var valueType = target.downsampleFunction ? target.downsampleFunction.value : "avg";
-              getHistory = self.zabbixAPI.getTrends(items, from, to).then(function(history) {
-                return self.queryProcessor.handleTrends(history, addHostName, valueType);
-              });
-            } else {
-
-              // Use history
-              getHistory = self.zabbixAPI.getHistory(items, from, to).then(function(history) {
-                return self.queryProcessor.handleHistory(history, addHostName);
-              });
-            }
-
-            return getHistory.then(function (timeseries_data) {
-              timeseries_data = _.map(timeseries_data, function (timeseries) {
-
-                // Filter only transform functions
-                var transformFunctions = _.map(metricFunctions.getCategories()['Transform'], 'name');
-                var transFuncDefs = _.filter(target.functions, function(func) {
-                  return _.contains(transformFunctions, func.def.name);
-                });
-                var functions = _.map(transFuncDefs, function(func) {
-                  var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
-                  return funcInstance.bindFunction(DataProcessingService.metricFunctions);
-                });
-
-                // Metric data processing
-                var dp = timeseries.datapoints;
-                for (var i = 0; i < functions.length; i++) {
-                  dp = functions[i](dp);
+                  // Use history
+                  getHistory = self.zabbixAPI.getHistory(items, from, to).then(function(history) {
+                    return self.queryProcessor.handleHistory(history, addHostName);
+                  });
                 }
-                timeseries.datapoints = dp;
 
-                return timeseries;
-              });
+                return getHistory.then(function (timeseries_data) {
+                  timeseries_data = _.map(timeseries_data, function (timeseries) {
 
-              // Aggregations
-              var aggregationFunctions = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
-              var aggFuncDefs = _.filter(target.functions, function(func) {
-                return _.contains(aggregationFunctions, func.def.name);
-              });
-              var functions = _.map(aggFuncDefs, function(func) {
-                var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
-                return funcInstance.bindFunction(DataProcessingService.metricFunctions);
-              });
-              var dp = _.map(timeseries_data, 'datapoints');
+                    // Filter only transform functions
+                    var transformFunctions = _.map(metricFunctions.getCategories()['Transform'], 'name');
+                    var transFuncDefs = _.filter(target.functions, function(func) {
+                      return _.contains(transformFunctions, func.def.name);
+                    });
+                    var functions = _.map(transFuncDefs, function(func) {
+                      var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
+                      return funcInstance.bindFunction(DataProcessingService.metricFunctions);
+                    });
 
-              if (functions.length) {
-                for (var i = 0; i < functions.length; i++) {
-                  dp = functions[i](dp);
-                }
-                timeseries_data = {
-                  target: 'agg',
-                  datapoints: dp
-                };
-              }
-              return timeseries_data;
-            });
+                    // Metric data processing
+                    var dp = timeseries.datapoints;
+                    for (var i = 0; i < functions.length; i++) {
+                      dp = functions[i](dp);
+                    }
+                    timeseries.datapoints = dp;
+
+                    return timeseries;
+                  });
+
+                  // Aggregations
+                  var aggregationFunctions = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
+                  var aggFuncDefs = _.filter(target.functions, function(func) {
+                    return _.contains(aggregationFunctions, func.def.name);
+                  });
+                  var functions = _.map(aggFuncDefs, function(func) {
+                    var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
+                    return funcInstance.bindFunction(DataProcessingService.metricFunctions);
+                  });
+                  var dp = _.map(timeseries_data, 'datapoints');
+
+                  if (functions.length) {
+                    for (var i = 0; i < functions.length; i++) {
+                      dp = functions[i](dp);
+                    }
+                    timeseries_data = {
+                      target: 'agg',
+                      datapoints: dp
+                    };
+                  }
+                  return timeseries_data;
+                });
+              });
           }
 
           // Query text data

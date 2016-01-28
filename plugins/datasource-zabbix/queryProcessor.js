@@ -8,7 +8,7 @@ function (angular, _, utils) {
 
   var module = angular.module('grafana.services');
 
-  module.factory('QueryProcessor', function() {
+  module.factory('QueryProcessor', function($q) {
 
     function QueryProcessor(zabbixCacheInstance) {
       var self = this;
@@ -16,9 +16,22 @@ function (angular, _, utils) {
       this.cache = zabbixCacheInstance;
 
       /**
-       * Build query - convert target filters to array of Zabbix items
+       * Build query in asynchronous manner
        */
       this.build = function (groupFilter, hostFilter, appFilter, itemFilter) {
+        if (this.cache._initialized) {
+          return $q.when(self.buildFromCache(groupFilter, hostFilter, appFilter, itemFilter));
+        } else {
+          return this.cache.refresh().then(function() {
+            return self.buildFromCache(groupFilter, hostFilter, appFilter, itemFilter);
+          });
+        }
+      };
+
+      /**
+       * Build query - convert target filters to array of Zabbix items
+       */
+      this.buildFromCache = function (groupFilter, hostFilter, appFilter, itemFilter) {
 
         // Find items by item names and perform queries
         var groups = [];
