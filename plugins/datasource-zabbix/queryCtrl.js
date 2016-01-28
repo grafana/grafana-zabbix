@@ -29,6 +29,11 @@ define([
         };
         _.defaults($scope.target, targetDefaults);
 
+        // Create function instances from saved JSON
+        $scope.target.functions = _.map($scope.target.functions, function(func) {
+          return metricFunctions.createFuncInstance(func.def, func.params);
+        });
+
         if ($scope.target.mode ===0 ||
             $scope.target.mode === 2) {
 
