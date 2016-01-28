@@ -167,8 +167,12 @@ function (angular, _, dateMath, utils, metricFunctions) {
                     for (var i = 0; i < aggregationFunctions.length; i++) {
                       dp = aggregationFunctions[i](dp);
                     }
+                    var lastAgg = _.findLast(target.functions, function(func) {
+                      return _.contains(
+                        _.map(metricFunctions.getCategories()['Aggregate'], 'name'), func.def.name);
+                    });
                     timeseries_data = {
-                      target: 'agg',
+                      target: lastAgg.text,
                       datapoints: dp
                     };
                   }
