@@ -171,10 +171,16 @@ function (angular, _, dateMath, utils, metricFunctions) {
                       return _.contains(
                         _.map(metricFunctions.getCategories()['Aggregate'], 'name'), func.def.name);
                     });
-                    timeseries_data = {
+                    timeseries_data = [{
                       target: lastAgg.text,
                       datapoints: dp
-                    };
+                    }];
+                  }
+
+                  // Apply alias functions
+                  var aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
+                  for (var j = 0; j < aliasFunctions.length; j++) {
+                    _.each(timeseries_data, aliasFunctions[j]);
                   }
 
                   return timeseries_data;

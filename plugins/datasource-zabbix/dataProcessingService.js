@@ -106,6 +106,11 @@ function (angular, _, moment, utils) {
       return _.max(values);
     };
 
+    this.setAlias = function(alias, timeseries) {
+      timeseries.target = alias;
+      return timeseries;
+    };
+
     this.aggregationFunctions = {
       avg: this.AVERAGE,
       min: this.MIN,
@@ -127,6 +132,7 @@ function (angular, _, moment, utils) {
       average: _.partial(this.aggregateWrapper, this.AVERAGE),
       min: _.partial(this.aggregateWrapper, this.MIN),
       max: _.partial(this.aggregateWrapper, this.MAX),
+      setAlias: this.setAlias,
     };
 
   });

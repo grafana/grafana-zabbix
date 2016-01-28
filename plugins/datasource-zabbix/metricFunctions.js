@@ -90,7 +90,7 @@ function (_, $) {
   });
 
   addFuncDef({
-    name: 'alias',
+    name: 'setAlias',
     category: 'Alias',
     params: [
       { name: 'alias', type: 'string'}
