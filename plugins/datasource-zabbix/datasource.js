@@ -148,19 +148,12 @@ function (angular, _, dateMath, utils, metricFunctions) {
                   timeseries_data = _.map(timeseries_data, function (timeseries) {
 
                     // Filter only transform functions
-                    var transformFunctions = _.map(metricFunctions.getCategories()['Transform'], 'name');
-                    var transFuncDefs = _.filter(target.functions, function(func) {
-                      return _.contains(transformFunctions, func.def.name);
-                    });
-                    var functions = _.map(transFuncDefs, function(func) {
-                      var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
-                      return funcInstance.bindFunction(DataProcessingService.metricFunctions);
-                    });
+                    var transformFunctions = bindFunctionDefs(target.functions, 'Transform');
 
                     // Metric data processing
                     var dp = timeseries.datapoints;
-                    for (var i = 0; i < functions.length; i++) {
-                      dp = functions[i](dp);
+                    for (var i = 0; i < transformFunctions.length; i++) {
+                      dp = transformFunctions[i](dp);
                     }
                     timeseries.datapoints = dp;
 
@@ -168,25 +161,18 @@ function (angular, _, dateMath, utils, metricFunctions) {
                   });
 
                   // Aggregations
-                  var aggregationFunctions = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
-                  var aggFuncDefs = _.filter(target.functions, function(func) {
-                    return _.contains(aggregationFunctions, func.def.name);
-                  });
-                  var functions = _.map(aggFuncDefs, function(func) {
-                    var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
-                    return funcInstance.bindFunction(DataProcessingService.metricFunctions);
-                  });
+                  var aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
                   var dp = _.map(timeseries_data, 'datapoints');
-
-                  if (functions.length) {
-                    for (var i = 0; i < functions.length; i++) {
-                      dp = functions[i](dp);
+                  if (aggregationFunctions.length) {
+                    for (var i = 0; i < aggregationFunctions.length; i++) {
+                      dp = aggregationFunctions[i](dp);
                     }
                     timeseries_data = {
                       target: 'agg',
                       datapoints: dp
                     };
                   }
+
                   return timeseries_data;
                 });
               });
@@ -256,6 +242,17 @@ function (angular, _, dateMath, utils, metricFunctions) {
           return { data: data };
         });
     };
+
+    function bindFunctionDefs(functionDefs, category) {
+      var aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
+      var aggFuncDefs = _.filter(functionDefs, function(func) {
+        return _.contains(aggregationFunctions, func.def.name);
+      });
+      return _.map(aggFuncDefs, function(func) {
+        var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
+        return funcInstance.bindFunction(DataProcessingService.metricFunctions);
+      });
+    }
 
     ////////////////
     // Templating //
