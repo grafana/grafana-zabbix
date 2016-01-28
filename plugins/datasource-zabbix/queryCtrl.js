@@ -34,7 +34,7 @@ define([
           return metricFunctions.createFuncInstance(func.def, func.params);
         });
 
-        if ($scope.target.mode ===0 ||
+        if ($scope.target.mode === 0 ||
             $scope.target.mode === 2) {
 
           $scope.downsampleFunctionList = [
@@ -83,11 +83,12 @@ define([
       };
 
       $scope.getMetricsFromCache = function () {
+        var item_type = $scope.editorModes[$scope.target.mode];
         $scope.metric = {
           groupList: zabbixCache.getGroups(),
           hostList: zabbixCache.getHosts(),
           applicationList: zabbixCache.getApplications(),
-          itemList: zabbixCache.getItems()
+          itemList: zabbixCache.getItems(item_type)
         };
       };
 
@@ -304,6 +305,12 @@ define([
       };
 
       $scope.functionChanged = function() {};
+
+      $scope.editorModes = {
+        0: 'num',
+        1: 'itservice',
+        2: 'text'
+      };
 
       /**
        * Switch query editor to specified mode.

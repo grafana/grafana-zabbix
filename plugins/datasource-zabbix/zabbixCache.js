@@ -60,8 +60,22 @@ function (angular, _, utils) {
       return this._applications;
     };
 
-    p.getItems = function() {
-      return this._items;
+    p.getItems = function(type) {
+      switch (type) {
+        case 'num':
+          return _.filter(this._items, function(item) {
+            return (item.value_type === '0' ||
+                    item.value_type === '3');
+          });
+        case 'text':
+          return _.filter(this._items, function(item) {
+            return (item.value_type === '1' ||
+                    item.value_type === '2' ||
+                    item.value_type === '4');
+          });
+        default:
+          return this._items;
+      }
     };
 
     p.getHost = function(hostid) {
