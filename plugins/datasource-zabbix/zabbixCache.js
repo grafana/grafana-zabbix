@@ -13,8 +13,6 @@ function (angular, _, utils) {
   module.factory('ZabbixCache', function($q) {
 
     function ZabbixCache(zabbixAPI, ttl) {
-      var self = this;
-
       this.zabbixAPI = zabbixAPI;
       this.ttl = ttl;
 
@@ -26,11 +24,6 @@ function (angular, _, utils) {
 
       // Check is a service initialized or not
       this._initialized = undefined;
-
-      // Set _initialized when data has loaded
-      this.refresh().then(function () {
-        self._initialized = true;
-      });
     }
 
     var p = ZabbixCache.prototype;
@@ -51,6 +44,7 @@ function (angular, _, utils) {
           self._applications  = convertApplications(results[2]);
           self._items         = convertItems(results[3]);
         }
+        self._initialized = true;
       });
     };
 
