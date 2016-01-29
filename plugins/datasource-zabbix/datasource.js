@@ -108,8 +108,9 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
         if (target.mode !== 1) {
 
-          // Don't show hidden targets
-          if (target.hide) {
+          // Don't request undefined and hidden targets
+          if (target.hide || !target.group ||
+              !target.host || !target.item) {
             return [];
           }
 
