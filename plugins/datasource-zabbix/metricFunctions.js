@@ -34,7 +34,7 @@ function (_, $) {
   });
 
   addFuncDef({
-    name: 'sum',
+    name: 'sumSeries',
     category: 'Aggregate',
     params: [],
     defaultParams: [],

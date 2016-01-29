@@ -97,6 +97,99 @@ function (angular, _, moment, utils) {
       });
     };
 
+    this.sumSeries = function(timeseries) {
+
+      // Calculate new points for interpolation
+      var new_timestamps = _.uniq(_.map(_.flatten(timeseries, true), function(point) {
+        return point[1];
+      }));
+      new_timestamps = _.sortBy(new_timestamps);
+
+      var interpolated_timeseries = _.map(timeseries, function(series) {
+        var timestamps = _.map(series, function(point) {
+          return point[1];
+        });
+        var new_points = _.map(_.difference(new_timestamps, timestamps), function(timestamp) {
+          return [null, timestamp];
+        });
+        var new_series = series.concat(new_points);
+        return sortByTime(new_series);
+      });
+
+      _.each(interpolated_timeseries, interpolateSeries);
+
+      var new_timeseries = [];
+      var sum;
+      for (var i = new_timestamps.length - 1; i >= 0; i--) {
+        sum = 0;
+        for (var j = interpolated_timeseries.length - 1; j >= 0; j--) {
+          sum += interpolated_timeseries[j][i][0];
+        }
+        new_timeseries.push([sum, new_timestamps[i]]);
+      }
+
+      return sortByTime(new_timeseries);
+    };
+
+    function sortByTime(series) {
+      return _.sortBy(series, function(point) {
+        return point[1];
+      });
+    }
+
+    /**
+     * Interpolate series with gaps
+     */
+    function interpolateSeries(series) {
+      var left, right;
+
+      // Interpolate series
+      for (var i = series.length - 1; i >= 0; i--) {
+        if (!series[i][0]) {
+          left = findNearestLeft(series, series[i]);
+          right = findNearestRight(series, series[i]);
+          if (!left) {
+            left = right;
+          }
+          if (!right) {
+            right = left;
+          }
+          series[i][0] = linearInterpolation(series[i][1], left, right);
+        }
+      }
+      return series;
+    }
+
+    function linearInterpolation(timestamp, left, right) {
+      if (left[1] === right[1]) {
+        return (left[0] + right[0]) / 2;
+      } else {
+        return (left[0] + (right[0] - left[0]) / (right[1] - left[1]) * (timestamp - left[1]));
+      }
+    }
+
+    function findNearestRight(series, point) {
+      var point_index = _.indexOf(series, point);
+      var nearestRight;
+      for (var i = point_index; i < series.length; i++) {
+        if (series[i][0]) {
+          return series[i];
+        }
+      }
+      return nearestRight;
+    }
+
+    function findNearestLeft(series, point) {
+      var point_index = _.indexOf(series, point);
+      var nearestLeft;
+      for (var i = point_index; i > 0; i--) {
+        if (series[i][0]) {
+          return series[i];
+        }
+      }
+      return nearestLeft;
+    }
+
     this.AVERAGE = function(values) {
       var sum = 0;
       _.each(values, function(value) {
@@ -139,6 +232,7 @@ function (angular, _, moment, utils) {
       average: _.partial(this.aggregateWrapper, this.AVERAGE),
       min: _.partial(this.aggregateWrapper, this.MIN),
       max: _.partial(this.aggregateWrapper, this.MAX),
+      sumSeries: this.sumSeries,
       setAlias: this.setAlias,
     };
 
