@@ -28,7 +28,7 @@ function (_, $) {
     category: 'Transform',
     params: [
       { name: 'interval', type: 'string'},
-      { name: 'function', type: 'string', options: ['avg', 'min', 'max'] }
+      { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'median'] }
     ],
     defaultParams: ['1m', 'avg'],
   });
@@ -38,6 +38,15 @@ function (_, $) {
     category: 'Aggregate',
     params: [],
     defaultParams: [],
+  });
+
+  addFuncDef({
+    name: 'medianBy',
+    category: 'Aggregate',
+    params: [
+      { name: 'interval', type: 'string'}
+    ],
+    defaultParams: ['1m'],
   });
 
   addFuncDef({

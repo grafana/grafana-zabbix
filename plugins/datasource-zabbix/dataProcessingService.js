@@ -190,6 +190,11 @@ function (angular, _, moment, utils) {
       return nearestLeft;
     }
 
+    this.medianBy = function(interval, timeseries) {
+      var flatten_series = _.flatten(timeseries, true);
+      return self.groupBy(interval, self.MEDIAN, flatten_series);
+    };
+
     this.AVERAGE = function(values) {
       var sum = 0;
       _.each(values, function(value) {
@@ -206,6 +211,11 @@ function (angular, _, moment, utils) {
       return _.max(values);
     };
 
+    this.MEDIAN = function(values) {
+      var sorted = _.sortBy(values);
+      return sorted[Math.floor(sorted.length / 2)];
+    };
+
     this.setAlias = function(alias, timeseries) {
       timeseries.target = alias;
       return timeseries;
@@ -215,6 +225,7 @@ function (angular, _, moment, utils) {
       avg: this.AVERAGE,
       min: this.MIN,
       max: this.MAX,
+      median: this.MEDIAN
     };
 
     this.groupByWrapper = function(interval, groupFunc, datapoints) {
@@ -233,6 +244,7 @@ function (angular, _, moment, utils) {
       min: _.partial(this.aggregateWrapper, this.MIN),
       max: _.partial(this.aggregateWrapper, this.MAX),
       sumSeries: this.sumSeries,
+      medianBy: this.medianBy,
       setAlias: this.setAlias,
     };
 
