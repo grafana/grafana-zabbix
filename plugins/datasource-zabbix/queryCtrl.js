@@ -60,8 +60,6 @@ define([
               //console.log("From server", $scope.metric);
             });
           }
-
-          setItemAlias();
         }
         else if ($scope.target.mode === 1) {
           $scope.slaPropertyList = [
@@ -77,9 +75,9 @@ define([
       };
 
       $scope.initFilters = function () {
-        $scope.onGroupBlur();
-        $scope.onHostBlur();
-        $scope.onApplicationBlur();
+        $scope.metric.filteredHosts = $scope.filterHosts();
+        $scope.metric.filteredApplications = $scope.filterApplications();
+        $scope.metric.filteredItems = $scope.filterItems();
       };
 
       $scope.getMetricsFromCache = function () {
