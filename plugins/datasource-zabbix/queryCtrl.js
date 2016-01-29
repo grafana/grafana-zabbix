@@ -281,7 +281,8 @@ define([
 
         $scope.moveAliasFuncLast();
 
-        if (newFunc.params.length && newFunc.added) {
+        if (newFunc.params.length && newFunc.added ||
+            newFunc.def.params.length === 0) {
           $scope.targetChanged();
         }
       };
