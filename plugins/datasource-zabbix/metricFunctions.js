@@ -41,7 +41,7 @@ function (_, $) {
   });
 
   addFuncDef({
-    name: 'medianBy',
+    name: 'median',
     category: 'Aggregate',
     params: [
       { name: 'interval', type: 'string'}

@@ -92,9 +92,9 @@ function (angular, _, moment, utils) {
       });
 
       // Convert points to Grafana format
-      return _.map(grouped, function(value, timestamp) {
+      return sortByTime(_.map(grouped, function(value, timestamp) {
         return [Number(value), Number(timestamp)];
-      });
+      }));
     };
 
     this.sumSeries = function(timeseries) {
@@ -190,11 +190,6 @@ function (angular, _, moment, utils) {
       return nearestLeft;
     }
 
-    this.medianBy = function(interval, timeseries) {
-      var flatten_series = _.flatten(timeseries, true);
-      return self.groupBy(interval, self.MEDIAN, flatten_series);
-    };
-
     this.AVERAGE = function(values) {
       var sum = 0;
       _.each(values, function(value) {
@@ -243,8 +238,8 @@ function (angular, _, moment, utils) {
       average: _.partial(this.aggregateWrapper, this.AVERAGE),
       min: _.partial(this.aggregateWrapper, this.MIN),
       max: _.partial(this.aggregateWrapper, this.MAX),
+      median: _.partial(this.aggregateWrapper, this.MEDIAN),
       sumSeries: this.sumSeries,
-      medianBy: this.medianBy,
       setAlias: this.setAlias,
     };
 
