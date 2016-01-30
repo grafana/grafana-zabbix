@@ -5,7 +5,7 @@ define([
 function (_, moment) {
   'use strict';
 
-  function utils() {
+  function Utils() {
 
     /**
      * Expand Zabbix item name
@@ -49,5 +49,5 @@ function (_, moment) {
 
   }
 
-  return new utils();
+  return new Utils();
 });

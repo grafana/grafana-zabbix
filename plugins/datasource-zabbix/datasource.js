@@ -277,6 +277,8 @@ function (angular, _, dateMath, utils, metricFunctions) {
      *                        of metrics in "{metric1,metcic2,...,metricN}" format.
      */
     this.metricFindQuery = function (query) {
+      var metrics;
+
       // Split query. Query structure:
       // group.host.app.item
       var parts = [];
@@ -294,49 +296,22 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
       // Get items
       if (parts.length === 4) {
-        return this.zabbixAPI.itemFindQuery(template.group, template.host, template.app)
-          .then(function (result) {
-            return _.map(result, function (item) {
-              var itemname = zabbixHelperSrv.expandItemName(item);
-              return {
-                text: itemname,
-                expandable: false
-              };
-            });
-          });
+        var items = this.queryProcessor.filterItems(template.host, template.app, true);
+        metrics = _.map(items, formatMetric);
       }
       // Get applications
       else if (parts.length === 3) {
-        return this.zabbixAPI.appFindQuery(template.host, template.group).then(function (result) {
-          return _.map(result, function (app) {
-            return {
-              text: app.name,
-              expandable: false
-            };
-          });
-        });
+        var apps = this.queryProcessor.filterApplications(template.host);
+        metrics = _.map(apps, formatMetric);
       }
       // Get hosts
       else if (parts.length === 2) {
-        return this.zabbixAPI.hostFindQuery(template.group).then(function (result) {
-          return _.map(result, function (host) {
-            return {
-              text: host.name,
-              expandable: false
-            };
-          });
-        });
+        var hosts = this.queryProcessor.filterHosts(template.group);
+        metrics = _.map(hosts, formatMetric);
       }
       // Get groups
       else if (parts.length === 1) {
-        return this.zabbixAPI.getGroupByName(template.group).then(function (result) {
-          return _.map(result, function (hostgroup) {
-            return {
-              text: hostgroup.name,
-              expandable: false
-            };
-          });
-        });
+        metrics = _.map(this.zabbixCache.getGroups(template.group), formatMetric);
       }
       // Return empty object for invalid request
       else {
@@ -344,7 +319,16 @@ function (angular, _, dateMath, utils, metricFunctions) {
         d.resolve([]);
         return d.promise;
       }
+
+      return $q.when(metrics);
     };
+
+    function formatMetric(metricObj) {
+      return {
+        text: metricObj.name,
+        expandable: false
+      };
+    }
 
     /////////////////
     // Annotations //
