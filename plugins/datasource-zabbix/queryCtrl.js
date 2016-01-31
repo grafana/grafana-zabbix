@@ -10,13 +10,16 @@ define([
     var module = angular.module('grafana.controllers');
     var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv) {
+    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, $q, templateSrv) {
 
       var zabbixCache = $scope.datasource.zabbixCache;
 
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
-        $scope.metric = {};
+
+        if (!$scope.metric) {
+          $scope.metric = {};
+        }
 
         // Load default values
         var targetDefaults = {
@@ -49,17 +52,9 @@ define([
           }
 
           // Load metrics from cache
-          if (zabbixCache._initialized) {
-            $scope.getMetricsFromCache();
+          $scope.getMetricsFromCache().then(function() {
             $scope.initFilters();
-            //console.log("Cached", $scope.metric);
-          } else {
-            zabbixCache.refresh().then(function () {
-              $scope.getMetricsFromCache();
-              $scope.initFilters();
-              //console.log("From server", $scope.metric);
-            });
-          }
+          });
         }
         else if ($scope.target.mode === 1) {
           $scope.slaPropertyList = [
@@ -75,19 +70,27 @@ define([
       };
 
       $scope.initFilters = function () {
-        $scope.metric.filteredHosts = $scope.filterHosts();
-        $scope.metric.filteredApplications = $scope.filterApplications();
-        $scope.metric.filteredItems = $scope.filterItems();
+        $scope.filterHosts();
+        $scope.filterApplications();
+        $scope.filterItems();
       };
 
-      $scope.getMetricsFromCache = function () {
+      $scope.getMetricsFromCache = function() {
         var item_type = $scope.editorModes[$scope.target.mode];
-        $scope.metric = {
-          groupList: zabbixCache.getGroups(),
-          hostList: zabbixCache.getHosts(),
-          applicationList: zabbixCache.getApplications(),
-          itemList: zabbixCache.getItems(item_type)
-        };
+        var promises = [
+          zabbixCache.getGroups(),
+          zabbixCache.getHosts(),
+          zabbixCache.getApplications(),
+          zabbixCache.getItems(item_type)
+        ];
+        return $q.all(promises).then(function(results) {
+          $scope.metric = {
+            groupList: results[0],
+            hostList: results[1],
+            applicationList: results[2],
+            itemList: results[3]
+          };
+        });
       };
 
       // Get list of metric names for bs-typeahead directive
@@ -102,130 +105,26 @@ define([
       $scope.getItemNames = _.partial(getMetricNames, $scope, 'filteredItems');
 
       $scope.filterHosts = function () {
-        var group = $scope.target.group;
-        var groups = [];
-        var hosts = [];
-
-        // Filter groups by regex
-        if (group.isRegex) {
-          var filterPattern = Utils.buildRegex(group.filter);
-          groups = _.filter($scope.metric.groupList, function (groupObj) {
-            return filterPattern.test(groupObj.name);
-          });
-        }
-        // Find hosts in selected group
-        else {
-          var finded = _.find($scope.metric.groupList, {'name': group.filter});
-          if (finded) {
-            groups.push(finded);
-          } else {
-            groups = undefined;
-          }
-        }
-
-        if (groups) {
-          var groupids = _.map(groups, 'groupid');
-          hosts = _.filter($scope.metric.hostList, function (hostObj) {
-            return _.intersection(groupids, hostObj.groups).length;
-          });
-        }
-        return hosts;
+        var groupFilter = templateSrv.replace($scope.target.group.filter);
+        $scope.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
+          $scope.metric.filteredHosts = hosts;
+        });
       };
 
       $scope.filterApplications = function () {
-        var host = $scope.target.host;
-        var hosts = [];
-        var apps = [];
-
-        // Filter hosts by regex
-        if (host.isRegex) {
-          var filterPattern = Utils.buildRegex(host.filter);
-          hosts = _.filter($scope.metric.hostList, function (hostObj) {
-            return filterPattern.test(hostObj.name);
-          });
-        }
-        // Find applications in selected host
-        else {
-          var finded = _.find($scope.metric.hostList, {'name': host.filter});
-          if (finded) {
-            hosts.push(finded);
-          } else {
-            hosts = undefined;
-          }
-        }
-
-        if (hosts) {
-          var hostsids = _.map(hosts, 'hostid');
-          apps = _.filter($scope.metric.applicationList, function (appObj) {
-            return _.intersection(hostsids, appObj.hosts).length;
-          });
-        }
-
-        return apps;
+        var hostFilter = templateSrv.replace($scope.target.host.filter);
+        $scope.datasource.queryProcessor.filterApplications(hostFilter).then(function(apps) {
+          $scope.metric.filteredApplications = apps;
+        });
       };
 
       $scope.filterItems = function () {
-        var app = $scope.target.application;
-        var host = $scope.target.host;
-        var hosts = [];
-        var apps = [];
-        var items = [];
-
-        // Filter hosts by regex
-        if (host.isRegex) {
-          var hostFilterPattern = Utils.buildRegex(host.filter);
-          hosts = _.filter($scope.metric.hostList, function (hostObj) {
-            return hostFilterPattern.test(hostObj.name);
+        var hostFilter = templateSrv.replace($scope.target.host.filter);
+        var appFilter = templateSrv.replace($scope.target.application.filter);
+        $scope.datasource.queryProcessor.filterItems(hostFilter, appFilter, $scope.target.showDisabledItems)
+          .then(function(items) {
+            $scope.metric.filteredItems = items;
           });
-        }
-        else {
-          var findedHosts = _.find($scope.metric.hostList, {'name': host.filter});
-          if (findedHosts) {
-            hosts.push(findedHosts);
-          } else {
-            hosts = undefined;
-          }
-        }
-
-        // Filter applications by regex
-        if (app.isRegex) {
-          var filterPattern = Utils.buildRegex(app.filter);
-          apps = _.filter($scope.metric.applicationList, function (appObj) {
-            return filterPattern.test(appObj.name);
-          });
-        }
-        // Find items in selected application
-        else if (app.filter) {
-          var finded = _.find($scope.metric.applicationList, {'name': app.filter});
-          if (finded) {
-            apps.push(finded);
-          } else {
-            apps = undefined;
-          }
-        } else {
-          apps = undefined;
-          if (hosts) {
-            items = _.filter($scope.metric.itemList, function (itemObj) {
-              return _.find(hosts, {'hostid': itemObj.hostid });
-            });
-          }
-        }
-
-        if (apps) {
-          var appids = _.flatten(_.map(apps, 'applicationids'));
-          items = _.filter($scope.metric.itemList, function (itemObj) {
-            return _.intersection(appids, itemObj.applications).length;
-          });
-          items = _.filter(items, function (itemObj) {
-            return _.find(hosts, {'hostid': itemObj.hostid });
-          });
-        }
-
-        if (!$scope.target.showDisabledItems) {
-          items = _.filter(items, {'status': '0'});
-        }
-
-        return items;
       };
 
       $scope.onTargetPartChange = function (targetPart) {
@@ -236,21 +135,21 @@ define([
 
       // Handle group blur and filter hosts
       $scope.onGroupBlur = function() {
-        $scope.metric.filteredHosts = $scope.filterHosts();
+        $scope.filterHosts();
         $scope.parseTarget();
         $scope.get_data();
       };
 
       // Handle host blur and filter applications
       $scope.onHostBlur = function() {
-        $scope.metric.filteredApplications = $scope.filterApplications();
+        $scope.filterApplications();
         $scope.parseTarget();
         $scope.get_data();
       };
 
       // Handle application blur and filter items
       $scope.onApplicationBlur = function() {
-        $scope.metric.filteredItems = $scope.filterItems();
+        $scope.filterItems();
         $scope.parseTarget();
         $scope.get_data();
       };

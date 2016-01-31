@@ -10,9 +10,9 @@ function (angular, _, utils) {
 
   // Use factory() instead service() for multiple datasources support.
   // Each datasource instance must initialize its own cache.
-  module.factory('ZabbixCache', function($q) {
+  module.factory('ZabbixCachingProxy', function($q) {
 
-    function ZabbixCache(zabbixAPI, ttl) {
+    function ZabbixCachingProxy(zabbixAPI, ttl) {
       this.zabbixAPI = zabbixAPI;
       this.ttl = ttl;
 
@@ -21,14 +21,23 @@ function (angular, _, utils) {
       this._hosts         = undefined;
       this._applications  = undefined;
       this._items         = undefined;
+      this.storage = {
+        history: {},
+        trends: {}
+      };
 
       // Check is a service initialized or not
       this._initialized = undefined;
+
+      this.refreshPromise = false;
+
+      // Wrap _refresh() method to call it once.
+      this.refresh = callOnce(p._refresh, this.refreshPromise);
     }
 
-    var p = ZabbixCache.prototype;
+    var p = ZabbixCachingProxy.prototype;
 
-    p.refresh = function () {
+    p._refresh = function() {
       var self = this;
       var promises = [
         this.zabbixAPI.getGroups(),
@@ -37,7 +46,7 @@ function (angular, _, utils) {
         this.zabbixAPI.getItems()
       ];
 
-      return $q.all(promises).then(function (results) {
+      return $q.all(promises).then(function(results) {
         if (results.length) {
           self._groups        = results[0];
           self._hosts         = convertHosts(results[1]);
@@ -49,33 +58,107 @@ function (angular, _, utils) {
     };
 
     p.getGroups = function() {
-      return this._groups;
+      var self = this;
+      if (this._groups) {
+        return $q.when(self._groups);
+      } else {
+        return this.refresh().then(function() {
+          return self._groups;
+        });
+      }
     };
 
     p.getHosts = function() {
-      return this._hosts;
+      var self = this;
+      if (this._hosts) {
+        return $q.when(self._hosts);
+      } else {
+        return this.refresh().then(function() {
+          return self._hosts;
+        });
+      }
     };
 
     p.getApplications = function() {
-      return this._applications;
+      var self = this;
+      if (this._applications) {
+        return $q.when(self._applications);
+      } else {
+        return this.refresh().then(function() {
+          return self._applications;
+        });
+      }
     };
 
     p.getItems = function(type) {
+      var self = this;
+      if (this._items) {
+        return $q.when(filterItems(self._items, type));
+      } else {
+        return this.refresh().then(function() {
+          return filterItems(self._items, type);
+        });
+      }
+    };
+
+    function filterItems(items, type) {
       switch (type) {
         case 'num':
-          return _.filter(this._items, function(item) {
+          return _.filter(items, function(item) {
             return (item.value_type === '0' ||
                     item.value_type === '3');
           });
         case 'text':
-          return _.filter(this._items, function(item) {
+          return _.filter(items, function(item) {
             return (item.value_type === '1' ||
                     item.value_type === '2' ||
                     item.value_type === '4');
           });
         default:
-          return this._items;
+          return items;
       }
+    }
+
+    p.getHistory = function(items, time_from, time_till) {
+      var itemids = _.map(arguments[0], 'itemid');
+      var stamp = itemids.join() + arguments[1] + arguments[2];
+      //console.log(arguments, stamp);
+      return this.zabbixAPI.getHistory(items, time_from, time_till);
+    };
+
+    p.getHistory_ = function(items, time_from, time_till) {
+      var deferred  = $q.defer();
+      var historyStorage = this.storage.history;
+      var full_history;
+      var expired = _.filter(_.indexBy(items, 'itemid'), function(item, itemid) {
+        return !historyStorage[itemid];
+      });
+      if (expired.length) {
+        this.zabbixAPI.getHistory(expired, time_from, time_till).then(function(history) {
+          var grouped_history = _.groupBy(history, 'itemid');
+          _.forEach(expired, function(item) {
+            var itemid = item.itemid;
+            historyStorage[itemid] = item;
+            historyStorage[itemid].time_from = time_from;
+            historyStorage[itemid].time_till = time_till;
+            historyStorage[itemid].history = grouped_history[itemid];
+          });
+          full_history = _.map(items, function(item) {
+            return historyStorage[item.itemid].history;
+          });
+          deferred.resolve(_.flatten(full_history, true));
+        });
+      } else {
+        full_history = _.map(items, function(item) {
+          return historyStorage[item.itemid].history;
+        });
+        deferred.resolve(_.flatten(full_history, true));
+      }
+      return deferred.promise;
+    };
+
+    p.getHistoryFromAPI = function(items, time_from, time_till) {
+      return this.zabbixAPI.getHistory(items, time_from, time_till);
     };
 
     p.getHost = function(hostid) {
@@ -102,7 +185,7 @@ function (angular, _, utils) {
      * host.hosts - array of host ids
      */
     function convertApplications(applications) {
-      return _.map(_.groupBy(applications, 'name'), function (value, key) {
+      return _.map(_.groupBy(applications, 'name'), function(value, key) {
         return {
           name: key,
           applicationids: _.map(value, 'applicationid'),
@@ -126,7 +209,23 @@ function (angular, _, utils) {
       });
     }
 
-    return ZabbixCache;
+    function callOnce(func, promiseKeeper) {
+      return function() {
+        var deferred  = $q.defer();
+        if (!promiseKeeper) {
+          promiseKeeper = deferred.promise;
+          func.apply(this, arguments).then(function(result) {
+            deferred.resolve(result);
+            promiseKeeper = null;
+          });
+        } else {
+          return promiseKeeper;
+        }
+        return deferred.promise;
+      };
+    }
+
+    return ZabbixCachingProxy;
 
   });
 

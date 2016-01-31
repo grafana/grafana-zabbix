@@ -8,6 +8,11 @@ function (angular, _) {
 
   var module = angular.module('grafana.services');
 
+  /**
+   * Zabbix API Wrapper.
+   * Creates Zabbix API instance with given parameters (url, credentials and other).
+   * Wraps API calls and provides high-level methods.
+   */
   module.factory('ZabbixAPI', function($q, backendSrv, ZabbixAPIService) {
 
     // Initialize Zabbix API.
@@ -15,12 +20,14 @@ function (angular, _) {
       this.url              = api_url;
       this.username         = username;
       this.password         = password;
-      this.auth             = null;
+      this.auth             = "";
 
       this.requestOptions = {
         basicAuth: basicAuth,
         withCredentials: withCredentials
       };
+
+      this.loginPromise = null;
     }
 
     var p = ZabbixAPI.prototype;
@@ -31,31 +38,49 @@ function (angular, _) {
 
     p.request = function(method, params) {
       var self = this;
-      if (this.auth) {
-        return ZabbixAPIService._request(this.url, method, params, this.requestOptions, this.auth)
-          .then(function(result) {
-            return result;
-          },
+      return ZabbixAPIService.request(this.url, method, params, this.requestOptions, this.auth)
+        .then(function(result) {
+          return result;
+        },
 
-          // Handle errors
-          function(error) {
-            if (error.message === "Session terminated, re-login, please.") {
-              return ZabbixAPIService.login(self.url, self.username, self.password, self.requestOptions)
-                .then(function(auth) {
-                  self.auth = auth;
-                  return ZabbixAPIService._request(self.url, method, params, self.requestOptions, self.auth);
-                });
-            }
-          });
+        // Handle errors
+        function(error) {
+          if (isAuthError(error.data)) {
+            return self.loginOnce().then(function() {
+              return self.request(method, params);
+            });
+          }
+        });
+    };
+
+    function isAuthError(message) {
+      return (
+        message === "Session terminated, re-login, please." ||
+        message === "Not authorised." ||
+        message === "Not authorized."
+      );
+    }
+
+    /**
+     * When API unauthenticated or auth token expired each request produce login()
+     * call. But auth token is common to all requests. This function wraps login() method
+     * and call it once. If login() already called just wait for it (return its promise).
+     * @return login promise
+     */
+    p.loginOnce = function() {
+      var self = this;
+      var deferred  = $q.defer();
+      if (!self.loginPromise) {
+        self.loginPromise = deferred.promise;
+        self.login().then(function(auth) {
+          self.loginPromise = null;
+          self.auth = auth;
+          deferred.resolve(auth);
+        });
       } else {
-
-        // Login first
-        return ZabbixAPIService.login(this.url, this.username, this.password, this.requestOptions)
-          .then(function(auth) {
-            self.auth = auth;
-            return ZabbixAPIService._request(self.url, method, params, self.requestOptions, self.auth);
-          });
+        return self.loginPromise;
       }
+      return deferred.promise;
     };
 
     /**
