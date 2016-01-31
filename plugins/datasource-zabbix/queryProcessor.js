@@ -66,97 +66,115 @@ function (angular, _, utils) {
       this.filterApplications = function(hostFilter) {
         var hosts = [];
         var apps = [];
-        var hostList = this.cache.getHosts();
 
-        // Filter hosts by regex
-        if (utils.isRegex(hostFilter)) {
-          var filterPattern = utils.buildRegex(hostFilter);
-          hosts = _.filter(hostList, function (hostObj) {
-            return filterPattern.test(hostObj.name);
-          });
-        }
-        // Find applications in selected host
-        else {
-          var finded = _.find(hostList, {'name': hostFilter});
-          if (finded) {
-            hosts.push(finded);
-          } else {
-            hosts = undefined;
+        var promises = [
+          this.cache.getHosts(),
+          this.cache.getApplications()
+        ];
+
+        return $q.all(promises).then(function(results) {
+          var hostList = results[0];
+          var applicationList = results[1];
+
+          // Filter hosts by regex
+          if (utils.isRegex(hostFilter)) {
+            var filterPattern = utils.buildRegex(hostFilter);
+            hosts = _.filter(hostList, function (hostObj) {
+              return filterPattern.test(hostObj.name);
+            });
           }
-        }
+          // Find applications in selected host
+          else {
+            var finded = _.find(hostList, {'name': hostFilter});
+            if (finded) {
+              hosts.push(finded);
+            } else {
+              hosts = undefined;
+            }
+          }
 
-        if (hosts) {
-          var hostsids = _.map(hosts, 'hostid');
-          apps = _.filter(this.cache.getApplications(), function (appObj) {
-            return _.intersection(hostsids, appObj.hosts).length;
-          });
-        }
-
-        return apps;
+          if (hosts) {
+            var hostsids = _.map(hosts, 'hostid');
+            apps = _.filter(applicationList, function (appObj) {
+              return _.intersection(hostsids, appObj.hosts).length;
+            });
+          }
+          return apps;
+        });
       };
 
       this.filterItems = function (hostFilter, appFilter, showDisabledItems) {
         var hosts = [];
         var apps = [];
         var items = [];
-        var hostList = this.cache.getHosts();
-        var applicationList = this.cache.getApplications();
 
-        // Filter hosts by regex
-        if (utils.isRegex(hostFilter)) {
-          var hostFilterPattern = utils.buildRegex(hostFilter);
-          hosts = _.filter(hostList, function (hostObj) {
-            return hostFilterPattern.test(hostObj.name);
-          });
-        }
-        else {
-          var findedHosts = _.find(hostList, {'name': hostFilter});
-          if (findedHosts) {
-            hosts.push(findedHosts);
-          } else {
-            hosts = undefined;
+        var promises = [
+          this.cache.getHosts(),
+          this.cache.getApplications(),
+          this.cache.getItems()
+        ];
+
+        return $q.all(promises).then(function(results) {
+          var hostList = results[0];
+          var applicationList = results[1];
+          var cachedItems = results[2];
+
+          // Filter hosts by regex
+          if (utils.isRegex(hostFilter)) {
+            var hostFilterPattern = utils.buildRegex(hostFilter);
+            hosts = _.filter(hostList, function (hostObj) {
+              return hostFilterPattern.test(hostObj.name);
+            });
           }
-        }
+          else {
+            var findedHosts = _.find(hostList, {'name': hostFilter});
+            if (findedHosts) {
+              hosts.push(findedHosts);
+            } else {
+              hosts = undefined;
+            }
+          }
 
-        // Filter applications by regex
-        if (utils.isRegex(appFilter)) {
-          var filterPattern = utils.buildRegex(appFilter);
-          apps = _.filter(applicationList, function (appObj) {
-            return filterPattern.test(appObj.name);
-          });
-        }
-        // Find items in selected application
-        else if (appFilter) {
-          var finded = _.find(applicationList, {'name': appFilter});
-          if (finded) {
-            apps.push(finded);
+          // Filter applications by regex
+          if (utils.isRegex(appFilter)) {
+            var filterPattern = utils.buildRegex(appFilter);
+            apps = _.filter(applicationList, function (appObj) {
+              return filterPattern.test(appObj.name);
+            });
+          }
+          // Find items in selected application
+          else if (appFilter) {
+            var finded = _.find(applicationList, {'name': appFilter});
+            if (finded) {
+              apps.push(finded);
+            } else {
+              apps = undefined;
+            }
           } else {
             apps = undefined;
+            if (hosts) {
+              items = _.filter(this.cache.getItems(), function (itemObj) {
+                return _.find(hosts, {'hostid': itemObj.hostid });
+              });
+            }
           }
-        } else {
-          apps = undefined;
-          if (hosts) {
-            items = _.filter(this.cache.getItems(), function (itemObj) {
+
+          if (apps) {
+            var appids = _.flatten(_.map(apps, 'applicationids'));
+            items = _.filter(cachedItems, function (itemObj) {
+              return _.intersection(appids, itemObj.applications).length;
+            });
+            items = _.filter(items, function (itemObj) {
               return _.find(hosts, {'hostid': itemObj.hostid });
             });
           }
-        }
 
-        if (apps) {
-          var appids = _.flatten(_.map(apps, 'applicationids'));
-          items = _.filter(this.cache.getItems(), function (itemObj) {
-            return _.intersection(appids, itemObj.applications).length;
-          });
-          items = _.filter(items, function (itemObj) {
-            return _.find(hosts, {'hostid': itemObj.hostid });
-          });
-        }
+          if (!showDisabledItems) {
+            items = _.filter(items, {'status': '0'});
+          }
 
-        if (!showDisabledItems) {
-          items = _.filter(items, {'status': '0'});
-        }
-
-        return items;
+          return items;
+        });
       };
 
       /**

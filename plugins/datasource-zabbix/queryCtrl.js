@@ -10,13 +10,16 @@ define([
     var module = angular.module('grafana.controllers');
     var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, templateSrv) {
+    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, $q, templateSrv) {
 
       var zabbixCache = $scope.datasource.zabbixCache;
 
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
-        $scope.metric = {};
+
+        if (!$scope.metric) {
+          $scope.metric = {};
+        }
 
         // Load default values
         var targetDefaults = {
@@ -49,17 +52,9 @@ define([
           }
 
           // Load metrics from cache
-          if (zabbixCache._initialized) {
-            $scope.getMetricsFromCache();
+          $scope.getMetricsFromCache().then(function() {
             $scope.initFilters();
-            //console.log("Cached", $scope.metric);
-          } else {
-            zabbixCache.refresh().then(function () {
-              $scope.getMetricsFromCache();
-              $scope.initFilters();
-              //console.log("From server", $scope.metric);
-            });
-          }
+          });
         }
         else if ($scope.target.mode === 1) {
           $scope.slaPropertyList = [
@@ -80,14 +75,22 @@ define([
         $scope.metric.filteredItems = $scope.filterItems();
       };
 
-      $scope.getMetricsFromCache = function () {
+      $scope.getMetricsFromCache = function() {
         var item_type = $scope.editorModes[$scope.target.mode];
-        $scope.metric = {
-          groupList: zabbixCache.getGroups(),
-          hostList: zabbixCache.getHosts(),
-          applicationList: zabbixCache.getApplications(),
-          itemList: zabbixCache.getItems(item_type)
-        };
+        var promises = [
+          zabbixCache.getGroups(),
+          zabbixCache.getHosts(),
+          zabbixCache.getApplications(),
+          zabbixCache.getItems(item_type)
+        ];
+        return $q.all(promises).then(function(results) {
+          $scope.metric = {
+            groupList: results[0],
+            hostList: results[1],
+            applicationList: results[2],
+            itemList: results[3]
+          };
+        });
       };
 
       // Get list of metric names for bs-typeahead directive

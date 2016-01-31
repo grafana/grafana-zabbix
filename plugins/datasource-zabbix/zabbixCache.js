@@ -56,38 +56,64 @@ function (angular, _, utils) {
     p.getGroups = function() {
       var self = this;
       if (this._groups) {
+        return $q.when(self._groups);
+      } else {
         return this.refresh().then(function() {
           return self._groups;
         });
       }
-      return $q.when(this._groups);
     };
 
     p.getHosts = function() {
-      return this._hosts;
+      var self = this;
+      if (this._hosts) {
+        return $q.when(self._hosts);
+      } else {
+        return this.refresh().then(function() {
+          return self._hosts;
+        });
+      }
     };
 
     p.getApplications = function() {
-      return this._applications;
+      var self = this;
+      if (this._applications) {
+        return $q.when(self._applications);
+      } else {
+        return this.refresh().then(function() {
+          return self._applications;
+        });
+      }
     };
 
     p.getItems = function(type) {
+      var self = this;
+      if (this._items) {
+        return $q.when(filterItems(self._items, type));
+      } else {
+        return this.refresh().then(function() {
+          return filterItems(self._items, type);
+        });
+      }
+    };
+
+    function filterItems(items, type) {
       switch (type) {
         case 'num':
-          return _.filter(this._items, function(item) {
+          return _.filter(items, function(item) {
             return (item.value_type === '0' ||
                     item.value_type === '3');
           });
         case 'text':
-          return _.filter(this._items, function(item) {
+          return _.filter(items, function(item) {
             return (item.value_type === '1' ||
                     item.value_type === '2' ||
                     item.value_type === '4');
           });
         default:
-          return this._items;
+          return items;
       }
-    };
+    }
 
     p.getHost = function(hostid) {
       return _.find(this._hosts, {'hostid': hostid});
