@@ -140,7 +140,7 @@ function (angular, _, dateMath, utils, metricFunctions) {
                 } else {
 
                   // Use history
-                  getHistory = self.zabbixAPI.getHistory(items, from, to).then(function(history) {
+                  getHistory = self.zabbixCache.getHistory(items, from, to).then(function(history) {
                     return self.queryProcessor.handleHistory(history, addHostName);
                   });
                 }

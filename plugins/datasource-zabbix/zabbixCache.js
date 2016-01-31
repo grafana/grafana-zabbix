@@ -21,6 +21,10 @@ function (angular, _, utils) {
       this._hosts         = undefined;
       this._applications  = undefined;
       this._items         = undefined;
+      this.storage = {
+        history: {},
+        trends: {}
+      };
 
       // Check is a service initialized or not
       this._initialized = undefined;
@@ -114,6 +118,48 @@ function (angular, _, utils) {
           return items;
       }
     }
+
+    p.getHistory = function(items, time_from, time_till) {
+      var itemids = _.map(arguments[0], 'itemid');
+      var stamp = itemids.join() + arguments[1] + arguments[2];
+      //console.log(arguments, stamp);
+      return this.zabbixAPI.getHistory(items, time_from, time_till);
+    };
+
+    p.getHistory_ = function(items, time_from, time_till) {
+      var deferred  = $q.defer();
+      var historyStorage = this.storage.history;
+      var full_history;
+      var expired = _.filter(_.indexBy(items, 'itemid'), function(item, itemid) {
+        return !historyStorage[itemid];
+      });
+      if (expired.length) {
+        this.zabbixAPI.getHistory(expired, time_from, time_till).then(function(history) {
+          var grouped_history = _.groupBy(history, 'itemid');
+          _.forEach(expired, function(item) {
+            var itemid = item.itemid;
+            historyStorage[itemid] = item;
+            historyStorage[itemid].time_from = time_from;
+            historyStorage[itemid].time_till = time_till;
+            historyStorage[itemid].history = grouped_history[itemid];
+          });
+          full_history = _.map(items, function(item) {
+            return historyStorage[item.itemid].history;
+          });
+          deferred.resolve(_.flatten(full_history, true));
+        });
+      } else {
+        full_history = _.map(items, function(item) {
+          return historyStorage[item.itemid].history;
+        });
+        deferred.resolve(_.flatten(full_history, true));
+      }
+      return deferred.promise;
+    };
+
+    p.getHistoryFromAPI = function(items, time_from, time_till) {
+      return this.zabbixAPI.getHistory(items, time_from, time_till);
+    };
 
     p.getHost = function(hostid) {
       return _.find(this._hosts, {'hostid': hostid});
