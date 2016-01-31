@@ -26,6 +26,8 @@ function (angular, _) {
         basicAuth: basicAuth,
         withCredentials: withCredentials
       };
+
+      this.loginPromise = null;
     }
 
     var p = ZabbixAPI.prototype;
@@ -45,22 +47,43 @@ function (angular, _) {
           // Handle errors
           function(error) {
             if (error.message === "Session terminated, re-login, please.") {
-              return ZabbixAPIService.login(self.url, self.username, self.password, self.requestOptions)
-                .then(function(auth) {
-                  self.auth = auth;
-                  return ZabbixAPIService.request(self.url, method, params, self.requestOptions, self.auth);
-                });
+              throw 'expired';
+              return self.login().then(function(auth) {
+                self.auth = auth;
+                return ZabbixAPIService.request(self.url, method, params, self.requestOptions, self.auth);
+              });
             }
           });
       } else {
 
         // Login first
-        return ZabbixAPIService.login(this.url, this.username, this.password, this.requestOptions)
-          .then(function(auth) {
-            self.auth = auth;
-            return ZabbixAPIService.request(self.url, method, params, self.requestOptions, self.auth);
-          });
+        //throw 'unauthenticated';
+        return self.loginOnce().then(function(auth) {
+          self.auth = auth;
+          return ZabbixAPIService.request(self.url, method, params, self.requestOptions, self.auth);
+        });
       }
+    };
+
+    /**
+     * When API unauthenticated or auth token expired each request produce login()
+     * call. But auth token is common to all requests. This function wraps login() method
+     * and call it once. If login() already called just wait for it (return its promise).
+     * @return login promise
+     */
+    p.loginOnce = function() {
+      var self = this;
+      var deferred  = $q.defer();
+      if (!self.loginPromise) {
+        self.loginPromise = deferred.promise;
+        self.login().then(function(auth) {
+          self.loginPromise = null;
+          deferred.resolve(auth);
+        });
+      } else {
+        return self.loginPromise;
+      }
+      return deferred.promise;
     };
 
     /**
