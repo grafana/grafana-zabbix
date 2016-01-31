@@ -16,7 +16,7 @@ function (angular) {
      * Request data from Zabbix API
      * @return {object}  response.result
      */
-    this._request = function(api_url, method, params, options, auth) {
+    this.request = function(api_url, method, params, options, auth) {
       var requestData = {
         jsonrpc: '2.0',
         method: method,
@@ -70,7 +70,7 @@ function (angular) {
         user: username,
         password: password
       };
-      return this._request(api_url, 'user.login', params, options, null);
+      return this.request(api_url, 'user.login', params, options, null);
     };
 
     /**
@@ -78,7 +78,7 @@ function (angular) {
      * Matches the version of Zabbix starting from Zabbix 2.0.4
      */
     this.getVersion = function(api_url, options) {
-      return this._request(api_url, 'apiinfo.version', [], options);
+      return this.request(api_url, 'apiinfo.version', [], options);
     };
 
   });
