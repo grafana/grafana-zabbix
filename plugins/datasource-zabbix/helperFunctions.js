@@ -47,7 +47,7 @@ function (angular, _) {
       return $q.when(_.map(grouped_history, function (history, itemid) {
         var item = indexed_items[itemid];
         return {
-          target: (item.hosts ? item.hosts[0].name+': ' : '')
+          target: (item.host ? item.host + ': ' : '')
             + (alias ? alias : self.expandItemName(item)),
           datapoints: _.map(history, function (p) {
 
