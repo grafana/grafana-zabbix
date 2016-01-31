@@ -54,7 +54,13 @@ function (angular, _, utils) {
     };
 
     p.getGroups = function() {
-      return this._groups;
+      var self = this;
+      if (this._groups) {
+        return this.refresh().then(function() {
+          return self._groups;
+        });
+      }
+      return $q.when(this._groups);
     };
 
     p.getHosts = function() {
