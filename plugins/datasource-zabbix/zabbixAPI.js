@@ -20,7 +20,7 @@ function (angular, _) {
       this.url              = api_url;
       this.username         = username;
       this.password         = password;
-      this.auth             = null;
+      this.auth             = "";
 
       this.requestOptions = {
         basicAuth: basicAuth,
@@ -38,32 +38,28 @@ function (angular, _) {
 
     p.request = function(method, params) {
       var self = this;
-      if (this.auth) {
-        return ZabbixAPIService.request(this.url, method, params, this.requestOptions, this.auth)
-          .then(function(result) {
-            return result;
-          },
+      return ZabbixAPIService.request(this.url, method, params, this.requestOptions, this.auth)
+        .then(function(result) {
+          return result;
+        },
 
-          // Handle errors
-          function(error) {
-            if (error.message === "Session terminated, re-login, please.") {
-              throw 'expired';
-              return self.login().then(function(auth) {
-                self.auth = auth;
-                return ZabbixAPIService.request(self.url, method, params, self.requestOptions, self.auth);
-              });
-            }
-          });
-      } else {
-
-        // Login first
-        //throw 'unauthenticated';
-        return self.loginOnce().then(function(auth) {
-          self.auth = auth;
-          return ZabbixAPIService.request(self.url, method, params, self.requestOptions, self.auth);
+        // Handle errors
+        function(error) {
+          if (isAuthError(error.data)) {
+            return self.loginOnce().then(function() {
+              return self.request(method, params);
+            });
+          }
         });
-      }
     };
+
+    function isAuthError(message) {
+      return (
+        message === "Session terminated, re-login, please." ||
+        message === "Not authorised." ||
+        message === "Not authorized."
+      );
+    }
 
     /**
      * When API unauthenticated or auth token expired each request produce login()
@@ -78,6 +74,7 @@ function (angular, _) {
         self.loginPromise = deferred.promise;
         self.login().then(function(auth) {
           self.loginPromise = null;
+          self.auth = auth;
           deferred.resolve(auth);
         });
       } else {

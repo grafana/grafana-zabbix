@@ -17,6 +17,7 @@ function (angular) {
      * @return {object}  response.result
      */
     this.request = function(api_url, method, params, options, auth) {
+      var deferred = $q.defer();
       var requestData = {
         jsonrpc: '2.0',
         method: method,
@@ -24,8 +25,12 @@ function (angular) {
         id: 1
       };
 
-      // Set auth parameter only if it needed
-      if (auth) {
+      if (auth === "") {
+        // Reject immediately if not authenticated
+        deferred.reject({data: "Not authorised."});
+        return deferred.promise;
+      } else if (auth) {
+        // Set auth parameter only if it needed
         requestData.auth = auth;
       }
 
@@ -46,19 +51,20 @@ function (angular) {
         requestOptions.headers.Authorization = options.basicAuth;
       }
 
-      return backendSrv.datasourceRequest(requestOptions).then(function (response) {
+      backendSrv.datasourceRequest(requestOptions).then(function (response) {
         // General connection issues
         if (!response.data) {
-          return [];
+          deferred.reject(response);
         }
 
         // Handle Zabbix API errors
         else if (response.data.error) {
-          throw new ZabbixException(response.data.error);
+          deferred.reject(response.data.error);
         }
 
-        return response.data.result;
+        deferred.resolve(response.data.result);
       });
+      return deferred.promise;
     };
 
     /**
