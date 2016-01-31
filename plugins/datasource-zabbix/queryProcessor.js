@@ -153,7 +153,7 @@ function (angular, _, utils) {
           } else {
             apps = undefined;
             if (hosts) {
-              items = _.filter(this.cache.getItems(), function (itemObj) {
+              items = _.filter(cachedItems, function (itemObj) {
                 return _.find(hosts, {'hostid': itemObj.hostid });
               });
             }
