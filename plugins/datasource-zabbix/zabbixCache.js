@@ -24,11 +24,31 @@ function (angular, _, utils) {
 
       // Check is a service initialized or not
       this._initialized = undefined;
+
+      this.refreshPromise = false;
     }
 
     var p = ZabbixCachingProxy.prototype;
 
-    p.refresh = function () {
+    /**
+     * Wrap _refresh() method to call it once.
+     */
+    p.refresh = function() {
+      var self = this;
+      var deferred  = $q.defer();
+      if (!self.refreshPromise) {
+        self.refreshPromise = deferred.promise;
+        self._refresh().then(function() {
+          deferred.resolve();
+          self.refreshPromise = null;
+        });
+      } else {
+        return self.refreshPromise;
+      }
+      return deferred.promise;
+    };
+
+    p._refresh = function() {
       var self = this;
       var promises = [
         this.zabbixAPI.getGroups(),
