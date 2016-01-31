@@ -8,6 +8,11 @@ function (angular, _) {
 
   var module = angular.module('grafana.services');
 
+  /**
+   * Zabbix API Wrapper.
+   * Creates Zabbix API instance with given parameters (url, credentials and other).
+   * Wraps API calls and provides high-level methods.
+   */
   module.factory('ZabbixAPI', function($q, backendSrv, ZabbixAPIService) {
 
     // Initialize Zabbix API.
