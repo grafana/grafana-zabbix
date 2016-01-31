@@ -26,27 +26,12 @@ function (angular, _, utils) {
       this._initialized = undefined;
 
       this.refreshPromise = false;
+
+      // Wrap _refresh() method to call it once.
+      this.refresh = callOnce(p._refresh, this.refreshPromise);
     }
 
     var p = ZabbixCachingProxy.prototype;
-
-    /**
-     * Wrap _refresh() method to call it once.
-     */
-    p.refresh = function() {
-      var self = this;
-      var deferred  = $q.defer();
-      if (!self.refreshPromise) {
-        self.refreshPromise = deferred.promise;
-        self._refresh().then(function() {
-          deferred.resolve();
-          self.refreshPromise = null;
-        });
-      } else {
-        return self.refreshPromise;
-      }
-      return deferred.promise;
-    };
 
     p._refresh = function() {
       var self = this;
@@ -57,7 +42,7 @@ function (angular, _, utils) {
         this.zabbixAPI.getItems()
       ];
 
-      return $q.all(promises).then(function (results) {
+      return $q.all(promises).then(function(results) {
         if (results.length) {
           self._groups        = results[0];
           self._hosts         = convertHosts(results[1]);
@@ -122,7 +107,7 @@ function (angular, _, utils) {
      * host.hosts - array of host ids
      */
     function convertApplications(applications) {
-      return _.map(_.groupBy(applications, 'name'), function (value, key) {
+      return _.map(_.groupBy(applications, 'name'), function(value, key) {
         return {
           name: key,
           applicationids: _.map(value, 'applicationid'),
@@ -144,6 +129,22 @@ function (angular, _, utils) {
         item.name = utils.expandItemName(item.item, item.key_);
         return item;
       });
+    }
+
+    function callOnce(func, promiseKeeper) {
+      return function() {
+        var deferred  = $q.defer();
+        if (!promiseKeeper) {
+          promiseKeeper = deferred.promise;
+          func.apply(this, arguments).then(function(result) {
+            deferred.resolve(result);
+            promiseKeeper = null;
+          });
+        } else {
+          return promiseKeeper;
+        }
+        return deferred.promise;
+      };
     }
 
     return ZabbixCachingProxy;
