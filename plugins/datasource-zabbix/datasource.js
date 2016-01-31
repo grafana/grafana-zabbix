@@ -19,7 +19,7 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
   /** @ngInject */
   function ZabbixAPIDatasource(instanceSettings, $q, templateSrv, alertSrv, zabbixHelperSrv,
-                               ZabbixAPI, ZabbixCache, QueryProcessor, DataProcessingService) {
+                               ZabbixAPI, ZabbixCachingProxy, QueryProcessor, DataProcessingService) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -39,7 +39,7 @@ function (angular, _, dateMath, utils, metricFunctions) {
     this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
 
     // Initialize cache service
-    this.zabbixCache = new ZabbixCache(this.zabbixAPI);
+    this.zabbixCache = new ZabbixCachingProxy(this.zabbixAPI);
 
     // Initialize query builder
     this.queryProcessor = new QueryProcessor(this.zabbixCache);

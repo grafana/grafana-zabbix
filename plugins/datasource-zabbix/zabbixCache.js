@@ -10,9 +10,9 @@ function (angular, _, utils) {
 
   // Use factory() instead service() for multiple datasources support.
   // Each datasource instance must initialize its own cache.
-  module.factory('ZabbixCache', function($q) {
+  module.factory('ZabbixCachingProxy', function($q) {
 
-    function ZabbixCache(zabbixAPI, ttl) {
+    function ZabbixCachingProxy(zabbixAPI, ttl) {
       this.zabbixAPI = zabbixAPI;
       this.ttl = ttl;
 
@@ -26,7 +26,7 @@ function (angular, _, utils) {
       this._initialized = undefined;
     }
 
-    var p = ZabbixCache.prototype;
+    var p = ZabbixCachingProxy.prototype;
 
     p.refresh = function () {
       var self = this;
@@ -126,7 +126,7 @@ function (angular, _, utils) {
       });
     }
 
-    return ZabbixCache;
+    return ZabbixCachingProxy;
 
   });
 
