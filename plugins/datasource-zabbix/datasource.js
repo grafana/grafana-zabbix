@@ -277,8 +277,6 @@ function (angular, _, dateMath, utils, metricFunctions) {
      *                        of metrics in "{metric1,metcic2,...,metricN}" format.
      */
     this.metricFindQuery = function (query) {
-      var metrics;
-
       // Split query. Query structure:
       // group.host.app.item
       var parts = [];
@@ -296,31 +294,36 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
       // Get items
       if (parts.length === 4) {
-        var items = this.queryProcessor.filterItems(template.host, template.app, true);
-        metrics = _.map(items, formatMetric);
+        //var items = this.queryProcessor.filterItems(template.host, template.app, true);
+        return this.queryProcessor.filterItems(template.host, template.app, true)
+          .then(function(items) {
+            return _.map(items, formatMetric);
+          });
       }
       // Get applications
       else if (parts.length === 3) {
-        var apps = this.queryProcessor.filterApplications(template.host);
-        metrics = _.map(apps, formatMetric);
+        return this.queryProcessor.filterApplications(template.host)
+          .then(function(apps) {
+            return _.map(apps, formatMetric);
+          });
       }
       // Get hosts
       else if (parts.length === 2) {
-        var hosts = this.queryProcessor.filterHosts(template.group);
-        metrics = _.map(hosts, formatMetric);
+        return this.queryProcessor.filterHosts(template.group)
+          .then(function(hosts) {
+            return _.map(hosts, formatMetric);
+          });
       }
       // Get groups
       else if (parts.length === 1) {
-        metrics = _.map(this.zabbixCache.getGroups(template.group), formatMetric);
+        return this.zabbixCache.getGroups(template.group).then(function(groups) {
+          return _.map(groups, formatMetric);
+        });
       }
       // Return empty object for invalid request
       else {
-        var d = $q.defer();
-        d.resolve([]);
-        return d.promise;
+        return $q.when([]);
       }
-
-      return $q.when(metrics);
     };
 
     function formatMetric(metricObj) {
