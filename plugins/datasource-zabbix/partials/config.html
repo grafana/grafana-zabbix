@@ -12,7 +12,7 @@
              ng-model='current.jsonData.username'
              placeholder="">
     </li>
-    <li class="tight-form-item">
+    <li class="tight-form-item" style="width: 80px">
       Password
     </li>
     <li>
@@ -25,6 +25,14 @@
 </div>
 <div class="tight-form last">
   <ul class="tight-form-list">
+    <li class="tight-form-item" style="width: 200px">
+      Cache update interval
+    </li>
+    <li>
+      <input type="text" class="tight-form-input input-small"
+             ng-model='current.jsonData.cacheTTL'
+             placeholder="1h">
+    </li>
     <li class="tight-form-item" style="width: 80px">
       Trends&nbsp;&nbsp;
       <input class="cr1" id="current.jsonData.trends" type="checkbox"

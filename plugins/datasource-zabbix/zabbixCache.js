@@ -10,7 +10,7 @@ function (angular, _, utils) {
 
   // Use factory() instead service() for multiple datasources support.
   // Each datasource instance must initialize its own cache.
-  module.factory('ZabbixCachingProxy', function($q) {
+  module.factory('ZabbixCachingProxy', function($q, $interval) {
 
     function ZabbixCachingProxy(zabbixAPI, ttl) {
       this.zabbixAPI = zabbixAPI;
@@ -33,6 +33,9 @@ function (angular, _, utils) {
 
       // Wrap _refresh() method to call it once.
       this.refresh = callOnce(p._refresh, this.refreshPromise);
+
+      // Update cache periodically
+      $interval(_.bind(this.refresh, this), this.ttl);
     }
 
     var p = ZabbixCachingProxy.prototype;
