@@ -193,12 +193,9 @@ function (angular, _, dateMath, utils, metricFunctions) {
           else if (target.mode === 2) {
 
             // Find items by item names and perform queries
-            return this.zabbixAPI.itemFindQuery(groups, hosts, apps, "text")
-              .then(function (items) {
-                items = _.filter(items, function (item) {
-                  return _.contains(itemnames, zabbixHelperSrv.expandItemName(item));
-                });
-                return self.zabbixAPI.getHistory(items, from, to).then(function(history) {
+            return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter)
+              .then(function(items) {
+                return self.zabbixCache.getHistory(items, from, to).then(function(history) {
                   return {
                     target: target.item.name,
                     datapoints: _.map(history, function (p) {
