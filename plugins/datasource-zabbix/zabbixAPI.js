@@ -132,12 +132,32 @@ function (angular, _) {
 
     p.getItems = function() {
       var params = {
-        output: ['name', 'key_', 'value_type', 'hostid', 'status', 'state'],
+        output: [
+          'name', 'key_',
+          'value_type',
+          'hostid',
+          'status',
+          'state'
+        ],
         sortfield: 'name',
         selectApplications: []
       };
 
       return this.request('item.get', params);
+    };
+
+    p.getLastValue = function(itemid) {
+      var params = {
+        output: ['lastvalue'],
+        itemids: itemid
+      };
+      return this.request('item.get', params).then(function(items) {
+        if (items.length) {
+          return items[0].lastvalue;
+        } else {
+          return null;
+        }
+      });
     };
 
     /**

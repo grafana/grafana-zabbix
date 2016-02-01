@@ -191,31 +191,33 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
           // Query text data
           else if (target.mode === 2) {
-
-            // Find items by item names and perform queries
             return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter)
               .then(function(items) {
-                return self.zabbixCache.getHistory(items, from, to).then(function(history) {
-                  return {
-                    target: target.item.name,
-                    datapoints: _.map(history, function (p) {
-                      var value = p.value;
-                      if (target.textFilter) {
-                        var text_extract_pattern = new RegExp(templateSrv.replace(target.textFilter, options.scopedVars));
-                        //var text_extract_pattern = new RegExp(target.textFilter);
-                        var result = text_extract_pattern.exec(value);
-                        if (result) {
-                          if (target.useCaptureGroups) {
-                            value = result[1];
-                          } else {
-                            value = result[0];
-                          }
+                var deferred = $q.defer();
+                if (items.length) {
+                  self.zabbixAPI.getLastValue(items[0].itemid).then(function(lastvalue) {
+                    if (target.textFilter) {
+                      var text_extract_pattern = new RegExp(templateSrv.replace(target.textFilter, options.scopedVars));
+                      var result = text_extract_pattern.exec(lastvalue);
+                      if (result) {
+                        if (target.useCaptureGroups) {
+                          result = result[1];
                         } else {
-                          value = null;
+                          result = result[0];
                         }
                       }
-                      return [value, p.clock * 1000];
-                    })
+                      deferred.resolve(result);
+                    } else {
+                      deferred.resolve(lastvalue);
+                    }
+                  });
+                } else {
+                  deferred.resolve(null);
+                }
+                return deferred.promise.then(function(text) {
+                  return {
+                    target: target.item.name,
+                    datapoints: [[text, to * 1000]]
                   };
                 });
               });
