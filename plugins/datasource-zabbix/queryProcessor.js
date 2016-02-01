@@ -63,12 +63,12 @@ function (angular, _, utils) {
         });
       };
 
-      this.filterApplications = function(hostFilter) {
+      this.filterApplications = function(groupFilter, hostFilter) {
         var hosts = [];
         var apps = [];
 
         var promises = [
-          this.cache.getHosts(),
+          this.filterHosts(groupFilter),
           this.cache.getApplications()
         ];
 
@@ -103,15 +103,15 @@ function (angular, _, utils) {
         });
       };
 
-      this.filterItems = function (hostFilter, appFilter, showDisabledItems) {
+      this.filterItems = function (groupFilter, hostFilter, appFilter, showDisabledItems) {
         var hosts = [];
         var apps = [];
         var items = [];
 
         var promises = [
-          this.cache.getHosts(),
-          this.cache.getApplications(),
-          this.cache.getItems()
+          this.filterHosts(groupFilter),
+          this.filterApplications(groupFilter, hostFilter),
+          this.cache.getItems(),
         ];
 
         return $q.all(promises).then(function(results) {

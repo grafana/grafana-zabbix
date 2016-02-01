@@ -295,14 +295,14 @@ function (angular, _, dateMath, utils, metricFunctions) {
       // Get items
       if (parts.length === 4) {
         //var items = this.queryProcessor.filterItems(template.host, template.app, true);
-        return this.queryProcessor.filterItems(template.host, template.app, true)
+        return this.queryProcessor.filterItems(template.group, template.host, template.app, true)
           .then(function(items) {
             return _.map(items, formatMetric);
           });
       }
       // Get applications
       else if (parts.length === 3) {
-        return this.queryProcessor.filterApplications(template.host)
+        return this.queryProcessor.filterApplications(template.group, template.host)
           .then(function(apps) {
             return _.map(apps, formatMetric);
           });

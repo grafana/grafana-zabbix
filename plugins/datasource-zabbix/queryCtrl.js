@@ -112,17 +112,20 @@ define([
       };
 
       $scope.filterApplications = function () {
+        var groupFilter = templateSrv.replace($scope.target.group.filter);
         var hostFilter = templateSrv.replace($scope.target.host.filter);
-        $scope.datasource.queryProcessor.filterApplications(hostFilter).then(function(apps) {
-          $scope.metric.filteredApplications = apps;
-        });
+        $scope.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
+          .then(function(apps) {
+            $scope.metric.filteredApplications = apps;
+          });
       };
 
       $scope.filterItems = function () {
+        var groupFilter = templateSrv.replace($scope.target.group.filter);
         var hostFilter = templateSrv.replace($scope.target.host.filter);
         var appFilter = templateSrv.replace($scope.target.application.filter);
-        $scope.datasource.queryProcessor.filterItems(hostFilter, appFilter, $scope.target.showDisabledItems)
-          .then(function(items) {
+        $scope.datasource.queryProcessor.filterItems(groupFilter, hostFilter, appFilter,
+          $scope.target.showDisabledItems).then(function(items) {
             $scope.metric.filteredItems = items;
           });
       };
@@ -135,21 +138,21 @@ define([
 
       // Handle group blur and filter hosts
       $scope.onGroupBlur = function() {
-        $scope.filterHosts();
+        $scope.initFilters();
         $scope.parseTarget();
         $scope.get_data();
       };
 
       // Handle host blur and filter applications
       $scope.onHostBlur = function() {
-        $scope.filterApplications();
+        $scope.initFilters();
         $scope.parseTarget();
         $scope.get_data();
       };
 
       // Handle application blur and filter items
       $scope.onApplicationBlur = function() {
-        $scope.filterItems();
+        $scope.initFilters();
         $scope.parseTarget();
         $scope.get_data();
       };
