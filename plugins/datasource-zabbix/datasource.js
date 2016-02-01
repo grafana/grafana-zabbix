@@ -191,34 +191,33 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
           // Query text data
           else if (target.mode === 2) {
-
-            // Find items by item names and perform queries
-            return this.zabbixAPI.itemFindQuery(groups, hosts, apps, "text")
-              .then(function (items) {
-                items = _.filter(items, function (item) {
-                  return _.contains(itemnames, zabbixHelperSrv.expandItemName(item));
-                });
-                return self.zabbixAPI.getHistory(items, from, to).then(function(history) {
-                  return {
-                    target: target.item.name,
-                    datapoints: _.map(history, function (p) {
-                      var value = p.value;
-                      if (target.textFilter) {
-                        var text_extract_pattern = new RegExp(templateSrv.replace(target.textFilter, options.scopedVars));
-                        //var text_extract_pattern = new RegExp(target.textFilter);
-                        var result = text_extract_pattern.exec(value);
-                        if (result) {
-                          if (target.useCaptureGroups) {
-                            value = result[1];
-                          } else {
-                            value = result[0];
-                          }
+            return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter)
+              .then(function(items) {
+                var deferred = $q.defer();
+                if (items.length) {
+                  self.zabbixAPI.getLastValue(items[0].itemid).then(function(lastvalue) {
+                    if (target.textFilter) {
+                      var text_extract_pattern = new RegExp(templateSrv.replace(target.textFilter, options.scopedVars));
+                      var result = text_extract_pattern.exec(lastvalue);
+                      if (result) {
+                        if (target.useCaptureGroups) {
+                          result = result[1];
                         } else {
-                          value = null;
+                          result = result[0];
                         }
                       }
-                      return [value, p.clock * 1000];
-                    })
+                      deferred.resolve(result);
+                    } else {
+                      deferred.resolve(lastvalue);
+                    }
+                  });
+                } else {
+                  deferred.resolve(null);
+                }
+                return deferred.promise.then(function(text) {
+                  return {
+                    target: target.item.name,
+                    datapoints: [[text, to * 1000]]
                   };
                 });
               });
@@ -294,11 +293,11 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
       // Get items
       if (parts.length === 4) {
-        //var items = this.queryProcessor.filterItems(template.host, template.app, true);
-        return this.queryProcessor.filterItems(template.group, template.host, template.app, true)
-          .then(function(items) {
-            return _.map(items, formatMetric);
-          });
+        return this.queryProcessor.filterItems(template.group, template.host,
+          template.app, 'all', true)
+            .then(function(items) {
+              return _.map(items, formatMetric);
+            });
       }
       // Get applications
       else if (parts.length === 3) {

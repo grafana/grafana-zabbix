@@ -11,6 +11,7 @@
           <i class="fa fa-bars"></i>
         </a>
         <ul class="dropdown-menu pull-right" role="menu">
+
           <!-- Switch editor mode -->
           <li role="menuitem" ng-show="target.mode">
             <a class="pointer" tabindex="1"
@@ -75,15 +76,6 @@
   </ul>
 
   <ul class="tight-form-list" role="menu" ng-hide="target.mode == 1">
-    <!-- Alias -->
-    <!-- <li>
-      <input type="text"
-             class="tight-form-input input-medium"
-             ng-model="target.alias"
-             spellcheck='false'
-             placeholder="Alias"
-             ng-blur="targetBlur()">
-    </li> -->
 
     <!-- Select Host Group -->
     <li class="tight-form-item input-small" style="width: 5em">Group</li>
@@ -147,7 +139,7 @@
     <li class="tight-form-item" style="width: 44px">&nbsp</li>
 
     <!-- Select Application -->
-    <li class="tight-form-item input-small" style="width: 5em">Application</li>
+    <li class="tight-form-item" style="width: 5em">Application</li>
     <li>
       <input type="text"
         ng-model="target.application.filter"
@@ -180,21 +172,6 @@
     </li>
     <li class="dropdown" add-metric-function>
     </li>
-
-    <!-- Scale -->
-    <!-- <li class="tight-form-item" ng-hide="target.mode == 2">
-      Scale
-      <i class="fa fa-question-circle"
-         bs-tooltip="'Set a custom multiplier for series values, for example -1 to invert series'"></i>
-    </li>
-    <li ng-hide="target.mode == 2">
-      <input type="text"
-             class="tight-form-input input-small"
-             ng-model="target.scale"
-             spellcheck='false'
-             placeholder="1"
-             ng-blur="targetBlur()">
-    </li> -->
   </ul>
 
   <div class="clearfix"></div>
@@ -213,12 +190,12 @@
   <ul class="tight-form-list" role="menu">
     <li class="tight-form-item" style="width: 44px">&nbsp</li>
     <!-- Text metric regex -->
-    <li class="tight-form-item" ng-show="target.mode == 2">
+    <li class="tight-form-item" style="width: 5em" ng-show="target.mode == 2">
       Text filter
     </li>
     <li ng-show="target.mode == 2">
       <input type="text"
-             class="tight-form-input input-large" style="width: 20em"
+             class="tight-form-input" style="width: 417px"
              ng-model="target.textFilter"
              spellcheck='false'
              placeholder="Text filter (regex)"

@@ -17,9 +17,10 @@ define([
       $scope.init = function () {
         $scope.targetLetters = targetLetters;
 
-        if (!$scope.metric) {
-          $scope.metric = {};
-        }
+        var scopeDefaults = {
+          metric: {}
+        };
+        _.defaults($scope, scopeDefaults);
 
         // Load default values
         var targetDefaults = {
@@ -51,10 +52,7 @@ define([
             $scope.target.downsampleFunction = $scope.downsampleFunctionList[0];
           }
 
-          // Load metrics from cache
-          $scope.getMetricsFromCache().then(function() {
-            $scope.initFilters();
-          });
+          $scope.initFilters();
         }
         else if ($scope.target.mode === 1) {
           $scope.slaPropertyList = [
@@ -70,27 +68,10 @@ define([
       };
 
       $scope.initFilters = function () {
+        $scope.filterGroups();
         $scope.filterHosts();
         $scope.filterApplications();
         $scope.filterItems();
-      };
-
-      $scope.getMetricsFromCache = function() {
-        var item_type = $scope.editorModes[$scope.target.mode];
-        var promises = [
-          zabbixCache.getGroups(),
-          zabbixCache.getHosts(),
-          zabbixCache.getApplications(),
-          zabbixCache.getItems(item_type)
-        ];
-        return $q.all(promises).then(function(results) {
-          $scope.metric = {
-            groupList: results[0],
-            hostList: results[1],
-            applicationList: results[2],
-            itemList: results[3]
-          };
-        });
       };
 
       // Get list of metric names for bs-typeahead directive
@@ -111,6 +92,12 @@ define([
         });
       };
 
+      $scope.filterGroups = function() {
+        $scope.datasource.queryProcessor.filterGroups().then(function(groups) {
+          $scope.metric.groupList = groups;
+        });
+      };
+
       $scope.filterApplications = function () {
         var groupFilter = templateSrv.replace($scope.target.group.filter);
         var hostFilter = templateSrv.replace($scope.target.host.filter);
@@ -121,11 +108,12 @@ define([
       };
 
       $scope.filterItems = function () {
+        var item_type = $scope.editorModes[$scope.target.mode];
         var groupFilter = templateSrv.replace($scope.target.group.filter);
         var hostFilter = templateSrv.replace($scope.target.host.filter);
         var appFilter = templateSrv.replace($scope.target.application.filter);
         $scope.datasource.queryProcessor.filterItems(groupFilter, hostFilter, appFilter,
-          $scope.target.showDisabledItems).then(function(items) {
+          item_type, $scope.target.showDisabledItems).then(function(items) {
             $scope.metric.filteredItems = items;
           });
       };
