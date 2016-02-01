@@ -13,7 +13,7 @@ function (angular, _) {
    * Creates Zabbix API instance with given parameters (url, credentials and other).
    * Wraps API calls and provides high-level methods.
    */
-  module.factory('ZabbixAPI', function($q, backendSrv, ZabbixAPIService) {
+  module.factory('ZabbixAPI', function($q, backendSrv, alertSrv, ZabbixAPIService) {
 
     // Initialize Zabbix API.
     function ZabbixAPI(api_url, username, password, basicAuth, withCredentials) {
@@ -38,22 +38,35 @@ function (angular, _) {
 
     p.request = function(method, params) {
       var self = this;
+
       return ZabbixAPIService.request(this.url, method, params, this.requestOptions, this.auth)
         .then(function(result) {
           return result;
         },
-
-        // Handle errors
+        // Handle API errors
         function(error) {
-          if (isAuthError(error.data)) {
-            return self.loginOnce().then(function() {
-              return self.request(method, params);
-            });
+          if (isNotAuthorized(error.data)) {
+            return self.loginOnce().then(
+              function() {
+                return self.request(method, params);
+              },
+              // Handle user.login method errors
+              function(error) {
+                self.alertAPIError(error.data);
+              });
           }
         });
     };
 
-    function isAuthError(message) {
+    p.alertAPIError = function(message) {
+      alertSrv.set(
+        "Zabbix API Error",
+        message,
+        'error'
+      );
+    };
+
+    function isNotAuthorized(message) {
       return (
         message === "Session terminated, re-login, please." ||
         message === "Not authorised." ||
@@ -72,11 +85,17 @@ function (angular, _) {
       var deferred  = $q.defer();
       if (!self.loginPromise) {
         self.loginPromise = deferred.promise;
-        self.login().then(function(auth) {
-          self.loginPromise = null;
-          self.auth = auth;
-          deferred.resolve(auth);
-        });
+        self.login().then(
+          function(auth) {
+            self.loginPromise = null;
+            self.auth = auth;
+            deferred.resolve(auth);
+          },
+          function(error) {
+            self.loginPromise = null;
+            deferred.reject(error);
+          }
+        );
       } else {
         return self.loginPromise;
       }
