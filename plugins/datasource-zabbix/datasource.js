@@ -35,11 +35,15 @@ function (angular, _, dateMath, utils, metricFunctions) {
     this.trends           = instanceSettings.jsonData.trends;
     this.trendsFrom       = instanceSettings.jsonData.trendsFrom || '7d';
 
+    // Set cache update interval
+    var ttl = instanceSettings.jsonData.cacheTTL || '1h';
+    this.cacheTTL = utils.parseInterval(ttl);
+
     // Initialize Zabbix API
     this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
 
     // Initialize cache service
-    this.zabbixCache = new ZabbixCachingProxy(this.zabbixAPI);
+    this.zabbixCache = new ZabbixCachingProxy(this.zabbixAPI, this.cacheTTL);
 
     // Initialize query builder
     this.queryProcessor = new QueryProcessor(this.zabbixCache);
