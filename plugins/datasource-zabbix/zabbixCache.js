@@ -30,12 +30,17 @@ function (angular, _, utils) {
       this._initialized = undefined;
 
       this.refreshPromise = false;
+      this.historyPromises = {};
 
       // Wrap _refresh() method to call it once.
       this.refresh = callOnce(p._refresh, this.refreshPromise);
 
       // Update cache periodically
       $interval(_.bind(this.refresh, this), this.ttl);
+
+      // Don't run duplicated history requests
+      this.getHistory = callHistoryOnce(_.bind(this.zabbixAPI.getHistory, this.zabbixAPI),
+                                        this.historyPromises);
     }
 
     var p = ZabbixCachingProxy.prototype;
@@ -122,14 +127,7 @@ function (angular, _, utils) {
       }
     }
 
-    p.getHistory = function(items, time_from, time_till) {
-      var itemids = _.map(arguments[0], 'itemid');
-      var stamp = itemids.join() + arguments[1] + arguments[2];
-      //console.log(arguments, stamp);
-      return this.zabbixAPI.getHistory(items, time_from, time_till);
-    };
-
-    p.getHistory_ = function(items, time_from, time_till) {
+    p.getHistoryFromCache = function(items, time_from, time_till) {
       var deferred  = $q.defer();
       var historyStorage = this.storage.history;
       var full_history;
@@ -210,6 +208,39 @@ function (angular, _, utils) {
         item.name = utils.expandItemName(item.item, item.key_);
         return item;
       });
+    }
+
+    String.prototype.getHash = function() {
+      var hash = 0, i, chr, len;
+      if (this.length === 0) {
+        return hash;
+      }
+      for (i = 0, len = this.length; i < len; i++) {
+        chr   = this.charCodeAt(i);
+        hash  = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+      }
+      return hash;
+    };
+
+    function callHistoryOnce(func, promiseKeeper) {
+      return function() {
+        var itemids = _.map(arguments[0], 'itemid');
+        var stamp = itemids.join() + arguments[1] + arguments[2];
+        var hash = stamp.getHash();
+
+        var deferred  = $q.defer();
+        if (!promiseKeeper[hash]) {
+          promiseKeeper[hash] = deferred.promise;
+          func.apply(this, arguments).then(function(result) {
+            deferred.resolve(result);
+            promiseKeeper[hash] = null;
+          });
+        } else {
+          return promiseKeeper[hash];
+        }
+        return deferred.promise;
+      };
     }
 
     function callOnce(func, promiseKeeper) {
