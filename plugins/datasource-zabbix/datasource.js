@@ -285,13 +285,12 @@ function (angular, _, dateMath, utils, metricFunctions) {
       var parts = [];
       _.each(query.split('.'), function (part) {
         part = templateSrv.replace(part);
-        if (part[0] === '{') {
-          // Convert multiple mettrics to array
-          // "{metric1,metcic2,...,metricN}" --> [metric1, metcic2,..., metricN]
-          parts.push(zabbixHelperSrv.splitMetrics(part));
-        } else {
-          parts.push(part);
+
+        // Replace wildcard to regex
+        if (part === '*') {
+          part = '/.*/';
         }
+        parts.push(part);
       });
       var template = _.object(['group', 'host', 'app', 'item'], parts);
 
