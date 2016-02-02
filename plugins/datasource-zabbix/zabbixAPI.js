@@ -143,6 +143,9 @@ function (angular, _) {
       var params = {
         output: ['name'],
         sortfield: 'name',
+
+        // Hack for supporting different apis (2.2 vs 2.4 vs 3.0)
+        selectHost: [],
         selectHosts: []
       };
 
@@ -223,7 +226,7 @@ function (angular, _) {
      * @param  {Number} time_till   Time in seconds
      * @return {Array}  Array of Zabbix trend objects
      */
-    p.getTrends = function(items, time_from, time_till) {
+    p.getTrend_ZBXNEXT1193 = function(items, time_from, time_till) {
       var self = this;
 
       // Group items by value type
@@ -249,6 +252,30 @@ function (angular, _) {
         return self.request('trend.get', params);
       })).then(_.flatten);
     };
+
+    p.getTrend_30 = function(items, time_from, time_till, value_type) {
+      var self = this;
+      var itemids = _.map(items, 'itemid');
+
+      var params = {
+        output: ["itemid",
+          "clock",
+          value_type
+        ],
+        itemids: itemids,
+        time_from: time_from
+      };
+
+      // Relative queries (e.g. last hour) don't include an end time
+      if (time_till) {
+        params.time_till = time_till;
+      }
+
+      return self.request('trend.get', params);
+    };
+
+    p.getTrend = p.getTrend_ZBXNEXT1193;
+    //p.getTrend = p.getTrend_30;
 
     p.getITService = function(/* optional */ serviceids) {
       var params = {

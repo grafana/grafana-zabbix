@@ -138,7 +138,7 @@ function (angular, _, dateMath, utils, metricFunctions) {
 
                   // Use trends
                   var valueType = target.downsampleFunction ? target.downsampleFunction.value : "avg";
-                  getHistory = self.zabbixAPI.getTrends(items, from, to).then(function(history) {
+                  getHistory = self.zabbixAPI.getTrend(items, from, to).then(function(history) {
                     return self.queryProcessor.handleTrends(history, addHostName, valueType);
                   });
                 } else {

@@ -187,10 +187,14 @@ function (angular, _, utils) {
      */
     function convertApplications(applications) {
       return _.map(_.groupBy(applications, 'name'), function(value, key) {
+
+        // Hack for supporting different apis (2.2 vs 2.4 vs 3.0)
+        var hostField = value['hosts'] ? 'hosts' : 'host';
+
         return {
           name: key,
           applicationids: _.map(value, 'applicationid'),
-          hosts: _.uniq(_.map(_.flatten(value, 'hosts'), 'hostid'))
+          hosts: _.uniq(_.map(_.flatten(value, hostField), 'hostid'))
         };
       });
     }
