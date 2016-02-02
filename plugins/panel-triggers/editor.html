@@ -7,21 +7,29 @@
           Group
         </li>
         <li>
-          <select class="tight-form-input input-large"
-                  ng-model="panel.triggers.group"
-                  ng-options="g.name for g in metric.groupList track by g.name"
-                  ng-change="groupChanged()">
-          </select>
+          <input type="text"
+            ng-model="panel.triggers.group.filter"
+            bs-typeahead="getGroupNames"
+            ng-change="onTargetPartChange(panel.triggers.group)"
+            ng-blur="parseTarget()"
+            data-min-length=0
+            data-items=100
+            class="input-large tight-form-input"
+            ng-style="panel.triggers.group.style">
         </li>
         <li class="tight-form-item" style="width: 50px">
           Host
         </li>
         <li>
-          <select class="tight-form-input input-large last"
-                  ng-model="panel.triggers.host"
-                  ng-options="h.name for h in metric.hostList track by h.name"
-                  ng-change="hostChanged()">
-          </select>
+          <input type="text"
+            ng-model="panel.triggers.host.filter"
+            bs-typeahead="getHostNames"
+            ng-change="onTargetPartChange(panel.triggers.host)"
+            ng-blur="parseTarget()"
+            data-min-length=0
+            data-items=100
+            class="input-large tight-form-input last"
+            ng-style="panel.triggers.host.style">
         </li>
       </ul>
       <div class="clearfix"></div>
@@ -32,22 +40,28 @@
           Application
         </li>
         <li>
-          <select class="tight-form-input input-large"
-                  ng-model="panel.triggers.application"
-                  ng-options="app.name for app in metric.applicationList track by app.name"
-                  ng-change="appChanged()">
-          </select>
+          <input type="text"
+            ng-model="panel.triggers.application.filter"
+            bs-typeahead="getApplicationNames"
+            ng-change="onTargetPartChange(panel.triggers.application)"
+            ng-blur="parseTarget()"
+            data-min-length=0
+            data-items=100
+            class="input-large tight-form-input"
+            ng-style="panel.triggers.application.style">
         </li>
         <li class="tight-form-item" style="width: 50px">
           Trigger
         </li>
         <li>
           <input  type="text"
-                  class="input-large tight-form-input last"
+                  ng-model="panel.triggers.trigger.filter"
+                  ng-change="onTargetPartChange(panel.triggers.trigger)"
+                  ng-blur="parseTarget()"
                   placeholder="trigger name"
-                  ng-model="panel.triggers.name"
-                  empty-to-null
-                  ng-blur="get_data()">
+                  class="input-large tight-form-input last"
+                  ng-style="panel.triggers.trigger.style"
+                  empty-to-null">
         </li>
       </ul>
       <div class="clearfix"></div>

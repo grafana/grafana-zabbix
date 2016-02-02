@@ -17,8 +17,7 @@ define([
   'lodash',
   'jquery',
   'app/core/config',
-  'app/features/panel/panel_meta',
-  '../zabbix/helperFunctions',
+  'app/features/panel/panel_meta'
 ],
 function (angular, app, _, $, config, PanelMeta) {
   'use strict';
@@ -27,7 +26,7 @@ function (angular, app, _, $, config, PanelMeta) {
   app.useModule(module);
 
   /** @ngInject */
-  function TriggerPanelCtrl($q, $scope, $element, datasourceSrv, panelSrv, templateSrv, zabbixHelperSrv, popoverSrv) {
+  function TriggerPanelCtrl($q, $scope, $element, datasourceSrv, panelSrv, templateSrv, popoverSrv) {
 
     $scope.panelMeta = new PanelMeta({
       panelName: 'Zabbix triggers',
@@ -66,9 +65,10 @@ function (angular, app, _, $, config, PanelMeta) {
     var panelDefaults = {
       datasource: null,
       triggers: {
-        group: {name: 'All', groupid: null},
-        host: {name: 'All', hostid: null},
-        application: {name: 'All', value: null}
+        group: {filter: ""},
+        host: {filter: ""},
+        application: {filter: ""},
+        trigger: {filter: ""}
       },
       hostField: true,
       severityField: false,
@@ -91,13 +91,13 @@ function (angular, app, _, $, config, PanelMeta) {
         $scope.panel.title = "Zabbix Triggers";
       }
 
-      if (!$scope.metric) {
-        $scope.metric = {
-          groupList: [{name: 'All', groupid: null}],
-          hostList: [{name: 'All', hostid: null}],
-          applicationList: [{name: 'All', applicationid: null}]
-        };
-      }
+      // Load scope defaults
+      var scopeDefaults = {
+        metric: {},
+        inputStyles: {},
+        oldTarget: _.cloneDeep($scope.panel.triggers)
+      };
+      _.defaults($scope, scopeDefaults);
 
       // Get zabbix data sources
       var datasources = _.filter(datasourceSrv.getMetricSources(), function(datasource) {
@@ -109,11 +109,11 @@ function (angular, app, _, $, config, PanelMeta) {
       if (!$scope.panel.datasource) {
         $scope.panel.datasource = $scope.datasources[0];
       }
-
-      // Update lists of groups, hosts and applications
-      $scope.updateGroups()
-        .then($scope.updateHosts)
-        .then($scope.updateApplications);
+      // Load datasource
+      datasourceSrv.get($scope.panel.datasource).then(function (datasource) {
+        $scope.datasource = datasource;
+        $scope.initFilters();
+      });
     };
 
     $scope.refreshData = function() {
@@ -142,7 +142,7 @@ function (angular, app, _, $, config, PanelMeta) {
 
               // Consider local time offset
               var ageUnix = now - lastchange + now.getTimezoneOffset() * 60000;
-              var age = zabbixHelperSrv.toZabbixAgeFormat(ageUnix);
+              var age = toZabbixAgeFormat(ageUnix);
               var triggerObj = trigger;
               triggerObj.lastchangeUnix = lastchangeUnix;
               triggerObj.lastchange = lastchange.toLocaleString();
@@ -191,44 +191,65 @@ function (angular, app, _, $, config, PanelMeta) {
       });
     };
 
-    $scope.groupChanged = function() {
-      return $scope.updateHosts()
-        .then($scope.updateApplications)
-        .then($scope.refreshData);
+    $scope.initFilters = function () {
+      $scope.filterGroups();
+      $scope.filterHosts();
+      $scope.filterApplications();
+      //$scope.filterItems();
     };
 
-    $scope.hostChanged = function() {
-      return $scope.updateApplications()
-        .then($scope.refreshData);
+    // Get list of metric names for bs-typeahead directive
+    function getMetricNames(scope, metricList) {
+      return _.uniq(_.map(scope.metric[metricList], 'name'));
+    }
+
+    // Map functions for bs-typeahead
+    $scope.getGroupNames = _.partial(getMetricNames, $scope, 'groupList');
+    $scope.getHostNames = _.partial(getMetricNames, $scope, 'filteredHosts');
+    $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'filteredApplications');
+    $scope.getItemNames = _.partial(getMetricNames, $scope, 'filteredItems');
+
+    $scope.filterGroups = function() {
+      $scope.datasource.queryProcessor.filterGroups().then(function(groups) {
+        $scope.metric.groupList = groups;
+      });
     };
 
-    $scope.appChanged = function() {
-      var app = $scope.panel.triggers.application.name;
+    $scope.filterHosts = function () {
+      var groupFilter = templateSrv.replace($scope.panel.triggers.group.filter);
+      $scope.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
+        $scope.metric.filteredHosts = hosts;
+      });
+    };
 
-      return datasourceSrv.get($scope.panel.datasource).then(function (datasource) {
-        return datasource.zabbixAPI.getAppByName(app).then(function (applications) {
-          var appids = _.map(applications, 'applicationid');
-          $scope.panel.triggers.application.value = appids.length ? appids : null;
+    $scope.filterApplications = function () {
+      var groupFilter = templateSrv.replace($scope.panel.triggers.group.filter);
+      var hostFilter = templateSrv.replace($scope.panel.triggers.host.filter);
+      $scope.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
+        .then(function(apps) {
+          $scope.metric.filteredApplications = apps;
         });
-      }).then($scope.refreshData);
     };
 
-    $scope.updateGroups = function() {
-      return datasourceSrv.get($scope.panel.datasource).then(function (datasource) {
-        return $scope.updateGroupList(datasource);
-      });
+    $scope.onTargetPartChange = function (targetPart) {
+      var regexStyle = {'color': '#CCA300'};
+      targetPart.isRegex = isRegex(targetPart.filter);
+      targetPart.style = targetPart.isRegex ? regexStyle : {};
     };
 
-    $scope.updateHosts = function() {
-      return datasourceSrv.get($scope.panel.datasource).then(function (datasource) {
-        return $scope.updateHostList(datasource);
-      });
-    };
+    function isRegex(str) {
+      // Pattern for testing regex
+      var regexPattern = /^\/(.*)\/([gmi]*)$/m;
+      return regexPattern.test(str);
+    }
 
-    $scope.updateApplications = function() {
-      return datasourceSrv.get($scope.panel.datasource).then(function (datasource) {
-        return $scope.updateAppList(datasource);
-      });
+    $scope.parseTarget = function() {
+      $scope.initFilters();
+      var newTarget = _.cloneDeep($scope.panel.triggers);
+      if (!_.isEqual($scope.oldTarget, $scope.panel.triggers)) {
+        $scope.oldTarget = newTarget;
+        $scope.get_data();
+      }
     };
 
     $scope.refreshTriggerSeverity = function() {
@@ -266,38 +287,32 @@ function (angular, app, _, $, config, PanelMeta) {
       });
     };
 
-    $scope.updateGroupList = function (datasource) {
-      datasource.zabbixAPI.performHostGroupSuggestQuery().then(function (groups) {
-        $scope.metric.groupList = $scope.metric.groupList.concat(groups);
-      });
-    };
-
-    $scope.updateHostList = function (datasource) {
-      var groups = $scope.panel.triggers.group.groupid ? $scope.panel.triggers.group.name : '*';
-      if (groups) {
-        datasource.zabbixAPI.hostFindQuery(groups).then(function (hosts) {
-          $scope.metric.hostList = [{name: 'All', hostid: null}];
-          $scope.metric.hostList = $scope.metric.hostList.concat(hosts);
-        });
+    /**
+     * Convert event age from Unix format (milliseconds sins 1970)
+     * to Zabbix format (like at Last 20 issues panel).
+     * @param  {Date}           AgeUnix time in Unix format
+     * @return {string}         Formatted time
+     */
+    function toZabbixAgeFormat(ageUnix) {
+      var age = new Date(+ageUnix);
+      var ageZabbix = age.getSeconds() + 's';
+      if (age.getMinutes()) {
+        ageZabbix = age.getMinutes() + 'm ' + ageZabbix;
       }
-    };
-
-    $scope.updateAppList = function (datasource) {
-      var groups = $scope.panel.triggers.group.groupid ? $scope.panel.triggers.group.name : '*';
-      var hosts = $scope.panel.triggers.host.hostid ? $scope.panel.triggers.host.name : '*';
-      if (groups && hosts) {
-        datasource.zabbixAPI.appFindQuery(hosts, groups).then(function (apps) {
-          apps = _.map(_.uniq(_.map(apps, 'name')), function (appname) {
-            return {
-              name: appname,
-              value: appname
-            };
-          });
-          $scope.metric.applicationList = [{name: 'All', value: null}];
-          $scope.metric.applicationList = $scope.metric.applicationList.concat(apps);
-        });
+      if (age.getHours()) {
+        ageZabbix = age.getHours() + 'h ' + ageZabbix;
       }
-    };
+      if (age.getDate() - 1) {
+        ageZabbix = age.getDate() - 1 + 'd ' + ageZabbix;
+      }
+      if (age.getMonth()) {
+        ageZabbix = age.getMonth() + 'M ' + ageZabbix;
+      }
+      if (age.getYear() - 70) {
+        ageZabbix = age.getYear() -70 + 'y ' + ageZabbix;
+      }
+      return ageZabbix;
+    }
 
     $scope.init();
   }
