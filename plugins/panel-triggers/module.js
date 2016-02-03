@@ -16,10 +16,11 @@ define([
   'app/app',
   'lodash',
   'jquery',
+  'moment',
   'app/core/config',
   'app/features/panel/panel_meta'
 ],
-function (angular, app, _, $, config, PanelMeta) {
+function (angular, app, _, $, moment, config, PanelMeta) {
   'use strict';
 
   var module = angular.module('grafana.panels.triggers', []);
@@ -135,17 +136,13 @@ function (angular, app, _, $, config, PanelMeta) {
                                     showEvents)
             .then(function(triggers) {
               return _.map(triggers, function (trigger) {
-                var lastchange = new Date(trigger.lastchange * 1000);
-                var lastchangeUnix = trigger.lastchange;
-                var now = new Date();
-
-                // Consider local time offset
-                var ageUnix = now - lastchange + now.getTimezoneOffset() * 60000;
-                var age = toZabbixAgeFormat(ageUnix);
                 var triggerObj = trigger;
-                triggerObj.lastchangeUnix = lastchangeUnix;
-                triggerObj.lastchange = lastchange.toLocaleString();
-                triggerObj.age = age.toLocaleString();
+
+                // Format last change and age
+                trigger.lastchangeUnix = Number(trigger.lastchange);
+                var timestamp = moment.unix(trigger.lastchangeUnix);
+                triggerObj.lastchange = timestamp.format("DD MMM YYYY, HH:mm:ss");
+                triggerObj.age = timestamp.fromNow(true);
 
                 // Set color
                 if (trigger.value === '1') {
