@@ -61,7 +61,7 @@
                   placeholder="trigger name"
                   class="input-large tight-form-input last"
                   ng-style="panel.triggers.trigger.style"
-                  empty-to-null">
+                  empty-to-null>
         </li>
       </ul>
       <div class="clearfix"></div>
@@ -188,6 +188,38 @@
                     ng-model="panel.infoField"
                     ng-checked="panel.infoField">
             <label for="panel.infoField" class="cr1"></label>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item">
+            <strong>Custom Last change format</strong>
+            <label class="checkbox-label" for="panel.customLastChangeFormat">&nbsp;</label>
+            <input  class="cr1"
+                    id="panel.customLastChangeFormat"
+                    type="checkbox"
+                    ng-change="get_data()"
+                    ng-model="panel.customLastChangeFormat"
+                    ng-checked="panel.customLastChangeFormat">
+            <label for="panel.customLastChangeFormat" class="cr1"></label>
+          </li>
+          <li ng-if="panel.customLastChangeFormat">
+            <input  type="text"
+                    ng-model="panel.lastChangeFormat"
+                    ng-blur="get_data()"
+                    placeholder="dddd, MMMM Do YYYY, h:mm:ss a"
+                    class="tight-form-input"
+                    style="width: 300px"
+                    empty-to-null>
+          </li>
+          <li class="tight-form-item last" ng-if="panel.customLastChangeFormat">
+            <a href="http://momentjs.com/docs/#/displaying/format/" target="_blank">
+              <i class="fa fa-question-circle"
+                 bs-tooltip="'See moment.js dosc for time format.'">
+              </i>
+            </a>
           </li>
         </ul>
         <div class="clearfix"></div>
