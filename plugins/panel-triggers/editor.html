@@ -105,7 +105,7 @@
             <strong>Limit triggers number to</strong>
           </li>
           <li>
-            <input  class="input-small tight-form-input last"
+            <input  class="input-small tight-form-input"
                     type="number"
                     ng-model="panel.limit"
                     ng-model-onblur
@@ -130,7 +130,7 @@
             <strong>Show events</strong>
           </li>
           <li>
-            <select class="input-medium tight-form-input"
+            <select class="tight-form-input input-medium last"
                     ng-model="panel.showEvents"
                     ng-options="f.text for f in showEventsFields track by f.value"
                     ng-change="get_data()">
@@ -198,7 +198,6 @@
     <h5>Customize triggers severity and colors</h5>
     <div class="tight-form"
          ng-repeat="trigger in panel.triggerSeverity"
-         ng-class="{last: $last}"
          ng-style="{background:trigger.color}">
       <ul class="tight-form-list">
         <li class="tight-form-item" style="width: 10px; color: #101010">
@@ -237,6 +236,29 @@
                     ng-checked="trigger.show"
                     ng-change="get_data()">
             <label for="{{ 'trigger-show-' + $index }}" class="cr1"></label>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+    <div class="tight-form last"
+         ng-style="{background:panel.okEventColor}">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 160px; color: #101010">
+          <span style="padding-left: 25px"> OK event color </span>
+        </li>
+        <li data-trigger-index="6">
+          &nbsp;
+          <i class="pointer fa fa-eyedropper trigger-color"
+             style="color: #101010"
+             ng-click="openOkEventColorSelector($event)">&nbsp;</i>
+          <input  type="text"
+                  class="tight-form-input input-small"
+                  style="color: #101010"
+                  empty-to-null
+                  ng-model="panel.okEventColor"
+                  ng-style="{background:panel.okEventColor}"
+                  ng-model-onblur
+                  ng-change="get_data()">
         </li>
       </ul>
       <div class="clearfix"></div>

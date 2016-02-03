@@ -79,7 +79,8 @@ function (angular, app, _, $, config, PanelMeta) {
       showTriggers: 'all triggers',
       sortTriggersBy: { text: 'last change', value: 'lastchange' },
       showEvents: { text: 'Problem events', value: '1' },
-      triggerSeverity: grafanaDefaultSeverity
+      triggerSeverity: grafanaDefaultSeverity,
+      okEventColor: '#890F02'
     };
 
     _.defaults($scope.panel, panelDefaults);
@@ -145,7 +146,14 @@ function (angular, app, _, $, config, PanelMeta) {
                 triggerObj.lastchangeUnix = lastchangeUnix;
                 triggerObj.lastchange = lastchange.toLocaleString();
                 triggerObj.age = age.toLocaleString();
-                triggerObj.color = $scope.panel.triggerSeverity[trigger.priority].color;
+
+                // Set color
+                if (trigger.value === '1') {
+                  triggerObj.color = $scope.panel.triggerSeverity[trigger.priority].color;
+                } else {
+                  triggerObj.color = $scope.panel.okEventColor;
+                }
+
                 triggerObj.severity = $scope.panel.triggerSeverity[trigger.priority].severity;
                 return triggerObj;
               });
@@ -318,6 +326,23 @@ function (angular, app, _, $, config, PanelMeta) {
       var popoverScope = $scope.$new();
       popoverScope.trigger = $scope.panel.triggerSeverity[index];
       popoverScope.changeTriggerSeverityColor = $scope.changeTriggerSeverityColor;
+
+      popoverSrv.show({
+        element: el,
+        placement: 'top',
+        templateUrl:  'public/plugins/triggers/trigger.colorpicker.html',
+        scope: popoverScope
+      });
+    };
+
+    $scope.openOkEventColorSelector = function(event) {
+      var el = $(event.currentTarget);
+      var popoverScope = $scope.$new();
+      popoverScope.trigger = {color: $scope.panel.okEventColor};
+      popoverScope.changeTriggerSeverityColor = function(trigger, color) {
+        $scope.panel.okEventColor = color;
+        $scope.refreshTriggerSeverity();
+      };
 
       popoverSrv.show({
         element: el,
