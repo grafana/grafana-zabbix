@@ -54,6 +54,11 @@ function (angular, app, _, $, moment, config, PanelMeta) {
       { text: 'Problem events', value: 1 }
     ];
 
+    $scope.triggerStatusMap = {
+      '0': 'OK',
+      '1': 'Problem'
+    };
+
     var grafanaDefaultSeverity = [
       { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },
       { priority: 1, severity: 'Information',     color: '#82B5D8', show: true },
@@ -72,6 +77,7 @@ function (angular, app, _, $, moment, config, PanelMeta) {
         trigger: {filter: ""}
       },
       hostField: true,
+      statusField: false,
       severityField: false,
       lastChangeField: true,
       ageField: true,
@@ -81,7 +87,7 @@ function (angular, app, _, $, moment, config, PanelMeta) {
       sortTriggersBy: { text: 'last change', value: 'lastchange' },
       showEvents: { text: 'Problem events', value: '1' },
       triggerSeverity: grafanaDefaultSeverity,
-      okEventColor: '#890F02'
+      okEventColor: '#890F02',
     };
 
     _.defaults($scope.panel, panelDefaults);
@@ -97,7 +103,8 @@ function (angular, app, _, $, moment, config, PanelMeta) {
       var scopeDefaults = {
         metric: {},
         inputStyles: {},
-        oldTarget: _.cloneDeep($scope.panel.triggers)
+        oldTarget: _.cloneDeep($scope.panel.triggers),
+        defaultTimeFormat: "DD MMM YYYY HH:mm:ss"
       };
       _.defaults($scope, scopeDefaults);
 
@@ -141,7 +148,12 @@ function (angular, app, _, $, moment, config, PanelMeta) {
                 // Format last change and age
                 trigger.lastchangeUnix = Number(trigger.lastchange);
                 var timestamp = moment.unix(trigger.lastchangeUnix);
-                triggerObj.lastchange = timestamp.format("DD MMM YYYY, HH:mm:ss");
+                if ($scope.panel.customLastChangeFormat) {
+                  // User defined format
+                  triggerObj.lastchange = timestamp.format($scope.panel.lastChangeFormat);
+                } else {
+                  triggerObj.lastchange = timestamp.format($scope.defaultTimeFormat);
+                }
                 triggerObj.age = timestamp.fromNow(true);
 
                 // Set color
