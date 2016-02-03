@@ -122,20 +122,10 @@ function (angular, app, _, $, config, PanelMeta) {
       return datasourceSrv.get($scope.panel.datasource).then(function (datasource) {
         var zabbix = datasource.zabbixAPI;
 
-        var groupid = $scope.panel.triggers.group.groupid;
-        var hostid = $scope.panel.triggers.host.hostid;
-        var applicationids = $scope.panel.triggers.application.value;
-
         // Get triggers
-        return zabbix.getTriggers(null,
-                                  $scope.panel.sortTriggersBy.value,
-                                  groupid,
-                                  hostid,
-                                  applicationids,
-                                  $scope.panel.triggers.name,
-                                  $scope.panel.showEvents.value)
+        return zabbix.getTriggers($scope.panel.showEvents.value)
           .then(function(triggers) {
-            var promises = _.map(triggers, function (trigger) {
+            return _.map(triggers, function (trigger) {
               var lastchange = new Date(trigger.lastchange * 1000);
               var lastchangeUnix = trigger.lastchange;
               var now = new Date();
@@ -149,44 +139,55 @@ function (angular, app, _, $, config, PanelMeta) {
               triggerObj.age = age.toLocaleString();
               triggerObj.color = $scope.panel.triggerSeverity[trigger.priority].color;
               triggerObj.severity = $scope.panel.triggerSeverity[trigger.priority].severity;
+              return triggerObj;
+            });
+          })
+          .then(function (triggerList) {
 
-              // Request acknowledges for trigger
-              return zabbix.getAcknowledges(trigger.triggerid, lastchangeUnix)
-                .then(function (acknowledges) {
-                  if (acknowledges.length) {
-                    triggerObj.acknowledges = _.map(acknowledges, function (ack) {
+            // Request acknowledges for trigger
+            var eventids = _.map(triggerList, function(trigger) {
+              return trigger.lastEvent.eventid;
+            });
+            return zabbix.getAcknowledges(eventids)
+              .then(function (events) {
+
+                // Map events to triggers
+                _.each(triggerList, function(trigger) {
+                  var event = _.find(events, function(event) {
+                    return event.eventid === trigger.lastEvent.eventid;
+                  });
+
+                  if (event) {
+                    trigger.acknowledges = _.map(event.acknowledges, function (ack) {
                       var time = new Date(+ack.clock * 1000);
                       ack.time = time.toLocaleString();
                       ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
                       return ack;
                     });
                   }
-                  return triggerObj;
                 });
-            });
-            return $q.all(promises).then(function (triggerList) {
 
-              // Filter acknowledged triggers
-              if ($scope.panel.showTriggers === 'unacknowledged') {
-                $scope.triggerList = _.filter(triggerList, function (trigger) {
-                  return !trigger.acknowledges;
+                // Filter acknowledged triggers
+                if ($scope.panel.showTriggers === 'unacknowledged') {
+                  $scope.triggerList = _.filter(triggerList, function (trigger) {
+                    return !trigger.acknowledges;
+                  });
+                } else if ($scope.panel.showTriggers === 'acknowledged') {
+                  $scope.triggerList = _.filter(triggerList, 'acknowledges');
+                } else {
+                  $scope.triggerList = triggerList;
+                }
+
+                // Filter triggers by severity
+                $scope.triggerList = _.filter($scope.triggerList, function (trigger) {
+                  return $scope.panel.triggerSeverity[trigger.priority].show;
                 });
-              } else if ($scope.panel.showTriggers === 'acknowledged') {
-                $scope.triggerList = _.filter(triggerList, 'acknowledges');
-              } else {
-                $scope.triggerList = triggerList;
-              }
 
-              // Filter triggers by severity
-              $scope.triggerList = _.filter($scope.triggerList, function (trigger) {
-                return $scope.panel.triggerSeverity[trigger.priority].show;
+                // Limit triggers number
+                $scope.triggerList  = _.first($scope.triggerList, $scope.panel.limit);
+
+                $scope.panelRenderingComplete();
               });
-
-              // Limit triggers number
-              $scope.triggerList  = _.first($scope.triggerList, $scope.panel.limit);
-
-              $scope.panelRenderingComplete();
-            });
           });
       });
     };
