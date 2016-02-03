@@ -208,6 +208,8 @@ function (angular, app, _, $, config, PanelMeta) {
                   // Sort triggers
                   if ($scope.panel.sortTriggersBy.value === 'priority') {
                     triggerList = _.sortBy(triggerList, 'priority').reverse();
+                  } else {
+                    triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
                   }
 
                   // Limit triggers number
