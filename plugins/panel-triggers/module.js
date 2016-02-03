@@ -174,6 +174,12 @@ function (angular, app, _, $, config, PanelMeta) {
                     }
                   });
 
+                  // Filter triggers by description
+                  var triggerFilter = $scope.panel.triggers.trigger.filter;
+                  if (triggerFilter) {
+                    triggerList = filterTriggers(triggerList, triggerFilter);
+                  }
+
                   // Filter acknowledged triggers
                   if ($scope.panel.showTriggers === 'unacknowledged') {
                     $scope.triggerList = _.filter(triggerList, function (trigger) {
@@ -204,7 +210,6 @@ function (angular, app, _, $, config, PanelMeta) {
       $scope.filterGroups();
       $scope.filterHosts();
       $scope.filterApplications();
-      //$scope.filterItems();
     };
 
     // Get list of metric names for bs-typeahead directive
@@ -224,14 +229,14 @@ function (angular, app, _, $, config, PanelMeta) {
       });
     };
 
-    $scope.filterHosts = function () {
+    $scope.filterHosts = function() {
       var groupFilter = templateSrv.replace($scope.panel.triggers.group.filter);
       $scope.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
         $scope.metric.filteredHosts = hosts;
       });
     };
 
-    $scope.filterApplications = function () {
+    $scope.filterApplications = function() {
       var groupFilter = templateSrv.replace($scope.panel.triggers.group.filter);
       var hostFilter = templateSrv.replace($scope.panel.triggers.host.filter);
       $scope.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
@@ -240,7 +245,19 @@ function (angular, app, _, $, config, PanelMeta) {
         });
     };
 
-    $scope.onTargetPartChange = function (targetPart) {
+    function filterTriggers(triggers, triggerFilter) {
+      if (isRegex(triggerFilter)) {
+        return _.filter(triggers, function(trigger) {
+          return buildRegex(triggerFilter).test(trigger.description);
+        });
+      } else {
+        return _.filter(triggers, function(trigger) {
+          return trigger.description === triggerFilter;
+        });
+      }
+    }
+
+    $scope.onTargetPartChange = function(targetPart) {
       var regexStyle = {'color': '#CCA300'};
       targetPart.isRegex = isRegex(targetPart.filter);
       targetPart.style = targetPart.isRegex ? regexStyle : {};
@@ -250,6 +267,14 @@ function (angular, app, _, $, config, PanelMeta) {
       // Pattern for testing regex
       var regexPattern = /^\/(.*)\/([gmi]*)$/m;
       return regexPattern.test(str);
+    }
+
+    function buildRegex(str) {
+      var regexPattern = /^\/(.*)\/([gmi]*)$/m;
+      var matches = str.match(regexPattern);
+      var pattern = matches[1];
+      var flags = matches[2] !== "" ? matches[2] : undefined;
+      return new RegExp(pattern, flags);
     }
 
     $scope.parseTarget = function() {
