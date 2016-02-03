@@ -229,35 +229,23 @@
   <div class="section">
     <h5>Customize triggers severity and colors</h5>
     <div class="tight-form"
-         ng-repeat="trigger in panel.triggerSeverity"
-         ng-style="{background:trigger.color}">
+         ng-repeat="trigger in panel.triggerSeverity">
       <ul class="tight-form-list">
-        <li class="tight-form-item" style="width: 10px; color: #101010">
+        <li class="tight-form-item" style="width: 10px">
           {{ trigger.priority }}
         </li>
         <li>
           <input  class="tight-form-input input-medium"
                   type="text"
-                  style="color: #101010"
                   empty-to-null
                   ng-model="trigger.severity"
-                  ng-style="{background:trigger.color}"
+                  style="color: white"
+                  ng-style="{background: trigger.color}"
                   ng-model-onblur
                   ng-change="get_data()">
         </li>
-        <li data-trigger-index="{{trigger.priority}}">
-          &nbsp;
-          <i class="pointer fa fa-eyedropper trigger-color"
-             style="color: #101010"
-             ng-click="openTriggerColorSelector($event)">&nbsp;</i>
-          <input  type="text"
-                  class="tight-form-input input-small"
-                  style="color: #101010"
-                  empty-to-null
-                  ng-model="trigger.color"
-                  ng-style="{background:trigger.color}"
-                  ng-model-onblur
-                  ng-change="get_data()">
+        <li class="tight-form-item">
+          <spectrum-picker ng-model="trigger.color" ng-change="get_data()"></spectrum-picker>
         </li>
         <li class="tight-form-item last" style="width: 28px">
           <label class="checkbox-label" for="{{ 'trigger-show-' + $index }}"></label>
@@ -272,25 +260,15 @@
       </ul>
       <div class="clearfix"></div>
     </div>
-    <div class="tight-form last"
-         ng-style="{background:panel.okEventColor}">
+    <div class="tight-form last">
       <ul class="tight-form-list">
-        <li class="tight-form-item" style="width: 160px; color: #101010">
+        <li class="tight-form-item"
+            ng-style="{background:panel.okEventColor}"
+            style="width: 160px; color: white">
           <span style="padding-left: 25px"> OK event color </span>
         </li>
-        <li data-trigger-index="6">
-          &nbsp;
-          <i class="pointer fa fa-eyedropper trigger-color"
-             style="color: #101010"
-             ng-click="openOkEventColorSelector($event)">&nbsp;</i>
-          <input  type="text"
-                  class="tight-form-input input-small"
-                  style="color: #101010"
-                  empty-to-null
-                  ng-model="panel.okEventColor"
-                  ng-style="{background:panel.okEventColor}"
-                  ng-model-onblur
-                  ng-change="get_data()">
+        <li class="tight-form-item">
+          <spectrum-picker ng-model="panel.okEventColor" ng-change="get_data()"></spectrum-picker>
         </li>
       </ul>
       <div class="clearfix"></div>
