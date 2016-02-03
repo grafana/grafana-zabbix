@@ -296,9 +296,12 @@ function (angular, _) {
       return this.request('service.getsla', params);
     };
 
-    p.getTriggers = function() {
+    p.getTriggers = function(groupids, hostids, applicationids) {
       var params = {
         output: 'extend',
+        groupids: groupids,
+        hostids: hostids,
+        applicationids: applicationids,
         expandDescription: true,
         expandData: true,
         monitored: true,

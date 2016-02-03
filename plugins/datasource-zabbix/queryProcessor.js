@@ -28,6 +28,19 @@ function (angular, _, utils) {
         }
       };
 
+      /**
+       * Build trigger query in asynchronous manner
+       */
+      this.buildTriggerQuery = function (groupFilter, hostFilter, appFilter) {
+        if (this.cache._initialized) {
+          return $q.when(self.buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter));
+        } else {
+          return this.cache.refresh().then(function() {
+            return self.buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter);
+          });
+        }
+      };
+
       this.filterGroups = function(groupFilter) {
         return self.cache.getGroups().then(function(groupList) {
           return groupList;
@@ -306,6 +319,60 @@ function (angular, _, utils) {
           });
 
           return items;
+        });
+      };
+
+      /**
+       * Build query - convert target filters to array of Zabbix items
+       */
+      this.buildTriggerQueryFromCache = function (groupFilter, hostFilter, appFilter) {
+        var promises = [
+          this.filterGroups(groupFilter).then(function(groups) {
+            return _.filter(groups, function(group) {
+              if (utils.isRegex(groupFilter)) {
+                return utils.buildRegex(groupFilter).test(group.name);
+              } else {
+                return group.name === groupFilter;
+              }
+            });
+          }),
+          this.filterHosts(groupFilter).then(function(hosts) {
+            return _.filter(hosts, function(host) {
+              if (utils.isRegex(hostFilter)) {
+                return utils.buildRegex(hostFilter).test(host.name);
+              } else {
+                return host.name === hostFilter;
+              }
+            });
+          }),
+          this.filterApplications(groupFilter, hostFilter).then(function(apps) {
+            return _.filter(apps, function(app) {
+              if (utils.isRegex(appFilter)) {
+                return utils.buildRegex(appFilter).test(app.name);
+              } else {
+                return app.name === appFilter;
+              }
+            });
+          })
+        ];
+
+        return $q.all(promises).then(function(results) {
+          var filteredGroups = results[0];
+          var filteredHosts = results[1];
+          var filteredApps = results[2];
+          var query = {};
+
+          if (appFilter) {
+            query.applicationids = _.flatten(_.map(filteredApps, 'applicationids'));
+          }
+          if (hostFilter) {
+            query.hostids = _.map(filteredHosts, 'hostid');
+          }
+          if (groupFilter) {
+            query.groupids = _.map(filteredGroups, 'groupid');
+          }
+
+          return query;
         });
       };
 
