@@ -11,6 +11,9 @@
                   Host
                 </div>
               </th>
+              <th ng-if="panel.statusField" style="width: 85px">
+                <div class="table-panel-table-header-inner pointer">Status</div>
+              </th>
               <th ng-if="panel.severityField" style="width: 120px">
                 <div class="table-panel-table-header-inner pointer">Severity</div>
               </th>
@@ -33,6 +36,11 @@
               <td ng-if="panel.hostField">
                 <div>
                   <span><strong>{{trigger.host}}</strong></span>
+                </div>
+              </td>
+              <td ng-if="panel.statusField" style="background-color: {{trigger.color}}; color: white">
+                <div>
+                  {{triggerStatusMap[trigger.value]}}
                 </div>
               </td>
               <td ng-if="panel.severityField" style="background-color: {{trigger.color}}; color: white">

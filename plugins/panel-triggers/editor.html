@@ -130,7 +130,7 @@
             <strong>Show events</strong>
           </li>
           <li>
-            <select class="tight-form-input input-medium last"
+            <select class="tight-form-input input-medium"
                     ng-model="panel.showEvents"
                     ng-options="f.text for f in showEventsFields track by f.value"
                     ng-change="get_data()">
@@ -152,6 +152,15 @@
                     ng-model="panel.hostField"
                     ng-checked="panel.hostField">
             <label for="panel.hostField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="panel.severityField">Status</label>
+            <input  class="cr1"
+                    id="panel.statusField"
+                    type="checkbox"
+                    ng-model="panel.statusField"
+                    ng-checked="panel.statusField">
+            <label for="panel.statusField" class="cr1"></label>
           </li>
           <li class="tight-form-item">
             <label class="checkbox-label" for="panel.severityField">Severity</label>

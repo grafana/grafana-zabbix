@@ -54,6 +54,11 @@ function (angular, app, _, $, moment, config, PanelMeta) {
       { text: 'Problem events', value: 1 }
     ];
 
+    $scope.triggerStatusMap = {
+      '0': 'OK',
+      '1': 'Problem'
+    };
+
     var grafanaDefaultSeverity = [
       { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },
       { priority: 1, severity: 'Information',     color: '#82B5D8', show: true },
@@ -72,6 +77,7 @@ function (angular, app, _, $, moment, config, PanelMeta) {
         trigger: {filter: ""}
       },
       hostField: true,
+      statusField: false,
       severityField: false,
       lastChangeField: true,
       ageField: true,
