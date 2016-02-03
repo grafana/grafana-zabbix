@@ -182,22 +182,27 @@ function (angular, app, _, $, config, PanelMeta) {
 
                   // Filter acknowledged triggers
                   if ($scope.panel.showTriggers === 'unacknowledged') {
-                    $scope.triggerList = _.filter(triggerList, function (trigger) {
+                    triggerList = _.filter(triggerList, function (trigger) {
                       return !trigger.acknowledges;
                     });
                   } else if ($scope.panel.showTriggers === 'acknowledged') {
-                    $scope.triggerList = _.filter(triggerList, 'acknowledges');
+                    triggerList = _.filter(triggerList, 'acknowledges');
                   } else {
-                    $scope.triggerList = triggerList;
+                    triggerList = triggerList;
                   }
 
                   // Filter triggers by severity
-                  $scope.triggerList = _.filter($scope.triggerList, function (trigger) {
+                  triggerList = _.filter(triggerList, function (trigger) {
                     return $scope.panel.triggerSeverity[trigger.priority].show;
                   });
 
+                  // Sort triggers
+                  if ($scope.panel.sortTriggersBy.value === 'priority') {
+                    triggerList = _.sortBy(triggerList, 'priority').reverse();
+                  }
+
                   // Limit triggers number
-                  $scope.triggerList  = _.first($scope.triggerList, $scope.panel.limit);
+                  $scope.triggerList  = _.first(triggerList, $scope.panel.limit);
 
                   $scope.panelRenderingComplete();
                 });
