@@ -296,49 +296,44 @@ function (angular, _) {
       return this.request('service.getsla', params);
     };
 
-    p.getTriggers = function(limit, sortfield, groupids, hostids, applicationids, name) {
+    p.getTriggers = function(groupids, hostids, applicationids, showEvents) {
       var params = {
         output: 'extend',
-        expandDescription: true,
-        expandData: true,
-        monitored: true,
-        //only_true: true,
-        filter: {
-          value: 1
-        },
-        search : {
-          description: name
-        },
-        searchWildcardsEnabled: false,
         groupids: groupids,
         hostids: hostids,
         applicationids: applicationids,
-        limit: limit,
-        sortfield: 'lastchange',
-        sortorder: 'DESC'
+        expandDescription: true,
+        expandData: true,
+        monitored: true,
+        skipDependent: true,
+        //only_true: true,
+        filter: {
+          value: showEvents
+        },
+        selectGroups: ['name'],
+        selectHosts: ['name'],
+        selectItems: ['name', 'key_', 'lastvalue'],
+        selectLastEvent: 'extend'
       };
-
-      if (sortfield) {
-        params.sortfield = sortfield;
-      }
 
       return this.request('trigger.get', params);
     };
 
-    p.getAcknowledges = function(triggerids, from) {
+    p.getAcknowledges = function(eventids) {
       var params = {
         output: 'extend',
-        objectids: triggerids,
-        acknowledged: true,
+        eventids: eventids,
+        preservekeys: true,
         select_acknowledges: 'extend',
         sortfield: 'clock',
-        sortorder: 'DESC',
-        time_from: from
+        sortorder: 'DESC'
       };
 
       return this.request('event.get', params)
         .then(function (events) {
-          return _.flatten(_.map(events, 'acknowledges'));
+          return _.filter(events, function(event) {
+            return event.acknowledges.length;
+          });
         });
     };
 
