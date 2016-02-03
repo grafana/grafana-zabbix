@@ -123,6 +123,7 @@ function (angular, app, _, $, config, PanelMeta) {
         var zabbix = datasource.zabbixAPI;
         var queryProcessor = datasource.queryProcessor;
         var triggerFilter = $scope.panel.triggers;
+        var showEvents = $scope.panel.showEvents.value;
         var buildQuery = queryProcessor.buildTriggerQuery(triggerFilter.group.filter,
                                                           triggerFilter.host.filter,
                                                           triggerFilter.application.filter);
@@ -130,7 +131,7 @@ function (angular, app, _, $, config, PanelMeta) {
           return zabbix.getTriggers(query.groupids,
                                     query.hostids,
                                     query.applicationids,
-                                    $scope.panel.showEvents.value)
+                                    showEvents)
             .then(function(triggers) {
               return _.map(triggers, function (trigger) {
                 var lastchange = new Date(trigger.lastchange * 1000);

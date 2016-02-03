@@ -296,7 +296,7 @@ function (angular, _) {
       return this.request('service.getsla', params);
     };
 
-    p.getTriggers = function(groupids, hostids, applicationids) {
+    p.getTriggers = function(groupids, hostids, applicationids, showEvents) {
       var params = {
         output: 'extend',
         groupids: groupids,
@@ -308,7 +308,7 @@ function (angular, _) {
         skipDependent: true,
         //only_true: true,
         filter: {
-          value: 1
+          value: showEvents
         },
         selectGroups: ['name'],
         selectHosts: ['name'],
