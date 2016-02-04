@@ -344,75 +344,76 @@ function (angular, _, dateMath, utils, metricFunctions) {
       var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
       var annotation = options.annotation;
       var self = this;
+      var showEvents = annotation.showOkEvents ? [0, 1] : 1;
 
-      // Remove events below the chose severity
-      var severities = [];
-      for (var i = 5; i >= annotation.minseverity; i--) {
-        severities.push(i);
-      }
-      var params = {
-        output: ['triggerid', 'description', 'priority'],
-        preservekeys: 1,
-        filter: { 'priority': severities },
-        search: {
-          'description': annotation.trigger
-        },
-        searchWildcardsEnabled: true,
-        expandDescription: true
-      };
-      if (annotation.host) {
-        params.host = templateSrv.replace(annotation.host);
-      }
-      else if (annotation.group) {
-        params.group = templateSrv.replace(annotation.group);
-      }
+      var buildQuery = self.queryProcessor.buildTriggerQuery(templateSrv.replace(annotation.group),
+                                                             templateSrv.replace(annotation.host),
+                                                             templateSrv.replace(annotation.application));
+      return buildQuery.then(function(query) {
+        return self.zabbixAPI.getTriggers(query.groupids,
+                                          query.hostids,
+                                          query.applicationids,
+                                          showEvents)
+          .then(function(triggers) {
 
-      return this.zabbixAPI.performZabbixAPIRequest('trigger.get', params)
-        .then(function (result) {
-          if(result) {
-            var objects = result;
+            // Filter triggers by description
+            if (utils.isRegex(annotation.trigger)) {
+              triggers = _.filter(triggers, function(trigger) {
+                return utils.buildRegex(annotation.trigger).test(trigger.description);
+              });
+            } else {
+              triggers = _.filter(triggers, function(trigger) {
+                return trigger.description === annotation.trigger;
+              });
+            }
+
+            // Remove events below the chose severity
+            triggers = _.filter(triggers, function(trigger) {
+              return Number(trigger.priority) >= Number(annotation.minseverity);
+            });
+
+            var objectids = _.map(triggers, 'triggerid');
             var params = {
               output: 'extend',
               time_from: from,
               time_till: to,
-              objectids: _.keys(objects),
+              objectids: objectids,
               select_acknowledges: 'extend',
-              selectHosts: 'extend'
+              selectHosts: 'extend',
+              value: showEvents
             };
 
-            // Show problem events only
-            if (!annotation.showOkEvents) {
-              params.value = 1;
-            }
+            return self.zabbixAPI.request('event.get', params)
+              .then(function (events) {
+                var indexedTriggers = _.indexBy(triggers, 'triggerid');
 
-            return self.zabbixAPI.performZabbixAPIRequest('event.get', params)
-              .then(function (result) {
-                var events = [];
+                // Hide acknowledged events if option enabled
+                if (annotation.hideAcknowledged) {
+                  events = _.filter(events, function(event) {
+                    return !event.acknowledges.length;
+                  });
+                }
 
-                _.each(result, function(e) {
+                return _.map(events, function(e) {
                   var title ='';
                   if (annotation.showHostname) {
                     title += e.hosts[0].name + ': ';
                   }
+
+                  // Show event type (OK or Problem)
                   title += Number(e.value) ? 'Problem' : 'OK';
 
-                  // Hide acknowledged events
-                  if (e.acknowledges.length > 0 && annotation.showAcknowledged) { return; }
-
-                  var formatted_acknowledges = zabbixHelperSrv.formatAcknowledges(e.acknowledges);
-                  events.push({
+                  var formatted_acknowledges = utils.formatAcknowledges(e.acknowledges);
+                  return {
                     annotation: annotation,
                     time: e.clock * 1000,
                     title: title,
-                    text: objects[e.objectid].description + formatted_acknowledges
-                  });
+                    text: indexedTriggers[e.objectid].description + formatted_acknowledges
+                  };
                 });
-                return events;
               });
-          } else {
-            return [];
-          }
-        });
+          });
+      });
     };
 
   }

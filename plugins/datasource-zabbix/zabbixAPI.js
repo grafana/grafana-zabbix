@@ -308,13 +308,17 @@ function (angular, _) {
         skipDependent: true,
         //only_true: true,
         filter: {
-          value: showEvents
+          value: 1
         },
         selectGroups: ['name'],
         selectHosts: ['name'],
         selectItems: ['name', 'key_', 'lastvalue'],
         selectLastEvent: 'extend'
       };
+
+      if (showEvents) {
+        params.filter.value = showEvents;
+      }
 
       return this.request('trigger.get', params);
     };

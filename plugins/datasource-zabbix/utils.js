@@ -47,6 +47,30 @@ function (_, moment) {
       return moment.duration(Number(momentInterval[1]), momentInterval[2]).valueOf();
     };
 
+    /**
+     * Format acknowledges.
+     *
+     * @param  {array} acknowledges array of Zabbix acknowledge objects
+     * @return {string} HTML-formatted table
+     */
+    this.formatAcknowledges = function(acknowledges) {
+      if (acknowledges.length) {
+        var formatted_acknowledges = '<br><br>Acknowledges:<br><table><tr><td><b>Time</b></td>'
+          + '<td><b>User</b></td><td><b>Comments</b></td></tr>';
+        _.each(_.map(acknowledges, function (ack) {
+          var timestamp = moment.unix(ack.clock);
+          return '<tr><td><i>' + timestamp.format("DD MMM YYYY HH:mm:ss") + '</i></td><td>' + ack.alias
+            + ' (' + ack.name + ' ' + ack.surname + ')' + '</td><td>' + ack.message + '</td></tr>';
+        }), function (ack) {
+          formatted_acknowledges = formatted_acknowledges.concat(ack);
+        });
+        formatted_acknowledges = formatted_acknowledges.concat('</table>');
+        return formatted_acknowledges;
+      } else {
+        return '';
+      }
+    };
+
   }
 
   return new Utils();

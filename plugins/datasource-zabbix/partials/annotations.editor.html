@@ -1,53 +1,61 @@
 <div class="editor-row">
-  <div class="section">
-    <h5>Zabbix trigger
-    </h5>
-  </div>
-</div>
-
-<div class="editor-row">
-  <div class="editor-option">
-    <label class="small">Group</label>
-    <input type="text" class="input-medium" ng-model='currentAnnotation.group'></input>
-  </div>
-  <div class="editor-option">
-    <label class="small">Host</label>
-    <input type="text" class="input-medium" ng-model='currentAnnotation.host'></input>
-  </div>
-  <div class="editor-option">
-    <label class="small">Trigger
-      <tip>Trigger name for search. Wildcards are supports. Examples: Lack of free swap space, Lack of*.
-      </tip>
-    </label>
-    <input type="text" style="width: 25em" ng-model='currentAnnotation.trigger' placeholder="Trigger name"></input>
-  </div>
-  <div class="editor-option">
-    <label class="small">Minimum severity
-    </label>
-    <select class="small" style="width: 113px" ng-init='currentAnnotation.minseverity = currentAnnotation.minseverity || 0' ng-model='currentAnnotation.minseverity' ng-options="v as k for (k, v) in {'Not classified': 0, 'Information': 1, 'Warning': 2, 'Average': 3, 'High': 4, 'Disaster': 5}" ng-change="render()"></select>
+  <div class="section tight-form-container" style="margin-bottom: 20px">
+    <h5>Filter Triggers</h5>
+    <div class="tight-form">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 80px">
+          Group
+        </li>
+        <li>
+          <input type="text"
+            ng-model="annotation.group"
+            class="input-large tight-form-input">
+        </li>
+        <li class="tight-form-item" style="width: 50px">
+          Host
+        </li>
+        <li>
+          <input type="text"
+            ng-model="annotation.host"
+            class="input-large tight-form-input last">
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+    <div class="tight-form">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 80px">
+          Application
+        </li>
+        <li>
+          <input type="text"
+            ng-model="annotation.application"
+            class="input-large tight-form-input">
+        </li>
+        <li class="tight-form-item" style="width: 50px">
+          Trigger
+        </li>
+        <li>
+          <input  type="text"
+                  ng-model="annotation.trigger"
+                  class="input-large tight-form-input last">
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
   </div>
 </div>
 
 <div class="editor-row">
   <div class="section">
     <h5>Options</h5>
-    <input type="checkbox" class="cr1" id="currentAnnotation.showOkEvents"
-           ng-model="currentAnnotation.showOkEvents"
-           ng-checked="currentAnnotation.showOkEvents">
-    <label for="currentAnnotation.showOkEvents" class="cr1">Show OK events
-      <tip>Show events, generated when trigger release to OK state</tip>
-    </label>
-    <input type="checkbox" class="cr1" id="currentAnnotation.showHostname"
-           ng-model="currentAnnotation.showHostname"
-           ng-checked="currentAnnotation.showHostname">
-    <label for="currentAnnotation.showHostname" class="cr1">Show hostname
-      <tip>Show the hostname the event belongs to</tip>
-    </label>
-    <input type="checkbox" class="cr1" id="currentAnnotation.showAcknowledged"
-           ng-model="currentAnnotation.showAcknowledged"
-           ng-checked="currentAnnotation.showAcknowledged">
-    <label for="currentAnnotation.showAcknowledged" class="cr1">Hide acknowledged events
-      <tip>Hide events, that have been acknowledged</tip>
-    </label>
+    <div class="editor-option">
+      <label class="small">Minimum severity
+      </label>
+      <select class="small" style="width: 113px" ng-init='annotation.minseverity = annotation.minseverity || 0' ng-model='annotation.minseverity' ng-options="v as k for (k, v) in {'Not classified': 0, 'Information': 1, 'Warning': 2, 'Average': 3, 'High': 4, 'Disaster': 5}" ng-change="render()"></select>
+    </div>
+    <editor-opt-bool text="Show OK events" model="annotation.showOkEvents"></editor-opt-bool>
+    <editor-opt-bool text="Hide acknowledged events" model="annotation.hideAcknowledged"></editor-opt-bool>
+    <editor-opt-bool text="Show hostname" model="annotation.showHostname"></editor-opt-bool>
   </div>
 </div>
