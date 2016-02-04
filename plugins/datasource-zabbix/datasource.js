@@ -361,7 +361,7 @@ function (angular, _, dateMath, utils, metricFunctions) {
               triggers = _.filter(triggers, function(trigger) {
                 return utils.buildRegex(annotation.trigger).test(trigger.description);
               });
-            } else {
+            } else if (annotation.trigger) {
               triggers = _.filter(triggers, function(trigger) {
                 return trigger.description === annotation.trigger;
               });
