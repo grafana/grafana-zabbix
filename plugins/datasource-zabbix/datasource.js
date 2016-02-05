@@ -132,12 +132,18 @@ function (angular, _, dateMath, utils, metricFunctions) {
               .then(function(items) {
                 // Add hostname for items from multiple hosts
                 var addHostName = target.host.isRegex;
-
                 var getHistory;
+
+                // Use trends
                 if ((from < useTrendsFrom) && self.trends) {
 
-                  // Use trends
-                  var valueType = target.downsampleFunction ? target.downsampleFunction.value : "avg";
+                  // Find trendValue() function and get specified trend value
+                  var trendFunctions = _.map(metricFunctions.getCategories()['Trends'], 'name');
+                  var trendValueFunc = _.find(target.functions, function(func) {
+                    return _.contains(trendFunctions, func.def.name);
+                  });
+                  var valueType = trendValueFunc ? trendValueFunc.params[0] : "avg";
+
                   getHistory = self.zabbixAPI.getTrend(items, from, to).then(function(history) {
                     return self.queryProcessor.handleTrends(history, addHostName, valueType);
                   });

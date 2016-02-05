@@ -9,6 +9,7 @@ function (_, $) {
   var categories = {
     Transform: [],
     Aggregate: [],
+    Trends: [],
     Alias: []
   };
 
@@ -74,6 +75,15 @@ function (_, $) {
       { name: 'interval', type: 'string' }
     ],
     defaultParams: ['1m'],
+  });
+
+  addFuncDef({
+    name: 'trendValue',
+    category: 'Trends',
+    params: [
+      { name: 'type', type: 'string', options: ['avg', 'min', 'max'] }
+    ],
+    defaultParams: ['avg'],
   });
 
   addFuncDef({
