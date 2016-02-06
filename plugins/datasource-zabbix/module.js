@@ -1,30 +1,30 @@
 define([
-  './datasource',
+  './datasource'
 ],
 function (ZabbixAPIDatasource) {
   'use strict';
 
-  function metricsQueryEditor() {
+  function ZabbixQueryCtrl() {
     return {controller: 'ZabbixAPIQueryCtrl', templateUrl: 'public/plugins/zabbix/partials/query.editor.html'};
   }
 
-  function metricsQueryOptions() {
+  function ZabbixQueryOptionsCtrl() {
     return {templateUrl: 'public/plugins/zabbix/partials/query.options.html'};
   }
 
-  function annotationsQueryEditor() {
+  function ZabbixAnnotationsQueryCtrl() {
     return {templateUrl: 'public/plugins/zabbix/partials/annotations.editor.html'};
   }
 
-  function configView() {
+  function ZabbixConfigCtrl() {
     return {templateUrl: 'public/plugins/zabbix/partials/config.html'};
   }
 
   return {
     Datasource: ZabbixAPIDatasource,
-    configView: configView,
-    annotationsQueryEditor: annotationsQueryEditor,
-    metricsQueryEditor: metricsQueryEditor,
-    metricsQueryOptions: metricsQueryOptions,
+    ConfigCtrl: ZabbixConfigCtrl,
+    QueryCtrl: ZabbixQueryCtrl,
+    QueryOptionsCtrl: ZabbixQueryOptionsCtrl,
+    AnnotationsQueryCtrl: ZabbixAnnotationsQueryCtrl
   };
 });
