@@ -1,7 +1,7 @@
 <div class="tight-form">
   <ul class="tight-form-list pull-right">
-    <li class="tight-form-item small" ng-show="target.datasource">
-      <em>{{target.datasource}}</em>
+    <li class="tight-form-item small" ng-show="ctrl.target.datasource">
+      <em>{{ctrl.target.datasource}}</em>
     </li>
     <li class="tight-form-item">
       <div class="dropdown">
@@ -13,119 +13,125 @@
         <ul class="dropdown-menu pull-right" role="menu">
 
           <!-- Switch editor mode -->
-          <li role="menuitem" ng-show="target.mode">
+          <li role="menuitem" ng-show="ctrl.target.mode">
             <a class="pointer" tabindex="1"
-               ng-click="switchEditorMode(0)">Numeric metrics</a>
+               ng-click="ctrl.switchEditorMode(0)">Numeric metrics</a>
           </li>
-          <li role="menuitem" ng-show="target.mode != 1">
+          <li role="menuitem" ng-show="ctrl.target.mode != 1">
             <a class="pointer" tabindex="1"
-               ng-click="switchEditorMode(1)">IT services</a>
+               ng-click="ctrl.switchEditorMode(1)">IT services</a>
           </li>
-          <li role="menuitem" ng-show="target.mode != 2">
+          <li role="menuitem" ng-show="ctrl.target.mode != 2">
             <a class="pointer" tabindex="1"
-               ng-click="switchEditorMode(2)">Text metrics</a>
+               ng-click="ctrl.switchEditorMode(2)">Text metrics</a>
           </li>
           <li class="divider" role="menuitem"></li>
-          <li role="menuitem"><a tabindex="1" ng-click="duplicate()">Duplicate</a></li>
-          <li role="menuitem"><a tabindex="1" ng-click="moveMetricQuery($index, $index-1)">Move up</a></li>
-          <li role="menuitem"><a tabindex="1" ng-click="moveMetricQuery($index, $index+1)">Move down</a></li>
+
+          <!-- From app/features/panel/partials/query_editor_row.html -->
+          <li role="menuitem">
+            <a tabindex="1" ng-click="ctrl.duplicateQuery()">Duplicate</a>
+          </li>
+          <li role="menuitem">
+            <a tabindex="1" ng-click="ctrl.moveQuery(-1)">Move up</a>
+          </li>
+          <li role="menuitem">
+            <a tabindex="1" ng-click="ctrl.moveQuery(1)">Move down</a>
+          </li>
         </ul>
       </div>
     </li>
     <li class="tight-form-item last">
-      <a class="pointer" tabindex="1" ng-click="removeDataQuery(target)">
-        <i class="fa fa-remove"></i>
+      <a class="pointer" tabindex="1" ng-click="ctrl.removeQuery(target)">
+        <i class="fa fa-trash"></i>
       </a>
     </li>
   </ul>
 
   <ul class="tight-form-list">
     <li class="tight-form-item" style="min-width: 15px; text-align: center">
-      {{target.refId}}
+      {{ctrl.target.refId}}
     </li>
     <li>
-      <a class="tight-form-item"
-         ng-click="target.hide = !target.hide; get_data();"
-         role="menuitem">
+      <a class="tight-form-item" ng-click="ctrl.toggleHideQuery()" role="menuitem">
         <i class="fa fa-eye"></i>
       </a>
     </li>
   </ul>
 
   <!-- IT Service editor -->
-  <ul class="tight-form-list" role="menu" ng-show="target.mode == 1">
+  <ul class="tight-form-list" role="menu" ng-show="ctrl.target.mode == 1">
     <li class="tight-form-item input-small">IT Service</li>
     <li>
       <select class="tight-form-input input-large"
-              ng-change="selectITService()"
-              ng-model="target.itservice"
-              bs-tooltip="target.itservice.name.length > 25 ? target.itservice.name : ''"
-              ng-options="itservice.name for itservice in itserviceList track by itservice.name">
+              ng-change="ctrl.selectITService()"
+              ng-model="ctrl.target.itservice"
+              bs-tooltip="ctrl.target.itservice.name.length > 25 ? ctrl.target.itservice.name : ''"
+              ng-options="itservice.name for itservice in ctrl.itserviceList track by itservice.name">
         <option value="">-- Select IT service --</option>
       </select>
     </li>
     <li class="tight-form-item input-medium">IT service property</li>
     <li>
       <select class="tight-form-input input-medium"
-              ng-change="selectITService()"
-              ng-model="target.slaProperty"
-              ng-options="slaProperty.name for slaProperty in slaPropertyList track by slaProperty.name">
+              ng-change="ctrl.selectITService()"
+              ng-model="ctrl.target.slaProperty"
+              ng-options="slaProperty.name for slaProperty in ctrl.slaPropertyList track by slaProperty.name">
         <option value="">-- Property --</option>
       </select>
     </li>
   </ul>
 
-  <ul class="tight-form-list" role="menu" ng-hide="target.mode == 1">
+  <ul class="tight-form-list" role="menu" ng-hide="ctrl.target.mode == 1">
 
     <!-- Select Host Group -->
     <li class="tight-form-item input-small" style="width: 5em">Group</li>
     <li>
       <input type="text"
-        ng-model="target.group.filter"
-        bs-typeahead="getGroupNames"
-        ng-change="onTargetPartChange(target.group)"
-        ng-blur="onGroupBlur()"
+        ng-model="ctrl.target.group.filter"
+        bs-typeahead="ctrl.getGroupNames"
+        ng-change="ctrl.onTargetPartChange(ctrl.target.group)"
+        ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
         data-items=100
         class="input-medium tight-form-input"
-        ng-style="target.group.style">
+        ng-style="ctrl.target.group.style">
     </li>
 
     <!-- Select Host -->
     <li class="tight-form-item input-small" style="width: 3em">Host</li>
     <li>
       <input type="text"
-        ng-model="target.host.filter"
-        bs-typeahead="getHostNames"
-        ng-change="onTargetPartChange(target.host)"
-        ng-blur="onHostBlur()"
+        ng-model="ctrl.target.host.filter"
+        bs-typeahead="ctrl.getHostNames"
+        ng-change="ctrl.onTargetPartChange(ctrl.target.host)"
+        ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
         data-items=100
         class="input-large tight-form-input"
-        ng-style="target.host.style">
+        ng-style="ctrl.target.host.style">
     </li>
-    <li class="tight-form-item" ng-hide="target.mode == 2">
+    <li class="tight-form-item" ng-hide="ctrl.target.mode == 2">
       Show disabled items&nbsp;
       <editor-checkbox text=""
-        model="target.showDisabledItems"
-        change="onApplicationBlur()">
+        model="ctrl.target.showDisabledItems"
+        change="ctrl.onTargetBlur()">
       </editor-checkbox>
     </li>
 
     <!-- Downsampling function -->
-    <!-- <li class="tight-form-item input-medium" ng-hide="target.mode == 2">
+    <!-- <li class="tight-form-item input-medium" ng-hide="ctrl.target.mode == 2">
       Downsampling
     </li>
-    <li ng-hide="target.mode == 2">
+    <li ng-hide="ctrl.target.mode == 2">
       <select class="tight-form-input input-small"
-              ng-change="targetBlur()"
-              ng-model="target.downsampleFunction"
+              ng-change="ctrl.targetBlur()"
+              ng-model="ctrl.target.downsampleFunction"
               bs-tooltip="'Downsampling function'"
               ng-options="func.name for func in downsampleFunctionList track by func.name">
       </select>
-      <a bs-tooltip="target.errors.metric"
+      <a bs-tooltip="ctrl.target.errors.metric"
          style="color: rgb(229, 189, 28)"
-         ng-show="target.errors.metric">
+         ng-show="ctrl.target.errors.metric">
         <i class="icon-warning-sign"></i>
       </a>
     </li> -->
@@ -134,7 +140,7 @@
   <div class="clearfix"></div>
 </div>
 
-<div class="tight-form" ng-hide="target.mode == 1">
+<div class="tight-form" ng-hide="ctrl.target.mode == 1">
   <ul class="tight-form-list" role="menu">
     <li class="tight-form-item" style="width: 44px">&nbsp</li>
 
@@ -142,31 +148,31 @@
     <li class="tight-form-item" style="width: 5em">Application</li>
     <li>
       <input type="text"
-        ng-model="target.application.filter"
-        bs-typeahead="getApplicationNames"
-        ng-change="onTargetPartChange(target.application)"
-        ng-blur="onApplicationBlur()"
+        ng-model="ctrl.target.application.filter"
+        bs-typeahead="ctrl.getApplicationNames"
+        ng-change="ctrl.onTargetPartChange(ctrl.target.application)"
+        ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
         data-items=100
         class="input-medium tight-form-input"
-        ng-style="target.application.style">
+        ng-style="ctrl.target.application.style">
     </li>
 
     <!-- Select Item -->
     <li class="tight-form-item input-small" style="width: 3em">Item</li>
     <li>
       <input type="text"
-        ng-model="target.item.filter"
-        bs-typeahead="getItemNames"
-        ng-change="onTargetPartChange(target.item)"
-        ng-blur="onItemBlur()"
+        ng-model="ctrl.target.item.filter"
+        bs-typeahead="ctrl.getItemNames"
+        ng-change="ctrl.onTargetPartChange(ctrl.target.item)"
+        ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
         data-items=100
         class="input-large tight-form-input"
-        ng-style="target.item.style">
+        ng-style="ctrl.target.item.style">
     </li>
     <li class="tight-form-item query-keyword">Options</li>
-    <li ng-repeat="func in target.functions">
+    <li ng-repeat="func in ctrl.target.functions">
       <span metric-function-editor class="tight-form-item tight-form-func">
       </span>
     </li>
@@ -176,38 +182,37 @@
 
   <div class="clearfix"></div>
 </div>
-<div class="tight-form" ng-hide="target.mode == 1" ng-if="target.options">
+<div class="tight-form" ng-hide="ctrl.target.mode === 1" ng-if="ctrl.target.options">
   <ul class="tight-form-list" role="menu">
     <li class="tight-form-item" style="width: 44px">&nbsp</li>
-
-    <!-- Select Application -->
     <li class="tight-form-item query-keyword" style="width: 5em">Options</li>
   </ul>
   <div class="clearfix"></div>
 </div>
 
-<div class="tight-form" ng-show="target.mode == 2">
+<div class="tight-form" ng-show="ctrl.target.mode == 2">
   <ul class="tight-form-list" role="menu">
     <li class="tight-form-item" style="width: 44px">&nbsp</li>
+
     <!-- Text metric regex -->
-    <li class="tight-form-item" style="width: 5em" ng-show="target.mode == 2">
+    <li class="tight-form-item" style="width: 5em" ng-show="ctrl.target.mode == 2">
       Text filter
     </li>
-    <li ng-show="target.mode == 2">
+    <li ng-show="ctrl.target.mode == 2">
       <input type="text"
              class="tight-form-input" style="width: 417px"
-             ng-model="target.textFilter"
+             ng-model="ctrl.target.textFilter"
              spellcheck='false'
              placeholder="Text filter (regex)"
-             ng-blur="targetBlur()">
+             ng-blur="ctrl.targetBlur()">
     </li>
-    <li class="tight-form-item" ng-show="target.mode == 2">
+    <li class="tight-form-item" ng-show="ctrl.target.mode == 2">
       Use capture groups&nbsp;
-      <input class="cr1" id="target.useCaptureGroups" type="checkbox"
-             ng-model="target.useCaptureGroups"
-             ng-checked="target.useCaptureGroups"
-             ng-change="targetBlur()">
-      <label for="target.useCaptureGroups" class="cr1"></label>
+      <input class="cr1" id="ctrl.target.useCaptureGroups" type="checkbox"
+             ng-model="ctrl.target.useCaptureGroups"
+             ng-checked="ctrl.target.useCaptureGroups"
+             ng-change="ctrl.targetBlur()">
+      <label for="ctrl.target.useCaptureGroups" class="cr1"></label>
     </li>
   </ul>
 

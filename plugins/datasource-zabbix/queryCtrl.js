@@ -1,26 +1,42 @@
 define([
-    'angular',
-    'lodash',
-    './metricFunctions',
-    './utils'
-  ],
-  function (angular, _, metricFunctions, Utils) {
-    'use strict';
+  'app/plugins/sdk',
+  'angular',
+  'lodash',
+  './metricFunctions',
+  './utils'
+],
+function (sdk, angular, _, metricFunctions, utils) {
+  'use strict';
 
-    var module = angular.module('grafana.controllers');
-    var targetLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var ZabbixQueryCtrl = (function(_super)  {
 
-    module.controller('ZabbixAPIQueryCtrl', function ($scope, $sce, $q, templateSrv) {
+    // ZabbixQueryCtrl constructor
+    function ZabbixQueryCtrl($scope, $injector, $sce, $q, templateSrv) {
 
-      var zabbixCache = $scope.datasource.zabbixCache;
+      // Call superclass constructor
+      _super.call(this, $scope, $injector);
 
-      $scope.init = function () {
-        $scope.targetLetters = targetLetters;
+      this.editorModes = {
+        0: 'num',
+        1: 'itservice',
+        2: 'text'
+      };
+
+      // Map functions for bs-typeahead
+      this.getGroupNames = _.partial(getMetricNames, this, 'groupList');
+      this.getHostNames = _.partial(getMetricNames, this, 'filteredHosts');
+      this.getApplicationNames = _.partial(getMetricNames, this, 'filteredApplications');
+      this.getItemNames = _.partial(getMetricNames, this, 'filteredItems');
+
+      this.init = function() {
+
+        this.templateSrv = templateSrv;
+        var target = this.target;
 
         var scopeDefaults = {
           metric: {}
         };
-        _.defaults($scope, scopeDefaults);
+        _.defaults(this, scopeDefaults);
 
         // Load default values
         var targetDefaults = {
@@ -31,250 +47,196 @@ define([
           item: { filter: "" },
           functions: [],
         };
-        _.defaults($scope.target, targetDefaults);
+        _.defaults(target, targetDefaults);
 
         // Create function instances from saved JSON
-        $scope.target.functions = _.map($scope.target.functions, function(func) {
+        target.functions = _.map(target.functions, function(func) {
           return metricFunctions.createFuncInstance(func.def, func.params);
         });
 
-        if ($scope.target.mode === 0 ||
-            $scope.target.mode === 2) {
+        if (target.mode === 0 ||
+            target.mode === 2) {
 
-          $scope.downsampleFunctionList = [
+          this.downsampleFunctionList = [
             {name: "avg", value: "avg"},
             {name: "min", value: "min"},
             {name: "max", value: "max"}
           ];
 
           // Set avg by default
-          if (!$scope.target.downsampleFunction) {
-            $scope.target.downsampleFunction = $scope.downsampleFunctionList[0];
+          if (!target.downsampleFunction) {
+            target.downsampleFunction = this.downsampleFunctionList[0];
           }
 
-          $scope.initFilters();
+          this.initFilters();
         }
-        else if ($scope.target.mode === 1) {
-          $scope.slaPropertyList = [
+        else if (target.mode === 1) {
+          this.slaPropertyList = [
             {name: "Status", property: "status"},
             {name: "SLA", property: "sla"},
             {name: "OK time", property: "okTime"},
             {name: "Problem time", property: "problemTime"},
             {name: "Down time", property: "downtimeTime"}
           ];
-          $scope.itserviceList = [{name: "test"}];
-          $scope.updateITServiceList();
+          this.itserviceList = [{name: "test"}];
+          this.updateITServiceList();
         }
       };
 
-      $scope.initFilters = function () {
-        $scope.filterGroups();
-        $scope.filterHosts();
-        $scope.filterApplications();
-        $scope.filterItems();
-      };
+      this.init();
+    }
 
-      // Get list of metric names for bs-typeahead directive
-      function getMetricNames(scope, metricList) {
-        return _.uniq(_.map(scope.metric[metricList], 'name'));
+    ZabbixQueryCtrl.templateUrl = 'partials/query.editor.html';
+
+    ZabbixQueryCtrl.prototype = Object.create(_super.prototype);
+    ZabbixQueryCtrl.prototype.constructor = ZabbixQueryCtrl;
+
+    var p = ZabbixQueryCtrl.prototype;
+
+    p.initFilters = function () {
+      this.filterGroups();
+      this.filterHosts();
+      this.filterApplications();
+      this.filterItems();
+    };
+
+    p.filterHosts = function () {
+      var self = this;
+      var groupFilter = this.templateSrv.replace(this.target.group.filter);
+      this.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
+        self.metric.filteredHosts = hosts;
+      });
+    };
+
+    p.filterGroups = function() {
+      var self = this;
+      this.datasource.queryProcessor.filterGroups().then(function(groups) {
+        self.metric.groupList = groups;
+      });
+    };
+
+    p.filterApplications = function () {
+      var self = this;
+      var groupFilter = this.templateSrv.replace(this.target.group.filter);
+      var hostFilter = this.templateSrv.replace(this.target.host.filter);
+      this.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
+        .then(function(apps) {
+          self.metric.filteredApplications = apps;
+        });
+    };
+
+    p.filterItems = function () {
+      var self = this;
+      var item_type = this.editorModes[this.target.mode];
+      var groupFilter = this.templateSrv.replace(this.target.group.filter);
+      var hostFilter = this.templateSrv.replace(this.target.host.filter);
+      var appFilter = this.templateSrv.replace(this.target.application.filter);
+      this.datasource.queryProcessor.filterItems(groupFilter, hostFilter, appFilter,
+        item_type, this.target.showDisabledItems).then(function(items) {
+          self.metric.filteredItems = items;
+        });
+    };
+
+    p.onTargetPartChange = function (targetPart) {
+      var regexStyle = {'color': '#CCA300'};
+      targetPart.isRegex = utils.isRegex(targetPart.filter);
+      targetPart.style = targetPart.isRegex ? regexStyle : {};
+    };
+
+    p.onTargetBlur = function() {
+      this.initFilters();
+      this.parseTarget();
+      this.panelCtrl.refresh();
+    };
+
+    p.parseTarget = function() {
+      // Parse target
+    };
+
+    // Validate target and set validation info
+    p.validateTarget = function () {};
+
+    p.targetChanged = function() {
+      this.panelCtrl.refresh();
+    };
+
+    p.addFunction = function(funcDef) {
+      var newFunc = metricFunctions.createFuncInstance(funcDef);
+      newFunc.added = true;
+      this.target.functions.push(newFunc);
+
+      this.moveAliasFuncLast();
+
+      if (newFunc.params.length && newFunc.added ||
+          newFunc.def.params.length === 0) {
+        this.targetChanged();
       }
+    };
 
-      // Map functions for bs-typeahead
-      $scope.getGroupNames = _.partial(getMetricNames, $scope, 'groupList');
-      $scope.getHostNames = _.partial(getMetricNames, $scope, 'filteredHosts');
-      $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'filteredApplications');
-      $scope.getItemNames = _.partial(getMetricNames, $scope, 'filteredItems');
+    p.removeFunction = function(func) {
+      this.target.functions = _.without(this.target.functions, func);
+      this.targetChanged();
+    };
 
-      $scope.filterHosts = function () {
-        var groupFilter = templateSrv.replace($scope.target.group.filter);
-        $scope.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
-          $scope.metric.filteredHosts = hosts;
-        });
-      };
+    p.moveAliasFuncLast = function() {
+      var aliasFunc = _.find(this.target.functions, function(func) {
+        return func.def.name === 'alias' ||
+          func.def.name === 'aliasByNode' ||
+          func.def.name === 'aliasByMetric';
+      });
 
-      $scope.filterGroups = function() {
-        $scope.datasource.queryProcessor.filterGroups().then(function(groups) {
-          $scope.metric.groupList = groups;
-        });
-      };
-
-      $scope.filterApplications = function () {
-        var groupFilter = templateSrv.replace($scope.target.group.filter);
-        var hostFilter = templateSrv.replace($scope.target.host.filter);
-        $scope.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
-          .then(function(apps) {
-            $scope.metric.filteredApplications = apps;
-          });
-      };
-
-      $scope.filterItems = function () {
-        var item_type = $scope.editorModes[$scope.target.mode];
-        var groupFilter = templateSrv.replace($scope.target.group.filter);
-        var hostFilter = templateSrv.replace($scope.target.host.filter);
-        var appFilter = templateSrv.replace($scope.target.application.filter);
-        $scope.datasource.queryProcessor.filterItems(groupFilter, hostFilter, appFilter,
-          item_type, $scope.target.showDisabledItems).then(function(items) {
-            $scope.metric.filteredItems = items;
-          });
-      };
-
-      $scope.onTargetPartChange = function (targetPart) {
-        var regexStyle = {'color': '#CCA300'};
-        targetPart.isRegex = Utils.isRegex(targetPart.filter);
-        targetPart.style = targetPart.isRegex ? regexStyle : {};
-      };
-
-      // Handle group blur and filter hosts
-      $scope.onGroupBlur = function() {
-        $scope.initFilters();
-        $scope.parseTarget();
-        $scope.get_data();
-      };
-
-      // Handle host blur and filter applications
-      $scope.onHostBlur = function() {
-        $scope.initFilters();
-        $scope.parseTarget();
-        $scope.get_data();
-      };
-
-      // Handle application blur and filter items
-      $scope.onApplicationBlur = function() {
-        $scope.initFilters();
-        $scope.parseTarget();
-        $scope.get_data();
-      };
-
-      $scope.onItemBlur = function () {
-        $scope.parseTarget();
-        $scope.get_data();
-      };
-
-      $scope.parseTarget = function() {
-        // Parse target
-      };
-
-      $scope.targetChanged = function() {
-        //console.log($scope.target);
-        $scope.get_data();
-      };
-
-      // Validate target and set validation info
-      $scope.validateTarget = function () {};
-
-      $scope.addFunction = function(funcDef) {
-        var newFunc = metricFunctions.createFuncInstance(funcDef);
-        newFunc.added = true;
-        $scope.target.functions.push(newFunc);
-
-        $scope.moveAliasFuncLast();
-
-        if (newFunc.params.length && newFunc.added ||
-            newFunc.def.params.length === 0) {
-          $scope.targetChanged();
-        }
-      };
-
-      $scope.removeFunction = function(func) {
-        $scope.target.functions = _.without($scope.target.functions, func);
-        $scope.targetChanged();
-      };
-
-      $scope.moveAliasFuncLast = function() {
-        var aliasFunc = _.find($scope.target.functions, function(func) {
-          return func.def.name === 'alias' ||
-            func.def.name === 'aliasByNode' ||
-            func.def.name === 'aliasByMetric';
-        });
-
-        if (aliasFunc) {
-          $scope.target.functions = _.without($scope.target.functions, aliasFunc);
-          $scope.target.functions.push(aliasFunc);
-        }
-      };
-
-      $scope.functionChanged = function() {};
-
-      $scope.editorModes = {
-        0: 'num',
-        1: 'itservice',
-        2: 'text'
-      };
-
-      /**
-       * Switch query editor to specified mode.
-       * Modes:
-       *  0 - items
-       *  1 - IT services
-       *  2 - Text metrics
-       */
-      $scope.switchEditorMode = function (mode) {
-        $scope.target.mode = mode;
-        $scope.init();
-      };
-
-      /**
-       * Take alias from item name by default
-       */
-      function setItemAlias() {
-        if (!$scope.target.alias && $scope.target.item) {
-          $scope.target.alias = $scope.target.item.name;
-        }
+      if (aliasFunc) {
+        this.target.functions = _.without(this.target.functions, aliasFunc);
+        this.target.functions.push(aliasFunc);
       }
+    };
 
-      $scope.targetBlur = function () {
-        setItemAlias();
-        if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
-          $scope.oldTarget = angular.copy($scope.target);
-          $scope.get_data();
-        }
-      };
+    /**
+     * Switch query editor to specified mode.
+     * Modes:
+     *  0 - items
+     *  1 - IT services
+     *  2 - Text metrics
+     */
+    p.switchEditorMode = function (mode) {
+      this.target.mode = mode;
+      this.init();
+    };
 
-      /**
-       * Call when IT service is selected.
-       */
-      $scope.selectITService = function () {
-        if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
-          $scope.oldTarget = angular.copy($scope.target);
-          $scope.get_data();
-        }
-      };
+    /////////////////
+    // IT Services //
+    /////////////////
 
-      $scope.duplicate = function () {
-        var clone = angular.copy($scope.target);
-        $scope.panel.targets.push(clone);
-      };
+    /**
+     * Update list of IT services
+     */
+    p.updateITServiceList = function () {
+      var self = this;
+      this.datasource.zabbixAPI.getITService().then(function (iteservices) {
+        self.itserviceList = [];
+        self.itserviceList = self.itserviceList.concat(iteservices);
+      });
+    };
 
-      $scope.moveMetricQuery = function (fromIndex, toIndex) {
-        _.move($scope.panel.targets, fromIndex, toIndex);
-      };
-
-      /**
-       * Update list of IT services
-       */
-      $scope.updateITServiceList = function () {
-        $scope.datasource.zabbixAPI.getITService().then(function (iteservices) {
-          $scope.itserviceList = [];
-          $scope.itserviceList = $scope.itserviceList.concat(iteservices);
-        });
-      };
-
-      /**
-       * Add templated variables to list of available metrics
-       *
-       * @param {Array} metricList List of metrics which variables add to
-       */
-      function addTemplatedVariables(metricList) {
-        _.each(templateSrv.variables, function (variable) {
-          metricList.push({
-            name: '$' + variable.name,
-            templated: true
-          });
-        });
+    /**
+     * Call when IT service is selected.
+     */
+    p.selectITService = function () {
+      if (!_.isEqual(this.oldTarget, this.target) && _.isEmpty(this.target.errors)) {
+        this.oldTarget = angular.copy(this.target);
+        this.panelCtrl.refresh();
       }
+    };
 
-      $scope.init();
+    return ZabbixQueryCtrl;
 
-    });
+  })(sdk.QueryCtrl);
 
-  });
+  return ZabbixQueryCtrl;
+
+  // Get list of metric names for bs-typeahead directive
+  function getMetricNames(scope, metricList) {
+    return _.uniq(_.map(scope.metric[metricList], 'name'));
+  }
+
+});

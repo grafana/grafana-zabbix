@@ -1,12 +1,9 @@
 define([
-  './datasource'
+  './datasource',
+  './queryCtrl'
 ],
-function (ZabbixAPIDatasource) {
+function (ZabbixAPIDatasource, ZabbixQueryCtrl) {
   'use strict';
-
-  function ZabbixQueryCtrl() {
-    return {controller: 'ZabbixAPIQueryCtrl', templateUrl: 'public/plugins/zabbix/partials/query.editor.html'};
-  }
 
   function ZabbixQueryOptionsCtrl() {
     return {templateUrl: 'public/plugins/zabbix/partials/query.options.html'};
@@ -22,8 +19,8 @@ function (ZabbixAPIDatasource) {
 
   return {
     Datasource: ZabbixAPIDatasource,
-    ConfigCtrl: ZabbixConfigCtrl,
     QueryCtrl: ZabbixQueryCtrl,
+    ConfigCtrl: ZabbixConfigCtrl,
     QueryOptionsCtrl: ZabbixQueryOptionsCtrl,
     AnnotationsQueryCtrl: ZabbixAnnotationsQueryCtrl
   };
