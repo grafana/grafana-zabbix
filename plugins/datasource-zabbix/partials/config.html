@@ -1,4 +1,5 @@
-<datasource-http-settings></datasource-http-settings>
+<datasource-http-settings current="ctrl.current">
+</datasource-http-settings>
 
 <h5>Zabbix API details</h5>
 
@@ -9,7 +10,7 @@
     </li>
     <li>
       <input type="text" class="tight-form-input input-large"
-             ng-model='current.jsonData.username'
+             ng-model='ctrl.current.jsonData.username'
              placeholder="">
     </li>
     <li class="tight-form-item" style="width: 80px">
@@ -17,7 +18,7 @@
     </li>
     <li>
       <input type="password" class="tight-form-input input-large"
-             ng-model='current.jsonData.password'
+             ng-model='ctrl.current.jsonData.password'
              placeholder="">
     </li>
   </ul>
@@ -30,24 +31,24 @@
     </li>
     <li>
       <input type="text" class="tight-form-input input-small"
-             ng-model='current.jsonData.cacheTTL'
+             ng-model='ctrl.current.jsonData.cacheTTL'
              placeholder="1h">
     </li>
     <li class="tight-form-item" style="width: 80px">
       Trends&nbsp;&nbsp;
-      <input class="cr1" id="current.jsonData.trends" type="checkbox"
-             ng-model="current.jsonData.trends"
-             ng-checked="current.jsonData.trends">
-      <label for="current.jsonData.trends" class="cr1"></label>
+      <input class="cr1" id="ctrl.current.jsonData.trends" type="checkbox"
+             ng-model="ctrl.current.jsonData.trends"
+             ng-checked="ctrl.current.jsonData.trends">
+      <label for="ctrl.current.jsonData.trends" class="cr1"></label>
     </li>
-    <li ng-if="current.jsonData.trends"
+    <li ng-if="ctrl.current.jsonData.trends"
         class="tight-form-item"
         style="width: 105px">
       Use trends from
     </li>
-    <li ng-if="current.jsonData.trends">
+    <li ng-if="ctrl.current.jsonData.trends">
       <input type="text" class="tight-form-input input-small"
-             ng-model='current.jsonData.trendsFrom'
+             ng-model='ctrl.current.jsonData.trendsFrom'
              placeholder="7d">
     </li>
   </ul>
