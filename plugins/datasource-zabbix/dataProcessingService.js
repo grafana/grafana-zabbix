@@ -71,15 +71,9 @@ function (angular, _, moment, utils) {
       var ms_interval = utils.parseInterval(interval);
 
       // Calculate frame timestamps
-      var min_timestamp = datapoints[0][1];
       var frames = _.groupBy(datapoints, function(point) {
-        var group_time = Math.floor(point[1] / ms_interval) * ms_interval;
-
-        // Prevent points outside of time range
-        if (group_time < min_timestamp) {
-          group_time = min_timestamp;
-        }
-        return group_time;
+        // Calculate time for group of points
+        return Math.floor(point[1] / ms_interval) * ms_interval;
       });
 
       // frame: { '<unixtime>': [[<value>, <unixtime>], ...] }
