@@ -5,17 +5,14 @@ define([
 function (ZabbixAPIDatasource, ZabbixQueryCtrl) {
   'use strict';
 
-  function ZabbixQueryOptionsCtrl() {
-    return {templateUrl: 'public/plugins/zabbix/partials/query.options.html'};
-  }
+  function ZabbixQueryOptionsCtrl() {}
+  ZabbixQueryOptionsCtrl.templateUrl = 'partials/query.options.html';
 
-  function ZabbixAnnotationsQueryCtrl() {
-    return {templateUrl: 'public/plugins/zabbix/partials/annotations.editor.html'};
-  }
+  function ZabbixAnnotationsQueryCtrl() {}
+  ZabbixAnnotationsQueryCtrl.templateUrl = 'partials/annotations.editor.html';
 
-  function ZabbixConfigCtrl() {
-    return {templateUrl: 'public/plugins/zabbix/partials/config.html'};
-  }
+  function ZabbixConfigCtrl() {}
+  ZabbixConfigCtrl.templateUrl = 'partials/config.html';
 
   return {
     Datasource: ZabbixAPIDatasource,
