@@ -189,7 +189,11 @@ function (angular, _, utils) {
       return _.map(_.groupBy(applications, 'name'), function(value, key) {
 
         // Hack for supporting different apis (2.2 vs 2.4 vs 3.0)
-        var hostField = value['hosts'] ? 'hosts' : 'host';
+        var hostField = 'host';
+        if (value[0] && value[0]['hosts']) {
+          // For Zabbix 2.2
+          hostField = 'hosts';
+        }
 
         return {
           name: key,
