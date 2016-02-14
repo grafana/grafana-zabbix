@@ -12,127 +12,88 @@
  */
 
 define([
+  'app/plugins/sdk',
   'angular',
-  'app/app',
   'lodash',
   'jquery',
   'moment',
-  'app/core/config',
-  'app/features/panel/panel_meta'
+  './editor'
 ],
-function (angular, app, _, $, moment, config, PanelMeta) {
+function (sdk, angular, _, $, moment, triggerPanelEditor) {
   'use strict';
 
-  var module = angular.module('grafana.panels.triggers', []);
-  app.useModule(module);
+  var defaultSeverity = [
+    { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },
+    { priority: 1, severity: 'Information',     color: '#82B5D8', show: true },
+    { priority: 2, severity: 'Warning',         color: '#E5AC0E', show: true },
+    { priority: 3, severity: 'Average',         color: '#C15C17', show: true },
+    { priority: 4, severity: 'High',            color: '#BF1B00', show: true },
+    { priority: 5, severity: 'Disaster',        color: '#890F02', show: true }
+  ];
 
-  /** @ngInject */
-  function TriggerPanelCtrl($q, $scope, $element, datasourceSrv, panelSrv, templateSrv, popoverSrv) {
+  var panelDefaults = {
+    datasource: null,
+    triggers: {
+      group: {filter: ""},
+      host: {filter: ""},
+      application: {filter: ""},
+      trigger: {filter: ""}
+    },
+    hostField: true,
+    statusField: false,
+    severityField: false,
+    lastChangeField: true,
+    ageField: true,
+    infoField: true,
+    limit: 10,
+    showTriggers: 'all triggers',
+    sortTriggersBy: { text: 'last change', value: 'lastchange' },
+    showEvents: { text: 'Problem events', value: '1' },
+    triggerSeverity: defaultSeverity,
+    okEventColor: '#890F02',
+  };
 
-    $scope.panelMeta = new PanelMeta({
-      panelName: 'Zabbix triggers',
-      editIcon:  "fa fa-lightbulb-o",
-      fullscreen: true,
-    });
+  var triggerStatusMap = {
+    '0': 'OK',
+    '1': 'Problem'
+  };
 
-    $scope.panelMeta.addEditorTab('Options', 'public/plugins/triggers/editor.html');
+  var TriggerPanelCtrl = (function(_super) {
 
-    $scope.ackFilters = [
-      'all triggers',
-      'unacknowledged',
-      'acknowledged'
-    ];
+    /** @ngInject */
+    function TriggerPanelCtrl($scope, $injector, $q, $element, datasourceSrv) {
+      _super.call(this, $scope, $injector);
+      this.datasourceSrv = datasourceSrv;
+      this.triggerStatusMap = triggerStatusMap;
 
-    $scope.sortByFields = [
-      { text: 'last change',  value: 'lastchange' },
-      { text: 'severity',     value: 'priority' }
-    ];
+      // Load panel defaults
+      _.defaults(this.panel, panelDefaults);
 
-    $scope.showEventsFields = [
-      { text: 'all events',     value: [0,1] },
-      { text: 'Ok events',      value: 0 },
-      { text: 'Problem events', value: 1 }
-    ];
+      this.triggerList = [];
+      this.refreshData();
+    }
 
-    $scope.triggerStatusMap = {
-      '0': 'OK',
-      '1': 'Problem'
+    TriggerPanelCtrl.templateUrl = 'module.html';
+
+    TriggerPanelCtrl.prototype = Object.create(_super.prototype);
+    TriggerPanelCtrl.prototype.constructor = TriggerPanelCtrl;
+
+    // Add panel editor
+    TriggerPanelCtrl.prototype.initEditMode = function() {
+      _super.prototype.initEditMode();
+      this.icon = "fa fa-lightbulb-o";
+      this.addEditorTab('Options', triggerPanelEditor, 2);
     };
 
-    var grafanaDefaultSeverity = [
-      { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },
-      { priority: 1, severity: 'Information',     color: '#82B5D8', show: true },
-      { priority: 2, severity: 'Warning',         color: '#E5AC0E', show: true },
-      { priority: 3, severity: 'Average',         color: '#C15C17', show: true },
-      { priority: 4, severity: 'High',            color: '#BF1B00', show: true },
-      { priority: 5, severity: 'Disaster',        color: '#890F02', show: true }
-    ];
-
-    var panelDefaults = {
-      datasource: null,
-      triggers: {
-        group: {filter: ""},
-        host: {filter: ""},
-        application: {filter: ""},
-        trigger: {filter: ""}
-      },
-      hostField: true,
-      statusField: false,
-      severityField: false,
-      lastChangeField: true,
-      ageField: true,
-      infoField: true,
-      limit: 10,
-      showTriggers: 'all triggers',
-      sortTriggersBy: { text: 'last change', value: 'lastchange' },
-      showEvents: { text: 'Problem events', value: '1' },
-      triggerSeverity: grafanaDefaultSeverity,
-      okEventColor: '#890F02',
-    };
-
-    _.defaults($scope.panel, panelDefaults);
-    $scope.triggerList = [];
-
-    $scope.init = function() {
-      panelSrv.init($scope);
-      if ($scope.isNewPanel()) {
-        $scope.panel.title = "Zabbix Triggers";
-      }
-
-      // Load scope defaults
-      var scopeDefaults = {
-        metric: {},
-        inputStyles: {},
-        oldTarget: _.cloneDeep($scope.panel.triggers),
-        defaultTimeFormat: "DD MMM YYYY HH:mm:ss"
-      };
-      _.defaults($scope, scopeDefaults);
-
-      // Get zabbix data sources
-      var datasources = _.filter(datasourceSrv.getMetricSources(), function(datasource) {
-        return datasource.meta.id === 'zabbix';
-      });
-      $scope.datasources = _.map(datasources, 'name');
-
-      // Set default datasource
-      if (!$scope.panel.datasource) {
-        $scope.panel.datasource = $scope.datasources[0];
-      }
-      // Load datasource
-      datasourceSrv.get($scope.panel.datasource).then(function (datasource) {
-        $scope.datasource = datasource;
-        $scope.initFilters();
-      });
-    };
-
-    $scope.refreshData = function() {
+    TriggerPanelCtrl.prototype.refreshData = function() {
+      var self = this;
 
       // Load datasource
-      return datasourceSrv.get($scope.panel.datasource).then(function (datasource) {
+      return this.datasourceSrv.get(this.panel.datasource).then(function (datasource) {
         var zabbix = datasource.zabbixAPI;
         var queryProcessor = datasource.queryProcessor;
-        var triggerFilter = $scope.panel.triggers;
-        var showEvents = $scope.panel.showEvents.value;
+        var triggerFilter = self.panel.triggers;
+        var showEvents = self.panel.showEvents.value;
         var buildQuery = queryProcessor.buildTriggerQuery(triggerFilter.group.filter,
                                                           triggerFilter.host.filter,
                                                           triggerFilter.application.filter);
@@ -148,22 +109,22 @@ function (angular, app, _, $, moment, config, PanelMeta) {
                 // Format last change and age
                 trigger.lastchangeUnix = Number(trigger.lastchange);
                 var timestamp = moment.unix(trigger.lastchangeUnix);
-                if ($scope.panel.customLastChangeFormat) {
+                if (self.panel.customLastChangeFormat) {
                   // User defined format
-                  triggerObj.lastchange = timestamp.format($scope.panel.lastChangeFormat);
+                  triggerObj.lastchange = timestamp.format(self.panel.lastChangeFormat);
                 } else {
-                  triggerObj.lastchange = timestamp.format($scope.defaultTimeFormat);
+                  triggerObj.lastchange = timestamp.format(self.defaultTimeFormat);
                 }
                 triggerObj.age = timestamp.fromNow(true);
 
                 // Set color
                 if (trigger.value === '1') {
-                  triggerObj.color = $scope.panel.triggerSeverity[trigger.priority].color;
+                  triggerObj.color = self.panel.triggerSeverity[trigger.priority].color;
                 } else {
-                  triggerObj.color = $scope.panel.okEventColor;
+                  triggerObj.color = self.panel.okEventColor;
                 }
 
-                triggerObj.severity = $scope.panel.triggerSeverity[trigger.priority].severity;
+                triggerObj.severity = self.panel.triggerSeverity[trigger.priority].severity;
                 return triggerObj;
               });
             })
@@ -173,6 +134,7 @@ function (angular, app, _, $, moment, config, PanelMeta) {
               var eventids = _.map(triggerList, function(trigger) {
                 return trigger.lastEvent.eventid;
               });
+
               return zabbix.getAcknowledges(eventids)
                 .then(function (events) {
 
@@ -193,17 +155,17 @@ function (angular, app, _, $, moment, config, PanelMeta) {
                   });
 
                   // Filter triggers by description
-                  var triggerFilter = $scope.panel.triggers.trigger.filter;
+                  var triggerFilter = self.panel.triggers.trigger.filter;
                   if (triggerFilter) {
                     triggerList = filterTriggers(triggerList, triggerFilter);
                   }
 
                   // Filter acknowledged triggers
-                  if ($scope.panel.showTriggers === 'unacknowledged') {
+                  if (self.panel.showTriggers === 'unacknowledged') {
                     triggerList = _.filter(triggerList, function (trigger) {
                       return !trigger.acknowledges;
                     });
-                  } else if ($scope.panel.showTriggers === 'acknowledged') {
+                  } else if (self.panel.showTriggers === 'acknowledged') {
                     triggerList = _.filter(triggerList, 'acknowledges');
                   } else {
                     triggerList = triggerList;
@@ -211,63 +173,24 @@ function (angular, app, _, $, moment, config, PanelMeta) {
 
                   // Filter triggers by severity
                   triggerList = _.filter(triggerList, function (trigger) {
-                    return $scope.panel.triggerSeverity[trigger.priority].show;
+                    return self.panel.triggerSeverity[trigger.priority].show;
                   });
 
                   // Sort triggers
-                  if ($scope.panel.sortTriggersBy.value === 'priority') {
+                  if (self.panel.sortTriggersBy.value === 'priority') {
                     triggerList = _.sortBy(triggerList, 'priority').reverse();
                   } else {
                     triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
                   }
 
                   // Limit triggers number
-                  $scope.triggerList  = _.first(triggerList, $scope.panel.limit);
+                  self.triggerList  = _.first(triggerList, self.panel.limit);
 
-                  $scope.panelRenderingComplete();
+                  self.renderingCompleted();
                 });
             });
         });
       });
-    };
-
-    $scope.initFilters = function () {
-      $scope.filterGroups();
-      $scope.filterHosts();
-      $scope.filterApplications();
-    };
-
-    // Get list of metric names for bs-typeahead directive
-    function getMetricNames(scope, metricList) {
-      return _.uniq(_.map(scope.metric[metricList], 'name'));
-    }
-
-    // Map functions for bs-typeahead
-    $scope.getGroupNames = _.partial(getMetricNames, $scope, 'groupList');
-    $scope.getHostNames = _.partial(getMetricNames, $scope, 'filteredHosts');
-    $scope.getApplicationNames = _.partial(getMetricNames, $scope, 'filteredApplications');
-    $scope.getItemNames = _.partial(getMetricNames, $scope, 'filteredItems');
-
-    $scope.filterGroups = function() {
-      $scope.datasource.queryProcessor.filterGroups().then(function(groups) {
-        $scope.metric.groupList = groups;
-      });
-    };
-
-    $scope.filterHosts = function() {
-      var groupFilter = templateSrv.replace($scope.panel.triggers.group.filter);
-      $scope.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
-        $scope.metric.filteredHosts = hosts;
-      });
-    };
-
-    $scope.filterApplications = function() {
-      var groupFilter = templateSrv.replace($scope.panel.triggers.group.filter);
-      var hostFilter = templateSrv.replace($scope.panel.triggers.host.filter);
-      $scope.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
-        .then(function(apps) {
-          $scope.metric.filteredApplications = apps;
-        });
     };
 
     function filterTriggers(triggers, triggerFilter) {
@@ -281,12 +204,6 @@ function (angular, app, _, $, moment, config, PanelMeta) {
         });
       }
     }
-
-    $scope.onTargetPartChange = function(targetPart) {
-      var regexStyle = {'color': '#CCA300'};
-      targetPart.isRegex = isRegex(targetPart.filter);
-      targetPart.style = targetPart.isRegex ? regexStyle : {};
-    };
 
     function isRegex(str) {
       // Pattern for testing regex
@@ -302,106 +219,12 @@ function (angular, app, _, $, moment, config, PanelMeta) {
       return new RegExp(pattern, flags);
     }
 
-    $scope.parseTarget = function() {
-      $scope.initFilters();
-      var newTarget = _.cloneDeep($scope.panel.triggers);
-      if (!_.isEqual($scope.oldTarget, $scope.panel.triggers)) {
-        $scope.oldTarget = newTarget;
-        $scope.get_data();
-      }
-    };
+    return TriggerPanelCtrl;
 
-    $scope.refreshTriggerSeverity = function() {
-      _.each($scope.triggerList, function(trigger) {
-        trigger.color = $scope.panel.triggerSeverity[trigger.priority].color;
-        trigger.severity = $scope.panel.triggerSeverity[trigger.priority].severity;
-      });
-    };
-
-    $scope.datasourceChanged = function() {
-      $scope.refreshData();
-    };
-
-    $scope.changeTriggerSeverityColor = function(trigger, color) {
-      $scope.panel.triggerSeverity[trigger.priority].color = color;
-      $scope.refreshTriggerSeverity();
-    };
-
-    function getTriggerIndexForElement(el) {
-      return el.parents('[data-trigger-index]').data('trigger-index');
-    }
-
-    $scope.openTriggerColorSelector = function(event) {
-      var el = $(event.currentTarget);
-      var index = getTriggerIndexForElement(el);
-      var popoverScope = $scope.$new();
-      popoverScope.trigger = $scope.panel.triggerSeverity[index];
-      popoverScope.changeTriggerSeverityColor = $scope.changeTriggerSeverityColor;
-
-      popoverSrv.show({
-        element: el,
-        placement: 'top',
-        templateUrl:  'public/plugins/triggers/trigger.colorpicker.html',
-        scope: popoverScope
-      });
-    };
-
-    $scope.openOkEventColorSelector = function(event) {
-      var el = $(event.currentTarget);
-      var popoverScope = $scope.$new();
-      popoverScope.trigger = {color: $scope.panel.okEventColor};
-      popoverScope.changeTriggerSeverityColor = function(trigger, color) {
-        $scope.panel.okEventColor = color;
-        $scope.refreshTriggerSeverity();
-      };
-
-      popoverSrv.show({
-        element: el,
-        placement: 'top',
-        templateUrl:  'public/plugins/triggers/trigger.colorpicker.html',
-        scope: popoverScope
-      });
-    };
-
-    /**
-     * Convert event age from Unix format (milliseconds sins 1970)
-     * to Zabbix format (like at Last 20 issues panel).
-     * @param  {Date}           AgeUnix time in Unix format
-     * @return {string}         Formatted time
-     */
-    function toZabbixAgeFormat(ageUnix) {
-      var age = new Date(+ageUnix);
-      var ageZabbix = age.getSeconds() + 's';
-      if (age.getMinutes()) {
-        ageZabbix = age.getMinutes() + 'm ' + ageZabbix;
-      }
-      if (age.getHours()) {
-        ageZabbix = age.getHours() + 'h ' + ageZabbix;
-      }
-      if (age.getDate() - 1) {
-        ageZabbix = age.getDate() - 1 + 'd ' + ageZabbix;
-      }
-      if (age.getMonth()) {
-        ageZabbix = age.getMonth() + 'M ' + ageZabbix;
-      }
-      if (age.getYear() - 70) {
-        ageZabbix = age.getYear() -70 + 'y ' + ageZabbix;
-      }
-      return ageZabbix;
-    }
-
-    $scope.init();
-  }
-
-  function triggerPanelDirective() {
-    return {
-      controller: TriggerPanelCtrl,
-      templateUrl: 'public/plugins/triggers/module.html',
-    };
-  }
+  })(sdk.PanelCtrl);
 
   return {
-    panel: triggerPanelDirective
+    PanelCtrl: TriggerPanelCtrl
   };
 
 });
