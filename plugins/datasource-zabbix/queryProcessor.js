@@ -49,7 +49,6 @@ function (angular, _, utils) {
 
       this.filterHosts = function(groupFilter) {
         var groups = [];
-        var hosts = [];
 
         return self.cache.getGroups().then(function(groupList) {
           // Filter groups by regex
@@ -69,15 +68,15 @@ function (angular, _, utils) {
             }
           }
 
-          if (groups) {
-            var groupids = _.map(groups, 'groupid');
-            return self.cache.getHosts().then(function(hosts) {
-              return _.filter(hosts, function (hostObj) {
-                return _.intersection(groupids, hostObj.groups).length;
+          var hostids = _.flatten(_.map(groups, 'hosts'));
+          if (hostids.length) {
+            return self.cache.getHostsExtend().then(function(hosts) {
+              return _.map(hostids, function(hostid) {
+                return hosts[hostid];
               });
             });
           } else {
-            return hosts;
+            return [];
           }
         });
       };
@@ -129,14 +128,12 @@ function (angular, _, utils) {
 
         var promises = [
           this.filterHosts(groupFilter),
-          this.filterApplications(groupFilter, hostFilter),
-          this.cache.getItems(itemType),
+          this.filterApplications(groupFilter, hostFilter)
         ];
 
         return $q.all(promises).then(function(results) {
           var hostList = results[0];
           var applicationList = results[1];
-          var cachedItems = results[2];
 
           // Filter hosts by regex
           if (utils.isRegex(hostFilter)) {
@@ -144,8 +141,7 @@ function (angular, _, utils) {
             hosts = _.filter(hostList, function (hostObj) {
               return hostFilterPattern.test(hostObj.name);
             });
-          }
-          else {
+          } else {
             var findedHosts = _.find(hostList, {'name': hostFilter});
             if (findedHosts) {
               hosts.push(findedHosts);
@@ -172,20 +168,18 @@ function (angular, _, utils) {
           } else {
             apps = undefined;
             if (hosts) {
-              items = _.filter(cachedItems, function (itemObj) {
-                return _.find(hosts, {'hostid': itemObj.hostid });
-              });
+              items = _.flatten(_.map(hosts, 'items'), true);
             }
           }
 
           if (apps) {
-            var appids = _.flatten(_.map(apps, 'applicationids'));
+            /*var appids = _.flatten(_.map(apps, 'applicationids'));
             items = _.filter(cachedItems, function (itemObj) {
               return _.intersection(appids, itemObj.applications).length;
             });
             items = _.filter(items, function (itemObj) {
               return _.find(hosts, {'hostid': itemObj.hostid });
-            });
+            });*/
           }
 
           if (!showDisabledItems) {

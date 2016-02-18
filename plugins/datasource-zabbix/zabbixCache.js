@@ -21,6 +21,7 @@ function (angular, _, utils) {
       this._hosts         = undefined;
       this._applications  = undefined;
       this._items         = undefined;
+      this._hostsExtend   = undefined;
       this.storage = {
         history: {},
         trends: {}
@@ -51,15 +52,17 @@ function (angular, _, utils) {
         this.zabbixAPI.getGroups(),
         this.zabbixAPI.getHosts(),
         this.zabbixAPI.getApplications(),
-        this.zabbixAPI.getItems()
+        this.zabbixAPI.getItems(),
+        this.zabbixAPI.getHostsExtend()
       ];
 
       return $q.all(promises).then(function(results) {
         if (results.length) {
-          self._groups        = results[0];
+          self._groups        = convertGroups(results[0]);
           self._hosts         = convertHosts(results[1]);
           self._applications  = convertApplications(results[2]);
           self._items         = convertItems(results[3]);
+          self._hostsExtend   = convertHostsExtend(results[4]);
         }
         self._initialized = true;
       });
@@ -83,6 +86,17 @@ function (angular, _, utils) {
       } else {
         return this.refresh().then(function() {
           return self._hosts;
+        });
+      }
+    };
+
+    p.getHostsExtend = function() {
+      var self = this;
+      if (this._hostsExtend) {
+        return $q.when(self._hostsExtend);
+      } else {
+        return this.refresh().then(function() {
+          return self._hostsExtend;
         });
       }
     };
@@ -179,6 +193,25 @@ function (angular, _, utils) {
         host.groups = _.map(host.groups, 'groupid');
         return host;
       });
+    }
+
+    function convertGroups(groups) {
+      return _.forEach(groups, function(group) {
+        group.hosts = _.map(group.hosts, 'hostid');
+        return group;
+      });
+    }
+
+    function convertHostsExtend(hosts) {
+      return _.indexBy(_.map(hosts, function(host) {
+        host.items = _.forEach(host.items, function(item) {
+          item.applications = _.map(item.applications, 'applicationid');
+          item.item = item.name;
+          item.name = utils.expandItemName(item.item, item.key_);
+          return item;
+        });
+        return host;
+      }), 'hostid');
     }
 
     /**

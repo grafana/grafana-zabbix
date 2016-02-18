@@ -123,7 +123,8 @@ function (angular, _) {
     p.getGroups = function() {
       var params = {
         output: ['name'],
-        sortfield: 'name'
+        sortfield: 'name',
+        selectHosts: []
       };
 
       return this.request('hostgroup.get', params);
@@ -166,6 +167,27 @@ function (angular, _) {
       };
 
       return this.request('item.get', params);
+    };
+
+    /**
+     * Get Hosts list with host's items.
+     * @return {[type]} [description]
+     */
+    p.getHostsExtend = function() {
+      var params = {
+        output: ['name', 'host'],
+        sortfield: 'name',
+        selectGroups: [],
+        selectItems: [
+          'name', 'key_',
+          'value_type',
+          'hostid',
+          'status',
+          'state'
+        ]
+      };
+
+      return this.request('host.get', params);
     };
 
     p.getLastValue = function(itemid) {
