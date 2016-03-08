@@ -104,7 +104,7 @@ function (angular, _, dateMath) {
         if (target.mode !== 1) {
           // Don't show undefined and hidden targets
           if (target.hide || !target.group || !target.host
-            || !target.trigger) {
+            || !target.trigger.name ) {
             return [];
           }
 
@@ -117,7 +117,8 @@ function (angular, _, dateMath) {
           // "{host1,host2,...,hostN}" --> [host1, host2, ..., hostN]
           var groups = zabbixHelperSrv.splitMetrics(groupname);
           var hosts = zabbixHelperSrv.splitMetrics(hostname);
-          var triggers = zabbixHelperSrv.splitMetrics(triggername);
+          //var triggers = zabbixHelperSrv.splitMetrics(triggername);
+          var triggers = [triggername];
           
           console.log(groups, hosts, triggers);
 
@@ -144,15 +145,24 @@ function (angular, _, dateMath) {
                 
                 return self.zabbixAPI.performZabbixAPIRequest('event.get', params).then(function(events) {
                     console.log(events);
-                    return {
-                        target: target.trigger.name,
-                        datapoints: _.map(events, function(e) {
-                            //var value = "NOK";
-                            //if (e.value == 0) { value = "OK" }
-                            //return [target.trigger.name + ": " +e.value, e.clock * 1000];
-                            return [e.value, e.clock * 1000];
-                        })
-                    };
+                    if (events == []) {
+                        // Assuming trigger is OK if no events found
+                        // TODO: Get last trigger state from triggers list
+                        return {
+                            target: target.trigger.name,
+                            datapoints: [[0, to]]
+                        }
+                    } else {
+                        return {
+                            target: target.trigger.name,
+                            datapoints: _.map(events, function(e) {
+                                //var value = "NOK";
+                                //if (e.value == 0) { value = "OK" }
+                                //return [target.trigger.name + ": " +e.value, e.clock * 1000];
+                                return [e.value, e.clock * 1000];
+                            })
+                        };
+                    }
                 });
 
             });

@@ -297,6 +297,7 @@ function (angular, _) {
       var params = {
         output: ['name'],
         sortfield: 'description',
+        //expandDescription: true,
         //active: true
       };
       if (hostids) {
@@ -441,7 +442,6 @@ function (angular, _) {
       } else {
           return [];
       }
-
     };
 
     /**
