@@ -285,6 +285,30 @@ function (angular, _) {
 
       return this.performZabbixAPIRequest('application.get', params);
     };
+    
+    /**
+     * Get the list of triggers
+     *
+     * @param  {array} hostids
+     * @param  {array} groupids
+     * @return {Object}          array of Zabbix trigger objects
+     */
+    p.performTriggerSuggestQuery = function(hostids, /* optional */ groupids) {
+      var params = {
+        output: ['name'],
+        sortfield: 'description',
+        //active: true
+      };
+      if (hostids) {
+        params.hostids = hostids;
+      }
+      else if (groupids) {
+        params.groupids = groupids;
+      }
+
+      return this.performZabbixAPIRequest('trigger.get', params);
+    };
+    
 
     /**
      * Items request
@@ -384,6 +408,40 @@ function (angular, _) {
         };
       }
       return this.performZabbixAPIRequest('host.get', params);
+    };
+    
+    /**
+     * Get triggers by name
+     *
+     * @param  {string or array} hostnames hosts names
+     * @param  {string}                    trigger description
+     * @return {array}                     array of Zabbix API host objects
+     */
+    p.getTriggerByName = function (hostnames, description) {
+        var params = {
+            output: ['triggerid', 'description', 'status', 'state', 'value', 'lastchange'],
+            searchWildcardsEnabled: true,
+            expandDescription: true
+      }
+
+      var self = this;
+      // Get hostids
+      if (hostnames && hostnames[0] !== '*') {
+          return this.getHostByName(hostnames).then(function(hostids) {
+              params.hostids = _.keys(_.indexBy(hostids, 'hostid'));
+              
+              // Apply description search
+              if (description && description !== '*') {
+                  params.search = {'description': description}
+              }
+              
+              console.log(params);
+              return self.performZabbixAPIRequest('trigger.get', params);
+          });
+      } else {
+          return [];
+      }
+
     };
 
     /**
@@ -493,6 +551,47 @@ function (angular, _) {
         return self.performAppSuggestQuery(hostids, groupids);
       });
     };
+    
+    /**
+     * Find trigger belongs to passed groups and hosts
+     *
+     * @param  {string or array} hosts
+     * @param  {string or array} groups
+     * @return {array}  array of Zabbix API trigger objects
+     */
+    p.triggerFindQuery = function(groups, hosts) {
+      var promises = [];
+
+      // Get hostids from names
+      if (hosts && hosts[0] !== '*') {
+        promises.push(this.getHostByName(hosts));
+      }
+      // Get groupids from names
+      else if (groups) {
+        promises.push(this.getGroupByName(groups));
+      }
+      
+
+      var self = this;
+      return $q.all(promises).then(function (results) {
+        results = _.flatten(results);
+        var groupids;
+        var hostids;
+        if (groups) {
+          groupids = _.map(_.filter(results, function (object) {
+            return object.groupid;
+          }), 'groupid');
+        }
+        if (hosts && hosts[0] !== '*') {
+          hostids = _.map(_.filter(results, function (object) {
+            return object.hostid;
+          }), 'hostid');
+        }
+
+        return self.performTriggerSuggestQuery(hostids, groupids);
+      });
+    };
+    
 
     /**
      * Find hosts belongs to passed groups

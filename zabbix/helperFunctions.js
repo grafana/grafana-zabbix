@@ -169,6 +169,17 @@ function (angular, _) {
       }
       return name;
     };
+    
+    /**
+     * Expand trigger name
+     *
+     * @param trigger: zabbix api trigger object
+     * @return {string} expanded trigger name (string)
+     */
+    this.expandTriggerName = function(trigger) {
+      var name = trigger.description;
+      return name;
+    };
 
     /**
      * Convert multiple mettrics to array

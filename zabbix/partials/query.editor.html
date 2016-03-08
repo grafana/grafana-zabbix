@@ -116,30 +116,15 @@
         <i class="icon-warning-sign"></i>
       </a>
     </li>
-    <!-- Host filter -->
-    <li class="tight-form-item" ng-hide="target.mode == 2">
-      Filter
-      <i class="fa fa-question-circle"
-         bs-tooltip="'Filtering hosts by regex. Select All in items and specify regex for host names.'"></i>
-    </li>
-    <li ng-hide="target.mode == 2">
-      <input type="text"
-             class="tight-form-input input-large"
-             ng-model="target.hostFilter"
-             spellcheck='false'
-             placeholder="Host filter (regex)"
-             ng-blur="targetBlur()">
-    </li>
-    <!-- Downsampling function -->
-    <li class="tight-form-item input-medium" ng-hide="target.mode == 2">
-      Downsampling
-    </li>
-    <li ng-hide="target.mode == 2">
-      <select class="tight-form-input input-small"
-              ng-change="targetBlur()"
-              ng-model="target.downsampleFunction"
-              bs-tooltip="'Downsampling function'"
-              ng-options="func.name for func in downsampleFunctionList track by func.name">
+    <!-- Select Trigger -->
+    <li class="tight-form-item input-small" style="width: 3em">Trigger</li>
+    <li>
+      <select class="tight-form-input input-large"
+              ng-change="selectTrigger()"
+              ng-model="target.trigger"
+              bs-tooltip="target.trigger.name.length > 25 ? target.trigger.name : ''"
+              ng-options="trigger.name for trigger in metric.triggerList track by trigger.name">
+        <option value="">-- Select trigger --</option>
       </select>
       <a bs-tooltip="target.errors.metric"
          style="color: rgb(229, 189, 28)"
@@ -147,81 +132,10 @@
         <i class="icon-warning-sign"></i>
       </a>
     </li>
+
   </ul>
 
   <div class="clearfix"></div>
-</div>
 
-<div class="tight-form" ng-hide="target.mode == 1">
-  <ul class="tight-form-list" role="menu">
-    <li class="tight-form-item" style="min-width: 15px; text-align: center">&nbsp</li>
-    <li class="tight-form-item">
-      <i class="fa fa-eye invisible"></i>
-    </li>
-    <li class="tight-form-item" style="width: 135px">&nbsp</li>
-
-    <!-- Select Application -->
-    <li class="tight-form-item input-small" style="width: 5em">Application</li>
-    <li>
-      <select class="tight-form-input input-large"
-              ng-change="selectApplication()"
-              ng-model="target.application"
-              bs-tooltip="target.application.name.length > 15 ? target.application.name : ''"
-              ng-options="app.visible_name ? app.visible_name : app.name for app in metric.applicationList track by app.name">
-        <option value="">-- Select application --</option>
-      </select>
-      <a bs-tooltip="target.errors.metric"
-         style="color: rgb(229, 189, 28)"
-         ng-show="target.errors.metric">
-        <i class="icon-warning-sign"></i>
-      </a>
-    </li>
-    <!-- Select Item -->
-    <li class="tight-form-item input-small" style="width: 3em">Item</li>
-    <li>
-      <select class="tight-form-input input-large"
-              ng-change="selectItem()"
-              ng-model="target.item"
-              bs-tooltip="target.item.name.length > 25 ? target.item.name : ''"
-              ng-options="item.name for item in metric.itemList track by item.name">
-        <option value="">-- Select item --</option>
-      </select>
-      <a bs-tooltip="target.errors.metric"
-         style="color: rgb(229, 189, 28)"
-         ng-show="target.errors.metric">
-        <i class="icon-warning-sign"></i>
-      </a>
-    </li>
-    <!-- Item filter -->
-    <li class="tight-form-item" ng-hide="target.mode == 2">
-      Filter
-      <i class="fa fa-question-circle"
-         bs-tooltip="'Filtering items by regex. Select All in items and specify regex for item names.'"></i>
-    </li>
-    <li ng-hide="target.mode == 2">
-      <input type="text"
-             class="tight-form-input input-large"
-             ng-model="target.itemFilter"
-             spellcheck='false'
-             placeholder="Item filter (regex)"
-             ng-blur="targetBlur()">
-    </li>
-    <!-- Scale -->
-    <li class="tight-form-item" ng-hide="target.mode == 2">
-      Scale
-      <i class="fa fa-question-circle"
-         bs-tooltip="'Set a custom multiplier for series values, for example -1 to invert series'"></i>
-    </li>
-    <li ng-hide="target.mode == 2">
-      <input type="text"
-             class="tight-form-input input-small"
-             ng-model="target.scale"
-             spellcheck='false'
-             placeholder="1"
-             ng-blur="targetBlur()">
-    </li>
-  </ul>
-
-  <div class="clearfix"></div>
 </div>
 

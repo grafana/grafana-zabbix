@@ -103,6 +103,7 @@ define([
         $scope.updateHostList();
         $scope.updateAppList();
         $scope.updateItemList();
+        $scope.updateTriggerList();
 
         $scope.target.errors = validateTarget($scope.target);
         if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
@@ -117,6 +118,7 @@ define([
       $scope.selectHost = function () {
         $scope.updateAppList();
         $scope.updateItemList();
+        $scope.updateTriggerList();
 
         $scope.target.errors = validateTarget($scope.target);
         if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
@@ -138,6 +140,17 @@ define([
         }
       };
 
+      /**
+       * Call when trigger selected
+       */
+      $scope.selectTrigger = function () {
+        $scope.target.errors = validateTarget($scope.target);
+        if (!_.isEqual($scope.oldTarget, $scope.target) && _.isEmpty($scope.target.errors)) {
+          $scope.oldTarget = angular.copy($scope.target);
+          $scope.get_data();
+        }
+      };      
+      
       /**
        * Call when item selected
        */
@@ -239,6 +252,31 @@ define([
           });
         }
       };
+      
+      /**
+       * Update list of trigger
+       */
+      $scope.updateTriggerList = function () {
+        var groups = $scope.target.group ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.group.name)) : undefined;
+        var hosts = $scope.target.host ? zabbixHelperSrv.splitMetrics(templateSrv.replace($scope.target.host.name)) : undefined;
+        
+        console.log(groups, hosts);
+        
+        if (groups && hosts) {
+          $scope.datasource.zabbixAPI.triggerFindQuery(groups, hosts).then(function (triggers) {
+            // Show only unique trigger description
+            var uniq_triggers = _.map(_.uniq(triggers, function (trigger) {
+              return zabbixHelperSrv.expandTriggerName(trigger);
+            }), function (trigger) {
+              return {name: zabbixHelperSrv.expandTriggerName(trigger)};
+            });
+            $scope.metric.triggerList = [{name: 'All trigger'}];
+            addTemplatedVariables($scope.metric.triggerList);
+            $scope.metric.triggerList = $scope.metric.triggerList.concat(uniq_triggers);
+          });
+        }
+      };
+      
 
       /**
        * Add templated variables to list of available metrics
