@@ -1,7 +1,7 @@
 //import angular from 'angular';
 import _ from 'lodash';
-import {parse as dateMathParse} from 'app/core/utils/datemath';
-import Utils from './utils';
+import * as dateMath from 'app/core/utils/datemath';
+import * as utils from './utils';
 import metricFunctions from './metricFunctions';
 import {zabbixHelperSrv} from './helperFunctions';
 import {ZabbixAPI} from './zabbixAPI';
@@ -29,7 +29,7 @@ export class ZabbixAPIDatasource {
 
     // Set cache update interval
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
-    this.cacheTTL = Utils.parseInterval(ttl);
+    this.cacheTTL = utils.parseInterval(ttl);
 
     // Initialize Zabbix API
     this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
@@ -103,9 +103,9 @@ export class ZabbixAPIDatasource {
     var self = this;
 
     // get from & to in seconds
-    var from = Math.ceil(dateMathParse(options.range.from) / 1000);
-    var to = Math.ceil(dateMathParse(options.range.to) / 1000);
-    var useTrendsFrom = Math.ceil(dateMathParse('now-' + this.trendsFrom) / 1000);
+    var from = Math.ceil(dateMath.parse(options.range.from) / 1000);
+    var to = Math.ceil(dateMath.parse(options.range.to) / 1000);
+    var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
 
     // Create request for each target
     var promises = _.map(options.targets, function(target) {
@@ -330,8 +330,8 @@ export class ZabbixAPIDatasource {
   /////////////////
 
   annotationQuery(options) {
-    var from = Math.ceil(dateMathParse(options.rangeRaw.from) / 1000);
-    var to = Math.ceil(dateMathParse(options.rangeRaw.to) / 1000);
+    var from = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
+    var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
     var annotation = options.annotation;
     var self = this;
     var showEvents = annotation.showOkEvents ? [0, 1] : 1;
@@ -347,9 +347,9 @@ export class ZabbixAPIDatasource {
         .then(function(triggers) {
 
           // Filter triggers by description
-          if (Utils.isRegex(annotation.trigger)) {
+          if (utils.isRegex(annotation.trigger)) {
             triggers = _.filter(triggers, function(trigger) {
-              return Utils.buildRegex(annotation.trigger).test(trigger.description);
+              return utils.buildRegex(annotation.trigger).test(trigger.description);
             });
           } else if (annotation.trigger) {
             triggers = _.filter(triggers, function(trigger) {
@@ -393,7 +393,7 @@ export class ZabbixAPIDatasource {
                 // Show event type (OK or Problem)
                 title += Number(e.value) ? 'Problem' : 'OK';
 
-                var formatted_acknowledges = Utils.formatAcknowledges(e.acknowledges);
+                var formatted_acknowledges = utils.formatAcknowledges(e.acknowledges);
                 return {
                   annotation: annotation,
                   time: e.clock * 1000,

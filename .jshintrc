@@ -5,6 +5,7 @@
   "curly": true,
   "eqnull": true,
   "strict": true,
+  "module": true,
   "devel": true,
   "eqeqeq": true,
   "forin": false,

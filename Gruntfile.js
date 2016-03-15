@@ -17,6 +17,8 @@ module.exports = function(grunt) {
           '**/*',
           '!**/datasource.js',
           '!**/module.js',
+          '!**/queryCtrl.js',
+          '!**/utils.js',
           '!**/*.scss'
         ],
         dest: 'dist/src'
@@ -47,8 +49,10 @@ module.exports = function(grunt) {
           cwd: 'src',
           expand: true,
           src: [
-            '**/**/datasource.js',
             '**/**/module.js',
+            '**/**/datasource.js',
+            '**/**/queryCtrl.js',
+            '**/**/utils.js',
           ],
           dest: 'dist/src',
           ext:'.js'
