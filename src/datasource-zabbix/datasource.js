@@ -4,14 +4,15 @@ import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
 import metricFunctions from './metricFunctions';
 import {zabbixHelperSrv} from './helperFunctions';
-import {ZabbixAPI} from './zabbixAPI';
+import './zabbixAPIService';
 import {ZabbixCachingProxy} from './zabbixCache';
 import {QueryProcessor} from './queryProcessor';
 import {DataProcessingService} from './dataProcessingService';
 
 export class ZabbixAPIDatasource {
 
-  constructor(instanceSettings, $q, templateSrv, alertSrv, ZabbixAPI, ZabbixCachingProxy, QueryProcessor, zabbixHelperSrv, DataProcessingService) {
+  /** @ngInject */
+  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryProcessor, zabbixHelperSrv, DataProcessingService) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -32,6 +33,7 @@ export class ZabbixAPIDatasource {
     this.cacheTTL = utils.parseInterval(ttl);
 
     // Initialize Zabbix API
+    var ZabbixAPI = zabbixAPIService;
     this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
 
     // Initialize cache service

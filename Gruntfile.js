@@ -19,6 +19,8 @@ module.exports = function(grunt) {
           '!**/module.js',
           '!**/queryCtrl.js',
           '!**/utils.js',
+          '!**/zabbixAPICoreService.js',
+          '!**/zabbixAPIService.js',
           '!**/*.scss'
         ],
         dest: 'dist/src'
@@ -53,6 +55,8 @@ module.exports = function(grunt) {
             '**/**/datasource.js',
             '**/**/queryCtrl.js',
             '**/**/utils.js',
+            '**/**/zabbixAPICoreService.js',
+            '**/**/zabbixAPIService.js',
           ],
           dest: 'dist/src',
           ext:'.js'
