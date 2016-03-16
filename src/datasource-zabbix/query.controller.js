@@ -1,7 +1,10 @@
 import {QueryCtrl} from 'app/plugins/sdk';
 import _ from 'lodash';
 import * as utils from './utils';
-import metricFunctions from './metricFunctions';
+import * as metricFunctions from './metricFunctions';
+
+import './add-metric-function.directive';
+import './metric-function-editor.directive';
 
 export class ZabbixQueryController extends QueryCtrl {
 

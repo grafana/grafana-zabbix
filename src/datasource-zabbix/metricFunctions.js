@@ -189,22 +189,20 @@ class FuncInstance {
   }
 }
 
-export default {
-  createFuncInstance: function(funcDef, params) {
-    if (_.isString(funcDef)) {
-      if (!index[funcDef]) {
-        throw { message: 'Method not found ' + name };
-      }
-      funcDef = index[funcDef];
+export function createFuncInstance(funcDef, params) {
+  if (_.isString(funcDef)) {
+    if (!index[funcDef]) {
+      throw { message: 'Method not found ' + name };
     }
-    return new FuncInstance(funcDef, params);
-  },
-
-  getFuncDef: function(name) {
-    return index[name];
-  },
-
-  getCategories: function() {
-    return categories;
+    funcDef = index[funcDef];
   }
-};
+  return new FuncInstance(funcDef, params);
+}
+
+export function getFuncDef(name) {
+  return index[name];
+}
+
+export function getCategories() {
+  return categories;
+}

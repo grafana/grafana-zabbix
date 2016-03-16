@@ -2,7 +2,7 @@
 import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
-import metricFunctions from './metricFunctions';
+import * as metricFunctions from './metricFunctions';
 import './zabbixAPI.service.js';
 import './zabbixCache.service.js';
 import './queryProcessor.service.js';
