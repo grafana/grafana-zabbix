@@ -1,19 +1,19 @@
 import {ZabbixAPIDatasource} from './datasource';
-import {ZabbixQueryCtrl} from './queryCtrl';
+import {ZabbixQueryController} from './query.controller';
 
-class ZabbixConfigCtrl {}
-ZabbixConfigCtrl.templateUrl = 'partials/config.html';
+class ZabbixConfigController {}
+ZabbixConfigController.templateUrl = 'partials/config.html';
 
-class ZabbixQueryOptionsCtrl {}
-ZabbixQueryOptionsCtrl.templateUrl = 'partials/query.options.html';
+class ZabbixQueryOptionsController {}
+ZabbixQueryOptionsController.templateUrl = 'partials/query.options.html';
 
-class ZabbixAnnotationsQueryCtrl {}
-ZabbixAnnotationsQueryCtrl.templateUrl = 'partials/annotations.editor.html';
+class ZabbixAnnotationsQueryController {}
+ZabbixAnnotationsQueryController.templateUrl = 'partials/annotations.editor.html';
 
 export {
   ZabbixAPIDatasource as Datasource,
-  ZabbixQueryCtrl as QueryCtrl,
-  ZabbixConfigCtrl as ConfigCtrl,
-  ZabbixQueryOptionsCtrl as QueryOptionsCtrl,
-  ZabbixAnnotationsQueryCtrl as AnnotationsQueryCtrl
+  ZabbixConfigController as ConfigCtrl,
+  ZabbixQueryController as QueryCtrl,
+  ZabbixQueryOptionsController as QueryOptionsCtrl,
+  ZabbixAnnotationsQueryController as AnnotationsQueryCtrl
 };

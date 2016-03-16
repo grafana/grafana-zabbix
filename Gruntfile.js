@@ -17,18 +17,19 @@ module.exports = function(grunt) {
           '**/*',
           '!**/datasource.js',
           '!**/module.js',
-          '!**/queryCtrl.js',
+          '!**/query.controller.js',
           '!**/utils.js',
-          '!**/zabbixAPICoreService.js',
-          '!**/zabbixAPIService.js',
+          '!**/zabbixAPICore.service.js',
+          '!**/zabbixAPI.service.js',
+          '!**/metricFunctions.js',
           '!**/*.scss'
         ],
-        dest: 'dist/src'
+        dest: 'dist/'
       },
       pluginDef: {
         expand: true,
         src: ['plugin.json', 'README.md'],
-        dest: 'dist',
+        dest: 'dist/',
       }
     },
 
@@ -42,7 +43,7 @@ module.exports = function(grunt) {
 
     babel: {
       options: {
-        sourceMap: true,
+        sourceMap: false,
         presets:  ["es2015"],
         plugins: ['transform-es2015-modules-systemjs', "transform-es2015-for-of"],
       },
@@ -53,13 +54,13 @@ module.exports = function(grunt) {
           src: [
             '**/**/module.js',
             '**/**/datasource.js',
-            '**/**/queryCtrl.js',
+            '**/**/query.controller.js',
             '**/**/utils.js',
-            '**/**/zabbixAPICoreService.js',
-            '**/**/zabbixAPIService.js',
+            '**/**/zabbixAPICore.service.js',
+            '**/**/zabbixAPI.service.js',
+            '**/**/metricFunctions.js'
           ],
-          dest: 'dist/src',
-          ext:'.js'
+          dest: 'dist/'
         }]
       },
     },

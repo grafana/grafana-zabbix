@@ -3,16 +3,15 @@ import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
 import metricFunctions from './metricFunctions';
-import {zabbixHelperSrv} from './helperFunctions';
-import './zabbixAPIService';
-import {ZabbixCachingProxy} from './zabbixCache';
-import {QueryProcessor} from './queryProcessor';
-import {DataProcessingService} from './dataProcessingService';
+import './zabbixAPI.service.js';
+import './zabbixCache.service.js';
+import './queryProcessor.service.js';
+import './dataProcessing.service';
 
 export class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryProcessor, zabbixHelperSrv, DataProcessingService) {
+  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryProcessor, DataProcessingService) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -46,7 +45,6 @@ export class ZabbixAPIDatasource {
     this.q = $q;
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
-    this.zabbixHelperSrv = zabbixHelperSrv;
     this.DataProcessingService = DataProcessingService;
 
     console.log(this.zabbixCache);
@@ -243,12 +241,12 @@ export class ZabbixAPIDatasource {
           return [];
         } else {
           return this.zabbixAPI.getSLA(target.itservice.serviceid, from, to)
-            .then(_.bind(zabbixHelperSrv.handleSLAResponse, zabbixHelperSrv, target.itservice, target.slaProperty));
+            .then(slaObject => {
+              return self.queryProcessor.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
+            });
         }
       }
     }, this);
-
-    var self = this;
 
     // Data for panel (all targets)
     return this.q.all(_.flatten(promises))

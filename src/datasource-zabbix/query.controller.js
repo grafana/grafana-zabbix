@@ -1,17 +1,9 @@
-/*define([
-  'app/plugins/sdk',
-  'angular',
-  'lodash',
-  './metricFunctions',
-  './utils'
-],*/
-
 import {QueryCtrl} from 'app/plugins/sdk';
 import _ from 'lodash';
 import * as utils from './utils';
 import metricFunctions from './metricFunctions';
 
-export class ZabbixQueryCtrl extends QueryCtrl {
+export class ZabbixQueryController extends QueryCtrl {
 
   // ZabbixQueryCtrl constructor
   constructor($scope, $injector, $sce, $q, templateSrv) {
@@ -229,7 +221,7 @@ export class ZabbixQueryCtrl extends QueryCtrl {
 }
 
 // Set templateUrl as static property
-ZabbixQueryCtrl.templateUrl = 'partials/query.editor.html';
+ZabbixQueryController.templateUrl = 'partials/query.editor.html';
 
 // Get list of metric names for bs-typeahead directive
 function getMetricNames(scope, metricList) {
