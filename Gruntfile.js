@@ -21,6 +21,7 @@ module.exports = function(grunt) {
           '!**/utils.js',
           '!**/zabbixAPICore.service.js',
           '!**/zabbixAPI.service.js',
+          //'!**/dataProcessing.service.js',
           '!**/metricFunctions.js',
           '!**/*.scss'
         ],
@@ -43,7 +44,7 @@ module.exports = function(grunt) {
 
     babel: {
       options: {
-        sourceMap: false,
+        sourceMap: true,
         presets:  ["es2015"],
         plugins: ['transform-es2015-modules-systemjs', "transform-es2015-for-of"],
       },
@@ -58,6 +59,7 @@ module.exports = function(grunt) {
             '**/**/utils.js',
             '**/**/zabbixAPICore.service.js',
             '**/**/zabbixAPI.service.js',
+            //'**/**/dataProcessing.service.js',
             '**/**/metricFunctions.js'
           ],
           dest: 'dist/'

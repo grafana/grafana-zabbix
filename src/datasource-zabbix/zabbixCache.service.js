@@ -62,7 +62,8 @@ function (angular, _, utils) {
           self._hosts         = convertHosts(results[1]);
           self._applications  = convertApplications(results[2]);
           self._items         = convertItems(results[3]);
-          self._hostsExtend   = convertHostsExtend(results[4]);
+          self._idx_apps      = indexApps(results[2]);
+          self._idx_hosts     = indexHosts(results[4]);
         }
         self._initialized = true;
       });
@@ -90,13 +91,24 @@ function (angular, _, utils) {
       }
     };
 
-    p.getHostsExtend = function() {
+    p.getIndexedHosts = function() {
       var self = this;
-      if (this._hostsExtend) {
-        return $q.when(self._hostsExtend);
+      if (this._idx_hosts) {
+        return $q.when(self._idx_hosts);
       } else {
         return this.refresh().then(function() {
-          return self._hostsExtend;
+          return self._idx_hosts;
+        });
+      }
+    };
+
+    p.getIndexedApplications = function() {
+      var self = this;
+      if (this._idx_apps) {
+        return $q.when(self._idx_apps);
+      } else {
+        return this.refresh().then(function() {
+          return self._idx_apps;
         });
       }
     };
@@ -202,25 +214,13 @@ function (angular, _, utils) {
       });
     }
 
-    function convertHostsExtend(hosts) {
-      return _.indexBy(_.map(hosts, function(host) {
-        host.items = _.forEach(host.items, function(item) {
-          item.applications = _.map(item.applications, 'applicationid');
-          item.item = item.name;
-          item.name = utils.expandItemName(item.item, item.key_);
-          return item;
-        });
-        return host;
-      }), 'hostid');
-    }
-
     /**
      * Group Zabbix applications by name
      * host.hosts - array of host ids
      */
     function convertApplications(applications) {
       return _.map(_.groupBy(applications, 'name'), function(value, key) {
-
+        //console.log(value);
         // Hack for supporting different apis (2.2 vs 2.4 vs 3.0)
         var hostField = 'host';
         if (value[0] && value[0]['hosts']) {
@@ -231,9 +231,44 @@ function (angular, _, utils) {
         return {
           name: key,
           applicationids: _.map(value, 'applicationid'),
+          itemids: _.uniq(_.map(_.flatten(value, 'items'), 'itemid')),
           hosts: _.uniq(_.map(_.flatten(value, hostField), 'hostid'))
         };
       });
+    }
+
+    function indexHosts(hosts) {
+      return _.indexBy(_.map(hosts, function(host) {
+
+        // Expand item names
+        host.items = _.forEach(host.items, function(item) {
+          item.item = item.name;
+          item.name = utils.expandItemName(item.item, item.key_);
+          return item;
+        });
+
+        host.applications = _.map(host.applications, 'applicationid');
+        host.idx_items = indexItems(host.items);
+        host.items = _.map(host.items, 'itemid');
+        return host;
+      }), 'hostid');
+    }
+
+    function indexApps(applications) {
+      return _.indexBy(_.map(applications, function(app) {
+        return {
+          name: app.name,
+          applicationid: app.applicationid,
+          host: _.first(_.map(app.hosts, 'hostid')),
+          itemids: _.map(app.items, 'itemid')
+        };
+      }), 'applicationid');
+    }
+
+    function indexItems(items) {
+      return _.indexBy(_.map(items, function(item) {
+        return item;
+      }), 'itemid');
     }
 
     /**
