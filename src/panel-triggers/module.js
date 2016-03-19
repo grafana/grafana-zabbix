@@ -15,6 +15,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import {PanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelEditor} from './editor';
+import './css/panel_triggers.css!';
 
 var defaultSeverity = [
   { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },

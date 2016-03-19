@@ -55,7 +55,24 @@ module.exports = function(grunt) {
       },
     },
 
+    sass: {
+      options: {
+        sourceMap: true
+      },
+      dist: {
+        files: {
+          'dist/panel-triggers/css/panel_triggers.css' : 'src/panel-triggers/sass/panel_triggers.scss',
+        }
+      }
+    }
+
   });
 
-  grunt.registerTask('default', ['clean', 'copy:src_to_dist', 'copy:pluginDef', 'babel']);
+  grunt.registerTask('default', [
+    'clean',
+    'copy:src_to_dist',
+    'copy:pluginDef',
+    'babel',
+    'sass'
+  ]);
 };
