@@ -2,6 +2,9 @@
   "type": "panel",
   "name": "Zabbix triggers",
   "id": "zabbix-triggers-panel",
+  
+  "module": "plugins/triggers/module",
+  "staticRoot": ".",
 
   "info": {
     "description": "Zabbix triggers panel for Grafana",

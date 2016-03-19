@@ -3,9 +3,9 @@
   "name": "Zabbix",
   "id": "zabbix-datasource",
 
+  "module": "plugins/zabbix/module",
   "staticRoot": ".",
 
-  "defaultMatchFormat": "regex values",
   "metrics": true,
   "annotations": true,
 
