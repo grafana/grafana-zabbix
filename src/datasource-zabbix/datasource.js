@@ -279,9 +279,10 @@ export class ZabbixAPIDatasource {
   metricFindQuery(query) {
     // Split query. Query structure:
     // group.host.app.item
+    var self = this;
     var parts = [];
     _.each(query.split('.'), function (part) {
-      part = this.templateSrv.replace(part);
+      part = self.templateSrv.replace(part);
 
       // Replace wildcard to regex
       if (part === '*') {
