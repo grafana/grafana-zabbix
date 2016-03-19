@@ -188,9 +188,7 @@ function isRegex(str) {
   return regexPattern.test(str);
 }
 
-/** @ngInject */
-export function triggerPanelEditor($q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
-  'use strict';
+export function triggerPanelEditor() {
   return {
     restrict: 'E',
     scope: true,
