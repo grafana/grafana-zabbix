@@ -1,12 +1,37 @@
 {
   "type": "datasource",
   "name": "Zabbix",
-  "id": "zabbix",
+  "id": "zabbix-datasource",
 
   "module": "plugins/zabbix/module",
-
   "staticRoot": ".",
 
   "metrics": true,
-  "annotations": true
+  "annotations": true,
+
+  "info": {
+    "description": "datasource plugin for Zabbix",
+    "author": {
+      "name": "Alexander Zobnin",
+      "url": "https://ru.linkedin.com/in/alexander-zobnin-76778162/en"
+    },
+    "keywords": ["zabbix", "datasource"],
+    "logos": {
+      "small": "img/zabbix-triggers_logo_small.png",
+      "large": "img/zabbix-triggers_logo_large.png"
+    },
+    "links": [
+      {"name": "Project site", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
+      {"name": "Play site", "url": "http://play.grafana-zabbix.org/"},
+      {"name": "Documentation", "url": "https://github.com/alexanderzobnin/grafana-zabbix/wiki"},      
+      {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
+    ],    
+    "version": "0.0.1",
+    "updated": "2016-03-19"
+  },
+
+  "dependencies": {
+    "grafanaVersion": "3.x.x",
+    "plugins": [ ]
+  }
 }
