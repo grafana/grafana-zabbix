@@ -52,6 +52,8 @@ var triggerStatusMap = {
   '1': 'Problem'
 };
 
+var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
+
 class TriggerPanelCtrl extends PanelCtrl {
 
   /** @ngInject */
@@ -59,6 +61,7 @@ class TriggerPanelCtrl extends PanelCtrl {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.triggerStatusMap = triggerStatusMap;
+    this.defaultTimeFormat = defaultTimeFormat;
 
     // Load panel defaults
     _.defaults(this.panel, panelDefaults);

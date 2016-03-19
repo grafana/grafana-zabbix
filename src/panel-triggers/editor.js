@@ -53,8 +53,7 @@ class TriggerPanelEditorCtrl{
     var scopeDefaults = {
       metric: {},
       inputStyles: {},
-      oldTarget: _.cloneDeep(this.panel.triggers),
-      defaultTimeFormat: "DD MMM YYYY HH:mm:ss"
+      oldTarget: _.cloneDeep(this.panel.triggers)
     };
     _.defaults(this, scopeDefaults);
 
