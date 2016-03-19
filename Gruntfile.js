@@ -16,6 +16,7 @@ module.exports = function(grunt) {
         src: [
           '**/*',
           '!datasource-zabbix/*.js',
+          '!panel-triggers/*.js',
           '!**/*.scss'
         ],
         dest: 'dist/'
@@ -46,7 +47,8 @@ module.exports = function(grunt) {
           cwd: 'src',
           expand: true,
           src: [
-            'datasource-zabbix/*.js'
+            'datasource-zabbix/*.js',
+            'panel-triggers/*.js',
           ],
           dest: 'dist/'
         }]
