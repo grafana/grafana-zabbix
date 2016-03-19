@@ -312,7 +312,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       return this.request('service.getsla', params);
     }
 
-    getTriggers(groupids, hostids, applicationids, showEvents) {
+    getTriggers(groupids, hostids, applicationids, showAll) {
       var params = {
         output: 'extend',
         groupids: groupids,
@@ -332,11 +332,25 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
         selectLastEvent: 'extend'
       };
 
-      if (showEvents) {
-        params.filter.value = showEvents;
+      if (showAll) {
+        params.filter = {};
       }
 
       return this.request('trigger.get', params);
+    }
+
+    getEvents(objectids, from, to, showOkEvents) {
+      var params = {
+        output: 'extend',
+        time_from: from,
+        time_till: to,
+        objectids: objectids,
+        select_acknowledges: 'extend',
+        selectHosts: 'extend',
+        value: showOkEvents
+      };
+
+      return this.request('event.get', params);
     }
 
     getAcknowledges(eventids) {

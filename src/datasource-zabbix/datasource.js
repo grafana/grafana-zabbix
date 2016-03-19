@@ -334,7 +334,7 @@ export class ZabbixAPIDatasource {
     var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
     var annotation = options.annotation;
     var self = this;
-    var showEvents = annotation.showOkEvents ? [0, 1] : 1;
+    var showOkEvents = annotation.showOkEvents ? [0, 1] : 1;
 
     var buildQuery = self.queryProcessor.buildTriggerQuery(this.templateSrv.replace(annotation.group),
                                                            this.templateSrv.replace(annotation.host),
@@ -343,7 +343,7 @@ export class ZabbixAPIDatasource {
       return self.zabbixAPI.getTriggers(query.groupids,
                                         query.hostids,
                                         query.applicationids,
-                                        showEvents)
+                                        true)
         .then(function(triggers) {
 
           // Filter triggers by description
@@ -363,17 +363,7 @@ export class ZabbixAPIDatasource {
           });
 
           var objectids = _.map(triggers, 'triggerid');
-          var params = {
-            output: 'extend',
-            time_from: from,
-            time_till: to,
-            objectids: objectids,
-            select_acknowledges: 'extend',
-            selectHosts: 'extend',
-            value: showEvents
-          };
-
-          return self.zabbixAPI.request('event.get', params)
+          return self.zabbixAPI.getEvents(objectids, from, to, showOkEvents)
             .then(function (events) {
               var indexedTriggers = _.indexBy(triggers, 'triggerid');
 
