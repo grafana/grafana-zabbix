@@ -136,12 +136,11 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
 
     getApplications() {
       var params = {
-        output: ['name'],
-        sortfield: 'name',
+        output: ['applicationid', 'name'],
 
         // Hack for supporting different apis (2.2 vs 2.4 vs 3.0)
-        selectHost: [],
-        selectHosts: [],
+        selectHost: ['hostid'],
+        selectHosts: ['hostid'],
         selectItems: ['itemid']
       };
 
