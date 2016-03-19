@@ -19,9 +19,11 @@ module.exports = function(grunt) {
           '!**/module.js',
           '!**/query.controller.js',
           '!**/utils.js',
+          '!**/DataProcessor.js',
           '!**/zabbixAPICore.service.js',
           '!**/zabbixAPI.service.js',
-          //'!**/dataProcessing.service.js',
+          '!**/queryProcessor.service.js',
+          '!**/zabbixCache.service.js',
           '!**/metricFunctions.js',
           '!**/*.scss'
         ],
@@ -57,9 +59,11 @@ module.exports = function(grunt) {
             '**/**/datasource.js',
             '**/**/query.controller.js',
             '**/**/utils.js',
+            '**/**/DataProcessor.js',
             '**/**/zabbixAPICore.service.js',
             '**/**/zabbixAPI.service.js',
-            //'**/**/dataProcessing.service.js',
+            '**/**/queryProcessor.service.js',
+            '**/**/zabbixCache.service.js',
             '**/**/metricFunctions.js'
           ],
           dest: 'dist/'

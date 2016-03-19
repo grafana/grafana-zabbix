@@ -3,15 +3,15 @@ import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
+import DataProcessor from './DataProcessor';
 import './zabbixAPI.service.js';
 import './zabbixCache.service.js';
 import './queryProcessor.service.js';
-import './dataProcessing.service';
 
 export class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryProcessor, DataProcessingService) {
+  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryProcessor) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -45,7 +45,6 @@ export class ZabbixAPIDatasource {
     this.q = $q;
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
-    this.DataProcessingService = DataProcessingService;
 
     console.log(this.zabbixCache);
   }
@@ -159,7 +158,7 @@ export class ZabbixAPIDatasource {
                 timeseries_data = _.map(timeseries_data, function (timeseries) {
 
                   // Filter only transform functions
-                  var transformFunctions = bindFunctionDefs(target.functions, 'Transform', self.DataProcessingService);
+                  var transformFunctions = bindFunctionDefs(target.functions, 'Transform', DataProcessor);
 
                   // Metric data processing
                   var dp = timeseries.datapoints;
@@ -172,7 +171,7 @@ export class ZabbixAPIDatasource {
                 });
 
                 // Aggregations
-                var aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate', self.DataProcessingService);
+                var aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate', DataProcessor);
                 var dp = _.map(timeseries_data, 'datapoints');
                 if (aggregationFunctions.length) {
                   for (var i = 0; i < aggregationFunctions.length; i++) {
@@ -189,7 +188,7 @@ export class ZabbixAPIDatasource {
                 }
 
                 // Apply alias functions
-                var aliasFunctions = bindFunctionDefs(target.functions, 'Alias', self.DataProcessingService);
+                var aliasFunctions = bindFunctionDefs(target.functions, 'Alias', DataProcessor);
                 for (var j = 0; j < aliasFunctions.length; j++) {
                   _.each(timeseries_data, aliasFunctions[j]);
                 }
@@ -255,9 +254,9 @@ export class ZabbixAPIDatasource {
 
         // Series downsampling
         var data = _.map(timeseries_data, function(timeseries) {
-          var DPS = self.DataProcessingService;
           if (timeseries.datapoints.length > options.maxDataPoints) {
-            timeseries.datapoints = DPS.groupBy(options.interval, DPS.AVERAGE, timeseries.datapoints);
+            timeseries.datapoints =
+              DataProcessor.groupBy(options.interval, DataProcessor.AVERAGE, timeseries.datapoints);
           }
           return timeseries;
         });
@@ -409,7 +408,7 @@ export class ZabbixAPIDatasource {
 
 }
 
-function bindFunctionDefs(functionDefs, category, DataProcessingService) {
+function bindFunctionDefs(functionDefs, category, DataProcessor) {
   'use strict';
   var aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
   var aggFuncDefs = _.filter(functionDefs, function(func) {
@@ -418,7 +417,7 @@ function bindFunctionDefs(functionDefs, category, DataProcessingService) {
 
   return _.map(aggFuncDefs, function(func) {
     var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
-    return funcInstance.bindFunction(DataProcessingService.metricFunctions);
+    return funcInstance.bindFunction(DataProcessor.metricFunctions);
   });
 }
 
