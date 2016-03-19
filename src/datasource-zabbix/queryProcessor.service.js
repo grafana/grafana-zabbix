@@ -42,32 +42,18 @@ function (angular, _, utils) {
       };
 
       this.filterGroups = function(groupFilter) {
-        return self.cache.getGroups().then(function(groupList) {
+        return this.cache.getGroups().then(function(groupList) {
           return groupList;
         });
       };
 
+      /**
+       * Get list of host belonging to given groups.
+       * @return list of hosts
+       */
       this.filterHosts = function(groupFilter) {
-        var groups = [];
-
-        return self.cache.getGroups().then(function(groupList) {
-          // Filter groups by regex
-          if (utils.isRegex(groupFilter)) {
-            var filterPattern = utils.buildRegex(groupFilter);
-            groups = _.filter(groupList, function (groupObj) {
-              return filterPattern.test(groupObj.name);
-            });
-          }
-          // Find hosts in selected group
-          else {
-            var finded = _.find(groupList, {'name': groupFilter});
-            if (finded) {
-              groups.push(finded);
-            } else {
-              groups = undefined;
-            }
-          }
-
+        return this.cache.getGroups().then(function(groups) {
+          groups = findByFilter(groups, groupFilter);
           var hostids = _.flatten(_.map(groups, 'hosts'));
           if (hostids.length) {
             return self.cache.getIndexedHosts().then(function(hosts) {
@@ -81,10 +67,11 @@ function (angular, _, utils) {
         });
       };
 
+      /**
+       * Get list of applications belonging to given groups and hosts.
+       * @return  list of applications belonging to given hosts
+       */
       this.filterApplications = function(groupFilter, hostFilter) {
-        var hosts = [];
-        var apps = [];
-
         var promises = [
           this.filterHosts(groupFilter),
           this.cache.getApplications()
@@ -94,68 +81,17 @@ function (angular, _, utils) {
           var hostList = results[0];
           var applicationList = results[1];
 
-          // Filter hosts by regex
-          if (utils.isRegex(hostFilter)) {
-            var filterPattern = utils.buildRegex(hostFilter);
-            hosts = _.filter(hostList, function (hostObj) {
-              return filterPattern.test(hostObj.name);
-            });
-          }
-          // Find applications in selected host
-          else {
-            var finded = _.find(hostList, {'name': hostFilter});
-            if (finded) {
-              hosts.push(finded);
-            } else {
-              hosts = undefined;
-            }
-          }
-
+          var hosts = findByFilter(hostList, hostFilter);
           if (hosts) {
             var hostsids = _.map(hosts, 'hostid');
-            apps = _.filter(applicationList, function (appObj) {
+            return _.filter(applicationList, function (appObj) {
               return _.intersection(hostsids, appObj.hosts).length;
             });
+          } else {
+            return [];
           }
-          return apps;
         });
       };
-
-      /**
-       * Find group, host, app or item by given name.
-       * @param  list list of groups, apps or other
-       * @param  name visible name
-       * @return      array with finded element or undefined
-       */
-      function findByName(list, name) {
-        var finded = _.find(list, {'name': name});
-        if (finded) {
-          return [finded];
-        } else {
-          return undefined;
-        }
-      }
-
-      function findByRegex(list, regex) {
-        var filterPattern = utils.buildRegex(regex);
-        return _.filter(list, function (zbx_obj) {
-          return filterPattern.test(zbx_obj.name);
-        });
-      }
-
-      function findByFilter(list, filter) {
-        if (utils.isRegex(filter)) {
-          return findByRegex(list, filter);
-        } else {
-          return findByName(list, filter);
-        }
-      }
-
-      function getFromIndex(index, objids) {
-        return _.map(objids, function(id) {
-          return index[id];
-        });
-      }
 
       this.filterItems = function (groupFilter, hostFilter, appFilter, itemType, showDisabledItems) {
         var hosts;
@@ -233,136 +169,12 @@ function (angular, _, utils) {
         });
       };
 
-      // DEPRECATED
-      this._buildFromCache = function (groupFilter, hostFilter, appFilter, itemFilter) {
-
-        // Find items by item names and perform queries
-        var groups = [];
-        var hosts = [];
-        var apps = [];
-        var items = [];
-        var promises = [
-          this.cache.getGroups(),
-          this.cache.getHosts(),
-          this.cache.getApplications(),
-          this.cache.getItems()
-        ];
-
-        return $q.all(promises).then(function(results) {
-          var cachedGroups = results[0];
-          var cachedHosts = results[1];
-          var cachedApps = results[2];
-          var cachedItems = results[3];
-
-          if (utils.isRegex(hostFilter)) {
-
-            // Filter groups
-            if (utils.isRegex(groupFilter)) {
-              var groupPattern = utils.buildRegex(groupFilter);
-              groups = _.filter(cachedGroups, function (groupObj) {
-                return groupPattern.test(groupObj.name);
-              });
-            } else {
-              var findedGroup = _.find(cachedGroups, {'name': groupFilter});
-              if (findedGroup) {
-                groups.push(findedGroup);
-              } else {
-                groups = undefined;
-              }
-            }
-            if (groups) {
-              var groupids = _.map(groups, 'groupid');
-              hosts = _.filter(cachedHosts, function (hostObj) {
-                return _.intersection(groupids, hostObj.groups).length;
-              });
-            } else {
-              // No groups finded
-              return [];
-            }
-
-            // Filter hosts
-            var hostPattern = utils.buildRegex(hostFilter);
-            hosts = _.filter(hosts, function (hostObj) {
-              return hostPattern.test(hostObj.name);
-            });
-          } else {
-            var findedHost = _.find(cachedHosts, {'name': hostFilter});
-            if (findedHost) {
-              hosts.push(findedHost);
-            } else {
-              // No hosts finded
-              return [];
-            }
-          }
-
-          // Find items belongs to selected hosts
-          items = _.filter(cachedItems, function (itemObj) {
-            return _.contains(_.map(hosts, 'hostid'), itemObj.hostid);
-          });
-
-          if (utils.isRegex(itemFilter)) {
-
-            // Filter applications
-            if (utils.isRegex(appFilter)) {
-              var appPattern = utils.buildRegex(appFilter);
-              apps = _.filter(cachedApps, function (appObj) {
-                return appPattern.test(appObj.name);
-              });
-            }
-            // Don't use application filter if it empty
-            else if (appFilter === "") {
-              apps = undefined;
-            }
-            else {
-              var findedApp = _.find(cachedApps, {'name': appFilter});
-              if (findedApp) {
-                apps.push(findedApp);
-              } else {
-                // No applications finded
-                return [];
-              }
-            }
-
-            // Find items belongs to selected applications
-            if (apps) {
-              var appids = _.flatten(_.map(apps, 'applicationids'));
-              items = _.filter(items, function (itemObj) {
-                return _.intersection(appids, itemObj.applications).length;
-              });
-            }
-
-            if (items) {
-              var itemPattern = utils.buildRegex(itemFilter);
-              items = _.filter(items, function (itemObj) {
-                return itemPattern.test(itemObj.name);
-              });
-            } else {
-              // No items finded
-              return [];
-            }
-          } else {
-            items = _.filter(items, {'name': itemFilter});
-            if (!items.length) {
-              // No items finded
-              return [];
-            }
-          }
-
-          // Set host as host name for each item
-          items = _.each(items, function (itemObj) {
-            itemObj.host = _.find(hosts, {'hostid': itemObj.hostid}).name;
-          });
-
-          return items;
-        });
-      };
-
       /**
        * Build query - convert target filters to array of Zabbix items
        */
       this.buildTriggerQueryFromCache = function (groupFilter, hostFilter, appFilter) {
         var promises = [
-          this.filterGroups(groupFilter).then(function(groups) {
+          this.cache.getGroups().then(function(groups) {
             return _.filter(groups, function(group) {
               if (utils.isRegex(groupFilter)) {
                 return utils.buildRegex(groupFilter).test(group.name);
@@ -477,39 +289,75 @@ function (angular, _, utils) {
           };
         }
       };
-
-      function convertHistoryPoint(point) {
-        // Value must be a number for properly work
-        return [
-          Number(point.value),
-          point.clock * 1000
-        ];
-      }
-
-      function convertTrendPoint(valueType, point) {
-        var value;
-        switch (valueType) {
-          case "min":
-            value = point.value_min;
-            break;
-          case "max":
-            value = point.value_max;
-            break;
-          case "avg":
-            value = point.value_avg;
-            break;
-          default:
-            value = point.value_avg;
-        }
-
-        return [
-          Number(value),
-          point.clock * 1000
-        ];
-      }
     }
 
     return QueryProcessor;
   });
+
+  /**
+   * Find group, host, app or item by given name.
+   * @param  list list of groups, apps or other
+   * @param  name visible name
+   * @return      array with finded element or undefined
+   */
+  function findByName(list, name) {
+    var finded = _.find(list, {'name': name});
+    if (finded) {
+      return [finded];
+    } else {
+      return undefined;
+    }
+  }
+
+  function findByRegex(list, regex) {
+    var filterPattern = utils.buildRegex(regex);
+    return _.filter(list, function (zbx_obj) {
+      return filterPattern.test(zbx_obj.name);
+    });
+  }
+
+  function findByFilter(list, filter) {
+    if (utils.isRegex(filter)) {
+      return findByRegex(list, filter);
+    } else {
+      return findByName(list, filter);
+    }
+  }
+
+  function getFromIndex(index, objids) {
+    return _.map(objids, function(id) {
+      return index[id];
+    });
+  }
+
+  function convertHistoryPoint(point) {
+    // Value must be a number for properly work
+    return [
+      Number(point.value),
+      point.clock * 1000
+    ];
+  }
+
+  function convertTrendPoint(valueType, point) {
+    var value;
+    switch (valueType) {
+      case "min":
+        value = point.value_min;
+        break;
+      case "max":
+        value = point.value_max;
+        break;
+      case "avg":
+        value = point.value_avg;
+        break;
+      default:
+        value = point.value_avg;
+    }
+
+    return [
+      Number(value),
+      point.clock * 1000
+    ];
+  }
 
 });
