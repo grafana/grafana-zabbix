@@ -39,31 +39,26 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
       }
     }
 
-    filterGroups(groupFilter) {
-      return this.cache.getGroups().then(function(groupList) {
-        return groupList;
-      });
+    filterGroups(groups, groupFilter) {
+      return this.$q.when(
+        findByFilter(groups, groupFilter)
+      );
     }
 
     /**
      * Get list of host belonging to given groups.
      * @return list of hosts
      */
-    filterHosts(groupFilter) {
-      var self = this;
-      return this.cache.getGroups().then(function(groups) {
-        groups = findByFilter(groups, groupFilter);
-        var hostids = _.flatten(_.map(groups, 'hosts'));
-        if (hostids.length) {
-          return self.cache.getIndexedHosts().then(function(hosts) {
-            return _.map(hostids, function(hostid) {
-              return hosts[hostid];
-            });
-          });
-        } else {
-          return [];
-        }
-      });
+    filterHosts(hosts, hostFilter) {
+      return this.$q.when(
+        findByFilter(hosts, hostFilter)
+      );
+    }
+
+    filterApps(apps, appFilter) {
+      return this.$q.when(
+        findByFilter(apps, appFilter)
+      );
     }
 
     /**
@@ -151,10 +146,65 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
       });
     }
 
+    buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, showDisabledItems) {
+      var self = this;
+      return this.cache
+        .getGroups()
+        .then(groups => {
+          return findByFilter(groups, groupFilter);
+        })
+        .then(groups => {
+          var groupids = _.map(groups, 'groupid');
+          return self.cache
+            .getHosts(groupids)
+            .then(hosts => {
+              return findByFilter(hosts, hostFilter);
+            });
+        })
+        .then(hosts => {
+          var hostids = _.map(hosts, 'hostid');
+          if (appFilter) {
+            return self.cache
+              .getApps(hostids)
+              .then(apps => {
+                // Use getByFilter for proper item filtering
+                return getByFilter(apps, appFilter);
+              });
+          } else {
+            return {
+              appFilterEmpty: true,
+              hostids: hostids
+            };
+          }
+        })
+        .then(apps => {
+          if (apps.appFilterEmpty) {
+            return self.cache
+              .getItems(apps.hostids)
+              .then(items => {
+                if (showDisabledItems) {
+                  items = _.filter(items, {'status': '0'});
+                }
+                return getByFilter(items, itemFilter);
+              });
+          } else {
+            var appids = _.map(apps, 'applicationid');
+            return self.cache
+              .getItems(undefined, appids)
+              .then(items => {
+                if (showDisabledItems) {
+                  items = _.filter(items, {'status': '0'});
+                }
+                return getByFilter(items, itemFilter);
+              });
+          }
+        });
+    }
+
     /**
      * Build query - convert target filters to array of Zabbix items
      */
-    buildFromCache(groupFilter, hostFilter, appFilter, itemFilter) {
+    _buildFromCache(groupFilter, hostFilter, appFilter, itemFilter) {
       return this.filterItems(groupFilter, hostFilter, appFilter).then(function(items) {
         if (items.length) {
           if (utils.isRegex(itemFilter)) {
@@ -309,6 +359,23 @@ function findByName(list, name) {
   }
 }
 
+/**
+ * Different hosts can contains applications and items with same name.
+ * For this reason use _.filter, which return all elements instead _.find,
+ * which return only first finded.
+ * @param  {[type]} list list of elements
+ * @param  {[type]} name app name
+ * @return {[type]}      array with finded element or undefined
+ */
+function filterByName(list, name) {
+  var finded = _.filter(list, {'name': name});
+  if (finded) {
+    return finded;
+  } else {
+    return undefined;
+  }
+}
+
 function findByRegex(list, regex) {
   var filterPattern = utils.buildRegex(regex);
   return _.filter(list, function (zbx_obj) {
@@ -321,6 +388,14 @@ function findByFilter(list, filter) {
     return findByRegex(list, filter);
   } else {
     return findByName(list, filter);
+  }
+}
+
+function getByFilter(list, filter) {
+  if (utils.isRegex(filter)) {
+    return findByRegex(list, filter);
+  } else {
+    return filterByName(list, filter);
   }
 }
 

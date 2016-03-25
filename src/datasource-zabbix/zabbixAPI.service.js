@@ -1,5 +1,6 @@
 import angular from 'angular';
 import _ from 'lodash';
+import * as utils from './utils';
 import './zabbixAPICore.service';
 
 /** @ngInject */
@@ -116,22 +117,40 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
     getGroups() {
       var params = {
         output: ['name'],
-        sortfield: 'name',
-        selectHosts: []
+        sortfield: 'name'
       };
 
       return this.request('hostgroup.get', params);
     }
 
-    getHosts() {
+    getHosts(groupids) {
       var params = {
         output: ['name', 'host'],
-        sortfield: 'name',
-        selectGroups: [],
-        selectApplications: ['applicationid']
+        sortfield: 'name'
+      };
+      if (groupids) {
+        params.groupids = groupids;
+      }
+
+      return this.request('host.get', params);
+    }
+
+    getHostsByGroups(groupids) {
+      var params = {
+        output: ['name', 'host'],
+        groupids: groupids
       };
 
       return this.request('host.get', params);
+    }
+
+    getApps(hostids) {
+      var params = {
+        output: ['applicationid', 'name'],
+        hostids: hostids
+      };
+
+      return this.request('application.get', params);
     }
 
     getApplications() {
@@ -147,7 +166,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       return this.request('application.get', params);
     }
 
-    getItems() {
+    getItems(hostids, appids) {
       var params = {
         output: [
           'name', 'key_',
@@ -157,10 +176,22 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
           'state'
         ],
         sortfield: 'name',
-        selectApplications: []
       };
+      if (hostids) {
+        params.hostids = hostids;
+      }
+      if (appids) {
+        params.applicationids = appids;
+      }
 
-      return this.request('item.get', params);
+      return this.request('item.get', params)
+        .then(items => {
+          return _.forEach(items, item => {
+            item.item = item.name;
+            item.name = utils.expandItemName(item.item, item.key_);
+            return item;
+          });
+        });
     }
 
     /**

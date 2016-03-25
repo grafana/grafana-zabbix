@@ -14,6 +14,10 @@ export class ZabbixQueryController extends QueryCtrl {
     // Call superclass constructor
     super($scope, $injector);
 
+    this.zabbix = this.datasource.zabbixAPI;
+    this.cache = this.datasource.zabbixCache;
+    this.$q = $q;
+
     this.editorModes = {
       0: 'num',
       1: 'itservice',
@@ -22,9 +26,9 @@ export class ZabbixQueryController extends QueryCtrl {
 
     // Map functions for bs-typeahead
     this.getGroupNames = _.partial(getMetricNames, this, 'groupList');
-    this.getHostNames = _.partial(getMetricNames, this, 'filteredHosts');
-    this.getApplicationNames = _.partial(getMetricNames, this, 'filteredApplications');
-    this.getItemNames = _.partial(getMetricNames, this, 'filteredItems');
+    this.getHostNames = _.partial(getMetricNames, this, 'hostList');
+    this.getApplicationNames = _.partial(getMetricNames, this, 'appList');
+    this.getItemNames = _.partial(getMetricNames, this, 'itemList');
 
     this.init = function() {
 
@@ -32,7 +36,8 @@ export class ZabbixQueryController extends QueryCtrl {
       var target = this.target;
 
       var scopeDefaults = {
-        metric: {}
+        metric: {},
+        oldTarget: _.cloneDeep(this.target)
       };
       _.defaults(this, scopeDefaults);
 
@@ -85,47 +90,84 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   initFilters() {
-    this.filterGroups();
-    this.filterHosts();
-    this.filterApplications();
-    this.filterItems();
+    var self = this;
+    return this.$q.when(this.suggestGroups())
+      .then(() => {return self.suggestHosts();})
+      .then(() => {return self.suggestApps();})
+      .then(() => {return self.suggestItems();});
   }
 
-  filterHosts() {
+  suggestGroups() {
     var self = this;
-    var groupFilter = this.templateSrv.replace(this.target.group.filter);
-    this.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
-      self.metric.filteredHosts = hosts;
-    });
-  }
-
-  filterGroups() {
-    var self = this;
-    this.datasource.queryProcessor.filterGroups().then(function(groups) {
+    return this.cache.getGroups().then(groups => {
       self.metric.groupList = groups;
+      return groups;
     });
   }
 
-  filterApplications() {
+  suggestHosts() {
     var self = this;
     var groupFilter = this.templateSrv.replace(this.target.group.filter);
-    var hostFilter = this.templateSrv.replace(this.target.host.filter);
-    this.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
-      .then(function(apps) {
-        self.metric.filteredApplications = apps;
+    return this.datasource.queryProcessor
+      .filterGroups(self.metric.groupList, groupFilter)
+      .then(groups => {
+        var groupids = _.map(groups, 'groupid');
+        return self.zabbix
+          .getHostsByGroups(groupids)
+          .then(hosts => {
+            self.metric.hostList = hosts;
+            return hosts;
+          });
       });
   }
 
-  filterItems() {
+  suggestApps() {
     var self = this;
-    var item_type = this.editorModes[this.target.mode];
-    var groupFilter = this.templateSrv.replace(this.target.group.filter);
     var hostFilter = this.templateSrv.replace(this.target.host.filter);
-    var appFilter = this.templateSrv.replace(this.target.application.filter);
-    this.datasource.queryProcessor.filterItems(groupFilter, hostFilter, appFilter,
-      item_type, this.target.showDisabledItems).then(function(items) {
-        self.metric.filteredItems = items;
+    return this.datasource.queryProcessor
+      .filterHosts(self.metric.hostList, hostFilter)
+      .then(hosts => {
+        var hostids = _.map(hosts, 'hostid');
+        return self.zabbix
+          .getApps(hostids)
+          .then(apps => {
+            return self.metric.appList = apps;
+          });
       });
+  }
+
+  suggestItems() {
+    var self = this;
+    var appFilter = this.templateSrv.replace(this.target.application.filter);
+    if (appFilter) {
+      // Filter by applications
+      return this.datasource.queryProcessor
+        .filterApps(self.metric.appList, appFilter)
+        .then(apps => {
+          var appids = _.map(apps, 'applicationid');
+          return self.zabbix
+            .getItems(undefined, appids)
+            .then(items => {
+              if (!self.target.showDisabledItems) {
+                items = _.filter(items, {'status': '0'});
+              }
+              self.metric.itemList = items;
+              return items;
+            });
+        });
+    } else {
+      // Return all items belonged to selected hosts
+      var hostids = _.map(self.metric.hostList, 'hostid');
+      return self.zabbix
+        .getItems(hostids)
+        .then(items => {
+          if (!self.target.showDisabledItems) {
+            items = _.filter(items, {'status': '0'});
+          }
+          self.metric.itemList = items;
+          return items;
+        });
+    }
   }
 
   onTargetPartChange(targetPart) {
@@ -135,9 +177,13 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   onTargetBlur() {
-    this.initFilters();
-    this.parseTarget();
-    this.panelCtrl.refresh();
+    var newTarget = _.cloneDeep(this.target);
+    if (!_.isEqual(this.oldTarget, this.target)) {
+      this.oldTarget = newTarget;
+      this.initFilters();
+      this.parseTarget();
+      this.panelCtrl.refresh();
+    }
   }
 
   parseTarget() {

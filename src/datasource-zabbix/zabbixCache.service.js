@@ -45,21 +45,12 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
     _refresh() {
       var self = this;
       var promises = [
-        this.zabbixAPI.getGroups(),
-        this.zabbixAPI.getHosts(),
-        this.zabbixAPI.getApplications(),
-        this.zabbixAPI.getItems(),
-        this.zabbixAPI.getHostsExtend()
+        this.zabbixAPI.getGroups()
       ];
 
       return this.$q.all(promises).then(function(results) {
         if (results.length) {
-          self._groups        = convertGroups(results[0]);
-          self._hosts         = convertHosts(results[1]);
-          self._applications  = convertApplications(results[2]);
-          self._items         = convertItems(results[3]);
-          self._idx_apps      = indexApps(results[2]);
-          self._idx_hosts     = indexHosts(results[4]);
+          self._groups = results[0];
         }
         self._initialized = true;
       });
@@ -70,13 +61,44 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
       if (this._groups) {
         return this.$q.when(self._groups);
       } else {
-        return this.refresh().then(function() {
-          return self._groups;
-        });
+        return this.zabbixAPI
+          .getGroups()
+          .then(groups => {
+            self._groups = groups;
+            return self._groups;
+          });
       }
     }
 
-    getHosts() {
+    getApps(hostids) {
+      return this.zabbixAPI
+        .getApps(hostids)
+        .then(apps => {
+          return apps;
+        });
+    }
+
+    getHosts(groupids) {
+      var self = this;
+      return this.zabbixAPI
+        .getHosts(groupids)
+        .then(hosts => {
+          self._hosts = _.union(self._hosts, hosts);
+          return hosts;
+        });
+    }
+
+    getItems(hostids, appids) {
+      var self = this;
+      return this.zabbixAPI
+        .getItems(hostids, appids)
+        .then(items => {
+          self._items = _.union(self._items, items);
+          return items;
+        });
+    }
+
+    _getHosts() {
       var self = this;
       if (this._hosts) {
         return this.$q.when(self._hosts);
@@ -120,7 +142,7 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
       }
     }
 
-    getItems(type) {
+    _getItems(type) {
       var self = this;
       if (this._items) {
         return this.$q.when(filterItems(self._items, type));
