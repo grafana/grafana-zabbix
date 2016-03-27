@@ -15,9 +15,16 @@ export class ZabbixAPIDatasource {
 
     // General data source settings
     this.name             = instanceSettings.name;
-    this.url              = instanceSettings.url;
     this.basicAuth        = instanceSettings.basicAuth;
     this.withCredentials  = instanceSettings.withCredentials;
+    this.url              = instanceSettings.url;
+    // add default api_jsonrpc.php if no .php endpoint is defined
+    if ( ! this.url.match(".php$")) {
+      if ( this.url.slice(-1) != '/') {
+         this.url = this.url + '/';      
+      }
+      this.url = this.url + 'api_jsonrpc.php';
+    }    
 
     // Zabbix API credentials
     this.username         = instanceSettings.jsonData.username;
