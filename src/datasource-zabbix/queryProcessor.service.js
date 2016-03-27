@@ -147,57 +147,9 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
     }
 
     buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, showDisabledItems) {
-      var self = this;
-      return this.cache
-        .getGroups()
-        .then(groups => {
-          return findByFilter(groups, groupFilter);
-        })
-        .then(groups => {
-          var groupids = _.map(groups, 'groupid');
-          return self.cache
-            .getHosts(groupids)
-            .then(hosts => {
-              return findByFilter(hosts, hostFilter);
-            });
-        })
-        .then(hosts => {
-          var hostids = _.map(hosts, 'hostid');
-          if (appFilter) {
-            return self.cache
-              .getApps(hostids)
-              .then(apps => {
-                // Use getByFilter for proper item filtering
-                return getByFilter(apps, appFilter);
-              });
-          } else {
-            return {
-              appFilterEmpty: true,
-              hostids: hostids
-            };
-          }
-        })
-        .then(apps => {
-          if (apps.appFilterEmpty) {
-            return self.cache
-              .getItems(apps.hostids)
-              .then(items => {
-                if (showDisabledItems) {
-                  items = _.filter(items, {'status': '0'});
-                }
-                return getByFilter(items, itemFilter);
-              });
-          } else {
-            var appids = _.map(apps, 'applicationid');
-            return self.cache
-              .getItems(undefined, appids)
-              .then(items => {
-                if (showDisabledItems) {
-                  items = _.filter(items, {'status': '0'});
-                }
-                return getByFilter(items, itemFilter);
-              });
-          }
+      return this.getItems(groupFilter, hostFilter, appFilter, showDisabledItems)
+        .then(items => {
+          return getByFilter(items, itemFilter);
         });
     }
 
@@ -216,8 +168,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
 
     getApps(groupFilter, hostFilter) {
       var self = this;
-      return this
-        .getHosts(groupFilter)
+      return this.getHosts(groupFilter)
         .then(hosts => {
           return findByFilter(hosts, hostFilter);
         })
@@ -229,8 +180,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
 
     getItems(groupFilter, hostFilter, appFilter, showDisabledItems) {
       var self = this;
-      return this
-        .getHosts(groupFilter)
+      return this.getHosts(groupFilter)
         .then(hosts => {
           return findByFilter(hosts, hostFilter);
         })
