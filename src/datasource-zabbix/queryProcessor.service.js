@@ -201,6 +201,79 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         });
     }
 
+    getHosts(groupFilter) {
+      var self = this;
+      return this.cache
+        .getGroups()
+        .then(groups => {
+          return findByFilter(groups, groupFilter);
+        })
+        .then(groups => {
+          var groupids = _.map(groups, 'groupid');
+          return self.cache.getHosts(groupids);
+        });
+    }
+
+    getApps(groupFilter, hostFilter) {
+      var self = this;
+      return this
+        .getHosts(groupFilter)
+        .then(hosts => {
+          return findByFilter(hosts, hostFilter);
+        })
+        .then(hosts => {
+          var hostids = _.map(hosts, 'hostid');
+          return self.cache.getApps(hostids);
+        });
+    }
+
+    getItems(groupFilter, hostFilter, appFilter, showDisabledItems) {
+      var self = this;
+      return this
+        .getHosts(groupFilter)
+        .then(hosts => {
+          return findByFilter(hosts, hostFilter);
+        })
+        .then(hosts => {
+          var hostids = _.map(hosts, 'hostid');
+          if (appFilter) {
+            return self.cache
+              .getApps(hostids)
+              .then(apps => {
+                // Use getByFilter for proper item filtering
+                return getByFilter(apps, appFilter);
+              });
+          } else {
+            return {
+              appFilterEmpty: true,
+              hostids: hostids
+            };
+          }
+        })
+        .then(apps => {
+          if (apps.appFilterEmpty) {
+            return self.cache
+              .getItems(apps.hostids, undefined)
+              .then(items => {
+                if (showDisabledItems) {
+                  items = _.filter(items, {'status': '0'});
+                }
+                return items;
+              });
+          } else {
+            var appids = _.map(apps, 'applicationid');
+            return self.cache
+              .getItems(undefined, appids)
+              .then(items => {
+                if (showDisabledItems) {
+                  items = _.filter(items, {'status': '0'});
+                }
+                return items;
+              });
+          }
+        });
+    }
+
     /**
      * Build query - convert target filters to array of Zabbix items
      */

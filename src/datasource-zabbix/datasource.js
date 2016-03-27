@@ -293,22 +293,25 @@ export class ZabbixAPIDatasource {
 
     // Get items
     if (parts.length === 4) {
-      return this.queryProcessor.filterItems(template.group, template.host,
-        template.app, 'all', true)
-          .then(function(items) {
-            return _.map(items, formatMetric);
-          });
+      // Search for all items, even it's not belong to any application
+      if (template.app === '/.*/') {
+        template.app = '';
+      }
+      return this.queryProcessor.getItems(template.group, template.host, template.app)
+        .then(function(items) {
+          return _.map(items, formatMetric);
+        });
     }
     // Get applications
     else if (parts.length === 3) {
-      return this.queryProcessor.filterApplications(template.group, template.host)
+      return this.queryProcessor.getApps(template.group, template.host)
         .then(function(apps) {
           return _.map(apps, formatMetric);
         });
     }
     // Get hosts
     else if (parts.length === 2) {
-      return this.queryProcessor.filterHosts(template.group)
+      return this.queryProcessor.getHosts(template.group)
         .then(function(hosts) {
           return _.map(hosts, formatMetric);
         });
