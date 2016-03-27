@@ -40,6 +40,22 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
       // Don't run duplicated history requests
       this.getHistory = callHistoryOnce(_.bind(this.zabbixAPI.getHistory, this.zabbixAPI),
                                         this.historyPromises);
+
+      this.groupPromises = {};
+      this.getGroupsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getGroups, this.zabbixAPI),
+                                              this.groupPromises);
+
+      this.hostPromises = {};
+      this.getHostsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getHosts, this.zabbixAPI),
+                                             this.hostPromises);
+
+      this.appPromises = {};
+      this.getAppsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getApps, this.zabbixAPI),
+                                            this.appPromises);
+
+      this.itemPromises = {};
+      this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI),
+                                             this.itemPromises);
     }
 
     _refresh() {
@@ -61,8 +77,7 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
       if (this._groups) {
         return this.$q.when(self._groups);
       } else {
-        return this.zabbixAPI
-          .getGroups()
+        return this.getGroupsOnce()
           .then(groups => {
             self._groups = groups;
             return self._groups;
@@ -70,28 +85,25 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
       }
     }
 
-    getApps(hostids) {
-      return this.zabbixAPI
-        .getApps(hostids)
-        .then(apps => {
-          return apps;
-        });
-    }
-
     getHosts(groupids) {
       var self = this;
-      return this.zabbixAPI
-        .getHosts(groupids)
+      return this.getHostsOnce(groupids)
         .then(hosts => {
           self._hosts = _.union(self._hosts, hosts);
           return hosts;
         });
     }
 
+    getApps(hostids) {
+      return this.getAppsOnce(hostids)
+        .then(apps => {
+          return apps;
+        });
+    }
+
     getItems(hostids, appids) {
       var self = this;
-      return this.zabbixAPI
-        .getItems(hostids, appids)
+      return this.getItemsOnce(hostids, appids)
         .then(items => {
           self._items = _.union(self._items, items);
           return items;
@@ -195,6 +207,26 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
     getItem(itemid) {
       return _.find(this._items, {'itemid': itemid});
     }
+  }
+
+  function callAPIRequestOnce(func, promiseKeeper) {
+    return function() {
+      var itemids = _.map(arguments[0], 'itemid');
+      var stamp = itemids.join() + arguments[1] + arguments[2];
+      var hash = stamp.getHash();
+
+      var deferred  = $q.defer();
+      if (!promiseKeeper[hash]) {
+        promiseKeeper[hash] = deferred.promise;
+        func.apply(this, arguments).then(function(result) {
+          deferred.resolve(result);
+          promiseKeeper[hash] = null;
+        });
+      } else {
+        return promiseKeeper[hash];
+      }
+      return deferred.promise;
+    };
   }
 
   function callHistoryOnce(func, promiseKeeper) {
