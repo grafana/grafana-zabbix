@@ -85,7 +85,7 @@ class TriggerPanelEditorCtrl{
 
   filterGroups() {
     var self = this;
-    this.datasource.queryProcessor.filterGroups().then(function(groups) {
+    this.datasource.queryProcessor.getGroups().then(function(groups) {
       self.metric.groupList = groups;
     });
   }
@@ -93,7 +93,7 @@ class TriggerPanelEditorCtrl{
   filterHosts() {
     var self = this;
     var groupFilter = this.templateSrv.replace(this.panel.triggers.group.filter);
-    this.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
+    this.datasource.queryProcessor.getHosts(groupFilter).then(function(hosts) {
       self.metric.filteredHosts = hosts;
     });
   }
@@ -102,7 +102,7 @@ class TriggerPanelEditorCtrl{
     var self = this;
     var groupFilter = this.templateSrv.replace(this.panel.triggers.group.filter);
     var hostFilter = this.templateSrv.replace(this.panel.triggers.host.filter);
-    this.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
+    this.datasource.queryProcessor.getApps(groupFilter, hostFilter)
       .then(function(apps) {
         self.metric.filteredApplications = apps;
       });

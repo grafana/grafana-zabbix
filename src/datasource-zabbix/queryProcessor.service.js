@@ -71,6 +71,10 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         });
     }
 
+    getGroups() {
+      return this.cache.getGroups();
+    }
+
     /**
      * Get list of host belonging to given groups.
      * @return list of hosts
