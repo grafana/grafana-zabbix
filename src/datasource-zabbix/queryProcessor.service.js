@@ -62,90 +62,8 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
     }
 
     /**
-     * Get list of applications belonging to given groups and hosts.
-     * @return  list of applications belonging to given hosts
+     * Build query - convert target filters to array of Zabbix items
      */
-    filterApplications(groupFilter, hostFilter) {
-      var promises = [
-        this.filterHosts(groupFilter),
-        this.cache.getApplications()
-      ];
-
-      return this.$q.all(promises).then(function(results) {
-        var hostList = results[0];
-        var applicationList = results[1];
-
-        var hosts = findByFilter(hostList, hostFilter);
-        if (hosts) {
-          var hostsids = _.map(hosts, 'hostid');
-          return _.filter(applicationList, function (appObj) {
-            return _.intersection(hostsids, appObj.hosts).length;
-          });
-        } else {
-          return [];
-        }
-      });
-    }
-
-    filterItems(groupFilter, hostFilter, appFilter, itemType, showDisabledItems) {
-      var hosts;
-      var apps;
-      var items;
-
-      var promises = [
-        this.filterHosts(groupFilter),
-        this.filterApplications(groupFilter, hostFilter),
-        this.cache.getIndexedHosts(),
-        this.cache.getIndexedApplications()
-      ];
-
-      return this.$q.all(promises).then(function(results) {
-        var hostList = results[0];
-        var applicationList = results[1];
-        var idx_hosts = results[2];
-        var idx_apps = results[3];
-
-        // Filter hosts
-        hosts = findByFilter(hostList, hostFilter);
-        idx_hosts = getFromIndex(idx_hosts, _.map(hosts, 'hostid'));
-
-        // Filter applications
-        if (appFilter === "") {
-          // Get all items
-          apps = undefined;
-          if (hosts) {
-            // Get all items in given hosts
-            items = _.flatten(_.map(idx_hosts, function(host) {
-              return _.values(host.idx_items);
-            }), true);
-          }
-        } else {
-          apps = findByFilter(applicationList, appFilter);
-        }
-
-        if (apps) {
-          // Get ids for finded applications
-          var appids = _.flatten(_.map(apps, 'applicationids'));
-          appids = _.flatten(_.map(_.map(hosts, 'applications'), function(apps) {
-            return _.intersection(apps, appids);
-          }));
-
-          // For each finded host get list of items in finded applications
-          items = _.flatten(_.map(idx_hosts, function(host) {
-            var host_apps = _.intersection(appids, host.applications);
-            var host_itemids = _.flatten(_.map(getFromIndex(idx_apps, host_apps), 'itemids'));
-            return _.values(getFromIndex(host.idx_items, host_itemids));
-          }), true);
-        }
-
-        if (!showDisabledItems) {
-          items = _.filter(items, {'status': '0'});
-        }
-
-        return items;
-      });
-    }
-
     buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, showDisabledItems) {
       return this.getItems(groupFilter, hostFilter, appFilter, showDisabledItems)
         .then(items => {
@@ -153,6 +71,10 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         });
     }
 
+    /**
+     * Get list of host belonging to given groups.
+     * @return list of hosts
+     */
     getHosts(groupFilter) {
       var self = this;
       return this.cache
@@ -166,6 +88,10 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         });
     }
 
+    /**
+     * Get list of applications belonging to given groups and hosts.
+     * @return  list of applications belonging to given hosts
+     */
     getApps(groupFilter, hostFilter) {
       var self = this;
       return this.getHosts(groupFilter)
@@ -227,23 +153,6 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
     /**
      * Build query - convert target filters to array of Zabbix items
      */
-    _buildFromCache(groupFilter, hostFilter, appFilter, itemFilter) {
-      return this.filterItems(groupFilter, hostFilter, appFilter).then(function(items) {
-        if (items.length) {
-          if (utils.isRegex(itemFilter)) {
-            return findByFilter(items, itemFilter);
-          } else {
-            return _.filter(items, {'name': itemFilter});
-          }
-        } else {
-          return [];
-        }
-      });
-    }
-
-    /**
-     * Build query - convert target filters to array of Zabbix items
-     */
     buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter) {
       var promises = [
         this.cache.getGroups().then(function(groups) {
@@ -255,7 +164,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
             }
           });
         }),
-        this.filterHosts(groupFilter).then(function(hosts) {
+        this.getHosts(groupFilter).then(function(hosts) {
           return _.filter(hosts, function(host) {
             if (utils.isRegex(hostFilter)) {
               return utils.buildRegex(hostFilter).test(host.name);
@@ -264,7 +173,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
             }
           });
         }),
-        this.filterApplications(groupFilter, hostFilter).then(function(apps) {
+        this.getApps(groupFilter, hostFilter).then(function(apps) {
           return _.filter(apps, function(app) {
             if (utils.isRegex(appFilter)) {
               return utils.buildRegex(appFilter).test(app.name);
