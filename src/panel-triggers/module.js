@@ -74,9 +74,11 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   // Add panel editor
   initEditMode() {
-    //super.initEditMode();
+    // Use initialize method from PanelCtrl instead MetricsPanelCtrl.
+    // We don't need metric editor from Metrics Panel.
     this.editorTabs = [];
     this.addEditorTab('General', 'public/app/partials/panelgeneral.html');
+
     this.icon = "fa fa-lightbulb-o";
     this.addEditorTab('Options', triggerPanelEditor, 2);
     this.editModeInitiated = true;
