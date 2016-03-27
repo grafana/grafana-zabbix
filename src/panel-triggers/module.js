@@ -45,7 +45,7 @@ var panelDefaults = {
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
   showEvents: { text: 'Problem events', value: '1' },
   triggerSeverity: defaultSeverity,
-  okEventColor: '#890F02',
+  okEventColor: 'rgba(0, 245, 153, 0.45)',
 };
 
 var triggerStatusMap = {
