@@ -1,22 +1,19 @@
-define([
-  'angular',
-  'lodash',
-  './zabbixAPIService'
-  ],
-function (angular, _) {
-  'use strict';
+import angular from 'angular';
+import _ from 'lodash';
+import * as utils from './utils';
+import './zabbixAPICore.service';
 
-  var module = angular.module('grafana.services');
+/** @ngInject */
+function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
 
   /**
    * Zabbix API Wrapper.
    * Creates Zabbix API instance with given parameters (url, credentials and other).
    * Wraps API calls and provides high-level methods.
    */
-  module.factory('ZabbixAPI', function($q, backendSrv, alertSrv, ZabbixAPIService) {
+  class ZabbixAPI {
 
-    // Initialize Zabbix API.
-    function ZabbixAPI(api_url, username, password, basicAuth, withCredentials) {
+    constructor(api_url, username, password, basicAuth, withCredentials) {
       this.url              = api_url;
       this.username         = username;
       this.password         = password;
@@ -28,18 +25,23 @@ function (angular, _) {
       };
 
       this.loginPromise = null;
+
+      this.$q = $q;
+      this.alertSrv = alertSrv;
+      this.zabbixAPICore = zabbixAPICoreService;
+
+      this.getTrend = this.getTrend_ZBXNEXT1193;
+      //getTrend = getTrend_30;
     }
 
-    var p = ZabbixAPI.prototype;
+    //////////////////////////
+    // Core method wrappers //
+    //////////////////////////
 
-    //////////////////
-    // Core methods //
-    //////////////////
-
-    p.request = function(method, params) {
+    request(method, params) {
       var self = this;
 
-      return ZabbixAPIService.request(this.url, method, params, this.requestOptions, this.auth)
+      return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
         .then(function(result) {
           return result;
         },
@@ -56,21 +58,13 @@ function (angular, _) {
               });
           }
         });
-    };
+    }
 
-    p.alertAPIError = function(message) {
-      alertSrv.set(
+    alertAPIError(message) {
+      this.alertSrv.set(
         "Zabbix API Error",
         message,
         'error'
-      );
-    };
-
-    function isNotAuthorized(message) {
-      return (
-        message === "Session terminated, re-login, please." ||
-        message === "Not authorised." ||
-        message === "Not authorized."
       );
     }
 
@@ -80,9 +74,9 @@ function (angular, _) {
      * and call it once. If login() already called just wait for it (return its promise).
      * @return login promise
      */
-    p.loginOnce = function() {
+    loginOnce() {
       var self = this;
-      var deferred  = $q.defer();
+      var deferred  = this.$q.defer();
       if (!self.loginPromise) {
         self.loginPromise = deferred.promise;
         self.login().then(
@@ -100,60 +94,79 @@ function (angular, _) {
         return self.loginPromise;
       }
       return deferred.promise;
-    };
+    }
 
     /**
      * Get authentication token.
      */
-    p.login = function() {
-      return ZabbixAPIService.login(this.url, this.username, this.password, this.requestOptions);
-    };
+    login() {
+      return this.zabbixAPICore.login(this.url, this.username, this.password, this.requestOptions);
+    }
 
     /**
      * Get Zabbix API version
      */
-    p.getVersion = function() {
-      return ZabbixAPIService.getVersion(this.url, this.requestOptions);
-    };
+    getVersion() {
+      return this.zabbixAPICore.getVersion(this.url, this.requestOptions);
+    }
 
-    /////////////////
-    // API methods //
-    /////////////////
+    ////////////////////////////////
+    // Zabbix API method wrappers //
+    ////////////////////////////////
 
-    p.getGroups = function() {
+    getGroups() {
       var params = {
         output: ['name'],
-        sortfield: 'name',
-        selectHosts: []
+        sortfield: 'name'
       };
 
       return this.request('hostgroup.get', params);
-    };
+    }
 
-    p.getHosts = function() {
+    getHosts(groupids) {
       var params = {
         output: ['name', 'host'],
-        sortfield: 'name',
-        selectGroups: []
+        sortfield: 'name'
+      };
+      if (groupids) {
+        params.groupids = groupids;
+      }
+
+      return this.request('host.get', params);
+    }
+
+    getHostsByGroups(groupids) {
+      var params = {
+        output: ['name', 'host'],
+        groupids: groupids
       };
 
       return this.request('host.get', params);
-    };
+    }
 
-    p.getApplications = function() {
+    getApps(hostids) {
       var params = {
-        output: ['name'],
-        sortfield: 'name',
-
-        // Hack for supporting different apis (2.2 vs 2.4 vs 3.0)
-        selectHost: [],
-        selectHosts: []
+        output: ['applicationid', 'name'],
+        hostids: hostids
       };
 
       return this.request('application.get', params);
-    };
+    }
 
-    p.getItems = function() {
+    getApplications() {
+      var params = {
+        output: ['applicationid', 'name'],
+
+        // Hack for supporting different apis (2.2 vs 2.4 vs 3.0)
+        selectHost: ['hostid'],
+        selectHosts: ['hostid'],
+        selectItems: ['itemid']
+      };
+
+      return this.request('application.get', params);
+    }
+
+    getItems(hostids, appids) {
       var params = {
         output: [
           'name', 'key_',
@@ -163,23 +176,38 @@ function (angular, _) {
           'state'
         ],
         sortfield: 'name',
-        selectApplications: []
       };
+      if (hostids) {
+        params.hostids = hostids;
+      }
+      if (appids) {
+        params.applicationids = appids;
+      }
 
-      return this.request('item.get', params);
-    };
+      return this.request('item.get', params)
+        .then(items => {
+          return _.forEach(items, item => {
+            item.item = item.name;
+            item.name = utils.expandItemName(item.item, item.key_);
+            return item;
+          });
+        });
+    }
 
     /**
      * Get Hosts list with host's items.
      * @return {[type]} [description]
      */
-    p.getHostsExtend = function() {
+    getHostsExtend() {
       var params = {
         output: ['name', 'host'],
         sortfield: 'name',
-        selectGroups: [],
+        selectGroups: ['groupid'],
+        selectApplications: ['applicationid'],
         selectItems: [
-          'name', 'key_',
+          'itemid',
+          'name',
+          'key_',
           'value_type',
           'hostid',
           'status',
@@ -188,9 +216,9 @@ function (angular, _) {
       };
 
       return this.request('host.get', params);
-    };
+    }
 
-    p.getLastValue = function(itemid) {
+    getLastValue(itemid) {
       var params = {
         output: ['lastvalue'],
         itemids: itemid
@@ -202,7 +230,7 @@ function (angular, _) {
           return null;
         }
       });
-    };
+    }
 
     /**
      * Perform history query from Zabbix API
@@ -212,14 +240,14 @@ function (angular, _) {
      * @param  {Number} time_till   Time in seconds
      * @return {Array}  Array of Zabbix history objects
      */
-    p.getHistory = function(items, time_from, time_till) {
+    getHistory(items, time_from, time_till) {
       var self = this;
 
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
 
       // Perform request for each value type
-      return $q.all(_.map(grouped_items, function (items, value_type) {
+      return this.$q.all(_.map(grouped_items, function (items, value_type) {
         var itemids = _.map(items, 'itemid');
         var params = {
           output: 'extend',
@@ -237,7 +265,7 @@ function (angular, _) {
 
         return self.request('history.get', params);
       })).then(_.flatten);
-    };
+    }
 
     /**
      * Perform trends query from Zabbix API
@@ -248,14 +276,14 @@ function (angular, _) {
      * @param  {Number} time_till   Time in seconds
      * @return {Array}  Array of Zabbix trend objects
      */
-    p.getTrend_ZBXNEXT1193 = function(items, time_from, time_till) {
+    getTrend_ZBXNEXT1193(items, time_from, time_till) {
       var self = this;
 
       // Group items by value type
       var grouped_items = _.groupBy(items, 'value_type');
 
       // Perform request for each value type
-      return $q.all(_.map(grouped_items, function (items, value_type) {
+      return this.$q.all(_.map(grouped_items, function (items, value_type) {
         var itemids = _.map(items, 'itemid');
         var params = {
           output: 'extend',
@@ -273,9 +301,9 @@ function (angular, _) {
 
         return self.request('trend.get', params);
       })).then(_.flatten);
-    };
+    }
 
-    p.getTrend_30 = function(items, time_from, time_till, value_type) {
+    getTrend_30(items, time_from, time_till, value_type) {
       var self = this;
       var itemids = _.map(items, 'itemid');
 
@@ -294,20 +322,17 @@ function (angular, _) {
       }
 
       return self.request('trend.get', params);
-    };
+    }
 
-    p.getTrend = p.getTrend_ZBXNEXT1193;
-    //p.getTrend = p.getTrend_30;
-
-    p.getITService = function(/* optional */ serviceids) {
+    getITService(/* optional */ serviceids) {
       var params = {
         output: 'extend',
         serviceids: serviceids
       };
       return this.request('service.get', params);
-    };
+    }
 
-    p.getSLA = function(serviceids, from, to) {
+    getSLA(serviceids, from, to) {
       var params = {
         serviceids: serviceids,
         intervals: [{
@@ -316,9 +341,9 @@ function (angular, _) {
         }]
       };
       return this.request('service.getsla', params);
-    };
+    }
 
-    p.getTriggers = function(groupids, hostids, applicationids, showEvents) {
+    getTriggers(groupids, hostids, applicationids, showAll) {
       var params = {
         output: 'extend',
         groupids: groupids,
@@ -338,14 +363,28 @@ function (angular, _) {
         selectLastEvent: 'extend'
       };
 
-      if (showEvents) {
-        params.filter.value = showEvents;
+      if (showAll) {
+        params.filter = {};
       }
 
       return this.request('trigger.get', params);
-    };
+    }
 
-    p.getAcknowledges = function(eventids) {
+    getEvents(objectids, from, to, showOkEvents) {
+      var params = {
+        output: 'extend',
+        time_from: from,
+        time_till: to,
+        objectids: objectids,
+        select_acknowledges: 'extend',
+        selectHosts: 'extend',
+        value: showOkEvents
+      };
+
+      return this.request('event.get', params);
+    }
+
+    getAcknowledges(eventids) {
       var params = {
         output: 'extend',
         eventids: eventids,
@@ -361,10 +400,21 @@ function (angular, _) {
             return event.acknowledges.length;
           });
         });
-    };
+    }
 
-    return ZabbixAPI;
+  }
 
-  });
+  return ZabbixAPI;
+}
 
-});
+function isNotAuthorized(message) {
+  return (
+    message === "Session terminated, re-login, please." ||
+    message === "Not authorised." ||
+    message === "Not authorized."
+  );
+}
+
+angular
+  .module('grafana.services')
+  .factory('zabbixAPIService', ZabbixAPIService);

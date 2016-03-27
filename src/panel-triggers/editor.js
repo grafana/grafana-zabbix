@@ -11,15 +11,13 @@
  * Licensed under the Apache License, Version 2.0
  */
 
-define([
-  'angular',
-  'lodash',
-  'jquery'
-],
-function (angular, _, $) {
-  'use strict';
+import _ from 'lodash';
+import $ from 'jquery';
 
-  function TriggerPanelEditorCtrl($scope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
+class TriggerPanelEditorCtrl{
+
+  /** @ngInject */
+  constructor($scope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
     $scope.editor = this;
     this.panelCtrl = $scope.ctrl;
     this.panel = this.panelCtrl.panel;
@@ -55,8 +53,7 @@ function (angular, _, $) {
     var scopeDefaults = {
       metric: {},
       inputStyles: {},
-      oldTarget: _.cloneDeep(this.panel.triggers),
-      defaultTimeFormat: "DD MMM YYYY HH:mm:ss"
+      oldTarget: _.cloneDeep(this.panel.triggers)
     };
     _.defaults(this, scopeDefaults);
 
@@ -80,87 +77,70 @@ function (angular, _, $) {
     });
   }
 
-  var p = TriggerPanelEditorCtrl.prototype;
-
-  // Get list of metric names for bs-typeahead directive
-  function getMetricNames(scope, metricList) {
-    return _.uniq(_.map(scope.metric[metricList], 'name'));
-  }
-
-  p.initFilters = function () {
+  initFilters() {
     this.filterGroups();
     this.filterHosts();
     this.filterApplications();
-  };
+  }
 
-  p.filterGroups = function() {
+  filterGroups() {
     var self = this;
-    this.datasource.queryProcessor.filterGroups().then(function(groups) {
+    this.datasource.queryProcessor.getGroups().then(function(groups) {
       self.metric.groupList = groups;
     });
-  };
+  }
 
-  p.filterHosts = function() {
+  filterHosts() {
     var self = this;
     var groupFilter = this.templateSrv.replace(this.panel.triggers.group.filter);
-    this.datasource.queryProcessor.filterHosts(groupFilter).then(function(hosts) {
+    this.datasource.queryProcessor.getHosts(groupFilter).then(function(hosts) {
       self.metric.filteredHosts = hosts;
     });
-  };
+  }
 
-  p.filterApplications = function() {
+  filterApplications() {
     var self = this;
     var groupFilter = this.templateSrv.replace(this.panel.triggers.group.filter);
     var hostFilter = this.templateSrv.replace(this.panel.triggers.host.filter);
-    this.datasource.queryProcessor.filterApplications(groupFilter, hostFilter)
+    this.datasource.queryProcessor.getApps(groupFilter, hostFilter)
       .then(function(apps) {
         self.metric.filteredApplications = apps;
       });
-  };
+  }
 
-  p.onTargetPartChange = function(targetPart) {
+  onTargetPartChange(targetPart) {
     var regexStyle = {'color': '#CCA300'};
     targetPart.isRegex = isRegex(targetPart.filter);
     targetPart.style = targetPart.isRegex ? regexStyle : {};
-  };
-
-  function isRegex(str) {
-    // Pattern for testing regex
-    var regexPattern = /^\/(.*)\/([gmi]*)$/m;
-    return regexPattern.test(str);
   }
 
-  p.parseTarget = function() {
+  parseTarget() {
     this.initFilters();
     var newTarget = _.cloneDeep(this.panel.triggers);
     if (!_.isEqual(this.oldTarget, this.panel.triggers)) {
       this.oldTarget = newTarget;
       this.panelCtrl.refreshData();
     }
-  };
+  }
 
-  p.refreshTriggerSeverity = function() {
+  refreshTriggerSeverity() {
     _.each(this.triggerList, function(trigger) {
       trigger.color = this.panel.triggerSeverity[trigger.priority].color;
       trigger.severity = this.panel.triggerSeverity[trigger.priority].severity;
     });
     this.panelCtrl.refreshData();
-  };
-
-  p.datasourceChanged = function() {
-    this.panelCtrl.refreshData();
-  };
-
-  p.changeTriggerSeverityColor = function(trigger, color) {
-    this.panel.triggerSeverity[trigger.priority].color = color;
-    this.refreshTriggerSeverity();
-  };
-
-  function getTriggerIndexForElement(el) {
-    return el.parents('[data-trigger-index]').data('trigger-index');
   }
 
-  p.openTriggerColorSelector = function(event) {
+  datasourceChanged() {
+    this.panelCtrl.refreshData();
+  }
+
+  changeTriggerSeverityColor(trigger, color) {
+    this.panel.triggerSeverity[trigger.priority].color = color;
+    this.refreshTriggerSeverity();
+  }
+
+  openTriggerColorSelector(event) {
     var el = $(event.currentTarget);
     var index = getTriggerIndexForElement(el);
     var popoverScope = this.$new();
@@ -173,9 +153,9 @@ function (angular, _, $) {
       templateUrl:  'public/plugins/triggers/trigger.colorpicker.html',
       scope: popoverScope
     });
-  };
+  }
 
-  p.openOkEventColorSelector = function(event) {
+  openOkEventColorSelector(event) {
     var el = $(event.currentTarget);
     var popoverScope = this.$new();
     popoverScope.trigger = {color: this.panel.okEventColor};
@@ -190,16 +170,29 @@ function (angular, _, $) {
       templateUrl:  'public/plugins/triggers/trigger.colorpicker.html',
       scope: popoverScope
     });
-  };
+  }
+}
 
-  var triggerPanelEditor = function() {
-    return {
-      restrict: 'E',
-      scope: true,
-      templateUrl: 'public/plugins/triggers/editor.html',
-      controller: TriggerPanelEditorCtrl,
-    };
-  };
+// Get list of metric names for bs-typeahead directive
+function getMetricNames(scope, metricList) {
+  return _.uniq(_.map(scope.metric[metricList], 'name'));
+}
 
-  return triggerPanelEditor;
-});
+function getTriggerIndexForElement(el) {
+  return el.parents('[data-trigger-index]').data('trigger-index');
+}
+
+function isRegex(str) {
+  // Pattern for testing regex
+  var regexPattern = /^\/(.*)\/([gmi]*)$/m;
+  return regexPattern.test(str);
+}
+
+export function triggerPanelEditor() {
+  return {
+    restrict: 'E',
+    scope: true,
+    templateUrl: 'public/plugins/triggers/editor.html',
+    controller: TriggerPanelEditorCtrl,
+  };
+}
