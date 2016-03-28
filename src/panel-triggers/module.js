@@ -192,6 +192,14 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       });
     });
   }
+
+  switchComment(trigger) {
+    trigger.showComment = !trigger.showComment;
+  }
+
+  switchAcknowledges(trigger) {
+    trigger.showAcknowledges = !trigger.showAcknowledges;
+  }
 }
 
 TriggerPanelCtrl.templateUrl = 'module.html';

@@ -50,10 +50,10 @@
             <div>
               {{trigger.description}}
               <a  ng-if="trigger.comments"
+                  role="button"
+                  ng-click="ctrl.switchComment(trigger)"
                   class="pointer"
                   style="float: right; padding-right: 8px"
-                  data-toggle="collapse"
-                  data-target="#comments-{{trigger.triggerid}}"
                   bs-tooltip="'Show additional trigger description'"
                   data-placement="top">
                 <i class="fa fa-file-text-o"></i>
@@ -63,7 +63,7 @@
             <!-- Trigger comments -->
             <div  class="collapse"
                   id="comments-{{trigger.triggerid}}"
-                  ng-if="trigger.comments">
+                  ng-if="trigger.showComment">
               <div>
                 <small>{{trigger.comments}}</small>
               </div>
@@ -72,7 +72,7 @@
             <!-- Trigger acknowledges -->
             <div  class="collapse"
                   id="acknowledges-{{trigger.triggerid}}"
-                  ng-if="trigger.acknowledges">
+                  ng-if="trigger.showAcknowledges">
               <div style="padding-top: 12px;">
                 <table class="table table-condensed">
                   <thead>
@@ -122,9 +122,9 @@
 
             <!-- Trigger acknowledges -->
             <a  ng-if="trigger.acknowledges"
-                bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'"
-                data-toggle="collapse"
-                data-target="#acknowledges-{{trigger.triggerid}}">
+                role="button"
+                ng-click="ctrl.switchAcknowledges(trigger)"
+                bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'">
               <i class="fa fa-comments"></i>
             </a>
           </td>
