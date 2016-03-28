@@ -41,6 +41,7 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
       this.getHistory = callHistoryOnce(_.bind(this.zabbixAPI.getHistory, this.zabbixAPI),
                                         this.historyPromises);
 
+      // Don't run duplicated requests
       this.groupPromises = {};
       this.getGroupsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getGroups, this.zabbixAPI),
                                               this.groupPromises);
@@ -156,10 +157,7 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
 
   function callAPIRequestOnce(func, promiseKeeper) {
     return function() {
-      var itemids = _.map(arguments[0], 'itemid');
-      var stamp = itemids.join() + arguments[1] + arguments[2];
-      var hash = stamp.getHash();
-
+      var hash = getAPIRequestHash(arguments);
       var deferred  = $q.defer();
       if (!promiseKeeper[hash]) {
         promiseKeeper[hash] = deferred.promise;
@@ -212,6 +210,17 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
 
   return ZabbixCachingProxy;
 });
+
+function getAPIRequestHash(args) {
+  var requestStamp = _.map(args, arg => {
+    if (arg === undefined) {
+      return 'undefined';
+    } else {
+      return arg.toString();
+    }
+  }).join();
+  return requestStamp.getHash();
+}
 
 String.prototype.getHash = function() {
   var hash = 0, i, chr, len;
