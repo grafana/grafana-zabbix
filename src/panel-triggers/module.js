@@ -13,7 +13,7 @@
 
 import _ from 'lodash';
 import moment from 'moment';
-import {PanelCtrl} from 'app/plugins/sdk';
+import {MetricsPanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelEditor} from './editor';
 import './css/panel_triggers.css!';
 
@@ -45,7 +45,7 @@ var panelDefaults = {
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
   showEvents: { text: 'Problem events', value: '1' },
   triggerSeverity: defaultSeverity,
-  okEventColor: '#890F02',
+  okEventColor: 'rgba(0, 245, 153, 0.45)',
 };
 
 var triggerStatusMap = {
@@ -55,12 +55,13 @@ var triggerStatusMap = {
 
 var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 
-class TriggerPanelCtrl extends PanelCtrl {
+class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $q, $element, datasourceSrv) {
+  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
+    this.templateSrv = templateSrv;
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
 
@@ -73,9 +74,14 @@ class TriggerPanelCtrl extends PanelCtrl {
 
   // Add panel editor
   initEditMode() {
-    super.initEditMode();
+    // Use initialize method from PanelCtrl instead MetricsPanelCtrl.
+    // We don't need metric editor from Metrics Panel.
+    this.editorTabs = [];
+    this.addEditorTab('General', 'public/app/partials/panelgeneral.html');
+
     this.icon = "fa fa-lightbulb-o";
     this.addEditorTab('Options', triggerPanelEditor, 2);
+    this.editModeInitiated = true;
   }
 
   refreshData() {
@@ -85,11 +91,12 @@ class TriggerPanelCtrl extends PanelCtrl {
     return this.datasourceSrv.get(this.panel.datasource).then(datasource => {
       var zabbix = datasource.zabbixAPI;
       var queryProcessor = datasource.queryProcessor;
-      var triggerFilter = self.panel.triggers;
       var showEvents = self.panel.showEvents.value;
-      var buildQuery = queryProcessor.buildTriggerQuery(triggerFilter.group.filter,
-                                                        triggerFilter.host.filter,
-                                                        triggerFilter.application.filter);
+      var triggerFilter = self.panel.triggers;
+      var groupFilter = self.templateSrv.replace(triggerFilter.group.filter);
+      var hostFilter = self.templateSrv.replace(triggerFilter.host.filter);
+      var appFilter = self.templateSrv.replace(triggerFilter.application.filter);
+      var buildQuery = queryProcessor.buildTriggerQuery(groupFilter, hostFilter, appFilter);
       return buildQuery.then(query => {
         return zabbix.getTriggers(query.groupids,
                                   query.hostids,
@@ -184,6 +191,14 @@ class TriggerPanelCtrl extends PanelCtrl {
           });
       });
     });
+  }
+
+  switchComment(trigger) {
+    trigger.showComment = !trigger.showComment;
+  }
+
+  switchAcknowledges(trigger) {
+    trigger.showAcknowledges = !trigger.showAcknowledges;
   }
 }
 
