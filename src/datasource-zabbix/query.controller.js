@@ -113,7 +113,7 @@ export class ZabbixQueryController extends QueryCtrl {
       .then(groups => {
         var groupids = _.map(groups, 'groupid');
         return self.zabbix
-          .getHostsByGroups(groupids)
+          .getHosts(groupids)
           .then(hosts => {
             self.metric.hostList = hosts;
             return hosts;

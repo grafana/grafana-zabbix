@@ -136,32 +136,10 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       return this.request('host.get', params);
     }
 
-    getHostsByGroups(groupids) {
-      var params = {
-        output: ['name', 'host'],
-        groupids: groupids
-      };
-
-      return this.request('host.get', params);
-    }
-
     getApps(hostids) {
       var params = {
         output: ['applicationid', 'name'],
         hostids: hostids
-      };
-
-      return this.request('application.get', params);
-    }
-
-    getApplications() {
-      var params = {
-        output: ['applicationid', 'name'],
-
-        // Hack for supporting different apis (2.2 vs 2.4 vs 3.0)
-        selectHost: ['hostid'],
-        selectHosts: ['hostid'],
-        selectItems: ['itemid']
       };
 
       return this.request('application.get', params);
@@ -193,30 +171,6 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
             return item;
           });
         });
-    }
-
-    /**
-     * Get Hosts list with host's items.
-     * @return {[type]} [description]
-     */
-    getHostsExtend() {
-      var params = {
-        output: ['name', 'host'],
-        sortfield: 'name',
-        selectGroups: ['groupid'],
-        selectApplications: ['applicationid'],
-        selectItems: [
-          'itemid',
-          'name',
-          'key_',
-          'value_type',
-          'hostid',
-          'status',
-          'state'
-        ]
-      };
-
-      return this.request('host.get', params);
     }
 
     getLastValue(itemid) {
