@@ -117,7 +117,8 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
     getGroups() {
       var params = {
         output: ['name'],
-        sortfield: 'name'
+        sortfield: 'name',
+        real_hosts: true
       };
 
       return this.request('hostgroup.get', params);
