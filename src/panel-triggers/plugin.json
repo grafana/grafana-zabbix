@@ -1,8 +1,16 @@
 {
   "type": "panel",
-  "name": "Zabbix triggers",
+  "name": "Zabbix Triggers",
   "id": "triggers",
 
-  "module": "plugins/triggers/module",
-  "staticRoot": "."
+  "info": {
+    "author": {
+      "name": "Alexander Zobnin",
+      "url": "http://grafana-zabbix.org"
+    },
+    "logos": {
+      "small": "img/zabbix_logo.svg",
+      "large": "img/zabbix_logo.svg"
+    }
+  }
 }

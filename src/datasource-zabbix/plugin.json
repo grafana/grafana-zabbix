@@ -1,12 +1,19 @@
 {
   "type": "datasource",
-  "name": "Zabbix",
+  "name": "Zabbix Datasource",
   "id": "zabbix",
 
-  "module": "plugins/zabbix/module",
-
-  "staticRoot": ".",
-
   "metrics": true,
-  "annotations": true
+  "annotations": true,
+
+  "info": {
+    "author": {
+      "name": "Alexander Zobnin",
+      "url": "http://grafana-zabbix.org"
+    },
+    "logos": {
+      "small": "img/zabbix_logo.svg",
+      "large": "img/zabbix_logo.svg"
+    }
+  }
 }
