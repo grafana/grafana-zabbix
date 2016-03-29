@@ -2,6 +2,7 @@
 import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
+import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
 import DataProcessor from './DataProcessor';
 import './zabbixAPI.service.js';
@@ -110,6 +111,8 @@ export class ZabbixAPIDatasource {
     var promises = _.map(options.targets, function(target) {
 
       if (target.mode !== 1) {
+        //console.log(migrations.isGrafana2target(target), target);
+        target = migrations.migrate(target);
 
         // Don't request undefined and hidden targets
         if (target.hide || !target.group ||

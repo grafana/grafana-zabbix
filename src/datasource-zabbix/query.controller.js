@@ -2,6 +2,7 @@ import {QueryCtrl} from 'app/plugins/sdk';
 import _ from 'lodash';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
+import * as migrations from './migrations';
 
 import './add-metric-function.directive';
 import './metric-function-editor.directive';
@@ -31,6 +32,8 @@ export class ZabbixQueryController extends QueryCtrl {
     this.getItemNames = _.partial(getMetricNames, this, 'itemList');
 
     this.init = function() {
+
+      this.target = migrations.migrate(this.target);
 
       this.templateSrv = templateSrv;
       var target = this.target;
