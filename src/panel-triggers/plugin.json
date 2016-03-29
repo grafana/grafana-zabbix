@@ -1,7 +1,7 @@
 {
   "type": "panel",
   "name": "Zabbix Triggers",
-  "id": "triggers",
+  "id": "zabbix-triggers-panel",
 
   "info": {
     "author": {

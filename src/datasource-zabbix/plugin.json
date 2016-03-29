@@ -1,7 +1,7 @@
 {
   "type": "datasource",
-  "name": "Zabbix Datasource",
-  "id": "zabbix",
+  "name": "Zabbix",
+  "id": "zabbix-datasource",
 
   "metrics": true,
   "annotations": true,
