@@ -65,3 +65,13 @@ export function formatAcknowledges(acknowledges) {
     return '';
   }
 }
+
+export function convertToZabbixAPIUrl(url) {
+  var zabbixAPIUrlPattern = /.*api_jsonrpc.php$/;
+  var trimSlashPattern = /(.*?)[\/]*$/;
+  if (url.match(zabbixAPIUrlPattern)) {
+    return url;
+  } else {
+    return url.replace(trimSlashPattern, "$1");
+  }
+}
