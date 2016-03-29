@@ -111,7 +111,8 @@ export class ZabbixAPIDatasource {
     var promises = _.map(options.targets, function(target) {
 
       if (target.mode !== 1) {
-        //console.log(migrations.isGrafana2target(target), target);
+
+        // Migrate old targets
         target = migrations.migrate(target);
 
         // Don't request undefined and hidden targets

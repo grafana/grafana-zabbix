@@ -33,10 +33,11 @@ export class ZabbixQueryController extends QueryCtrl {
 
     this.init = function() {
 
-      this.target = migrations.migrate(this.target);
-
       this.templateSrv = templateSrv;
       var target = this.target;
+
+      // Migrate old targets
+      target = migrations.migrate(target);
 
       var scopeDefaults = {
         metric: {},
@@ -68,11 +69,6 @@ export class ZabbixQueryController extends QueryCtrl {
           {name: "min", value: "min"},
           {name: "max", value: "max"}
         ];
-
-        // Set avg by default
-        if (!target.downsampleFunction) {
-          target.downsampleFunction = this.downsampleFunctionList[0];
-        }
 
         this.initFilters();
       }
