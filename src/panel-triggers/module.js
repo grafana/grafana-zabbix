@@ -82,6 +82,11 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.icon = "fa fa-lightbulb-o";
     this.addEditorTab('Options', triggerPanelEditor, 2);
     this.editModeInitiated = true;
+    this.events.emit('init-edit-mode', null);
+  }
+
+  onMetricsPanelRefresh() {
+    this.refreshData();
   }
 
   refreshData() {
