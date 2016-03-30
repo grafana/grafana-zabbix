@@ -25,8 +25,6 @@ export function migrateFrom2To3version(target) {
   target.application.isRegex = target.application.name === "*";
   target.item.filter = target.item.name === "All" ? convertToRegex(target.itemFilter) : target.item.name;
   target.item.isRegex = target.item.name === "All";
-  target.functions = [];
-  target.refId = target.refId ? target.refId : "A";
   return target;
 }
 

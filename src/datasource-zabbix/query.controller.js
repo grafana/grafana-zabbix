@@ -53,6 +53,7 @@ export class ZabbixQueryController extends QueryCtrl {
         application: { filter: "" },
         item: { filter: "" },
         functions: [],
+        refId: "A"
       };
       _.defaults(target, targetDefaults);
 
