@@ -343,6 +343,9 @@ export class ZabbixAPIDatasource {
     var self = this;
     var showOkEvents = annotation.showOkEvents ? [0, 1] : 1;
 
+    // Show all triggers
+    var showTriggers = [0, 1];
+
     var buildQuery = self.queryProcessor.buildTriggerQuery(this.templateSrv.replace(annotation.group),
                                                            this.templateSrv.replace(annotation.host),
                                                            this.templateSrv.replace(annotation.application));
@@ -350,7 +353,7 @@ export class ZabbixAPIDatasource {
       return self.zabbixAPI.getTriggers(query.groupids,
                                         query.hostids,
                                         query.applicationids,
-                                        true)
+                                        showTriggers)
         .then(function(triggers) {
 
           // Filter triggers by description

@@ -43,7 +43,7 @@ var panelDefaults = {
   limit: 10,
   showTriggers: 'all triggers',
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
-  showEvents: { text: 'Problem events', value: '1' },
+  showEvents: { text: 'Problems', value: '1' },
   triggerSeverity: defaultSeverity,
   okEventColor: 'rgba(0, 245, 153, 0.45)',
 };

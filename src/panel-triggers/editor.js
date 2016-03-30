@@ -44,9 +44,9 @@ class TriggerPanelEditorCtrl{
     ];
 
     this.showEventsFields = [
-      { text: 'all events',     value: [0,1] },
-      { text: 'Ok events',      value: 0 },
-      { text: 'Problem events', value: 1 }
+      { text: 'All',     value: [0,1] },
+      { text: 'OK',      value: [0] },
+      { text: 'Problems', value: 1 }
     ];
 
     // Load scope defaults
