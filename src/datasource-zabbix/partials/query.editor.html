@@ -94,7 +94,7 @@
         data-min-length=0
         data-items=100
         class="input-medium tight-form-input"
-        ng-style="ctrl.target.group.style">
+        ng-class="{'zbx-regex': ctrl.isRegex(ctrl.target.group.filter)}">
     </li>
 
     <!-- Select Host -->
@@ -108,7 +108,7 @@
         data-min-length=0
         data-items=100
         class="input-large tight-form-input"
-        ng-style="ctrl.target.host.style">
+        ng-class="{'zbx-regex': ctrl.isRegex(ctrl.target.host.filter)}">
     </li>
     <li class="tight-form-item" ng-hide="ctrl.target.mode == 2">
       Show disabled items&nbsp;
@@ -155,7 +155,7 @@
         data-min-length=0
         data-items=100
         class="input-medium tight-form-input"
-        ng-style="ctrl.target.application.style">
+        ng-class="{'zbx-regex': ctrl.isRegex(ctrl.target.application.filter)}">
     </li>
 
     <!-- Select Item -->
@@ -169,7 +169,7 @@
         data-min-length=0
         data-items=100
         class="input-large tight-form-input"
-        ng-style="ctrl.target.item.style">
+        ng-class="{'zbx-regex': ctrl.isRegex(ctrl.target.item.filter)}">
     </li>
     <li class="tight-form-item query-keyword">Options</li>
     <li ng-repeat="func in ctrl.target.functions">

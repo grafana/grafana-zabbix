@@ -7,6 +7,8 @@ import * as migrations from './migrations';
 import './add-metric-function.directive';
 import './metric-function-editor.directive';
 
+import './css/query-editor.css!';
+
 export class ZabbixQueryController extends QueryCtrl {
 
   // ZabbixQueryCtrl constructor
@@ -171,9 +173,13 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   onTargetPartChange(targetPart) {
-    var regexStyle = {'color': '#CCA300'};
+    /*var regexStyle = {'color': '#CCA300'};
     targetPart.isRegex = utils.isRegex(targetPart.filter);
-    targetPart.style = targetPart.isRegex ? regexStyle : {};
+    targetPart.style = targetPart.isRegex ? regexStyle : {};*/
+  }
+
+  isRegex(str) {
+    return utils.isRegex(str);
   }
 
   onTargetBlur() {

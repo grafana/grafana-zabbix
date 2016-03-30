@@ -134,7 +134,7 @@ export class ZabbixAPIDatasource {
           return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter)
             .then(function(items) {
               // Add hostname for items from multiple hosts
-              var addHostName = target.host.isRegex;
+              var addHostName = utils.isRegex(target.host.filter);
               var getHistory;
 
               // Use trends
