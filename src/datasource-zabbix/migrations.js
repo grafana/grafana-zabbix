@@ -4,7 +4,7 @@
  */
 
 export function isGrafana2target(target) {
-  if (!target.mode || target.mode === 0) {
+  if (!target.mode || target.mode === 0 || target.mode === 2) {
     if ((target.hostFilter || target.itemFilter || target.downsampleFunction ||  target.host.host) &&
         (target.item.filter === undefined && target.host.filter === undefined)) {
       return true;
