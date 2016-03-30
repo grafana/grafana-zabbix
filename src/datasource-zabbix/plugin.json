@@ -1,7 +1,7 @@
 {
   "type": "datasource",
   "name": "Zabbix",
-  "id": "zabbix",
+  "id": "zabbix-datasource",
 
   "module": "plugins/zabbix/module",
 
