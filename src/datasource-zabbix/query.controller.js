@@ -182,6 +182,18 @@ export class ZabbixQueryController extends QueryCtrl {
     return utils.isRegex(str);
   }
 
+  isVariable(str) {
+    var variablePattern = /^\$\w+/;
+    if (variablePattern.test(str)) {
+      var variables = _.map(this.templateSrv.variables, variable => {
+        return '$' + variable.name;
+      });
+      return _.contains(variables, str);
+    } else {
+      return false;
+    }
+  }
+
   onTargetBlur() {
     var newTarget = _.cloneDeep(this.target);
     if (!_.isEqual(this.oldTarget, this.target)) {
