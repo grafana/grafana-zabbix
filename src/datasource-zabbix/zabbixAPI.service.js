@@ -313,7 +313,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
           value: 1
         },
         selectGroups: ['name'],
-        selectHosts: ['name'],
+        selectHosts: ['name', 'host'],
         selectItems: ['name', 'key_', 'lastvalue'],
         selectLastEvent: 'extend'
       };

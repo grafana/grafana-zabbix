@@ -122,6 +122,11 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
               }
               triggerObj.age = timestamp.fromNow(true);
 
+              // Set host that the trigger belongs
+              if (trigger.hosts.length) {
+                triggerObj.host = trigger.hosts[0].name;
+              }
+
               // Set color
               if (trigger.value === '1') {
                 triggerObj.color = self.panel.triggerSeverity[trigger.priority].color;
