@@ -150,7 +150,7 @@ class TriggerPanelEditorCtrl{
     this.popoverSrv.show({
       element: el,
       placement: 'top',
-      templateUrl:  'public/plugins/zabbix-triggers-panel/trigger.colorpicker.html',
+      templateUrl:  'public/plugins/zabbix-app/panel-triggers/trigger.colorpicker.html',
       scope: popoverScope
     });
   }
@@ -167,7 +167,7 @@ class TriggerPanelEditorCtrl{
     this.popoverSrv.show({
       element: el,
       placement: 'top',
-      templateUrl:  'public/plugins/zabbix-triggers-panel/trigger.colorpicker.html',
+      templateUrl:  'public/plugins/zabbix-app/panel-triggers/trigger.colorpicker.html',
       scope: popoverScope
     });
   }
@@ -192,7 +192,7 @@ export function triggerPanelEditor() {
   return {
     restrict: 'E',
     scope: true,
-    templateUrl: 'public/plugins/zabbix-triggers-panel/editor.html',
+    templateUrl: 'public/plugins/zabbix-app/panel-triggers/editor.html',
     controller: TriggerPanelEditorCtrl,
   };
 }
