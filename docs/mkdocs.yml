@@ -13,7 +13,8 @@ pages:
     - 'About Grafana-Zabbix': 'index.md'
     - 'Feature Highlights': 'features.md'
 - Installation:
-    - 'Installation and Configuration': 'installation/index.md'
+    - 'Installation': 'installation/index.md'
+    - 'Configuration': 'installation/configuration.md'
     - 'Troubleshooting': 'installation/troubleshooting.md'
 - User Guides:
     - 'Getting Started': 'guides/gettingstarted.md'
