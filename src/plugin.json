@@ -9,7 +9,7 @@
   },
 
   "info": {
-    "description": "Zabbix bundle for Grafana",
+    "description": "Zabbix plugin for Grafana",
     "author": {
       "name": "Alexander Zobnin",
       "url": "http://grafana-zabbix.org"
@@ -19,8 +19,8 @@
       {"name": "Project site", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
       {"name": "License & Terms", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
     ],
-    "version": "1.0.0",
-    "updated": "2016-03-28"
+    "version": "1.0.0-beta1",
+    "updated": "2016-03-31"
   },
 
   "includes": [
