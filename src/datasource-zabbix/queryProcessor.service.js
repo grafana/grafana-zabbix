@@ -195,7 +195,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         var query = {};
 
         if (appFilter) {
-          query.applicationids = _.flatten(_.map(filteredApps, 'applicationids'));
+          query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
         }
         if (hostFilter) {
           query.hostids = _.map(filteredHosts, 'hostid');
