@@ -93,9 +93,12 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       var queryProcessor = datasource.queryProcessor;
       var showEvents = self.panel.showEvents.value;
       var triggerFilter = self.panel.triggers;
+
+      // Replace template variables
       var groupFilter = self.templateSrv.replace(triggerFilter.group.filter);
       var hostFilter = self.templateSrv.replace(triggerFilter.host.filter);
       var appFilter = self.templateSrv.replace(triggerFilter.application.filter);
+
       var buildQuery = queryProcessor.buildTriggerQuery(groupFilter, hostFilter, appFilter);
       return buildQuery.then(query => {
         return zabbix.getTriggers(query.groupids,
@@ -124,8 +127,10 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
 
               // Set color
               if (trigger.value === '1') {
+                // Problem state
                 triggerObj.color = self.panel.triggerSeverity[trigger.priority].color;
               } else {
+                // OK state
                 triggerObj.color = self.panel.okEventColor;
               }
 
