@@ -24,6 +24,13 @@ a number of ways to get help:
 
 Or you can just send me [emai](mailto:alexanderzobnin@gmail.com).
 
+## Support Project
+I develop this project in my free time, but if you really find it helpful and promising, you can
+support me. There are some ways to do this. You can [donate](https://www.paypal.me/alexanderzobnin) 
+any reasonable amount, or you can request a feature development, interesting for you (for example, 
+Triggers panel was sponsored by [Core IT Project](http://coreit.fr/)). Or you can even hire me if
+you want to maintaining this project in your company.
+
 ## License
 
 By utilizing this software, you agree to the terms of the included license. Grafana-Zabbix is
