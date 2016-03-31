@@ -1,0 +1,136 @@
+<div class="triggers-panel-container">
+  <div class="triggers-panel-header-bg"></div>
+  <div class="triggers-panel-scroll">
+    <table class="triggers-panel-table">
+      <thead>
+        <tr>
+          <th ng-if="ctrl.panel.hostField" style="width: 15%">
+            <div class="triggers-panel-table-header-inner pointer">
+              Host
+            </div>
+          </th>
+          <th ng-if="ctrl.panel.statusField" style="width: 85px">
+            <div class="triggers-panel-table-header-inner pointer">Status</div>
+          </th>
+          <th ng-if="ctrl.panel.severityField" style="width: 120px">
+            <div class="triggers-panel-table-header-inner pointer">Severity</div>
+          </th>
+          <th>
+            <div class="triggers-panel-table-header-inner pointer">Issue</div>
+          </th>
+          <th ng-if="ctrl.panel.lastChangeField" style="width: 220px">
+            <div class="triggers-panel-table-header-inner pointer">Last change</div>
+          </th>
+          <th ng-if="ctrl.panel.ageField" style="width: 180px">
+            <div class="triggers-panel-table-header-inner pointer">Age</div>
+          </th>
+          <th ng-if="ctrl.panel.infoField" style="width: 100px">
+            <div class="triggers-panel-table-header-inner pointer">Info</div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="trigger in ctrl.triggerList">
+          <td ng-if="ctrl.panel.hostField">
+            <div>
+              <span><strong>{{trigger.host}}</strong></span>
+            </div>
+          </td>
+          <td ng-if="ctrl.panel.statusField" style="background-color: {{trigger.color}}; color: white">
+            <div>
+              {{ctrl.triggerStatusMap[trigger.value]}}
+            </div>
+          </td>
+          <td ng-if="ctrl.panel.severityField" style="background-color: {{trigger.color}}; color: white">
+            <div>
+              {{trigger.severity}}
+            </div>
+          </td>
+          <td style="background-color: {{trigger.color}}; color: white">
+            <div>
+              {{trigger.description}}
+              <a  ng-if="trigger.comments"
+                  role="button"
+                  ng-click="ctrl.switchComment(trigger)"
+                  class="pointer"
+                  style="float: right; padding-right: 8px"
+                  bs-tooltip="'Show additional trigger description'"
+                  data-placement="top">
+                <i class="fa fa-file-text-o"></i>
+              </a>
+            </div>
+
+            <!-- Trigger comments -->
+            <div  class="collapse"
+                  id="comments-{{trigger.triggerid}}"
+                  ng-if="trigger.showComment">
+              <div>
+                <small>{{trigger.comments}}</small>
+              </div>
+            </div>
+
+            <!-- Trigger acknowledges -->
+            <div  class="collapse"
+                  id="acknowledges-{{trigger.triggerid}}"
+                  ng-if="trigger.showAcknowledges">
+              <div style="padding-top: 12px;">
+                <table class="table table-condensed">
+                  <thead>
+                    <tr>
+                      <th><small>Time</small></th>
+                      <th><small>User</small></th>
+                      <th><small>Comments</small></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-repeat="ack in trigger.acknowledges">
+                      <td>
+                        <small>{{ack.time}}</small>
+                      </td>
+                      <td>
+                        <small>{{ack.user}}</small>
+                      </td>
+                      <td>
+                        <small>{{ack.message}}</small>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </td>
+          <td ng-if="ctrl.panel.lastChangeField">
+            {{trigger.lastchange}}
+          </td>
+          <td ng-if="ctrl.panel.ageField">
+            {{trigger.age}}
+          </td>
+          <td ng-if="ctrl.panel.infoField">
+
+            <!-- Trigger Url -->
+            <a  ng-if="trigger.url"
+                href="{{trigger.url}}"
+                target="_blank">
+              <i class="fa fa-external-link"></i>
+            </a>
+
+            <!-- Trigger state -->
+            <span ng-if="trigger.state === '1'"
+                  bs-tooltip="'{{trigger.error}}'">
+              <i class="fa fa-question-circle"></i>
+            </span>
+
+            <!-- Trigger acknowledges -->
+            <a  ng-if="trigger.acknowledges"
+                role="button"
+                ng-click="ctrl.switchAcknowledges(trigger)"
+                bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'">
+              <i class="fa fa-comments"></i>
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="triggers-panel-footer"></div>

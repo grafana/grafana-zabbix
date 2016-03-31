@@ -1,46 +1,36 @@
-# Grafana-Zabbix
+# Zabbix plugin for Grafana
 
-#### Zabbix datasource for Grafana dashboard
+Zabbix datasource, Triggers panel and more.
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/alexanderzobnin/grafana-zabbix?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-
-##### [Donate](https://www.paypal.me/alexanderzobnin)
 
 ##### See features overview and dashboards examples at Grafana-Zabbix [Live demo](http://play.grafana-zabbix.org) site.
 
 ##### Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/releases/latest)
 
-Display your Zabbix data directly in [Grafana](http://grafana.org) dashboards!
+### Meet grafana-zabbix 3.0
+Download [grafana-zabbix 3.0 beta](https://github.com/alexanderzobnin/grafana-zabbix/releases/latest)
+
+[Documentation](http://docs.grafana-zabbix.org)  
+Read [installation instruction](http://docs.grafana-zabbix.org/installation/) for version 3.0.
+
+Display your Zabbix data with powerful [Grafana](http://grafana.org) dashboards!
 
 ![Dashboard](https://cloud.githubusercontent.com/assets/4932851/8269101/9e6ee67e-17a3-11e5-85de-fe9dcc2dd375.png)
-
-#### [Documentation](https://github.com/alexanderzobnin/grafana-zabbix/wiki)
-1. [**Overview**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Overview)
-2. [**Installation**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Installation#grafana-21x-and-25x)
-3. [**User’s Guide**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Usage)
-4. [**Troubleshooting**](https://github.com/alexanderzobnin/grafana-zabbix/wiki/Troubleshooting)
 
 ## Features
 
 #### Flexible metric editor
  * hosts and items filtering:
- 
-[![regex_filter](https://cloud.githubusercontent.com/assets/4932851/8312766/5eb34480-19e7-11e5-925f-452a99ec0ab6.gif)](https://cloud.githubusercontent.com/assets/4932851/8312766/5eb34480-19e7-11e5-925f-452a99ec0ab6.gif)
-
- * Custom scale for each target:
-
-![Scale](https://cloud.githubusercontent.com/assets/4932851/8269207/212549be-17a9-11e5-9e33-90deb90ddc13.png)
+ * Custom scale for each target
 
 #### Templated dashboards support
 Group, host, application or item names can be replaced with a template variable. This allows you to create generic dashboards that can quickly be changed to show stats for a specific cluster, server or application.
 
-[![templated_dashboard](https://cloud.githubusercontent.com/assets/4932851/8312492/7f286c38-19e5-11e5-8c19-1b9e97292b06.gif)](https://cloud.githubusercontent.com/assets/4932851/8312492/7f286c38-19e5-11e5-8c19-1b9e97292b06.gif)
 
 #### Annotations support
- * Display zabbix events on graphs:
-![Annotations](https://cloud.githubusercontent.com/assets/4932851/8269358/622ec3be-17ad-11e5-8023-eba137369cfe.png)
- * Show acknowledges for problems:  
-![Acknowledges](https://cloud.githubusercontent.com/assets/4932851/8269375/e6d8706a-17ad-11e5-8e2d-2d707d8ee67f.png)
+ * Display zabbix events on graphs
+ * Show acknowledges for problems
 
 ### Dockerized Grafana with Zabbix datasource
 

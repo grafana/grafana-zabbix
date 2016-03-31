@@ -1,0 +1,47 @@
+{
+  "type": "app",
+  "name": "Zabbix App",
+  "id": "zabbix-app",
+
+  "css": {
+    "dark":  "css/dark.css",
+    "light":  "css/light.css"
+  },
+
+  "info": {
+    "description": "Zabbix plugin for Grafana",
+    "author": {
+      "name": "Alexander Zobnin",
+      "url": "http://grafana-zabbix.org"
+    },
+    "keywords": ["zabbix"],
+    "links": [
+      {"name": "Project site", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
+      {"name": "License & Terms", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
+    ],
+    "version": "1.0.0-beta1",
+    "updated": "2016-03-31"
+  },
+
+  "includes": [
+    {
+      "type": "datasource",
+      "name": "Zabbix Datasource"
+    },
+    {
+      "type": "panel",
+      "name": "Triggers Panel"
+    },
+    {
+      "type": "dashboard",
+      "name": "Zabbix Server Dashboard",
+      "path": "dashboards/zabbix_server_dashboard.json",
+      "addToNav": true
+    }
+  ],
+
+  "dependencies": {
+    "grafanaVersion": "3.x.x",
+    "plugins": []
+  }
+}
