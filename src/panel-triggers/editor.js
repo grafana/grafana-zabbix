@@ -73,7 +73,7 @@ class TriggerPanelEditorCtrl{
     this.datasourceSrv.get(this.panel.datasource).then(function (datasource) {
       self.datasource = datasource;
       self.initFilters();
-      self.panelCtrl.refreshData();
+      self.panelCtrl.refresh();
     });
   }
 
@@ -119,7 +119,7 @@ class TriggerPanelEditorCtrl{
     var newTarget = _.cloneDeep(this.panel.triggers);
     if (!_.isEqual(this.oldTarget, this.panel.triggers)) {
       this.oldTarget = newTarget;
-      this.panelCtrl.refreshData();
+      this.panelCtrl.refresh();
     }
   }
 
@@ -128,11 +128,11 @@ class TriggerPanelEditorCtrl{
       trigger.color = this.panel.triggerSeverity[trigger.priority].color;
       trigger.severity = this.panel.triggerSeverity[trigger.priority].severity;
     });
-    this.panelCtrl.refreshData();
+    this.panelCtrl.refresh();
   }
 
   datasourceChanged() {
-    this.panelCtrl.refreshData();
+    this.panelCtrl.refresh();
   }
 
   changeTriggerSeverityColor(trigger, color) {

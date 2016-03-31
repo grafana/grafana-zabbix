@@ -98,7 +98,7 @@
             <select class="input-medium tight-form-input"
                     ng-model="editor.panel.showTriggers"
                     ng-options="f for f in editor.ackFilters"
-                    ng-change="editor.panelCtrl.refreshData()">
+                    ng-change="editor.panelCtrl.refresh()">
             </select>
           </li>
           <li class="tight-form-item" style="width: 13em">
@@ -109,7 +109,7 @@
                     type="number"
                     ng-model="editor.panel.limit"
                     ng-model-onblur
-                    ng-change="editor.panelCtrl.refreshData()">
+                    ng-change="editor.panelCtrl.refresh()">
           </li>
         </ul>
         <div class="clearfix"></div>
@@ -123,7 +123,7 @@
             <select class="input-medium tight-form-input"
                     ng-model="editor.panel.sortTriggersBy"
                     ng-options="f.text for f in editor.sortByFields track by f.value"
-                    ng-change="editor.panelCtrl.refreshData()">
+                    ng-change="editor.panelCtrl.refresh()">
             </select>
           </li>
           <li class="tight-form-item" style="width: 13em">
@@ -133,7 +133,7 @@
             <select class="tight-form-input input-medium"
                     ng-model="editor.panel.showEvents"
                     ng-options="f.text for f in editor.showEventsFields track by f.value"
-                    ng-change="editor.panelCtrl.refreshData()">
+                    ng-change="editor.panelCtrl.refresh()">
             </select>
           </li>
         </ul>
@@ -209,7 +209,7 @@
             <input  class="cr1"
                     id="customLastChangeFormat"
                     type="checkbox"
-                    ng-change="editor.panelCtrl.refreshData()"
+                    ng-change="editor.panelCtrl.refresh()"
                     ng-model="editor.panel.customLastChangeFormat"
                     ng-checked="editor.panel.customLastChangeFormat">
             <label for="customLastChangeFormat" class="cr1"></label>
@@ -217,7 +217,7 @@
           <li ng-if="editor.panel.customLastChangeFormat">
             <input  type="text"
                     ng-model="editor.panel.lastChangeFormat"
-                    ng-blur="editor.panelCtrl.refreshData()"
+                    ng-blur="editor.panelCtrl.refresh()"
                     placeholder="dddd, MMMM Do YYYY, h:mm:ss a"
                     class="tight-form-input"
                     style="width: 300px"
@@ -250,10 +250,10 @@
                   style="color: white"
                   ng-style="{background: trigger.color}"
                   ng-model-onblur
-                  ng-change="editor.panelCtrl.refreshData()">
+                  ng-change="editor.panelCtrl.refresh()">
         </li>
         <li class="tight-form-item">
-          <spectrum-picker ng-model="trigger.color" ng-change="editor.panelCtrl.refreshData()"></spectrum-picker>
+          <spectrum-picker ng-model="trigger.color" ng-change="editor.panelCtrl.refresh()"></spectrum-picker>
         </li>
         <li class="tight-form-item last" style="width: 28px">
           <label class="checkbox-label" for="{{ 'trigger-show-' + $index }}"></label>
@@ -262,7 +262,7 @@
                     type="checkbox"
                     ng-model="trigger.show"
                     ng-checked="trigger.show"
-                    ng-change="editor.panelCtrl.refreshData()">
+                    ng-change="editor.panelCtrl.refresh()">
             <label for="{{ 'trigger-show-' + $index }}" class="cr1"></label>
         </li>
       </ul>
@@ -278,7 +278,7 @@
         <li class="tight-form-item">
           <spectrum-picker
             ng-model="editor.panel.okEventColor"
-            ng-change="editor.panelCtrl.refreshData()">
+            ng-change="editor.panelCtrl.refresh()">
           </spectrum-picker>
         </li>
       </ul>

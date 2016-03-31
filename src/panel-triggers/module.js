@@ -80,7 +80,19 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.addEditorTab('Options', triggerPanelEditor, 2);
   }
 
+  refresh() {
+    this.onMetricsPanelRefresh();
+  }
+
   onMetricsPanelRefresh() {
+    // ignore fetching data if another panel is in fullscreen
+    if (this.otherPanelInFullscreenMode()) { return; }
+
+    // clear loading/error state
+    delete this.error;
+    this.loading = true;
+    this.setTimeQueryStart();
+
     this.refreshData();
   }
 
@@ -196,7 +208,8 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                 // Limit triggers number
                 self.triggerList  = _.first(triggerList, self.panel.limit);
 
-                self.renderingCompleted();
+                this.setTimeQueryEnd();
+                this.loading = false;
               });
           });
       });
