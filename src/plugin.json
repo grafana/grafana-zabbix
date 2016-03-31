@@ -3,8 +3,6 @@
   "name": "Zabbix App",
   "id": "zabbix-app",
 
-  "pages": [],
-
   "css": {
     "dark":  "css/dark.css",
     "light":  "css/light.css"
@@ -26,9 +24,20 @@
   },
 
   "includes": [
-    {"type": "dashboard", "name": "Example Zabbix Dashboard", "path": "dashboards/example_zabbix_dashboard.json"},
-    {"type": "panel", "name": "Triggers Panel"},
-    {"type": "datasource", "name": "Zabbix Datasource"}
+    {
+      "type": "datasource",
+      "name": "Zabbix Datasource"
+    },
+    {
+      "type": "panel",
+      "name": "Triggers Panel"
+    },
+    {
+      "type": "dashboard",
+      "name": "Zabbix Server Dashboard",
+      "path": "dashboards/zabbix_server_dashboard.json",
+      "addToNav": true
+    }
   ],
 
   "dependencies": {
