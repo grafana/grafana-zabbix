@@ -5,13 +5,8 @@ page_description: Installation instructions for Grafana-Zabbix.
 
 ## From release package
 Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/releases/latest)
-for relative Grafana version or just clone a repo:
-```
-git clone https://github.com/alexanderzobnin/grafana-zabbix.git
-```
-
-Copy content of `plugins` into your grafana plugins directory (default `/var/lib/grafana/plugins`
-if your installing grafana with package).
+for relative Grafana version. Unpack archive and copy *grafana-zabbix* into your grafana 
+plugins directory (default `/var/lib/grafana/plugins` if your installing grafana with package).
 Restart grafana-server and the plugin should be automatically detected and used.
 
 ## Building from sources
