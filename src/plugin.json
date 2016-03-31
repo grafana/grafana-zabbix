@@ -17,10 +17,6 @@
       "url": "http://grafana-zabbix.org"
     },
     "keywords": ["zabbix"],
-    "logos": {
-      "small": "/src/img/small_logo.png",
-      "large": "/src/img/large_logo.png"
-    },
     "links": [
       {"name": "Project site", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
       {"name": "License & Terms", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
