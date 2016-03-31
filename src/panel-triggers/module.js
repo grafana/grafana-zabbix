@@ -212,7 +212,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 }
 
-TriggerPanelCtrl.templateUrl = 'module.html';
+TriggerPanelCtrl.templateUrl = 'panel-triggers/module.html';
 
 function filterTriggers(triggers, triggerFilter) {
   if (isRegex(triggerFilter)) {

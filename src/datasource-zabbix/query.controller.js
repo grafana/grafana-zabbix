@@ -288,7 +288,7 @@ export class ZabbixQueryController extends QueryCtrl {
 }
 
 // Set templateUrl as static property
-ZabbixQueryController.templateUrl = 'partials/query.editor.html';
+ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';
 
 // Get list of metric names for bs-typeahead directive
 function getMetricNames(scope, metricList) {
