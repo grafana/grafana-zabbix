@@ -337,8 +337,8 @@ export class ZabbixAPIDatasource {
   /////////////////
 
   annotationQuery(options) {
-    var from = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
-    var to = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
+    var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
+    var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
     var annotation = options.annotation;
     var self = this;
     var showOkEvents = annotation.showOkEvents ? [0, 1] : 1;
@@ -353,7 +353,8 @@ export class ZabbixAPIDatasource {
       return self.zabbixAPI.getTriggers(query.groupids,
                                         query.hostids,
                                         query.applicationids,
-                                        showTriggers)
+                                        showTriggers,
+                                        timeFrom, timeTo)
         .then(function(triggers) {
 
           // Filter triggers by description
@@ -373,7 +374,7 @@ export class ZabbixAPIDatasource {
           });
 
           var objectids = _.map(triggers, 'triggerid');
-          return self.zabbixAPI.getEvents(objectids, from, to, showOkEvents)
+          return self.zabbixAPI.getEvents(objectids, timeFrom, timeTo, showOkEvents)
             .then(function (events) {
               var indexedTriggers = _.indexBy(triggers, 'triggerid');
 
