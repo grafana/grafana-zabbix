@@ -34,5 +34,9 @@ export function migrate(target) {
 }
 
 function convertToRegex(str) {
-  return '/' + str + '/';
+  if (str) {
+    return '/' + str + '/';
+  } else {
+    return '/.*/';
+  }
 }
