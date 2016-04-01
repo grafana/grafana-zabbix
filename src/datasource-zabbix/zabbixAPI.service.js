@@ -298,7 +298,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       return this.request('service.getsla', params);
     }
 
-    getTriggers(groupids, hostids, applicationids, showTriggers) {
+    getTriggers(groupids, hostids, applicationids, showTriggers, timeFrom, timeTo) {
       var params = {
         output: 'extend',
         groupids: groupids,
@@ -320,6 +320,11 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
 
       if (showTriggers) {
         params.filter.value = showTriggers;
+      }
+
+      if (timeFrom || timeTo) {
+        params.lastChangeSince = timeFrom;
+        params.lastChangeTill = timeTo;
       }
 
       return this.request('trigger.get', params);
