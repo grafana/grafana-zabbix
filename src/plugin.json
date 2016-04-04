@@ -1,6 +1,6 @@
 {
   "type": "app",
-  "name": "Zabbix App",
+  "name": "Zabbix",
   "id": "zabbix-app",
 
   "css": {
