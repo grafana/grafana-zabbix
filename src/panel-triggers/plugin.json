@@ -1,7 +1,7 @@
 {
   "type": "panel",
   "name": "Zabbix Triggers",
-  "id": "zabbix-triggers-panel",
+  "id": "alexanderzobnin-zabbix-triggers-panel",
 
   "info": {
     "author": {

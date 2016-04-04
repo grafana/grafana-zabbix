@@ -1,7 +1,7 @@
 {
   "type": "app",
   "name": "Zabbix",
-  "id": "zabbix-app",
+  "id": "alexanderzobnin-zabbix-app",
 
   "css": {
     "dark":  "css/dark.css",
@@ -19,7 +19,7 @@
       {"name": "Project site", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
       {"name": "License & Terms", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
     ],
-    "version": "1.0.0-beta1",
+    "version": "3.0.0-beta1",
     "updated": "2016-03-31"
   },
 
