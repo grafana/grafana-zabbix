@@ -12,7 +12,7 @@
     "description": "Zabbix plugin for Grafana",
     "author": {
       "name": "Alexander Zobnin",
-      "url": "http://grafana-zabbix.org"
+      "url": "https://github.com/alexanderzobnin/grafana-zabbix"
     },
     "keywords": ["zabbix"],
     "links": [
