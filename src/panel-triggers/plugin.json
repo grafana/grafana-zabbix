@@ -1,12 +1,12 @@
 {
   "type": "panel",
   "name": "Zabbix Triggers",
-  "id": "zabbix-triggers-panel",
+  "id": "alexanderzobnin-zabbix-triggers-panel",
 
   "info": {
     "author": {
       "name": "Alexander Zobnin",
-      "url": "http://grafana-zabbix.org"
+      "url": "https://github.com/alexanderzobnin/grafana-zabbix"
     }
   }
 }

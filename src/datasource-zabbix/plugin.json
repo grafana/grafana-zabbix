@@ -1,7 +1,7 @@
 {
   "type": "datasource",
   "name": "Zabbix",
-  "id": "zabbix-datasource",
+  "id": "alexanderzobnin-zabbix-datasource",
 
   "metrics": true,
   "annotations": true,
@@ -9,7 +9,7 @@
   "info": {
     "author": {
       "name": "Alexander Zobnin",
-      "url": "http://grafana-zabbix.org"
+      "url": "https://github.com/alexanderzobnin/grafana-zabbix"
     }
   }
 }
