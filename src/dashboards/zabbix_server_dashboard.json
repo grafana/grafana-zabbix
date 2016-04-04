@@ -55,7 +55,7 @@
               },
               "functions": [],
               "group": {
-                "filter": "Linux servers"
+                "filter": "Zabbix servers"
               },
               "host": {
                 "filter": "Zabbix server"
@@ -188,7 +188,7 @@
                 "filter": "Zabbix server"
               },
               "item": {
-                "filter": "Required performance of Zabbix server, new values per second"
+                "filter": "/Required performance of Zabbix server/"
               },
               "mode": 0,
               "refId": "A"
