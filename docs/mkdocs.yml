@@ -3,7 +3,7 @@ site_name: Grafana-Zabbix Documentation
 #site_url: /
 site_description: Documentation for Grafana-Zabbix, Zabbix monitoring system plugin bundle for Grafana
 repo_url: https://github.com/alexanderzobnin/grafana-zabbix/
-copyright: Copyright &copy; 2014-2015, Alexander Zobnin
+copyright: Copyright &copy; 2015-2016, Alexander Zobnin
 
 docs_dir: sources
 theme: readthedocs
@@ -15,6 +15,7 @@ pages:
 - Installation:
     - 'Installation': 'installation/index.md'
     - 'Configuration': 'installation/configuration.md'
+    - 'Upgrade': 'installation/upgrade.md'
     - 'Troubleshooting': 'installation/troubleshooting.md'
 - User Guides:
     - 'Getting Started': 'guides/gettingstarted.md'
