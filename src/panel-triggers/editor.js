@@ -61,7 +61,7 @@ class TriggerPanelEditorCtrl{
 
     // Get zabbix data sources
     var datasources = _.filter(this.datasourceSrv.getMetricSources(), datasource => {
-      return datasource.meta.id === 'zabbix-datasource';
+      return datasource.meta.id === 'alexanderzobnin-zabbix-datasource';
     });
     this.datasources = _.map(datasources, 'name');
 
@@ -150,7 +150,7 @@ class TriggerPanelEditorCtrl{
     this.popoverSrv.show({
       element: el,
       placement: 'top',
-      templateUrl:  'public/plugins/zabbix-app/panel-triggers/trigger.colorpicker.html',
+      templateUrl:  'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/trigger.colorpicker.html',
       scope: popoverScope
     });
   }
@@ -167,7 +167,7 @@ class TriggerPanelEditorCtrl{
     this.popoverSrv.show({
       element: el,
       placement: 'top',
-      templateUrl:  'public/plugins/zabbix-app/panel-triggers/trigger.colorpicker.html',
+      templateUrl:  'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/trigger.colorpicker.html',
       scope: popoverScope
     });
   }
@@ -192,7 +192,7 @@ export function triggerPanelEditor() {
   return {
     restrict: 'E',
     scope: true,
-    templateUrl: 'public/plugins/zabbix-app/panel-triggers/editor.html',
+    templateUrl: 'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/editor.html',
     controller: TriggerPanelEditorCtrl,
   };
 }
