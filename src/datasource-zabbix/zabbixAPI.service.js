@@ -155,6 +155,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
           'state'
         ],
         sortfield: 'name',
+        webitems: true
       };
       if (hostids) {
         params.hostids = hostids;
