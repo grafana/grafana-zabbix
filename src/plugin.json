@@ -12,15 +12,20 @@
     "description": "Zabbix plugin for Grafana",
     "author": {
       "name": "Alexander Zobnin",
-      "url": "https://github.com/alexanderzobnin/grafana-zabbix"
+      "url": "https://github.com/alexanderzobnin"
     },
     "keywords": ["zabbix"],
+    "logos": {
+      "small": "/img/zabbix_logo_200.png",
+      "large": "/img/zabbix_logo_400.png"
+    },
     "links": [
-      {"name": "Project site", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
-      {"name": "License & Terms", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
+      {"name": "GitHub", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
+      {"name": "Docs", "url": "http://docs.grafana-zabbix.org"},
+      {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
     ],
-    "version": "3.0.0-beta2",
-    "updated": "2016-04-04"
+    "version": "3.0.0-beta3",
+    "updated": "2016-04-06"
   },
 
   "includes": [
