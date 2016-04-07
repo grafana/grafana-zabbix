@@ -47,6 +47,22 @@ export class ZabbixAPIDatasource {
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
 
+    // If template variables are used in request, replace it using regex format
+    // and wrap with '/' for proper multi-value work. Example:
+    // $variable selected as a, b, c
+    // We use filter $variable
+    // $variable    -> a|b|c    -> /a|b|c/
+    // /$variable/  -> /a|b|c/  -> /a|b|c/
+    this.multiValueFormat = "regex";
+    this.replaceTemplateVars = function(target, scopedVars) {
+      var regexPattern = /^\/.*\/$/;
+      var replacedTarget = this.templateSrv.replace(target, scopedVars, this.multiValueFormat);
+      if (target !== replacedTarget && !regexPattern.test(replacedTarget)) {
+        replacedTarget = '/' + replacedTarget + '/';
+      }
+      return replacedTarget;
+    };
+
     console.log(this.zabbixCache);
   }
 
@@ -122,10 +138,10 @@ export class ZabbixAPIDatasource {
         }
 
         // Replace templated variables
-        var groupFilter = this.templateSrv.replace(target.group.filter, options.scopedVars);
-        var hostFilter = this.templateSrv.replace(target.host.filter, options.scopedVars);
-        var appFilter = this.templateSrv.replace(target.application.filter, options.scopedVars);
-        var itemFilter = this.templateSrv.replace(target.item.filter, options.scopedVars);
+        var groupFilter = this.replaceTemplateVars(target.group.filter, options.scopedVars, self.multiValueFormat);
+        var hostFilter = this.replaceTemplateVars(target.host.filter, options.scopedVars, self.multiValueFormat);
+        var appFilter = this.replaceTemplateVars(target.application.filter, options.scopedVars, self.multiValueFormat);
+        var itemFilter = this.replaceTemplateVars(target.item.filter, options.scopedVars, self.multiValueFormat);
 
         // Query numeric data
         if (!target.mode || target.mode === 0) {
@@ -210,7 +226,7 @@ export class ZabbixAPIDatasource {
               if (items.length) {
                 self.zabbixAPI.getLastValue(items[0].itemid).then(function(lastvalue) {
                   if (target.textFilter) {
-                    var text_extract_pattern = new RegExp(self.templateSrv.replace(target.textFilter, options.scopedVars));
+                    var text_extract_pattern = new RegExp(self.replaceTemplateVars(target.textFilter, options.scopedVars));
                     var result = text_extract_pattern.exec(lastvalue);
                     if (result) {
                       if (target.useCaptureGroups) {
@@ -285,7 +301,7 @@ export class ZabbixAPIDatasource {
     var self = this;
     var parts = [];
     _.each(query.split('.'), function (part) {
-      part = self.templateSrv.replace(part);
+      part = self.replaceTemplateVars(part, {}, self.multiValueFormat);
 
       // Replace wildcard to regex
       if (part === '*') {
@@ -346,9 +362,9 @@ export class ZabbixAPIDatasource {
     // Show all triggers
     var showTriggers = [0, 1];
 
-    var buildQuery = self.queryProcessor.buildTriggerQuery(this.templateSrv.replace(annotation.group),
-                                                           this.templateSrv.replace(annotation.host),
-                                                           this.templateSrv.replace(annotation.application));
+    var buildQuery = self.queryProcessor.buildTriggerQuery(this.replaceTemplateVars(annotation.group, {}, self.multiValueFormat),
+                                                           this.replaceTemplateVars(annotation.host, {}, self.multiValueFormat),
+                                                           this.replaceTemplateVars(annotation.application, {}, self.multiValueFormat));
     return buildQuery.then(function(query) {
       return self.zabbixAPI.getTriggers(query.groupids,
                                         query.hostids,
