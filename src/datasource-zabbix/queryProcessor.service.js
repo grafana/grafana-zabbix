@@ -217,7 +217,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
      *                               datapoints: [[<value>, <unixtime>], ...]
      *                            }
      */
-    convertHistory(history, addHostName, convertPointCallback) {
+    convertHistory(history, items, addHostName, convertPointCallback) {
       /**
        * Response should be in the format:
        * data: [
@@ -231,12 +231,13 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
 
       // Group history by itemid
       var grouped_history = _.groupBy(history, 'itemid');
+      var hosts = _.indexBy(_.flatten(_.map(items, 'hosts')), 'hostid');
 
       return _.map(grouped_history, function(hist, itemid) {
         var item = self.cache.getItem(itemid);
         var alias = item.name;
-        if (addHostName) {
-          var host = self.cache.getHost(item.hostid);
+        if (_.keys(hosts).length > 1 || addHostName) {
+          var host = hosts[item.hostid];
           alias = host.name + ": " + alias;
         }
         return {
@@ -246,13 +247,13 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
       });
     }
 
-    handleHistory(history, addHostName) {
-      return this.convertHistory(history, addHostName, convertHistoryPoint);
+    handleHistory(history, items, addHostName) {
+      return this.convertHistory(history, items, addHostName, convertHistoryPoint);
     }
 
-    handleTrends(history, addHostName, valueType) {
+    handleTrends(history, items, addHostName, valueType) {
       var convertPointCallback = _.partial(convertTrendPoint, valueType);
-      return this.convertHistory(history, addHostName, convertPointCallback);
+      return this.convertHistory(history, items, addHostName, convertPointCallback);
     }
 
     handleSLAResponse(itservice, slaProperty, slaObject) {

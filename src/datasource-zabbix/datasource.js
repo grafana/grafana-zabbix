@@ -151,13 +151,13 @@ export class ZabbixAPIDatasource {
                 var valueType = trendValueFunc ? trendValueFunc.params[0] : "avg";
 
                 getHistory = self.zabbixAPI.getTrend(items, from, to).then(function(history) {
-                  return self.queryProcessor.handleTrends(history, addHostName, valueType);
+                  return self.queryProcessor.handleTrends(history, items, addHostName, valueType);
                 });
               } else {
 
                 // Use history
                 getHistory = self.zabbixCache.getHistory(items, from, to).then(function(history) {
-                  return self.queryProcessor.handleHistory(history, addHostName);
+                  return self.queryProcessor.handleHistory(history, items, addHostName);
                 });
               }
 
