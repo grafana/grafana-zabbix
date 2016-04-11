@@ -3,6 +3,26 @@ page_description: Installation instructions for Grafana-Zabbix.
 
 # Installation
 
+## Using grafana-cli tool
+Get list of available plugins
+
+```sh
+grafana-cli plugins list-remote
+```
+
+Install zabbix plugin
+
+```sh
+grafana-cli plugins install alexanderzobnin-zabbix-app
+```
+
+Restart grafana after installing plugins 
+```sh
+service grafana-server restart
+```
+
+Read more about installing plugins in [Grafana docs](http://docs.grafana.org/plugins/installation/)
+
 ## From special repo
 You can use [grafana-zabbix-app](https://github.com/alexanderzobnin/grafana-zabbix-app) repo,
 which contains latest builded version of plugin.
@@ -20,21 +40,6 @@ cd /var/lib/grafana/plugins/grafana-zabbix-app
 git pull
 service grafana-server restart
 ```
-
-## Using grafana-cli tool
-Get list of available plugins
-
-```sh
-grafana-cli plugins list-remote
-```
-
-Install zabbix plugin
-
-```sh
-grafana-cli plugins install zabbix-app
-```
-
-Read more in [Grafana docs](http://docs.grafana.org/plugins/installation/)
 
 ## Building from sources
 You need NodeJS, npm and Grunt for building plugin from sources. Read more about required versions
@@ -66,12 +71,6 @@ grunt
 Restart Grafana server
 
 ```sh
-sudo service grafana-server restart
+service grafana-server restart
 systemctl restart grafana-server
 ```
-
-## From release package
-Download [latest release](https://github.com/alexanderzobnin/grafana-zabbix/releases/latest)
-for relative Grafana version. Unpack archive and copy *grafana-zabbix* into your grafana 
-plugins directory (default `/var/lib/grafana/plugins` if your installing grafana with package).
-Restart grafana-server and the plugin should be automatically detected and used.
