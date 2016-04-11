@@ -47,21 +47,8 @@ export class ZabbixAPIDatasource {
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
 
-    // If template variables are used in request, replace it using regex format
-    // and wrap with '/' for proper multi-value work. Example:
-    // $variable selected as a, b, c
-    // We use filter $variable
-    // $variable    -> a|b|c    -> /a|b|c/
-    // /$variable/  -> /a|b|c/  -> /a|b|c/
-    this.multiValueFormat = "regex";
-    this.replaceTemplateVars = function(target, scopedVars) {
-      var regexPattern = /^\/.*\/$/;
-      var replacedTarget = this.templateSrv.replace(target, scopedVars, this.multiValueFormat);
-      if (target !== replacedTarget && !regexPattern.test(replacedTarget)) {
-        replacedTarget = '/' + replacedTarget + '/';
-      }
-      return replacedTarget;
-    };
+    // Use custom format for template variables
+    this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
 
     console.log(this.zabbixCache);
   }
@@ -444,4 +431,38 @@ function formatMetric(metricObj) {
     text: metricObj.name,
     expandable: false
   };
+}
+
+/**
+ * Custom formatter for template variables.
+ * Default Grafana "regex" formatter returns
+ * value1|value2
+ * This formatter returns
+ * (value1|value2)
+ * This format needed for using in complex regex with
+ * template variables, for example
+ * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
+ */
+function zabbixTemplateFormat(value, variable) {
+  if (typeof value === 'string') {
+    return utils.escapeRegex(value);
+  }
+
+  var escapedValues = _.map(value, utils.escapeRegex);
+  return '(' + escapedValues.join('|') + ')';
+}
+
+/** If template variables are used in request, replace it using regex format
+ * and wrap with '/' for proper multi-value work. Example:
+ * $variable selected as a, b, c
+ * We use filter $variable
+ * $variable    -> a|b|c    -> /a|b|c/
+ * /$variable/  -> /a|b|c/  -> /a|b|c/
+ */
+function replaceTemplateVars(templateSrv, target, scopedVars) {
+  var replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
+  if (target !== replacedTarget && !utils.regexPattern.test(replacedTarget)) {
+    replacedTarget = '/' + replacedTarget + '/';
+  }
+  return replacedTarget;
 }
