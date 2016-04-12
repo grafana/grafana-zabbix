@@ -102,9 +102,9 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
         });
     }
 
-    getItems(hostids, appids) {
+    getItems(hostids, appids, itemtype) {
       var self = this;
-      return this.getItemsOnce(hostids, appids)
+      return this.getItemsOnce(hostids, appids, itemtype)
         .then(items => {
           self._items = _.union(self._items, items);
           return items;

@@ -14,13 +14,13 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
     /**
      * Build query in asynchronous manner
      */
-    build(groupFilter, hostFilter, appFilter, itemFilter) {
+    build(groupFilter, hostFilter, appFilter, itemFilter, itemtype) {
       var self = this;
       if (this.cache._initialized) {
-        return this.$q.when(self.buildFromCache(groupFilter, hostFilter, appFilter, itemFilter));
+        return this.$q.when(self.buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, itemtype));
       } else {
         return this.cache.refresh().then(function() {
-          return self.buildFromCache(groupFilter, hostFilter, appFilter, itemFilter);
+          return self.buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, itemtype);
         });
       }
     }
@@ -64,8 +64,8 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
     /**
      * Build query - convert target filters to array of Zabbix items
      */
-    buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, showDisabledItems) {
-      return this.getItems(groupFilter, hostFilter, appFilter, showDisabledItems)
+    buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, itemtype, showDisabledItems) {
+      return this.getItems(groupFilter, hostFilter, appFilter, itemtype, showDisabledItems)
         .then(items => {
           return getByFilter(items, itemFilter);
         });
@@ -108,7 +108,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         });
     }
 
-    getItems(groupFilter, hostFilter, appFilter, showDisabledItems) {
+    getItems(groupFilter, hostFilter, appFilter, itemtype, showDisabledItems) {
       var self = this;
       return this.getHosts(groupFilter)
         .then(hosts => {
@@ -133,7 +133,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         .then(apps => {
           if (apps.appFilterEmpty) {
             return self.cache
-              .getItems(apps.hostids, undefined)
+              .getItems(apps.hostids, undefined, itemtype)
               .then(items => {
                 if (showDisabledItems) {
                   items = _.filter(items, {'status': '0'});
@@ -143,7 +143,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
           } else {
             var appids = _.map(apps, 'applicationid');
             return self.cache
-              .getItems(undefined, appids)
+              .getItems(undefined, appids, itemtype)
               .then(items => {
                 if (showDisabledItems) {
                   items = _.filter(items, {'status': '0'});

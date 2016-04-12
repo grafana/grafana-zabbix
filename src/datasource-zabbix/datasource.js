@@ -207,7 +207,7 @@ export class ZabbixAPIDatasource {
 
         // Query text data
         else if (target.mode === 2) {
-          return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter)
+          return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter, 'text')
             .then(function(items) {
               var deferred = self.q.defer();
               if (items.length) {
