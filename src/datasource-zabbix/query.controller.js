@@ -116,7 +116,6 @@ export class ZabbixQueryController extends QueryCtrl {
   suggestHosts() {
     var self = this;
     var groupFilter = this.replaceTemplateVars(this.target.group.filter);
-    console.log(groupFilter);
     return this.datasource.queryProcessor
       .filterGroups(self.metric.groupList, groupFilter)
       .then(groups => {

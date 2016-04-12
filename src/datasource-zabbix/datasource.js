@@ -125,10 +125,10 @@ export class ZabbixAPIDatasource {
         }
 
         // Replace templated variables
-        var groupFilter = this.replaceTemplateVars(target.group.filter, options.scopedVars, self.multiValueFormat);
-        var hostFilter = this.replaceTemplateVars(target.host.filter, options.scopedVars, self.multiValueFormat);
-        var appFilter = this.replaceTemplateVars(target.application.filter, options.scopedVars, self.multiValueFormat);
-        var itemFilter = this.replaceTemplateVars(target.item.filter, options.scopedVars, self.multiValueFormat);
+        var groupFilter = this.replaceTemplateVars(target.group.filter, options.scopedVars);
+        var hostFilter = this.replaceTemplateVars(target.host.filter, options.scopedVars);
+        var appFilter = this.replaceTemplateVars(target.application.filter, options.scopedVars);
+        var itemFilter = this.replaceTemplateVars(target.item.filter, options.scopedVars);
 
         // Query numeric data
         if (!target.mode || target.mode === 0) {
@@ -288,7 +288,7 @@ export class ZabbixAPIDatasource {
     var self = this;
     var parts = [];
     _.each(query.split('.'), function (part) {
-      part = self.replaceTemplateVars(part, {}, self.multiValueFormat);
+      part = self.replaceTemplateVars(part, {});
 
       // Replace wildcard to regex
       if (part === '*') {
@@ -349,9 +349,9 @@ export class ZabbixAPIDatasource {
     // Show all triggers
     var showTriggers = [0, 1];
 
-    var buildQuery = self.queryProcessor.buildTriggerQuery(this.replaceTemplateVars(annotation.group, {}, self.multiValueFormat),
-                                                           this.replaceTemplateVars(annotation.host, {}, self.multiValueFormat),
-                                                           this.replaceTemplateVars(annotation.application, {}, self.multiValueFormat));
+    var buildQuery = self.queryProcessor.buildTriggerQuery(this.replaceTemplateVars(annotation.group, {}),
+                                                           this.replaceTemplateVars(annotation.host, {}),
+                                                           this.replaceTemplateVars(annotation.application, {}));
     return buildQuery.then(function(query) {
       return self.zabbixAPI.getTriggers(query.groupids,
                                         query.hostids,
