@@ -134,8 +134,9 @@ export class ZabbixAPIDatasource {
         if (!target.mode || target.mode === 0) {
 
           // Build query in asynchronous manner
-          return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter)
-            .then(function(items) {
+          return self.queryProcessor
+            .build(groupFilter, hostFilter, appFilter, itemFilter, 'num')
+            .then(items => {
               // Add hostname for items from multiple hosts
               var addHostName = utils.isRegex(target.host.filter);
               var getHistory;
@@ -207,35 +208,39 @@ export class ZabbixAPIDatasource {
 
         // Query text data
         else if (target.mode === 2) {
-          return self.queryProcessor.build(groupFilter, hostFilter, appFilter, itemFilter)
-            .then(function(items) {
-              var deferred = self.q.defer();
+          return self.queryProcessor
+            .build(groupFilter, hostFilter, appFilter, itemFilter, 'text')
+            .then(items => {
               if (items.length) {
-                self.zabbixAPI.getLastValue(items[0].itemid).then(function(lastvalue) {
-                  if (target.textFilter) {
-                    var text_extract_pattern = new RegExp(self.replaceTemplateVars(target.textFilter, options.scopedVars));
-                    var result = text_extract_pattern.exec(lastvalue);
-                    if (result) {
-                      if (target.useCaptureGroups) {
-                        result = result[1];
-                      } else {
-                        result = result[0];
-                      }
-                    }
-                    deferred.resolve(result);
-                  } else {
-                    deferred.resolve(lastvalue);
-                  }
+                var textItemsPromises = _.map(items, item => {
+                  return self.zabbixAPI.getLastValue(item.itemid);
                 });
+                return self.q.all(textItemsPromises)
+                  .then(result => {
+                    return _.map(result, (lastvalue, index) => {
+                      var extractedValue;
+                      if (target.textFilter) {
+                        var text_extract_pattern = new RegExp(self.replaceTemplateVars(target.textFilter, options.scopedVars));
+                        extractedValue = text_extract_pattern.exec(lastvalue);
+                        if (extractedValue) {
+                          if (target.useCaptureGroups) {
+                            extractedValue = extractedValue[1];
+                          } else {
+                            extractedValue = extractedValue[0];
+                          }
+                        }
+                      } else {
+                        extractedValue = lastvalue;
+                      }
+                      return {
+                        target: items[index].name,
+                        datapoints: [[extractedValue, to * 1000]]
+                      };
+                    });
+                  });
               } else {
-                deferred.resolve(null);
+                return self.q.when([]);
               }
-              return deferred.promise.then(function(text) {
-                return {
-                  target: target.item.name,
-                  datapoints: [[text, to * 1000]]
-                };
-              });
             });
         }
       }
