@@ -24,8 +24,8 @@
       {"name": "Docs", "url": "http://docs.grafana-zabbix.org"},
       {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
     ],
-    "version": "3.0.0-beta4",
-    "updated": "2016-04-10"
+    "version": "3.0.0-beta5",
+    "updated": "2016-04-12"
   },
 
   "includes": [
