@@ -93,10 +93,11 @@ export class ZabbixQueryController extends QueryCtrl {
 
   initFilters() {
     var self = this;
+    var itemtype = self.editorModes[self.target.mode];
     return this.$q.when(this.suggestGroups())
       .then(() => {return self.suggestHosts();})
       .then(() => {return self.suggestApps();})
-      .then(() => {return self.suggestItems();});
+      .then(() => {return self.suggestItems(itemtype);});
   }
 
   suggestGroups() {
@@ -138,7 +139,7 @@ export class ZabbixQueryController extends QueryCtrl {
       });
   }
 
-  suggestItems() {
+  suggestItems(itemtype='num') {
     var self = this;
     var appFilter = this.templateSrv.replace(this.target.application.filter);
     if (appFilter) {
@@ -148,7 +149,7 @@ export class ZabbixQueryController extends QueryCtrl {
         .then(apps => {
           var appids = _.map(apps, 'applicationid');
           return self.zabbix
-            .getItems(undefined, appids)
+            .getItems(undefined, appids, itemtype)
             .then(items => {
               if (!self.target.showDisabledItems) {
                 items = _.filter(items, {'status': '0'});
@@ -161,7 +162,7 @@ export class ZabbixQueryController extends QueryCtrl {
       // Return all items belonged to selected hosts
       var hostids = _.map(self.metric.hostList, 'hostid');
       return self.zabbix
-        .getItems(hostids)
+        .getItems(hostids, undefined, itemtype)
         .then(items => {
           if (!self.target.showDisabledItems) {
             items = _.filter(items, {'status': '0'});

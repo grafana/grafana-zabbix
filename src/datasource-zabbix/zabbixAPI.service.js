@@ -145,7 +145,14 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       return this.request('application.get', params);
     }
 
-    getItems(hostids, appids) {
+    /**
+     * Get Zabbix items
+     * @param  {[type]} hostids  host ids
+     * @param  {[type]} appids   application ids
+     * @param  {String} itemtype 'num' or 'text'
+     * @return {[type]}          array of items
+     */
+    getItems(hostids, appids, itemtype='num') {
       var params = {
         output: [
           'name', 'key_',
@@ -156,6 +163,10 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
         ],
         sortfield: 'name',
         webitems: true,
+        filter: {
+          // Return only numeric items by default
+          value_type: [0, 3]
+        },
         selectHosts: [
           'hostid',
           'name'
@@ -166,6 +177,10 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       }
       if (appids) {
         params.applicationids = appids;
+      }
+      if (itemtype === 'text') {
+        // Return only text metrics
+        params.filter.value_type = [1, 2, 4];
       }
 
       return this.request('item.get', params)
