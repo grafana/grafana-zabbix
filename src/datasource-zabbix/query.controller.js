@@ -12,7 +12,7 @@ import './css/query-editor.css!';
 export class ZabbixQueryController extends QueryCtrl {
 
   // ZabbixQueryCtrl constructor
-  constructor($scope, $injector, $sce, $q, templateSrv) {
+  constructor($scope, $injector, $rootScope, $sce, $q, templateSrv) {
 
     // Call superclass constructor
     super($scope, $injector);
@@ -20,6 +20,10 @@ export class ZabbixQueryController extends QueryCtrl {
     this.zabbix = this.datasource.zabbixAPI;
     this.cache = this.datasource.zabbixCache;
     this.$q = $q;
+
+    // Use custom format for template variables
+    this.replaceTemplateVars = this.datasource.replaceTemplateVars;
+    this.templateSrv = templateSrv;
 
     this.editorModes = {
       0: 'num',
@@ -33,9 +37,10 @@ export class ZabbixQueryController extends QueryCtrl {
     this.getApplicationNames = _.partial(getMetricNames, this, 'appList');
     this.getItemNames = _.partial(getMetricNames, this, 'itemList');
 
-    this.init = function() {
+    // Update metric suggestion when template variable was changed
+    $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
 
-      this.templateSrv = templateSrv;
+    this.init = function() {
       var target = this.target;
 
       // Migrate old targets
@@ -110,7 +115,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
   suggestHosts() {
     var self = this;
-    var groupFilter = this.templateSrv.replace(this.target.group.filter);
+    var groupFilter = this.replaceTemplateVars(this.target.group.filter);
+    console.log(groupFilter);
     return this.datasource.queryProcessor
       .filterGroups(self.metric.groupList, groupFilter)
       .then(groups => {
@@ -126,7 +132,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
   suggestApps() {
     var self = this;
-    var hostFilter = this.templateSrv.replace(this.target.host.filter);
+    var hostFilter = this.replaceTemplateVars(this.target.host.filter);
     return this.datasource.queryProcessor
       .filterHosts(self.metric.hostList, hostFilter)
       .then(hosts => {
@@ -141,7 +147,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
   suggestItems(itemtype='num') {
     var self = this;
-    var appFilter = this.templateSrv.replace(this.target.application.filter);
+    var appFilter = this.replaceTemplateVars(this.target.application.filter);
     if (appFilter) {
       // Filter by applications
       return this.datasource.queryProcessor
@@ -199,10 +205,26 @@ export class ZabbixQueryController extends QueryCtrl {
     var newTarget = _.cloneDeep(this.target);
     if (!_.isEqual(this.oldTarget, this.target)) {
       this.oldTarget = newTarget;
-      this.initFilters();
-      this.parseTarget();
-      this.panelCtrl.refresh();
+      this.targetChanged();
     }
+  }
+
+  onVariableChange() {
+    if (this.isContainsVariables()) {
+      this.targetChanged();
+    }
+  }
+
+  /**
+   * Check query for template variables
+   */
+  isContainsVariables() {
+    var self = this;
+    return _.some(self.templateSrv.variables, variable => {
+      return _.some(['group', 'host', 'application', 'item'], field => {
+        return self.templateSrv.containsVariable(self.target[field].filter, variable.name);
+      });
+    });
   }
 
   parseTarget() {
@@ -215,6 +237,8 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   targetChanged() {
+    this.initFilters();
+    this.parseTarget();
     this.panelCtrl.refresh();
   }
 
