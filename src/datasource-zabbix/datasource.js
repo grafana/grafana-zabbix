@@ -135,7 +135,7 @@ export class ZabbixAPIDatasource {
 
           // Build query in asynchronous manner
           return self.queryProcessor
-            .build(groupFilter, hostFilter, appFilter, itemFilter)
+            .build(groupFilter, hostFilter, appFilter, itemFilter, 'num')
             .then(items => {
               // Add hostname for items from multiple hosts
               var addHostName = utils.isRegex(target.host.filter);
