@@ -17,13 +17,19 @@ select _Zabbix_ from dropdown list.
 
 ![Configure Zabbix data source](../img/installation-datasource_config.png)
 
-### Http settings
+### HTTP settings
 
 - **Url**: set Zabbix API url (full path with `api_jsonrpc.php`).
-- **Access**: can be either _proxy_ or _direct_.
+- **Access**:
+    - **Proxy**: access via Grafana backend
+    - **Direct**: access from browser.
 - **Http Auth**: configure if you use proxy authentication.
     - **Basic Auth**:
     - **With Credentials**:
+
+Proxy access means that the Grafana backend will proxy all requests from the browser, and send them on to the Data Source. This is useful because it can eliminate CORS (Cross Origin Site Resource) issues, as well as eliminate the need to disseminate authentication details to the Data Source to the browser.
+
+Direct access is still supported because in some cases it may be useful to access a Data Source directly depending on the use case and topology of Grafana, the user, and the Data Source.
 
 ### Zabbix API details
 
