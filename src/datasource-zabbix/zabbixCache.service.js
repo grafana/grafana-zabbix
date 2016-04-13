@@ -87,10 +87,11 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
     }
 
     getHosts(groupids) {
-      var self = this;
+      //var self = this;
       return this.getHostsOnce(groupids)
         .then(hosts => {
-          self._hosts = _.union(self._hosts, hosts);
+          // iss #196 - disable caching due performance issues
+          //self._hosts = _.union(self._hosts, hosts);
           return hosts;
         });
     }
@@ -103,10 +104,11 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
     }
 
     getItems(hostids, appids, itemtype) {
-      var self = this;
+      //var self = this;
       return this.getItemsOnce(hostids, appids, itemtype)
         .then(items => {
-          self._items = _.union(self._items, items);
+          // iss #196 - disable caching due performance issues
+          //self._items = _.union(self._items, items);
           return items;
         });
     }
