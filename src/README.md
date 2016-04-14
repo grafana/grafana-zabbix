@@ -2,11 +2,9 @@
 Zabbix plugin allows to show different type of data from [Zabbix](http://www.zabbix.com/) 
 monitoring system.
 
-![Dashboard](https://cloud.githubusercontent.com/assets/4932851/8269101/9e6ee67e-17a3-11e5-85de-fe9dcc2dd375.png)
-
 ### Live Demo
 
-Check out the [live demo](http://play.grafana-zabbix.org/)
+Check out the [live demo](http://play.grafana-zabbix.org/) with dashboard examples.
 
 ### Features
 

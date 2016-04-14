@@ -12,25 +12,30 @@
  */
 
 import _ from 'lodash';
-import $ from 'jquery';
+import * as utils from '../datasource-zabbix/utils';
 
-class TriggerPanelEditorCtrl{
+import '../datasource-zabbix/css/query-editor.css!';
+
+class TriggerPanelEditorCtrl {
 
   /** @ngInject */
-  constructor($scope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
+  constructor($scope, $rootScope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
     $scope.editor = this;
     this.panelCtrl = $scope.ctrl;
     this.panel = this.panelCtrl.panel;
 
+    this.$q = $q;
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.popoverSrv = popoverSrv;
 
     // Map functions for bs-typeahead
     this.getGroupNames = _.partial(getMetricNames, this, 'groupList');
-    this.getHostNames = _.partial(getMetricNames, this, 'filteredHosts');
-    this.getApplicationNames = _.partial(getMetricNames, this, 'filteredApplications');
-    this.getItemNames = _.partial(getMetricNames, this, 'filteredItems');
+    this.getHostNames = _.partial(getMetricNames, this, 'hostList');
+    this.getApplicationNames = _.partial(getMetricNames, this, 'appList');
+
+    // Update metric suggestion when template variable was changed
+    $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
 
     this.ackFilters = [
       'all triggers',
@@ -78,40 +83,75 @@ class TriggerPanelEditorCtrl{
   }
 
   initFilters() {
-    this.filterGroups();
-    this.filterHosts();
-    this.filterApplications();
+    var self = this;
+    return this.$q
+      .when(this.suggestGroups())
+      .then(() => {return self.suggestHosts();})
+      .then(() => {return self.suggestApps();});
   }
 
-  filterGroups() {
+  suggestGroups() {
     var self = this;
-    this.datasource.queryProcessor.getGroups().then(function(groups) {
-      self.metric.groupList = groups;
-    });
-  }
-
-  filterHosts() {
-    var self = this;
-    var groupFilter = this.templateSrv.replace(this.panel.triggers.group.filter);
-    this.datasource.queryProcessor.getHosts(groupFilter).then(function(hosts) {
-      self.metric.filteredHosts = hosts;
-    });
-  }
-
-  filterApplications() {
-    var self = this;
-    var groupFilter = this.templateSrv.replace(this.panel.triggers.group.filter);
-    var hostFilter = this.templateSrv.replace(this.panel.triggers.host.filter);
-    this.datasource.queryProcessor.getApps(groupFilter, hostFilter)
-      .then(function(apps) {
-        self.metric.filteredApplications = apps;
+    return this.datasource.zabbixCache
+      .getGroups()
+      .then(groups => {
+        self.metric.groupList = groups;
+        return groups;
       });
   }
 
-  onTargetPartChange(targetPart) {
-    var regexStyle = {'color': '#CCA300'};
-    targetPart.isRegex = isRegex(targetPart.filter);
-    targetPart.style = targetPart.isRegex ? regexStyle : {};
+  suggestHosts() {
+    var self = this;
+    var groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
+    return this.datasource.queryProcessor
+      .filterGroups(self.metric.groupList, groupFilter)
+      .then(groups => {
+        var groupids = _.map(groups, 'groupid');
+        return self.datasource.zabbixAPI
+          .getHosts(groupids)
+          .then(hosts => {
+            self.metric.hostList = hosts;
+            return hosts;
+          });
+      });
+  }
+
+  suggestApps() {
+    var self = this;
+    var hostFilter = this.datasource.replaceTemplateVars(this.panel.triggers.host.filter);
+    return this.datasource.queryProcessor
+      .filterHosts(self.metric.hostList, hostFilter)
+      .then(hosts => {
+        var hostids = _.map(hosts, 'hostid');
+        return self.datasource.zabbixAPI
+          .getApps(hostids)
+          .then(apps => {
+            return self.metric.appList = apps;
+          });
+      });
+  }
+
+  onVariableChange() {
+    if (this.isContainsVariables()) {
+      this.targetChanged();
+    }
+  }
+
+  /**
+   * Check query for template variables
+   */
+  isContainsVariables() {
+    var self = this;
+    return _.some(self.templateSrv.variables, variable => {
+      return _.some(['group', 'host', 'application'], field => {
+        return self.templateSrv.containsVariable(self.panel.triggers[field].filter, variable.name);
+      });
+    });
+  }
+
+  targetChanged() {
+    this.initFilters();
+    this.panelCtrl.refresh();
   }
 
   parseTarget() {
@@ -140,52 +180,18 @@ class TriggerPanelEditorCtrl{
     this.refreshTriggerSeverity();
   }
 
-  openTriggerColorSelector(event) {
-    var el = $(event.currentTarget);
-    var index = getTriggerIndexForElement(el);
-    var popoverScope = this.$new();
-    popoverScope.trigger = this.panel.triggerSeverity[index];
-    popoverScope.changeTriggerSeverityColor = this.changeTriggerSeverityColor;
-
-    this.popoverSrv.show({
-      element: el,
-      placement: 'top',
-      templateUrl:  'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/trigger.colorpicker.html',
-      scope: popoverScope
-    });
+  isRegex(str) {
+    return utils.isRegex(str);
   }
 
-  openOkEventColorSelector(event) {
-    var el = $(event.currentTarget);
-    var popoverScope = this.$new();
-    popoverScope.trigger = {color: this.panel.okEventColor};
-    popoverScope.changeTriggerSeverityColor = function(trigger, color) {
-      this.panel.okEventColor = color;
-      this.refreshTriggerSeverity();
-    };
-
-    this.popoverSrv.show({
-      element: el,
-      placement: 'top',
-      templateUrl:  'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/trigger.colorpicker.html',
-      scope: popoverScope
-    });
+  isVariable(str) {
+    return utils.isTemplateVariable(str, this.templateSrv.variables);
   }
 }
 
 // Get list of metric names for bs-typeahead directive
 function getMetricNames(scope, metricList) {
   return _.uniq(_.map(scope.metric[metricList], 'name'));
-}
-
-function getTriggerIndexForElement(el) {
-  return el.parents('[data-trigger-index]').data('trigger-index');
-}
-
-function isRegex(str) {
-  // Pattern for testing regex
-  var regexPattern = /^\/(.*)\/([gmi]*)$/m;
-  return regexPattern.test(str);
 }
 
 export function triggerPanelEditor() {

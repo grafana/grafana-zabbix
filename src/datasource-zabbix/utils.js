@@ -29,6 +29,18 @@ export function isRegex(str) {
   return regexPattern.test(str);
 }
 
+export function isTemplateVariable(str, templateVariables) {
+  var variablePattern = /^\$\w+/;
+  if (variablePattern.test(str)) {
+    var variables = _.map(templateVariables, variable => {
+      return '$' + variable.name;
+    });
+    return _.contains(variables, str);
+  } else {
+    return false;
+  }
+}
+
 export function buildRegex(str) {
   var matches = str.match(regexPattern);
   var pattern = matches[1];
