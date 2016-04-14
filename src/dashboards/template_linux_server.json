@@ -2,7 +2,10 @@
   "id": null,
   "title": "Template Linux Server",
   "originalTitle": "Template Linux Server",
-  "tags": [],
+  "tags": [
+    "zabbix",
+    "example"
+  ],
   "style": "dark",
   "timezone": "browser",
   "editable": true,
