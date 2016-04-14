@@ -31,8 +31,8 @@
       {"name": "Metric Editor", "path": "https://cloud.githubusercontent.com/assets/4932851/14539267/6004cb8a-0288-11e6-9b1f-78ec54409835.png"}
       {"name": "Triggers", "path": "https://cloud.githubusercontent.com/assets/4932851/14539266/600495fc-0288-11e6-8d15-308bbef16535.png"}
     ],
-    "version": "3.0.0-beta6",
-    "updated": "2016-04-13"
+    "version": "3.0.0-beta7",
+    "updated": "2016-04-14"
   },
 
   "includes": [
