@@ -25,10 +25,10 @@
       {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
     ],
     "screenshots": [
-      {"name": "Showcase", "path": "https://cloud.githubusercontent.com/assets/4932851/8269101/9e6ee67e-17a3-11e5-85de-fe9dcc2dd375.png"}
-      {"name": "Dashboard", "path": "https://cloud.githubusercontent.com/assets/4932851/14539264/5ff70b58-0288-11e6-9de3-8aabe8c85e4c.png"}
-      {"name": "Annotations", "path": "https://cloud.githubusercontent.com/assets/4932851/14539263/5fd8abd6-0288-11e6-9c87-b960c654ab29.png"}
-      {"name": "Metric Editor", "path": "https://cloud.githubusercontent.com/assets/4932851/14539267/6004cb8a-0288-11e6-9b1f-78ec54409835.png"}
+      {"name": "Showcase", "path": "https://cloud.githubusercontent.com/assets/4932851/8269101/9e6ee67e-17a3-11e5-85de-fe9dcc2dd375.png"},
+      {"name": "Dashboard", "path": "https://cloud.githubusercontent.com/assets/4932851/14539264/5ff70b58-0288-11e6-9de3-8aabe8c85e4c.png"},
+      {"name": "Annotations", "path": "https://cloud.githubusercontent.com/assets/4932851/14539263/5fd8abd6-0288-11e6-9c87-b960c654ab29.png"},
+      {"name": "Metric Editor", "path": "https://cloud.githubusercontent.com/assets/4932851/14539267/6004cb8a-0288-11e6-9b1f-78ec54409835.png"},
       {"name": "Triggers", "path": "https://cloud.githubusercontent.com/assets/4932851/14539266/600495fc-0288-11e6-8d15-308bbef16535.png"}
     ],
     "version": "3.0.0-beta7",
@@ -48,6 +48,12 @@
       "type": "dashboard",
       "name": "Zabbix Server Dashboard",
       "path": "dashboards/zabbix_server_dashboard.json",
+      "addToNav": true
+    },
+    {
+      "type": "dashboard",
+      "name": "Template Linux Server",
+      "path": "dashboards/template_linux_server.json",
       "addToNav": true
     }
   ],
