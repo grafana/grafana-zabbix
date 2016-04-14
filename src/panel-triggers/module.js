@@ -13,6 +13,7 @@
 
 import _ from 'lodash';
 import moment from 'moment';
+import * as utils from '../datasource-zabbix/utils';
 import {MetricsPanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelEditor} from './editor';
 import './css/panel_triggers.css!';
@@ -90,15 +91,15 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     // ignore fetching data if another panel is in fullscreen
     if (this.otherPanelInFullscreenMode()) { return; }
 
+    this.refreshData();
+  }
+
+  refreshData() {
     // clear loading/error state
     delete this.error;
     this.loading = true;
     this.setTimeQueryStart();
 
-    this.refreshData();
-  }
-
-  refreshData() {
     var self = this;
 
     // Load datasource
@@ -210,8 +211,9 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                 // Limit triggers number
                 self.triggerList  = _.first(triggerList, self.panel.limit);
 
-                this.setTimeQueryEnd();
-                this.loading = false;
+                // Notify panel that request is finished
+                self.setTimeQueryEnd();
+                self.loading = false;
               });
           });
       });
@@ -230,29 +232,15 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
 TriggerPanelCtrl.templateUrl = 'panel-triggers/module.html';
 
 function filterTriggers(triggers, triggerFilter) {
-  if (isRegex(triggerFilter)) {
+  if (utils.isRegex(triggerFilter)) {
     return _.filter(triggers, function(trigger) {
-      return buildRegex(triggerFilter).test(trigger.description);
+      return utils.buildRegex(triggerFilter).test(trigger.description);
     });
   } else {
     return _.filter(triggers, function(trigger) {
       return trigger.description === triggerFilter;
     });
   }
-}
-
-function isRegex(str) {
-  // Pattern for testing regex
-  var regexPattern = /^\/(.*)\/([gmi]*)$/m;
-  return regexPattern.test(str);
-}
-
-function buildRegex(str) {
-  var regexPattern = /^\/(.*)\/([gmi]*)$/m;
-  var matches = str.match(regexPattern);
-  var pattern = matches[1];
-  var flags = matches[2] !== "" ? matches[2] : undefined;
-  return new RegExp(pattern, flags);
 }
 
 export {

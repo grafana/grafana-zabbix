@@ -12,7 +12,9 @@
  */
 
 import _ from 'lodash';
-import $ from 'jquery';
+import * as utils from '../datasource-zabbix/utils';
+
+import '../datasource-zabbix/css/query-editor.css!';
 
 class TriggerPanelEditorCtrl {
 
@@ -108,12 +110,6 @@ class TriggerPanelEditorCtrl {
       });
   }
 
-  onTargetPartChange(targetPart) {
-    var regexStyle = {'color': '#CCA300'};
-    targetPart.isRegex = isRegex(targetPart.filter);
-    targetPart.style = targetPart.isRegex ? regexStyle : {};
-  }
-
   parseTarget() {
     this.initFilters();
     var newTarget = _.cloneDeep(this.panel.triggers);
@@ -140,52 +136,26 @@ class TriggerPanelEditorCtrl {
     this.refreshTriggerSeverity();
   }
 
-  openTriggerColorSelector(event) {
-    var el = $(event.currentTarget);
-    var index = getTriggerIndexForElement(el);
-    var popoverScope = this.$new();
-    popoverScope.trigger = this.panel.triggerSeverity[index];
-    popoverScope.changeTriggerSeverityColor = this.changeTriggerSeverityColor;
-
-    this.popoverSrv.show({
-      element: el,
-      placement: 'top',
-      templateUrl:  'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/trigger.colorpicker.html',
-      scope: popoverScope
-    });
+  isRegex(str) {
+    return utils.isRegex(str);
   }
 
-  openOkEventColorSelector(event) {
-    var el = $(event.currentTarget);
-    var popoverScope = this.$new();
-    popoverScope.trigger = {color: this.panel.okEventColor};
-    popoverScope.changeTriggerSeverityColor = function(trigger, color) {
-      this.panel.okEventColor = color;
-      this.refreshTriggerSeverity();
-    };
-
-    this.popoverSrv.show({
-      element: el,
-      placement: 'top',
-      templateUrl:  'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/trigger.colorpicker.html',
-      scope: popoverScope
-    });
+  isVariable(str) {
+    var variablePattern = /^\$\w+/;
+    if (variablePattern.test(str)) {
+      var variables = _.map(this.templateSrv.variables, variable => {
+        return '$' + variable.name;
+      });
+      return _.contains(variables, str);
+    } else {
+      return false;
+    }
   }
 }
 
 // Get list of metric names for bs-typeahead directive
 function getMetricNames(scope, metricList) {
   return _.uniq(_.map(scope.metric[metricList], 'name'));
-}
-
-function getTriggerIndexForElement(el) {
-  return el.parents('[data-trigger-index]').data('trigger-index');
-}
-
-function isRegex(str) {
-  // Pattern for testing regex
-  var regexPattern = /^\/(.*)\/([gmi]*)$/m;
-  return regexPattern.test(str);
 }
 
 export function triggerPanelEditor() {

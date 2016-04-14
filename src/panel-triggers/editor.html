@@ -10,12 +10,14 @@
           <input type="text"
             ng-model="editor.panel.triggers.group.filter"
             bs-typeahead="editor.getGroupNames"
-            ng-change="editor.onTargetPartChange(editor.panel.triggers.group)"
             ng-blur="editor.parseTarget()"
             data-min-length=0
             data-items=100
             class="input-large tight-form-input"
-            ng-style="editor.panel.triggers.group.style">
+            ng-class="{
+              'zbx-variable': editor.isVariable(editor.panel.triggers.group.filter),
+              'zbx-regex': editor.isRegex(editor.panel.triggers.group.filter)
+            }">
         </li>
         <li class="tight-form-item" style="width: 50px">
           Host
@@ -24,12 +26,14 @@
           <input type="text"
             ng-model="editor.panel.triggers.host.filter"
             bs-typeahead="editor.getHostNames"
-            ng-change="editor.onTargetPartChange(editor.panel.triggers.host)"
             ng-blur="editor.parseTarget()"
             data-min-length=0
             data-items=100
             class="input-large tight-form-input last"
-            ng-style="editor.panel.triggers.host.style">
+            ng-class="{
+              'zbx-variable': editor.isVariable(editor.panel.triggers.host.filter),
+              'zbx-regex': editor.isRegex(editor.panel.triggers.host.filter)
+            }">
         </li>
       </ul>
       <div class="clearfix"></div>
@@ -43,12 +47,14 @@
           <input type="text"
             ng-model="editor.panel.triggers.application.filter"
             bs-typeahead="editor.getApplicationNames"
-            ng-change="editor.onTargetPartChange(editor.panel.triggers.application)"
             ng-blur="editor.parseTarget()"
             data-min-length=0
             data-items=100
             class="input-large tight-form-input"
-            ng-style="editor.panel.triggers.application.style">
+            ng-class="{
+              'zbx-variable': editor.isVariable(editor.panel.triggers.application.filter),
+              'zbx-regex': editor.isRegex(editor.panel.triggers.application.filter)
+            }">
         </li>
         <li class="tight-form-item" style="width: 50px">
           Trigger
@@ -56,7 +62,6 @@
         <li>
           <input  type="text"
                   ng-model="editor.panel.triggers.trigger.filter"
-                  ng-change="editor.onTargetPartChange(editor.panel.triggers.trigger)"
                   ng-blur="editor.parseTarget()"
                   placeholder="trigger name"
                   class="input-large tight-form-input last"
