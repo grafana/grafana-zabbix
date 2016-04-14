@@ -66,7 +66,9 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.defaultTimeFormat = defaultTimeFormat;
 
     // Load panel defaults
-    _.defaults(this.panel, panelDefaults);
+    // _.cloneDeep() need for prevent changing shared defaultSeverity.
+    // Load object "by value" istead "by reference".
+    _.defaults(this.panel, _.cloneDeep(panelDefaults));
 
     this.triggerList = [];
     this.refreshData();

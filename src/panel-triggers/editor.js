@@ -14,7 +14,7 @@
 import _ from 'lodash';
 import $ from 'jquery';
 
-class TriggerPanelEditorCtrl{
+class TriggerPanelEditorCtrl {
 
   /** @ngInject */
   constructor($scope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
