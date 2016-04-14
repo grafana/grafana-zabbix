@@ -89,7 +89,6 @@
       <input type="text"
         ng-model="ctrl.target.group.filter"
         bs-typeahead="ctrl.getGroupNames"
-        ng-change="ctrl.onTargetPartChange(ctrl.target.group)"
         ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
         data-items=100
@@ -106,7 +105,6 @@
       <input type="text"
         ng-model="ctrl.target.host.filter"
         bs-typeahead="ctrl.getHostNames"
-        ng-change="ctrl.onTargetPartChange(ctrl.target.host)"
         ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
         data-items=100
@@ -123,26 +121,7 @@
         change="ctrl.onTargetBlur()">
       </editor-checkbox>
     </li>
-
-    <!-- Downsampling function -->
-    <!-- <li class="tight-form-item input-medium" ng-hide="ctrl.target.mode == 2">
-      Downsampling
-    </li>
-    <li ng-hide="ctrl.target.mode == 2">
-      <select class="tight-form-input input-small"
-              ng-change="ctrl.targetBlur()"
-              ng-model="ctrl.target.downsampleFunction"
-              bs-tooltip="'Downsampling function'"
-              ng-options="func.name for func in downsampleFunctionList track by func.name">
-      </select>
-      <a bs-tooltip="ctrl.target.errors.metric"
-         style="color: rgb(229, 189, 28)"
-         ng-show="ctrl.target.errors.metric">
-        <i class="icon-warning-sign"></i>
-      </a>
-    </li> -->
   </ul>
-
   <div class="clearfix"></div>
 </div>
 
@@ -156,7 +135,6 @@
       <input type="text"
         ng-model="ctrl.target.application.filter"
         bs-typeahead="ctrl.getApplicationNames"
-        ng-change="ctrl.onTargetPartChange(ctrl.target.application)"
         ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
         data-items=100
@@ -173,7 +151,6 @@
       <input type="text"
         ng-model="ctrl.target.item.filter"
         bs-typeahead="ctrl.getItemNames"
-        ng-change="ctrl.onTargetPartChange(ctrl.target.item)"
         ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
         data-items=100

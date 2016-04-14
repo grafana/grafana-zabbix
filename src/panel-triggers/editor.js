@@ -141,15 +141,7 @@ class TriggerPanelEditorCtrl {
   }
 
   isVariable(str) {
-    var variablePattern = /^\$\w+/;
-    if (variablePattern.test(str)) {
-      var variables = _.map(this.templateSrv.variables, variable => {
-        return '$' + variable.name;
-      });
-      return _.contains(variables, str);
-    } else {
-      return false;
-    }
+    return utils.isTemplateVariable(str, this.templateSrv.variables);
   }
 }
 

@@ -178,26 +178,12 @@ export class ZabbixQueryController extends QueryCtrl {
     }
   }
 
-  onTargetPartChange(targetPart) {
-    /*var regexStyle = {'color': '#CCA300'};
-    targetPart.isRegex = utils.isRegex(targetPart.filter);
-    targetPart.style = targetPart.isRegex ? regexStyle : {};*/
-  }
-
   isRegex(str) {
     return utils.isRegex(str);
   }
 
   isVariable(str) {
-    var variablePattern = /^\$\w+/;
-    if (variablePattern.test(str)) {
-      var variables = _.map(this.templateSrv.variables, variable => {
-        return '$' + variable.name;
-      });
-      return _.contains(variables, str);
-    } else {
-      return false;
-    }
+    return utils.isTemplateVariable(str, this.templateSrv.variables);
   }
 
   onTargetBlur() {
