@@ -110,9 +110,9 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       var triggerFilter = self.panel.triggers;
 
       // Replace template variables
-      var groupFilter = self.templateSrv.replace(triggerFilter.group.filter);
-      var hostFilter = self.templateSrv.replace(triggerFilter.host.filter);
-      var appFilter = self.templateSrv.replace(triggerFilter.application.filter);
+      var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
+      var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
+      var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
       var buildQuery = queryProcessor.buildTriggerQuery(groupFilter, hostFilter, appFilter);
       return buildQuery.then(query => {

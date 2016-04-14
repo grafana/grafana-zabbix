@@ -19,20 +19,23 @@ import '../datasource-zabbix/css/query-editor.css!';
 class TriggerPanelEditorCtrl {
 
   /** @ngInject */
-  constructor($scope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
+  constructor($scope, $rootScope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
     $scope.editor = this;
     this.panelCtrl = $scope.ctrl;
     this.panel = this.panelCtrl.panel;
 
+    this.$q = $q;
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.popoverSrv = popoverSrv;
 
     // Map functions for bs-typeahead
     this.getGroupNames = _.partial(getMetricNames, this, 'groupList');
-    this.getHostNames = _.partial(getMetricNames, this, 'filteredHosts');
-    this.getApplicationNames = _.partial(getMetricNames, this, 'filteredApplications');
-    this.getItemNames = _.partial(getMetricNames, this, 'filteredItems');
+    this.getHostNames = _.partial(getMetricNames, this, 'hostList');
+    this.getApplicationNames = _.partial(getMetricNames, this, 'appList');
+
+    // Update metric suggestion when template variable was changed
+    $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
 
     this.ackFilters = [
       'all triggers',
@@ -80,34 +83,75 @@ class TriggerPanelEditorCtrl {
   }
 
   initFilters() {
-    this.filterGroups();
-    this.filterHosts();
-    this.filterApplications();
+    var self = this;
+    return this.$q
+      .when(this.suggestGroups())
+      .then(() => {return self.suggestHosts();})
+      .then(() => {return self.suggestApps();});
   }
 
-  filterGroups() {
+  suggestGroups() {
     var self = this;
-    this.datasource.queryProcessor.getGroups().then(function(groups) {
-      self.metric.groupList = groups;
-    });
-  }
-
-  filterHosts() {
-    var self = this;
-    var groupFilter = this.templateSrv.replace(this.panel.triggers.group.filter);
-    this.datasource.queryProcessor.getHosts(groupFilter).then(function(hosts) {
-      self.metric.filteredHosts = hosts;
-    });
-  }
-
-  filterApplications() {
-    var self = this;
-    var groupFilter = this.templateSrv.replace(this.panel.triggers.group.filter);
-    var hostFilter = this.templateSrv.replace(this.panel.triggers.host.filter);
-    this.datasource.queryProcessor.getApps(groupFilter, hostFilter)
-      .then(function(apps) {
-        self.metric.filteredApplications = apps;
+    return this.datasource.zabbixCache
+      .getGroups()
+      .then(groups => {
+        self.metric.groupList = groups;
+        return groups;
       });
+  }
+
+  suggestHosts() {
+    var self = this;
+    var groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
+    return this.datasource.queryProcessor
+      .filterGroups(self.metric.groupList, groupFilter)
+      .then(groups => {
+        var groupids = _.map(groups, 'groupid');
+        return self.datasource.zabbixAPI
+          .getHosts(groupids)
+          .then(hosts => {
+            self.metric.hostList = hosts;
+            return hosts;
+          });
+      });
+  }
+
+  suggestApps() {
+    var self = this;
+    var hostFilter = this.datasource.replaceTemplateVars(this.panel.triggers.host.filter);
+    return this.datasource.queryProcessor
+      .filterHosts(self.metric.hostList, hostFilter)
+      .then(hosts => {
+        var hostids = _.map(hosts, 'hostid');
+        return self.datasource.zabbixAPI
+          .getApps(hostids)
+          .then(apps => {
+            return self.metric.appList = apps;
+          });
+      });
+  }
+
+  onVariableChange() {
+    if (this.isContainsVariables()) {
+      this.targetChanged();
+    }
+  }
+
+  /**
+   * Check query for template variables
+   */
+  isContainsVariables() {
+    var self = this;
+    return _.some(self.templateSrv.variables, variable => {
+      return _.some(['group', 'host', 'application'], field => {
+        return self.templateSrv.containsVariable(self.panel.triggers[field].filter, variable.name);
+      });
+    });
+  }
+
+  targetChanged() {
+    this.initFilters();
+    this.panelCtrl.refresh();
   }
 
   parseTarget() {
