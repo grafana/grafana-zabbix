@@ -114,13 +114,6 @@
           'zbx-regex': ctrl.isRegex(ctrl.target.host.filter)
         }">
     </li>
-    <li class="tight-form-item" ng-hide="ctrl.target.mode == 2">
-      Show disabled items&nbsp;
-      <editor-checkbox text=""
-        model="ctrl.target.showDisabledItems"
-        change="ctrl.onTargetBlur()">
-      </editor-checkbox>
-    </li>
   </ul>
   <div class="clearfix"></div>
 </div>
@@ -160,23 +153,47 @@
           'zbx-regex': ctrl.isRegex(ctrl.target.item.filter)
         }">
     </li>
-    <li class="tight-form-item query-keyword">Options</li>
-    <li ng-repeat="func in ctrl.target.functions">
-      <span metric-function-editor class="tight-form-item tight-form-func">
-      </span>
-    </li>
-    <li class="dropdown" add-metric-function>
+    <li class="tight-form-item last">
+      <a ng-click="ctrl.toggleQueryOptions()">
+        <i class="fa fa-caret-down" ng-show="ctrl.showQueryOptions"></i>
+        <i class="fa fa-caret-right" ng-hide="ctrl.showQueryOptions"></i>
+        {{ctrl.queryOptionsText}}
+      </a>
     </li>
   </ul>
 
   <div class="clearfix"></div>
 </div>
-<div class="tight-form" ng-hide="ctrl.target.mode === 1" ng-if="ctrl.target.options">
+<div class="tight-form" ng-hide="ctrl.target.mode === 1">
   <ul class="tight-form-list" role="menu">
     <li class="tight-form-item" style="width: 44px">&nbsp</li>
-    <li class="tight-form-item query-keyword" style="width: 5em">Options</li>
+    <li class="tight-form-item query-keyword" style="width: 5em">Functions</li>
+    <li ng-repeat="func in ctrl.target.functions">
+      <span metric-function-editor class="tight-form-item tight-form-func"></span>
+    </li>
+    <li class="dropdown" add-metric-function></li>
   </ul>
   <div class="clearfix"></div>
+</div>
+
+<!-- Query options -->
+<div class="tight-form" ng-if="ctrl.showQueryOptions">
+  <div class="tight-form-inner-box">
+    <div class="tight-form last">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 170px">
+          Show disabled items
+        </li>
+        <li class="tight-form-item last">
+          <editor-checkbox text=""
+            model="ctrl.target.options.showDisabledItems"
+            change="ctrl.onQueryOptionChange()">
+          </editor-checkbox>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+  </div>
 </div>
 
 <div class="tight-form" ng-show="ctrl.target.mode == 2">

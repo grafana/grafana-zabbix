@@ -48,7 +48,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
       var scopeDefaults = {
         metric: {},
-        oldTarget: _.cloneDeep(this.target)
+        oldTarget: _.cloneDeep(this.target),
+        queryOptionsText: this.renderQueryOptionsText()
       };
       _.defaults(this, scopeDefaults);
 
@@ -60,6 +61,9 @@ export class ZabbixQueryController extends QueryCtrl {
         application: { filter: "" },
         item: { filter: "" },
         functions: [],
+        options: {
+          showDisabledItems: false
+        },
         refId: "A"
       };
       _.defaults(target, targetDefaults);
@@ -156,7 +160,7 @@ export class ZabbixQueryController extends QueryCtrl {
           return self.zabbix
             .getItems(undefined, appids, itemtype)
             .then(items => {
-              if (!self.target.showDisabledItems) {
+              if (!self.target.options.showDisabledItems) {
                 items = _.filter(items, {'status': '0'});
               }
               self.metric.itemList = items;
@@ -169,7 +173,7 @@ export class ZabbixQueryController extends QueryCtrl {
       return self.zabbix
         .getItems(hostids, undefined, itemtype)
         .then(items => {
-          if (!self.target.showDisabledItems) {
+          if (!self.target.options.showDisabledItems) {
             items = _.filter(items, {'status': '0'});
           }
           self.metric.itemList = items;
@@ -256,6 +260,34 @@ export class ZabbixQueryController extends QueryCtrl {
       this.target.functions = _.without(this.target.functions, aliasFunc);
       this.target.functions.push(aliasFunc);
     }
+  }
+
+  toggleQueryOptions() {
+    this.showQueryOptions = !this.showQueryOptions;
+  }
+
+  onQueryOptionChange() {
+    this.queryOptionsText = this.renderQueryOptionsText();
+    this.onTargetBlur();
+  }
+
+  renderQueryOptionsText() {
+    var optionsMap = {
+      showDisabledItems: "Show disabled items"
+    };
+    var options = [];
+    _.forOwn(this.target.options, (value, key) => {
+      if (value) {
+        if (value === true) {
+          // Show only option name (if enabled) for boolean options
+          options.push(optionsMap[key]);
+        } else {
+          // Show "option = value" for another options
+          options.push(optionsMap[key] + " = " + value);
+        }
+      }
+    });
+    return "Options: " + options.join(', ');
   }
 
   /**
