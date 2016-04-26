@@ -60,7 +60,7 @@
 
   <!-- IT Service editor -->
   <ul class="tight-form-list" role="menu" ng-show="ctrl.target.mode == 1">
-    <li class="tight-form-item input-small">IT Service</li>
+    <li class="tight-form-item query-keyword input-small">IT Service</li>
     <li>
       <select class="tight-form-input input-large"
               ng-change="ctrl.selectITService()"
@@ -70,7 +70,7 @@
         <option value="">-- Select IT service --</option>
       </select>
     </li>
-    <li class="tight-form-item input-medium">IT service property</li>
+    <li class="tight-form-item query-keyword input-medium">IT service property</li>
     <li>
       <select class="tight-form-input input-medium"
               ng-change="ctrl.selectITService()"
@@ -84,7 +84,7 @@
   <ul class="tight-form-list" role="menu" ng-hide="ctrl.target.mode == 1">
 
     <!-- Select Host Group -->
-    <li class="tight-form-item input-small" style="width: 5em">Group</li>
+    <li class="tight-form-item query-keyword input-small" style="width: 6em">Group</li>
     <li>
       <input type="text"
         ng-model="ctrl.target.group.filter"
@@ -100,7 +100,7 @@
     </li>
 
     <!-- Select Host -->
-    <li class="tight-form-item input-small" style="width: 3em">Host</li>
+    <li class="tight-form-item query-keyword input-small" style="width: 3em">Host</li>
     <li>
       <input type="text"
         ng-model="ctrl.target.host.filter"
@@ -120,10 +120,9 @@
 
 <div class="tight-form" ng-hide="ctrl.target.mode == 1">
   <ul class="tight-form-list" role="menu">
-    <li class="tight-form-item" style="width: 44px">&nbsp</li>
 
     <!-- Select Application -->
-    <li class="tight-form-item" style="width: 5em">Application</li>
+    <li class="tight-form-item query-keyword tight-form-align" style="width: 6em">Application</li>
     <li>
       <input type="text"
         ng-model="ctrl.target.application.filter"
@@ -139,7 +138,7 @@
     </li>
 
     <!-- Select Item -->
-    <li class="tight-form-item input-small" style="width: 3em">Item</li>
+    <li class="tight-form-item query-keyword input-small" style="width: 3em">Item</li>
     <li>
       <input type="text"
         ng-model="ctrl.target.item.filter"
@@ -164,10 +163,11 @@
 
   <div class="clearfix"></div>
 </div>
-<div class="tight-form" ng-hide="ctrl.target.mode === 1">
+
+<!-- Functions -->
+<div class="tight-form" ng-show="!ctrl.target.mode">
   <ul class="tight-form-list" role="menu">
-    <li class="tight-form-item" style="width: 44px">&nbsp</li>
-    <li class="tight-form-item query-keyword" style="width: 5em">Functions</li>
+    <li class="tight-form-item query-keyword tight-form-align" style="width: 6em">Functions</li>
     <li ng-repeat="func in ctrl.target.functions">
       <span metric-function-editor class="tight-form-item tight-form-func"></span>
     </li>
@@ -198,10 +198,9 @@
 
 <div class="tight-form" ng-show="ctrl.target.mode == 2">
   <ul class="tight-form-list" role="menu">
-    <li class="tight-form-item" style="width: 44px">&nbsp</li>
 
     <!-- Text metric regex -->
-    <li class="tight-form-item" style="width: 5em" ng-show="ctrl.target.mode == 2">
+    <li class="tight-form-item query-keyword tight-form-align" style="width: 6em" ng-show="ctrl.target.mode == 2">
       Text filter
     </li>
     <li ng-show="ctrl.target.mode == 2">
