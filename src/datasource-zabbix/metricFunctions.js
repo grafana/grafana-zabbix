@@ -74,6 +74,16 @@ addFuncDef({
 });
 
 addFuncDef({
+  name: 'aggregateBy',
+  category: 'Aggregate',
+  params: [
+    { name: 'interval', type: 'string' },
+    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'median'] }
+  ],
+  defaultParams: ['1m', 'avg'],
+});
+
+addFuncDef({
   name: 'trendValue',
   category: 'Trends',
   params: [

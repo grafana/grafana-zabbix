@@ -147,6 +147,13 @@ export default class DataProcessor {
     return DataProcessor.groupBy(interval, groupByCallback, datapoints);
   }
 
+  static aggregateByWrapper(interval, aggregateFunc, datapoints) {
+    // Flatten all points in frame and then just use groupBy()
+    var flattenedPoints = _.flatten(datapoints, true);
+    var groupByCallback = DataProcessor.aggregationFunctions[aggregateFunc];
+    return DataProcessor.groupBy(interval, groupByCallback, flattenedPoints);
+  }
+
   static aggregateWrapper(groupByCallback, interval, datapoints) {
     var flattenedPoints = _.flatten(datapoints, true);
     return DataProcessor.groupBy(interval, groupByCallback, flattenedPoints);
@@ -164,6 +171,7 @@ export default class DataProcessor {
   static get metricFunctions() {
     return {
       groupBy: this.groupByWrapper,
+      aggregateBy: this.aggregateByWrapper,
       average: _.partial(this.aggregateWrapper, this.AVERAGE),
       min: _.partial(this.aggregateWrapper, this.MIN),
       max: _.partial(this.aggregateWrapper, this.MAX),
