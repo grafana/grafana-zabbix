@@ -26,9 +26,9 @@ export class ZabbixQueryController extends QueryCtrl {
     this.templateSrv = templateSrv;
 
     this.editorModes = {
-      0: {value: 'num', text: 'Numeric metrics', mode: 0},
+      0: {value: 'num', text: 'Metrics', mode: 0},
       1: {value: 'itservice', text: 'IT Services', mode: 1},
-      2: {value: 'text', text: 'Text metrics', mode: 2}
+      2: {value: 'text', text: 'Text', mode: 2}
     };
 
     // Map functions for bs-typeahead
