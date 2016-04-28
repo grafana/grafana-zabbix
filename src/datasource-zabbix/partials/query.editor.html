@@ -12,14 +12,14 @@
       </div>
     </div>
     <div class="gf-form gf-form--grow">
-			<div class="gf-form-label gf-form-label--grow"></div>
-		</div>
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
   </div>
 
   <!-- IT Service editor -->
   <div class="gf-form-inline" ng-show="ctrl.target.mode == 1">
     <div class="gf-form max-width-20">
-      <label class="gf-form-label width-7">IT Service</label>
+      <label class="gf-form-label query-keyword width-7">IT Service</label>
       <div class="gf-form-select-wrapper max-width-20">
         <select class="gf-form-input"
               ng-change="ctrl.selectITService()"
@@ -31,7 +31,7 @@
       </div>
     </div>
     <div class="gf-form">
-      <label class="gf-form-label">IT service property</label>
+      <label class="gf-form-label query-keyword">IT service property</label>
       <div class="gf-form-select-wrapper">
         <select class="gf-form-input"
               ng-change="ctrl.selectITService()"
@@ -42,14 +42,14 @@
       </div>
     </div>
     <div class="gf-form gf-form--grow">
-			<div class="gf-form-label gf-form-label--grow"></div>
-		</div>
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
   </div>
 
   <div class="gf-form-inline" ng-hide="ctrl.target.mode == 1">
     <!-- Select Group -->
     <div class="gf-form max-width-20">
-      <label class="gf-form-label width-7">Group</label>
+      <label class="gf-form-label query-keyword width-7">Group</label>
       <input type="text"
         ng-model="ctrl.target.group.filter"
         bs-typeahead="ctrl.getGroupNames"
@@ -64,7 +64,7 @@
     </div>
     <!-- Select Host -->
     <div class="gf-form">
-      <label class="gf-form-label width-7">Host</label>
+      <label class="gf-form-label query-keyword width-7">Host</label>
       <input type="text"
         ng-model="ctrl.target.host.filter"
         bs-typeahead="ctrl.getHostNames"
@@ -78,19 +78,15 @@
           }">
     </div>
 
-		<gf-form-switch class="gf-form" ng-hide="ctrl.target.mode == 2"
-      label="Show disabled items" checked="ctrl.target.showDisabledItems" on-change="ctrl.onTargetBlur()">
-		</gf-form-switch>
-
     <div class="gf-form gf-form--grow">
-			<div class="gf-form-label gf-form-label--grow"></div>
-		</div>
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
   </div>
 
   <div class="gf-form-inline" ng-hide="ctrl.target.mode == 1">
     <!-- Select Application -->
     <div class="gf-form max-width-20">
-      <label class="gf-form-label width-7">Application</label>
+      <label class="gf-form-label query-keyword width-7">Application</label>
       <input type="text"
         ng-model="ctrl.target.application.filter"
         bs-typeahead="ctrl.getApplicationNames"
@@ -106,7 +102,7 @@
 
     <!-- Select Item -->
     <div class="gf-form">
-      <label class="gf-form-label width-7">Item</label>
+      <label class="gf-form-label query-keyword width-7">Item</label>
       <input type="text"
         ng-model="ctrl.target.item.filter"
         bs-typeahead="ctrl.getItemNames"
@@ -119,21 +115,35 @@
           'zbx-regex': ctrl.isRegex(ctrl.target.item.filter)
         }">
     </div>
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label gf-form-label--grow">
+        <a ng-click="ctrl.toggleQueryOptions()">
+          <i class="fa fa-caret-down" ng-show="ctrl.showQueryOptions"></i>
+          <i class="fa fa-caret-right" ng-hide="ctrl.showQueryOptions"></i>
+          {{ctrl.queryOptionsText}}
+        </a>
+      </label>
+    </div>
+  </div>
+
+  <!-- Metric processing functions -->
+  <div class="gf-form-inline" ng-hide="ctrl.target.mode">
     <div class="gf-form">
-      <label class="gf-form-label">Options</label>
+      <label class="gf-form-label query-keyword width-7">Functions</label>
       <div ng-repeat="func in ctrl.target.functions" class="gf-form-label query-part" metric-function-editor></div>
     </div>
     <div class="gf-form dropdown" add-metric-function>
     </div>
     <div class="gf-form gf-form--grow">
-			<div class="gf-form-label gf-form-label--grow"></div>
-		</div>
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
   </div>
 
+  <!-- Text mode options -->
   <div class="gf-form-inline" ng-show="ctrl.target.mode == 2">
     <!-- Text metric regex -->
     <div class="gf-form max-width-20">
-      <label class="gf-form-label width-7">Text filter</label>
+      <label class="gf-form-label query-keyword width-7">Text filter</label>
       <input type="text"
              class="gf-form-input"
              ng-model="ctrl.target.textFilter"
@@ -143,7 +153,18 @@
     </div>
 
     <gf-form-switch class="gf-form" label="Use capture groups" checked="ctrl.target.useCaptureGroups" on-change="ctrl.onTargetBlur()">
-		</gf-form-switch>
+    </gf-form-switch>
+  </div>
+
+  <!-- Query options -->
+  <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
+    <div class="gf-form offset-width-7">
+      <gf-form-switch class="gf-form" ng-hide="ctrl.target.mode == 2"
+        label="Show disabled items"
+        checked="ctrl.target.options.showDisabledItems"
+        on-change="ctrl.onQueryOptionChange()">
+      </gf-form-switch>
+    </div>
   </div>
 
 </query-editor-row>
