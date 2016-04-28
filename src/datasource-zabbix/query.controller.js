@@ -26,9 +26,9 @@ export class ZabbixQueryController extends QueryCtrl {
     this.templateSrv = templateSrv;
 
     this.editorModes = {
-      0: 'num',
-      1: 'itservice',
-      2: 'text'
+      0: {value: 'num', text: 'Numeric metrics', mode: 0},
+      1: {value: 'itservice', text: 'IT Services', mode: 1},
+      2: {value: 'text', text: 'Text metrics', mode: 2}
     };
 
     // Map functions for bs-typeahead
@@ -98,7 +98,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
   initFilters() {
     var self = this;
-    var itemtype = self.editorModes[self.target.mode];
+    var itemtype = self.editorModes[self.target.mode].value;
     return this.$q.when(this.suggestGroups())
       .then(() => {return self.suggestHosts();})
       .then(() => {return self.suggestApps();})
