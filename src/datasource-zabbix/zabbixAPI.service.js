@@ -383,6 +383,15 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
         });
     }
 
+    sendAcknowledge(eventid) {
+      var params = {
+          "eventids": eventid,
+          "message": 'Trigger acknowledged via grafana'
+      };
+
+      return this.request('event.acknowledge', params);
+    }
+
   }
 
   return ZabbixAPI;
