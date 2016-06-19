@@ -102,7 +102,8 @@ angular
           $input.attr('data-provide', 'typeahead');
 
           var options = funcDef.params[paramIndex].options;
-          if (funcDef.params[paramIndex].type === 'int') {
+          if (funcDef.params[paramIndex].type === 'int' ||
+              funcDef.params[paramIndex].type === 'float') {
             options = _.map(options, function(val) { return val.toString(); });
           }
 

@@ -142,6 +142,15 @@ export default class DataProcessor {
     return timeseries;
   }
 
+  static scale(factor, datapoints) {
+    return _.map(datapoints, point => {
+      return [
+        point[0] * factor,
+        point[1]
+      ];
+    });
+  }
+
   static groupByWrapper(interval, groupFunc, datapoints) {
     var groupByCallback = DataProcessor.aggregationFunctions[groupFunc];
     return DataProcessor.groupBy(interval, groupByCallback, datapoints);
@@ -171,6 +180,7 @@ export default class DataProcessor {
   static get metricFunctions() {
     return {
       groupBy: this.groupByWrapper,
+      scale: this.scale,
       aggregateBy: this.aggregateByWrapper,
       average: _.partial(this.aggregateWrapper, this.AVERAGE),
       min: _.partial(this.aggregateWrapper, this.MIN),
