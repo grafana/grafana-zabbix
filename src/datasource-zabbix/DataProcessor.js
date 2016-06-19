@@ -233,7 +233,7 @@ function findNearestRight(series, point) {
   var point_index = _.indexOf(series, point);
   var nearestRight;
   for (var i = point_index; i < series.length; i++) {
-    if (series[i][0]) {
+    if (series[i][0] !== null) {
       return series[i];
     }
   }
@@ -244,7 +244,7 @@ function findNearestLeft(series, point) {
   var point_index = _.indexOf(series, point);
   var nearestLeft;
   for (var i = point_index; i > 0; i--) {
-    if (series[i][0]) {
+    if (series[i][0] !== null) {
       return series[i];
     }
   }
