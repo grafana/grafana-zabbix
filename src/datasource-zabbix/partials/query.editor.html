@@ -126,6 +126,17 @@
     </div>
   </div>
 
+  <!-- Query options -->
+  <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
+    <div class="gf-form offset-width-7">
+      <gf-form-switch class="gf-form" ng-hide="ctrl.target.mode == 2"
+        label="Show disabled items"
+        checked="ctrl.target.options.showDisabledItems"
+        on-change="ctrl.onQueryOptionChange()">
+      </gf-form-switch>
+    </div>
+  </div>
+
   <!-- Metric processing functions -->
   <div class="gf-form-inline" ng-hide="ctrl.target.mode">
     <div class="gf-form">
@@ -154,17 +165,6 @@
 
     <gf-form-switch class="gf-form" label="Use capture groups" checked="ctrl.target.useCaptureGroups" on-change="ctrl.onTargetBlur()">
     </gf-form-switch>
-  </div>
-
-  <!-- Query options -->
-  <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
-    <div class="gf-form offset-width-7">
-      <gf-form-switch class="gf-form" ng-hide="ctrl.target.mode == 2"
-        label="Show disabled items"
-        checked="ctrl.target.options.showDisabledItems"
-        on-change="ctrl.onQueryOptionChange()">
-      </gf-form-switch>
-    </div>
   </div>
 
 </query-editor-row>

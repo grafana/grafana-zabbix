@@ -40,6 +40,11 @@ export class ZabbixQueryController extends QueryCtrl {
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
 
+    // Update metrics when item selected from dropdown
+    $scope.$on('typeahead-updated', () => {
+      this.onTargetBlur();
+    });
+
     this.init = function() {
       var target = this.target;
 

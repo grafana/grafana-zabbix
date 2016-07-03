@@ -176,10 +176,10 @@ export class ZabbixAPIDatasource {
           // Apply transformation functions
           timeseries_data = _.map(timeseries_data, timeseries => {
 
-            // Filter only transform functions
+            // Filter only transformation functions
             var transformFunctions = bindFunctionDefs(target.functions, 'Transform', DataProcessor);
 
-            // Metric data processing
+            // Timeseries processing
             var dp = timeseries.datapoints;
             for (var i = 0; i < transformFunctions.length; i++) {
               dp = transformFunctions[i](dp);
@@ -492,7 +492,7 @@ function zabbixTemplateFormat(value, variable) {
 function replaceTemplateVars(templateSrv, target, scopedVars) {
   var replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
   if (target !== replacedTarget && !utils.regexPattern.test(replacedTarget)) {
-    replacedTarget = '/' + replacedTarget + '/';
+    replacedTarget = '/^' + replacedTarget + '$/';
   }
   return replacedTarget;
 }
