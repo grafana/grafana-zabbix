@@ -492,7 +492,7 @@ function zabbixTemplateFormat(value, variable) {
 function replaceTemplateVars(templateSrv, target, scopedVars) {
   var replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
   if (target !== replacedTarget && !utils.regexPattern.test(replacedTarget)) {
-    replacedTarget = '/' + replacedTarget + '/';
+    replacedTarget = '/^' + replacedTarget + '$/';
   }
   return replacedTarget;
 }
