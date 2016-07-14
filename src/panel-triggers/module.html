@@ -136,9 +136,9 @@
                 bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'">
               <i class="fa fa-comments"></i>
             </a>
-            
+
             <!-- Acknowledge events -->
-            <a  ng-if="trigger.acknowledges === undefined"
+            <a 
                 role="button"
                 ng-click="ctrl.addAcknowledgeMessage(trigger)"
                 bs-tooltip="'acknowledge this event'">

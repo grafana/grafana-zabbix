@@ -171,12 +171,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                   });
 
                   if (event) {
-                    trigger.acknowledges = _.map(event.acknowledges, ack => {
-                      var time = new Date(+ack.clock * 1000);
-                      ack.time = time.toLocaleString();
-                      ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-                      return ack;
-                    });
+                    trigger.acknowledges = this.formatAcknowledges(event.acknowledges);
                   }
                 });
 
@@ -233,9 +228,23 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     trigger.newAct={
       time:new Date(),
       user:this.contextSrv.user.name+'(Grafana)',
-      eventid:trigger.lastEvent.eventid,
       message:''
     };
+  }
+  formatAcknowledges(acknowledges){
+    var re=/^([^\(]+\(Grafana\)): (.+)/;
+    return _.map(acknowledges, ack=>{
+      var time = new Date(+ack.clock * 1000);
+      ack.time = time.toLocaleString();
+      var m=re.exec(ack.message)
+      if(m === null){
+        ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
+      }else{
+        ack.user = m[1]
+        ack.message = m[2];
+      }
+      return ack;
+    });
   }
   acknowledgeTrigger($event,trigger,newAct){
     if($event.keyCode!=13) return;
@@ -246,19 +255,14 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     }
     this.datasourceSrv.get(this.panel.datasource).then(datasource => {
       var zabbix = datasource.zabbixAPI;
-      zabbix.acknowledgeEvent(newAct.eventid,newAct.user+': '+newAct.message)
+      var eventid = trigger.lastEvent.eventid;
+      zabbix.acknowledgeEvent(eventid,newAct.user+': '+newAct.message)
         .then(rs=>{
           zabbix.getAcknowledges(rs.eventids).then(events => {
-            _.each(events, event => {
-                    trigger.acknowledges = _.map(event.acknowledges, ack => {
-                      var time = new Date(+ack.clock * 1000);
-                      ack.time = time.toLocaleString();
-                      ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-                      return ack;
-                    });
-            });
+            if(_.size(events)>0){
+                trigger.acknowledges = this.formatAcknowledges(events[0].acknowledges);
+            };
             delete trigger.newAct;
-            console.log('event id '+ rs.eventids.join() + ' new message added: ' + ack.message );
         });
       });
     });
