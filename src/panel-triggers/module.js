@@ -67,6 +67,8 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
 
+    this.$injector=$injector;
+    this.el = $element;
     // Load panel defaults
     // _.cloneDeep() need for prevent changing shared defaultSeverity.
     // Load object "by value" istead "by reference".
@@ -226,10 +228,15 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
   addAcknowledgeMessage(trigger){
     trigger.showAcknowledges = true;
     trigger.newAct={
-      time:new Date(),
+      time:(new Date()).toLocaleString(),
       user:this.contextSrv.user.name+'(Grafana)',
       message:''
     };
+    //auto focus the new input box
+    var el=this.el;
+    this.$injector.get('$timeout')(function(){
+      el.find('input').focus();
+    },100);
   }
   formatAcknowledges(acknowledges){
     var re=/^([^\(]+\(Grafana\)): (.+)/;

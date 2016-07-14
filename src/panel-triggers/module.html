@@ -83,6 +83,15 @@
                     </tr>
                   </thead>
                   <tbody>
+                    <tr ng-if="trigger.newAct">
+                      <td>
+                        <small>{{trigger.newAct.time}}</small>
+                      </td>
+                      <td>
+                        <small>{{trigger.newAct.user}}</small>
+                      </td>
+                      <td><input ng-model="trigger.newAct.message" size="80" ng-blur="ctrl.acknowledgeTrigger({keyCode:13},trigger,trigger.newAct)" ng-keyup="ctrl.acknowledgeTrigger($event,trigger,trigger.newAct)"/></td>
+                    </tr>
                     <tr ng-repeat="ack in trigger.acknowledges">
                       <td>
                         <small>{{ack.time}}</small>
@@ -93,15 +102,6 @@
                       <td>
                         <small>{{ack.message}}</small>
                       </td>
-                    </tr>
-                    <tr ng-if="trigger.newAct">
-                      <td>
-                        <small>{{trigger.newAct.time}}</small>
-                      </td>
-                      <td>
-                        <small>{{trigger.newAct.user}}</small>
-                      </td>
-                      <td><input ng-model="trigger.newAct.message" size="80" ng-blur="ctrl.acknowledgeTrigger({keyCode:13},trigger,trigger.newAct)" ng-keyup="ctrl.acknowledgeTrigger($event,trigger,trigger.newAct)"/></td>
                     </tr>
                   </tbody>
                 </table>
@@ -138,7 +138,7 @@
             </a>
 
             <!-- Acknowledge events -->
-            <a 
+            <a
                 role="button"
                 ng-click="ctrl.addAcknowledgeMessage(trigger)"
                 bs-tooltip="'acknowledge this event'">
