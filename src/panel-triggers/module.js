@@ -59,10 +59,11 @@ var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv) {
+  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv,contextSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
+    this.contextSrv = contextSrv;
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
 
@@ -226,6 +227,41 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   switchAcknowledges(trigger) {
     trigger.showAcknowledges = !trigger.showAcknowledges;
+  }
+  addAcknowledgeMessage(trigger){
+    trigger.showAcknowledges = true;
+    trigger.newAct={
+      time:new Date(),
+      user:this.contextSrv.user.name+'(Grafana)',
+      eventid:trigger.lastEvent.eventid,
+      message:''
+    };
+  }
+  acknowledgeTrigger($event,trigger,newAct){
+    if($event.keyCode!=13) return;
+    if(newAct.message.trim() === ""){
+      delete trigger.newAct;
+      trigger.showAcknowledges = false;
+      return;
+    }
+    this.datasourceSrv.get(this.panel.datasource).then(datasource => {
+      var zabbix = datasource.zabbixAPI;
+      zabbix.acknowledgeEvent(newAct.eventid,newAct.user+': '+newAct.message)
+        .then(rs=>{
+          zabbix.getAcknowledges(rs.eventids).then(events => {
+            _.each(events, event => {
+                    trigger.acknowledges = _.map(event.acknowledges, ack => {
+                      var time = new Date(+ack.clock * 1000);
+                      ack.time = time.toLocaleString();
+                      ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
+                      return ack;
+                    });
+            });
+            delete trigger.newAct;
+            console.log('event id '+ rs.eventids.join() + ' new message added: ' + ack.message );
+        });
+      });
+    });
   }
 }
 
