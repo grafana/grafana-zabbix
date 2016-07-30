@@ -94,6 +94,15 @@
                         <small>{{ack.message}}</small>
                       </td>
                     </tr>
+                    <tr ng-if="trigger.newAct">
+                      <td>
+                        <small>{{trigger.newAct.time}}</small>
+                      </td>
+                      <td>
+                        <small>{{trigger.newAct.user}}</small>
+                      </td>
+                      <td><input ng-model="trigger.newAct.message" size="80" ng-blur="ctrl.acknowledgeTrigger({keyCode:13},trigger,trigger.newAct)" ng-keyup="ctrl.acknowledgeTrigger($event,trigger,trigger.newAct)"/></td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -126,6 +135,14 @@
                 ng-click="ctrl.switchAcknowledges(trigger)"
                 bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'">
               <i class="fa fa-comments"></i>
+            </a>
+            
+            <!-- Acknowledge events -->
+            <a  ng-if="trigger.acknowledges === undefined"
+                role="button"
+                ng-click="ctrl.addAcknowledgeMessage(trigger)"
+                bs-tooltip="'acknowledge this event'">
+              <i class="fa fa-comments-o"></i>
             </a>
           </td>
         </tr>
