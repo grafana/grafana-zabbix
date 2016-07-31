@@ -31,21 +31,25 @@
       </thead>
       <tbody>
         <tr ng-repeat="trigger in ctrl.triggerList">
+
           <td ng-if="ctrl.panel.hostField">
             <div>
               <span><strong>{{trigger.host}}</strong></span>
             </div>
           </td>
+
           <td ng-if="ctrl.panel.statusField" style="background-color: {{trigger.color}}; color: white">
             <div>
               {{ctrl.triggerStatusMap[trigger.value]}}
             </div>
           </td>
+
           <td ng-if="ctrl.panel.severityField" style="background-color: {{trigger.color}}; color: white">
             <div>
               {{trigger.severity}}
             </div>
           </td>
+
           <td style="background-color: {{trigger.color}}; color: white">
             <div>
               {{trigger.description}}
@@ -68,43 +72,16 @@
                 <small>{{trigger.comments}}</small>
               </div>
             </div>
-
-            <!-- Trigger acknowledges -->
-            <div  class="collapse"
-                  id="acknowledges-{{trigger.triggerid}}"
-                  ng-if="trigger.showAcknowledges">
-              <div style="padding-top: 12px;">
-                <table class="table table-condensed">
-                  <thead>
-                    <tr>
-                      <th><small>Time</small></th>
-                      <th><small>User</small></th>
-                      <th><small>Comments</small></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr ng-repeat="ack in trigger.acknowledges">
-                      <td>
-                        <small>{{ack.time}}</small>
-                      </td>
-                      <td>
-                        <small>{{ack.user}}</small>
-                      </td>
-                      <td>
-                        <small>{{ack.message}}</small>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </td>
+
           <td ng-if="ctrl.panel.lastChangeField">
             {{trigger.lastchange}}
           </td>
+
           <td ng-if="ctrl.panel.ageField">
             {{trigger.age}}
           </td>
+
           <td ng-if="ctrl.panel.infoField">
 
             <!-- Trigger Url -->
@@ -121,12 +98,12 @@
             </span>
 
             <!-- Trigger acknowledges -->
-            <a  ng-if="trigger.acknowledges"
-                role="button"
-                ng-click="ctrl.switchAcknowledges(trigger)"
-                bs-tooltip="'Acknowledges ({{trigger.acknowledges.length}})'">
-              <i class="fa fa-comments"></i>
-            </a>
+            <ack-tooltip
+              ack="trigger.acknowledges"
+              trigger="trigger"
+              on-ack="ctrl.acknowledgeTrigger"
+              context="ctrl">
+            </ack-tooltip>
           </td>
         </tr>
       </tbody>

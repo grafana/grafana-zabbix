@@ -16,6 +16,7 @@ import moment from 'moment';
 import * as utils from '../datasource-zabbix/utils';
 import {MetricsPanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelEditor} from './editor';
+import './ack-tooltip.directive';
 import './css/panel_triggers.css!';
 
 var defaultSeverity = [
@@ -59,10 +60,11 @@ var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv) {
+  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv, contextSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
+    this.contextSrv = contextSrv;
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
 
@@ -122,11 +124,11 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                                   showEvents)
           .then(triggers => {
             return _.map(triggers, trigger => {
-              var triggerObj = trigger;
+              let triggerObj = trigger;
 
               // Format last change and age
               trigger.lastchangeUnix = Number(trigger.lastchange);
-              var timestamp = moment.unix(trigger.lastchangeUnix);
+              let timestamp = moment.unix(trigger.lastchangeUnix);
               if (self.panel.customLastChangeFormat) {
                 // User defined format
                 triggerObj.lastchange = timestamp.format(self.panel.lastChangeFormat);
@@ -171,8 +173,12 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
 
                   if (event) {
                     trigger.acknowledges = _.map(event.acknowledges, ack => {
-                      var time = new Date(+ack.clock * 1000);
-                      ack.time = time.toLocaleString();
+                      let timestamp = moment.unix(ack.clock);
+                      if (self.panel.customLastChangeFormat) {
+                        ack.time = timestamp.format(self.panel.lastChangeFormat);
+                      } else {
+                        ack.time = timestamp.format(self.defaultTimeFormat);
+                      }
                       ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
                       return ack;
                     });
@@ -224,8 +230,17 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     trigger.showComment = !trigger.showComment;
   }
 
-  switchAcknowledges(trigger) {
-    trigger.showAcknowledges = !trigger.showAcknowledges;
+  acknowledgeTrigger(trigger, message) {
+    let self = this;
+    let eventid = trigger.lastEvent.eventid;
+    let grafana_user = this.contextSrv.user.name;
+    let ack_message = grafana_user + ' (Grafana): ' + message;
+    return this.datasourceSrv.get(this.panel.datasource).then(datasource => {
+      let zabbix = datasource.zabbixAPI;
+      return zabbix.acknowledgeEvent(eventid, ack_message).then(() => {
+        self.refresh();
+      });
+    });
   }
 }
 
