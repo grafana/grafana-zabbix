@@ -47,7 +47,6 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
         },
         // Handle API errors
         function(error) {
-          console.log('Zabbix error: '+error.data);
           if (isNotAuthorized(error.data)) {
             return self.loginOnce().then(
               function() {
@@ -114,12 +113,14 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
     ////////////////////////////////
     // Zabbix API method wrappers //
     ////////////////////////////////
-    acknowledgeEvent(eventid,message){
+
+    acknowledgeEvent(eventid, message) {
       var params = {
-        eventids:eventid,
-        message:message
+        eventids: eventid,
+        message: message
       };
-      return this.request('event.acknowledge',params);
+
+      return this.request('event.acknowledge', params);
     }
 
     getGroups() {
