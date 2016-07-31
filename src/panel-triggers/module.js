@@ -140,6 +140,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
               // Set host that the trigger belongs
               if (trigger.hosts.length) {
                 triggerObj.host = trigger.hosts[0].name;
+                triggerObj.hostTechName = trigger.hosts[0].host;
               }
 
               // Set color

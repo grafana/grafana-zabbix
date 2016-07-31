@@ -9,6 +9,11 @@
               Host
             </div>
           </th>
+          <th ng-if="ctrl.panel.hostTechNameField" style="width: 15%">
+            <div class="triggers-panel-table-header-inner pointer">
+              Technical Name
+            </div>
+          </th>
           <th ng-if="ctrl.panel.statusField" style="width: 85px">
             <div class="triggers-panel-table-header-inner pointer">Status</div>
           </th>
@@ -35,6 +40,12 @@
           <td ng-if="ctrl.panel.hostField">
             <div>
               <span><strong>{{trigger.host}}</strong></span>
+            </div>
+          </td>
+
+          <td ng-if="ctrl.panel.hostTechNameField">
+            <div>
+              <span><strong>{{trigger.hostTechName}}</strong></span>
             </div>
           </td>
 

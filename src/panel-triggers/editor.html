@@ -150,13 +150,22 @@
             <strong>Show fields</strong>
           </li>
           <li class="tight-form-item">
-            <label class="checkbox-label" for="hostField">Host</label>
+            <label class="checkbox-label" for="hostField">Host Name</label>
             <input  class="cr1"
                     id="hostField"
                     type="checkbox"
                     ng-model="editor.panel.hostField"
                     ng-checked="editor.panel.hostField">
             <label for="hostField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="hostField">Host Technical Name</label>
+            <input  class="cr1"
+                    id="hostTechNameField"
+                    type="checkbox"
+                    ng-model="editor.panel.hostTechNameField"
+                    ng-checked="editor.panel.hostTechNameField">
+            <label for="hostTechNameField" class="cr1"></label>
           </li>
           <li class="tight-form-item">
             <label class="checkbox-label" for="statusField">Status</label>
@@ -176,6 +185,14 @@
                     ng-checked="editor.panel.severityField">
             <label for="severityField" class="cr1"></label>
           </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>&nbsp;</strong>
+          </li>
           <li class="tight-form-item">
             <label class="checkbox-label" for="lastChangeField">Last change</label>
             <input  class="cr1"
@@ -194,7 +211,7 @@
                     ng-checked="editor.panel.ageField">
             <label for="ageField" class="cr1"></label>
           </li>
-          <li class="tight-form-item last">
+          <li class="tight-form-item">
             <label class="checkbox-label" for="infoField">Info</label>
             <input  class="cr1"
                     id="infoField"
@@ -206,6 +223,7 @@
         </ul>
         <div class="clearfix"></div>
       </div>
+
       <div class="tight-form">
         <ul class="tight-form-list">
           <li class="tight-form-item">
