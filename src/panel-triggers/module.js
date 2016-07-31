@@ -48,6 +48,7 @@ var panelDefaults = {
   showEvents: { text: 'Problems', value: '1' },
   triggerSeverity: defaultSeverity,
   okEventColor: 'rgba(0, 245, 153, 0.45)',
+  ackEventColor: 'rgba(0, 0, 0, 0)'
 };
 
 var triggerStatusMap = {
@@ -183,6 +184,11 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                       ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
                       return ack;
                     });
+
+                    // Mark acknowledged triggers with different color
+                    if (self.panel.markAckEvents && trigger.acknowledges.length) {
+                      trigger.color = self.panel.ackEventColor;
+                    }
                   }
                 });
 
