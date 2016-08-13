@@ -61,16 +61,17 @@ export class ZabbixAPIDatasource {
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(options) {
-    var self = this;
-
-    // get from & to in seconds
     var timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
     var timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
+
     var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
-    var useTrends = (timeFrom < useTrendsFrom) && this.trends;
+    var useTrends = (timeFrom <= useTrendsFrom) && this.trends;
 
     // Create request for each target
     var promises = _.map(options.targets, target => {
+
+      // Prevent changes of original object
+      target = _.cloneDeep(target);
 
       if (target.mode !== 1) {
 
@@ -83,21 +84,20 @@ export class ZabbixAPIDatasource {
         }
 
         // Replace templated variables
-        var groupFilter = this.replaceTemplateVars(target.group.filter, options.scopedVars);
-        var hostFilter = this.replaceTemplateVars(target.host.filter, options.scopedVars);
-        var appFilter = this.replaceTemplateVars(target.application.filter, options.scopedVars);
-        var itemFilter = this.replaceTemplateVars(target.item.filter, options.scopedVars);
+        target.group.filter = this.replaceTemplateVars(target.group.filter, options.scopedVars);
+        target.host.filter = this.replaceTemplateVars(target.host.filter, options.scopedVars);
+        target.application.filter = this.replaceTemplateVars(target.application.filter, options.scopedVars);
+        target.item.filter = this.replaceTemplateVars(target.item.filter, options.scopedVars);
+        target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
 
         // Query numeric data
         if (!target.mode || target.mode === 0) {
-          return self.queryNumericData(target, groupFilter, hostFilter, appFilter, itemFilter,
-                                       timeFrom, timeTo, useTrends, options, self);
+          return this.queryNumericData(target, timeFrom, timeTo, useTrends);
         }
 
         // Query text data
         else if (target.mode === 2) {
-          return self.queryTextData(target, groupFilter, hostFilter, appFilter, itemFilter,
-                                    timeFrom, timeTo, options, self);
+          return this.queryTextData(target, timeFrom, timeTo);
         }
       }
 
@@ -111,11 +111,11 @@ export class ZabbixAPIDatasource {
         return this.zabbixAPI
           .getSLA(target.itservice.serviceid, timeFrom, timeTo)
           .then(slaObject => {
-            return self.queryProcessor
+            return this.queryProcessor
               .handleSLAResponse(target.itservice, target.slaProperty, slaObject);
           });
       }
-    }, this);
+    });
 
     // Data for panel (all targets)
     return this.q.all(_.flatten(promises))
@@ -134,10 +134,13 @@ export class ZabbixAPIDatasource {
       });
   }
 
-  queryNumericData(target, groupFilter, hostFilter, appFilter, itemFilter, timeFrom, timeTo, useTrends, options, self) {
+  queryNumericData(target, timeFrom, timeTo, useTrends) {
     // Build query in asynchronous manner
-    return self.queryProcessor
-      .build(groupFilter, hostFilter, appFilter, itemFilter, 'num')
+    return this.queryProcessor.build(target.group.filter,
+                                     target.host.filter,
+                                     target.application.filter,
+                                     target.item.filter,
+                                     'num')
       .then(items => {
         // Add hostname for items from multiple hosts
         var addHostName = utils.isRegex(target.host.filter);
@@ -153,51 +156,43 @@ export class ZabbixAPIDatasource {
           });
           var valueType = trendValueFunc ? trendValueFunc.params[0] : "avg";
 
-          getHistory = self.zabbixAPI
+          getHistory = this.zabbixAPI
             .getTrend(items, timeFrom, timeTo)
             .then(history => {
-              return self.queryProcessor.handleTrends(history, items, addHostName, valueType);
+              return this.queryProcessor.handleTrends(history, items, addHostName, valueType);
             });
         }
 
         // Use history
         else {
-          getHistory = self.zabbixCache
+          getHistory = this.zabbixCache
             .getHistory(items, timeFrom, timeTo)
             .then(history => {
-              return self.queryProcessor.handleHistory(history, items, addHostName);
+              return this.queryProcessor.handleHistory(history, items, addHostName);
             });
         }
 
         return getHistory.then(timeseries_data => {
+          let transformFunctions   = bindFunctionDefs(target.functions, 'Transform');
+          let aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
+          let aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
 
           // Apply transformation functions
           timeseries_data = _.map(timeseries_data, timeseries => {
-
-            // Filter only transformation functions
-            var transformFunctions = bindFunctionDefs(target.functions, 'Transform', DataProcessor);
-
-            // Timeseries processing
-            var dp = timeseries.datapoints;
-            for (var i = 0; i < transformFunctions.length; i++) {
-              dp = transformFunctions[i](dp);
-            }
-            timeseries.datapoints = dp;
-
+            timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
             return timeseries;
           });
 
           // Apply aggregations
-          var aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate', DataProcessor);
-          var dp = _.map(timeseries_data, 'datapoints');
           if (aggregationFunctions.length) {
-            for (var i = 0; i < aggregationFunctions.length; i++) {
-              dp = aggregationFunctions[i](dp);
-            }
-            var lastAgg = _.findLast(target.functions, func => {
-              return _.contains(
-                _.map(metricFunctions.getCategories()['Aggregate'], 'name'), func.def.name);
+            let dp = _.map(timeseries_data, 'datapoints');
+            dp = sequence(aggregationFunctions)(dp);
+
+            let aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
+            let lastAgg = _.findLast(target.functions, func => {
+              return _.contains(aggFuncNames, func.def.name);
             });
+
             timeseries_data = [
               {
                 target: lastAgg.text,
@@ -207,47 +202,36 @@ export class ZabbixAPIDatasource {
           }
 
           // Apply alias functions
-          var aliasFunctions = bindFunctionDefs(target.functions, 'Alias', DataProcessor);
-          for (var j = 0; j < aliasFunctions.length; j++) {
-            _.each(timeseries_data, aliasFunctions[j]);
-          }
+          _.each(timeseries_data, sequence(aliasFunctions));
 
           return timeseries_data;
         });
       });
   }
 
-  queryTextData(target, groupFilter, hostFilter, appFilter, itemFilter, timeFrom, timeTo, options, self) {
-    return self.queryProcessor
-      .build(groupFilter, hostFilter, appFilter, itemFilter, 'text')
+  queryTextData(target, timeFrom, timeTo) {
+    return this.queryProcessor.build(target.group.filter,
+                                     target.host.filter,
+                                     target.application.filter,
+                                     target.item.filter,
+                                     'text')
       .then(items => {
         if (items.length) {
-          return self.zabbixAPI.getHistory(items, timeFrom, timeTo)
+          return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
             .then(history => {
-              return self.queryProcessor.convertHistory(history, items, false, (point) => {
-                let extractedValue = point.value;
+              return this.queryProcessor.convertHistory(history, items, false, (point) => {
+                let value = point.value;
 
                 // Regex-based extractor
                 if (target.textFilter) {
-                  let text_extract_pattern = new RegExp(self.replaceTemplateVars(target.textFilter, options.scopedVars));
-                  extractedValue = text_extract_pattern.exec(point.value);
-                  if (extractedValue) {
-                    if (target.useCaptureGroups) {
-                      extractedValue = extractedValue[1];
-                    } else {
-                      extractedValue = extractedValue[0];
-                    }
-                  }
+                  value = extractText(point.value, target.textFilter, target.useCaptureGroups);
                 }
 
-                return [
-                  extractedValue,
-                  point.clock * 1000
-                ];
+                return [value, point.clock * 1000];
               });
             });
         } else {
-          return self.q.when([]);
+          return this.q.when([]);
         }
       });
   }
@@ -304,12 +288,12 @@ export class ZabbixAPIDatasource {
    *                        of metrics in "{metric1,metcic2,...,metricN}" format.
    */
   metricFindQuery(query) {
-    // Split query. Query structure:
-    // group.host.app.item
-    var self = this;
-    var parts = [];
-    _.each(query.split('.'), function (part) {
-      part = self.replaceTemplateVars(part, {});
+    let result;
+    let parts = [];
+
+    // Split query. Query structure: group.host.app.item
+    _.each(query.split('.'), part => {
+      part = this.replaceTemplateVars(part, {});
 
       // Replace wildcard to regex
       if (part === '*') {
@@ -317,7 +301,7 @@ export class ZabbixAPIDatasource {
       }
       parts.push(part);
     });
-    var template = _.object(['group', 'host', 'app', 'item'], parts);
+    let template = _.object(['group', 'host', 'app', 'item'], parts);
 
     // Get items
     if (parts.length === 4) {
@@ -325,40 +309,23 @@ export class ZabbixAPIDatasource {
       if (template.app === '/.*/') {
         template.app = '';
       }
-      return this.queryProcessor
-        .getItems(template.group, template.host, template.app)
-        .then(items => {
-          return _.map(items, formatMetric);
-        });
+      result = this.queryProcessor.getItems(template.group, template.host, template.app);
+    } else if (parts.length === 3) {
+      // Get applications
+      result = this.queryProcessor.getApps(template.group, template.host);
+    } else if (parts.length === 2) {
+      // Get hosts
+      result = this.queryProcessor.getHosts(template.group);
+    } else if (parts.length === 1) {
+      // Get groups
+      result = this.zabbixCache.getGroups(template.group);
+    } else {
+      result = this.q.when([]);
     }
-    // Get applications
-    else if (parts.length === 3) {
-      return this.queryProcessor
-        .getApps(template.group, template.host)
-        .then(apps => {
-          return _.map(apps, formatMetric);
-        });
-    }
-    // Get hosts
-    else if (parts.length === 2) {
-      return this.queryProcessor
-        .getHosts(template.group)
-        .then(hosts => {
-          return _.map(hosts, formatMetric);
-        });
-    }
-    // Get groups
-    else if (parts.length === 1) {
-      return this.zabbixCache
-        .getGroups(template.group)
-        .then(groups => {
-          return _.map(groups, formatMetric);
-        });
-    }
-    // Return empty object for invalid request
-    else {
-      return this.q.when([]);
-    }
+
+    return result.then(metrics => {
+      return _.map(metrics, formatMetric);
+    });
   }
 
   /////////////////
@@ -438,8 +405,7 @@ export class ZabbixAPIDatasource {
 
 }
 
-function bindFunctionDefs(functionDefs, category, DataProcessor) {
-  'use strict';
+function bindFunctionDefs(functionDefs, category) {
   var aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
   var aggFuncDefs = _.filter(functionDefs, function(func) {
     return _.contains(aggregationFunctions, func.def.name);
@@ -452,7 +418,6 @@ function bindFunctionDefs(functionDefs, category, DataProcessor) {
 }
 
 function formatMetric(metricObj) {
-  'use strict';
   return {
     text: metricObj.name,
     expandable: false
@@ -491,4 +456,28 @@ function replaceTemplateVars(templateSrv, target, scopedVars) {
     replacedTarget = '/^' + replacedTarget + '$/';
   }
   return replacedTarget;
+}
+
+function extractText(str, pattern, useCaptureGroups) {
+  let extractPattern = new RegExp(pattern);
+  let extractedValue = extractPattern.exec(str);
+  if (extractedValue) {
+    if (useCaptureGroups) {
+      extractedValue = extractedValue[1];
+    } else {
+      extractedValue = extractedValue[0];
+    }
+  }
+  return extractedValue;
+}
+
+// Apply function one by one:
+// sequence([a(), b(), c()]) = c(b(a()));
+function sequence(funcsArray) {
+  return function(result) {
+    for (var i = 0; i < funcsArray.length; i++) {
+      result = funcsArray[i].call(this, result);
+    }
+    return result;
+  };
 }
