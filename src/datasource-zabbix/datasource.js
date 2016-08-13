@@ -90,6 +90,12 @@ export class ZabbixAPIDatasource {
         target.item.filter = this.replaceTemplateVars(target.item.filter, options.scopedVars);
         target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
 
+        _.forEach(target.functions, func => {
+          func.params = _.map(func.params, param => {
+            return this.templateSrv.replace(param, options.scopedVars);
+          });
+        });
+
         // Query numeric data
         if (!target.mode || target.mode === 0) {
           return this.queryNumericData(target, timeFrom, timeTo, useTrends);
@@ -414,6 +420,13 @@ function bindFunctionDefs(functionDefs, category) {
   return _.map(aggFuncDefs, function(func) {
     var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
     return funcInstance.bindFunction(DataProcessor.metricFunctions);
+  });
+}
+
+function filterFunctionDefs(funcs, category) {
+  let filteredFuncs = _.map(metricFunctions.getCategories()[category]);
+  return _.filter(funcs, func => {
+    return _.contains(filteredFuncs, func.def.name);
   });
 }
 
