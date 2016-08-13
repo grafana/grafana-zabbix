@@ -224,16 +224,15 @@ export class ZabbixAPIDatasource {
       .build(groupFilter, hostFilter, appFilter, itemFilter, 'text')
       .then(items => {
         if (items.length) {
-          var textItemsPromises = _.map(items, item => {
-            return self.zabbixAPI.getLastValue(item.itemid);
-          });
-          return self.q.all(textItemsPromises)
-            .then(result => {
-              return _.map(result, (lastvalue, index) => {
-                var extractedValue;
+          return self.zabbixAPI.getHistory(items, timeFrom, timeTo)
+            .then(history => {
+              return self.queryProcessor.convertHistory(history, items, false, (point) => {
+                let extractedValue = point.value;
+
+                // Regex-based extractor
                 if (target.textFilter) {
-                  var text_extract_pattern = new RegExp(self.replaceTemplateVars(target.textFilter, options.scopedVars));
-                  extractedValue = text_extract_pattern.exec(lastvalue);
+                  let text_extract_pattern = new RegExp(self.replaceTemplateVars(target.textFilter, options.scopedVars));
+                  extractedValue = text_extract_pattern.exec(point.value);
                   if (extractedValue) {
                     if (target.useCaptureGroups) {
                       extractedValue = extractedValue[1];
@@ -241,13 +240,12 @@ export class ZabbixAPIDatasource {
                       extractedValue = extractedValue[0];
                     }
                   }
-                } else {
-                  extractedValue = lastvalue;
                 }
-                return {
-                  target: items[index].name,
-                  datapoints: [[extractedValue, timeTo * 1000]]
-                };
+
+                return [
+                  extractedValue,
+                  point.clock * 1000
+                ];
               });
             });
         } else {
