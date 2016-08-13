@@ -49,8 +49,6 @@ export class ZabbixAPIDatasource {
 
     // Use custom format for template variables
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
-
-    console.log(this.zabbixCache);
   }
 
   ////////////////////////
