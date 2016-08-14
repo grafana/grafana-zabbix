@@ -4,6 +4,9 @@
 import prunk from 'prunk';
 import {jsdom} from 'jsdom';
 import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import * as dateMath from './modules/datemath';
 
 // Mock angular module
 var angularMocks = {
@@ -17,7 +20,9 @@ var angularMocks = {
 };
 
 var datemathMock = {
-  parse: function() {}
+  parse: dateMath.parse,
+  parseDateMath: dateMath.parseDateMath,
+  isValid: dateMath.isValid
 };
 
 // Mock Grafana modules that are not available outside of the core project
@@ -39,5 +44,6 @@ global.Node = window.Node;
 
 // Setup Chai
 chai.should();
+chai.use(sinonChai);
 global.assert = chai.assert;
 global.expect = chai.expect;
