@@ -308,6 +308,7 @@ export class ZabbixAPIDatasource {
    *                        of metrics in "{metric1,metcic2,...,metricN}" format.
    */
   metricFindQuery(query) {
+    query = (query==undefined? '' : query);
     // Split query. Query structure:
     // group.host.app.item
     var self = this;
@@ -315,9 +316,11 @@ export class ZabbixAPIDatasource {
     _.each(query.split('.'), function (part) {
       part = self.replaceTemplateVars(part, {});
 
-      // Replace wildcard to regex
+      // treat each part as regex
       if (part === '*') {
         part = '/.*/';
+      }else if(part.charAt(0)!=='/' || part.slice(-1)!=='/'){ //if not a regex yet
+        part = '/'+part+'/';
       }
       parts.push(part);
     });
@@ -330,7 +333,7 @@ export class ZabbixAPIDatasource {
         template.app = '';
       }
       return this.queryProcessor
-        .getItems(template.group, template.host, template.app)
+        .getItems(template.group, template.host, template.app, undefined, undefined, template.item)
         .then(items => {
           return _.map(items, formatMetric);
         });
@@ -338,7 +341,7 @@ export class ZabbixAPIDatasource {
     // Get applications
     else if (parts.length === 3) {
       return this.queryProcessor
-        .getApps(template.group, template.host)
+        .getApps(template.group, template.host, template.app)
         .then(apps => {
           return _.map(apps, formatMetric);
         });
@@ -346,14 +349,14 @@ export class ZabbixAPIDatasource {
     // Get hosts
     else if (parts.length === 2) {
       return this.queryProcessor
-        .getHosts(template.group)
+        .getHosts(template.group, template.host)
         .then(hosts => {
           return _.map(hosts, formatMetric);
         });
     }
     // Get groups
     else if (parts.length === 1) {
-      return this.zabbixCache
+      return this.queryProcessor
         .getGroups(template.group)
         .then(groups => {
           return _.map(groups, formatMetric);
