@@ -307,13 +307,17 @@ export class ZabbixAPIDatasource {
     let result;
     let parts = [];
 
+    query = (query==undefined? '' : query);
+    
     // Split query. Query structure: group.host.app.item
     _.each(query.split('.'), part => {
       part = this.replaceTemplateVars(part, {});
 
-      // Replace wildcard to regex
+      // treat each part as regex
       if (part === '*') {
         part = '/.*/';
+      }else if(part.charAt(0)!=='/' || part.slice(-1)!=='/'){ //if not a regex yet
+        part = '/'+part+'/';
       }
       parts.push(part);
     });
@@ -325,16 +329,16 @@ export class ZabbixAPIDatasource {
       if (template.app === '/.*/') {
         template.app = '';
       }
-      result = this.queryProcessor.getItems(template.group, template.host, template.app);
+      result = this.queryProcessor.getItems(template.group, template.host, template.app, undefined, undefined, template.item);
     } else if (parts.length === 3) {
       // Get applications
-      result = this.queryProcessor.getApps(template.group, template.host);
+      result = this.queryProcessor.getApps(template.group, template.host, template.app);
     } else if (parts.length === 2) {
       // Get hosts
-      result = this.queryProcessor.getHosts(template.group);
+      result = this.queryProcessor.getHosts(template.group, template.host);
     } else if (parts.length === 1) {
       // Get groups
-      result = this.zabbixCache.getGroups(template.group);
+      result = this.queryProcessor.getGroups(template.group);
     } else {
       result = this.q.when([]);
     }
