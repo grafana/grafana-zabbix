@@ -327,6 +327,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
         applicationids: applicationids,
         expandDescription: true,
         expandData: true,
+        expandComment: true,
         monitored: true,
         skipDependent: true,
         //only_true: true,
