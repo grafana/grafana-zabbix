@@ -1,5 +1,3 @@
-##Contributing to Grafana-Zabbix
-
 #### I'm submitting a ...
 - [ ] Bug report
 - [ ] Feature request
