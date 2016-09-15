@@ -378,7 +378,7 @@ export class ZabbixAPIDatasource {
           return self.zabbixAPI
             .getEvents(objectids, timeFrom, timeTo, showOkEvents)
             .then(events => {
-              var indexedTriggers = _.indexBy(triggers, 'triggerid');
+              var indexedTriggers = _.groupBy(triggers, 'triggerid');
 
               // Hide acknowledged events if option enabled
               if (annotation.hideAcknowledged) {
