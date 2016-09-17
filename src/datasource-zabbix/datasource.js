@@ -158,7 +158,7 @@ export class ZabbixAPIDatasource {
           // Find trendValue() function and get specified trend value
           var trendFunctions = _.map(metricFunctions.getCategories()['Trends'], 'name');
           var trendValueFunc = _.find(target.functions, func => {
-            return _.contains(trendFunctions, func.def.name);
+            return _.includes(trendFunctions, func.def.name);
           });
           var valueType = trendValueFunc ? trendValueFunc.params[0] : "avg";
 
@@ -196,7 +196,7 @@ export class ZabbixAPIDatasource {
 
             let aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
             let lastAgg = _.findLast(target.functions, func => {
-              return _.contains(aggFuncNames, func.def.name);
+              return _.includes(aggFuncNames, func.def.name);
             });
 
             timeseries_data = [
@@ -307,7 +307,7 @@ export class ZabbixAPIDatasource {
       }
       parts.push(part);
     });
-    let template = _.object(['group', 'host', 'app', 'item'], parts);
+    let template = _.zipObject(['group', 'host', 'app', 'item'], parts);
 
     // Get items
     if (parts.length === 4) {
@@ -414,7 +414,7 @@ export class ZabbixAPIDatasource {
 function bindFunctionDefs(functionDefs, category) {
   var aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
   var aggFuncDefs = _.filter(functionDefs, function(func) {
-    return _.contains(aggregationFunctions, func.def.name);
+    return _.includes(aggregationFunctions, func.def.name);
   });
 
   return _.map(aggFuncDefs, function(func) {
@@ -426,7 +426,7 @@ function bindFunctionDefs(functionDefs, category) {
 function filterFunctionDefs(funcs, category) {
   let filteredFuncs = _.map(metricFunctions.getCategories()[category]);
   return _.filter(funcs, func => {
-    return _.contains(filteredFuncs, func.def.name);
+    return _.includes(filteredFuncs, func.def.name);
   });
 }
 
