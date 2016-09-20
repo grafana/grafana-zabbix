@@ -46,7 +46,7 @@
               {{trigger.severity}}
             </div>
           </td>
-          <td style="background-color: {{trigger.color}}; color: white">
+          <td style="background-color: {{trigger.color}}; color: {{trigger.acknowledges.length ? 'darkgray' : 'white'}}">
             <div>
               {{trigger.description}}
               <a  ng-if="trigger.comments"
