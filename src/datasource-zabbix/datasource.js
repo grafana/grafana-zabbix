@@ -92,7 +92,11 @@ export class ZabbixAPIDatasource {
 
         _.forEach(target.functions, func => {
           func.params = _.map(func.params, param => {
-            return this.templateSrv.replace(param, options.scopedVars);
+            if (typeof param === 'number') {
+              return +this.templateSrv.replace(param.toString(), options.scopedVars);
+            } else {
+              return this.templateSrv.replace(param, options.scopedVars);
+            }
           });
         });
 
@@ -181,6 +185,7 @@ export class ZabbixAPIDatasource {
         return getHistory.then(timeseries_data => {
           let transformFunctions   = bindFunctionDefs(target.functions, 'Transform');
           let aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
+          let filterFunctions      = bindFunctionDefs(target.functions, 'Filter');
           let aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
 
           // Apply transformation functions
@@ -188,6 +193,11 @@ export class ZabbixAPIDatasource {
             timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
             return timeseries;
           });
+
+          // Apply filter functions
+          if (filterFunctions.length) {
+            timeseries_data = sequence(filterFunctions)(timeseries_data);
+          }
 
           // Apply aggregations
           if (aggregationFunctions.length) {

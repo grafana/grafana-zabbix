@@ -116,6 +116,22 @@ export default class DataProcessor {
     return sortByTime(new_timeseries);
   }
 
+  static limit(order, n, orderByFunc, timeseries) {
+    let orderByCallback = DataProcessor.aggregationFunctions[orderByFunc];
+    let sortByIteratee = (ts) => {
+      let values = _.map(ts.datapoints, (point) => {
+        return point[0];
+      });
+      return orderByCallback(values);
+    };
+    let sortedTimeseries = _.sortBy(timeseries, sortByIteratee);
+    if (order === 'bottom') {
+      return sortedTimeseries.slice(0, n);
+    } else {
+      return sortedTimeseries.slice(-n);
+    }
+  }
+
   static AVERAGE(values) {
     var sum = 0;
     _.each(values, function(value) {
@@ -151,6 +167,16 @@ export default class DataProcessor {
     });
   }
 
+  static delta(datapoints) {
+    let newSeries = [];
+    let deltaValue;
+    for (var i = 1; i < datapoints.length; i++) {
+      deltaValue = datapoints[i][0] - datapoints[i - 1][0];
+      newSeries.push([deltaValue, datapoints[i][1]]);
+    }
+    return newSeries;
+  }
+
   static groupByWrapper(interval, groupFunc, datapoints) {
     var groupByCallback = DataProcessor.aggregationFunctions[groupFunc];
     return DataProcessor.groupBy(interval, groupByCallback, datapoints);
@@ -181,12 +207,15 @@ export default class DataProcessor {
     return {
       groupBy: this.groupByWrapper,
       scale: this.scale,
+      delta: this.delta,
       aggregateBy: this.aggregateByWrapper,
       average: _.partial(this.aggregateWrapper, this.AVERAGE),
       min: _.partial(this.aggregateWrapper, this.MIN),
       max: _.partial(this.aggregateWrapper, this.MAX),
       median: _.partial(this.aggregateWrapper, this.MEDIAN),
       sumSeries: this.sumSeries,
+      top: _.partial(this.limit, 'top'),
+      bottom: _.partial(this.limit, 'bottom'),
       setAlias: this.setAlias,
     };
   }

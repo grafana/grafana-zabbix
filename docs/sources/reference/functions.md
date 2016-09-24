@@ -30,6 +30,13 @@ scale(100)
 scale(0.01)
 ```
 
+### delta
+```
+delta()
+```
+Convert absolute values to delta, for example, bits to bits/sec.
+
+
 Aggregate
 ---------
 
@@ -70,6 +77,38 @@ min(interval)
 max(interval)
 ```
 **Deprecated**, use `aggregateBy(interval, max)` instead.
+
+
+Filter
+---------
+
+### top
+
+```
+top(N, value)
+```
+
+Returns top N series, sorted by _value_, which can be one of: _avg_, _min_, _max_, _median_.
+
+Examples:
+```
+top(10, avg)
+top(5, max)
+```
+
+### bottom
+
+```
+bottom(N, value)
+```
+
+Returns bottom N series, sorted by _value_, which can be one of: _avg_, _min_, _max_, _median_.
+
+Examples:
+```
+bottom(5, avg)
+```
+
 
 ## Trends
 
