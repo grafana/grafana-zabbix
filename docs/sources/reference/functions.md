@@ -30,6 +30,13 @@ scale(100)
 scale(0.01)
 ```
 
+### delta
+```
+delta()
+```
+Convert absolute values to delta, for example, bits to bits/sec.
+
+
 Aggregate
 ---------
 
