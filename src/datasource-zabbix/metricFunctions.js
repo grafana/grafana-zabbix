@@ -40,6 +40,13 @@ addFuncDef({
 });
 
 addFuncDef({
+  name: 'delta',
+  category: 'Transform',
+  params: [],
+  defaultParams: [],
+});
+
+addFuncDef({
   name: 'sumSeries',
   category: 'Aggregate',
   params: [],

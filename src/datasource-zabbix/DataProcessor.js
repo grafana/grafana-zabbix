@@ -151,6 +151,16 @@ export default class DataProcessor {
     });
   }
 
+  static delta(datapoints) {
+    let newSeries = [];
+    let deltaValue;
+    for (var i = 1; i < datapoints.length; i++) {
+      deltaValue = datapoints[i][0] - datapoints[i - 1][0];
+      newSeries.push([deltaValue, datapoints[i][1]]);
+    }
+    return newSeries;
+  }
+
   static groupByWrapper(interval, groupFunc, datapoints) {
     var groupByCallback = DataProcessor.aggregationFunctions[groupFunc];
     return DataProcessor.groupBy(interval, groupByCallback, datapoints);
@@ -181,6 +191,7 @@ export default class DataProcessor {
     return {
       groupBy: this.groupByWrapper,
       scale: this.scale,
+      delta: this.delta,
       aggregateBy: this.aggregateByWrapper,
       average: _.partial(this.aggregateWrapper, this.AVERAGE),
       min: _.partial(this.aggregateWrapper, this.MIN),
