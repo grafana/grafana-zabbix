@@ -5,6 +5,7 @@ var index = [];
 var categories = {
   Transform: [],
   Aggregate: [],
+  Filter: [],
   Trends: [],
   Alias: []
 };
@@ -97,6 +98,26 @@ addFuncDef({
     { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'median'] }
   ],
   defaultParams: ['1m', 'avg'],
+});
+
+addFuncDef({
+  name: 'top',
+  category: 'Filter',
+  params: [
+    { name: 'number', type: 'int' },
+    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'median'] }
+  ],
+  defaultParams: [5, 'avg'],
+});
+
+addFuncDef({
+  name: 'bottom',
+  category: 'Filter',
+  params: [
+    { name: 'number', type: 'int' },
+    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'median'] }
+  ],
+  defaultParams: [5, 'avg'],
 });
 
 addFuncDef({

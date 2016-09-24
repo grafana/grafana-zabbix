@@ -116,6 +116,22 @@ export default class DataProcessor {
     return sortByTime(new_timeseries);
   }
 
+  static limit(order, n, orderByFunc, timeseries) {
+    let orderByCallback = DataProcessor.aggregationFunctions[orderByFunc];
+    let sortByIteratee = (ts) => {
+      let values = _.map(ts.datapoints, (point) => {
+        return point[0];
+      });
+      return orderByCallback(values);
+    };
+    let sortedTimeseries = _.sortBy(timeseries, sortByIteratee);
+    if (order === 'bottom') {
+      return sortedTimeseries.slice(0, n);
+    } else {
+      return sortedTimeseries.slice(-n);
+    }
+  }
+
   static AVERAGE(values) {
     var sum = 0;
     _.each(values, function(value) {
@@ -198,6 +214,8 @@ export default class DataProcessor {
       max: _.partial(this.aggregateWrapper, this.MAX),
       median: _.partial(this.aggregateWrapper, this.MEDIAN),
       sumSeries: this.sumSeries,
+      top: _.partial(this.limit, 'top'),
+      bottom: _.partial(this.limit, 'bottom'),
       setAlias: this.setAlias,
     };
   }
