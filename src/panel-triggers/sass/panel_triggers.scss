@@ -106,3 +106,37 @@ $grafanaListAccent:         lighten($dark-2, 2%);
   height: 0px;
   line-height: 0px;
 }
+
+.ack-tooltip {
+  .drop-content {
+    // Rewrite tooltip width
+    max-width: 70rem !important;
+    min-width: 30rem !important;
+  }
+
+  .ack-comments {
+    width: 60%;
+  }
+
+  .ack-add-button {
+    padding-top: 1rem;
+  }
+
+  table td, th {
+    padding-right: 1rem;
+  }
+
+  .ack-input-group {
+    padding-top: 1rem;
+
+    input {
+      border: 1px solid;
+      border-radius: 2px;
+      width: 50%;
+    }
+
+    button {
+      margin-left: 1rem;
+    }
+  }
+}

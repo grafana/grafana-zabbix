@@ -114,6 +114,15 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
     // Zabbix API method wrappers //
     ////////////////////////////////
 
+    acknowledgeEvent(eventid, message) {
+      var params = {
+        eventids: eventid,
+        message: message
+      };
+
+      return this.request('event.acknowledge', params);
+    }
+
     getGroups() {
       var params = {
         output: ['name'],

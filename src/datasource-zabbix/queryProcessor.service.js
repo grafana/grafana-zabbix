@@ -230,7 +230,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
 
       // Group history by itemid
       var grouped_history = _.groupBy(history, 'itemid');
-      var hosts = _.indexBy(_.flatten(_.map(items, 'hosts')), 'hostid');
+      var hosts = _.groupBy(_.flatten(_.map(items, 'hosts')), 'hostid');
 
       return _.map(grouped_history, function(hist, itemid) {
         var item = _.find(items, {'itemid': itemid});

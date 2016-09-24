@@ -35,7 +35,7 @@ export function isTemplateVariable(str, templateVariables) {
     var variables = _.map(templateVariables, variable => {
       return '$' + variable.name;
     });
-    return _.contains(variables, str);
+    return _.includes(variables, str);
   } else {
     return false;
   }
