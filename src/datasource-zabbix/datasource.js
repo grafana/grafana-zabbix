@@ -504,3 +504,8 @@ function sequence(funcsArray) {
     return result;
   };
 }
+
+// Fix for backward compatibility with lodash 2.4
+if (!_.includes) {
+  _.includes = _.contains;
+}

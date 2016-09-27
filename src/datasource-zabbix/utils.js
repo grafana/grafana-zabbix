@@ -93,3 +93,8 @@ export function convertToZabbixAPIUrl(url) {
     return url.replace(trimSlashPattern, "$1");
   }
 }
+
+// Fix for backward compatibility with lodash 2.4
+if (!_.includes) {
+  _.includes = _.contains;
+}
