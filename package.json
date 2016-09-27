@@ -32,6 +32,9 @@
     "babel-plugin-transform-es2015-modules-systemjs": "^6.5.0",
     "babel-plugin-transform-es2015-for-of": "^6.5.0",
     "babel-preset-es2015": "^6.5.0",
+    "grunt-contrib-jshint": "^1.0.0",
+    "grunt-jscs": "^2.8.0",
+    "jshint-stylish": "^2.1.0",
     "lodash": "~4.0.0"
   },
   "homepage": "http://grafana-zabbix.org"
