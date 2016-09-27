@@ -99,9 +99,9 @@ module.exports = function(grunt) {
     'clean',
     'copy:src_to_dist',
     'copy:pluginDef',
-    'sass',
-    'babel',
     'jshint',
-    'jscs'
+    'jscs',
+    'sass',
+    'babel'
   ]);
 };
