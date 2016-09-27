@@ -335,12 +335,6 @@ function getByFilter(list, filter) {
   }
 }
 
-function getFromIndex(index, objids) {
-  return _.map(objids, function(id) {
-    return index[id];
-  });
-}
-
 function convertHistoryPoint(point) {
   // Value must be a number for properly work
   return [

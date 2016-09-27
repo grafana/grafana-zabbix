@@ -1,6 +1,5 @@
 import angular from 'angular';
 import _ from 'lodash';
-import * as utils from './utils';
 
 // Use factory() instead service() for multiple datasources support.
 // Each datasource instance must initialize its own cache.

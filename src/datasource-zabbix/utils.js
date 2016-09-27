@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import moment from 'moment';
 
-
 /**
  * Expand Zabbix item name
  *

@@ -433,13 +433,6 @@ function bindFunctionDefs(functionDefs, category) {
   });
 }
 
-function filterFunctionDefs(funcs, category) {
-  let filteredFuncs = _.map(metricFunctions.getCategories()[category]);
-  return _.filter(funcs, func => {
-    return _.includes(filteredFuncs, func.def.name);
-  });
-}
-
 function formatMetric(metricObj) {
   return {
     text: metricObj.name,
@@ -457,7 +450,7 @@ function formatMetric(metricObj) {
  * template variables, for example
  * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
  */
-function zabbixTemplateFormat(value, variable) {
+function zabbixTemplateFormat(value) {
   if (typeof value === 'string') {
     return utils.escapeRegex(value);
   }
@@ -466,7 +459,8 @@ function zabbixTemplateFormat(value, variable) {
   return '(' + escapedValues.join('|') + ')';
 }
 
-/** If template variables are used in request, replace it using regex format
+/**
+ * If template variables are used in request, replace it using regex format
  * and wrap with '/' for proper multi-value work. Example:
  * $variable selected as a, b, c
  * We use filter $variable
