@@ -73,6 +73,16 @@ addFuncDef({
 });
 
 addFuncDef({
+  name: 'percentil',
+  category: 'Aggregate',
+  params: [
+    { name: 'interval', type: 'string' },
+    { name: 'percent', type: 'string' }
+  ],
+  defaultParams: ['1m','95'],
+});
+
+addFuncDef({
   name: 'min',
   category: 'Aggregate',
   params: [

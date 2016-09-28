@@ -158,6 +158,32 @@ export default class DataProcessor {
     return timeseries;
   }
 
+  static PERCENTIL(interval, n, datapoints) {
+    var flattenedPoints = _.flatten(datapoints, true);
+    var ms_interval = utils.parseInterval(interval);
+
+    // Calculate frame timestamps
+    var frames = _.groupBy(flattenedPoints, function(point) {
+      // Calculate time for group of points
+      return Math.floor(point[1] / ms_interval) * ms_interval;
+    });
+
+    // frame: { '<unixtime>': [[<value>, <unixtime>], ...] }
+    // return [{ '<unixtime>': <value> }, { '<unixtime>': <value> }, ...]
+    var grouped = _.mapValues(frames, function(frame) {
+      var points = _.map(frame, function(point) {
+        return point[0];
+      });
+      var sorted = _.sortBy(points);
+      return sorted[Math.floor(sorted.length*n/100)];
+    });
+
+    // Convert points to Grafana format
+    return sortByTime(_.map(grouped, function(value, timestamp) {
+      return [Number(value), Number(timestamp)];
+    }));
+  }
+
   static scale(factor, datapoints) {
     return _.map(datapoints, point => {
       return [
@@ -208,6 +234,7 @@ export default class DataProcessor {
       groupBy: this.groupByWrapper,
       scale: this.scale,
       delta: this.delta,
+      percentil: this.PERCENTIL,
       aggregateBy: this.aggregateByWrapper,
       average: _.partial(this.aggregateWrapper, this.AVERAGE),
       min: _.partial(this.aggregateWrapper, this.MIN),
