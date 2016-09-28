@@ -236,10 +236,11 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         var item = _.find(items, {'itemid': itemid});
         var alias = item.name;
         var host = _.find(hosts, {'hostid': item.hostid});
-        if (addHostName)
+        if (addHostName) {
           alias = host.name;
-        else if (_.keys(hosts).length > 1)
+        } else if (_.keys(hosts).length > 1) {
           alias = host.name + ": " + alias;
+        }
         return {
           target: alias,
           datapoints: _.map(hist, convertPointCallback)
