@@ -150,13 +150,22 @@
             <strong>Show fields</strong>
           </li>
           <li class="tight-form-item">
-            <label class="checkbox-label" for="hostField">Host</label>
+            <label class="checkbox-label" for="hostField">Host Name</label>
             <input  class="cr1"
                     id="hostField"
                     type="checkbox"
                     ng-model="editor.panel.hostField"
                     ng-checked="editor.panel.hostField">
             <label for="hostField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="hostField">Host Technical Name</label>
+            <input  class="cr1"
+                    id="hostTechNameField"
+                    type="checkbox"
+                    ng-model="editor.panel.hostTechNameField"
+                    ng-checked="editor.panel.hostTechNameField">
+            <label for="hostTechNameField" class="cr1"></label>
           </li>
           <li class="tight-form-item">
             <label class="checkbox-label" for="statusField">Status</label>
@@ -176,6 +185,14 @@
                     ng-checked="editor.panel.severityField">
             <label for="severityField" class="cr1"></label>
           </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>&nbsp;</strong>
+          </li>
           <li class="tight-form-item">
             <label class="checkbox-label" for="lastChangeField">Last change</label>
             <input  class="cr1"
@@ -194,7 +211,7 @@
                     ng-checked="editor.panel.ageField">
             <label for="ageField" class="cr1"></label>
           </li>
-          <li class="tight-form-item last">
+          <li class="tight-form-item">
             <label class="checkbox-label" for="infoField">Info</label>
             <input  class="cr1"
                     id="infoField"
@@ -206,6 +223,7 @@
         </ul>
         <div class="clearfix"></div>
       </div>
+
       <div class="tight-form">
         <ul class="tight-form-list">
           <li class="tight-form-item">
@@ -273,7 +291,7 @@
       </ul>
       <div class="clearfix"></div>
     </div>
-    <div class="tight-form last">
+    <div class="tight-form">
       <ul class="tight-form-list">
         <li class="tight-form-item"
             ng-style="{background:editor.panel.okEventColor}"
@@ -285,6 +303,32 @@
             ng-model="editor.panel.okEventColor"
             ng-change="editor.panelCtrl.refresh()">
           </spectrum-picker>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+    <div class="tight-form last">
+      <ul class="tight-form-list">
+        <li class="tight-form-item"
+            ng-style="{background:editor.panel.ackEventColor}"
+            style="width: 160px; color: white">
+          <span style="padding-left: 25px"> Acknowledged color </span>
+        </li>
+        <li class="tight-form-item">
+          <spectrum-picker
+            ng-model="editor.panel.ackEventColor"
+            ng-change="editor.panelCtrl.refresh()">
+          </spectrum-picker>
+        </li>
+        <li class="tight-form-item last" style="width: 28px">
+          <label class="checkbox-label" for="ack-event-color"></label>
+            <input  class="cr1"
+                    id="ack-event-color"
+                    type="checkbox"
+                    ng-model="editor.panel.markAckEvents"
+                    ng-checked="editor.panel.markAckEvents"
+                    ng-change="editor.panelCtrl.refresh()">
+            <label for="ack-event-color" class="cr1"></label>
         </li>
       </ul>
       <div class="clearfix"></div>

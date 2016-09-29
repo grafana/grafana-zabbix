@@ -22,5 +22,6 @@ pages:
 - Reference:
     - 'Zabbix Datasource': 'reference/datasource-zabbix.md'
     - 'Triggers Panel': 'reference/panel-triggers.md'
+    - 'Functions': 'reference/functions.md'
 - Tutorials:
     - 'Building Host Dashboard': 'tutorials/host_dashboard.md'

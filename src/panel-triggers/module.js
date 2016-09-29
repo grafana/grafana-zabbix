@@ -16,6 +16,7 @@ import moment from 'moment';
 import * as utils from '../datasource-zabbix/utils';
 import {MetricsPanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelEditor} from './editor';
+import './ack-tooltip.directive';
 import './css/panel_triggers.css!';
 
 var defaultSeverity = [
@@ -47,6 +48,7 @@ var panelDefaults = {
   showEvents: { text: 'Problems', value: '1' },
   triggerSeverity: defaultSeverity,
   okEventColor: 'rgba(0, 245, 153, 0.45)',
+  ackEventColor: 'rgba(0, 0, 0, 0)'
 };
 
 var triggerStatusMap = {
@@ -59,7 +61,7 @@ var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv,contextSrv) {
+  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv, contextSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
@@ -67,8 +69,6 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
 
-    this.$injector=$injector;
-    this.el = $element;
     // Load panel defaults
     // _.cloneDeep() need for prevent changing shared defaultSeverity.
     // Load object "by value" istead "by reference".
@@ -125,11 +125,11 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                                   showEvents)
           .then(triggers => {
             return _.map(triggers, trigger => {
-              var triggerObj = trigger;
+              let triggerObj = trigger;
 
               // Format last change and age
               trigger.lastchangeUnix = Number(trigger.lastchange);
-              var timestamp = moment.unix(trigger.lastchangeUnix);
+              let timestamp = moment.unix(trigger.lastchangeUnix);
               if (self.panel.customLastChangeFormat) {
                 // User defined format
                 triggerObj.lastchange = timestamp.format(self.panel.lastChangeFormat);
@@ -141,6 +141,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
               // Set host that the trigger belongs
               if (trigger.hosts.length) {
                 triggerObj.host = trigger.hosts[0].name;
+                triggerObj.hostTechName = trigger.hosts[0].host;
               }
 
               // Set color
@@ -173,7 +174,21 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                   });
 
                   if (event) {
-                    trigger.acknowledges = this.formatAcknowledges(event.acknowledges);
+                    trigger.acknowledges = _.map(event.acknowledges, ack => {
+                      let timestamp = moment.unix(ack.clock);
+                      if (self.panel.customLastChangeFormat) {
+                        ack.time = timestamp.format(self.panel.lastChangeFormat);
+                      } else {
+                        ack.time = timestamp.format(self.defaultTimeFormat);
+                      }
+                      ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
+                      return ack;
+                    });
+
+                    // Mark acknowledged triggers with different color
+                    if (self.panel.markAckEvents && trigger.acknowledges.length) {
+                      trigger.color = self.panel.ackEventColor;
+                    }
                   }
                 });
 
@@ -207,7 +222,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                 }
 
                 // Limit triggers number
-                self.triggerList  = _.first(triggerList, self.panel.limit);
+                self.triggerList  = triggerList.slice(0, self.panel.limit);
 
                 // Notify panel that request is finished
                 self.setTimeQueryEnd();
@@ -222,55 +237,15 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     trigger.showComment = !trigger.showComment;
   }
 
-  switchAcknowledges(trigger) {
-    trigger.showAcknowledges = !trigger.showAcknowledges;
-  }
-  addAcknowledgeMessage(trigger){
-    trigger.showAcknowledges = true;
-    trigger.newAct={
-      time:(new Date()).toLocaleString(),
-      user:this.contextSrv.user.name+'(Grafana)',
-      message:''
-    };
-    //auto focus the new input box
-    var el=this.el;
-    this.$injector.get('$timeout')(function(){
-      el.find('input').focus();
-    },100);
-  }
-  formatAcknowledges(acknowledges){
-    var re=/^([^\(]+\(Grafana\)): (.+)/;
-    return _.map(acknowledges, ack=>{
-      var time = new Date(+ack.clock * 1000);
-      ack.time = time.toLocaleString();
-      var m=re.exec(ack.message)
-      if(m === null){
-        ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-      }else{
-        ack.user = m[1]
-        ack.message = m[2];
-      }
-      return ack;
-    });
-  }
-  acknowledgeTrigger($event,trigger,newAct){
-    if($event.keyCode!=13) return;
-    if(newAct.message.trim() === ""){
-      delete trigger.newAct;
-      trigger.showAcknowledges = false;
-      return;
-    }
-    this.datasourceSrv.get(this.panel.datasource).then(datasource => {
-      var zabbix = datasource.zabbixAPI;
-      var eventid = trigger.lastEvent.eventid;
-      zabbix.acknowledgeEvent(eventid,newAct.user+': '+newAct.message)
-        .then(rs=>{
-          zabbix.getAcknowledges(rs.eventids).then(events => {
-            if(_.size(events)>0){
-                trigger.acknowledges = this.formatAcknowledges(events[0].acknowledges);
-            };
-            delete trigger.newAct;
-        });
+  acknowledgeTrigger(trigger, message) {
+    let self = this;
+    let eventid = trigger.lastEvent.eventid;
+    let grafana_user = this.contextSrv.user.name;
+    let ack_message = grafana_user + ' (Grafana): ' + message;
+    return this.datasourceSrv.get(this.panel.datasource).then(datasource => {
+      let zabbix = datasource.zabbixAPI;
+      return zabbix.acknowledgeEvent(eventid, ack_message).then(() => {
+        self.refresh();
       });
     });
   }

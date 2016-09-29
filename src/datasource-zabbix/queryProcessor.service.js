@@ -80,8 +80,9 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
     getGroups(groupFilter) {
       return this.cache.getGroups()
         .then(groups=>{
-          if (groupFilter)
+          if (groupFilter){
             return this.filterGroups(groups, groupFilter);
+          }
           return groups;
         });
     }
@@ -102,8 +103,9 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
           return self.cache.getHosts(groupids);
         })
         .then(hosts => {
-          if(hostFilter)
+          if(hostFilter){
             return this.filterHosts(hosts,hostFilter);
+          }
           return hosts;
         });
     }
@@ -123,8 +125,9 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
           return self.cache.getApps(hostids);
         })
         .then(apps => {
-          if(appFilter)
+          if(appFilter){
             return this.filterApps(apps,appFilter);
+          }
           return apps;
         });
     }
@@ -174,8 +177,9 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
           }
         })
         .then(items => {
-          if(itemFilter)
+          if(itemFilter){
             return this.filterItems(items,itemFilter);
+          }
           return items;
         });
     }
@@ -256,13 +260,13 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
 
       // Group history by itemid
       var grouped_history = _.groupBy(history, 'itemid');
-      var hosts = _.indexBy(_.flatten(_.map(items, 'hosts')), 'hostid');
+      var hosts = _.flatten(_.map(items, 'hosts'));
 
       return _.map(grouped_history, function(hist, itemid) {
         var item = _.find(items, {'itemid': itemid});
         var alias = item.name;
         if (_.keys(hosts).length > 1 || addHostName) {
-          var host = hosts[item.hostid];
+          var host = _.find(hosts, {'hostid': item.hostid});
           alias = host.name + ": " + alias;
         }
         return {
@@ -359,12 +363,6 @@ function getByFilter(list, filter) {
   } else {
     return filterByName(list, filter);
   }
-}
-
-function getFromIndex(index, objids) {
-  return _.map(objids, function(id) {
-    return index[id];
-  });
 }
 
 function convertHistoryPoint(point) {
