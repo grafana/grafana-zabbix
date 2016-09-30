@@ -61,6 +61,12 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
       );
     }
 
+    filterItems(items, itemFilter) {
+      return this.$q.when(
+        findByFilter(items, itemFilter)
+      );
+    }
+
     /**
      * Build query - convert target filters to array of Zabbix items
      */
@@ -71,15 +77,21 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         });
     }
 
-    getGroups() {
-      return this.cache.getGroups();
+    getGroups(groupFilter) {
+      return this.cache.getGroups()
+        .then(groups=>{
+          if (groupFilter){
+            return this.filterGroups(groups, groupFilter);
+          }
+          return groups;
+        });
     }
 
     /**
      * Get list of host belonging to given groups.
      * @return list of hosts
      */
-    getHosts(groupFilter) {
+    getHosts(groupFilter,hostFilter) {
       var self = this;
       return this.cache
         .getGroups()
@@ -89,6 +101,12 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         .then(groups => {
           var groupids = _.map(groups, 'groupid');
           return self.cache.getHosts(groupids);
+        })
+        .then(hosts => {
+          if(hostFilter){
+            return this.filterHosts(hosts,hostFilter);
+          }
+          return hosts;
         });
     }
 
@@ -96,7 +114,7 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
      * Get list of applications belonging to given groups and hosts.
      * @return  list of applications belonging to given hosts
      */
-    getApps(groupFilter, hostFilter) {
+    getApps(groupFilter, hostFilter, appFilter) {
       var self = this;
       return this.getHosts(groupFilter)
         .then(hosts => {
@@ -105,10 +123,16 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
         .then(hosts => {
           var hostids = _.map(hosts, 'hostid');
           return self.cache.getApps(hostids);
+        })
+        .then(apps => {
+          if(appFilter){
+            return this.filterApps(apps,appFilter);
+          }
+          return apps;
         });
     }
 
-    getItems(groupFilter, hostFilter, appFilter, itemtype, showDisabledItems) {
+    getItems(groupFilter, hostFilter, appFilter, itemtype, showDisabledItems, itemFilter) {
       var self = this;
       return this.getHosts(groupFilter)
         .then(hosts => {
@@ -151,6 +175,12 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
                 return items;
               });
           }
+        })
+        .then(items => {
+          if(itemFilter){
+            return this.filterItems(items,itemFilter);
+          }
+          return items;
         });
     }
 
@@ -230,12 +260,12 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
 
       // Group history by itemid
       var grouped_history = _.groupBy(history, 'itemid');
-      var hosts = _.flatten(_.map(items, 'hosts'));
+      var hosts = _.uniq(_.flatten(_.map(items, 'hosts')),'hostid');  //uniq is needed to deduplicate
 
       return _.map(grouped_history, function(hist, itemid) {
         var item = _.find(items, {'itemid': itemid});
         var alias = item.name;
-        if (_.keys(hosts).length > 1 || addHostName) {
+        if (_.keys(hosts).length > 1 && addHostName) {   //only when actual multi hosts selected
           var host = _.find(hosts, {'hostid': item.hostid});
           alias = host.name + ": " + alias;
         }
