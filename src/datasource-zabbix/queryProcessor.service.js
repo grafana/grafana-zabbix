@@ -260,12 +260,12 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
 
       // Group history by itemid
       var grouped_history = _.groupBy(history, 'itemid');
-      var hosts = _.flatten(_.map(items, 'hosts'));
+      var hosts = _.uniq(_.flatten(_.map(items, 'hosts')),'hostid');  //uniq is needed to deduplicate
 
       return _.map(grouped_history, function(hist, itemid) {
         var item = _.find(items, {'itemid': itemid});
         var alias = item.name;
-        if (_.keys(hosts).length > 1 || addHostName) {
+        if (_.keys(hosts).length > 1 && addHostName) {   //only when actual multi hosts selected
           var host = _.find(hosts, {'hostid': item.hostid});
           alias = host.name + ": " + alias;
         }
