@@ -19,6 +19,7 @@ pages:
     - 'Troubleshooting': 'installation/troubleshooting.md'
 - User Guides:
     - 'Getting Started': 'guides/gettingstarted.md'
+    - 'Templating': 'guides/templating.md'
 - Reference:
     - 'Zabbix Datasource': 'reference/datasource-zabbix.md'
     - 'Triggers Panel': 'reference/panel-triggers.md'
