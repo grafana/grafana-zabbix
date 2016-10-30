@@ -7,6 +7,8 @@ copyright: Copyright &copy; 2015-2016, Alexander Zobnin
 
 docs_dir: sources
 theme: readthedocs
+extra_css:
+    - css/custom.css
 
 pages:
 - Project:
