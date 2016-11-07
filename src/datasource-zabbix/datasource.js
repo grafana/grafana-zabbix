@@ -388,7 +388,7 @@ export class ZabbixAPIDatasource {
           return self.zabbixAPI
             .getEvents(objectids, timeFrom, timeTo, showOkEvents)
             .then(events => {
-              var indexedTriggers = _.groupBy(triggers, 'triggerid');
+              var indexedTriggers = _.keyBy(triggers, 'triggerid');
 
               // Hide acknowledged events if option enabled
               if (annotation.hideAcknowledged) {
@@ -500,6 +500,5 @@ function sequence(funcsArray) {
 }
 
 // Fix for backward compatibility with lodash 2.4
-if (!_.includes) {
-  _.includes = _.contains;
-}
+if (!_.includes) {_.includes = _.contains;}
+if (!_.keyBy) {_.keyBy = _.indexBy;}
