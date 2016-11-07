@@ -257,10 +257,9 @@ export class ZabbixAPIDatasource {
    * @return {object} Connection status and Zabbix API version
    */
   testDatasource() {
-    var self = this;
     return this.zabbixAPI.getVersion()
       .then(version => {
-        return self.zabbixAPI.login()
+        return this.zabbixAPI.login()
           .then(auth => {
             if (auth) {
               return {
@@ -361,11 +360,10 @@ export class ZabbixAPIDatasource {
       .buildTriggerQuery(this.replaceTemplateVars(annotation.group, {}),
                          this.replaceTemplateVars(annotation.host, {}),
                          this.replaceTemplateVars(annotation.application, {}));
-    var self = this;
+
     return buildQuery.then(query => {
-      return self.zabbixAPI
-        .getTriggers(query.groupids, query.hostids, query.applicationids,
-                     showTriggers)
+      return this.zabbixAPI
+        .getTriggers(query.groupids, query.hostids, query.applicationids, showTriggers)
         .then(triggers => {
 
           // Filter triggers by description
@@ -385,7 +383,7 @@ export class ZabbixAPIDatasource {
           });
 
           var objectids = _.map(triggers, 'triggerid');
-          return self.zabbixAPI
+          return this.zabbixAPI
             .getEvents(objectids, timeFrom, timeTo, showOkEvents)
             .then(events => {
               var indexedTriggers = _.keyBy(triggers, 'triggerid');
