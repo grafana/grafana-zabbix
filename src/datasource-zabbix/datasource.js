@@ -396,19 +396,20 @@ export class ZabbixAPIDatasource {
               }
 
               return _.map(events, event => {
-                var title ='';
+                let tags;
                 if (annotation.showHostname) {
-                  title += event.hosts[0].name + ': ';
+                  tags = _.map(event.hosts, 'name');
                 }
 
                 // Show event type (OK or Problem)
-                title += Number(event.value) ? 'Problem' : 'OK';
+                let title = Number(event.value) ? 'Problem' : 'OK';
 
-                var formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
+                let formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
                 return {
                   annotation: annotation,
                   time: event.clock * 1000,
                   title: title,
+                  tags: tags,
                   text: indexedTriggers[event.objectid].description + formatted_acknowledges
                 };
               });
