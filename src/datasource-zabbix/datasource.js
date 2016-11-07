@@ -365,7 +365,7 @@ export class ZabbixAPIDatasource {
     return buildQuery.then(query => {
       return self.zabbixAPI
         .getTriggers(query.groupids, query.hostids, query.applicationids,
-                     showTriggers, timeFrom, timeTo)
+                     showTriggers)
         .then(triggers => {
 
           // Filter triggers by description
