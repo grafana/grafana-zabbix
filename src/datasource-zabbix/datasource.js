@@ -9,7 +9,7 @@ import './zabbixAPI.service.js';
 import './zabbixCache.service.js';
 import './queryProcessor.service.js';
 
-export class ZabbixAPIDatasource {
+class ZabbixAPIDatasource {
 
   /** @ngInject */
   constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryProcessor) {
@@ -449,7 +449,7 @@ function formatMetric(metricObj) {
  * template variables, for example
  * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
  */
-export function zabbixTemplateFormat(value) {
+function zabbixTemplateFormat(value) {
   if (typeof value === 'string') {
     return utils.escapeRegex(value);
   }
@@ -497,6 +497,8 @@ function sequence(funcsArray) {
     return result;
   };
 }
+
+export {ZabbixAPIDatasource, zabbixTemplateFormat};
 
 // Fix for backward compatibility with lodash 2.4
 if (!_.includes) {_.includes = _.contains;}
