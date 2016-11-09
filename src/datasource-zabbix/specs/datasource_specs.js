@@ -5,8 +5,8 @@ import sinon from 'sinon';
 import _ from 'lodash';
 
 describe('ZabbixDatasource', () => {
-  var ctx = {};
-  var defined = sinon.match.defined;
+  let ctx = {};
+  let defined = sinon.match.defined;
 
   beforeEach(() => {
     ctx.instanceSettings = {
@@ -30,7 +30,7 @@ describe('ZabbixDatasource', () => {
 
   describe('When querying data', () => {
     beforeEach(() => {
-      ctx.ds.replaceTemplateVars = (str) => { return str; };
+      ctx.ds.replaceTemplateVars = (str) => str;
     });
 
     ctx.options = {
@@ -45,19 +45,19 @@ describe('ZabbixDatasource', () => {
       range: {from: 'now-7d', to: 'now'}
     };
 
-    it('should return an empty array when no targets are set', function(done) {
-      var options = {
+    it('should return an empty array when no targets are set', (done) => {
+      let options = {
         targets: [],
         range: {from: 'now-6h', to: 'now'}
       };
-      ctx.ds.query(options).then(function(result) {
+      ctx.ds.query(options).then(result => {
         expect(result.data).to.have.length(0);
         done();
       });
     });
 
-    it('should use trends if it enabled and time more than trendsFrom', function(done) {
-      var ranges = ['now-7d', 'now-168h', 'now-1M', 'now-1y'];
+    it('should use trends if it enabled and time more than trendsFrom', (done) => {
+      let ranges = ['now-7d', 'now-168h', 'now-1M', 'now-1y'];
 
       _.forEach(ranges, range => {
         ctx.options.range.from = range;
@@ -72,8 +72,8 @@ describe('ZabbixDatasource', () => {
       done();
     });
 
-    it('shouldnt use trends if it enabled and time less than trendsFrom', function(done) {
-      var ranges = ['now-6d', 'now-167h', 'now-1h', 'now-30m', 'now-30s'];
+    it('shouldnt use trends if it enabled and time less than trendsFrom', (done) => {
+      let ranges = ['now-6d', 'now-167h', 'now-1h', 'now-30m', 'now-30s'];
 
       _.forEach(ranges, range => {
         ctx.options.range.from = range;
@@ -139,7 +139,99 @@ describe('ZabbixDatasource', () => {
 
       testReplacingVariable(target, template_var_value, expected_result, done);
     });
+  });
 
+  describe('When invoking metricFindQuery()', () => {
+    beforeEach(() => {
+      ctx.ds.replaceTemplateVars = (str) => str;
+      ctx.ds.zabbixCache = {
+        getGroups: () => Q.when([])
+      };
+      ctx.ds.queryProcessor =  {
+        getGroups: () => Q.when([]),
+        getHosts: () => Q.when([]),
+        getApps: () => Q.when([]),
+        getItems: () => Q.when([])
+      };
+    });
+
+    it('should return groups', (done) => {
+      const tests = [
+        {query: '*',        expect: '/.*/'},
+        {query: '',         expect: ''},
+        {query: 'Backend',  expect: 'Backend'},
+        {query: 'Back*',    expect: 'Back*'}
+      ];
+
+      let getGroups = sinon.spy(ctx.ds.zabbixCache, 'getGroups');
+      for (const test of tests) {
+        ctx.ds.metricFindQuery(test.query);
+        expect(getGroups).to.have.been.calledWith(test.expect);
+        getGroups.reset();
+      }
+      done();
+    });
+
+    it('should return hosts', (done) => {
+      const tests = [
+        {query: '*.*',       expect: '/.*/'},
+        {query: '.',         expect: ''},
+        {query: 'Backend.*', expect: 'Backend'},
+        {query: 'Back*.',    expect: 'Back*'}
+      ];
+
+      let getHosts = sinon.spy(ctx.ds.queryProcessor, 'getHosts');
+      for (const test of tests) {
+        ctx.ds.metricFindQuery(test.query);
+        expect(getHosts).to.have.been.calledWith(test.expect);
+        getHosts.reset();
+      }
+      done();
+    });
+
+    it('should return applications', (done) => {
+      const tests = [
+        {query: '*.*.*',               expect: ['/.*/', '/.*/']},
+        {query: '.*.',                 expect: ['', '/.*/']},
+        {query: 'Backend.backend01.*', expect: ['Backend', 'backend01']},
+        {query: 'Back*.*.',            expect: ['Back*', '/.*/']}
+      ];
+
+      let getApps = sinon.spy(ctx.ds.queryProcessor, 'getApps');
+      for (const test of tests) {
+        ctx.ds.metricFindQuery(test.query);
+        expect(getApps).to.have.been.calledWith(test.expect[0], test.expect[1]);
+        getApps.reset();
+      }
+      done();
+    });
+
+    it('should return items', (done) => {
+      const tests = [
+        {query: '*.*.*.*',               expect: ['/.*/', '/.*/', '']},
+        {query: '.*.*.*',                expect: ['', '/.*/', '']},
+        {query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '']},
+        {query: 'Back*.*.cpu.*',         expect: ['Back*', '/.*/', 'cpu']}
+      ];
+
+      let getItems = sinon.spy(ctx.ds.queryProcessor, 'getItems');
+      for (const test of tests) {
+        ctx.ds.metricFindQuery(test.query);
+        expect(getItems)
+          .to.have.been.calledWith(test.expect[0], test.expect[1], test.expect[2]);
+        getItems.reset();
+      }
+      done();
+    });
+
+    it('should invoke method with proper arguments', (done) => {
+      let query = '*.*';
+
+      let getHosts = sinon.spy(ctx.ds.queryProcessor, 'getHosts');
+      ctx.ds.metricFindQuery(query);
+      expect(getHosts).to.have.been.calledWith('/.*/');
+      done();
+    });
   });
 
 });
