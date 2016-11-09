@@ -1,13 +1,14 @@
 import {Datasource} from "../module";
+import {zabbixTemplateFormat} from "../datasource";
 import Q from "q";
 import sinon from 'sinon';
 import _ from 'lodash';
 
-describe('ZabbixDatasource', function() {
+describe('ZabbixDatasource', () => {
   var ctx = {};
   var defined = sinon.match.defined;
 
-  beforeEach(function() {
+  beforeEach(() => {
     ctx.instanceSettings = {
       jsonData: {
         username: 'zabbix',
@@ -19,19 +20,19 @@ describe('ZabbixDatasource', function() {
     ctx.$q = Q;
     ctx.templateSrv = {};
     ctx.alertSrv = {};
-    ctx.zabbixAPIService = function() {};
-    ctx.ZabbixCachingProxy = function() {};
-    ctx.QueryProcessor = function() {};
+    ctx.zabbixAPIService   = () => {};
+    ctx.ZabbixCachingProxy = () => {};
+    ctx.QueryProcessor     = () => {};
 
     ctx.ds = new Datasource(ctx.instanceSettings, ctx.$q, ctx.templateSrv, ctx.alertSrv,
                             ctx.zabbixAPIService, ctx.ZabbixCachingProxy, ctx.QueryProcessor);
-
-    ctx.ds.replaceTemplateVars = function(str) {
-      return str;
-    };
   });
 
-  describe('When querying data', function() {
+  describe('When querying data', () => {
+    beforeEach(() => {
+      ctx.ds.replaceTemplateVars = (str) => { return str; };
+    });
+
     ctx.options = {
       targets: [
         {
@@ -83,8 +84,60 @@ describe('ZabbixDatasource', function() {
         expect(ctx.ds.queryNumericData)
           .to.have.been.calledWith(defined, defined, defined, false);
       });
-
       done();
+    });
+
+  });
+
+  describe('When replacing template variables', () => {
+
+    function testReplacingVariable(target, varValue, expectedResult, done) {
+      ctx.ds.templateSrv.replace = () => {
+        return zabbixTemplateFormat(varValue);
+      };
+
+      let result = ctx.ds.replaceTemplateVars(target);
+      expect(result).to.equal(expectedResult);
+      done();
+    }
+
+    /*
+     * Alphanumerics, spaces, dots, dashes and underscores
+     * are allowed in Zabbix host name.
+     * 'AaBbCc0123 .-_'
+     */
+    it('should return properly escaped regex', (done) => {
+      let target = '$host';
+      let template_var_value = 'AaBbCc0123 .-_';
+      let expected_result = '/^AaBbCc0123 \\.-_$/';
+
+      testReplacingVariable(target, template_var_value, expected_result, done);
+    });
+
+    /*
+     * Single-value variable
+     * $host = backend01
+     * $host => /^backend01|backend01$/
+     */
+    it('should return proper regex for single value', (done) => {
+      let target = '$host';
+      let template_var_value = 'backend01';
+      let expected_result = '/^backend01$/';
+
+      testReplacingVariable(target, template_var_value, expected_result, done);
+    });
+
+    /*
+     * Multi-value variable
+     * $host = [backend01, backend02]
+     * $host => /^(backend01|backend01)$/
+     */
+    it('should return proper regex for multi-value', (done) => {
+      let target = '$host';
+      let template_var_value = ['backend01', 'backend02'];
+      let expected_result = '/^(backend01|backend02)$/';
+
+      testReplacingVariable(target, template_var_value, expected_result, done);
     });
 
   });
