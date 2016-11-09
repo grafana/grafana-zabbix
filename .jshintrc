@@ -34,6 +34,13 @@
     "define": true,
     "require": true,
     "Chromath": false,
-    "setImmediate": true
+    "setImmediate": true,
+    "expect": true,
+    "it": true,
+    "describe": true,
+    "sinon": true,
+    "module": true,
+    "beforeEach": true,
+    "inject": true
   }
 }

@@ -449,7 +449,7 @@ function formatMetric(metricObj) {
  * template variables, for example
  * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
  */
-function zabbixTemplateFormat(value) {
+export function zabbixTemplateFormat(value) {
   if (typeof value === 'string') {
     return utils.escapeRegex(value);
   }
@@ -468,7 +468,7 @@ function zabbixTemplateFormat(value) {
  */
 function replaceTemplateVars(templateSrv, target, scopedVars) {
   var replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
-  if (target !== replacedTarget && !utils.regexPattern.test(replacedTarget)) {
+  if (target !== replacedTarget && !utils.isRegex(replacedTarget)) {
     replacedTarget = '/^' + replacedTarget + '$/';
   }
   return replacedTarget;

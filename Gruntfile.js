@@ -40,11 +40,13 @@ module.exports = function(grunt) {
 
     babel: {
       options: {
-        sourceMap: true,
-        presets:  ["es2015"],
-        plugins: ['transform-es2015-modules-systemjs', "transform-es2015-for-of"],
+        presets:  ["es2015"]
       },
       dist: {
+        options: {
+          sourceMap: true,
+          plugins: ['transform-es2015-modules-systemjs', "transform-es2015-for-of"]
+        },
         files: [{
           cwd: 'src',
           expand: true,
@@ -57,6 +59,34 @@ module.exports = function(grunt) {
           dest: 'dist/'
         }]
       },
+      distTestNoSystemJs: {
+        files: [{
+          cwd: 'src',
+          expand: true,
+          src: ['**/*.js'],
+          dest: 'dist/test'
+        }]
+      },
+      distTestsSpecsNoSystemJs: {
+        files: [{
+          expand: true,
+          cwd: 'specs',
+          src: ['**/*.js'],
+          dest: 'dist/test/specs'
+        }]
+      }
+    },
+
+    mochaTest: {
+      test: {
+        options: {
+          reporter: 'spec'
+        },
+        src: [
+          'dist/test/datasource-zabbix/specs/test-main.js',
+          'dist/test/datasource-zabbix/specs/*_specs.js'
+        ]
+      }
     },
 
     sass: {
@@ -102,6 +132,7 @@ module.exports = function(grunt) {
     'jshint',
     'jscs',
     'sass',
-    'babel'
+    'babel',
+    'mochaTest'
   ]);
 };
