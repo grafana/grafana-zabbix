@@ -4,7 +4,7 @@
 import prunk from 'prunk';
 import {jsdom} from 'jsdom';
 import chai from 'chai';
-import sinon from 'sinon';
+// import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import * as dateMath from './modules/datemath';
 
