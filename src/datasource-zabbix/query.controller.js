@@ -1,4 +1,5 @@
 import {QueryCtrl} from 'app/plugins/sdk';
+import angular from 'angular';
 import _ from 'lodash';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';

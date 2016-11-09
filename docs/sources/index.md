@@ -22,7 +22,7 @@ a number of ways to get help:
 - [Gitter room](https://gitter.im/alexanderzobnin/grafana-zabbix)
 - [Twitter](https://twitter.com/AlexanderZobnin)
 
-Or you can just send me [email](mailto:alexanderzobnin@gmail.com).
+Or you can send me [email](mailto:alexanderzobnin@gmail.com).
 
 ## Support Project
 I develop this project in my free time, but if you really find it helpful and promising, you can
@@ -34,5 +34,5 @@ Triggers panel was sponsored by [Core IT Project](http://coreit.fr/)).
 
 By utilizing this software, you agree to the terms of the included license. Grafana-Zabbix plugin is
 licensed under the Apache 2.0 agreement. See
-[LICENSE](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md) for the full
+[LICENSE](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE) for the full
 license terms.

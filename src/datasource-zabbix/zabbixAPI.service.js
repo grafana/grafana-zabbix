@@ -41,12 +41,12 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
     request(method, params) {
       var self = this;
 
-      return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
-        .then(function(result) {
+      return this.zabbixAPICore
+        .request(this.url, method, params, this.requestOptions, this.auth)
+        .then((result) => {
           return result;
-        },
-        // Handle API errors
-        function(error) {
+        }, (error) => {
+          // Handle API errors
           if (isNotAuthorized(error.data)) {
             return self.loginOnce().then(
               function() {
@@ -56,15 +56,18 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
               function(error) {
                 self.alertAPIError(error.data);
               });
+          } else {
+            this.alertSrv.set("Connection Error", error.data, 'error', 5000);
           }
         });
     }
 
-    alertAPIError(message) {
+    alertAPIError(message, timeout = 5000) {
       this.alertSrv.set(
         "Zabbix API Error",
         message,
-        'error'
+        'error',
+        timeout
       );
     }
 
@@ -336,6 +339,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
         applicationids: applicationids,
         expandDescription: true,
         expandData: true,
+        expandComment: true,
         monitored: true,
         skipDependent: true,
         //only_true: true,

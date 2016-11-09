@@ -230,13 +230,13 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
 
       // Group history by itemid
       var grouped_history = _.groupBy(history, 'itemid');
-      var hosts = _.indexBy(_.flatten(_.map(items, 'hosts')), 'hostid');
+      var hosts = _.uniq(_.flatten(_.map(items, 'hosts')),'hostid');  //uniq is needed to deduplicate
 
       return _.map(grouped_history, function(hist, itemid) {
         var item = _.find(items, {'itemid': itemid});
         var alias = item.name;
-        if (_.keys(hosts).length > 1 || addHostName) {
-          var host = hosts[item.hostid];
+        if (_.keys(hosts).length > 1 && addHostName) {   //only when actual multi hosts selected
+          var host = _.find(hosts, {'hostid': item.hostid});
           alias = host.name + ": " + alias;
         }
         return {
@@ -333,12 +333,6 @@ function getByFilter(list, filter) {
   } else {
     return filterByName(list, filter);
   }
-}
-
-function getFromIndex(index, objids) {
-  return _.map(objids, function(id) {
-    return index[id];
-  });
 }
 
 function convertHistoryPoint(point) {

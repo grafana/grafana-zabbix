@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import moment from 'moment';
 
-
 /**
  * Expand Zabbix item name
  *
@@ -35,7 +34,7 @@ export function isTemplateVariable(str, templateVariables) {
     var variables = _.map(templateVariables, variable => {
       return '$' + variable.name;
     });
-    return _.contains(variables, str);
+    return _.includes(variables, str);
   } else {
     return false;
   }
@@ -92,4 +91,9 @@ export function convertToZabbixAPIUrl(url) {
   } else {
     return url.replace(trimSlashPattern, "$1");
   }
+}
+
+// Fix for backward compatibility with lodash 2.4
+if (!_.includes) {
+  _.includes = _.contains;
 }

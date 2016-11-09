@@ -222,7 +222,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
                 }
 
                 // Limit triggers number
-                self.triggerList  = _.first(triggerList, self.panel.limit);
+                self.triggerList  = triggerList.slice(0, self.panel.limit);
 
                 // Notify panel that request is finished
                 self.setTimeQueryEnd();

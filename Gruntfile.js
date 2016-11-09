@@ -98,6 +98,29 @@ module.exports = function(grunt) {
           'dist/panel-triggers/css/panel_triggers.css' : 'src/panel-triggers/sass/panel_triggers.scss',
         }
       }
+    },
+
+    jshint: {
+      source: {
+        files: {
+          src: ['src/**/*.js'],
+        }
+      },
+      options: {
+        jshintrc: true,
+        reporter: require('jshint-stylish'),
+        ignores: [
+          'node_modules/*',
+          'dist/*',
+        ]
+      }
+    },
+
+    jscs: {
+      src: ['src/**/*.js'],
+      options: {
+        config: ".jscs.json",
+      },
     }
 
   });
@@ -106,8 +129,10 @@ module.exports = function(grunt) {
     'clean',
     'copy:src_to_dist',
     'copy:pluginDef',
-    'babel',
+    'jshint',
+    'jscs',
     'sass',
+    'babel',
     'mochaTest'
   ]);
 };

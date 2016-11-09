@@ -1,6 +1,5 @@
 import angular from 'angular';
 import _ from 'lodash';
-import * as utils from './utils';
 
 // Use factory() instead service() for multiple datasources support.
 // Each datasource instance must initialize its own cache.
@@ -117,7 +116,7 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
       var deferred  = this.$q.defer();
       var historyStorage = this.storage.history;
       var full_history;
-      var expired = _.filter(_.indexBy(items, 'itemid'), function(item, itemid) {
+      var expired = _.filter(_.keyBy(items, 'itemid'), function(item, itemid) {
         return !historyStorage[itemid];
       });
       if (expired.length) {
@@ -236,3 +235,6 @@ String.prototype.getHash = function() {
   }
   return hash;
 };
+
+// Fix for backward compatibility with lodash 2.4
+if (!_.keyBy) {_.keyBy = _.indexBy;}

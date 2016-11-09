@@ -51,19 +51,23 @@ class ZabbixAPICoreService {
       requestOptions.headers.Authorization = options.basicAuth;
     }
 
-    this.backendSrv.datasourceRequest(requestOptions).then(function (response) {
-      // General connection issues
-      if (!response.data) {
-        deferred.reject(response);
-      }
+    this.backendSrv.datasourceRequest(requestOptions)
+      .then((response) => {
+        // General connection issues
+        if (!response.data) {
+          deferred.reject(response);
+        }
 
-      // Handle Zabbix API errors
-      else if (response.data.error) {
-        deferred.reject(response.data.error);
-      }
+        // Handle Zabbix API errors
+        else if (response.data.error) {
+          deferred.reject(response.data.error);
+        }
 
-      deferred.resolve(response.data.result);
-    });
+        deferred.resolve(response.data.result);
+      }, (error) => {
+        deferred.reject(error.err);
+      });
+
     return deferred.promise;
   }
 

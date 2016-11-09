@@ -92,7 +92,11 @@ export class ZabbixAPIDatasource {
 
         _.forEach(target.functions, func => {
           func.params = _.map(func.params, param => {
-            return this.templateSrv.replace(param, options.scopedVars);
+            if (typeof param === 'number') {
+              return +this.templateSrv.replace(param.toString(), options.scopedVars);
+            } else {
+              return this.templateSrv.replace(param, options.scopedVars);
+            }
           });
         });
 
@@ -158,7 +162,7 @@ export class ZabbixAPIDatasource {
           // Find trendValue() function and get specified trend value
           var trendFunctions = _.map(metricFunctions.getCategories()['Trends'], 'name');
           var trendValueFunc = _.find(target.functions, func => {
-            return _.contains(trendFunctions, func.def.name);
+            return _.includes(trendFunctions, func.def.name);
           });
           var valueType = trendValueFunc ? trendValueFunc.params[0] : "avg";
 
@@ -181,6 +185,7 @@ export class ZabbixAPIDatasource {
         return getHistory.then(timeseries_data => {
           let transformFunctions   = bindFunctionDefs(target.functions, 'Transform');
           let aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
+          let filterFunctions      = bindFunctionDefs(target.functions, 'Filter');
           let aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
 
           // Apply transformation functions
@@ -189,6 +194,11 @@ export class ZabbixAPIDatasource {
             return timeseries;
           });
 
+          // Apply filter functions
+          if (filterFunctions.length) {
+            timeseries_data = sequence(filterFunctions)(timeseries_data);
+          }
+
           // Apply aggregations
           if (aggregationFunctions.length) {
             let dp = _.map(timeseries_data, 'datapoints');
@@ -196,7 +206,7 @@ export class ZabbixAPIDatasource {
 
             let aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
             let lastAgg = _.findLast(target.functions, func => {
-              return _.contains(aggFuncNames, func.def.name);
+              return _.includes(aggFuncNames, func.def.name);
             });
 
             timeseries_data = [
@@ -247,10 +257,9 @@ export class ZabbixAPIDatasource {
    * @return {object} Connection status and Zabbix API version
    */
   testDatasource() {
-    var self = this;
     return this.zabbixAPI.getVersion()
       .then(version => {
-        return self.zabbixAPI.login()
+        return this.zabbixAPI.login()
           .then(auth => {
             if (auth) {
               return {
@@ -307,7 +316,7 @@ export class ZabbixAPIDatasource {
       }
       parts.push(part);
     });
-    let template = _.object(['group', 'host', 'app', 'item'], parts);
+    let template = _.zipObject(['group', 'host', 'app', 'item'], parts);
 
     // Get items
     if (parts.length === 4) {
@@ -351,11 +360,10 @@ export class ZabbixAPIDatasource {
       .buildTriggerQuery(this.replaceTemplateVars(annotation.group, {}),
                          this.replaceTemplateVars(annotation.host, {}),
                          this.replaceTemplateVars(annotation.application, {}));
-    var self = this;
+
     return buildQuery.then(query => {
-      return self.zabbixAPI
-        .getTriggers(query.groupids, query.hostids, query.applicationids,
-                     showTriggers, timeFrom, timeTo)
+      return this.zabbixAPI
+        .getTriggers(query.groupids, query.hostids, query.applicationids, showTriggers)
         .then(triggers => {
 
           // Filter triggers by description
@@ -375,10 +383,10 @@ export class ZabbixAPIDatasource {
           });
 
           var objectids = _.map(triggers, 'triggerid');
-          return self.zabbixAPI
+          return this.zabbixAPI
             .getEvents(objectids, timeFrom, timeTo, showOkEvents)
             .then(events => {
-              var indexedTriggers = _.indexBy(triggers, 'triggerid');
+              var indexedTriggers = _.keyBy(triggers, 'triggerid');
 
               // Hide acknowledged events if option enabled
               if (annotation.hideAcknowledged) {
@@ -388,19 +396,20 @@ export class ZabbixAPIDatasource {
               }
 
               return _.map(events, event => {
-                var title ='';
+                let tags;
                 if (annotation.showHostname) {
-                  title += event.hosts[0].name + ': ';
+                  tags = _.map(event.hosts, 'name');
                 }
 
                 // Show event type (OK or Problem)
-                title += Number(event.value) ? 'Problem' : 'OK';
+                let title = Number(event.value) ? 'Problem' : 'OK';
 
-                var formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
+                let formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
                 return {
                   annotation: annotation,
                   time: event.clock * 1000,
                   title: title,
+                  tags: tags,
                   text: indexedTriggers[event.objectid].description + formatted_acknowledges
                 };
               });
@@ -414,19 +423,12 @@ export class ZabbixAPIDatasource {
 function bindFunctionDefs(functionDefs, category) {
   var aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
   var aggFuncDefs = _.filter(functionDefs, function(func) {
-    return _.contains(aggregationFunctions, func.def.name);
+    return _.includes(aggregationFunctions, func.def.name);
   });
 
   return _.map(aggFuncDefs, function(func) {
     var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
     return funcInstance.bindFunction(DataProcessor.metricFunctions);
-  });
-}
-
-function filterFunctionDefs(funcs, category) {
-  let filteredFuncs = _.map(metricFunctions.getCategories()[category]);
-  return _.filter(funcs, func => {
-    return _.contains(filteredFuncs, func.def.name);
   });
 }
 
@@ -447,7 +449,7 @@ function formatMetric(metricObj) {
  * template variables, for example
  * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
  */
-function zabbixTemplateFormat(value, variable) {
+function zabbixTemplateFormat(value) {
   if (typeof value === 'string') {
     return utils.escapeRegex(value);
   }
@@ -456,7 +458,8 @@ function zabbixTemplateFormat(value, variable) {
   return '(' + escapedValues.join('|') + ')';
 }
 
-/** If template variables are used in request, replace it using regex format
+/**
+ * If template variables are used in request, replace it using regex format
  * and wrap with '/' for proper multi-value work. Example:
  * $variable selected as a, b, c
  * We use filter $variable
@@ -494,3 +497,7 @@ function sequence(funcsArray) {
     return result;
   };
 }
+
+// Fix for backward compatibility with lodash 2.4
+if (!_.includes) {_.includes = _.contains;}
+if (!_.keyBy) {_.keyBy = _.indexBy;}
