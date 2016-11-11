@@ -8,6 +8,7 @@ import DataProcessor from './DataProcessor';
 import './zabbixAPI.service.js';
 import './zabbixCache.service.js';
 import './queryProcessor.service.js';
+import {ZabbixAPIError} from './zabbixAPICore.service.js';
 
 class ZabbixAPIDatasource {
 
@@ -257,38 +258,34 @@ class ZabbixAPIDatasource {
    * @return {object} Connection status and Zabbix API version
    */
   testDatasource() {
+    let zabbixVersion;
     return this.zabbixAPI.getVersion()
-      .then(version => {
-        return this.zabbixAPI.login()
-          .then(auth => {
-            if (auth) {
-              return {
-                status: "success",
-                title: "Success",
-                message: "Zabbix API version: " + version
-              };
-            } else {
-              return {
-                status: "error",
-                title: "Invalid user name or password",
-                message: "Zabbix API version: " + version
-              };
-            }
-          }, error => {
-            return {
-              status: "error",
-              title: error.message,
-              message: error.data
-            };
-          });
-      }, error => {
-        console.log(error);
+    .then(version => {
+      zabbixVersion = version;
+      return this.zabbixAPI.login();
+    })
+    .then(() => {
+      return {
+        status: "success",
+        title: "Success",
+        message: "Zabbix API version: " + zabbixVersion
+      };
+    })
+    .catch(error => {
+      if (error instanceof ZabbixAPIError) {
+        return {
+          status: "error",
+          title: error.message,
+          message: error.data
+        };
+      } else {
         return {
           status: "error",
           title: "Connection failed",
           message: "Could not connect to given url"
         };
-      });
+      }
+    });
   }
 
   ////////////////
