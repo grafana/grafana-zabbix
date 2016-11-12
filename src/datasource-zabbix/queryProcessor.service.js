@@ -2,197 +2,137 @@ import angular from 'angular';
 import _ from 'lodash';
 import * as utils from './utils';
 
-/** @ngInject */
-angular.module('grafana.services').factory('QueryProcessor', function($q) {
+function QueryProcessorFactory() {
 
   class QueryProcessor {
     constructor(zabbixCacheInstance) {
       this.cache = zabbixCacheInstance;
-      this.$q = $q;
+    }
+
+    initializeCache() {
+      if (this.cache._initialized) {
+        return Promise.resolve();
+      } else {
+        return this.cache.refresh();
+      }
     }
 
     /**
-     * Build query in asynchronous manner
+     * Build query - convert target filters to array of Zabbix items
      */
-    build(groupFilter, hostFilter, appFilter, itemFilter, itemtype) {
-      var self = this;
-      if (this.cache._initialized) {
-        return this.$q.when(self.buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, itemtype));
-      } else {
-        return this.cache.refresh().then(function() {
-          return self.buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, itemtype);
-        });
+    build(target, options) {
+      function getFiltersFromTarget(target) {
+        let parts = ['group', 'host', 'application', 'item'];
+        return _.map(parts, p => target[p].filter);
       }
+
+      return this.initializeCache()
+      .then(() => {
+        return this.getItems(...getFiltersFromTarget(target), options);
+      });
     }
 
     /**
      * Build trigger query in asynchronous manner
      */
     buildTriggerQuery(groupFilter, hostFilter, appFilter) {
-      var self = this;
-      if (this.cache._initialized) {
-        return this.$q.when(self.buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter));
-      } else {
-        return this.cache.refresh().then(function() {
-          return self.buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter);
-        });
-      }
+      return this.initializeCache()
+      .then(() => {
+        return this.buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter);
+      });
     }
 
-    filterGroups(groups, groupFilter) {
-      return this.$q.when(
-        findByFilter(groups, groupFilter)
-      );
-    }
-
-    /**
-     * Get list of host belonging to given groups.
-     * @return list of hosts
-     */
-    filterHosts(hosts, hostFilter) {
-      return this.$q.when(
-        findByFilter(hosts, hostFilter)
-      );
-    }
-
-    filterApps(apps, appFilter) {
-      return this.$q.when(
-        findByFilter(apps, appFilter)
-      );
-    }
-
-    /**
-     * Build query - convert target filters to array of Zabbix items
-     */
-    buildFromCache(groupFilter, hostFilter, appFilter, itemFilter, itemtype, showDisabledItems) {
-      return this.getItems(groupFilter, hostFilter, appFilter, itemtype, showDisabledItems)
-        .then(items => {
-          return getByFilter(items, itemFilter);
-        });
-    }
-
-    getGroups() {
+    getAllGroups() {
       return this.cache.getGroups();
     }
 
+    getGroups(groupFilter) {
+      return this.getAllGroups()
+      .then(groups => findByFilter(groups, groupFilter));
+    }
+
     /**
      * Get list of host belonging to given groups.
-     * @return list of hosts
      */
-    getHosts(groupFilter) {
-      var self = this;
-      return this.cache
-        .getGroups()
-        .then(groups => {
-          return findByFilter(groups, groupFilter);
-        })
-        .then(groups => {
-          var groupids = _.map(groups, 'groupid');
-          return self.cache.getHosts(groupids);
-        });
+    getAllHosts(groupFilter) {
+      return this.getGroups(groupFilter)
+      .then(groups => {
+        let groupids = _.map(groups, 'groupid');
+        return this.cache.getHosts(groupids);
+      });
+    }
+
+    getHosts(groupFilter, hostFilter) {
+      return this.getAllHosts(groupFilter)
+      .then(hosts => findByFilter(hosts, hostFilter));
     }
 
     /**
      * Get list of applications belonging to given groups and hosts.
-     * @return  list of applications belonging to given hosts
      */
-    getApps(groupFilter, hostFilter) {
-      var self = this;
-      return this.getHosts(groupFilter)
-        .then(hosts => {
-          return findByFilter(hosts, hostFilter);
-        })
-        .then(hosts => {
-          var hostids = _.map(hosts, 'hostid');
-          return self.cache.getApps(hostids);
-        });
+    getAllApps(groupFilter, hostFilter) {
+      return this.getHosts(groupFilter, hostFilter)
+      .then(hosts => {
+        let hostids = _.map(hosts, 'hostid');
+        return this.cache.getApps(hostids);
+      });
     }
 
-    getItems(groupFilter, hostFilter, appFilter, itemtype, showDisabledItems) {
-      var self = this;
-      return this.getHosts(groupFilter)
-        .then(hosts => {
-          return findByFilter(hosts, hostFilter);
-        })
-        .then(hosts => {
-          var hostids = _.map(hosts, 'hostid');
-          if (appFilter) {
-            return self.cache
-              .getApps(hostids)
-              .then(apps => {
-                // Use getByFilter for proper item filtering
-                return getByFilter(apps, appFilter);
-              });
-          } else {
-            return {
-              appFilterEmpty: true,
-              hostids: hostids
-            };
-          }
-        })
-        .then(apps => {
-          if (apps.appFilterEmpty) {
-            return self.cache
-              .getItems(apps.hostids, undefined, itemtype)
-              .then(items => {
-                if (showDisabledItems) {
-                  items = _.filter(items, {'status': '0'});
-                }
-                return items;
-              });
-          } else {
-            var appids = _.map(apps, 'applicationid');
-            return self.cache
-              .getItems(undefined, appids, itemtype)
-              .then(items => {
-                if (showDisabledItems) {
-                  items = _.filter(items, {'status': '0'});
-                }
-                return items;
-              });
-          }
-        });
+    getApps(groupFilter, hostFilter, appFilter) {
+      return this.getHosts(groupFilter, hostFilter)
+      .then(hosts => {
+        let hostids = _.map(hosts, 'hostid');
+        if (appFilter) {
+          return this.cache.getApps(hostids)
+          .then(apps => filterByQuery(apps, appFilter));
+        } else {
+          return {
+            appFilterEmpty: true,
+            hostids: hostids
+          };
+        }
+      });
+    }
+
+    getAllItems(groupFilter, hostFilter, appFilter, options = {}) {
+      return this.getApps(groupFilter, hostFilter, appFilter)
+      .then(apps => {
+        if (apps.appFilterEmpty) {
+          return this.cache.getItems(apps.hostids, undefined, options.itemtype);
+        } else {
+          let appids = _.map(apps, 'applicationid');
+          return this.cache.getItems(undefined, appids, options.itemtype);
+        }
+      })
+      .then(items => {
+        if (!options.showDisabledItems) {
+          items = _.filter(items, {'status': '0'});
+        }
+        return items;
+      });
+    }
+
+    getItems(groupFilter, hostFilter, appFilter, itemFilter, options = {}) {
+      return this.getAllItems(groupFilter, hostFilter, appFilter, options)
+      .then(items => filterByQuery(items, itemFilter));
     }
 
     /**
      * Build query - convert target filters to array of Zabbix items
      */
     buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter) {
-      var promises = [
-        this.cache.getGroups().then(function(groups) {
-          return _.filter(groups, function(group) {
-            if (utils.isRegex(groupFilter)) {
-              return utils.buildRegex(groupFilter).test(group.name);
-            } else {
-              return group.name === groupFilter;
-            }
-          });
-        }),
-        this.getHosts(groupFilter).then(function(hosts) {
-          return _.filter(hosts, function(host) {
-            if (utils.isRegex(hostFilter)) {
-              return utils.buildRegex(hostFilter).test(host.name);
-            } else {
-              return host.name === hostFilter;
-            }
-          });
-        }),
-        this.getApps(groupFilter, hostFilter).then(function(apps) {
-          return _.filter(apps, function(app) {
-            if (utils.isRegex(appFilter)) {
-              return utils.buildRegex(appFilter).test(app.name);
-            } else {
-              return app.name === appFilter;
-            }
-          });
-        })
+      let promises = [
+        this.getGroups(groupFilter),
+        this.getHosts(groupFilter, hostFilter),
+        this.getApps(groupFilter, hostFilter, appFilter)
       ];
 
-      return this.$q.all(promises).then(function(results) {
-        var filteredGroups = results[0];
-        var filteredHosts = results[1];
-        var filteredApps = results[2];
-        var query = {};
+      return Promise.all(promises)
+      .then(results => {
+        let filteredGroups = results[0];
+        let filteredHosts = results[1];
+        let filteredApps = results[2];
+        let query = {};
 
         if (appFilter) {
           query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
@@ -278,7 +218,11 @@ angular.module('grafana.services').factory('QueryProcessor', function($q) {
   }
 
   return QueryProcessor;
-});
+}
+
+angular
+  .module('grafana.services')
+  .factory('QueryProcessor', QueryProcessorFactory);
 
 /**
  * Find group, host, app or item by given name.
@@ -312,7 +256,7 @@ function filterByName(list, name) {
   }
 }
 
-function findByRegex(list, regex) {
+function filterByRegex(list, regex) {
   var filterPattern = utils.buildRegex(regex);
   return _.filter(list, function (zbx_obj) {
     return filterPattern.test(zbx_obj.name);
@@ -321,15 +265,15 @@ function findByRegex(list, regex) {
 
 function findByFilter(list, filter) {
   if (utils.isRegex(filter)) {
-    return findByRegex(list, filter);
+    return filterByRegex(list, filter);
   } else {
     return findByName(list, filter);
   }
 }
 
-function getByFilter(list, filter) {
+function filterByQuery(list, filter) {
   if (utils.isRegex(filter)) {
-    return findByRegex(list, filter);
+    return filterByRegex(list, filter);
   } else {
     return filterByName(list, filter);
   }

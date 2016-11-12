@@ -146,12 +146,10 @@ class ZabbixAPIDatasource {
   }
 
   queryNumericData(target, timeFrom, timeTo, useTrends) {
-    // Build query in asynchronous manner
-    return this.queryProcessor.build(target.group.filter,
-                                     target.host.filter,
-                                     target.application.filter,
-                                     target.item.filter,
-                                     'num')
+    let options = {
+      itemtype: 'num'
+    };
+    return this.queryProcessor.build(target, options)
       .then(items => {
         // Add hostname for items from multiple hosts
         var addHostName = utils.isRegex(target.host.filter);
@@ -227,11 +225,10 @@ class ZabbixAPIDatasource {
   }
 
   queryTextData(target, timeFrom, timeTo) {
-    return this.queryProcessor.build(target.group.filter,
-                                     target.host.filter,
-                                     target.application.filter,
-                                     target.item.filter,
-                                     'text')
+    let options = {
+      itemtype: 'text'
+    };
+    return this.queryProcessor.build(target, options)
       .then(items => {
         if (items.length) {
           return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
