@@ -5,6 +5,7 @@ import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
 import DataProcessor from './DataProcessor';
+import responseHandler from './responseHandler';
 import './zabbixAPI.service.js';
 import './zabbixCache.service.js';
 import './queryProcessor.service.js';
@@ -120,11 +121,10 @@ class ZabbixAPIDatasource {
         }
 
         return this.zabbixAPI
-          .getSLA(target.itservice.serviceid, timeFrom, timeTo)
-          .then(slaObject => {
-            return this.queryProcessor
-              .handleSLAResponse(target.itservice, target.slaProperty, slaObject);
-          });
+        .getSLA(target.itservice.serviceid, timeFrom, timeTo)
+        .then(slaObject => {
+          return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
+        });
       }
     });
 
@@ -168,7 +168,7 @@ class ZabbixAPIDatasource {
           getHistory = this.zabbixAPI
             .getTrend(items, timeFrom, timeTo)
             .then(history => {
-              return this.queryProcessor.handleTrends(history, items, addHostName, valueType);
+              return responseHandler.handleTrends(history, items, addHostName, valueType);
             });
         }
 
@@ -177,7 +177,7 @@ class ZabbixAPIDatasource {
           getHistory = this.zabbixCache
             .getHistory(items, timeFrom, timeTo)
             .then(history => {
-              return this.queryProcessor.handleHistory(history, items, addHostName);
+              return responseHandler.handleHistory(history, items, addHostName);
             });
         }
 
@@ -233,7 +233,7 @@ class ZabbixAPIDatasource {
         if (items.length) {
           return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
             .then(history => {
-              return this.queryProcessor.convertHistory(history, items, false, (point) => {
+              return responseHandler.convertHistory(history, items, false, (point) => {
                 let value = point.value;
 
                 // Regex-based extractor
