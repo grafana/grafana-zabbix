@@ -2,9 +2,9 @@ import angular from 'angular';
 import _ from 'lodash';
 import * as utils from './utils';
 
-function QueryProcessorFactory() {
+function QueryBuilderFactory() {
 
-  class QueryProcessor {
+  class QueryBuilder {
     constructor(zabbixCacheInstance) {
       this.cache = zabbixCacheInstance;
     }
@@ -149,12 +149,12 @@ function QueryProcessorFactory() {
     }
   }
 
-  return QueryProcessor;
+  return QueryBuilder;
 }
 
 angular
   .module('grafana.services')
-  .factory('QueryProcessor', QueryProcessorFactory);
+  .factory('QueryBuilder', QueryBuilderFactory);
 
 /**
  * Find group, host, app or item by given name.

@@ -76,7 +76,7 @@ class TriggerPanelEditorCtrl {
     this.datasourceSrv.get(this.panel.datasource)
     .then(datasource => {
       this.datasource = datasource;
-      this.queryProcessor = datasource.queryProcessor;
+      this.queryBuilder = datasource.queryBuilder;
       this.initFilters();
       this.panelCtrl.refresh();
     });
@@ -91,7 +91,7 @@ class TriggerPanelEditorCtrl {
   }
 
   suggestGroups() {
-    return this.queryProcessor.getAllGroups()
+    return this.queryBuilder.getAllGroups()
     .then(groups => {
       this.metric.groupList = groups;
       return groups;
@@ -100,7 +100,7 @@ class TriggerPanelEditorCtrl {
 
   suggestHosts() {
     let groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
-    return this.queryProcessor.getAllHosts(groupFilter)
+    return this.queryBuilder.getAllHosts(groupFilter)
     .then(hosts => {
       this.metric.hostList = hosts;
       return hosts;
@@ -110,7 +110,7 @@ class TriggerPanelEditorCtrl {
   suggestApps() {
     let groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
     let hostFilter = this.datasource.replaceTemplateVars(this.panel.triggers.host.filter);
-    return this.queryProcessor.getAllApps(groupFilter, hostFilter)
+    return this.queryBuilder.getAllApps(groupFilter, hostFilter)
     .then(apps => {
       this.metric.appList = apps;
       return apps;

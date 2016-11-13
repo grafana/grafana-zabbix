@@ -8,13 +8,13 @@ import DataProcessor from './DataProcessor';
 import responseHandler from './responseHandler';
 import './zabbixAPI.service.js';
 import './zabbixCache.service.js';
-import './queryProcessor.service.js';
+import './queryBuilder.js';
 import {ZabbixAPIError} from './zabbixAPICore.service.js';
 
 class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryProcessor) {
+  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryBuilder) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -42,7 +42,7 @@ class ZabbixAPIDatasource {
     this.zabbixCache = new ZabbixCachingProxy(this.zabbixAPI, this.cacheTTL);
 
     // Initialize query builder
-    this.queryProcessor = new QueryProcessor(this.zabbixCache);
+    this.queryBuilder = new QueryBuilder(this.zabbixCache);
 
     // Dependencies
     this.q = $q;
@@ -149,7 +149,7 @@ class ZabbixAPIDatasource {
     let options = {
       itemtype: 'num'
     };
-    return this.queryProcessor.build(target, options)
+    return this.queryBuilder.build(target, options)
       .then(items => {
         // Add hostname for items from multiple hosts
         var addHostName = utils.isRegex(target.host.filter);
@@ -228,7 +228,7 @@ class ZabbixAPIDatasource {
     let options = {
       itemtype: 'text'
     };
-    return this.queryProcessor.build(target, options)
+    return this.queryBuilder.build(target, options)
       .then(items => {
         if (items.length) {
           return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
@@ -318,13 +318,13 @@ class ZabbixAPIDatasource {
       if (template.app === '/.*/') {
         template.app = '';
       }
-      result = this.queryProcessor.getItems(template.group, template.host, template.app);
+      result = this.queryBuilder.getItems(template.group, template.host, template.app);
     } else if (parts.length === 3) {
       // Get applications
-      result = this.queryProcessor.getApps(template.group, template.host);
+      result = this.queryBuilder.getApps(template.group, template.host);
     } else if (parts.length === 2) {
       // Get hosts
-      result = this.queryProcessor.getHosts(template.group);
+      result = this.queryBuilder.getHosts(template.group);
     } else if (parts.length === 1) {
       // Get groups
       result = this.zabbixCache.getGroups(template.group);
@@ -350,7 +350,7 @@ class ZabbixAPIDatasource {
     // Show all triggers
     var showTriggers = [0, 1];
 
-    var buildQuery = this.queryProcessor
+    var buildQuery = this.queryBuilder
       .buildTriggerQuery(this.replaceTemplateVars(annotation.group, {}),
                          this.replaceTemplateVars(annotation.host, {}),
                          this.replaceTemplateVars(annotation.application, {}));

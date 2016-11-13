@@ -20,7 +20,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
     this.zabbix = this.datasource.zabbixAPI;
     this.cache = this.datasource.zabbixCache;
-    this.queryProcessor = this.datasource.queryProcessor;
+    this.queryBuilder = this.datasource.queryBuilder;
     this.$q = $q;
 
     // Use custom format for template variables
@@ -116,7 +116,7 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   suggestGroups() {
-    return this.queryProcessor.getAllGroups()
+    return this.queryBuilder.getAllGroups()
     .then(groups => {
       this.metric.groupList = groups;
       return groups;
@@ -125,7 +125,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
   suggestHosts() {
     let groupFilter = this.replaceTemplateVars(this.target.group.filter);
-    return this.queryProcessor.getAllHosts(groupFilter)
+    return this.queryBuilder.getAllHosts(groupFilter)
     .then(hosts => {
       this.metric.hostList = hosts;
       return hosts;
@@ -135,7 +135,7 @@ export class ZabbixQueryController extends QueryCtrl {
   suggestApps() {
     let groupFilter = this.replaceTemplateVars(this.target.group.filter);
     let hostFilter = this.replaceTemplateVars(this.target.host.filter);
-    return this.queryProcessor.getAllApps(groupFilter, hostFilter)
+    return this.queryBuilder.getAllApps(groupFilter, hostFilter)
     .then(apps => {
       this.metric.appList = apps;
       return apps;
@@ -151,7 +151,7 @@ export class ZabbixQueryController extends QueryCtrl {
       showDisabledItems: this.target.options.showDisabledItems
     };
 
-    return this.queryProcessor
+    return this.queryBuilder
     .getAllItems(groupFilter, hostFilter, appFilter, options)
     .then(items => {
       this.metric.itemList = items;

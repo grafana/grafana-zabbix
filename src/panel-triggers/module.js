@@ -108,7 +108,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     // Load datasource
     return this.datasourceSrv.get(this.panel.datasource).then(datasource => {
       var zabbix = datasource.zabbixAPI;
-      var queryProcessor = datasource.queryProcessor;
+      var queryBuilder = datasource.queryBuilder;
       var showEvents = self.panel.showEvents.value;
       var triggerFilter = self.panel.triggers;
 
@@ -117,7 +117,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
       var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-      var buildQuery = queryProcessor.buildTriggerQuery(groupFilter, hostFilter, appFilter);
+      var buildQuery = queryBuilder.buildTriggerQuery(groupFilter, hostFilter, appFilter);
       return buildQuery.then(query => {
         return zabbix.getTriggers(query.groupids,
                                   query.hostids,
