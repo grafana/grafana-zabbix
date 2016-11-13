@@ -14,13 +14,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
   // ZabbixQueryCtrl constructor
   constructor($scope, $injector, $rootScope, $sce, templateSrv) {
-
-    // Call superclass constructor
     super($scope, $injector);
-
-    this.zabbix = this.datasource.zabbixAPI;
-    this.cache = this.datasource.zabbixCache;
-    this.queryBuilder = this.datasource.queryBuilder;
+    this.zabbix = this.datasource.zabbix;
 
     // Use custom format for template variables
     this.replaceTemplateVars = this.datasource.replaceTemplateVars;
@@ -116,7 +111,7 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   suggestGroups() {
-    return this.queryBuilder.getAllGroups()
+    return this.zabbix.getAllGroups()
     .then(groups => {
       this.metric.groupList = groups;
       return groups;
@@ -125,7 +120,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
   suggestHosts() {
     let groupFilter = this.replaceTemplateVars(this.target.group.filter);
-    return this.queryBuilder.getAllHosts(groupFilter)
+    return this.zabbix.getAllHosts(groupFilter)
     .then(hosts => {
       this.metric.hostList = hosts;
       return hosts;
@@ -135,7 +130,7 @@ export class ZabbixQueryController extends QueryCtrl {
   suggestApps() {
     let groupFilter = this.replaceTemplateVars(this.target.group.filter);
     let hostFilter = this.replaceTemplateVars(this.target.host.filter);
-    return this.queryBuilder.getAllApps(groupFilter, hostFilter)
+    return this.zabbix.getAllApps(groupFilter, hostFilter)
     .then(apps => {
       this.metric.appList = apps;
       return apps;
@@ -151,7 +146,7 @@ export class ZabbixQueryController extends QueryCtrl {
       showDisabledItems: this.target.options.showDisabledItems
     };
 
-    return this.queryBuilder
+    return this.zabbix
     .getAllItems(groupFilter, hostFilter, appFilter, options)
     .then(items => {
       this.metric.itemList = items;
