@@ -373,7 +373,7 @@ class ZabbixAPIDatasource {
     });
     target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
 
-    target.functions.forEach(func => {
+    _.forEach(target.functions, func => {
       func.params = func.params.map(param => {
         if (typeof param === 'number') {
           return +this.templateSrv.replace(param.toString(), options.scopedVars);

@@ -19,12 +19,9 @@ describe('ZabbixDatasource', () => {
     };
     ctx.templateSrv = {};
     ctx.alertSrv = {};
-    ctx.zabbixAPIService   = () => {};
-    ctx.ZabbixCachingProxy = () => {};
-    ctx.queryBuilder     = () => {};
+    ctx.zabbix = () => {};
 
-    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv,
-                            ctx.zabbixAPIService, ctx.ZabbixCachingProxy, ctx.queryBuilder);
+    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.zabbix);
   });
 
   describe('When querying data', () => {
@@ -143,10 +140,7 @@ describe('ZabbixDatasource', () => {
   describe('When invoking metricFindQuery()', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
-      ctx.ds.zabbixCache = {
-        getGroups: () => Q.when([])
-      };
-      ctx.ds.queryBuilder =  {
+      ctx.ds.zabbix =  {
         getGroups: () => Q.when([]),
         getHosts: () => Q.when([]),
         getApps: () => Q.when([]),
@@ -162,7 +156,7 @@ describe('ZabbixDatasource', () => {
         {query: 'Back*',    expect: 'Back*'}
       ];
 
-      let getGroups = sinon.spy(ctx.ds.zabbixCache, 'getGroups');
+      let getGroups = sinon.spy(ctx.ds.zabbix, 'getGroups');
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
         expect(getGroups).to.have.been.calledWith(test.expect);
@@ -179,7 +173,7 @@ describe('ZabbixDatasource', () => {
         {query: 'Back*.',    expect: 'Back*'}
       ];
 
-      let getHosts = sinon.spy(ctx.ds.queryBuilder, 'getHosts');
+      let getHosts = sinon.spy(ctx.ds.zabbix, 'getHosts');
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
         expect(getHosts).to.have.been.calledWith(test.expect);
@@ -196,7 +190,7 @@ describe('ZabbixDatasource', () => {
         {query: 'Back*.*.',            expect: ['Back*', '/.*/']}
       ];
 
-      let getApps = sinon.spy(ctx.ds.queryBuilder, 'getApps');
+      let getApps = sinon.spy(ctx.ds.zabbix, 'getApps');
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
         expect(getApps).to.have.been.calledWith(test.expect[0], test.expect[1]);
@@ -213,7 +207,7 @@ describe('ZabbixDatasource', () => {
         {query: 'Back*.*.cpu.*',         expect: ['Back*', '/.*/', 'cpu']}
       ];
 
-      let getItems = sinon.spy(ctx.ds.queryBuilder, 'getItems');
+      let getItems = sinon.spy(ctx.ds.zabbix, 'getItems');
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
         expect(getItems)
@@ -226,7 +220,7 @@ describe('ZabbixDatasource', () => {
     it('should invoke method with proper arguments', (done) => {
       let query = '*.*';
 
-      let getHosts = sinon.spy(ctx.ds.queryBuilder, 'getHosts');
+      let getHosts = sinon.spy(ctx.ds.zabbix, 'getHosts');
       ctx.ds.metricFindQuery(query);
       expect(getHosts).to.have.been.calledWith('/.*/');
       done();
