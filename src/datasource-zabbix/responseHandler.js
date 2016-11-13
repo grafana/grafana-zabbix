@@ -22,7 +22,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
 
   // Group history by itemid
   var grouped_history = _.groupBy(history, 'itemid');
-  var hosts = _.uniq(_.flatten(_.map(items, 'hosts')),'hostid');  //uniq is needed to deduplicate
+  var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');  //uniqBy is needed to deduplicate
 
   return _.map(grouped_history, function(hist, itemid) {
     var item = _.find(items, {'itemid': itemid});
@@ -38,11 +38,11 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
-function handleHistory(history, items, addHostName) {
+function handleHistory(history, items, addHostName = true) {
   return convertHistory(history, items, addHostName, convertHistoryPoint);
 }
 
-function handleTrends(history, items, addHostName, valueType) {
+function handleTrends(history, items, valueType, addHostName = true) {
   var convertPointCallback = _.partial(convertTrendPoint, valueType);
   return convertHistory(history, items, addHostName, convertPointCallback);
 }
