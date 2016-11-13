@@ -5,7 +5,7 @@ import _ from 'lodash';
 // Each datasource instance must initialize its own cache.
 
 /** @ngInject */
-angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $interval) {
+function ZabbixCachingProxyFactory($q, $interval) {
 
   class ZabbixCachingProxy {
     constructor(zabbixAPI, ttl) {
@@ -37,79 +37,76 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
       $interval(_.bind(this.refresh, this), this.ttl);
 
       // Don't run duplicated history requests
-      this.getHistory = callHistoryOnce(_.bind(this.zabbixAPI.getHistory, this.zabbixAPI),
-                                        this.historyPromises);
+      this.getHistory = callAPIRequestOnce(_.bind(this.zabbixAPI.getHistory, this.zabbixAPI),
+                                           this.historyPromises, getHistoryRequestHash);
 
       // Don't run duplicated requests
       this.groupPromises = {};
       this.getGroupsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getGroups, this.zabbixAPI),
-                                              this.groupPromises);
+                                              this.groupPromises, getAPIRequestHash);
 
       this.hostPromises = {};
       this.getHostsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getHosts, this.zabbixAPI),
-                                             this.hostPromises);
+                                             this.hostPromises, getAPIRequestHash);
 
       this.appPromises = {};
       this.getAppsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getApps, this.zabbixAPI),
-                                            this.appPromises);
+                                            this.appPromises, getAPIRequestHash);
 
       this.itemPromises = {};
       this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI),
-                                             this.itemPromises);
+                                             this.itemPromises, getAPIRequestHash);
     }
 
     _refresh() {
-      var self = this;
-      var promises = [
+      let promises = [
         this.zabbixAPI.getGroups()
       ];
 
-      return this.$q.all(promises).then(function(results) {
+      return Promise.all(promises)
+      .then(results => {
         if (results.length) {
-          self._groups = results[0];
+          this._groups = results[0];
         }
-        self._initialized = true;
+        this._initialized = true;
       });
     }
 
     getGroups() {
-      var self = this;
       if (this._groups) {
-        return this.$q.when(self._groups);
+        return Promise.resolve(this._groups);
       } else {
         return this.getGroupsOnce()
-          .then(groups => {
-            self._groups = groups;
-            return self._groups;
-          });
+        .then(groups => {
+          this._groups = groups;
+          return groups;
+        });
       }
     }
 
     getHosts(groupids) {
-      //var self = this;
       return this.getHostsOnce(groupids)
-        .then(hosts => {
-          // iss #196 - disable caching due performance issues
-          //self._hosts = _.union(self._hosts, hosts);
-          return hosts;
-        });
+      .then(hosts => {
+        // iss #196 - disable caching due performance issues
+        //this._hosts = _.union(this._hosts, hosts);
+        return hosts;
+      });
     }
 
     getApps(hostids) {
       return this.getAppsOnce(hostids)
-        .then(apps => {
-          return apps;
-        });
+      .then(apps => {
+        return apps;
+      });
     }
 
     getItems(hostids, appids, itemtype) {
-      //var self = this;
       return this.getItemsOnce(hostids, appids, itemtype)
-        .then(items => {
-          // iss #196 - disable caching due performance issues
-          //self._items = _.union(self._items, items);
-          return items;
-        });
+      .then(items => {
+        // iss #196 - disable caching due performance issues
+        //this._items = _.union(this._items, items);
+        return items;
+      });
     }
 
     getHistoryFromCache(items, time_from, time_till) {
@@ -156,61 +153,51 @@ angular.module('grafana.services').factory('ZabbixCachingProxy', function($q, $i
     }
   }
 
-  function callAPIRequestOnce(func, promiseKeeper) {
-    return function() {
-      var hash = getAPIRequestHash(arguments);
-      var deferred  = $q.defer();
-      if (!promiseKeeper[hash]) {
-        promiseKeeper[hash] = deferred.promise;
-        func.apply(this, arguments).then(function(result) {
-          deferred.resolve(result);
-          promiseKeeper[hash] = null;
-        });
-      } else {
-        return promiseKeeper[hash];
-      }
-      return deferred.promise;
-    };
-  }
-
-  function callHistoryOnce(func, promiseKeeper) {
-    return function() {
-      var itemids = _.map(arguments[0], 'itemid');
-      var stamp = itemids.join() + arguments[1] + arguments[2];
-      var hash = stamp.getHash();
-
-      var deferred  = $q.defer();
-      if (!promiseKeeper[hash]) {
-        promiseKeeper[hash] = deferred.promise;
-        func.apply(this, arguments).then(function(result) {
-          deferred.resolve(result);
-          promiseKeeper[hash] = null;
-        });
-      } else {
-        return promiseKeeper[hash];
-      }
-      return deferred.promise;
-    };
-  }
-
-  function callOnce(func, promiseKeeper) {
-    return function() {
-      var deferred  = $q.defer();
-      if (!promiseKeeper) {
-        promiseKeeper = deferred.promise;
-        func.apply(this, arguments).then(function(result) {
-          deferred.resolve(result);
-          promiseKeeper = null;
-        });
-      } else {
-        return promiseKeeper;
-      }
-      return deferred.promise;
-    };
-  }
-
   return ZabbixCachingProxy;
-});
+}
+
+angular
+  .module('grafana.services')
+  .factory('ZabbixCachingProxy', ZabbixCachingProxyFactory);
+
+/**
+ * Wrap function to prevent multiple calls
+ * when waiting for result.
+ */
+function callOnce(func, promiseKeeper) {
+  return function() {
+    if (!promiseKeeper) {
+      promiseKeeper = Promise.resolve(
+        func.apply(this, arguments)
+        .then(result => {
+          promiseKeeper = null;
+          return result;
+        })
+      );
+    }
+    return promiseKeeper;
+  };
+}
+
+/**
+ * Wrap zabbix API request to prevent multiple calls
+ * with same params when waiting for result.
+ */
+function callAPIRequestOnce(func, promiseKeeper, argsHashFunc) {
+  return function() {
+    var hash = argsHashFunc(arguments);
+    if (!promiseKeeper[hash]) {
+      promiseKeeper[hash] = Promise.resolve(
+        func.apply(this, arguments)
+        .then(result => {
+          promiseKeeper[hash] = null;
+          return result;
+        })
+      );
+    }
+    return promiseKeeper[hash];
+  };
+}
 
 function getAPIRequestHash(args) {
   var requestStamp = _.map(args, arg => {
@@ -223,15 +210,20 @@ function getAPIRequestHash(args) {
   return requestStamp.getHash();
 }
 
+function getHistoryRequestHash(args) {
+  let itemids = _.map(args[0], 'itemid');
+  let stamp = itemids.join() + args[1] + args[2];
+  return stamp.getHash();
+}
+
 String.prototype.getHash = function() {
   var hash = 0, i, chr, len;
-  if (this.length === 0) {
-    return hash;
-  }
-  for (i = 0, len = this.length; i < len; i++) {
-    chr   = this.charCodeAt(i);
-    hash  = ((hash << 5) - hash) + chr;
-    hash |= 0; // Convert to 32bit integer
+  if (this.length !== 0) {
+    for (i = 0, len = this.length; i < len; i++) {
+      chr   = this.charCodeAt(i);
+      hash  = ((hash << 5) - hash) + chr;
+      hash |= 0; // Convert to 32bit integer
+    }
   }
   return hash;
 };
