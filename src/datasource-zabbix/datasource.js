@@ -14,7 +14,7 @@ import {ZabbixAPIError} from './zabbixAPICore.service.js';
 class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryBuilder) {
+  constructor(instanceSettings, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryBuilder) {
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -45,7 +45,6 @@ class ZabbixAPIDatasource {
     this.queryBuilder = new QueryBuilder(this.zabbixCache);
 
     // Dependencies
-    this.q = $q;
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
 
@@ -129,7 +128,7 @@ class ZabbixAPIDatasource {
     });
 
     // Data for panel (all targets)
-    return this.q.all(_.flatten(promises))
+    return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(timeseries_data => {
 
@@ -245,7 +244,7 @@ class ZabbixAPIDatasource {
               });
             });
         } else {
-          return this.q.when([]);
+          return Promise.resolve([]);
         }
       });
   }
@@ -318,18 +317,18 @@ class ZabbixAPIDatasource {
       if (template.app === '/.*/') {
         template.app = '';
       }
-      result = this.queryBuilder.getItems(template.group, template.host, template.app);
+      result = this.queryBuilder.getItems(template.group, template.host, template.app, template.item);
     } else if (parts.length === 3) {
       // Get applications
-      result = this.queryBuilder.getApps(template.group, template.host);
+      result = this.queryBuilder.getApps(template.group, template.host, template.app);
     } else if (parts.length === 2) {
       // Get hosts
-      result = this.queryBuilder.getHosts(template.group);
+      result = this.queryBuilder.getHosts(template.group, template.host);
     } else if (parts.length === 1) {
       // Get groups
       result = this.zabbixCache.getGroups(template.group);
     } else {
-      result = this.q.when([]);
+      result = Promise.resolve([]);
     }
 
     return result.then(metrics => {

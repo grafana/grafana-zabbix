@@ -17,14 +17,13 @@ describe('ZabbixDatasource', () => {
         trendsFrom: '7d'
       }
     };
-    ctx.$q = Q;
     ctx.templateSrv = {};
     ctx.alertSrv = {};
     ctx.zabbixAPIService   = () => {};
     ctx.ZabbixCachingProxy = () => {};
     ctx.queryBuilder     = () => {};
 
-    ctx.ds = new Datasource(ctx.instanceSettings, ctx.$q, ctx.templateSrv, ctx.alertSrv,
+    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv,
                             ctx.zabbixAPIService, ctx.ZabbixCachingProxy, ctx.queryBuilder);
   });
 

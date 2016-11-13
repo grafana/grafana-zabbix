@@ -7,8 +7,7 @@ import angular from 'angular';
 class ZabbixAPICoreService {
 
   /** @ngInject */
-  constructor($q, backendSrv) {
-    this.$q = $q;
+  constructor(backendSrv) {
     this.backendSrv = backendSrv;
   }
 

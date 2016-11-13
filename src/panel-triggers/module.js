@@ -61,7 +61,7 @@ var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv, contextSrv) {
+  constructor($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;

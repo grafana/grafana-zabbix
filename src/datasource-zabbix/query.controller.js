@@ -13,7 +13,7 @@ import './css/query-editor.css!';
 export class ZabbixQueryController extends QueryCtrl {
 
   // ZabbixQueryCtrl constructor
-  constructor($scope, $injector, $rootScope, $sce, $q, templateSrv) {
+  constructor($scope, $injector, $rootScope, $sce, templateSrv) {
 
     // Call superclass constructor
     super($scope, $injector);
@@ -21,7 +21,6 @@ export class ZabbixQueryController extends QueryCtrl {
     this.zabbix = this.datasource.zabbixAPI;
     this.cache = this.datasource.zabbixCache;
     this.queryBuilder = this.datasource.queryBuilder;
-    this.$q = $q;
 
     // Use custom format for template variables
     this.replaceTemplateVars = this.datasource.replaceTemplateVars;
@@ -107,12 +106,13 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   initFilters() {
-    var self = this;
-    var itemtype = self.editorModes[self.target.mode].value;
-    return this.$q.when(this.suggestGroups())
-      .then(() => {return self.suggestHosts();})
-      .then(() => {return self.suggestApps();})
-      .then(() => {return self.suggestItems(itemtype);});
+    let itemtype = this.editorModes[this.target.mode].value;
+    return Promise.all([
+      this.suggestGroups(),
+      this.suggestHosts(),
+      this.suggestApps(),
+      this.suggestItems(itemtype)
+    ]);
   }
 
   suggestGroups() {
@@ -303,7 +303,6 @@ export class ZabbixQueryController extends QueryCtrl {
       this.panelCtrl.refresh();
     }
   }
-
 }
 
 // Set templateUrl as static property

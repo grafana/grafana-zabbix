@@ -19,12 +19,11 @@ import '../datasource-zabbix/css/query-editor.css!';
 class TriggerPanelEditorCtrl {
 
   /** @ngInject */
-  constructor($scope, $rootScope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
+  constructor($scope, $rootScope, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
     $scope.editor = this;
     this.panelCtrl = $scope.ctrl;
     this.panel = this.panelCtrl.panel;
 
-    this.$q = $q;
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.popoverSrv = popoverSrv;
@@ -83,11 +82,11 @@ class TriggerPanelEditorCtrl {
   }
 
   initFilters() {
-    var self = this;
-    return this.$q
-      .when(this.suggestGroups())
-      .then(() => {return self.suggestHosts();})
-      .then(() => {return self.suggestApps();});
+    return Promise.all([
+      this.suggestGroups(),
+      this.suggestHosts(),
+      this.suggestApps()
+    ]);
   }
 
   suggestGroups() {

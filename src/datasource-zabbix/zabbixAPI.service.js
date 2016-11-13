@@ -4,7 +4,7 @@ import * as utils from './utils';
 import './zabbixAPICore.service';
 
 /** @ngInject */
-function ZabbixAPIServiceFactory($q, alertSrv, zabbixAPICoreService) {
+function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
 
   /**
    * Zabbix API Wrapper.
@@ -28,7 +28,6 @@ function ZabbixAPIServiceFactory($q, alertSrv, zabbixAPICoreService) {
       this.loginErrorCount = 0;
       this.maxLoginAttempts = 3;
 
-      this.$q = $q;
       this.alertSrv = alertSrv;
       this.zabbixAPICore = zabbixAPICoreService;
 
