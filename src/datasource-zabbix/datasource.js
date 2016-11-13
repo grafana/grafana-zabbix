@@ -6,15 +6,15 @@ import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
 import DataProcessor from './DataProcessor';
 import responseHandler from './responseHandler';
-import './zabbixAPI.service.js';
-import './zabbixCache.service.js';
-import './queryBuilder.js';
+import './zabbix.js';
 import {ZabbixAPIError} from './zabbixAPICore.service.js';
 
 class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryBuilder) {
+  constructor(instanceSettings, templateSrv, alertSrv, Zabbix) {
+    this.templateSrv = templateSrv;
+    this.alertSrv = alertSrv;
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -34,19 +34,7 @@ class ZabbixAPIDatasource {
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
-    // Initialize Zabbix API
-    var ZabbixAPI = zabbixAPIService;
-    this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
-
-    // Initialize cache service
-    this.zabbixCache = new ZabbixCachingProxy(this.zabbixAPI, this.cacheTTL);
-
-    // Initialize query builder
-    this.queryBuilder = new QueryBuilder(this.zabbixCache);
-
-    // Dependencies
-    this.templateSrv = templateSrv;
-    this.alertSrv = alertSrv;
+    this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
     // Use custom format for template variables
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
@@ -119,7 +107,7 @@ class ZabbixAPIDatasource {
           return [];
         }
 
-        return this.zabbixAPI
+        return this.zabbix
         .getSLA(target.itservice.serviceid, timeFrom, timeTo)
         .then(slaObject => {
           return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
@@ -148,7 +136,7 @@ class ZabbixAPIDatasource {
     let options = {
       itemtype: 'num'
     };
-    return this.queryBuilder.build(target, options)
+    return this.zabbix.getItemsFromTarget(target, options)
       .then(items => {
         // Add hostname for items from multiple hosts
         var addHostName = utils.isRegex(target.host.filter);
@@ -164,7 +152,7 @@ class ZabbixAPIDatasource {
           });
           var valueType = trendValueFunc ? trendValueFunc.params[0] : "avg";
 
-          getHistory = this.zabbixAPI
+          getHistory = this.zabbix
             .getTrend(items, timeFrom, timeTo)
             .then(history => {
               return responseHandler.handleTrends(history, items, addHostName, valueType);
@@ -173,7 +161,7 @@ class ZabbixAPIDatasource {
 
         // Use history
         else {
-          getHistory = this.zabbixCache
+          getHistory = this.zabbix
             .getHistory(items, timeFrom, timeTo)
             .then(history => {
               return responseHandler.handleHistory(history, items, addHostName);
@@ -227,10 +215,10 @@ class ZabbixAPIDatasource {
     let options = {
       itemtype: 'text'
     };
-    return this.queryBuilder.build(target, options)
+    return this.zabbix.getItemsFromTarget(target, options)
       .then(items => {
         if (items.length) {
-          return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
+          return this.zabbix.getHistory(items, timeFrom, timeTo)
             .then(history => {
               return responseHandler.convertHistory(history, items, false, (point) => {
                 let value = point.value;
@@ -255,10 +243,10 @@ class ZabbixAPIDatasource {
    */
   testDatasource() {
     let zabbixVersion;
-    return this.zabbixAPI.getVersion()
+    return this.zabbix.getVersion()
     .then(version => {
       zabbixVersion = version;
-      return this.zabbixAPI.login();
+      return this.zabbix.login();
     })
     .then(() => {
       return {
@@ -317,16 +305,16 @@ class ZabbixAPIDatasource {
       if (template.app === '/.*/') {
         template.app = '';
       }
-      result = this.queryBuilder.getItems(template.group, template.host, template.app, template.item);
+      result = this.zabbix.getItems(template.group, template.host, template.app, template.item);
     } else if (parts.length === 3) {
       // Get applications
-      result = this.queryBuilder.getApps(template.group, template.host, template.app);
+      result = this.zabbix.getApps(template.group, template.host, template.app);
     } else if (parts.length === 2) {
       // Get hosts
-      result = this.queryBuilder.getHosts(template.group, template.host);
+      result = this.zabbix.getHosts(template.group, template.host);
     } else if (parts.length === 1) {
       // Get groups
-      result = this.zabbixCache.getGroups(template.group);
+      result = this.zabbix.getGroups(template.group);
     } else {
       result = Promise.resolve([]);
     }
@@ -349,64 +337,61 @@ class ZabbixAPIDatasource {
     // Show all triggers
     var showTriggers = [0, 1];
 
-    var buildQuery = this.queryBuilder
-      .buildTriggerQuery(this.replaceTemplateVars(annotation.group, {}),
-                         this.replaceTemplateVars(annotation.host, {}),
-                         this.replaceTemplateVars(annotation.application, {}));
+    var getTriggers = this.zabbix
+      .getTriggers(this.replaceTemplateVars(annotation.group, {}),
+                   this.replaceTemplateVars(annotation.host, {}),
+                   this.replaceTemplateVars(annotation.application, {}),
+                   showTriggers);
 
-    return buildQuery.then(query => {
-      return this.zabbixAPI
-        .getTriggers(query.groupids, query.hostids, query.applicationids, showTriggers)
-        .then(triggers => {
+    return getTriggers.then(triggers => {
 
-          // Filter triggers by description
-          if (utils.isRegex(annotation.trigger)) {
-            triggers = _.filter(triggers, trigger => {
-              return utils.buildRegex(annotation.trigger).test(trigger.description);
-            });
-          } else if (annotation.trigger) {
-            triggers = _.filter(triggers, trigger => {
-              return trigger.description === annotation.trigger;
+      // Filter triggers by description
+      if (utils.isRegex(annotation.trigger)) {
+        triggers = _.filter(triggers, trigger => {
+          return utils.buildRegex(annotation.trigger).test(trigger.description);
+        });
+      } else if (annotation.trigger) {
+        triggers = _.filter(triggers, trigger => {
+          return trigger.description === annotation.trigger;
+        });
+      }
+
+      // Remove events below the chose severity
+      triggers = _.filter(triggers, trigger => {
+        return Number(trigger.priority) >= Number(annotation.minseverity);
+      });
+
+      var objectids = _.map(triggers, 'triggerid');
+      return this.zabbix
+        .getEvents(objectids, timeFrom, timeTo, showOkEvents)
+        .then(events => {
+          var indexedTriggers = _.keyBy(triggers, 'triggerid');
+
+          // Hide acknowledged events if option enabled
+          if (annotation.hideAcknowledged) {
+            events = _.filter(events, event => {
+              return !event.acknowledges.length;
             });
           }
 
-          // Remove events below the chose severity
-          triggers = _.filter(triggers, trigger => {
-            return Number(trigger.priority) >= Number(annotation.minseverity);
+          return _.map(events, event => {
+            let tags;
+            if (annotation.showHostname) {
+              tags = _.map(event.hosts, 'name');
+            }
+
+            // Show event type (OK or Problem)
+            let title = Number(event.value) ? 'Problem' : 'OK';
+
+            let formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
+            return {
+              annotation: annotation,
+              time: event.clock * 1000,
+              title: title,
+              tags: tags,
+              text: indexedTriggers[event.objectid].description + formatted_acknowledges
+            };
           });
-
-          var objectids = _.map(triggers, 'triggerid');
-          return this.zabbixAPI
-            .getEvents(objectids, timeFrom, timeTo, showOkEvents)
-            .then(events => {
-              var indexedTriggers = _.keyBy(triggers, 'triggerid');
-
-              // Hide acknowledged events if option enabled
-              if (annotation.hideAcknowledged) {
-                events = _.filter(events, event => {
-                  return !event.acknowledges.length;
-                });
-              }
-
-              return _.map(events, event => {
-                let tags;
-                if (annotation.showHostname) {
-                  tags = _.map(event.hosts, 'name');
-                }
-
-                // Show event type (OK or Problem)
-                let title = Number(event.value) ? 'Problem' : 'OK';
-
-                let formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
-                return {
-                  annotation: annotation,
-                  time: event.clock * 1000,
-                  title: title,
-                  tags: tags,
-                  text: indexedTriggers[event.objectid].description + formatted_acknowledges
-                };
-              });
-            });
         });
     });
   }

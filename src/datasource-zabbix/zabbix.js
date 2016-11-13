@@ -1,45 +1,40 @@
 import angular from 'angular';
 import _ from 'lodash';
 import * as utils from './utils';
+import './zabbixAPI.service.js';
+import './zabbixCache.service.js';
 
-function QueryBuilderFactory() {
+// Use factory() instead service() for multiple data sources support.
+// Each Zabbix data source instance should initialize its own API instance.
 
-  class QueryBuilder {
-    constructor(zabbixCacheInstance) {
-      this.cache = zabbixCacheInstance;
+/** @ngInject */
+function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
+
+  class Zabbix {
+    constructor(url, username, password, basicAuth, withCredentials, cacheTTL) {
+
+      // Initialize Zabbix API
+      var ZabbixAPI = zabbixAPIService;
+      this.zabbixAPI = new ZabbixAPI(url, username, password, basicAuth, withCredentials);
+
+      // Initialize cache
+      this.cache = new ZabbixCachingProxy(this.zabbixAPI, cacheTTL);
+
+      // Proxy methods
+      this.getHistory = this.cache.getHistory.bind(this.cache);
+
+      this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
+      this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
+      this.getAcknowledges = this.zabbixAPI.getAcknowledges.bind(this.zabbixAPI);
+      this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
+      this.getVersion = this.zabbixAPI.getVersion.bind(this.zabbixAPI);
+      this.login = this.zabbixAPI.login.bind(this.zabbixAPI);
     }
 
-    initializeCache() {
-      if (this.cache._initialized) {
-        return Promise.resolve();
-      } else {
-        return this.cache.refresh();
-      }
-    }
-
-    /**
-     * Build query - convert target filters to array of Zabbix items
-     */
-    build(target, options) {
-      function getFiltersFromTarget(target) {
-        let parts = ['group', 'host', 'application', 'item'];
-        return _.map(parts, p => target[p].filter);
-      }
-
-      return this.initializeCache()
-      .then(() => {
-        return this.getItems(...getFiltersFromTarget(target), options);
-      });
-    }
-
-    /**
-     * Build trigger query in asynchronous manner
-     */
-    buildTriggerQuery(groupFilter, hostFilter, appFilter) {
-      return this.initializeCache()
-      .then(() => {
-        return this.buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter);
-      });
+    getItemsFromTarget(target, options) {
+      let parts = ['group', 'host', 'application', 'item'];
+      let filters = _.map(parts, p => target[p].filter);
+      return this.getItems(...filters, options);
     }
 
     getAllGroups() {
@@ -120,7 +115,7 @@ function QueryBuilderFactory() {
     /**
      * Build query - convert target filters to array of Zabbix items
      */
-    buildTriggerQueryFromCache(groupFilter, hostFilter, appFilter) {
+    getTriggers(groupFilter, hostFilter, appFilter, showTriggers) {
       let promises = [
         this.getGroups(groupFilter),
         this.getHosts(groupFilter, hostFilter),
@@ -145,16 +140,21 @@ function QueryBuilderFactory() {
         }
 
         return query;
+      }).then(query => {
+        return this.zabbixAPI
+        .getTriggers(query.groupids, query.hostids, query.applicationids, showTriggers);
       });
     }
   }
 
-  return QueryBuilder;
+  return Zabbix;
 }
 
 angular
   .module('grafana.services')
-  .factory('QueryBuilder', QueryBuilderFactory);
+  .factory('Zabbix', ZabbixFactory);
+
+///////////////////////////////////////////////////////////////////////////////
 
 /**
  * Find group, host, app or item by given name.
