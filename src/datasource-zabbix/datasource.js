@@ -58,12 +58,12 @@ class ZabbixAPIDatasource {
 
     // Create request for each target
     var promises = _.map(options.targets, target => {
-
       // Prevent changes of original object
       target = _.cloneDeep(target);
+      this.replaceTargetVariables(target, options);
 
+      // Metrics or Text query mode
       if (target.mode !== 1) {
-
         // Migrate old targets
         target = migrations.migrate(target);
 
@@ -72,30 +72,9 @@ class ZabbixAPIDatasource {
           return [];
         }
 
-        // Replace templated variables
-        target.group.filter = this.replaceTemplateVars(target.group.filter, options.scopedVars);
-        target.host.filter = this.replaceTemplateVars(target.host.filter, options.scopedVars);
-        target.application.filter = this.replaceTemplateVars(target.application.filter, options.scopedVars);
-        target.item.filter = this.replaceTemplateVars(target.item.filter, options.scopedVars);
-        target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
-
-        _.forEach(target.functions, func => {
-          func.params = _.map(func.params, param => {
-            if (typeof param === 'number') {
-              return +this.templateSrv.replace(param.toString(), options.scopedVars);
-            } else {
-              return this.templateSrv.replace(param, options.scopedVars);
-            }
-          });
-        });
-
-        // Query numeric data
         if (!target.mode || target.mode === 0) {
           return this.queryNumericData(target, timeFrom, timeTo, useTrends);
-        }
-
-        // Query text data
-        else if (target.mode === 2) {
+        } else if (target.mode === 2) {
           return this.queryTextData(target, timeFrom, timeTo);
         }
       }
@@ -107,8 +86,7 @@ class ZabbixAPIDatasource {
           return [];
         }
 
-        return this.zabbix
-        .getSLA(target.itservice.serviceid, timeFrom, timeTo)
+        return this.zabbix.getSLA(target.itservice.serviceid, timeFrom, timeTo)
         .then(slaObject => {
           return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
         });
@@ -119,15 +97,9 @@ class ZabbixAPIDatasource {
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(timeseries_data => {
-
-        // Series downsampling
-        var data = _.map(timeseries_data, timeseries => {
-          if (timeseries.datapoints.length > options.maxDataPoints) {
-            timeseries.datapoints = DataProcessor
-              .groupBy(options.interval, DataProcessor.AVERAGE, timeseries.datapoints);
-          }
-          return timeseries;
-        });
+        return downsampleSeries(timeseries_data, options);
+      })
+      .then(data => {
         return { data: data };
       });
   }
@@ -137,78 +109,75 @@ class ZabbixAPIDatasource {
       itemtype: 'num'
     };
     return this.zabbix.getItemsFromTarget(target, options)
-      .then(items => {
-        // Add hostname for items from multiple hosts
-        var addHostName = utils.isRegex(target.host.filter);
-        var getHistory;
+    .then(items => {
+      let getHistoryPromise;
 
-        // Use trends
-        if (useTrends) {
-
-          // Find trendValue() function and get specified trend value
-          var trendFunctions = _.map(metricFunctions.getCategories()['Trends'], 'name');
-          var trendValueFunc = _.find(target.functions, func => {
-            return _.includes(trendFunctions, func.def.name);
+      if (useTrends) {
+        let valueType = this.getTrendValueType(target);
+        getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo)
+          .then(history => {
+            return responseHandler.handleTrends(history, items, valueType);
           });
-          var valueType = trendValueFunc ? trendValueFunc.params[0] : "avg";
-
-          getHistory = this.zabbix
-            .getTrend(items, timeFrom, timeTo)
-            .then(history => {
-              return responseHandler.handleTrends(history, items, addHostName, valueType);
-            });
-        }
-
+      } else {
         // Use history
-        else {
-          getHistory = this.zabbix
-            .getHistory(items, timeFrom, timeTo)
-            .then(history => {
-              return responseHandler.handleHistory(history, items, addHostName);
-            });
-        }
-
-        return getHistory.then(timeseries_data => {
-          let transformFunctions   = bindFunctionDefs(target.functions, 'Transform');
-          let aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
-          let filterFunctions      = bindFunctionDefs(target.functions, 'Filter');
-          let aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
-
-          // Apply transformation functions
-          timeseries_data = _.map(timeseries_data, timeseries => {
-            timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
-            return timeseries;
+        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
+          .then(history => {
+            return responseHandler.handleHistory(history, items);
           });
+      }
 
-          // Apply filter functions
-          if (filterFunctions.length) {
-            timeseries_data = sequence(filterFunctions)(timeseries_data);
-          }
-
-          // Apply aggregations
-          if (aggregationFunctions.length) {
-            let dp = _.map(timeseries_data, 'datapoints');
-            dp = sequence(aggregationFunctions)(dp);
-
-            let aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
-            let lastAgg = _.findLast(target.functions, func => {
-              return _.includes(aggFuncNames, func.def.name);
-            });
-
-            timeseries_data = [
-              {
-                target: lastAgg.text,
-                datapoints: dp
-              }
-            ];
-          }
-
-          // Apply alias functions
-          _.each(timeseries_data, sequence(aliasFunctions));
-
-          return timeseries_data;
-        });
+      return getHistoryPromise.then(timeseries_data => {
+        return this.applyDataProcessingFunctions(timeseries_data, target);
       });
+    });
+  }
+
+  getTrendValueType(target) {
+    // Find trendValue() function and get specified trend value
+    var trendFunctions = _.map(metricFunctions.getCategories()['Trends'], 'name');
+    var trendValueFunc = _.find(target.functions, func => {
+      return _.includes(trendFunctions, func.def.name);
+    });
+    return trendValueFunc ? trendValueFunc.params[0] : "avg";
+  }
+
+  applyDataProcessingFunctions(timeseries_data, target) {
+    let transformFunctions   = bindFunctionDefs(target.functions, 'Transform');
+    let aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
+    let filterFunctions      = bindFunctionDefs(target.functions, 'Filter');
+    let aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
+
+    // Apply transformation functions
+    timeseries_data = _.map(timeseries_data, timeseries => {
+      timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
+      return timeseries;
+    });
+
+    // Apply filter functions
+    if (filterFunctions.length) {
+      timeseries_data = sequence(filterFunctions)(timeseries_data);
+    }
+
+    // Apply aggregations
+    if (aggregationFunctions.length) {
+      let dp = _.map(timeseries_data, 'datapoints');
+      dp = sequence(aggregationFunctions)(dp);
+
+      let aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
+      let lastAgg = _.findLast(target.functions, func => {
+        return _.includes(aggFuncNames, func.def.name);
+      });
+
+      timeseries_data = [{
+        target: lastAgg.text,
+        datapoints: dp
+      }];
+    }
+
+    // Apply alias functions
+    _.each(timeseries_data, sequence(aliasFunctions));
+
+    return timeseries_data;
   }
 
   queryTextData(target, timeFrom, timeTo) {
@@ -320,7 +289,7 @@ class ZabbixAPIDatasource {
     }
 
     return result.then(metrics => {
-      return _.map(metrics, formatMetric);
+      return metrics.map(formatMetric);
     });
   }
 
@@ -396,6 +365,25 @@ class ZabbixAPIDatasource {
     });
   }
 
+  // Replace template variables
+  replaceTargetVariables(target, options) {
+    let parts = ['group', 'host', 'application', 'item'];
+    parts.forEach(p => {
+      target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
+    });
+    target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
+
+    target.functions.forEach(func => {
+      func.params = func.params.map(param => {
+        if (typeof param === 'number') {
+          return +this.templateSrv.replace(param.toString(), options.scopedVars);
+        } else {
+          return this.templateSrv.replace(param, options.scopedVars);
+        }
+      });
+    });
+  }
+
 }
 
 function bindFunctionDefs(functionDefs, category) {
@@ -407,6 +395,16 @@ function bindFunctionDefs(functionDefs, category) {
   return _.map(aggFuncDefs, function(func) {
     var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
     return funcInstance.bindFunction(DataProcessor.metricFunctions);
+  });
+}
+
+function downsampleSeries(timeseries_data, options) {
+  return _.map(timeseries_data, timeseries => {
+    if (timeseries.datapoints.length > options.maxDataPoints) {
+      timeseries.datapoints = DataProcessor
+        .groupBy(options.interval, DataProcessor.AVERAGE, timeseries.datapoints);
+    }
+    return timeseries;
   });
 }
 
