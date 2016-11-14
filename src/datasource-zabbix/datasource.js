@@ -4,7 +4,7 @@ import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
-import DataProcessor from './DataProcessor';
+import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import './zabbix.js';
 import {ZabbixAPIError} from './zabbixAPICore.service.js';
@@ -394,15 +394,15 @@ function bindFunctionDefs(functionDefs, category) {
 
   return _.map(aggFuncDefs, function(func) {
     var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
-    return funcInstance.bindFunction(DataProcessor.metricFunctions);
+    return funcInstance.bindFunction(dataProcessor.metricFunctions);
   });
 }
 
 function downsampleSeries(timeseries_data, options) {
   return _.map(timeseries_data, timeseries => {
     if (timeseries.datapoints.length > options.maxDataPoints) {
-      timeseries.datapoints = DataProcessor
-        .groupBy(options.interval, DataProcessor.AVERAGE, timeseries.datapoints);
+      timeseries.datapoints = dataProcessor
+        .groupBy(options.interval, dataProcessor.AVERAGE, timeseries.datapoints);
     }
     return timeseries;
   });
