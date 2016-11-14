@@ -14,33 +14,16 @@ function ZabbixCachingProxyFactory() {
       this.ttl          = cacheOptions.ttl || 600000; // 10 minutes by default
 
       // Internal objects for data storing
-      this._groups        = undefined;
-      this._hosts         = undefined;
-      this._applications  = undefined;
-      this._items         = undefined;
-      this.storage = {
-        history: {},
-        trends: {}
-      };
-
       this.cache = {
         groups: {},
         hosts: {},
         applications: {},
-        items: {}
+        items: {},
+        history: {},
+        trends: {}
       };
 
-      // Check is a service initialized or not
-      this._initialized = undefined;
-
-      this.refreshPromise = false;
       this.historyPromises = {};
-
-      // Wrap _refresh() method to call it once.
-      this.refresh = callOnce(this._refresh, this.refreshPromise);
-
-      // Update cache periodically
-      // $interval(_.bind(this.refresh, this), this.ttl);
 
       // Don't run duplicated history requests
       this.getHistory = callAPIRequestOnce(_.bind(this.zabbixAPI.getHistory, this.zabbixAPI),
@@ -62,20 +45,6 @@ function ZabbixCachingProxyFactory() {
       this.itemPromises = {};
       this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI),
                                              this.itemPromises, getRequestHash);
-    }
-
-    _refresh() {
-      let promises = [
-        this.zabbixAPI.getGroups()
-      ];
-
-      return Promise.all(promises)
-      .then(results => {
-        if (results.length) {
-          this._groups = results[0];
-        }
-        this._initialized = true;
-      });
     }
 
     isExpired(cacheObject) {
@@ -125,7 +94,7 @@ function ZabbixCachingProxyFactory() {
     }
 
     getHistoryFromCache(items, time_from, time_till) {
-      var historyStorage = this.storage.history;
+      var historyStorage = this.cache.history;
       var full_history;
       var expired = _.filter(_.keyBy(items, 'itemid'), (item, itemid) => {
         return !historyStorage[itemid];
@@ -156,14 +125,6 @@ function ZabbixCachingProxyFactory() {
     getHistoryFromAPI(items, time_from, time_till) {
       return this.zabbixAPI.getHistory(items, time_from, time_till);
     }
-
-    getHost(hostid) {
-      return _.find(this._hosts, {'hostid': hostid});
-    }
-
-    getItem(itemid) {
-      return _.find(this._items, {'itemid': itemid});
-    }
   }
 
   return ZabbixCachingProxy;
@@ -172,25 +133,6 @@ function ZabbixCachingProxyFactory() {
 angular
   .module('grafana.services')
   .factory('ZabbixCachingProxy', ZabbixCachingProxyFactory);
-
-/**
- * Wrap function to prevent multiple calls
- * when waiting for result.
- */
-function callOnce(func, promiseKeeper) {
-  return function() {
-    if (!promiseKeeper) {
-      promiseKeeper = Promise.resolve(
-        func.apply(this, arguments)
-        .then(result => {
-          promiseKeeper = null;
-          return result;
-        })
-      );
-    }
-    return promiseKeeper;
-  };
-}
 
 /**
  * Wrap zabbix API request to prevent multiple calls
