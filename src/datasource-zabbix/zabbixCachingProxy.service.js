@@ -5,12 +5,13 @@ import _ from 'lodash';
 // Each datasource instance must initialize its own cache.
 
 /** @ngInject */
-function ZabbixCachingProxyFactory($interval) {
+function ZabbixCachingProxyFactory() {
 
   class ZabbixCachingProxy {
-    constructor(zabbixAPI, ttl) {
+    constructor(zabbixAPI, cacheOptions) {
       this.zabbixAPI = zabbixAPI;
-      this.ttl = ttl;
+      this.cacheEnabled = cacheOptions.enabled;
+      this.ttl          = cacheOptions.ttl || 600000; // 10 minutes by default
 
       // Internal objects for data storing
       this._groups        = undefined;
@@ -20,6 +21,13 @@ function ZabbixCachingProxyFactory($interval) {
       this.storage = {
         history: {},
         trends: {}
+      };
+
+      this.cache = {
+        groups: {},
+        hosts: {},
+        applications: {},
+        items: {}
       };
 
       // Check is a service initialized or not
@@ -32,7 +40,7 @@ function ZabbixCachingProxyFactory($interval) {
       this.refresh = callOnce(this._refresh, this.refreshPromise);
 
       // Update cache periodically
-      $interval(_.bind(this.refresh, this), this.ttl);
+      // $interval(_.bind(this.refresh, this), this.ttl);
 
       // Don't run duplicated history requests
       this.getHistory = callAPIRequestOnce(_.bind(this.zabbixAPI.getHistory, this.zabbixAPI),
@@ -41,19 +49,19 @@ function ZabbixCachingProxyFactory($interval) {
       // Don't run duplicated requests
       this.groupPromises = {};
       this.getGroupsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getGroups, this.zabbixAPI),
-                                              this.groupPromises, getAPIRequestHash);
+                                              this.groupPromises, getRequestHash);
 
       this.hostPromises = {};
       this.getHostsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getHosts, this.zabbixAPI),
-                                             this.hostPromises, getAPIRequestHash);
+                                             this.hostPromises, getRequestHash);
 
       this.appPromises = {};
       this.getAppsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getApps, this.zabbixAPI),
-                                            this.appPromises, getAPIRequestHash);
+                                            this.appPromises, getRequestHash);
 
       this.itemPromises = {};
       this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI),
-                                             this.itemPromises, getAPIRequestHash);
+                                             this.itemPromises, getRequestHash);
     }
 
     _refresh() {
@@ -70,41 +78,50 @@ function ZabbixCachingProxyFactory($interval) {
       });
     }
 
-    getGroups() {
-      if (this._groups) {
-        return Promise.resolve(this._groups);
+    isExpired(cacheObject) {
+      if (cacheObject) {
+        let object_age = Date.now() - cacheObject.timestamp;
+        return !(cacheObject.timestamp && object_age < this.ttl);
       } else {
-        return this.getGroupsOnce()
-        .then(groups => {
-          this._groups = groups;
-          return groups;
+        return true;
+      }
+    }
+
+    /**
+     * Check that result is present in cache and up to date
+     * or send request to API.
+     */
+    proxyRequest(request, params, cacheObject) {
+      let hash = getRequestHash(params);
+      if (this.cacheEnabled && !this.isExpired(cacheObject[hash])) {
+        return Promise.resolve(cacheObject[hash].value);
+      } else {
+        return request(...params)
+        .then(result => {
+          cacheObject[hash] = {
+            value: result,
+            timestamp: Date.now()
+          };
+          return result;
         });
       }
     }
 
+    getGroups() {
+      return this.proxyRequest(this.getGroupsOnce, [], this.cache.groups);
+    }
+
     getHosts(groupids) {
-      return this.getHostsOnce(groupids)
-      .then(hosts => {
-        // iss #196 - disable caching due performance issues
-        //this._hosts = _.union(this._hosts, hosts);
-        return hosts;
-      });
+      return this.proxyRequest(this.getHostsOnce, [groupids], this.cache.hosts);
     }
 
     getApps(hostids) {
-      return this.getAppsOnce(hostids)
-      .then(apps => {
-        return apps;
-      });
+      return this.proxyRequest(this.getAppsOnce, [hostids], this.cache.applications);
     }
 
     getItems(hostids, appids, itemtype) {
-      return this.getItemsOnce(hostids, appids, itemtype)
-      .then(items => {
-        // iss #196 - disable caching due performance issues
-        //this._items = _.union(this._items, items);
-        return items;
-      });
+      let params = [hostids, appids, itemtype];
+      return this.proxyRequest(this.getItemsOnce, params, this.cache.items);
     }
 
     getHistoryFromCache(items, time_from, time_till) {
@@ -195,12 +212,16 @@ function callAPIRequestOnce(func, promiseKeeper, argsHashFunc) {
   };
 }
 
-function getAPIRequestHash(args) {
+function getRequestHash(args) {
   var requestStamp = _.map(args, arg => {
     if (arg === undefined) {
       return 'undefined';
     } else {
-      return arg.toString();
+      if (_.isArray(arg)) {
+        return arg.sort().toString();
+      } else {
+        return arg.toString();
+      }
     }
   }).join();
   return requestStamp.getHash();

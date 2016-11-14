@@ -18,7 +18,11 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       this.zabbixAPI = new ZabbixAPI(url, username, password, basicAuth, withCredentials);
 
       // Initialize caching proxy for requests
-      this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, cacheTTL);
+      let cacheOptions = {
+        enabled: true,
+        ttl: cacheTTL
+      };
+      this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, cacheOptions);
 
       // Proxy methods
       this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
