@@ -2,7 +2,7 @@ import angular from 'angular';
 import _ from 'lodash';
 import * as utils from './utils';
 import './zabbixAPI.service.js';
-import './zabbixCache.service.js';
+import './zabbixCachingProxy.service.js';
 
 // Use factory() instead service() for multiple data sources support.
 // Each Zabbix data source instance should initialize its own API instance.
@@ -17,11 +17,11 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       var ZabbixAPI = zabbixAPIService;
       this.zabbixAPI = new ZabbixAPI(url, username, password, basicAuth, withCredentials);
 
-      // Initialize cache
-      this.cache = new ZabbixCachingProxy(this.zabbixAPI, cacheTTL);
+      // Initialize caching proxy for requests
+      this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, cacheTTL);
 
       // Proxy methods
-      this.getHistory = this.cache.getHistory.bind(this.cache);
+      this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
 
       this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
       this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
@@ -38,7 +38,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
     }
 
     getAllGroups() {
-      return this.cache.getGroups();
+      return this.cachingProxy.getGroups();
     }
 
     getGroups(groupFilter) {
@@ -53,7 +53,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       return this.getGroups(groupFilter)
       .then(groups => {
         let groupids = _.map(groups, 'groupid');
-        return this.cache.getHosts(groupids);
+        return this.cachingProxy.getHosts(groupids);
       });
     }
 
@@ -69,7 +69,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       return this.getHosts(groupFilter, hostFilter)
       .then(hosts => {
         let hostids = _.map(hosts, 'hostid');
-        return this.cache.getApps(hostids);
+        return this.cachingProxy.getApps(hostids);
       });
     }
 
@@ -78,7 +78,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       .then(hosts => {
         let hostids = _.map(hosts, 'hostid');
         if (appFilter) {
-          return this.cache.getApps(hostids)
+          return this.cachingProxy.getApps(hostids)
           .then(apps => filterByQuery(apps, appFilter));
         } else {
           return {
@@ -93,10 +93,10 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       return this.getApps(groupFilter, hostFilter, appFilter)
       .then(apps => {
         if (apps.appFilterEmpty) {
-          return this.cache.getItems(apps.hostids, undefined, options.itemtype);
+          return this.cachingProxy.getItems(apps.hostids, undefined, options.itemtype);
         } else {
           let appids = _.map(apps, 'applicationid');
-          return this.cache.getItems(undefined, appids, options.itemtype);
+          return this.cachingProxy.getItems(undefined, appids, options.itemtype);
         }
       })
       .then(items => {
