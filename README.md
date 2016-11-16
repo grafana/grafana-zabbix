@@ -27,6 +27,7 @@ Or see more installation options in [docs](http://docs.grafana-zabbix.org/instal
   - [About](http://docs.grafana-zabbix.org)
   - [Installation](http://docs.grafana-zabbix.org/installation)
   - [Getting Started](http://docs.grafana-zabbix.org/guides/gettingstarted)
+  - [Templating](http://docs.grafana-zabbix.org/guides/templating)
 
 ## Dockerized Grafana with Zabbix datasource
 

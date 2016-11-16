@@ -7,8 +7,7 @@ import angular from 'angular';
 class ZabbixAPICoreService {
 
   /** @ngInject */
-  constructor($q, backendSrv) {
-    this.$q = $q;
+  constructor(backendSrv) {
     this.backendSrv = backendSrv;
   }
 
@@ -17,8 +16,7 @@ class ZabbixAPICoreService {
    * @return {object}  response.result
    */
   request(api_url, method, params, options, auth) {
-    var deferred = this.$q.defer();
-    var requestData = {
+    let requestData = {
       jsonrpc: '2.0',
       method: method,
       params: params,
@@ -27,20 +25,19 @@ class ZabbixAPICoreService {
 
     if (auth === "") {
       // Reject immediately if not authenticated
-      deferred.reject({data: "Not authorised."});
-      return deferred.promise;
+      return Promise.reject(new ZabbixAPIError({data: "Not authorised."}));
     } else if (auth) {
       // Set auth parameter only if it needed
       requestData.auth = auth;
     }
 
-    var requestOptions = {
+    let requestOptions = {
       method: 'POST',
+      url: api_url,
+      data: requestData,
       headers: {
         'Content-Type': 'application/json'
-      },
-      url: api_url,
-      data: requestData
+      }
     };
 
     // Set request options for basic auth
@@ -51,20 +48,23 @@ class ZabbixAPICoreService {
       requestOptions.headers.Authorization = options.basicAuth;
     }
 
-    this.backendSrv.datasourceRequest(requestOptions).then(function (response) {
-      // General connection issues
+    return this.datasourceRequest(requestOptions);
+  }
+
+  datasourceRequest(requestOptions) {
+    return this.backendSrv.datasourceRequest(requestOptions)
+    .then(response => {
       if (!response.data) {
-        deferred.reject(response);
+        return Promise.reject(new ZabbixAPIError({data: "General Error, no data"}));
+      } else if (response.data.error) {
+
+        // Handle Zabbix API errors
+        return Promise.reject(new ZabbixAPIError(response.data.error));
       }
 
-      // Handle Zabbix API errors
-      else if (response.data.error) {
-        deferred.reject(response.data.error);
-      }
-
-      deferred.resolve(response.data.result);
+      // Success
+      return response.data.result;
     });
-    return deferred.promise;
   }
 
   /**
@@ -72,7 +72,7 @@ class ZabbixAPICoreService {
    * @return {string}  auth token
    */
   login(api_url, username, password, options) {
-    var params = {
+    let params = {
       user: username,
       password: password
     };
@@ -89,15 +89,18 @@ class ZabbixAPICoreService {
 }
 
 // Define zabbix API exception type
-function ZabbixException(error) {
-  this.code = error.code;
-  this.errorType = error.message;
-  this.message = error.data;
-}
+export class ZabbixAPIError {
+  constructor(error) {
+    this.code = error.code;
+    this.name = error.data;
+    this.message = error.data;
+    this.data = error.data;
+  }
 
-ZabbixException.prototype.toString = function() {
-  return this.errorType + ": " + this.message;
-};
+  toString() {
+    return this.name + ": " + this.message;
+  }
+}
 
 angular
   .module('grafana.services')

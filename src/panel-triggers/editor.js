@@ -19,12 +19,11 @@ import '../datasource-zabbix/css/query-editor.css!';
 class TriggerPanelEditorCtrl {
 
   /** @ngInject */
-  constructor($scope, $rootScope, $q, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
+  constructor($scope, $rootScope, uiSegmentSrv, datasourceSrv, templateSrv, popoverSrv) {
     $scope.editor = this;
     this.panelCtrl = $scope.ctrl;
     this.panel = this.panelCtrl.panel;
 
-    this.$q = $q;
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.popoverSrv = popoverSrv;
@@ -62,8 +61,6 @@ class TriggerPanelEditorCtrl {
     };
     _.defaults(this, scopeDefaults);
 
-    var self = this;
-
     // Get zabbix data sources
     var datasources = _.filter(this.datasourceSrv.getMetricSources(), datasource => {
       return datasource.meta.id === 'alexanderzobnin-zabbix-datasource';
@@ -75,60 +72,48 @@ class TriggerPanelEditorCtrl {
       this.panel.datasource = this.datasources[0];
     }
     // Load datasource
-    this.datasourceSrv.get(this.panel.datasource).then(function (datasource) {
-      self.datasource = datasource;
-      self.initFilters();
-      self.panelCtrl.refresh();
+    this.datasourceSrv.get(this.panel.datasource)
+    .then(datasource => {
+      this.datasource = datasource;
+      this.queryBuilder = datasource.queryBuilder;
+      this.initFilters();
+      this.panelCtrl.refresh();
     });
   }
 
   initFilters() {
-    var self = this;
-    return this.$q
-      .when(this.suggestGroups())
-      .then(() => {return self.suggestHosts();})
-      .then(() => {return self.suggestApps();});
+    return Promise.all([
+      this.suggestGroups(),
+      this.suggestHosts(),
+      this.suggestApps()
+    ]);
   }
 
   suggestGroups() {
-    var self = this;
-    return this.datasource.zabbixCache
-      .getGroups()
-      .then(groups => {
-        self.metric.groupList = groups;
-        return groups;
-      });
+    return this.queryBuilder.getAllGroups()
+    .then(groups => {
+      this.metric.groupList = groups;
+      return groups;
+    });
   }
 
   suggestHosts() {
-    var self = this;
-    var groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
-    return this.datasource.queryProcessor
-      .filterGroups(self.metric.groupList, groupFilter)
-      .then(groups => {
-        var groupids = _.map(groups, 'groupid');
-        return self.datasource.zabbixAPI
-          .getHosts(groupids)
-          .then(hosts => {
-            self.metric.hostList = hosts;
-            return hosts;
-          });
-      });
+    let groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
+    return this.queryBuilder.getAllHosts(groupFilter)
+    .then(hosts => {
+      this.metric.hostList = hosts;
+      return hosts;
+    });
   }
 
   suggestApps() {
-    var self = this;
-    var hostFilter = this.datasource.replaceTemplateVars(this.panel.triggers.host.filter);
-    return this.datasource.queryProcessor
-      .filterHosts(self.metric.hostList, hostFilter)
-      .then(hosts => {
-        var hostids = _.map(hosts, 'hostid');
-        return self.datasource.zabbixAPI
-          .getApps(hostids)
-          .then(apps => {
-            return self.metric.appList = apps;
-          });
-      });
+    let groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
+    let hostFilter = this.datasource.replaceTemplateVars(this.panel.triggers.host.filter);
+    return this.queryBuilder.getAllApps(groupFilter, hostFilter)
+    .then(apps => {
+      this.metric.appList = apps;
+      return apps;
+    });
   }
 
   onVariableChange() {

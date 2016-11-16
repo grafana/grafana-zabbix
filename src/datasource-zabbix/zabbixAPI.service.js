@@ -4,7 +4,7 @@ import * as utils from './utils';
 import './zabbixAPICore.service';
 
 /** @ngInject */
-function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
+function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
 
   /**
    * Zabbix API Wrapper.
@@ -25,8 +25,9 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       };
 
       this.loginPromise = null;
+      this.loginErrorCount = 0;
+      this.maxLoginAttempts = 3;
 
-      this.$q = $q;
       this.alertSrv = alertSrv;
       this.zabbixAPICore = zabbixAPICoreService;
 
@@ -39,32 +40,32 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
     //////////////////////////
 
     request(method, params) {
-      var self = this;
-
       return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
-        .then(function(result) {
-          return result;
-        },
-        // Handle API errors
-        function(error) {
-          if (isNotAuthorized(error.data)) {
-            return self.loginOnce().then(
-              function() {
-                return self.request(method, params);
-              },
-              // Handle user.login method errors
-              function(error) {
-                self.alertAPIError(error.data);
-              });
+      .catch(error => {
+        if (isNotAuthorized(error.data)) {
+          // Handle auth errors
+          this.loginErrorCount++;
+          if (this.loginErrorCount > this.maxLoginAttempts) {
+            this.loginErrorCount = 0;
+            return null;
+          } else {
+            return this.loginOnce()
+            .then(() => this.request(method, params));
           }
-        });
+        } else {
+          // Handle API errors
+          let message = error.data ? error.data : error.statusText;
+          this.alertAPIError(message);
+        }
+      });
     }
 
-    alertAPIError(message) {
+    alertAPIError(message, timeout = 5000) {
       this.alertSrv.set(
         "Zabbix API Error",
         message,
-        'error'
+        'error',
+        timeout
       );
     }
 
@@ -75,25 +76,16 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
      * @return login promise
      */
     loginOnce() {
-      var self = this;
-      var deferred  = this.$q.defer();
-      if (!self.loginPromise) {
-        self.loginPromise = deferred.promise;
-        self.login().then(
-          function(auth) {
-            self.loginPromise = null;
-            self.auth = auth;
-            deferred.resolve(auth);
-          },
-          function(error) {
-            self.loginPromise = null;
-            deferred.reject(error);
-          }
+      if (!this.loginPromise) {
+        this.loginPromise = Promise.resolve(
+          this.login().then(auth => {
+            this.auth = auth;
+            this.loginPromise = null;
+            return auth;
+          })
         );
-      } else {
-        return self.loginPromise;
       }
-      return deferred.promise;
+      return this.loginPromise;
     }
 
     /**
@@ -113,6 +105,15 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
     ////////////////////////////////
     // Zabbix API method wrappers //
     ////////////////////////////////
+
+    acknowledgeEvent(eventid, message) {
+      var params = {
+        eventids: eventid,
+        message: message
+      };
+
+      return this.request('event.acknowledge', params);
+    }
 
     getGroups() {
       var params = {
@@ -185,13 +186,16 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       }
 
       return this.request('item.get', params)
-        .then(items => {
-          return _.forEach(items, item => {
-            item.item = item.name;
-            item.name = utils.expandItemName(item.item, item.key_);
-            return item;
-          });
+      .then(expandItems);
+
+      function expandItems(items) {
+        items.forEach(item => {
+          item.item = item.name;
+          item.name = utils.expandItemName(item.item, item.key_);
+          return item;
         });
+        return items;
+      }
     }
 
     getLastValue(itemid) {
@@ -199,48 +203,42 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
         output: ['lastvalue'],
         itemids: itemid
       };
-      return this.request('item.get', params).then(function(items) {
-        if (items.length) {
-          return items[0].lastvalue;
-        } else {
-          return null;
-        }
-      });
+      return this.request('item.get', params)
+      .then(items => items.length ? items[0].lastvalue : null);
     }
 
     /**
      * Perform history query from Zabbix API
      *
      * @param  {Array}  items       Array of Zabbix item objects
-     * @param  {Number} time_from   Time in seconds
-     * @param  {Number} time_till   Time in seconds
+     * @param  {Number} timeFrom   Time in seconds
+     * @param  {Number} timeTill   Time in seconds
      * @return {Array}  Array of Zabbix history objects
      */
-    getHistory(items, time_from, time_till) {
-      var self = this;
+    getHistory(items, timeFrom, timeTill) {
 
-      // Group items by value type
-      var grouped_items = _.groupBy(items, 'value_type');
-
-      // Perform request for each value type
-      return this.$q.all(_.map(grouped_items, function (items, value_type) {
-        var itemids = _.map(items, 'itemid');
-        var params = {
+      // Group items by value type and perform request for each value type
+      let grouped_items = _.groupBy(items, 'value_type');
+      let promises = _.map(grouped_items, (items, value_type) => {
+        let itemids = _.map(items, 'itemid');
+        let params = {
           output: 'extend',
           history: value_type,
           itemids: itemids,
           sortfield: 'clock',
           sortorder: 'ASC',
-          time_from: time_from
+          time_from: timeFrom
         };
 
         // Relative queries (e.g. last hour) don't include an end time
-        if (time_till) {
-          params.time_till = time_till;
+        if (timeTill) {
+          params.time_till = timeTill;
         }
 
-        return self.request('history.get', params);
-      })).then(_.flatten);
+        return this.request('history.get', params);
+      });
+
+      return Promise.all(promises).then(_.flatten);
     }
 
     /**
@@ -252,31 +250,30 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
      * @param  {Number} time_till   Time in seconds
      * @return {Array}  Array of Zabbix trend objects
      */
-    getTrend_ZBXNEXT1193(items, time_from, time_till) {
-      var self = this;
+    getTrend_ZBXNEXT1193(items, timeFrom, timeTill) {
 
-      // Group items by value type
-      var grouped_items = _.groupBy(items, 'value_type');
-
-      // Perform request for each value type
-      return this.$q.all(_.map(grouped_items, function (items, value_type) {
-        var itemids = _.map(items, 'itemid');
-        var params = {
+      // Group items by value type and perform request for each value type
+      let grouped_items = _.groupBy(items, 'value_type');
+      let promises = _.map(grouped_items, (items, value_type) => {
+        let itemids = _.map(items, 'itemid');
+        let params = {
           output: 'extend',
           trend: value_type,
           itemids: itemids,
           sortfield: 'clock',
           sortorder: 'ASC',
-          time_from: time_from
+          time_from: timeFrom
         };
 
         // Relative queries (e.g. last hour) don't include an end time
-        if (time_till) {
-          params.time_till = time_till;
+        if (timeTill) {
+          params.time_till = timeTill;
         }
 
-        return self.request('trend.get', params);
-      })).then(_.flatten);
+        return this.request('trend.get', params);
+      });
+
+      return Promise.all(promises).then(_.flatten);
     }
 
     getTrend_30(items, time_from, time_till, value_type) {
@@ -300,7 +297,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       return self.request('trend.get', params);
     }
 
-    getITService(/* optional */ serviceids) {
+    getITService(serviceids) {
       var params = {
         output: 'extend',
         serviceids: serviceids
@@ -308,12 +305,12 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       return this.request('service.get', params);
     }
 
-    getSLA(serviceids, from, to) {
+    getSLA(serviceids, timeFrom, timeTo) {
       var params = {
         serviceids: serviceids,
         intervals: [{
-          from: from,
-          to: to
+          from: timeFrom,
+          to: timeTo
         }]
       };
       return this.request('service.getsla', params);
@@ -327,6 +324,7 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
         applicationids: applicationids,
         expandDescription: true,
         expandData: true,
+        expandComment: true,
         monitored: true,
         skipDependent: true,
         //only_true: true,
@@ -351,11 +349,11 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       return this.request('trigger.get', params);
     }
 
-    getEvents(objectids, from, to, showEvents) {
+    getEvents(objectids, timeFrom, timeTo, showEvents) {
       var params = {
         output: 'extend',
-        time_from: from,
-        time_till: to,
+        time_from: timeFrom,
+        time_till: timeTo,
         objectids: objectids,
         select_acknowledges: 'extend',
         selectHosts: 'extend',
@@ -376,11 +374,9 @@ function ZabbixAPIService($q, alertSrv, zabbixAPICoreService) {
       };
 
       return this.request('event.get', params)
-        .then(function (events) {
-          return _.filter(events, function(event) {
-            return event.acknowledges.length;
-          });
-        });
+      .then(events => {
+        return _.filter(events, (event) => event.acknowledges.length);
+      });
     }
 
   }
@@ -398,4 +394,4 @@ function isNotAuthorized(message) {
 
 angular
   .module('grafana.services')
-  .factory('zabbixAPIService', ZabbixAPIService);
+  .factory('zabbixAPIService', ZabbixAPIServiceFactory);

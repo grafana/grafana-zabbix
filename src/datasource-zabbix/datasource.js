@@ -4,15 +4,17 @@ import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
-import DataProcessor from './DataProcessor';
-import './zabbixAPI.service.js';
-import './zabbixCache.service.js';
-import './queryProcessor.service.js';
+import dataProcessor from './dataProcessor';
+import responseHandler from './responseHandler';
+import './zabbix.js';
+import {ZabbixAPIError} from './zabbixAPICore.service.js';
 
-export class ZabbixAPIDatasource {
+class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, $q, templateSrv, alertSrv, zabbixAPIService, ZabbixCachingProxy, QueryProcessor) {
+  constructor(instanceSettings, templateSrv, alertSrv, Zabbix) {
+    this.templateSrv = templateSrv;
+    this.alertSrv = alertSrv;
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -32,25 +34,10 @@ export class ZabbixAPIDatasource {
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
-    // Initialize Zabbix API
-    var ZabbixAPI = zabbixAPIService;
-    this.zabbixAPI = new ZabbixAPI(this.url, this.username, this.password, this.basicAuth, this.withCredentials);
-
-    // Initialize cache service
-    this.zabbixCache = new ZabbixCachingProxy(this.zabbixAPI, this.cacheTTL);
-
-    // Initialize query builder
-    this.queryProcessor = new QueryProcessor(this.zabbixCache);
-
-    // Dependencies
-    this.q = $q;
-    this.templateSrv = templateSrv;
-    this.alertSrv = alertSrv;
+    this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
     // Use custom format for template variables
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
-
-    console.log(this.zabbixCache);
   }
 
   ////////////////////////
@@ -63,19 +50,20 @@ export class ZabbixAPIDatasource {
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(options) {
-    var self = this;
-
-    // get from & to in seconds
     var timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
     var timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
+
     var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
-    var useTrends = (timeFrom < useTrendsFrom) && this.trends;
+    var useTrends = (timeFrom <= useTrendsFrom) && this.trends;
 
     // Create request for each target
     var promises = _.map(options.targets, target => {
+      // Prevent changes of original object
+      target = _.cloneDeep(target);
+      this.replaceTargetVariables(target, options);
 
+      // Metrics or Text query mode
       if (target.mode !== 1) {
-
         // Migrate old targets
         target = migrations.migrate(target);
 
@@ -84,22 +72,10 @@ export class ZabbixAPIDatasource {
           return [];
         }
 
-        // Replace templated variables
-        var groupFilter = this.replaceTemplateVars(target.group.filter, options.scopedVars);
-        var hostFilter = this.replaceTemplateVars(target.host.filter, options.scopedVars);
-        var appFilter = this.replaceTemplateVars(target.application.filter, options.scopedVars);
-        var itemFilter = this.replaceTemplateVars(target.item.filter, options.scopedVars);
-
-        // Query numeric data
         if (!target.mode || target.mode === 0) {
-          return self.queryNumericData(target, groupFilter, hostFilter, appFilter, itemFilter,
-                                       timeFrom, timeTo, useTrends, options, self);
-        }
-
-        // Query text data
-        else if (target.mode === 2) {
-          return self.queryTextData(target, groupFilter, hostFilter, appFilter, itemFilter,
-                                    timeFrom, timeTo, options, self);
+          return this.queryNumericData(target, timeFrom, timeTo, useTrends);
+        } else if (target.mode === 2) {
+          return this.queryTextData(target, timeFrom, timeTo);
         }
       }
 
@@ -110,148 +86,122 @@ export class ZabbixAPIDatasource {
           return [];
         }
 
-        return this.zabbixAPI
-          .getSLA(target.itservice.serviceid, timeFrom, timeTo)
-          .then(slaObject => {
-            return self.queryProcessor
-              .handleSLAResponse(target.itservice, target.slaProperty, slaObject);
-          });
+        return this.zabbix.getSLA(target.itservice.serviceid, timeFrom, timeTo)
+        .then(slaObject => {
+          return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
+        });
       }
-    }, this);
+    });
 
     // Data for panel (all targets)
-    return this.q.all(_.flatten(promises))
+    return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(timeseries_data => {
-
-        // Series downsampling
-        var data = _.map(timeseries_data, timeseries => {
-          if (timeseries.datapoints.length > options.maxDataPoints) {
-            timeseries.datapoints = DataProcessor
-              .groupBy(options.interval, DataProcessor.AVERAGE, timeseries.datapoints);
-          }
-          return timeseries;
-        });
+        return downsampleSeries(timeseries_data, options);
+      })
+      .then(data => {
         return { data: data };
       });
   }
 
-  queryNumericData(target, groupFilter, hostFilter, appFilter, itemFilter, timeFrom, timeTo, useTrends, options, self) {
-    // Build query in asynchronous manner
-    return self.queryProcessor
-      .build(groupFilter, hostFilter, appFilter, itemFilter, 'num')
-      .then(items => {
-        // Add hostname for items from multiple hosts
-        var addHostName = utils.isRegex(target.host.filter);
-        var getHistory;
+  queryNumericData(target, timeFrom, timeTo, useTrends) {
+    let options = {
+      itemtype: 'num'
+    };
+    return this.zabbix.getItemsFromTarget(target, options)
+    .then(items => {
+      let getHistoryPromise;
 
-        // Use trends
-        if (useTrends) {
-
-          // Find trendValue() function and get specified trend value
-          var trendFunctions = _.map(metricFunctions.getCategories()['Trends'], 'name');
-          var trendValueFunc = _.find(target.functions, func => {
-            return _.contains(trendFunctions, func.def.name);
+      if (useTrends) {
+        let valueType = this.getTrendValueType(target);
+        getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo)
+          .then(history => {
+            return responseHandler.handleTrends(history, items, valueType);
           });
-          var valueType = trendValueFunc ? trendValueFunc.params[0] : "avg";
-
-          getHistory = self.zabbixAPI
-            .getTrend(items, timeFrom, timeTo)
-            .then(history => {
-              return self.queryProcessor.handleTrends(history, items, addHostName, valueType);
-            });
-        }
-
+      } else {
         // Use history
-        else {
-          getHistory = self.zabbixCache
-            .getHistory(items, timeFrom, timeTo)
-            .then(history => {
-              return self.queryProcessor.handleHistory(history, items, addHostName);
-            });
-        }
-
-        return getHistory.then(timeseries_data => {
-
-          // Apply transformation functions
-          timeseries_data = _.map(timeseries_data, timeseries => {
-
-            // Filter only transformation functions
-            var transformFunctions = bindFunctionDefs(target.functions, 'Transform', DataProcessor);
-
-            // Timeseries processing
-            var dp = timeseries.datapoints;
-            for (var i = 0; i < transformFunctions.length; i++) {
-              dp = transformFunctions[i](dp);
-            }
-            timeseries.datapoints = dp;
-
-            return timeseries;
+        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
+          .then(history => {
+            return responseHandler.handleHistory(history, items);
           });
+      }
 
-          // Apply aggregations
-          var aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate', DataProcessor);
-          var dp = _.map(timeseries_data, 'datapoints');
-          if (aggregationFunctions.length) {
-            for (var i = 0; i < aggregationFunctions.length; i++) {
-              dp = aggregationFunctions[i](dp);
-            }
-            var lastAgg = _.findLast(target.functions, func => {
-              return _.contains(
-                _.map(metricFunctions.getCategories()['Aggregate'], 'name'), func.def.name);
-            });
-            timeseries_data = [
-              {
-                target: lastAgg.text,
-                datapoints: dp
-              }
-            ];
-          }
-
-          // Apply alias functions
-          var aliasFunctions = bindFunctionDefs(target.functions, 'Alias', DataProcessor);
-          for (var j = 0; j < aliasFunctions.length; j++) {
-            _.each(timeseries_data, aliasFunctions[j]);
-          }
-
-          return timeseries_data;
-        });
+      return getHistoryPromise.then(timeseries_data => {
+        return this.applyDataProcessingFunctions(timeseries_data, target);
       });
+    });
   }
 
-  queryTextData(target, groupFilter, hostFilter, appFilter, itemFilter, timeFrom, timeTo, options, self) {
-    return self.queryProcessor
-      .build(groupFilter, hostFilter, appFilter, itemFilter, 'text')
+  getTrendValueType(target) {
+    // Find trendValue() function and get specified trend value
+    var trendFunctions = _.map(metricFunctions.getCategories()['Trends'], 'name');
+    var trendValueFunc = _.find(target.functions, func => {
+      return _.includes(trendFunctions, func.def.name);
+    });
+    return trendValueFunc ? trendValueFunc.params[0] : "avg";
+  }
+
+  applyDataProcessingFunctions(timeseries_data, target) {
+    let transformFunctions   = bindFunctionDefs(target.functions, 'Transform');
+    let aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
+    let filterFunctions      = bindFunctionDefs(target.functions, 'Filter');
+    let aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
+
+    // Apply transformation functions
+    timeseries_data = _.map(timeseries_data, timeseries => {
+      timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
+      return timeseries;
+    });
+
+    // Apply filter functions
+    if (filterFunctions.length) {
+      timeseries_data = sequence(filterFunctions)(timeseries_data);
+    }
+
+    // Apply aggregations
+    if (aggregationFunctions.length) {
+      let dp = _.map(timeseries_data, 'datapoints');
+      dp = sequence(aggregationFunctions)(dp);
+
+      let aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
+      let lastAgg = _.findLast(target.functions, func => {
+        return _.includes(aggFuncNames, func.def.name);
+      });
+
+      timeseries_data = [{
+        target: lastAgg.text,
+        datapoints: dp
+      }];
+    }
+
+    // Apply alias functions
+    _.each(timeseries_data, sequence(aliasFunctions));
+
+    return timeseries_data;
+  }
+
+  queryTextData(target, timeFrom, timeTo) {
+    let options = {
+      itemtype: 'text'
+    };
+    return this.zabbix.getItemsFromTarget(target, options)
       .then(items => {
         if (items.length) {
-          var textItemsPromises = _.map(items, item => {
-            return self.zabbixAPI.getLastValue(item.itemid);
-          });
-          return self.q.all(textItemsPromises)
-            .then(result => {
-              return _.map(result, (lastvalue, index) => {
-                var extractedValue;
+          return this.zabbix.getHistory(items, timeFrom, timeTo)
+            .then(history => {
+              return responseHandler.convertHistory(history, items, false, (point) => {
+                let value = point.value;
+
+                // Regex-based extractor
                 if (target.textFilter) {
-                  var text_extract_pattern = new RegExp(self.replaceTemplateVars(target.textFilter, options.scopedVars));
-                  extractedValue = text_extract_pattern.exec(lastvalue);
-                  if (extractedValue) {
-                    if (target.useCaptureGroups) {
-                      extractedValue = extractedValue[1];
-                    } else {
-                      extractedValue = extractedValue[0];
-                    }
-                  }
-                } else {
-                  extractedValue = lastvalue;
+                  value = extractText(point.value, target.textFilter, target.useCaptureGroups);
                 }
-                return {
-                  target: items[index].name,
-                  datapoints: [[extractedValue, timeTo * 1000]]
-                };
+
+                return [value, point.clock * 1000];
               });
             });
         } else {
-          return self.q.when([]);
+          return Promise.resolve([]);
         }
       });
   }
@@ -261,39 +211,34 @@ export class ZabbixAPIDatasource {
    * @return {object} Connection status and Zabbix API version
    */
   testDatasource() {
-    var self = this;
-    return this.zabbixAPI.getVersion()
-      .then(version => {
-        return self.zabbixAPI.login()
-          .then(auth => {
-            if (auth) {
-              return {
-                status: "success",
-                title: "Success",
-                message: "Zabbix API version: " + version
-              };
-            } else {
-              return {
-                status: "error",
-                title: "Invalid user name or password",
-                message: "Zabbix API version: " + version
-              };
-            }
-          }, error => {
-            return {
-              status: "error",
-              title: error.message,
-              message: error.data
-            };
-          });
-      }, error => {
-        console.log(error);
+    let zabbixVersion;
+    return this.zabbix.getVersion()
+    .then(version => {
+      zabbixVersion = version;
+      return this.zabbix.login();
+    })
+    .then(() => {
+      return {
+        status: "success",
+        title: "Success",
+        message: "Zabbix API version: " + zabbixVersion
+      };
+    })
+    .catch(error => {
+      if (error instanceof ZabbixAPIError) {
+        return {
+          status: "error",
+          title: error.message,
+          message: error.data
+        };
+      } else {
         return {
           status: "error",
           title: "Connection failed",
           message: "Could not connect to given url"
         };
-      });
+      }
+    });
   }
 
   ////////////////
@@ -308,12 +253,12 @@ export class ZabbixAPIDatasource {
    *                        of metrics in "{metric1,metcic2,...,metricN}" format.
    */
   metricFindQuery(query) {
-    // Split query. Query structure:
-    // group.host.app.item
-    var self = this;
-    var parts = [];
-    _.each(query.split('.'), function (part) {
-      part = self.replaceTemplateVars(part, {});
+    let result;
+    let parts = [];
+
+    // Split query. Query structure: group.host.app.item
+    _.each(query.split('.'), part => {
+      part = this.replaceTemplateVars(part, {});
 
       // Replace wildcard to regex
       if (part === '*') {
@@ -321,7 +266,7 @@ export class ZabbixAPIDatasource {
       }
       parts.push(part);
     });
-    var template = _.object(['group', 'host', 'app', 'item'], parts);
+    let template = _.zipObject(['group', 'host', 'app', 'item'], parts);
 
     // Get items
     if (parts.length === 4) {
@@ -329,40 +274,23 @@ export class ZabbixAPIDatasource {
       if (template.app === '/.*/') {
         template.app = '';
       }
-      return this.queryProcessor
-        .getItems(template.group, template.host, template.app)
-        .then(items => {
-          return _.map(items, formatMetric);
-        });
+      result = this.zabbix.getItems(template.group, template.host, template.app, template.item);
+    } else if (parts.length === 3) {
+      // Get applications
+      result = this.zabbix.getApps(template.group, template.host, template.app);
+    } else if (parts.length === 2) {
+      // Get hosts
+      result = this.zabbix.getHosts(template.group, template.host);
+    } else if (parts.length === 1) {
+      // Get groups
+      result = this.zabbix.getGroups(template.group);
+    } else {
+      result = Promise.resolve([]);
     }
-    // Get applications
-    else if (parts.length === 3) {
-      return this.queryProcessor
-        .getApps(template.group, template.host)
-        .then(apps => {
-          return _.map(apps, formatMetric);
-        });
-    }
-    // Get hosts
-    else if (parts.length === 2) {
-      return this.queryProcessor
-        .getHosts(template.group)
-        .then(hosts => {
-          return _.map(hosts, formatMetric);
-        });
-    }
-    // Get groups
-    else if (parts.length === 1) {
-      return this.zabbixCache
-        .getGroups(template.group)
-        .then(groups => {
-          return _.map(groups, formatMetric);
-        });
-    }
-    // Return empty object for invalid request
-    else {
-      return this.q.when([]);
-    }
+
+    return result.then(metrics => {
+      return metrics.map(formatMetric);
+    });
   }
 
   /////////////////
@@ -378,85 +306,109 @@ export class ZabbixAPIDatasource {
     // Show all triggers
     var showTriggers = [0, 1];
 
-    var buildQuery = this.queryProcessor
-      .buildTriggerQuery(this.replaceTemplateVars(annotation.group, {}),
-                         this.replaceTemplateVars(annotation.host, {}),
-                         this.replaceTemplateVars(annotation.application, {}));
-    var self = this;
-    return buildQuery.then(query => {
-      return self.zabbixAPI
-        .getTriggers(query.groupids, query.hostids, query.applicationids,
-                     showTriggers, timeFrom, timeTo)
-        .then(triggers => {
+    var getTriggers = this.zabbix
+      .getTriggers(this.replaceTemplateVars(annotation.group, {}),
+                   this.replaceTemplateVars(annotation.host, {}),
+                   this.replaceTemplateVars(annotation.application, {}),
+                   showTriggers);
 
-          // Filter triggers by description
-          if (utils.isRegex(annotation.trigger)) {
-            triggers = _.filter(triggers, trigger => {
-              return utils.buildRegex(annotation.trigger).test(trigger.description);
-            });
-          } else if (annotation.trigger) {
-            triggers = _.filter(triggers, trigger => {
-              return trigger.description === annotation.trigger;
+    return getTriggers.then(triggers => {
+
+      // Filter triggers by description
+      if (utils.isRegex(annotation.trigger)) {
+        triggers = _.filter(triggers, trigger => {
+          return utils.buildRegex(annotation.trigger).test(trigger.description);
+        });
+      } else if (annotation.trigger) {
+        triggers = _.filter(triggers, trigger => {
+          return trigger.description === annotation.trigger;
+        });
+      }
+
+      // Remove events below the chose severity
+      triggers = _.filter(triggers, trigger => {
+        return Number(trigger.priority) >= Number(annotation.minseverity);
+      });
+
+      var objectids = _.map(triggers, 'triggerid');
+      return this.zabbix
+        .getEvents(objectids, timeFrom, timeTo, showOkEvents)
+        .then(events => {
+          var indexedTriggers = _.keyBy(triggers, 'triggerid');
+
+          // Hide acknowledged events if option enabled
+          if (annotation.hideAcknowledged) {
+            events = _.filter(events, event => {
+              return !event.acknowledges.length;
             });
           }
 
-          // Remove events below the chose severity
-          triggers = _.filter(triggers, trigger => {
-            return Number(trigger.priority) >= Number(annotation.minseverity);
+          return _.map(events, event => {
+            let tags;
+            if (annotation.showHostname) {
+              tags = _.map(event.hosts, 'name');
+            }
+
+            // Show event type (OK or Problem)
+            let title = Number(event.value) ? 'Problem' : 'OK';
+
+            let formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
+            return {
+              annotation: annotation,
+              time: event.clock * 1000,
+              title: title,
+              tags: tags,
+              text: indexedTriggers[event.objectid].description + formatted_acknowledges
+            };
           });
-
-          var objectids = _.map(triggers, 'triggerid');
-          return self.zabbixAPI
-            .getEvents(objectids, timeFrom, timeTo, showOkEvents)
-            .then(events => {
-              var indexedTriggers = _.indexBy(triggers, 'triggerid');
-
-              // Hide acknowledged events if option enabled
-              if (annotation.hideAcknowledged) {
-                events = _.filter(events, event => {
-                  return !event.acknowledges.length;
-                });
-              }
-
-              return _.map(events, event => {
-                var title ='';
-                if (annotation.showHostname) {
-                  title += event.hosts[0].name + ': ';
-                }
-
-                // Show event type (OK or Problem)
-                title += Number(event.value) ? 'Problem' : 'OK';
-
-                var formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
-                return {
-                  annotation: annotation,
-                  time: event.clock * 1000,
-                  title: title,
-                  text: indexedTriggers[event.objectid].description + formatted_acknowledges
-                };
-              });
-            });
         });
+    });
+  }
+
+  // Replace template variables
+  replaceTargetVariables(target, options) {
+    let parts = ['group', 'host', 'application', 'item'];
+    parts.forEach(p => {
+      target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
+    });
+    target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
+
+    _.forEach(target.functions, func => {
+      func.params = func.params.map(param => {
+        if (typeof param === 'number') {
+          return +this.templateSrv.replace(param.toString(), options.scopedVars);
+        } else {
+          return this.templateSrv.replace(param, options.scopedVars);
+        }
+      });
     });
   }
 
 }
 
-function bindFunctionDefs(functionDefs, category, DataProcessor) {
-  'use strict';
+function bindFunctionDefs(functionDefs, category) {
   var aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
   var aggFuncDefs = _.filter(functionDefs, function(func) {
-    return _.contains(aggregationFunctions, func.def.name);
+    return _.includes(aggregationFunctions, func.def.name);
   });
 
   return _.map(aggFuncDefs, function(func) {
     var funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
-    return funcInstance.bindFunction(DataProcessor.metricFunctions);
+    return funcInstance.bindFunction(dataProcessor.metricFunctions);
+  });
+}
+
+function downsampleSeries(timeseries_data, options) {
+  return _.map(timeseries_data, timeseries => {
+    if (timeseries.datapoints.length > options.maxDataPoints) {
+      timeseries.datapoints = dataProcessor
+        .groupBy(options.interval, dataProcessor.AVERAGE, timeseries.datapoints);
+    }
+    return timeseries;
   });
 }
 
 function formatMetric(metricObj) {
-  'use strict';
   return {
     text: metricObj.name,
     expandable: false
@@ -473,7 +425,7 @@ function formatMetric(metricObj) {
  * template variables, for example
  * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
  */
-function zabbixTemplateFormat(value, variable) {
+function zabbixTemplateFormat(value) {
   if (typeof value === 'string') {
     return utils.escapeRegex(value);
   }
@@ -482,7 +434,8 @@ function zabbixTemplateFormat(value, variable) {
   return '(' + escapedValues.join('|') + ')';
 }
 
-/** If template variables are used in request, replace it using regex format
+/**
+ * If template variables are used in request, replace it using regex format
  * and wrap with '/' for proper multi-value work. Example:
  * $variable selected as a, b, c
  * We use filter $variable
@@ -491,8 +444,38 @@ function zabbixTemplateFormat(value, variable) {
  */
 function replaceTemplateVars(templateSrv, target, scopedVars) {
   var replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
-  if (target !== replacedTarget && !utils.regexPattern.test(replacedTarget)) {
+  if (target !== replacedTarget && !utils.isRegex(replacedTarget)) {
     replacedTarget = '/^' + replacedTarget + '$/';
   }
   return replacedTarget;
 }
+
+function extractText(str, pattern, useCaptureGroups) {
+  let extractPattern = new RegExp(pattern);
+  let extractedValue = extractPattern.exec(str);
+  if (extractedValue) {
+    if (useCaptureGroups) {
+      extractedValue = extractedValue[1];
+    } else {
+      extractedValue = extractedValue[0];
+    }
+  }
+  return extractedValue;
+}
+
+// Apply function one by one:
+// sequence([a(), b(), c()]) = c(b(a()));
+function sequence(funcsArray) {
+  return function(result) {
+    for (var i = 0; i < funcsArray.length; i++) {
+      result = funcsArray[i].call(this, result);
+    }
+    return result;
+  };
+}
+
+export {ZabbixAPIDatasource, zabbixTemplateFormat};
+
+// Fix for backward compatibility with lodash 2.4
+if (!_.includes) {_.includes = _.contains;}
+if (!_.keyBy) {_.keyBy = _.indexBy;}

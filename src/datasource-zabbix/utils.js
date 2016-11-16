@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import moment from 'moment';
 
-
 /**
  * Expand Zabbix item name
  *
@@ -35,7 +34,7 @@ export function isTemplateVariable(str, templateVariables) {
     var variables = _.map(templateVariables, variable => {
       return '$' + variable.name;
     });
-    return _.contains(variables, str);
+    return _.includes(variables, str);
   } else {
     return false;
   }
@@ -92,4 +91,28 @@ export function convertToZabbixAPIUrl(url) {
   } else {
     return url.replace(trimSlashPattern, "$1");
   }
+}
+
+/**
+ * Wrap function to prevent multiple calls
+ * when waiting for result.
+ */
+export function callOnce(func, promiseKeeper) {
+  return function() {
+    if (!promiseKeeper) {
+      promiseKeeper = Promise.resolve(
+        func.apply(this, arguments)
+        .then(result => {
+          promiseKeeper = null;
+          return result;
+        })
+      );
+    }
+    return promiseKeeper;
+  };
+}
+
+// Fix for backward compatibility with lodash 2.4
+if (!_.includes) {
+  _.includes = _.contains;
 }
