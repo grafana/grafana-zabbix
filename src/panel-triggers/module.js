@@ -61,7 +61,7 @@ var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $q, $element, datasourceSrv, templateSrv, contextSrv) {
+  constructor($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
@@ -106,9 +106,9 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     var self = this;
 
     // Load datasource
-    return this.datasourceSrv.get(this.panel.datasource).then(datasource => {
-      var zabbix = datasource.zabbixAPI;
-      var queryProcessor = datasource.queryProcessor;
+    return this.datasourceSrv.get(this.panel.datasource)
+    .then(datasource => {
+      var zabbix = datasource.zabbix;
       var showEvents = self.panel.showEvents.value;
       var triggerFilter = self.panel.triggers;
 
@@ -117,118 +117,112 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
       var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-      var buildQuery = queryProcessor.buildTriggerQuery(groupFilter, hostFilter, appFilter);
-      return buildQuery.then(query => {
-        return zabbix.getTriggers(query.groupids,
-                                  query.hostids,
-                                  query.applicationids,
-                                  showEvents)
-          .then(triggers => {
-            return _.map(triggers, trigger => {
-              let triggerObj = trigger;
+      var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, showEvents);
+      return getTriggers.then(triggers => {
+        return _.map(triggers, trigger => {
+          let triggerObj = trigger;
 
-              // Format last change and age
-              trigger.lastchangeUnix = Number(trigger.lastchange);
-              let timestamp = moment.unix(trigger.lastchangeUnix);
-              if (self.panel.customLastChangeFormat) {
-                // User defined format
-                triggerObj.lastchange = timestamp.format(self.panel.lastChangeFormat);
-              } else {
-                triggerObj.lastchange = timestamp.format(self.defaultTimeFormat);
-              }
-              triggerObj.age = timestamp.fromNow(true);
+          // Format last change and age
+          trigger.lastchangeUnix = Number(trigger.lastchange);
+          let timestamp = moment.unix(trigger.lastchangeUnix);
+          if (self.panel.customLastChangeFormat) {
+            // User defined format
+            triggerObj.lastchange = timestamp.format(self.panel.lastChangeFormat);
+          } else {
+            triggerObj.lastchange = timestamp.format(self.defaultTimeFormat);
+          }
+          triggerObj.age = timestamp.fromNow(true);
 
-              // Set host that the trigger belongs
-              if (trigger.hosts.length) {
-                triggerObj.host = trigger.hosts[0].name;
-                triggerObj.hostTechName = trigger.hosts[0].host;
-              }
+          // Set host that the trigger belongs
+          if (trigger.hosts.length) {
+            triggerObj.host = trigger.hosts[0].name;
+            triggerObj.hostTechName = trigger.hosts[0].host;
+          }
 
-              // Set color
-              if (trigger.value === '1') {
-                // Problem state
-                triggerObj.color = self.panel.triggerSeverity[trigger.priority].color;
-              } else {
-                // OK state
-                triggerObj.color = self.panel.okEventColor;
-              }
+          // Set color
+          if (trigger.value === '1') {
+            // Problem state
+            triggerObj.color = self.panel.triggerSeverity[trigger.priority].color;
+          } else {
+            // OK state
+            triggerObj.color = self.panel.okEventColor;
+          }
 
-              triggerObj.severity = self.panel.triggerSeverity[trigger.priority].severity;
-              return triggerObj;
+          triggerObj.severity = self.panel.triggerSeverity[trigger.priority].severity;
+          return triggerObj;
+        });
+      })
+      .then(triggerList => {
+
+        // Request acknowledges for trigger
+        var eventids = _.map(triggerList, trigger => {
+          return trigger.lastEvent.eventid;
+        });
+
+        return zabbix.getAcknowledges(eventids)
+        .then(events => {
+
+          // Map events to triggers
+          _.each(triggerList, trigger => {
+            var event = _.find(events, event => {
+              return event.eventid === trigger.lastEvent.eventid;
             });
-          })
-          .then(triggerList => {
 
-            // Request acknowledges for trigger
-            var eventids = _.map(triggerList, trigger => {
-              return trigger.lastEvent.eventid;
-            });
-
-            return zabbix.getAcknowledges(eventids)
-              .then(events => {
-
-                // Map events to triggers
-                _.each(triggerList, trigger => {
-                  var event = _.find(events, event => {
-                    return event.eventid === trigger.lastEvent.eventid;
-                  });
-
-                  if (event) {
-                    trigger.acknowledges = _.map(event.acknowledges, ack => {
-                      let timestamp = moment.unix(ack.clock);
-                      if (self.panel.customLastChangeFormat) {
-                        ack.time = timestamp.format(self.panel.lastChangeFormat);
-                      } else {
-                        ack.time = timestamp.format(self.defaultTimeFormat);
-                      }
-                      ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-                      return ack;
-                    });
-
-                    // Mark acknowledged triggers with different color
-                    if (self.panel.markAckEvents && trigger.acknowledges.length) {
-                      trigger.color = self.panel.ackEventColor;
-                    }
-                  }
-                });
-
-                // Filter triggers by description
-                var triggerFilter = self.panel.triggers.trigger.filter;
-                if (triggerFilter) {
-                  triggerList = filterTriggers(triggerList, triggerFilter);
-                }
-
-                // Filter acknowledged triggers
-                if (self.panel.showTriggers === 'unacknowledged') {
-                  triggerList = _.filter(triggerList, trigger => {
-                    return !trigger.acknowledges;
-                  });
-                } else if (self.panel.showTriggers === 'acknowledged') {
-                  triggerList = _.filter(triggerList, 'acknowledges');
+            if (event) {
+              trigger.acknowledges = _.map(event.acknowledges, ack => {
+                let timestamp = moment.unix(ack.clock);
+                if (self.panel.customLastChangeFormat) {
+                  ack.time = timestamp.format(self.panel.lastChangeFormat);
                 } else {
-                  triggerList = triggerList;
+                  ack.time = timestamp.format(self.defaultTimeFormat);
                 }
-
-                // Filter triggers by severity
-                triggerList = _.filter(triggerList, trigger => {
-                  return self.panel.triggerSeverity[trigger.priority].show;
-                });
-
-                // Sort triggers
-                if (self.panel.sortTriggersBy.value === 'priority') {
-                  triggerList = _.sortBy(triggerList, 'priority').reverse();
-                } else {
-                  triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
-                }
-
-                // Limit triggers number
-                self.triggerList  = triggerList.slice(0, self.panel.limit);
-
-                // Notify panel that request is finished
-                self.setTimeQueryEnd();
-                self.loading = false;
+                ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
+                return ack;
               });
+
+              // Mark acknowledged triggers with different color
+              if (self.panel.markAckEvents && trigger.acknowledges.length) {
+                trigger.color = self.panel.ackEventColor;
+              }
+            }
           });
+
+          // Filter triggers by description
+          var triggerFilter = self.panel.triggers.trigger.filter;
+          if (triggerFilter) {
+            triggerList = filterTriggers(triggerList, triggerFilter);
+          }
+
+          // Filter acknowledged triggers
+          if (self.panel.showTriggers === 'unacknowledged') {
+            triggerList = _.filter(triggerList, trigger => {
+              return !trigger.acknowledges;
+            });
+          } else if (self.panel.showTriggers === 'acknowledged') {
+            triggerList = _.filter(triggerList, 'acknowledges');
+          } else {
+            triggerList = triggerList;
+          }
+
+          // Filter triggers by severity
+          triggerList = _.filter(triggerList, trigger => {
+            return self.panel.triggerSeverity[trigger.priority].show;
+          });
+
+          // Sort triggers
+          if (self.panel.sortTriggersBy.value === 'priority') {
+            triggerList = _.sortBy(triggerList, 'priority').reverse();
+          } else {
+            triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
+          }
+
+          // Limit triggers number
+          self.triggerList  = triggerList.slice(0, self.panel.limit);
+
+          // Notify panel that request is finished
+          self.setTimeQueryEnd();
+          self.loading = false;
+        });
       });
     });
   }

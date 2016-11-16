@@ -93,6 +93,25 @@ export function convertToZabbixAPIUrl(url) {
   }
 }
 
+/**
+ * Wrap function to prevent multiple calls
+ * when waiting for result.
+ */
+export function callOnce(func, promiseKeeper) {
+  return function() {
+    if (!promiseKeeper) {
+      promiseKeeper = Promise.resolve(
+        func.apply(this, arguments)
+        .then(result => {
+          promiseKeeper = null;
+          return result;
+        })
+      );
+    }
+    return promiseKeeper;
+  };
+}
+
 // Fix for backward compatibility with lodash 2.4
 if (!_.includes) {
   _.includes = _.contains;

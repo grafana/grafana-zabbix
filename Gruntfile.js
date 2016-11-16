@@ -33,7 +33,7 @@ module.exports = function(grunt) {
     watch: {
       rebuild_all: {
         files: ['src/**/*', 'plugin.json'],
-        tasks: ['default'],
+        tasks: ['watchTask'],
         options: {spawn: false}
       },
     },
@@ -134,5 +134,15 @@ module.exports = function(grunt) {
     'sass',
     'babel',
     'mochaTest'
+  ]);
+
+  grunt.registerTask('watchTask', [
+    'clean',
+    'copy:src_to_dist',
+    'copy:pluginDef',
+    'jshint',
+    'jscs',
+    'sass',
+    'babel:dist'
   ]);
 };
