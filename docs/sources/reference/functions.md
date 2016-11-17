@@ -119,6 +119,20 @@ trendValue(valueType)
 
 Specifying type of trend value returned by Zabbix when trends are used (avg, min or max).
 
+## Time
+
+### timeShift
+```
+timeShift(interval)
+```
+Draws the selected metrics shifted in time. If no sign is given, a minus sign ( - ) is implied which will shift the metric back in time. If a plus sign ( + ) is given, the metric will be shifted forward in time.
+Examples:
+```
+timeShift(24h)  - shift metric back in 2h hours
+timeShift(-24h) - the same result as for timeShift(24h)
+timeShift(+1d)  - shift metric forward in 1 day
+```
+
 ## Alias
 
 ### setAlias
