@@ -282,10 +282,9 @@ export class ZabbixQueryController extends QueryCtrl {
    * Update list of IT services
    */
   updateITServiceList() {
-    var self = this;
-    this.datasource.zabbixAPI.getITService().then(function (iteservices) {
-      self.itserviceList = [];
-      self.itserviceList = self.itserviceList.concat(iteservices);
+    this.zabbix.getITService().then((iteservices) => {
+      this.itserviceList = [];
+      this.itserviceList = this.itserviceList.concat(iteservices);
     });
   }
 
