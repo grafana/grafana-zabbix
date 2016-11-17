@@ -50,17 +50,25 @@ class ZabbixAPIDatasource {
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(options) {
-    var timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
-    var timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
+    let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
+    let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
 
-    var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
-    var useTrends = (timeFrom <= useTrendsFrom) && this.trends;
+    let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
+    let useTrends = (timeFrom <= useTrendsFrom) && this.trends;
 
     // Create request for each target
-    var promises = _.map(options.targets, target => {
+    let promises = _.map(options.targets, target => {
       // Prevent changes of original object
       target = _.cloneDeep(target);
       this.replaceTargetVariables(target, options);
+
+      // Apply Time-related functions (timeShift(), etc)
+      let timeFunctions = bindFunctionDefs(target.functions, 'Time');
+      if (timeFunctions.length) {
+        const [time_from, time_to] = sequence(timeFunctions)([timeFrom, timeTo]);
+        timeFrom = time_from;
+        timeTo = time_to;
+      }
 
       // Metrics or Text query mode
       if (target.mode !== 1) {
@@ -175,9 +183,26 @@ class ZabbixAPIDatasource {
     }
 
     // Apply alias functions
-    _.each(timeseries_data, sequence(aliasFunctions));
+    _.forEach(timeseries_data, sequence(aliasFunctions));
+
+    // Apply Time-related functions (timeShift(), etc)
+    // Find timeShift() function and get specified trend value
+    this.applyTimeShiftFunction(timeseries_data, target);
 
     return timeseries_data;
+  }
+
+  applyTimeShiftFunction(timeseries_data, target) {
+    // Find timeShift() function and get specified interval
+    let timeShiftFunc = _.find(target.functions, (func) => {
+      return func.def.name === 'timeShift';
+    });
+    if (timeShiftFunc) {
+      let shift = timeShiftFunc.params[0];
+      _.forEach(timeseries_data, (series) => {
+        series.datapoints = dataProcessor.unShiftTimeSeries(shift, series.datapoints);
+      });
+    }
   }
 
   queryTextData(target, timeFrom, timeTo) {

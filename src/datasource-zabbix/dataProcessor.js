@@ -251,6 +251,23 @@ function findNearestLeft(series, point) {
   return nearestLeft;
 }
 
+function timeShift(interval, range) {
+  let shift = utils.parseTimeShiftInterval(interval) / 1000;
+  return range.map(time => {
+    return time - shift;
+  });
+}
+
+function unShiftTimeSeries(interval, datapoints) {
+  let unshift = utils.parseTimeShiftInterval(interval);
+  return datapoints.map(dp => {
+    return [
+      dp[0],
+      dp[1] + unshift
+    ];
+  });
+}
+
 let metricFunctions = {
   groupBy: groupByWrapper,
   scale: scale,
@@ -263,6 +280,7 @@ let metricFunctions = {
   sumSeries: sumSeries,
   top: _.partial(limit, 'top'),
   bottom: _.partial(limit, 'bottom'),
+  timeShift: timeShift,
   setAlias: setAlias
 };
 
@@ -280,6 +298,7 @@ export default {
   MIN: MIN,
   MAX: MAX,
   MEDIAN: MEDIAN,
+  unShiftTimeSeries: unShiftTimeSeries,
 
   get aggregationFunctions() {
     return aggregationFunctions;

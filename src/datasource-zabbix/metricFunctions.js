@@ -7,6 +7,7 @@ var categories = {
   Aggregate: [],
   Filter: [],
   Trends: [],
+  Time: [],
   Alias: []
 };
 
@@ -20,6 +21,8 @@ function addFuncDef(funcDef) {
   index[funcDef.name] = funcDef;
   index[funcDef.shortName || funcDef.name] = funcDef;
 }
+
+// Transform
 
 addFuncDef({
   name: 'groupBy',
@@ -46,6 +49,8 @@ addFuncDef({
   params: [],
   defaultParams: [],
 });
+
+// Aggregate
 
 addFuncDef({
   name: 'sumSeries',
@@ -100,6 +105,8 @@ addFuncDef({
   defaultParams: ['1m', 'avg'],
 });
 
+// Filter
+
 addFuncDef({
   name: 'top',
   category: 'Filter',
@@ -120,6 +127,8 @@ addFuncDef({
   defaultParams: [5, 'avg'],
 });
 
+// Trends
+
 addFuncDef({
   name: 'trendValue',
   category: 'Trends',
@@ -127,6 +136,17 @@ addFuncDef({
     { name: 'type', type: 'string', options: ['avg', 'min', 'max'] }
   ],
   defaultParams: ['avg'],
+});
+
+// Time
+
+addFuncDef({
+  name: 'timeShift',
+  category: 'Time',
+  params: [
+    { name: 'interval', type: 'string', options: ['24h', '7d', '1M', '+24h', '-24h']}
+  ],
+  defaultParams: ['24h'],
 });
 
 addFuncDef({

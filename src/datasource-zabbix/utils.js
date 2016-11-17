@@ -59,6 +59,20 @@ export function parseInterval(interval) {
   return moment.duration(Number(momentInterval[1]), momentInterval[2]).valueOf();
 }
 
+export function parseTimeShiftInterval(interval) {
+  let intervalPattern = /^([\+\-]*)([\d]+)(y|M|w|d|h|m|s)/g;
+  let momentInterval = intervalPattern.exec(interval);
+  let duration = 0;
+
+  if (momentInterval[1] === '+') {
+    duration = 0 - moment.duration(Number(momentInterval[2]), momentInterval[3]).valueOf();
+  } else {
+    duration = moment.duration(Number(momentInterval[2]), momentInterval[3]).valueOf();
+  }
+
+  return duration;
+}
+
 /**
  * Format acknowledges.
  *
