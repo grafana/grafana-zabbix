@@ -104,3 +104,6 @@ export default {
   handleTrends: handleTrends,
   handleSLAResponse: handleSLAResponse
 };
+
+// Fix for backward compatibility with lodash 2.4
+if (!_.uniqBy) {_.uniqBy = _.uniq;}
