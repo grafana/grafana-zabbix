@@ -1,0 +1,56 @@
+<datasource-http-settings current="ctrl.current">
+</datasource-http-settings>
+
+<h5>Zabbix API details</h5>
+
+<div class="tight-form">
+  <ul class="tight-form-list">
+    <li class="tight-form-item" style="width: 80px">
+      User
+    </li>
+    <li>
+      <input type="text" class="tight-form-input input-large"
+             ng-model='ctrl.current.jsonData.username'
+             placeholder="">
+    </li>
+    <li class="tight-form-item" style="width: 80px">
+      Password
+    </li>
+    <li>
+      <input type="password" class="tight-form-input input-large"
+             ng-model='ctrl.current.jsonData.password'
+             placeholder="">
+    </li>
+  </ul>
+  <div class="clearfix"></div>
+</div>
+<div class="tight-form last">
+  <ul class="tight-form-list">
+    <li class="tight-form-item" style="width: 200px">
+      Cache update interval
+    </li>
+    <li>
+      <input type="text" class="tight-form-input input-small"
+             ng-model='ctrl.current.jsonData.cacheTTL'
+             placeholder="1h">
+    </li>
+    <li class="tight-form-item" style="width: 80px">
+      Trends&nbsp;&nbsp;
+      <input class="cr1" id="ctrl.current.jsonData.trends" type="checkbox"
+             ng-model="ctrl.current.jsonData.trends"
+             ng-checked="ctrl.current.jsonData.trends">
+      <label for="ctrl.current.jsonData.trends" class="cr1"></label>
+    </li>
+    <li ng-if="ctrl.current.jsonData.trends"
+        class="tight-form-item"
+        style="width: 105px">
+      Use trends from
+    </li>
+    <li ng-if="ctrl.current.jsonData.trends">
+      <input type="text" class="tight-form-input input-small"
+             ng-model='ctrl.current.jsonData.trendsFrom'
+             placeholder="7d">
+    </li>
+  </ul>
+  <div class="clearfix"></div>
+</div>

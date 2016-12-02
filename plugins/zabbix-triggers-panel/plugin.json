@@ -1,0 +1,34 @@
+{
+  "type": "panel",
+  "name": "Zabbix triggers",
+  "id": "zabbix-triggers-panel",
+  
+  "module": "plugins/triggers/module",
+  "staticRoot": ".",
+
+  "info": {
+    "description": "Zabbix triggers panel for Grafana",
+    "author": {
+      "name": "Alexander Zobnin",
+      "url": "https://ru.linkedin.com/in/alexander-zobnin-76778162/en"
+    },
+    "keywords": ["zabbix", "triggers", "panel"],
+    "logos": {
+      "small": "img/zabbix-triggers_logo_small.png",
+      "large": "img/zabbix-triggers_logo_large.png"
+    },
+    "links": [
+      {"name": "Project site", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
+      {"name": "Play site", "url": "http://play.grafana-zabbix.org/"},
+      {"name": "Documentation", "url": "https://github.com/alexanderzobnin/grafana-zabbix/wiki"},      
+      {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
+    ],
+    "version": "0.0.1",
+    "updated": "2016-03-19"
+  },
+
+  "dependencies": {
+    "grafanaVersion": "3.x.x",
+    "plugins": [ ]
+  }
+}
