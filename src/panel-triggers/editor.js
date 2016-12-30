@@ -75,6 +75,7 @@ class TriggerPanelEditorCtrl {
     this.datasourceSrv.get(this.panel.datasource)
     .then(datasource => {
       this.datasource = datasource;
+      this.zabbix = datasource.zabbix;
       this.queryBuilder = datasource.queryBuilder;
       this.initFilters();
       this.panelCtrl.refresh();
@@ -90,7 +91,7 @@ class TriggerPanelEditorCtrl {
   }
 
   suggestGroups() {
-    return this.queryBuilder.getAllGroups()
+    return this.zabbix.getAllGroups()
     .then(groups => {
       this.metric.groupList = groups;
       return groups;
@@ -99,7 +100,7 @@ class TriggerPanelEditorCtrl {
 
   suggestHosts() {
     let groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
-    return this.queryBuilder.getAllHosts(groupFilter)
+    return this.zabbix.getAllHosts(groupFilter)
     .then(hosts => {
       this.metric.hostList = hosts;
       return hosts;
@@ -109,7 +110,7 @@ class TriggerPanelEditorCtrl {
   suggestApps() {
     let groupFilter = this.datasource.replaceTemplateVars(this.panel.triggers.group.filter);
     let hostFilter = this.datasource.replaceTemplateVars(this.panel.triggers.host.filter);
-    return this.queryBuilder.getAllApps(groupFilter, hostFilter)
+    return this.zabbix.getAllApps(groupFilter, hostFilter)
     .then(apps => {
       this.metric.appList = apps;
       return apps;
@@ -126,11 +127,8 @@ class TriggerPanelEditorCtrl {
    * Check query for template variables
    */
   isContainsVariables() {
-    var self = this;
-    return _.some(self.templateSrv.variables, variable => {
-      return _.some(['group', 'host', 'application'], field => {
-        return self.templateSrv.containsVariable(self.panel.triggers[field].filter, variable.name);
-      });
+    return _.some(['group', 'host', 'application'], field => {
+      return utils.isTemplateVariable(this.panel.triggers[field].filter, this.templateSrv.variables);
     });
   }
 

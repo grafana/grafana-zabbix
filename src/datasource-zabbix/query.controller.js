@@ -180,11 +180,8 @@ export class ZabbixQueryController extends QueryCtrl {
    * Check query for template variables
    */
   isContainsVariables() {
-    var self = this;
-    return _.some(self.templateSrv.variables, variable => {
-      return _.some(['group', 'host', 'application', 'item'], field => {
-        return self.templateSrv.containsVariable(self.target[field].filter, variable.name);
-      });
+    return _.some(['group', 'host', 'application'], field => {
+      return utils.isTemplateVariable(this.panel.triggers[field].filter, this.templateSrv.variables);
     });
   }
 
