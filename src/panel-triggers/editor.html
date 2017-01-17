@@ -1,0 +1,337 @@
+<div class="editor-row">
+  <div class="section tight-form-container" style="margin-bottom: 20px">
+    <h5>Select triggers</h5>
+    <div class="tight-form">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 80px">
+          Group
+        </li>
+        <li>
+          <input type="text"
+            ng-model="editor.panel.triggers.group.filter"
+            bs-typeahead="editor.getGroupNames"
+            ng-blur="editor.parseTarget()"
+            data-min-length=0
+            data-items=100
+            class="input-large tight-form-input"
+            ng-class="{
+              'zbx-variable': editor.isVariable(editor.panel.triggers.group.filter),
+              'zbx-regex': editor.isRegex(editor.panel.triggers.group.filter)
+            }">
+        </li>
+        <li class="tight-form-item" style="width: 50px">
+          Host
+        </li>
+        <li>
+          <input type="text"
+            ng-model="editor.panel.triggers.host.filter"
+            bs-typeahead="editor.getHostNames"
+            ng-blur="editor.parseTarget()"
+            data-min-length=0
+            data-items=100
+            class="input-large tight-form-input last"
+            ng-class="{
+              'zbx-variable': editor.isVariable(editor.panel.triggers.host.filter),
+              'zbx-regex': editor.isRegex(editor.panel.triggers.host.filter)
+            }">
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+    <div class="tight-form">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 80px">
+          Application
+        </li>
+        <li>
+          <input type="text"
+            ng-model="editor.panel.triggers.application.filter"
+            bs-typeahead="editor.getApplicationNames"
+            ng-blur="editor.parseTarget()"
+            data-min-length=0
+            data-items=100
+            class="input-large tight-form-input"
+            ng-class="{
+              'zbx-variable': editor.isVariable(editor.panel.triggers.application.filter),
+              'zbx-regex': editor.isRegex(editor.panel.triggers.application.filter)
+            }">
+        </li>
+        <li class="tight-form-item" style="width: 50px">
+          Trigger
+        </li>
+        <li>
+          <input  type="text"
+                  ng-model="editor.panel.triggers.trigger.filter"
+                  ng-blur="editor.parseTarget()"
+                  placeholder="trigger name"
+                  class="input-large tight-form-input last"
+                  ng-style="editor.panel.triggers.trigger.style"
+                  empty-to-null>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+  <div class="section">
+    <h5>Data source</h5>
+    <div class="section tight-form-container" style="margin-bottom: 20px">
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li>
+            <select class="tight-form-input input-large last"
+                    ng-model="editor.panel.datasource"
+                    ng-options="ds for ds in editor.datasources"
+                    ng-change="editor.datasourceChanged()">
+            </select>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+    </div>
+  </div>
+</div>
+
+<div class="editor-row">
+  <div class="section">
+    <h5>Options</h5>
+    <div class="tight-form-container" style="margin-bottom: 20px">
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>Acknowledged</strong>
+          </li>
+          <li>
+            <select class="input-medium tight-form-input"
+                    ng-model="editor.panel.showTriggers"
+                    ng-options="f for f in editor.ackFilters"
+                    ng-change="editor.panelCtrl.refresh()">
+            </select>
+          </li>
+          <li class="tight-form-item" style="width: 13em">
+            <strong>Limit triggers number to</strong>
+          </li>
+          <li>
+            <input  class="input-small tight-form-input"
+                    type="number"
+                    ng-model="editor.panel.limit"
+                    ng-model-onblur
+                    ng-change="editor.panelCtrl.refresh()">
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>Sort by</strong>
+          </li>
+          <li>
+            <select class="input-medium tight-form-input"
+                    ng-model="editor.panel.sortTriggersBy"
+                    ng-options="f.text for f in editor.sortByFields track by f.value"
+                    ng-change="editor.panelCtrl.refresh()">
+            </select>
+          </li>
+          <li class="tight-form-item" style="width: 13em">
+            <strong>Show events</strong>
+          </li>
+          <li>
+            <select class="tight-form-input input-medium"
+                    ng-model="editor.panel.showEvents"
+                    ng-options="f.text for f in editor.showEventsFields track by f.value"
+                    ng-change="editor.panelCtrl.refresh()">
+            </select>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>Show fields</strong>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="hostField">Host Name</label>
+            <input  class="cr1"
+                    id="hostField"
+                    type="checkbox"
+                    ng-model="editor.panel.hostField"
+                    ng-checked="editor.panel.hostField">
+            <label for="hostField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="hostField">Host Technical Name</label>
+            <input  class="cr1"
+                    id="hostTechNameField"
+                    type="checkbox"
+                    ng-model="editor.panel.hostTechNameField"
+                    ng-checked="editor.panel.hostTechNameField">
+            <label for="hostTechNameField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="statusField">Status</label>
+            <input  class="cr1"
+                    id="statusField"
+                    type="checkbox"
+                    ng-model="editor.panel.statusField"
+                    ng-checked="editor.panel.statusField">
+            <label for="statusField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="severityField">Severity</label>
+            <input  class="cr1"
+                    id="severityField"
+                    type="checkbox"
+                    ng-model="editor.panel.severityField"
+                    ng-checked="editor.panel.severityField">
+            <label for="severityField" class="cr1"></label>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item" style="width: 100px">
+            <strong>&nbsp;</strong>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="lastChangeField">Last change</label>
+            <input  class="cr1"
+                    id="lastChangeField"
+                    type="checkbox"
+                    ng-model="editor.panel.lastChangeField"
+                    ng-checked="editor.panel.lastChangeField">
+            <label for="lastChangeField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="ageField">Age</label>
+            <input  class="cr1"
+                    id="ageField"
+                    type="checkbox"
+                    ng-model="editor.panel.ageField"
+                    ng-checked="editor.panel.ageField">
+            <label for="ageField" class="cr1"></label>
+          </li>
+          <li class="tight-form-item">
+            <label class="checkbox-label" for="infoField">Info</label>
+            <input  class="cr1"
+                    id="infoField"
+                    type="checkbox"
+                    ng-model="editor.panel.infoField"
+                    ng-checked="editor.panel.infoField">
+            <label for="infoField" class="cr1"></label>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+
+      <div class="tight-form">
+        <ul class="tight-form-list">
+          <li class="tight-form-item">
+            <strong>Custom Last change format</strong>
+            <label class="checkbox-label" for="customLastChangeFormat">&nbsp;</label>
+            <input  class="cr1"
+                    id="customLastChangeFormat"
+                    type="checkbox"
+                    ng-change="editor.panelCtrl.refresh()"
+                    ng-model="editor.panel.customLastChangeFormat"
+                    ng-checked="editor.panel.customLastChangeFormat">
+            <label for="customLastChangeFormat" class="cr1"></label>
+          </li>
+          <li ng-if="editor.panel.customLastChangeFormat">
+            <input  type="text"
+                    ng-model="editor.panel.lastChangeFormat"
+                    ng-blur="editor.panelCtrl.refresh()"
+                    placeholder="dddd, MMMM Do YYYY, h:mm:ss a"
+                    class="tight-form-input"
+                    style="width: 300px"
+                    empty-to-null>
+          </li>
+          <li class="tight-form-item last" ng-if="editor.panel.customLastChangeFormat">
+            <a href="http://momentjs.com/docs/#/displaying/format/" target="_blank">
+              <i class="fa fa-question-circle"
+                 bs-tooltip="'See moment.js dosc for time format.'">
+              </i>
+            </a>
+          </li>
+        </ul>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <h5>Customize triggers severity and colors</h5>
+    <div class="tight-form" ng-repeat="trigger in editor.panel.triggerSeverity">
+      <ul class="tight-form-list">
+        <li class="tight-form-item" style="width: 10px">
+          {{ trigger.priority }}
+        </li>
+        <li>
+          <input  class="tight-form-input input-medium"
+                  type="text"
+                  empty-to-null
+                  ng-model="trigger.severity"
+                  style="color: white"
+                  ng-style="{background: trigger.color}"
+                  ng-model-onblur
+                  ng-change="editor.panelCtrl.refresh()">
+        </li>
+        <li class="tight-form-item">
+          <spectrum-picker ng-model="trigger.color" ng-change="editor.panelCtrl.refresh()"></spectrum-picker>
+        </li>
+        <li class="tight-form-item last" style="width: 28px">
+          <label class="checkbox-label" for="{{ 'trigger-show-' + $index }}"></label>
+            <input  class="cr1"
+                    ng-attr-id="{{ 'trigger-show-' + $index }}"
+                    type="checkbox"
+                    ng-model="trigger.show"
+                    ng-checked="trigger.show"
+                    ng-change="editor.panelCtrl.refresh()">
+            <label for="{{ 'trigger-show-' + $index }}" class="cr1"></label>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+    <div class="tight-form">
+      <ul class="tight-form-list">
+        <li class="tight-form-item"
+            ng-style="{background:editor.panel.okEventColor}"
+            style="width: 160px; color: white">
+          <span style="padding-left: 25px"> OK event color </span>
+        </li>
+        <li class="tight-form-item">
+          <spectrum-picker
+            ng-model="editor.panel.okEventColor"
+            ng-change="editor.panelCtrl.refresh()">
+          </spectrum-picker>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+    <div class="tight-form last">
+      <ul class="tight-form-list">
+        <li class="tight-form-item"
+            ng-style="{background:editor.panel.ackEventColor}"
+            style="width: 160px; color: white">
+          <span style="padding-left: 25px"> Acknowledged color </span>
+        </li>
+        <li class="tight-form-item">
+          <spectrum-picker
+            ng-model="editor.panel.ackEventColor"
+            ng-change="editor.panelCtrl.refresh()">
+          </spectrum-picker>
+        </li>
+        <li class="tight-form-item last" style="width: 28px">
+          <label class="checkbox-label" for="ack-event-color"></label>
+            <input  class="cr1"
+                    id="ack-event-color"
+                    type="checkbox"
+                    ng-model="editor.panel.markAckEvents"
+                    ng-checked="editor.panel.markAckEvents"
+                    ng-change="editor.panelCtrl.refresh()">
+            <label for="ack-event-color" class="cr1"></label>
+        </li>
+      </ul>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,170 @@
+<query-editor-row query-ctrl="ctrl" can-collapse="false">
+
+  <div class="gf-form-inline">
+    <div class="gf-form max-width-20">
+      <label class="gf-form-label width-7">Query Mode</label>
+      <div class="gf-form-select-wrapper max-width-20">
+        <select class="gf-form-input"
+              ng-change="ctrl.switchEditorMode(ctrl.target.mode)"
+              ng-model="ctrl.target.mode"
+              ng-options="v.mode as v.text for (k, v) in ctrl.editorModes">
+        </select>
+      </div>
+    </div>
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
+  </div>
+
+  <!-- IT Service editor -->
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == 1">
+    <div class="gf-form max-width-20">
+      <label class="gf-form-label query-keyword width-7">IT Service</label>
+      <div class="gf-form-select-wrapper max-width-20">
+        <select class="gf-form-input"
+              ng-change="ctrl.selectITService()"
+              ng-model="ctrl.target.itservice"
+              bs-tooltip="ctrl.target.itservice.name.length > 25 ? ctrl.target.itservice.name : ''"
+              ng-options="itservice.name for itservice in ctrl.itserviceList track by itservice.name">
+          <option value="">-- Select IT service --</option>
+        </select>
+      </div>
+    </div>
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword">IT service property</label>
+      <div class="gf-form-select-wrapper">
+        <select class="gf-form-input"
+              ng-change="ctrl.selectITService()"
+              ng-model="ctrl.target.slaProperty"
+              ng-options="slaProperty.name for slaProperty in ctrl.slaPropertyList track by slaProperty.name">
+          <option value="">-- Property --</option>
+        </select>
+      </div>
+    </div>
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
+  </div>
+
+  <div class="gf-form-inline" ng-hide="ctrl.target.mode == 1">
+    <!-- Select Group -->
+    <div class="gf-form max-width-20">
+      <label class="gf-form-label query-keyword width-7">Group</label>
+      <input type="text"
+        ng-model="ctrl.target.group.filter"
+        bs-typeahead="ctrl.getGroupNames"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.group.filter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.group.filter)
+          }"></input>
+    </div>
+    <!-- Select Host -->
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword width-7">Host</label>
+      <input type="text"
+        ng-model="ctrl.target.host.filter"
+        bs-typeahead="ctrl.getHostNames"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.host.filter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.host.filter)
+          }">
+    </div>
+
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
+  </div>
+
+  <div class="gf-form-inline" ng-hide="ctrl.target.mode == 1">
+    <!-- Select Application -->
+    <div class="gf-form max-width-20">
+      <label class="gf-form-label query-keyword width-7">Application</label>
+      <input type="text"
+        ng-model="ctrl.target.application.filter"
+        bs-typeahead="ctrl.getApplicationNames"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.application.filter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.application.filter)
+        }">
+    </div>
+
+    <!-- Select Item -->
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword width-7">Item</label>
+      <input type="text"
+        ng-model="ctrl.target.item.filter"
+        bs-typeahead="ctrl.getItemNames"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.item.filter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.item.filter)
+        }">
+    </div>
+    <div class="gf-form gf-form--grow">
+      <label class="gf-form-label gf-form-label--grow">
+        <a ng-click="ctrl.toggleQueryOptions()">
+          <i class="fa fa-caret-down" ng-show="ctrl.showQueryOptions"></i>
+          <i class="fa fa-caret-right" ng-hide="ctrl.showQueryOptions"></i>
+          {{ctrl.queryOptionsText}}
+        </a>
+      </label>
+    </div>
+  </div>
+
+  <!-- Query options -->
+  <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
+    <div class="gf-form offset-width-7">
+      <gf-form-switch class="gf-form" ng-hide="ctrl.target.mode == 2"
+        label="Show disabled items"
+        checked="ctrl.target.options.showDisabledItems"
+        on-change="ctrl.onQueryOptionChange()">
+      </gf-form-switch>
+    </div>
+  </div>
+
+  <!-- Metric processing functions -->
+  <div class="gf-form-inline" ng-hide="ctrl.target.mode">
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword width-7">Functions</label>
+      <div ng-repeat="func in ctrl.target.functions" class="gf-form-label query-part" metric-function-editor></div>
+    </div>
+    <div class="gf-form dropdown" add-metric-function>
+    </div>
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
+  </div>
+
+  <!-- Text mode options -->
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == 2">
+    <!-- Text metric regex -->
+    <div class="gf-form max-width-20">
+      <label class="gf-form-label query-keyword width-7">Text filter</label>
+      <input type="text"
+             class="gf-form-input"
+             ng-model="ctrl.target.textFilter"
+             spellcheck='false'
+             placeholder="Text filter (regex)"
+             ng-blur="ctrl.onTargetBlur()">
+    </div>
+
+    <gf-form-switch class="gf-form" label="Use capture groups" checked="ctrl.target.useCaptureGroups" on-change="ctrl.onTargetBlur()">
+    </gf-form-switch>
+  </div>
+
+</query-editor-row>
