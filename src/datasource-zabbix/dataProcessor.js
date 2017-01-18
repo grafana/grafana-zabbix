@@ -156,6 +156,18 @@ function setAlias(alias, timeseries) {
   return timeseries;
 }
 
+function setAliasByRegex(alias, timeseries) {
+  timeseries.target = extractText(timeseries.target, alias);
+  return timeseries;
+}
+
+function extractText(str, pattern) {
+  var extractPattern = new RegExp(pattern);
+  var extractedValue = extractPattern.exec(str);
+  extractedValue = extractedValue[0]
+  return extractedValue;
+}
+
 function scale(factor, datapoints) {
   return _.map(datapoints, point => {
     return [
@@ -281,7 +293,8 @@ let metricFunctions = {
   top: _.partial(limit, 'top'),
   bottom: _.partial(limit, 'bottom'),
   timeShift: timeShift,
-  setAlias: setAlias
+  setAlias: setAlias,
+  setAliasByRegex: setAliasByRegex
 };
 
 let aggregationFunctions = {

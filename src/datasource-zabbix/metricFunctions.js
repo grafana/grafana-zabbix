@@ -149,13 +149,24 @@ addFuncDef({
   defaultParams: ['24h'],
 });
 
+//Alias
+
 addFuncDef({
   name: 'setAlias',
   category: 'Alias',
   params: [
-    { name: 'alias', type: 'string'}
+    { name: 'alias', type: 'string' }
   ],
-  defaultParams: [],
+  defaultParams: []
+});
+
+addFuncDef({
+  name: 'setAliasByRegex',
+  category: 'Alias',
+  params: [
+    { name: 'aliasByRegex', type: 'string' }
+  ],
+  defaultParams: []
 });
 
 _.each(categories, function(funcList, catName) {
