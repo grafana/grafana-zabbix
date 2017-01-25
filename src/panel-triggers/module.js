@@ -42,6 +42,7 @@ var panelDefaults = {
   lastChangeField: true,
   ageField: true,
   infoField: true,
+  actionsField: true,
   limit: 10,
   showTriggers: 'all triggers',
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
@@ -241,6 +242,21 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       return zabbix.acknowledgeEvent(eventid, ack_message).then(() => {
         self.refresh();
       });
+    });
+  }
+
+  sendAcknowledge(trigger) {
+    console.log(trigger, this.panel.datasource);
+    var self = this;
+    // Load datasource
+    return this.datasourceSrv.get(this.panel.datasource).then(datasource => {
+      var zabbix = datasource.zabbixAPI;
+      return zabbix.sendAcknowledge(trigger.lastEvent.eventid)
+              .then(result => {
+                alert("Acknowledge sent");
+                this.refreshData();
+              });
+
     });
   }
 }

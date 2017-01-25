@@ -32,6 +32,9 @@
           <th ng-if="ctrl.panel.infoField" style="width: 100px">
             <div class="triggers-panel-table-header-inner pointer">Info</div>
           </th>
+          <th ng-if="ctrl.panel.actionsField" style="width: 100px">
+            <div class="triggers-panel-table-header-inner pointer">Actions</div>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -116,6 +119,14 @@
               context="ctrl">
             </ack-tooltip>
           </td>
+          <td ng-if="ctrl.panel.actionsField">
+            <a  ng-if="!trigger.acknowledges"
+                role="button"
+                ng-click="ctrl.sendAcknowledge(trigger)">
+              <i class="fa fa-paper-plane"></i>
+              Ack
+            </a>
+        </td>
         </tr>
       </tbody>
     </table>
