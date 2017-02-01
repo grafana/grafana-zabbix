@@ -12,6 +12,7 @@
  */
 
 import _ from 'lodash';
+import $ from 'jquery';
 import moment from 'moment';
 import * as utils from '../datasource-zabbix/utils';
 import {MetricsPanelCtrl} from 'app/plugins/sdk';
@@ -48,7 +49,9 @@ var panelDefaults = {
   showEvents: { text: 'Problems', value: '1' },
   triggerSeverity: defaultSeverity,
   okEventColor: 'rgba(0, 245, 153, 0.45)',
-  ackEventColor: 'rgba(0, 0, 0, 0)'
+  ackEventColor: 'rgba(0, 0, 0, 0)',
+  scroll: true,
+  pageSize: null
 };
 
 var triggerStatusMap = {
@@ -68,6 +71,8 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.contextSrv = contextSrv;
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
+
+    this.pageIndex = 0;
 
     // Load panel defaults
     // _.cloneDeep() need for prevent changing shared defaultSeverity.
@@ -222,6 +227,9 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
           // Notify panel that request is finished
           self.setTimeQueryEnd();
           self.loading = false;
+
+          this.panel.triggerList = this.triggerList;
+          this.render();
         });
       });
     });
@@ -242,6 +250,89 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       .then(() => {
         this.refresh();
       });
+    });
+  }
+
+  render() {
+    return super.render(this.table);
+  }
+
+  link(scope, elem, attrs, ctrl) {
+    var data;
+    var panel = ctrl.panel;
+    var pageCount = 0;
+    // var formaters = [];
+    data = ctrl.panel.triggerList;
+
+    function getTableHeight() {
+      var panelHeight = ctrl.height;
+
+      if (pageCount > 1) {
+        panelHeight -= 26;
+      }
+
+      return (panelHeight - 31) + 'px';
+    }
+
+    // function appendTableRows(tbodyElem) {
+    //   var renderer = new TableRenderer(panel, data, ctrl.dashboard.isTimezoneUtc(), ctrl.$sanitize);
+    //   tbodyElem.empty();
+    //   tbodyElem.html(renderer.render(ctrl.pageIndex));
+    // }
+
+    function switchPage(e) {
+      var el = $(e.currentTarget);
+      ctrl.pageIndex = (parseInt(el.text(), 10)-1);
+      renderPanel();
+    }
+
+    function appendPaginationControls(footerElem) {
+      footerElem.empty();
+
+      var pageSize = panel.pageSize || 5;
+      pageCount = Math.ceil(ctrl.panel.triggerList.length / pageSize);
+      if (pageCount === 1) {
+        return;
+      }
+
+      var startPage = Math.max(ctrl.pageIndex - 3, 0);
+      var endPage = Math.min(pageCount, startPage + 9);
+
+      var paginationList = $('<ul></ul>');
+
+      for (var i = startPage; i < endPage; i++) {
+        var activeClass = i === ctrl.pageIndex ? 'active' : '';
+        var pageLinkElem = $('<li><a class="triggers-panel-page-link pointer ' + activeClass + '">' + (i+1) + '</a></li>');
+        paginationList.append(pageLinkElem);
+      }
+
+      footerElem.append(paginationList);
+    }
+
+    function renderPanel() {
+      var panelElem = elem.parents('.panel');
+      var rootElem = elem.find('.triggers-panel-scroll');
+      // var tbodyElem = elem.find('tbody');
+      var footerElem = elem.find('.triggers-panel-footer');
+
+      elem.css({'font-size': panel.fontSize});
+      panelElem.addClass('triggers-panel-wrapper');
+
+      // appendTableRows(tbodyElem);
+      appendPaginationControls(footerElem);
+
+      rootElem.css({'max-height': panel.scroll ? getTableHeight() : '' });
+    }
+
+    elem.on('click', '.triggers-panel-page-link', switchPage);
+
+    var unbindDestroy = scope.$on('$destroy', function() {
+      elem.off('click', '.triggers-panel-page-link');
+      unbindDestroy();
+    });
+
+    ctrl.events.on('render', () => {
+      renderPanel();
     });
   }
 }
