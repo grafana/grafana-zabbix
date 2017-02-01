@@ -232,14 +232,15 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   acknowledgeTrigger(trigger, message) {
-    let self = this;
     let eventid = trigger.lastEvent.eventid;
     let grafana_user = this.contextSrv.user.name;
     let ack_message = grafana_user + ' (Grafana): ' + message;
-    return this.datasourceSrv.get(this.panel.datasource).then(datasource => {
-      let zabbix = datasource.zabbixAPI;
-      return zabbix.acknowledgeEvent(eventid, ack_message).then(() => {
-        self.refresh();
+    return this.datasourceSrv.get(this.panel.datasource)
+    .then(datasource => {
+      let zabbixAPI = datasource.zabbix.zabbixAPI;
+      return zabbixAPI.acknowledgeEvent(eventid, ack_message)
+      .then(() => {
+        this.refresh();
       });
     });
   }
