@@ -164,7 +164,7 @@ function setAliasByRegex(alias, timeseries) {
 function extractText(str, pattern) {
   var extractPattern = new RegExp(pattern);
   var extractedValue = extractPattern.exec(str);
-  extractedValue = extractedValue[0]
+  extractedValue = extractedValue[0];
   return extractedValue;
 }
 
