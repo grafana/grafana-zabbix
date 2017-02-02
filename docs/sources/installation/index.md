@@ -43,7 +43,7 @@ service grafana-server restart
 ```
 
 ## From special repo
-**WARNING!** This way is deprecated. Now main repo (https://github.com/alexanderzobnin/grafana-zabbix) contains builded pludin.  
+**WARNING!** This way is deprecated. Now main repo (https://github.com/alexanderzobnin/grafana-zabbix) contains builded plugin.  
 You can use [grafana-zabbix-app](https://github.com/alexanderzobnin/grafana-zabbix-app) repo,
 which contains latest builded version of plugin.
 
