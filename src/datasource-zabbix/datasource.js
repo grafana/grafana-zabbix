@@ -394,7 +394,9 @@ class ZabbixAPIDatasource {
   replaceTargetVariables(target, options) {
     let parts = ['group', 'host', 'application', 'item'];
     parts.forEach(p => {
-      target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
+      if (target[p] && target[p].filter) {
+        target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
+      }
     });
     target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
 

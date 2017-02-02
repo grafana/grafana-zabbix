@@ -61,13 +61,8 @@ class TriggerPanelEditorCtrl {
     };
     _.defaults(this, scopeDefaults);
 
-    // Get zabbix data sources
-    var datasources = _.filter(this.datasourceSrv.getMetricSources(), datasource => {
-      return datasource.meta.id === 'alexanderzobnin-zabbix-datasource';
-    });
-    this.datasources = _.map(datasources, 'name');
-
     // Set default datasource
+    this.datasources = _.map(this.getZabbixDataSources(), 'name');
     if (!this.panel.datasource) {
       this.panel.datasource = this.datasources[0];
     }
@@ -169,6 +164,13 @@ class TriggerPanelEditorCtrl {
 
   isVariable(str) {
     return utils.isTemplateVariable(str, this.templateSrv.variables);
+  }
+
+  getZabbixDataSources() {
+    let ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
+    return _.filter(this.datasourceSrv.getMetricSources(), datasource => {
+      return datasource.meta.id === ZABBIX_DS_ID && datasource.value;
+    });
   }
 }
 

@@ -23,7 +23,27 @@ service grafana-server restart
 
 Read more about installing plugins in [Grafana docs](http://docs.grafana.org/plugins/installation/)
 
+## From github repo
+Just clone plugin repo into your plugin directory
+```sh
+cd /var/lib/grafana/plugins
+git clone https://github.com/alexanderzobnin/grafana-zabbix
+```
+
+Then restart grafana server.
+```sh
+service grafana-server restart
+```
+
+Using this way you can easy upgrade plugin just running
+```sh
+cd /var/lib/grafana/plugins/grafana-zabbix-app
+git pull
+service grafana-server restart
+```
+
 ## From special repo
+**WARNING!** This way is deprecated. Now main repo (https://github.com/alexanderzobnin/grafana-zabbix) contains builded plugin.  
 You can use [grafana-zabbix-app](https://github.com/alexanderzobnin/grafana-zabbix-app) repo,
 which contains latest builded version of plugin.
 
@@ -72,5 +92,4 @@ Restart Grafana server
 
 ```sh
 service grafana-server restart
-systemctl restart grafana-server
 ```

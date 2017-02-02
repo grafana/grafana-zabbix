@@ -1,5 +1,20 @@
-import _ from 'lodash';
-import * as utils from './utils';
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _lodash = require('lodash');
+
+var _lodash2 = _interopRequireDefault(_lodash);
+
+var _utils = require('./utils');
+
+var utils = _interopRequireWildcard(_utils);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Downsample datapoints series
@@ -21,21 +36,19 @@ function downsampleSeries(datapoints, time_to, ms_interval, func) {
       points_sum += datapoints[i][0];
       points_num++;
       frame.push(datapoints[i][0]);
-    }
-    else {
+    } else {
       value_avg = points_num ? points_sum / points_num : 0;
 
       if (func === "max") {
-        downsampledSeries.push([_.max(frame), timeWindow.to]);
-      }
-      else if (func === "min") {
-        downsampledSeries.push([_.min(frame), timeWindow.to]);
+        downsampledSeries.push([_lodash2.default.max(frame), timeWindow.to]);
+      } else if (func === "min") {
+        downsampledSeries.push([_lodash2.default.min(frame), timeWindow.to]);
       }
 
       // avg by default
       else {
-        downsampledSeries.push([value_avg, timeWindow.to]);
-      }
+          downsampledSeries.push([value_avg, timeWindow.to]);
+        }
 
       // Shift time window
       timeWindow.to = timeWindow.from;
@@ -60,22 +73,22 @@ function groupBy(interval, groupByCallback, datapoints) {
   var ms_interval = utils.parseInterval(interval);
 
   // Calculate frame timestamps
-  var frames = _.groupBy(datapoints, function(point) {
+  var frames = _lodash2.default.groupBy(datapoints, function (point) {
     // Calculate time for group of points
     return Math.floor(point[1] / ms_interval) * ms_interval;
   });
 
   // frame: { '<unixtime>': [[<value>, <unixtime>], ...] }
   // return [{ '<unixtime>': <value> }, { '<unixtime>': <value> }, ...]
-  var grouped = _.mapValues(frames, function(frame) {
-    var points = _.map(frame, function(point) {
+  var grouped = _lodash2.default.mapValues(frames, function (frame) {
+    var points = _lodash2.default.map(frame, function (point) {
       return point[0];
     });
     return groupByCallback(points);
   });
 
   // Convert points to Grafana format
-  return sortByTime(_.map(grouped, function(value, timestamp) {
+  return sortByTime(_lodash2.default.map(grouped, function (value, timestamp) {
     return [Number(value), Number(timestamp)];
   }));
 }
@@ -83,23 +96,23 @@ function groupBy(interval, groupByCallback, datapoints) {
 function sumSeries(timeseries) {
 
   // Calculate new points for interpolation
-  var new_timestamps = _.uniq(_.map(_.flatten(timeseries, true), function(point) {
+  var new_timestamps = _lodash2.default.uniq(_lodash2.default.map(_lodash2.default.flatten(timeseries, true), function (point) {
     return point[1];
   }));
-  new_timestamps = _.sortBy(new_timestamps);
+  new_timestamps = _lodash2.default.sortBy(new_timestamps);
 
-  var interpolated_timeseries = _.map(timeseries, function(series) {
-    var timestamps = _.map(series, function(point) {
+  var interpolated_timeseries = _lodash2.default.map(timeseries, function (series) {
+    var timestamps = _lodash2.default.map(series, function (point) {
       return point[1];
     });
-    var new_points = _.map(_.difference(new_timestamps, timestamps), function(timestamp) {
+    var new_points = _lodash2.default.map(_lodash2.default.difference(new_timestamps, timestamps), function (timestamp) {
       return [null, timestamp];
     });
     var new_series = series.concat(new_points);
     return sortByTime(new_series);
   });
 
-  _.each(interpolated_timeseries, interpolateSeries);
+  _lodash2.default.each(interpolated_timeseries, interpolateSeries);
 
   var new_timeseries = [];
   var sum;
@@ -115,14 +128,14 @@ function sumSeries(timeseries) {
 }
 
 function limit(order, n, orderByFunc, timeseries) {
-  let orderByCallback = aggregationFunctions[orderByFunc];
-  let sortByIteratee = (ts) => {
-    let values = _.map(ts.datapoints, (point) => {
+  var orderByCallback = aggregationFunctions[orderByFunc];
+  var sortByIteratee = function sortByIteratee(ts) {
+    var values = _lodash2.default.map(ts.datapoints, function (point) {
       return point[0];
     });
     return orderByCallback(values);
   };
-  let sortedTimeseries = _.sortBy(timeseries, sortByIteratee);
+  var sortedTimeseries = _lodash2.default.sortBy(timeseries, sortByIteratee);
   if (order === 'bottom') {
     return sortedTimeseries.slice(0, n);
   } else {
@@ -132,22 +145,22 @@ function limit(order, n, orderByFunc, timeseries) {
 
 function AVERAGE(values) {
   var sum = 0;
-  _.each(values, function(value) {
+  _lodash2.default.each(values, function (value) {
     sum += value;
   });
   return sum / values.length;
 }
 
 function MIN(values) {
-  return _.min(values);
+  return _lodash2.default.min(values);
 }
 
 function MAX(values) {
-  return _.max(values);
+  return _lodash2.default.max(values);
 }
 
 function MEDIAN(values) {
-  var sorted = _.sortBy(values);
+  var sorted = _lodash2.default.sortBy(values);
   return sorted[Math.floor(sorted.length / 2)];
 }
 
@@ -169,17 +182,14 @@ function extractText(str, pattern) {
 }
 
 function scale(factor, datapoints) {
-  return _.map(datapoints, point => {
-    return [
-      point[0] * factor,
-      point[1]
-    ];
+  return _lodash2.default.map(datapoints, function (point) {
+    return [point[0] * factor, point[1]];
   });
 }
 
 function delta(datapoints) {
-  let newSeries = [];
-  let deltaValue;
+  var newSeries = [];
+  var deltaValue = void 0;
   for (var i = 1; i < datapoints.length; i++) {
     deltaValue = datapoints[i][0] - datapoints[i - 1][0];
     newSeries.push([deltaValue, datapoints[i][1]]);
@@ -194,18 +204,18 @@ function groupByWrapper(interval, groupFunc, datapoints) {
 
 function aggregateByWrapper(interval, aggregateFunc, datapoints) {
   // Flatten all points in frame and then just use groupBy()
-  var flattenedPoints = _.flatten(datapoints, true);
+  var flattenedPoints = _lodash2.default.flatten(datapoints, true);
   var groupByCallback = aggregationFunctions[aggregateFunc];
   return groupBy(interval, groupByCallback, flattenedPoints);
 }
 
 function aggregateWrapper(groupByCallback, interval, datapoints) {
-  var flattenedPoints = _.flatten(datapoints, true);
+  var flattenedPoints = _lodash2.default.flatten(datapoints, true);
   return groupBy(interval, groupByCallback, flattenedPoints);
 }
 
 function sortByTime(series) {
-  return _.sortBy(series, function(point) {
+  return _lodash2.default.sortBy(series, function (point) {
     return point[1];
   });
 }
@@ -237,12 +247,12 @@ function linearInterpolation(timestamp, left, right) {
   if (left[1] === right[1]) {
     return (left[0] + right[0]) / 2;
   } else {
-    return (left[0] + (right[0] - left[0]) / (right[1] - left[1]) * (timestamp - left[1]));
+    return left[0] + (right[0] - left[0]) / (right[1] - left[1]) * (timestamp - left[1]);
   }
 }
 
 function findNearestRight(series, point) {
-  var point_index = _.indexOf(series, point);
+  var point_index = _lodash2.default.indexOf(series, point);
   var nearestRight;
   for (var i = point_index; i < series.length; i++) {
     if (series[i][0] !== null) {
@@ -253,7 +263,7 @@ function findNearestRight(series, point) {
 }
 
 function findNearestLeft(series, point) {
-  var point_index = _.indexOf(series, point);
+  var point_index = _lodash2.default.indexOf(series, point);
   var nearestLeft;
   for (var i = point_index; i > 0; i--) {
     if (series[i][0] !== null) {
@@ -264,47 +274,44 @@ function findNearestLeft(series, point) {
 }
 
 function timeShift(interval, range) {
-  let shift = utils.parseTimeShiftInterval(interval) / 1000;
-  return range.map(time => {
+  var shift = utils.parseTimeShiftInterval(interval) / 1000;
+  return range.map(function (time) {
     return time - shift;
   });
 }
 
 function unShiftTimeSeries(interval, datapoints) {
-  let unshift = utils.parseTimeShiftInterval(interval);
-  return datapoints.map(dp => {
-    return [
-      dp[0],
-      dp[1] + unshift
-    ];
+  var unshift = utils.parseTimeShiftInterval(interval);
+  return datapoints.map(function (dp) {
+    return [dp[0], dp[1] + unshift];
   });
 }
 
-let metricFunctions = {
+var metricFunctions = {
   groupBy: groupByWrapper,
   scale: scale,
   delta: delta,
   aggregateBy: aggregateByWrapper,
-  average: _.partial(aggregateWrapper, AVERAGE),
-  min: _.partial(aggregateWrapper, MIN),
-  max: _.partial(aggregateWrapper, MAX),
-  median: _.partial(aggregateWrapper, MEDIAN),
+  average: _lodash2.default.partial(aggregateWrapper, AVERAGE),
+  min: _lodash2.default.partial(aggregateWrapper, MIN),
+  max: _lodash2.default.partial(aggregateWrapper, MAX),
+  median: _lodash2.default.partial(aggregateWrapper, MEDIAN),
   sumSeries: sumSeries,
-  top: _.partial(limit, 'top'),
-  bottom: _.partial(limit, 'bottom'),
+  top: _lodash2.default.partial(limit, 'top'),
+  bottom: _lodash2.default.partial(limit, 'bottom'),
   timeShift: timeShift,
   setAlias: setAlias,
   setAliasByRegex: setAliasByRegex
 };
 
-let aggregationFunctions = {
+var aggregationFunctions = {
   avg: AVERAGE,
   min: MIN,
   max: MAX,
   median: MEDIAN
 };
 
-export default {
+exports.default = {
   downsampleSeries: downsampleSeries,
   groupBy: groupBy,
   AVERAGE: AVERAGE,

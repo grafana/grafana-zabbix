@@ -1,0 +1,124 @@
+<div class="triggers-panel-container">
+  <div class="triggers-panel-header-bg"></div>
+  <div class="triggers-panel-scroll">
+    <table class="triggers-panel-table">
+      <thead>
+        <tr>
+          <th ng-if="ctrl.panel.hostField" style="width: 15%">
+            <div class="triggers-panel-table-header-inner pointer">
+              Host
+            </div>
+          </th>
+          <th ng-if="ctrl.panel.hostTechNameField" style="width: 15%">
+            <div class="triggers-panel-table-header-inner pointer">
+              Technical Name
+            </div>
+          </th>
+          <th ng-if="ctrl.panel.statusField" style="width: 85px">
+            <div class="triggers-panel-table-header-inner pointer">Status</div>
+          </th>
+          <th ng-if="ctrl.panel.severityField" style="width: 120px">
+            <div class="triggers-panel-table-header-inner pointer">Severity</div>
+          </th>
+          <th>
+            <div class="triggers-panel-table-header-inner pointer">Issue</div>
+          </th>
+          <th ng-if="ctrl.panel.lastChangeField" style="width: 220px">
+            <div class="triggers-panel-table-header-inner pointer">Last change</div>
+          </th>
+          <th ng-if="ctrl.panel.ageField" style="width: 180px">
+            <div class="triggers-panel-table-header-inner pointer">Age</div>
+          </th>
+          <th ng-if="ctrl.panel.infoField" style="width: 100px">
+            <div class="triggers-panel-table-header-inner pointer">Info</div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="trigger in ctrl.triggerList">
+
+          <td ng-if="ctrl.panel.hostField">
+            <div>
+              <span><strong>{{trigger.host}}</strong></span>
+            </div>
+          </td>
+
+          <td ng-if="ctrl.panel.hostTechNameField">
+            <div>
+              <span><strong>{{trigger.hostTechName}}</strong></span>
+            </div>
+          </td>
+
+          <td ng-if="ctrl.panel.statusField" style="background-color: {{trigger.color}}; color: white">
+            <div>
+              {{ctrl.triggerStatusMap[trigger.value]}}
+            </div>
+          </td>
+
+          <td ng-if="ctrl.panel.severityField" style="background-color: {{trigger.color}}; color: white">
+            <div>
+              {{trigger.severity}}
+            </div>
+          </td>
+
+          <td style="background-color: {{trigger.color}}; color: white">
+            <div>
+              {{trigger.description}}
+              <a  ng-if="trigger.comments"
+                  role="button"
+                  ng-click="ctrl.switchComment(trigger)"
+                  class="pointer"
+                  style="float: right; padding-right: 8px"
+                  bs-tooltip="'Show additional trigger description'"
+                  data-placement="top">
+                <i class="fa fa-file-text-o"></i>
+              </a>
+            </div>
+
+            <!-- Trigger comments -->
+            <div  class="collapse"
+                  id="comments-{{trigger.triggerid}}"
+                  ng-if="trigger.showComment">
+              <div>
+                <small>{{trigger.comments}}</small>
+              </div>
+            </div>
+          </td>
+
+          <td ng-if="ctrl.panel.lastChangeField">
+            {{trigger.lastchange}}
+          </td>
+
+          <td ng-if="ctrl.panel.ageField">
+            {{trigger.age}}
+          </td>
+
+          <td ng-if="ctrl.panel.infoField">
+
+            <!-- Trigger Url -->
+            <a  ng-if="trigger.url"
+                href="{{trigger.url}}"
+                target="_blank">
+              <i class="fa fa-external-link"></i>
+            </a>
+
+            <!-- Trigger state -->
+            <span ng-if="trigger.state === '1'"
+                  bs-tooltip="'{{trigger.error}}'">
+              <i class="fa fa-question-circle"></i>
+            </span>
+
+            <!-- Trigger acknowledges -->
+            <ack-tooltip
+              ack="trigger.acknowledges"
+              trigger="trigger"
+              on-ack="ctrl.acknowledgeTrigger"
+              context="ctrl">
+            </ack-tooltip>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="triggers-panel-footer"></div>

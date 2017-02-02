@@ -1,0 +1,3 @@
+# Don't diff files in dist/
+*.map binary
+dist/** binary

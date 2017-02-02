@@ -23,7 +23,7 @@ awsconfig
 /tmp
 vendor/phantomjs/phantomjs
 
-dist/
+# dist/
 
 # locally required config files
 public/css/*.min.css

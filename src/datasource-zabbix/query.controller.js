@@ -181,7 +181,11 @@ export class ZabbixQueryController extends QueryCtrl {
    */
   isContainsVariables() {
     return _.some(['group', 'host', 'application'], field => {
-      return utils.isTemplateVariable(this.panel.triggers[field].filter, this.templateSrv.variables);
+      if (this.target[field] && this.target[field].filter) {
+        return utils.isTemplateVariable(this.target[field].filter, this.templateSrv.variables);
+      } else {
+        return false;
+      }
     });
   }
 
