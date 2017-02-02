@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/sdk', './editor', './ack-tooltip.directive', './css/panel_triggers.css!'], function (_export, _context) {
+System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'app/plugins/sdk', './editor', './ack-tooltip.directive', './css/panel_triggers.css!'], function (_export, _context) {
   "use strict";
 
-  var _, moment, utils, MetricsPanelCtrl, triggerPanelEditor, _createClass, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
+  var _, $, moment, utils, MetricsPanelCtrl, triggerPanelEditor, _createClass, _get, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -50,6 +50,8 @@ System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/
   return {
     setters: [function (_lodash) {
       _ = _lodash.default;
+    }, function (_jquery) {
+      $ = _jquery.default;
     }, function (_moment) {
       moment = _moment.default;
     }, function (_datasourceZabbixUtils) {
@@ -78,6 +80,31 @@ System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/
         };
       }();
 
+      _get = function get(object, property, receiver) {
+        if (object === null) object = Function.prototype;
+        var desc = Object.getOwnPropertyDescriptor(object, property);
+
+        if (desc === undefined) {
+          var parent = Object.getPrototypeOf(object);
+
+          if (parent === null) {
+            return undefined;
+          } else {
+            return get(parent, property, receiver);
+          }
+        } else if ("value" in desc) {
+          return desc.value;
+        } else {
+          var getter = desc.get;
+
+          if (getter === undefined) {
+            return undefined;
+          }
+
+          return getter.call(receiver);
+        }
+      };
+
       defaultSeverity = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true }, { priority: 3, severity: 'Average', color: '#C15C17', show: true }, { priority: 4, severity: 'High', color: '#BF1B00', show: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true }];
       panelDefaults = {
         datasource: null,
@@ -99,7 +126,9 @@ System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/
         showEvents: { text: 'Problems', value: '1' },
         triggerSeverity: defaultSeverity,
         okEventColor: 'rgba(0, 245, 153, 0.45)',
-        ackEventColor: 'rgba(0, 0, 0, 0)'
+        ackEventColor: 'rgba(0, 0, 0, 0)',
+        scroll: true,
+        pageSize: 10
       };
       triggerStatusMap = {
         '0': 'OK',
@@ -121,6 +150,8 @@ System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/
           _this.contextSrv = contextSrv;
           _this.triggerStatusMap = triggerStatusMap;
           _this.defaultTimeFormat = defaultTimeFormat;
+
+          _this.pageIndex = 0;
 
           // Load panel defaults
           // _.cloneDeep() need for prevent changing shared defaultSeverity.
@@ -161,6 +192,8 @@ System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/
         }, {
           key: 'refreshData',
           value: function refreshData() {
+            var _this2 = this;
+
             // clear loading/error state
             delete this.error;
             this.loading = true;
@@ -282,6 +315,9 @@ System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/
                   // Notify panel that request is finished
                   self.setTimeQueryEnd();
                   self.loading = false;
+
+                  _this2.panel.triggerList = _this2.triggerList;
+                  _this2.render();
                 });
               });
             });
@@ -294,7 +330,7 @@ System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/
         }, {
           key: 'acknowledgeTrigger',
           value: function acknowledgeTrigger(trigger, message) {
-            var _this2 = this;
+            var _this3 = this;
 
             var eventid = trigger.lastEvent.eventid;
             var grafana_user = this.contextSrv.user.name;
@@ -302,8 +338,93 @@ System.register(['lodash', 'moment', '../datasource-zabbix/utils', 'app/plugins/
             return this.datasourceSrv.get(this.panel.datasource).then(function (datasource) {
               var zabbixAPI = datasource.zabbix.zabbixAPI;
               return zabbixAPI.acknowledgeEvent(eventid, ack_message).then(function () {
-                _this2.refresh();
+                _this3.refresh();
               });
+            });
+          }
+        }, {
+          key: 'render',
+          value: function render() {
+            return _get(TriggerPanelCtrl.prototype.__proto__ || Object.getPrototypeOf(TriggerPanelCtrl.prototype), 'render', this).call(this, this.table);
+          }
+        }, {
+          key: 'link',
+          value: function link(scope, elem, attrs, ctrl) {
+            var data;
+            var panel = ctrl.panel;
+            var pageCount = 0;
+            // var formaters = [];
+            data = ctrl.panel.triggerList;
+
+            function getTableHeight() {
+              var panelHeight = ctrl.height;
+
+              if (pageCount > 1) {
+                panelHeight -= 26;
+              }
+
+              return panelHeight - 31 + 'px';
+            }
+
+            // function appendTableRows(tbodyElem) {
+            //   var renderer = new TableRenderer(panel, data, ctrl.dashboard.isTimezoneUtc(), ctrl.$sanitize);
+            //   tbodyElem.empty();
+            //   tbodyElem.html(renderer.render(ctrl.pageIndex));
+            // }
+
+            function switchPage(e) {
+              var el = $(e.currentTarget);
+              ctrl.pageIndex = parseInt(el.text(), 10) - 1;
+              renderPanel();
+            }
+
+            function appendPaginationControls(footerElem) {
+              footerElem.empty();
+
+              var pageSize = panel.pageSize || 5;
+              pageCount = Math.ceil(ctrl.panel.triggerList.length / pageSize);
+              if (pageCount === 1) {
+                return;
+              }
+
+              var startPage = Math.max(ctrl.pageIndex - 3, 0);
+              var endPage = Math.min(pageCount, startPage + 9);
+
+              var paginationList = $('<ul></ul>');
+
+              for (var i = startPage; i < endPage; i++) {
+                var activeClass = i === ctrl.pageIndex ? 'active' : '';
+                var pageLinkElem = $('<li><a class="triggers-panel-page-link pointer ' + activeClass + '">' + (i + 1) + '</a></li>');
+                paginationList.append(pageLinkElem);
+              }
+
+              footerElem.append(paginationList);
+            }
+
+            function renderPanel() {
+              var panelElem = elem.parents('.panel');
+              var rootElem = elem.find('.triggers-panel-scroll');
+              // var tbodyElem = elem.find('tbody');
+              var footerElem = elem.find('.triggers-panel-footer');
+
+              elem.css({ 'font-size': panel.fontSize });
+              panelElem.addClass('triggers-panel-wrapper');
+
+              // appendTableRows(tbodyElem);
+              appendPaginationControls(footerElem);
+
+              rootElem.css({ 'max-height': panel.scroll ? getTableHeight() : '' });
+            }
+
+            elem.on('click', '.triggers-panel-page-link', switchPage);
+
+            var unbindDestroy = scope.$on('$destroy', function () {
+              elem.off('click', '.triggers-panel-page-link');
+              unbindDestroy();
+            });
+
+            ctrl.events.on('render', function () {
+              renderPanel();
             });
           }
         }]);

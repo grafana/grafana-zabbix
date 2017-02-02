@@ -121,6 +121,22 @@
         </div>
       </div>
     </div>
+    <div class="gf-form-inline">
+      <gf-form-switch class="gf-form"
+        label-class="width-8"
+        label="Enable scroll"
+        checked="editor.panel.scroll"
+        on-change="ctrl.render()">
+      </gf-form-switch>
+      <div class="gf-form">
+        <label class="gf-form-label width-8">Page size</label>
+        <input class="gf-form-input width-5"
+          type="number"
+          ng-model="editor.panel.pageSize"
+          ng-model-onblur
+          ng-change="editor.panelCtrl.refresh()">
+      </div>
+    </div>
   </div>
 
   <div class="section gf-form-group">

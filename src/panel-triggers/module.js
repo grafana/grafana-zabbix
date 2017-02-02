@@ -51,7 +51,7 @@ var panelDefaults = {
   okEventColor: 'rgba(0, 245, 153, 0.45)',
   ackEventColor: 'rgba(0, 0, 0, 0)',
   scroll: true,
-  pageSize: null
+  pageSize: 10
 };
 
 var triggerStatusMap = {
