@@ -45,6 +45,7 @@ var panelDefaults = {
   infoField: true,
   limit: 10,
   showTriggers: 'all triggers',
+  hideHostsInMaintenance: false,
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
   showEvents: { text: 'Problems', value: '1' },
   triggerSeverity: defaultSeverity,
@@ -121,13 +122,14 @@ class TriggerPanelCtrl extends PanelCtrl {
       this.zabbix = zabbix;
       var showEvents = this.panel.showEvents.value;
       var triggerFilter = this.panel.triggers;
+      var hideHostsInMaintenance = this.panel.hideHostsInMaintenance;
 
       // Replace template variables
       var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
       var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
       var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-      var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, showEvents);
+      var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, showEvents, hideHostsInMaintenance);
       return getTriggers.then(triggers => {
         return _.map(triggers, this.formatTrigger.bind(this));
       });

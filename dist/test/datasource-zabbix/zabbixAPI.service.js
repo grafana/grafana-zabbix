@@ -356,7 +356,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       }
     }, {
       key: 'getTriggers',
-      value: function getTriggers(groupids, hostids, applicationids, showTriggers, timeFrom, timeTo) {
+      value: function getTriggers(groupids, hostids, applicationids, showTriggers, hideHostsInMaintenance, timeFrom, timeTo) {
         var params = {
           output: 'extend',
           groupids: groupids,
@@ -379,6 +379,10 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
 
         if (showTriggers) {
           params.filter.value = showTriggers;
+        }
+
+        if (hideHostsInMaintenance) {
+          params.maintenance = false;
         }
 
         if (timeFrom || timeTo) {

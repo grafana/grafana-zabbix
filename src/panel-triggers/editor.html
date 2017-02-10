@@ -138,15 +138,21 @@
       </div>
     </div>
     <div class="gf-form-inline">
-      <div class="gf-form max-width-17">
+      <div class="gf-form max-width-12">
         <label class="gf-form-label width-6">Font size</label>
-        <div class="gf-form-select-wrapper max-width-15">
+        <div class="gf-form-select-wrapper max-width-8">
           <select class="gf-form-input"
               ng-model="editor.panel.fontSize"
               ng-options="f for f in editor.fontSizes"
               ng-change="editor.panelCtrl.render()"></select>
         </div>
       </div>
+      <gf-form-switch class="gf-form"
+        label-class="width-14"
+        label="Hide hosts in maintenance"
+        checked="editor.panel.hideHostsInMaintenance"
+        on-change="ctrl.refresh()">
+      </gf-form-switch>
     </div>
   </div>
 

@@ -97,6 +97,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         infoField: true,
         limit: 10,
         showTriggers: 'all triggers',
+        hideHostsInMaintenance: false,
         sortTriggersBy: { text: 'last change', value: 'lastchange' },
         showEvents: { text: 'Problems', value: '1' },
         triggerSeverity: defaultSeverity,
@@ -181,13 +182,14 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               _this3.zabbix = zabbix;
               var showEvents = _this3.panel.showEvents.value;
               var triggerFilter = _this3.panel.triggers;
+              var hideHostsInMaintenance = _this3.panel.hideHostsInMaintenance;
 
               // Replace template variables
               var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
               var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
               var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-              var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, showEvents);
+              var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, showEvents, hideHostsInMaintenance);
               return getTriggers.then(function (triggers) {
                 return _.map(triggers, _this3.formatTrigger.bind(_this3));
               });
