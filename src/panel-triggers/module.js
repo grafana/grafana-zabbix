@@ -80,13 +80,10 @@ class TriggerPanelCtrl extends PanelCtrl {
     _.defaults(this.panel, _.cloneDeep(panelDefaults));
 
     this.triggerList = [];
-    this.currentPage = [];
+    this.currentTriggersPage = [];
 
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
-    this.events.on('render',  this.onRender.bind(this));
-    this.events.on('refresh', this.onRender.bind(this));
-
-    this.refreshData();
+    this.events.on('refresh', this.onRefresh.bind(this));
   }
 
   /**
@@ -104,7 +101,7 @@ class TriggerPanelCtrl extends PanelCtrl {
     this.refreshData();
   }
 
-  onRender() {
+  onRefresh() {
     // clear loading/error state
     delete this.error;
     this.loading = true;
@@ -114,8 +111,12 @@ class TriggerPanelCtrl extends PanelCtrl {
       // Limit triggers number
       this.triggerList  = triggerList.slice(0, this.panel.limit);
 
+      this.getCurrentTriggersPage();
+
       // Notify panel that request is finished
       this.loading = false;
+
+      this.render(this.triggerList);
     });
   }
 
@@ -260,19 +261,24 @@ class TriggerPanelCtrl extends PanelCtrl {
     return this.datasourceSrv.get(this.panel.datasource)
     .then(datasource => {
       let zabbixAPI = datasource.zabbix.zabbixAPI;
-      return zabbixAPI.acknowledgeEvent(eventid, ack_message)
-      .then(() => {
-        this.refresh();
-      });
-    });
+      return zabbixAPI.acknowledgeEvent(eventid, ack_message);
+    })
+    .then(this.onRefresh.bind(this));
+  }
+
+  getCurrentTriggersPage() {
+    let pageSize = this.panel.pageSize || 10;
+    let startPos = this.pageIndex * pageSize;
+    let endPos = Math.min(startPos + pageSize, this.triggerList.length);
+    this.currentTriggersPage = this.triggerList.slice(startPos, endPos);
+    return this.currentTriggersPage;
   }
 
   link(scope, elem, attrs, ctrl) {
     var data;
     var panel = ctrl.panel;
     var pageCount = 0;
-    // var formaters = [];
-    data = ctrl.panel.triggerList;
+    data = ctrl.triggerList;
 
     function getTableHeight() {
       var panelHeight = ctrl.height;
@@ -291,16 +297,17 @@ class TriggerPanelCtrl extends PanelCtrl {
       let pageSize = ctrl.panel.pageSize || 10;
       let startPos = ctrl.pageIndex * pageSize;
       let endPos = Math.min(startPos + pageSize, ctrl.triggerList.length);
-      ctrl.currentPage = ctrl.triggerList.slice(startPos, endPos);
-      ctrl.render();
-      // renderPanel();
+      ctrl.currentTriggersPage = ctrl.triggerList.slice(startPos, endPos);
+
+      scope.$apply();
+      renderPanel();
     }
 
     function appendPaginationControls(footerElem) {
       footerElem.empty();
 
-      var pageSize = panel.pageSize || 5;
-      pageCount = Math.ceil(ctrl.panel.triggerList.length / pageSize);
+      var pageSize = ctrl.panel.pageSize || 5;
+      pageCount = Math.ceil(data.length / pageSize);
       if (pageCount === 1) {
         return;
       }
@@ -322,17 +329,13 @@ class TriggerPanelCtrl extends PanelCtrl {
     function renderPanel() {
       var panelElem = elem.parents('.panel');
       var rootElem = elem.find('.triggers-panel-scroll');
-      // var tbodyElem = elem.find('tbody');
       var footerElem = elem.find('.triggers-panel-footer');
 
       elem.css({'font-size': panel.fontSize});
       panelElem.addClass('triggers-panel-wrapper');
-
-      // appendTableRows(tbodyElem);
       appendPaginationControls(footerElem);
 
       rootElem.css({'max-height': panel.scroll ? getTableHeight() : '' });
-      // ctrl.render();
     }
 
     elem.on('click', '.triggers-panel-page-link', switchPage);

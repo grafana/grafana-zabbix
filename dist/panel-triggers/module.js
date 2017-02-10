@@ -134,13 +134,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           _.defaults(_this.panel, _.cloneDeep(panelDefaults));
 
           _this.triggerList = [];
-          _this.currentPage = [];
+          _this.currentTriggersPage = [];
 
           _this.events.on('init-edit-mode', _this.onInitEditMode.bind(_this));
-          _this.events.on('render', _this.onRender.bind(_this));
-          _this.events.on('refresh', _this.onRender.bind(_this));
-
-          _this.refreshData();
+          _this.events.on('refresh', _this.onRefresh.bind(_this));
           return _this;
         }
 
@@ -166,8 +163,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             this.refreshData();
           }
         }, {
-          key: 'onRender',
-          value: function onRender() {
+          key: 'onRefresh',
+          value: function onRefresh() {
             var _this2 = this;
 
             // clear loading/error state
@@ -178,8 +175,12 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               // Limit triggers number
               _this2.triggerList = triggerList.slice(0, _this2.panel.limit);
 
+              _this2.getCurrentTriggersPage();
+
               // Notify panel that request is finished
               _this2.loading = false;
+
+              _this2.render(_this2.triggerList);
             });
           }
         }, {
@@ -327,17 +328,22 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'acknowledgeTrigger',
           value: function acknowledgeTrigger(trigger, message) {
-            var _this6 = this;
-
             var eventid = trigger.lastEvent.eventid;
             var grafana_user = this.contextSrv.user.name;
             var ack_message = grafana_user + ' (Grafana): ' + message;
             return this.datasourceSrv.get(this.panel.datasource).then(function (datasource) {
               var zabbixAPI = datasource.zabbix.zabbixAPI;
-              return zabbixAPI.acknowledgeEvent(eventid, ack_message).then(function () {
-                _this6.refresh();
-              });
-            });
+              return zabbixAPI.acknowledgeEvent(eventid, ack_message);
+            }).then(this.onRefresh.bind(this));
+          }
+        }, {
+          key: 'getCurrentTriggersPage',
+          value: function getCurrentTriggersPage() {
+            var pageSize = this.panel.pageSize || 10;
+            var startPos = this.pageIndex * pageSize;
+            var endPos = Math.min(startPos + pageSize, this.triggerList.length);
+            this.currentTriggersPage = this.triggerList.slice(startPos, endPos);
+            return this.currentTriggersPage;
           }
         }, {
           key: 'link',
@@ -345,8 +351,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             var data;
             var panel = ctrl.panel;
             var pageCount = 0;
-            // var formaters = [];
-            data = ctrl.panel.triggerList;
+            data = ctrl.triggerList;
 
             function getTableHeight() {
               var panelHeight = ctrl.height;
@@ -365,16 +370,17 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               var pageSize = ctrl.panel.pageSize || 10;
               var startPos = ctrl.pageIndex * pageSize;
               var endPos = Math.min(startPos + pageSize, ctrl.triggerList.length);
-              ctrl.currentPage = ctrl.triggerList.slice(startPos, endPos);
-              ctrl.render();
-              // renderPanel();
+              ctrl.currentTriggersPage = ctrl.triggerList.slice(startPos, endPos);
+
+              scope.$apply();
+              renderPanel();
             }
 
             function appendPaginationControls(footerElem) {
               footerElem.empty();
 
-              var pageSize = panel.pageSize || 5;
-              pageCount = Math.ceil(ctrl.panel.triggerList.length / pageSize);
+              var pageSize = ctrl.panel.pageSize || 5;
+              pageCount = Math.ceil(data.length / pageSize);
               if (pageCount === 1) {
                 return;
               }
@@ -396,17 +402,13 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             function renderPanel() {
               var panelElem = elem.parents('.panel');
               var rootElem = elem.find('.triggers-panel-scroll');
-              // var tbodyElem = elem.find('tbody');
               var footerElem = elem.find('.triggers-panel-footer');
 
               elem.css({ 'font-size': panel.fontSize });
               panelElem.addClass('triggers-panel-wrapper');
-
-              // appendTableRows(tbodyElem);
               appendPaginationControls(footerElem);
 
               rootElem.css({ 'max-height': panel.scroll ? getTableHeight() : '' });
-              // ctrl.render();
             }
 
             elem.on('click', '.triggers-panel-page-link', switchPage);
