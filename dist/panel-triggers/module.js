@@ -159,6 +159,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           _.defaults(_this.panel, _.cloneDeep(panelDefaults));
 
           _this.triggerList = [];
+          _this.currentPage = [];
           _this.refreshData();
           return _this;
         }
@@ -345,7 +346,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'render',
           value: function render() {
-            return _get(TriggerPanelCtrl.prototype.__proto__ || Object.getPrototypeOf(TriggerPanelCtrl.prototype), 'render', this).call(this, this.table);
+            return _get(TriggerPanelCtrl.prototype.__proto__ || Object.getPrototypeOf(TriggerPanelCtrl.prototype), 'render', this).call(this, this.triggerList);
           }
         }, {
           key: 'link',
@@ -366,16 +367,16 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               return panelHeight - 31 + 'px';
             }
 
-            // function appendTableRows(tbodyElem) {
-            //   var renderer = new TableRenderer(panel, data, ctrl.dashboard.isTimezoneUtc(), ctrl.$sanitize);
-            //   tbodyElem.empty();
-            //   tbodyElem.html(renderer.render(ctrl.pageIndex));
-            // }
-
             function switchPage(e) {
               var el = $(e.currentTarget);
               ctrl.pageIndex = parseInt(el.text(), 10) - 1;
-              renderPanel();
+
+              var pageSize = ctrl.panel.pageSize || 10;
+              var startPos = ctrl.pageIndex * pageSize;
+              var endPos = Math.min(startPos + pageSize, ctrl.triggerList.length);
+              ctrl.currentPage = ctrl.triggerList.slice(startPos, endPos);
+              ctrl.render();
+              // renderPanel();
             }
 
             function appendPaginationControls(footerElem) {
@@ -414,6 +415,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               appendPaginationControls(footerElem);
 
               rootElem.css({ 'max-height': panel.scroll ? getTableHeight() : '' });
+              // ctrl.render();
             }
 
             elem.on('click', '.triggers-panel-page-link', switchPage);
@@ -423,8 +425,12 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               unbindDestroy();
             });
 
-            ctrl.events.on('render', function () {
-              renderPanel();
+            ctrl.events.on('render', function (renderData) {
+              data = renderData || data;
+              if (data) {
+                renderPanel();
+              }
+              ctrl.renderingCompleted();
             });
           }
         }]);

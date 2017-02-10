@@ -80,6 +80,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     _.defaults(this.panel, _.cloneDeep(panelDefaults));
 
     this.triggerList = [];
+    this.currentPage = [];
     this.refreshData();
   }
 
@@ -254,7 +255,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   render() {
-    return super.render(this.table);
+    return super.render(this.triggerList);
   }
 
   link(scope, elem, attrs, ctrl) {
@@ -274,16 +275,16 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       return (panelHeight - 31) + 'px';
     }
 
-    // function appendTableRows(tbodyElem) {
-    //   var renderer = new TableRenderer(panel, data, ctrl.dashboard.isTimezoneUtc(), ctrl.$sanitize);
-    //   tbodyElem.empty();
-    //   tbodyElem.html(renderer.render(ctrl.pageIndex));
-    // }
-
     function switchPage(e) {
-      var el = $(e.currentTarget);
+      let el = $(e.currentTarget);
       ctrl.pageIndex = (parseInt(el.text(), 10)-1);
-      renderPanel();
+
+      let pageSize = ctrl.panel.pageSize || 10;
+      let startPos = ctrl.pageIndex * pageSize;
+      let endPos = Math.min(startPos + pageSize, ctrl.triggerList.length);
+      ctrl.currentPage = ctrl.triggerList.slice(startPos, endPos);
+      ctrl.render();
+      // renderPanel();
     }
 
     function appendPaginationControls(footerElem) {
@@ -322,6 +323,7 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       appendPaginationControls(footerElem);
 
       rootElem.css({'max-height': panel.scroll ? getTableHeight() : '' });
+      // ctrl.render();
     }
 
     elem.on('click', '.triggers-panel-page-link', switchPage);
@@ -331,8 +333,12 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
       unbindDestroy();
     });
 
-    ctrl.events.on('render', () => {
-      renderPanel();
+    ctrl.events.on('render', (renderData) => {
+      data = renderData || data;
+      if (data) {
+        renderPanel();
+      }
+      ctrl.renderingCompleted();
     });
   }
 }
