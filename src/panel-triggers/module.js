@@ -15,7 +15,7 @@ import _ from 'lodash';
 import $ from 'jquery';
 import moment from 'moment';
 import * as utils from '../datasource-zabbix/utils';
-import {MetricsPanelCtrl} from 'app/plugins/sdk';
+import {PanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelEditor} from './editor';
 import './ack-tooltip.directive';
 import './css/panel_triggers.css!';
@@ -61,7 +61,7 @@ var triggerStatusMap = {
 
 var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 
-class TriggerPanelCtrl extends MetricsPanelCtrl {
+class TriggerPanelCtrl extends PanelCtrl {
 
   /** @ngInject */
   constructor($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv) {
@@ -81,6 +81,11 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
 
     this.triggerList = [];
     this.currentPage = [];
+
+    this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
+    this.events.on('render',  this.onRender.bind(this));
+    this.events.on('refresh', this.onRender.bind(this));
+
     this.refreshData();
   }
 
@@ -88,12 +93,8 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
    * Override onInitMetricsPanelEditMode() method from MetricsPanelCtrl.
    * We don't need metric editor from Metrics Panel.
    */
-  onInitMetricsPanelEditMode() {
+  onInitEditMode() {
     this.addEditorTab('Options', triggerPanelEditor, 2);
-  }
-
-  refresh() {
-    this.onMetricsPanelRefresh();
   }
 
   onMetricsPanelRefresh() {
@@ -103,20 +104,34 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.refreshData();
   }
 
-  refreshData() {
+  onRender() {
     // clear loading/error state
     delete this.error;
     this.loading = true;
-    this.setTimeQueryStart();
 
-    var self = this;
+    return this.refreshData()
+    .then(triggerList => {
+      // Limit triggers number
+      this.triggerList  = triggerList.slice(0, this.panel.limit);
 
-    // Load datasource
+      // Notify panel that request is finished
+      this.loading = false;
+    });
+  }
+
+  refreshData() {
+    return this.getTriggers()
+    .then(this.getAcknowledges.bind(this))
+    .then(this.filterTriggers.bind(this));
+  }
+
+  getTriggers() {
     return this.datasourceSrv.get(this.panel.datasource)
     .then(datasource => {
       var zabbix = datasource.zabbix;
-      var showEvents = self.panel.showEvents.value;
-      var triggerFilter = self.panel.triggers;
+      this.zabbix = zabbix;
+      var showEvents = this.panel.showEvents.value;
+      var triggerFilter = this.panel.triggers;
 
       // Replace template variables
       var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
@@ -125,115 +140,113 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
 
       var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, showEvents);
       return getTriggers.then(triggers => {
-        return _.map(triggers, trigger => {
-          let triggerObj = trigger;
-
-          // Format last change and age
-          trigger.lastchangeUnix = Number(trigger.lastchange);
-          let timestamp = moment.unix(trigger.lastchangeUnix);
-          if (self.panel.customLastChangeFormat) {
-            // User defined format
-            triggerObj.lastchange = timestamp.format(self.panel.lastChangeFormat);
-          } else {
-            triggerObj.lastchange = timestamp.format(self.defaultTimeFormat);
-          }
-          triggerObj.age = timestamp.fromNow(true);
-
-          // Set host that the trigger belongs
-          if (trigger.hosts.length) {
-            triggerObj.host = trigger.hosts[0].name;
-            triggerObj.hostTechName = trigger.hosts[0].host;
-          }
-
-          // Set color
-          if (trigger.value === '1') {
-            // Problem state
-            triggerObj.color = self.panel.triggerSeverity[trigger.priority].color;
-          } else {
-            // OK state
-            triggerObj.color = self.panel.okEventColor;
-          }
-
-          triggerObj.severity = self.panel.triggerSeverity[trigger.priority].severity;
-          return triggerObj;
-        });
-      })
-      .then(triggerList => {
-
-        // Request acknowledges for trigger
-        var eventids = _.map(triggerList, trigger => {
-          return trigger.lastEvent.eventid;
-        });
-
-        return zabbix.getAcknowledges(eventids)
-        .then(events => {
-
-          // Map events to triggers
-          _.each(triggerList, trigger => {
-            var event = _.find(events, event => {
-              return event.eventid === trigger.lastEvent.eventid;
-            });
-
-            if (event) {
-              trigger.acknowledges = _.map(event.acknowledges, ack => {
-                let timestamp = moment.unix(ack.clock);
-                if (self.panel.customLastChangeFormat) {
-                  ack.time = timestamp.format(self.panel.lastChangeFormat);
-                } else {
-                  ack.time = timestamp.format(self.defaultTimeFormat);
-                }
-                ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-                return ack;
-              });
-
-              // Mark acknowledged triggers with different color
-              if (self.panel.markAckEvents && trigger.acknowledges.length) {
-                trigger.color = self.panel.ackEventColor;
-              }
-            }
-          });
-
-          // Filter triggers by description
-          var triggerFilter = self.panel.triggers.trigger.filter;
-          if (triggerFilter) {
-            triggerList = filterTriggers(triggerList, triggerFilter);
-          }
-
-          // Filter acknowledged triggers
-          if (self.panel.showTriggers === 'unacknowledged') {
-            triggerList = _.filter(triggerList, trigger => {
-              return !trigger.acknowledges;
-            });
-          } else if (self.panel.showTriggers === 'acknowledged') {
-            triggerList = _.filter(triggerList, 'acknowledges');
-          } else {
-            triggerList = triggerList;
-          }
-
-          // Filter triggers by severity
-          triggerList = _.filter(triggerList, trigger => {
-            return self.panel.triggerSeverity[trigger.priority].show;
-          });
-
-          // Sort triggers
-          if (self.panel.sortTriggersBy.value === 'priority') {
-            triggerList = _.sortBy(triggerList, 'priority').reverse();
-          } else {
-            triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
-          }
-
-          // Limit triggers number
-          self.triggerList  = triggerList.slice(0, self.panel.limit);
-
-          // Notify panel that request is finished
-          self.setTimeQueryEnd();
-          self.loading = false;
-
-          this.panel.triggerList = this.triggerList;
-          this.render();
-        });
+        return _.map(triggers, this.formatTrigger.bind(this));
       });
     });
+  }
+
+  getAcknowledges(triggerList) {
+    // Request acknowledges for trigger
+    var eventids = _.map(triggerList, trigger => {
+      return trigger.lastEvent.eventid;
+    });
+
+    return this.zabbix.getAcknowledges(eventids)
+    .then(events => {
+
+      // Map events to triggers
+      _.each(triggerList, trigger => {
+        var event = _.find(events, event => {
+          return event.eventid === trigger.lastEvent.eventid;
+        });
+
+        if (event) {
+          trigger.acknowledges = _.map(event.acknowledges, ack => {
+            let timestamp = moment.unix(ack.clock);
+            if (this.panel.customLastChangeFormat) {
+              ack.time = timestamp.format(this.panel.lastChangeFormat);
+            } else {
+              ack.time = timestamp.format(this.defaultTimeFormat);
+            }
+            ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
+            return ack;
+          });
+
+          // Mark acknowledged triggers with different color
+          if (this.panel.markAckEvents && trigger.acknowledges.length) {
+            trigger.color = this.panel.ackEventColor;
+          }
+        }
+      });
+
+      return triggerList;
+    });
+  }
+
+  filterTriggers(triggerList) {
+    // Filter triggers by description
+    var triggerFilter = this.panel.triggers.trigger.filter;
+    if (triggerFilter) {
+      triggerList = filterTriggers(triggerList, triggerFilter);
+    }
+
+    // Filter acknowledged triggers
+    if (this.panel.showTriggers === 'unacknowledged') {
+      triggerList = _.filter(triggerList, trigger => {
+        return !trigger.acknowledges;
+      });
+    } else if (this.panel.showTriggers === 'acknowledged') {
+      triggerList = _.filter(triggerList, 'acknowledges');
+    } else {
+      triggerList = triggerList;
+    }
+
+    // Filter triggers by severity
+    triggerList = _.filter(triggerList, trigger => {
+      return this.panel.triggerSeverity[trigger.priority].show;
+    });
+
+    // Sort triggers
+    if (this.panel.sortTriggersBy.value === 'priority') {
+      triggerList = _.sortBy(triggerList, 'priority').reverse();
+    } else {
+      triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
+    }
+
+    return triggerList;
+  }
+
+  formatTrigger(trigger) {
+    let triggerObj = trigger;
+
+    // Format last change and age
+    trigger.lastchangeUnix = Number(trigger.lastchange);
+    let timestamp = moment.unix(trigger.lastchangeUnix);
+    if (this.panel.customLastChangeFormat) {
+      // User defined format
+      triggerObj.lastchange = timestamp.format(this.panel.lastChangeFormat);
+    } else {
+      triggerObj.lastchange = timestamp.format(this.defaultTimeFormat);
+    }
+    triggerObj.age = timestamp.fromNow(true);
+
+    // Set host that the trigger belongs
+    if (trigger.hosts.length) {
+      triggerObj.host = trigger.hosts[0].name;
+      triggerObj.hostTechName = trigger.hosts[0].host;
+    }
+
+    // Set color
+    if (trigger.value === '1') {
+      // Problem state
+      triggerObj.color = this.panel.triggerSeverity[trigger.priority].color;
+    } else {
+      // OK state
+      triggerObj.color = this.panel.okEventColor;
+    }
+
+    triggerObj.severity = this.panel.triggerSeverity[trigger.priority].severity;
+    return triggerObj;
   }
 
   switchComment(trigger) {
@@ -252,10 +265,6 @@ class TriggerPanelCtrl extends MetricsPanelCtrl {
         this.refresh();
       });
     });
-  }
-
-  render() {
-    return super.render(this.triggerList);
   }
 
   link(scope, elem, attrs, ctrl) {
