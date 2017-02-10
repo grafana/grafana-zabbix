@@ -125,42 +125,24 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           _this.contextSrv = contextSrv;
           _this.triggerStatusMap = triggerStatusMap;
           _this.defaultTimeFormat = defaultTimeFormat;
-
           _this.pageIndex = 0;
+          _this.triggerList = [];
+          _this.currentTriggersPage = [];
 
           // Load panel defaults
           // _.cloneDeep() need for prevent changing shared defaultSeverity.
           // Load object "by value" istead "by reference".
           _.defaults(_this.panel, _.cloneDeep(panelDefaults));
 
-          _this.triggerList = [];
-          _this.currentTriggersPage = [];
-
           _this.events.on('init-edit-mode', _this.onInitEditMode.bind(_this));
           _this.events.on('refresh', _this.onRefresh.bind(_this));
           return _this;
         }
 
-        /**
-         * Override onInitMetricsPanelEditMode() method from MetricsPanelCtrl.
-         * We don't need metric editor from Metrics Panel.
-         */
-
-
         _createClass(TriggerPanelCtrl, [{
           key: 'onInitEditMode',
           value: function onInitEditMode() {
             this.addEditorTab('Options', triggerPanelEditor, 2);
-          }
-        }, {
-          key: 'onMetricsPanelRefresh',
-          value: function onMetricsPanelRefresh() {
-            // ignore fetching data if another panel is in fullscreen
-            if (this.otherPanelInFullscreenMode()) {
-              return;
-            }
-
-            this.refreshData();
           }
         }, {
           key: 'onRefresh',

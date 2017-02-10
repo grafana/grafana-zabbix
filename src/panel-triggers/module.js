@@ -71,34 +71,21 @@ class TriggerPanelCtrl extends PanelCtrl {
     this.contextSrv = contextSrv;
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
-
     this.pageIndex = 0;
+    this.triggerList = [];
+    this.currentTriggersPage = [];
 
     // Load panel defaults
     // _.cloneDeep() need for prevent changing shared defaultSeverity.
     // Load object "by value" istead "by reference".
     _.defaults(this.panel, _.cloneDeep(panelDefaults));
 
-    this.triggerList = [];
-    this.currentTriggersPage = [];
-
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
     this.events.on('refresh', this.onRefresh.bind(this));
   }
 
-  /**
-   * Override onInitMetricsPanelEditMode() method from MetricsPanelCtrl.
-   * We don't need metric editor from Metrics Panel.
-   */
   onInitEditMode() {
     this.addEditorTab('Options', triggerPanelEditor, 2);
-  }
-
-  onMetricsPanelRefresh() {
-    // ignore fetching data if another panel is in fullscreen
-    if (this.otherPanelInFullscreenMode()) { return; }
-
-    this.refreshData();
   }
 
   onRefresh() {
