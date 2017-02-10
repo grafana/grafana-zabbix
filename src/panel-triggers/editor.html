@@ -82,7 +82,7 @@
     <div class="gf-form-inline">
       <div class="gf-form">
         <label class="gf-form-label width-8">Acknowledged</label>
-        <div class="gf-form-select-wrapper">
+        <div class="gf-form-select-wrapper width-12">
           <select class="gf-form-input"
             ng-model="editor.panel.showTriggers"
             ng-options="f for f in editor.ackFilters"
@@ -90,19 +90,17 @@
           </select>
         </div>
       </div>
-      <div class="gf-form">
-        <label class="gf-form-label width-12">Limit triggers number to</label>
-        <input class="gf-form-input width-5"
-          type="number"
-          ng-model="editor.panel.limit"
-          ng-model-onblur
-          ng-change="editor.panelCtrl.refresh()">
-      </div>
+      <gf-form-switch class="gf-form"
+        label-class="width-13"
+        label="Hide hosts in maintenance"
+        checked="editor.panel.hideHostsInMaintenance"
+        on-change="ctrl.refresh()">
+      </gf-form-switch>
     </div>
     <div class="gf-form-inline">
       <div class="gf-form">
         <label class="gf-form-label width-8">Sort by</label>
-        <div class="gf-form-select-wrapper">
+        <div class="gf-form-select-wrapper width-12">
           <select class="gf-form-input"
             ng-model="editor.panel.sortTriggersBy"
             ng-options="f.text for f in editor.sortByFields track by f.value"
@@ -112,13 +110,48 @@
       </div>
       <div class="gf-form">
         <label class="gf-form-label width-8">Show events</label>
-        <div class="gf-form-select-wrapper">
+        <div class="gf-form-select-wrapper width-9">
           <select class="gf-form-input"
             ng-model="editor.panel.showEvents"
             ng-options="f.text for f in editor.showEventsFields track by f.value"
             ng-change="editor.panelCtrl.refresh()">
           </select>
         </div>
+      </div>
+    </div>
+    <div class="gf-form-inline">
+      <div class="gf-form">
+        <label class="gf-form-label width-8">Page size</label>
+        <input class="gf-form-input width-6"
+          type="number"
+          ng-model="editor.panel.pageSize"
+          ng-model-onblur
+          ng-change="editor.panelCtrl.refresh()">
+      </div>
+      <gf-form-switch class="gf-form"
+        label-class="width-8"
+        label="Enable scroll"
+        checked="editor.panel.scroll"
+        on-change="ctrl.render()">
+      </gf-form-switch>
+    </div>
+    <div class="gf-form-inline">
+      <div class="gf-form max-width-14">
+        <label class="gf-form-label width-8">Font size</label>
+        <div class="gf-form-select-wrapper max-width-8">
+          <select class="gf-form-input"
+              ng-model="editor.panel.fontSize"
+              ng-options="f for f in editor.fontSizes"
+              ng-change="editor.panelCtrl.render()"></select>
+        </div>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label width-8">Limit triggers</label>
+        <input class="gf-form-input width-5"
+          type="number"
+          ng-model="editor.panel.limit"
+          ng-model-onblur
+          ng-change="editor.panelCtrl.refresh()">
       </div>
     </div>
   </div>

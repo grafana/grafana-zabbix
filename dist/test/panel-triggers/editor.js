@@ -61,10 +61,9 @@ var TriggerPanelEditorCtrl = function () {
       return _this.onVariableChange();
     });
 
+    this.fontSizes = ['80%', '90%', '100%', '110%', '120%', '130%', '150%', '160%', '180%', '200%', '220%', '250%'];
     this.ackFilters = ['all triggers', 'unacknowledged', 'acknowledged'];
-
     this.sortByFields = [{ text: 'last change', value: 'lastchange' }, { text: 'severity', value: 'priority' }];
-
     this.showEventsFields = [{ text: 'All', value: [0, 1] }, { text: 'OK', value: [0] }, { text: 'Problems', value: 1 }];
 
     // Load scope defaults

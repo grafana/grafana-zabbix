@@ -140,9 +140,9 @@ module.exports = function(grunt) {
     'clean',
     'copy:src_to_dist',
     'copy:pluginDef',
-    'jshint',
-    'jscs',
     'sass',
-    'babel:dist'
+    'babel',
+    'jshint',
+    'jscs'
   ]);
 };
