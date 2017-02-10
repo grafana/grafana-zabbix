@@ -137,6 +137,17 @@
           ng-change="editor.panelCtrl.refresh()">
       </div>
     </div>
+    <div class="gf-form-inline">
+      <div class="gf-form max-width-17">
+        <label class="gf-form-label width-6">Font size</label>
+        <div class="gf-form-select-wrapper max-width-15">
+          <select class="gf-form-input"
+              ng-model="editor.panel.fontSize"
+              ng-options="f for f in editor.fontSizes"
+              ng-change="editor.panelCtrl.render()"></select>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="section gf-form-group">
