@@ -67,10 +67,10 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     };
 
     // Map functions for bs-typeahead
-    _this.getGroupNames = _lodash2.default.partial(getMetricNames, _this, 'groupList');
-    _this.getHostNames = _lodash2.default.partial(getMetricNames, _this, 'hostList');
-    _this.getApplicationNames = _lodash2.default.partial(getMetricNames, _this, 'appList');
-    _this.getItemNames = _lodash2.default.partial(getMetricNames, _this, 'itemList');
+    _this.getGroupNames = _lodash2.default.bind(_this.getMetricNames, _this, 'groupList');
+    _this.getHostNames = _lodash2.default.bind(_this.getMetricNames, _this, 'hostList');
+    _this.getApplicationNames = _lodash2.default.bind(_this.getMetricNames, _this, 'appList');
+    _this.getItemNames = _lodash2.default.bind(_this.getMetricNames, _this, 'itemList');
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', function () {
@@ -135,6 +135,21 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     value: function initFilters() {
       var itemtype = this.editorModes[this.target.mode].value;
       return Promise.all([this.suggestGroups(), this.suggestHosts(), this.suggestApps(), this.suggestItems(itemtype)]);
+    }
+
+    // Get list of metric names for bs-typeahead directive
+
+  }, {
+    key: 'getMetricNames',
+    value: function getMetricNames(metricList) {
+      var metrics = _lodash2.default.uniq(_lodash2.default.map(this.metric[metricList], 'name'));
+
+      // Add template variables
+      _lodash2.default.forEach(this.templateSrv.variables, function (variable) {
+        metrics.unshift('$' + variable.name);
+      });
+
+      return metrics;
     }
   }, {
     key: 'suggestGroups',
@@ -371,8 +386,3 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
 
 
 ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';
-
-// Get list of metric names for bs-typeahead directive
-function getMetricNames(scope, metricList) {
-  return _lodash2.default.uniq(_lodash2.default.map(scope.metric[metricList], 'name'));
-}

@@ -28,10 +28,10 @@ export class ZabbixQueryController extends QueryCtrl {
     };
 
     // Map functions for bs-typeahead
-    this.getGroupNames = _.partial(getMetricNames, this, 'groupList');
-    this.getHostNames = _.partial(getMetricNames, this, 'hostList');
-    this.getApplicationNames = _.partial(getMetricNames, this, 'appList');
-    this.getItemNames = _.partial(getMetricNames, this, 'itemList');
+    this.getGroupNames = _.bind(this.getMetricNames, this, 'groupList');
+    this.getHostNames = _.bind(this.getMetricNames, this, 'hostList');
+    this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
+    this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
@@ -108,6 +108,18 @@ export class ZabbixQueryController extends QueryCtrl {
       this.suggestApps(),
       this.suggestItems(itemtype)
     ]);
+  }
+
+  // Get list of metric names for bs-typeahead directive
+  getMetricNames(metricList) {
+    let metrics = _.uniq(_.map(this.metric[metricList], 'name'));
+
+    // Add template variables
+    _.forEach(this.templateSrv.variables, variable => {
+      metrics.unshift('$' + variable.name);
+    });
+
+    return metrics;
   }
 
   suggestGroups() {
@@ -302,8 +314,3 @@ export class ZabbixQueryController extends QueryCtrl {
 
 // Set templateUrl as static property
 ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';
-
-// Get list of metric names for bs-typeahead directive
-function getMetricNames(scope, metricList) {
-  return _.uniq(_.map(scope.metric[metricList], 'name'));
-}

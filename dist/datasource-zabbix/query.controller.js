@@ -35,10 +35,6 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './utils', './metricFun
     if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
   }
 
-  // Get list of metric names for bs-typeahead directive
-  function getMetricNames(scope, metricList) {
-    return _.uniq(_.map(scope.metric[metricList], 'name'));
-  }
   return {
     setters: [function (_appPluginsSdk) {
       QueryCtrl = _appPluginsSdk.QueryCtrl;
@@ -94,10 +90,10 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './utils', './metricFun
           };
 
           // Map functions for bs-typeahead
-          _this.getGroupNames = _.partial(getMetricNames, _this, 'groupList');
-          _this.getHostNames = _.partial(getMetricNames, _this, 'hostList');
-          _this.getApplicationNames = _.partial(getMetricNames, _this, 'appList');
-          _this.getItemNames = _.partial(getMetricNames, _this, 'itemList');
+          _this.getGroupNames = _.bind(_this.getMetricNames, _this, 'groupList');
+          _this.getHostNames = _.bind(_this.getMetricNames, _this, 'hostList');
+          _this.getApplicationNames = _.bind(_this.getMetricNames, _this, 'appList');
+          _this.getItemNames = _.bind(_this.getMetricNames, _this, 'itemList');
 
           // Update metric suggestion when template variable was changed
           $rootScope.$on('template-variable-value-updated', function () {
@@ -162,6 +158,18 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './utils', './metricFun
           value: function initFilters() {
             var itemtype = this.editorModes[this.target.mode].value;
             return Promise.all([this.suggestGroups(), this.suggestHosts(), this.suggestApps(), this.suggestItems(itemtype)]);
+          }
+        }, {
+          key: 'getMetricNames',
+          value: function getMetricNames(metricList) {
+            var metrics = _.uniq(_.map(this.metric[metricList], 'name'));
+
+            // Add template variables
+            _.forEach(this.templateSrv.variables, function (variable) {
+              metrics.unshift('$' + variable.name);
+            });
+
+            return metrics;
           }
         }, {
           key: 'suggestGroups',
