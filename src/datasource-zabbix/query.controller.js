@@ -29,7 +29,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
     // Map functions for bs-typeahead
     this.getGroupNames = _.bind(this.getMetricNames, this, 'groupList');
-    this.getHostNames = _.bind(this.getMetricNames, this, 'hostList');
+    this.getHostNames = _.bind(this.getMetricNames, this, 'hostList', true);
     this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
     this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
 
@@ -111,13 +111,17 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   // Get list of metric names for bs-typeahead directive
-  getMetricNames(metricList) {
+  getMetricNames(metricList, addAllValue) {
     let metrics = _.uniq(_.map(this.metric[metricList], 'name'));
 
     // Add template variables
     _.forEach(this.templateSrv.variables, variable => {
       metrics.unshift('$' + variable.name);
     });
+
+    if (addAllValue) {
+      metrics.unshift('/.*/');
+    }
 
     return metrics;
   }

@@ -68,7 +68,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
 
     // Map functions for bs-typeahead
     _this.getGroupNames = _lodash2.default.bind(_this.getMetricNames, _this, 'groupList');
-    _this.getHostNames = _lodash2.default.bind(_this.getMetricNames, _this, 'hostList');
+    _this.getHostNames = _lodash2.default.bind(_this.getMetricNames, _this, 'hostList', true);
     _this.getApplicationNames = _lodash2.default.bind(_this.getMetricNames, _this, 'appList');
     _this.getItemNames = _lodash2.default.bind(_this.getMetricNames, _this, 'itemList');
 
@@ -141,13 +141,17 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
 
   }, {
     key: 'getMetricNames',
-    value: function getMetricNames(metricList) {
+    value: function getMetricNames(metricList, addAllValue) {
       var metrics = _lodash2.default.uniq(_lodash2.default.map(this.metric[metricList], 'name'));
 
       // Add template variables
       _lodash2.default.forEach(this.templateSrv.variables, function (variable) {
         metrics.unshift('$' + variable.name);
       });
+
+      if (addAllValue) {
+        metrics.unshift('/.*/');
+      }
 
       return metrics;
     }

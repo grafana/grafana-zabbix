@@ -91,7 +91,7 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './utils', './metricFun
 
           // Map functions for bs-typeahead
           _this.getGroupNames = _.bind(_this.getMetricNames, _this, 'groupList');
-          _this.getHostNames = _.bind(_this.getMetricNames, _this, 'hostList');
+          _this.getHostNames = _.bind(_this.getMetricNames, _this, 'hostList', true);
           _this.getApplicationNames = _.bind(_this.getMetricNames, _this, 'appList');
           _this.getItemNames = _.bind(_this.getMetricNames, _this, 'itemList');
 
@@ -161,13 +161,17 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './utils', './metricFun
           }
         }, {
           key: 'getMetricNames',
-          value: function getMetricNames(metricList) {
+          value: function getMetricNames(metricList, addAllValue) {
             var metrics = _.uniq(_.map(this.metric[metricList], 'name'));
 
             // Add template variables
             _.forEach(this.templateSrv.variables, function (variable) {
               metrics.unshift('$' + variable.name);
             });
+
+            if (addAllValue) {
+              metrics.unshift('/.*/');
+            }
 
             return metrics;
           }
