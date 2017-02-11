@@ -314,7 +314,7 @@ class ZabbixAPIDatasource {
     }
 
     return result.then(metrics => {
-      return metrics.map(formatMetric);
+      return _.map(metrics, formatMetric);
     });
   }
 

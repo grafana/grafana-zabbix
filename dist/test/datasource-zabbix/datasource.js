@@ -378,7 +378,7 @@ var ZabbixAPIDatasource = function () {
       }
 
       return result.then(function (metrics) {
-        return metrics.map(formatMetric);
+        return _lodash2.default.map(metrics, formatMetric);
       });
     }
 

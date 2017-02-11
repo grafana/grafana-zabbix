@@ -214,14 +214,14 @@ _angular2.default.module('grafana.services').factory('Zabbix', ZabbixFactory);
  * Find group, host, app or item by given name.
  * @param  list list of groups, apps or other
  * @param  name visible name
- * @return      array with finded element or undefined
+ * @return      array with finded element or empty array
  */
 function findByName(list, name) {
   var finded = _lodash2.default.find(list, { 'name': name });
   if (finded) {
     return [finded];
   } else {
-    return undefined;
+    return [];
   }
 }
 
@@ -231,14 +231,14 @@ function findByName(list, name) {
  * which return only first finded.
  * @param  {[type]} list list of elements
  * @param  {[type]} name app name
- * @return {[type]}      array with finded element or undefined
+ * @return {[type]}      array with finded element or empty array
  */
 function filterByName(list, name) {
   var finded = _lodash2.default.filter(list, { 'name': name });
   if (finded) {
     return finded;
   } else {
-    return undefined;
+    return [];
   }
 }
 

@@ -484,7 +484,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             }
 
             return result.then(function (metrics) {
-              return metrics.map(formatMetric);
+              return _.map(metrics, formatMetric);
             });
           }
         }, {
