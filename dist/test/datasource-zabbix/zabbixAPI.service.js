@@ -227,6 +227,26 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         }
       }
     }, {
+      key: 'getMacros',
+      value: function getMacros(hostids) {
+        var params = {
+          output: 'extend',
+          hostids: hostids
+        };
+
+        return this.request('usermacro.get', params);
+      }
+    }, {
+      key: 'getGlobalMacros',
+      value: function getGlobalMacros() {
+        var params = {
+          output: 'extend',
+          globalmacro: true
+        };
+
+        return this.request('usermacro.get', params);
+      }
+    }, {
       key: 'getLastValue',
       value: function getLastValue(itemid) {
         var params = {

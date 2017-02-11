@@ -48,6 +48,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
 
       // Proxy methods
       this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
+      this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
 
       this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
       this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
@@ -153,6 +154,20 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
           if (!options.showDisabledItems) {
             items = _lodash2.default.filter(items, { 'status': '0' });
           }
+
+          return items;
+        }).then(this.expandUserMacro.bind(this));
+      }
+    }, {
+      key: 'expandUserMacro',
+      value: function expandUserMacro(items) {
+        var hostids = getHostIds(items);
+        return this.getMacros(hostids).then(function (macros) {
+          _lodash2.default.forEach(items, function (item) {
+            if (containsMacro(item.name)) {
+              item.name = replaceMacro(item, macros);
+            }
+          });
           return items;
         });
       }
@@ -263,4 +278,46 @@ function filterByQuery(list, filter) {
   } else {
     return filterByName(list, filter);
   }
+}
+
+function getHostIds(items) {
+  var hostIds = _lodash2.default.map(items, function (item) {
+    return _lodash2.default.map(item.hosts, 'hostid');
+  });
+  return _lodash2.default.uniq(_lodash2.default.flatten(hostIds));
+}
+
+var MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
+
+function containsMacro(itemName) {
+  return MACRO_PATTERN.test(itemName);
+}
+
+function replaceMacro(item, macros) {
+  var itemName = item.name;
+  var item_macros = itemName.match(MACRO_PATTERN);
+  _lodash2.default.forEach(item_macros, function (macro) {
+    var host_macros = _lodash2.default.filter(macros, function (m) {
+      if (m.hostid) {
+        return m.hostid === item.hostid;
+      } else {
+        // Add global macros
+        return true;
+      }
+    });
+
+    var macro_def = _lodash2.default.find(host_macros, { macro: macro });
+    if (macro_def && macro_def.value) {
+      var macro_value = macro_def.value;
+      var macro_regex = new RegExp(escapeMacro(macro));
+      itemName = itemName.replace(macro_regex, macro_value);
+    }
+  });
+
+  return itemName;
+}
+
+function escapeMacro(macro) {
+  macro = macro.replace(/\$/, '\\\$');
+  return macro;
 }

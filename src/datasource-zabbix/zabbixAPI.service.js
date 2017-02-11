@@ -198,6 +198,24 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       }
     }
 
+    getMacros(hostids) {
+      var params = {
+        output: 'extend',
+        hostids: hostids
+      };
+
+      return this.request('usermacro.get', params);
+    }
+
+    getGlobalMacros() {
+      var params = {
+        output: 'extend',
+        globalmacro: true
+      };
+
+      return this.request('usermacro.get', params);
+    }
+
     getLastValue(itemid) {
       var params = {
         output: ['lastvalue'],

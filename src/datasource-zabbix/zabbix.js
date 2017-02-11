@@ -26,6 +26,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
 
       // Proxy methods
       this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
+      this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
 
       this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
       this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
@@ -108,6 +109,21 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
         if (!options.showDisabledItems) {
           items = _.filter(items, {'status': '0'});
         }
+
+        return items;
+      })
+      .then(this.expandUserMacro.bind(this));
+    }
+
+    expandUserMacro(items) {
+      let hostids = getHostIds(items);
+      return this.getMacros(hostids)
+      .then(macros => {
+        _.forEach(items, item => {
+          if (containsMacro(item.name)) {
+            item.name = replaceMacro(item, macros);
+          }
+        });
         return items;
       });
     }
@@ -214,4 +230,46 @@ function filterByQuery(list, filter) {
   } else {
     return filterByName(list, filter);
   }
+}
+
+function getHostIds(items) {
+  let hostIds = _.map(items, item => {
+    return _.map(item.hosts, 'hostid');
+  });
+  return _.uniq(_.flatten(hostIds));
+}
+
+let MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
+
+function containsMacro(itemName) {
+  return MACRO_PATTERN.test(itemName);
+}
+
+function replaceMacro(item, macros) {
+  let itemName = item.name;
+  let item_macros = itemName.match(MACRO_PATTERN);
+  _.forEach(item_macros, macro => {
+    let host_macros = _.filter(macros, m => {
+      if (m.hostid) {
+        return m.hostid === item.hostid;
+      } else {
+        // Add global macros
+        return true;
+      }
+    });
+
+    let macro_def = _.find(host_macros, {macro: macro});
+    if (macro_def && macro_def.value) {
+      let macro_value = macro_def.value;
+      let macro_regex = new RegExp(escapeMacro(macro));
+      itemName = itemName.replace(macro_regex, macro_value);
+    }
+  });
+
+  return itemName;
+}
+
+function escapeMacro(macro)  {
+  macro = macro.replace(/\$/, '\\\$');
+  return macro;
 }

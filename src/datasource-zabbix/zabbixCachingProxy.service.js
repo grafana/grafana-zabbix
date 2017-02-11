@@ -20,7 +20,9 @@ function ZabbixCachingProxyFactory() {
         applications: {},
         items: {},
         history: {},
-        trends: {}
+        trends: {},
+        macros: {},
+        globalMacros: {}
       };
 
       this.historyPromises = {};
@@ -45,6 +47,14 @@ function ZabbixCachingProxyFactory() {
       this.itemPromises = {};
       this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI),
                                              this.itemPromises, getRequestHash);
+
+      this.macroPromises = {};
+      this.getMacrosOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getMacros, this.zabbixAPI),
+                                             this.macroPromises, getRequestHash);
+
+      this.globalMacroPromises = {};
+      this.getGlobalMacrosOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getGlobalMacros, this.zabbixAPI),
+                                                    this.globalMacroPromises, getRequestHash);
     }
 
     isExpired(cacheObject) {
@@ -91,6 +101,16 @@ function ZabbixCachingProxyFactory() {
     getItems(hostids, appids, itemtype) {
       let params = [hostids, appids, itemtype];
       return this.proxyRequest(this.getItemsOnce, params, this.cache.items);
+    }
+
+    getMacros(hostids) {
+      // Merge global macros and host macros
+      let promises = [
+        this.proxyRequest(this.getMacrosOnce, [hostids], this.cache.macros),
+        this.proxyRequest(this.getGlobalMacrosOnce, [], this.cache.globalMacros)
+      ];
+
+      return Promise.all(promises).then(_.flatten);
     }
 
     getHistoryFromCache(items, time_from, time_till) {

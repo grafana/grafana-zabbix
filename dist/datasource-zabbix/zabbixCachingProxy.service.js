@@ -43,7 +43,9 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           applications: {},
           items: {},
           history: {},
-          trends: {}
+          trends: {},
+          macros: {},
+          globalMacros: {}
         };
 
         this.historyPromises = {};
@@ -63,6 +65,12 @@ System.register(['angular', 'lodash'], function (_export, _context) {
 
         this.itemPromises = {};
         this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI), this.itemPromises, getRequestHash);
+
+        this.macroPromises = {};
+        this.getMacrosOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getMacros, this.zabbixAPI), this.macroPromises, getRequestHash);
+
+        this.globalMacroPromises = {};
+        this.getGlobalMacrosOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getGlobalMacros, this.zabbixAPI), this.globalMacroPromises, getRequestHash);
       }
 
       _createClass(ZabbixCachingProxy, [{
@@ -111,6 +119,14 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         value: function getItems(hostids, appids, itemtype) {
           var params = [hostids, appids, itemtype];
           return this.proxyRequest(this.getItemsOnce, params, this.cache.items);
+        }
+      }, {
+        key: 'getMacros',
+        value: function getMacros(hostids) {
+          // Merge global macros and host macros
+          var promises = [this.proxyRequest(this.getMacrosOnce, [hostids], this.cache.macros), this.proxyRequest(this.getGlobalMacrosOnce, [], this.cache.globalMacros)];
+
+          return Promise.all(promises).then(_.flatten);
         }
       }, {
         key: 'getHistoryFromCache',

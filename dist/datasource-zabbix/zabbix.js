@@ -3,7 +3,7 @@
 System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './zabbixCachingProxy.service.js'], function (_export, _context) {
   "use strict";
 
-  var angular, _, utils, _createClass;
+  var angular, _, utils, _createClass, MACRO_PATTERN;
 
   function _toConsumableArray(arr) {
     if (Array.isArray(arr)) {
@@ -45,6 +45,7 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
 
         // Proxy methods
         this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
+        this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
 
         this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
         this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
@@ -140,6 +141,20 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
             if (!options.showDisabledItems) {
               items = _.filter(items, { 'status': '0' });
             }
+
+            return items;
+          }).then(this.expandUserMacro.bind(this));
+        }
+      }, {
+        key: 'expandUserMacro',
+        value: function expandUserMacro(items) {
+          var hostids = getHostIds(items);
+          return this.getMacros(hostids).then(function (macros) {
+            _.forEach(items, function (item) {
+              if (containsMacro(item.name)) {
+                item.name = replaceMacro(item, macros);
+              }
+            });
             return items;
           });
         }
@@ -244,6 +259,46 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
       return filterByName(list, filter);
     }
   }
+
+  function getHostIds(items) {
+    var hostIds = _.map(items, function (item) {
+      return _.map(item.hosts, 'hostid');
+    });
+    return _.uniq(_.flatten(hostIds));
+  }
+
+  function containsMacro(itemName) {
+    return MACRO_PATTERN.test(itemName);
+  }
+
+  function replaceMacro(item, macros) {
+    var itemName = item.name;
+    var item_macros = itemName.match(MACRO_PATTERN);
+    _.forEach(item_macros, function (macro) {
+      var host_macros = _.filter(macros, function (m) {
+        if (m.hostid) {
+          return m.hostid === item.hostid;
+        } else {
+          // Add global macros
+          return true;
+        }
+      });
+
+      var macro_def = _.find(host_macros, { macro: macro });
+      if (macro_def && macro_def.value) {
+        var macro_value = macro_def.value;
+        var macro_regex = new RegExp(escapeMacro(macro));
+        itemName = itemName.replace(macro_regex, macro_value);
+      }
+    });
+
+    return itemName;
+  }
+
+  function escapeMacro(macro) {
+    macro = macro.replace(/\$/, '\\\$');
+    return macro;
+  }
   return {
     setters: [function (_angular) {
       angular = _angular.default;
@@ -271,7 +326,7 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
         };
       }();
 
-      angular.module('grafana.services').factory('Zabbix', ZabbixFactory);
+      angular.module('grafana.services').factory('Zabbix', ZabbixFactory);MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
     }
   };
 });
