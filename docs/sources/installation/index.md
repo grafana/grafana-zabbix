@@ -37,7 +37,7 @@ service grafana-server restart
 
 Using this way you can easy upgrade plugin just running
 ```sh
-cd /var/lib/grafana/plugins/grafana-zabbix-app
+cd /var/lib/grafana/plugins/grafana-zabbix
 git pull
 service grafana-server restart
 ```
