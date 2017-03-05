@@ -1,5 +1,5 @@
-//import angular from 'angular';
 import _ from 'lodash';
+import $ from 'jquery';
 import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
@@ -12,9 +12,10 @@ import {ZabbixAPIError} from './zabbixAPICore.service.js';
 class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, alertSrv, Zabbix) {
+  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, Zabbix) {
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
+    this.dashboardSrv = dashboardSrv;
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -55,6 +56,11 @@ class ZabbixAPIDatasource {
 
     let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
     let useTrends = (timeFrom <= useTrendsFrom) && this.trends;
+
+    // Get alerts for current panel
+    this.alertQuery(options).then(alert => {
+      this.setPanelAlertState(options.panelId, alert.state);
+    });
 
     // Create request for each target
     let promises = _.map(options.targets, target => {
@@ -394,6 +400,72 @@ class ZabbixAPIDatasource {
     });
   }
 
+  alertQuery(options) {
+    let enabled_targets = filterEnabledTargets(options.targets);
+    let getPanelItems = _.map(enabled_targets, target => {
+      return this.zabbix.getItemsFromTarget(target, {itemtype: 'num'});
+    });
+
+    return Promise.all(getPanelItems)
+    .then(results => {
+      let items = _.flatten(results);
+      let itemids = _.map(items, 'itemid');
+
+      return this.zabbix.getAlerts(itemids);
+    })
+    .then(triggers => {
+      if (!triggers || triggers.length === 0) {
+        return {};
+      }
+
+      let state = 'ok';
+
+      let firedTriggers = _.filter(triggers, {value: '1'});
+      if (firedTriggers.length) {
+        state = 'alerting';
+      }
+
+      return {
+        panelId: options.panelId,
+        state: state
+      };
+    });
+  }
+
+  setPanelAlertState(panelId, alertState) {
+    let panelContainers = _.filter($('.panel-container'), elem => {
+      return elem.clientHeight && elem.clientWidth;
+    });
+
+    let panelModels = _.flatten(_.map(this.dashboardSrv.dash.rows, row => {
+      if (row.collapse) {
+        return [];
+      } else {
+        return row.panels;
+      }
+    }));
+    let panelIndex = _.findIndex(panelModels, panel => {
+      return panel.id === panelId;
+    });
+
+    if (panelIndex >= 0) {
+      if (alertState) {
+        if (alertState === 'alerting') {
+          let alertClass = "panel-has-alert panel-alert-state--" + alertState;
+          $(panelContainers[panelIndex]).addClass(alertClass);
+        }
+        if (alertState === 'ok') {
+          let alertClass = "panel-alert-state--" + alertState;
+          $(panelContainers[panelIndex]).addClass(alertClass);
+          $(panelContainers[panelIndex]).removeClass("panel-has-alert");
+        }
+      } else {
+        let alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
+        $(panelContainers[panelIndex]).removeClass(alertClass);
+      }
+    }
+  }
+
   // Replace template variables
   replaceTargetVariables(target, options) {
     let parts = ['group', 'host', 'application', 'item'];
@@ -503,6 +575,12 @@ function sequence(funcsArray) {
     }
     return result;
   };
+}
+
+function filterEnabledTargets(targets) {
+  return _.filter(targets, target => {
+    return !(target.hide || !target.group || !target.host || !target.item);
+  });
 }
 
 export {ZabbixAPIDatasource, zabbixTemplateFormat};

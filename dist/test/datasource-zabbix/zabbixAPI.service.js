@@ -445,6 +445,31 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
           });
         });
       }
+    }, {
+      key: 'getAlerts',
+      value: function getAlerts(itemids, timeFrom, timeTo) {
+        var params = {
+          output: 'extend',
+          itemids: itemids,
+          expandDescription: true,
+          expandData: true,
+          expandComment: true,
+          monitored: true,
+          skipDependent: true,
+          //only_true: true,
+          // filter: {
+          //   value: 1
+          // },
+          selectLastEvent: 'extend'
+        };
+
+        if (timeFrom || timeTo) {
+          params.lastChangeSince = timeFrom;
+          params.lastChangeTill = timeTo;
+        }
+
+        return this.request('trigger.get', params);
+      }
     }]);
 
     return ZabbixAPI;

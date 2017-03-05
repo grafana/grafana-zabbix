@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './dataProcessor', './responseHandler', './zabbix.js', './zabbixAPICore.service.js'], function (_export, _context) {
+System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './dataProcessor', './responseHandler', './zabbix.js', './zabbixAPICore.service.js'], function (_export, _context) {
   "use strict";
 
-  var _, dateMath, utils, migrations, metricFunctions, dataProcessor, responseHandler, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
+  var _, $, dateMath, utils, migrations, metricFunctions, dataProcessor, responseHandler, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -98,9 +98,17 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
     };
   }
 
+  function filterEnabledTargets(targets) {
+    return _.filter(targets, function (target) {
+      return !(target.hide || !target.group || !target.host || !target.item);
+    });
+  }
+
   return {
     setters: [function (_lodash) {
       _ = _lodash.default;
+    }, function (_jquery) {
+      $ = _jquery.default;
     }, function (_appCoreUtilsDatemath) {
       dateMath = _appCoreUtilsDatemath;
     }, function (_utils) {
@@ -176,11 +184,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
       _export('ZabbixAPIDatasource', ZabbixAPIDatasource = function () {
 
         /** @ngInject */
-        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, Zabbix) {
+        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, Zabbix) {
           _classCallCheck(this, ZabbixAPIDatasource);
 
           this.templateSrv = templateSrv;
           this.alertSrv = alertSrv;
+          this.dashboardSrv = dashboardSrv;
 
           // General data source settings
           this.name = instanceSettings.name;
@@ -227,6 +236,11 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
             var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
             var useTrends = timeFrom <= useTrendsFrom && this.trends;
+
+            // Get alerts for current panel
+            this.alertQuery(options).then(function (alert) {
+              _this.setPanelAlertState(options.panelId, alert.state);
+            });
 
             // Create request for each target
             var promises = _.map(options.targets, function (target) {
@@ -556,14 +570,82 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             });
           }
         }, {
+          key: 'alertQuery',
+          value: function alertQuery(options) {
+            var _this7 = this;
+
+            var enabled_targets = filterEnabledTargets(options.targets);
+            var getPanelItems = _.map(enabled_targets, function (target) {
+              return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
+            });
+
+            return Promise.all(getPanelItems).then(function (results) {
+              var items = _.flatten(results);
+              var itemids = _.map(items, 'itemid');
+
+              return _this7.zabbix.getAlerts(itemids);
+            }).then(function (triggers) {
+              if (!triggers || triggers.length === 0) {
+                return {};
+              }
+
+              var state = 'ok';
+
+              var firedTriggers = _.filter(triggers, { value: '1' });
+              if (firedTriggers.length) {
+                state = 'alerting';
+              }
+
+              return {
+                panelId: options.panelId,
+                state: state
+              };
+            });
+          }
+        }, {
+          key: 'setPanelAlertState',
+          value: function setPanelAlertState(panelId, alertState) {
+            var panelContainers = _.filter($('.panel-container'), function (elem) {
+              return elem.clientHeight && elem.clientWidth;
+            });
+
+            var panelModels = _.flatten(_.map(this.dashboardSrv.dash.rows, function (row) {
+              if (row.collapse) {
+                return [];
+              } else {
+                return row.panels;
+              }
+            }));
+            var panelIndex = _.findIndex(panelModels, function (panel) {
+              return panel.id === panelId;
+            });
+
+            if (panelIndex >= 0) {
+              if (alertState) {
+                if (alertState === 'alerting') {
+                  var alertClass = "panel-has-alert panel-alert-state--" + alertState;
+                  $(panelContainers[panelIndex]).addClass(alertClass);
+                }
+                if (alertState === 'ok') {
+                  var _alertClass = "panel-alert-state--" + alertState;
+                  $(panelContainers[panelIndex]).addClass(_alertClass);
+                  $(panelContainers[panelIndex]).removeClass("panel-has-alert");
+                }
+              } else {
+                var _alertClass2 = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
+                $(panelContainers[panelIndex]).removeClass(_alertClass2);
+              }
+            }
+          }
+        }, {
           key: 'replaceTargetVariables',
           value: function replaceTargetVariables(target, options) {
-            var _this7 = this;
+            var _this8 = this;
 
             var parts = ['group', 'host', 'application', 'item'];
             _.forEach(parts, function (p) {
               if (target[p] && target[p].filter) {
-                target[p].filter = _this7.replaceTemplateVars(target[p].filter, options.scopedVars);
+                target[p].filter = _this8.replaceTemplateVars(target[p].filter, options.scopedVars);
               }
             });
             target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
@@ -571,9 +653,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             _.forEach(target.functions, function (func) {
               func.params = _.map(func.params, function (param) {
                 if (typeof param === 'number') {
-                  return +_this7.templateSrv.replace(param.toString(), options.scopedVars);
+                  return +_this8.templateSrv.replace(param.toString(), options.scopedVars);
                 } else {
-                  return _this7.templateSrv.replace(param, options.scopedVars);
+                  return _this8.templateSrv.replace(param, options.scopedVars);
                 }
               });
             });

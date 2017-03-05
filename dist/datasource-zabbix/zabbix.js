@@ -49,6 +49,7 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
 
         this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
         this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
+        this.getAlerts = this.zabbixAPI.getAlerts.bind(this.zabbixAPI);
         this.getAcknowledges = this.zabbixAPI.getAcknowledges.bind(this.zabbixAPI);
         this.getITService = this.zabbixAPI.getITService.bind(this.zabbixAPI);
         this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
