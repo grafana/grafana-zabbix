@@ -218,7 +218,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         return this.request('item.get', params).then(expandItems);
 
         function expandItems(items) {
-          items.forEach(function (item) {
+          _lodash2.default.forEach(items, function (item) {
             item.item = item.name;
             item.name = utils.expandItemName(item.item, item.key_);
             return item;

@@ -100,6 +100,8 @@ System.register(['angular'], function (_export, _context) {
 
               // Success
               return response.data.result;
+            }).catch(function () {
+              return Promise.reject(new ZabbixAPIError({ data: "Connection Error" }));
             });
           }
         }, {

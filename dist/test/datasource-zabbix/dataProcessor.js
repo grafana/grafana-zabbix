@@ -275,14 +275,14 @@ function findNearestLeft(series, point) {
 
 function timeShift(interval, range) {
   var shift = utils.parseTimeShiftInterval(interval) / 1000;
-  return range.map(function (time) {
+  return _lodash2.default.map(range, function (time) {
     return time - shift;
   });
 }
 
 function unShiftTimeSeries(interval, datapoints) {
   var unshift = utils.parseTimeShiftInterval(interval);
-  return datapoints.map(function (dp) {
+  return _lodash2.default.map(datapoints, function (dp) {
     return [dp[0], dp[1] + unshift];
   });
 }

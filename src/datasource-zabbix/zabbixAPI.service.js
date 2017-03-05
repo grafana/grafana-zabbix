@@ -189,7 +189,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       .then(expandItems);
 
       function expandItems(items) {
-        items.forEach(item => {
+        _.forEach(items, item => {
           item.item = item.name;
           item.name = utils.expandItemName(item.item, item.key_);
           return item;

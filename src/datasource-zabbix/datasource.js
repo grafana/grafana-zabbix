@@ -137,6 +137,10 @@ class ZabbixAPIDatasource {
       return getHistoryPromise.then(timeseries_data => {
         return this.applyDataProcessingFunctions(timeseries_data, target);
       });
+    })
+    .catch(error => {
+      console.log(error);
+      return [];
     });
   }
 
@@ -393,7 +397,7 @@ class ZabbixAPIDatasource {
   // Replace template variables
   replaceTargetVariables(target, options) {
     let parts = ['group', 'host', 'application', 'item'];
-    parts.forEach(p => {
+    _.forEach(parts, p => {
       if (target[p] && target[p].filter) {
         target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
       }
@@ -401,7 +405,7 @@ class ZabbixAPIDatasource {
     target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
 
     _.forEach(target.functions, func => {
-      func.params = func.params.map(param => {
+      func.params = _.map(func.params, param => {
         if (typeof param === 'number') {
           return +this.templateSrv.replace(param.toString(), options.scopedVars);
         } else {

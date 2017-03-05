@@ -265,14 +265,14 @@ function findNearestLeft(series, point) {
 
 function timeShift(interval, range) {
   let shift = utils.parseTimeShiftInterval(interval) / 1000;
-  return range.map(time => {
+  return _.map(range, time => {
     return time - shift;
   });
 }
 
 function unShiftTimeSeries(interval, datapoints) {
   let unshift = utils.parseTimeShiftInterval(interval);
-  return datapoints.map(dp => {
+  return _.map(datapoints, dp => {
     return [
       dp[0],
       dp[1] + unshift

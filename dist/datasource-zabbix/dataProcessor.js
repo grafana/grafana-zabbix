@@ -226,12 +226,12 @@ System.register(['lodash', './utils'], function (_export, _context) {
     return nearestLeft;
   }function timeShift(interval, range) {
     var shift = utils.parseTimeShiftInterval(interval) / 1000;
-    return range.map(function (time) {
+    return _.map(range, function (time) {
       return time - shift;
     });
   }function unShiftTimeSeries(interval, datapoints) {
     var unshift = utils.parseTimeShiftInterval(interval);
-    return datapoints.map(function (dp) {
+    return _.map(datapoints, function (dp) {
       return [dp[0], dp[1] + unshift];
     });
   }return {

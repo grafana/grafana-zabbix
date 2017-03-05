@@ -186,6 +186,9 @@ var ZabbixAPIDatasource = function () {
         return getHistoryPromise.then(function (timeseries_data) {
           return _this2.applyDataProcessingFunctions(timeseries_data, target);
         });
+      }).catch(function (error) {
+        console.log(error);
+        return [];
       });
     }
   }, {
@@ -460,7 +463,7 @@ var ZabbixAPIDatasource = function () {
       var _this7 = this;
 
       var parts = ['group', 'host', 'application', 'item'];
-      parts.forEach(function (p) {
+      _lodash2.default.forEach(parts, function (p) {
         if (target[p] && target[p].filter) {
           target[p].filter = _this7.replaceTemplateVars(target[p].filter, options.scopedVars);
         }
@@ -468,7 +471,7 @@ var ZabbixAPIDatasource = function () {
       target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
 
       _lodash2.default.forEach(target.functions, function (func) {
-        func.params = func.params.map(function (param) {
+        func.params = _lodash2.default.map(func.params, function (param) {
           if (typeof param === 'number') {
             return +_this7.templateSrv.replace(param.toString(), options.scopedVars);
           } else {

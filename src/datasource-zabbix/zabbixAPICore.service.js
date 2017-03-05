@@ -64,6 +64,9 @@ class ZabbixAPICoreService {
 
       // Success
       return response.data.result;
+    })
+    .catch(() => {
+      return Promise.reject(new ZabbixAPIError({data: "Connection Error"}));
     });
   }
 

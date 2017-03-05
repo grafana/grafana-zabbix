@@ -83,6 +83,8 @@ var ZabbixAPICoreService = function () {
 
         // Success
         return response.data.result;
+      }).catch(function () {
+        return Promise.reject(new ZabbixAPIError({ data: "Connection Error" }));
       });
     }
 

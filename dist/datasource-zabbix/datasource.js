@@ -311,6 +311,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               return getHistoryPromise.then(function (timeseries_data) {
                 return _this2.applyDataProcessingFunctions(timeseries_data, target);
               });
+            }).catch(function (error) {
+              console.log(error);
+              return [];
             });
           }
         }, {
@@ -558,7 +561,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var _this7 = this;
 
             var parts = ['group', 'host', 'application', 'item'];
-            parts.forEach(function (p) {
+            _.forEach(parts, function (p) {
               if (target[p] && target[p].filter) {
                 target[p].filter = _this7.replaceTemplateVars(target[p].filter, options.scopedVars);
               }
@@ -566,7 +569,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
 
             _.forEach(target.functions, function (func) {
-              func.params = func.params.map(function (param) {
+              func.params = _.map(func.params, function (param) {
                 if (typeof param === 'number') {
                   return +_this7.templateSrv.replace(param.toString(), options.scopedVars);
                 } else {
