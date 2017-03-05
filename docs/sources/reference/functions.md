@@ -146,3 +146,15 @@ Examples:
 ```
 setAlias(load)
 ```
+
+### setAliasByRegex
+```
+setAliasByRegex(regex)
+```
+
+Returns part of the metric name matched by regex.
+
+Examples:
+```
+setAlias(Zabbix busy [a-zA-Z]+)
+```
