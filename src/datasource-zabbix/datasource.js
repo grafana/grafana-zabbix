@@ -35,6 +35,8 @@ class ZabbixAPIDatasource {
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
+    this.alertingEnabled = instanceSettings.jsonData.alerting;
+
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
     // Use custom format for template variables
@@ -58,9 +60,11 @@ class ZabbixAPIDatasource {
     let useTrends = (timeFrom <= useTrendsFrom) && this.trends;
 
     // Get alerts for current panel
-    this.alertQuery(options).then(alert => {
-      this.setPanelAlertState(options.panelId, alert.state);
-    });
+    if (this.alertingEnabled) {
+      this.alertQuery(options).then(alert => {
+        this.setPanelAlertState(options.panelId, alert.state);
+      });
+    }
 
     // Create request for each target
     let promises = _.map(options.targets, target => {

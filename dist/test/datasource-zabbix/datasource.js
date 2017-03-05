@@ -79,6 +79,8 @@ var ZabbixAPIDatasource = function () {
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
+    this.alertingEnabled = instanceSettings.jsonData.alerting;
+
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
     // Use custom format for template variables
@@ -108,9 +110,11 @@ var ZabbixAPIDatasource = function () {
       var useTrends = timeFrom <= useTrendsFrom && this.trends;
 
       // Get alerts for current panel
-      this.alertQuery(options).then(function (alert) {
-        _this.setPanelAlertState(options.panelId, alert.state);
-      });
+      if (this.alertingEnabled) {
+        this.alertQuery(options).then(function (alert) {
+          _this.setPanelAlertState(options.panelId, alert.state);
+        });
+      }
 
       // Create request for each target
       var promises = _lodash2.default.map(options.targets, function (target) {
