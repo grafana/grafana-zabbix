@@ -31,9 +31,10 @@
     <div class="gf-form">
       <label class="gf-form-label width-7">Trends</label>
     </div>
-    <gf-form-switch class="gf-form"
+    <gf-form-switch class="gf-form" label-class="width-5"
       label="Enable"
-      checked="ctrl.current.jsonData.trends" switch-class="max-width-6">
+      checked="ctrl.current.jsonData.trends"
+      switch-class="max-width-6">
     </gf-form-switch>
     <div class="gf-form" ng-if="ctrl.current.jsonData.trends">
       <span class="gf-form-label width-7">
@@ -61,8 +62,12 @@
 
 <div class="gf-form-group">
   <h3 class="page-heading">Alerting</h3>
-  <gf-form-switch class="gf-form width-8"
+  <gf-form-switch class="gf-form" label-class="width-8"
     label="Enable alerting"
     checked="ctrl.current.jsonData.alerting">
+  </gf-form-switch>
+  <gf-form-switch class="gf-form" label-class="width-8"
+    label="Add thresholds"
+    checked="ctrl.current.jsonData.addThresholds">
   </gf-form-switch>
 </div>

@@ -79,7 +79,9 @@ var ZabbixAPIDatasource = function () {
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
+    // Alerting options
     this.alertingEnabled = instanceSettings.jsonData.alerting;
+    this.addThresholds = instanceSettings.jsonData.addThresholds;
 
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -113,6 +115,12 @@ var ZabbixAPIDatasource = function () {
       if (this.alertingEnabled) {
         this.alertQuery(options).then(function (alert) {
           _this.setPanelAlertState(options.panelId, alert.state);
+
+          if (_this.addThresholds) {
+            _lodash2.default.forEach(alert.thresholds, function (threshold) {
+              _this.setPanelThreshold(options.panelId, threshold);
+            });
+          }
         });
       }
 
@@ -467,6 +475,13 @@ var ZabbixAPIDatasource = function () {
         });
       });
     }
+
+    /**
+     * Get triggers and its details for panel's targets
+     * Returns alert state ('ok' if no fired triggers, or 'alerting' if at least 1 trigger is fired)
+     * or empty object if no related triggers are finded.
+     */
+
   }, {
     key: 'alertQuery',
     value: function alertQuery(options) {
@@ -494,9 +509,14 @@ var ZabbixAPIDatasource = function () {
           state = 'alerting';
         }
 
+        var thresholds = _lodash2.default.map(triggers, function (trigger) {
+          return getTriggerThreshold(trigger.expression);
+        });
+
         return {
           panelId: options.panelId,
-          state: state
+          state: state,
+          thresholds: thresholds
         };
       });
     }
@@ -507,14 +527,7 @@ var ZabbixAPIDatasource = function () {
         return elem.clientHeight && elem.clientWidth;
       });
 
-      var panelModels = _lodash2.default.flatten(_lodash2.default.map(this.dashboardSrv.dash.rows, function (row) {
-        if (row.collapse) {
-          return [];
-        } else {
-          return row.panels;
-        }
-      }));
-
+      var panelModels = this.getPanelModels();
       var panelIndex = _lodash2.default.findIndex(panelModels, function (panel) {
         return panel.id === panelId;
       });
@@ -534,6 +547,46 @@ var ZabbixAPIDatasource = function () {
             (0, _jquery2.default)(panelContainers[panelIndex]).removeClass("panel-has-alert");
           }
         }
+      }
+    }
+  }, {
+    key: 'getPanelModels',
+    value: function getPanelModels() {
+      return _lodash2.default.flatten(_lodash2.default.map(this.dashboardSrv.dash.rows, function (row) {
+        if (row.collapse) {
+          return [];
+        } else {
+          return row.panels;
+        }
+      }));
+    }
+  }, {
+    key: 'getPanelModel',
+    value: function getPanelModel(panelId) {
+      var panelModels = this.getPanelModels();
+
+      return _lodash2.default.find(panelModels, function (panel) {
+        return panel.id === panelId;
+      });
+    }
+  }, {
+    key: 'setPanelThreshold',
+    value: function setPanelThreshold(panelId, threshold) {
+      var panel = this.getPanelModel(panelId);
+      var containsThreshold = _lodash2.default.find(panel.thresholds, { value: threshold });
+
+      if (panel && !containsThreshold) {
+        var thresholdOptions = {
+          colorMode: "custom",
+          fill: false,
+          line: true,
+          lineColor: "rgb(255, 0, 0)",
+          op: "gt",
+          value: threshold,
+          source: "zabbix"
+        };
+
+        panel.thresholds.push(thresholdOptions);
       }
     }
 
@@ -658,6 +711,18 @@ function filterEnabledTargets(targets) {
   return _lodash2.default.filter(targets, function (target) {
     return !(target.hide || !target.group || !target.host || !target.item);
   });
+}
+
+function getTriggerThreshold(expression) {
+  var thresholdPattern = /.*[<>]([\d\.]+)/;
+  var finded_thresholds = expression.match(thresholdPattern);
+  if (finded_thresholds && finded_thresholds.length >= 2) {
+    var threshold = finded_thresholds[1];
+    threshold = Number(threshold);
+    return threshold;
+  } else {
+    return null;
+  }
 }
 
 exports.ZabbixAPIDatasource = ZabbixAPIDatasource;

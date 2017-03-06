@@ -35,7 +35,9 @@ class ZabbixAPIDatasource {
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
+    // Alerting options
     this.alertingEnabled = instanceSettings.jsonData.alerting;
+    this.addThresholds = instanceSettings.jsonData.addThresholds;
 
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -63,6 +65,12 @@ class ZabbixAPIDatasource {
     if (this.alertingEnabled) {
       this.alertQuery(options).then(alert => {
         this.setPanelAlertState(options.panelId, alert.state);
+
+        if (this.addThresholds) {
+          _.forEach(alert.thresholds, threshold => {
+            this.setPanelThreshold(options.panelId, threshold);
+          });
+        }
       });
     }
 
@@ -404,6 +412,11 @@ class ZabbixAPIDatasource {
     });
   }
 
+  /**
+   * Get triggers and its details for panel's targets
+   * Returns alert state ('ok' if no fired triggers, or 'alerting' if at least 1 trigger is fired)
+   * or empty object if no related triggers are finded.
+   */
   alertQuery(options) {
     let enabled_targets = filterEnabledTargets(options.targets);
     let getPanelItems = _.map(enabled_targets, target => {
@@ -429,9 +442,14 @@ class ZabbixAPIDatasource {
         state = 'alerting';
       }
 
+      let thresholds = _.map(triggers, trigger => {
+        return getTriggerThreshold(trigger.expression);
+      });
+
       return {
         panelId: options.panelId,
-        state: state
+        state: state,
+        thresholds: thresholds
       };
     });
   }
@@ -441,14 +459,7 @@ class ZabbixAPIDatasource {
       return elem.clientHeight && elem.clientWidth;
     });
 
-    let panelModels = _.flatten(_.map(this.dashboardSrv.dash.rows, row => {
-      if (row.collapse) {
-        return [];
-      } else {
-        return row.panels;
-      }
-    }));
-
+    let panelModels = this.getPanelModels();
     let panelIndex = _.findIndex(panelModels, panel => {
       return panel.id === panelId;
     });
@@ -468,6 +479,43 @@ class ZabbixAPIDatasource {
           $(panelContainers[panelIndex]).removeClass("panel-has-alert");
         }
       }
+    }
+  }
+
+  getPanelModels() {
+    return _.flatten(_.map(this.dashboardSrv.dash.rows, row => {
+      if (row.collapse) {
+        return [];
+      } else {
+        return row.panels;
+      }
+    }));
+  }
+
+  getPanelModel(panelId) {
+    let panelModels = this.getPanelModels();
+
+    return _.find(panelModels, panel => {
+      return panel.id === panelId;
+    });
+  }
+
+  setPanelThreshold(panelId, threshold) {
+    let panel = this.getPanelModel(panelId);
+    let containsThreshold = _.find(panel.thresholds, {value: threshold});
+
+    if (panel && !containsThreshold) {
+      let thresholdOptions = {
+        colorMode : "custom",
+        fill : false,
+        line : true,
+        lineColor: "rgb(255, 0, 0)",
+        op: "gt",
+        value: threshold,
+        source: "zabbix"
+      };
+
+      panel.thresholds.push(thresholdOptions);
     }
   }
 
@@ -586,6 +634,18 @@ function filterEnabledTargets(targets) {
   return _.filter(targets, target => {
     return !(target.hide || !target.group || !target.host || !target.item);
   });
+}
+
+function getTriggerThreshold(expression) {
+  let thresholdPattern = /.*[<>]([\d\.]+)/;
+  let finded_thresholds = expression.match(thresholdPattern);
+  if (finded_thresholds && finded_thresholds.length >= 2) {
+    let threshold = finded_thresholds[1];
+    threshold = Number(threshold);
+    return threshold;
+  } else {
+    return null;
+  }
 }
 
 export {ZabbixAPIDatasource, zabbixTemplateFormat};

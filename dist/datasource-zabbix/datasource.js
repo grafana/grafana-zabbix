@@ -104,6 +104,18 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
     });
   }
 
+  function getTriggerThreshold(expression) {
+    var thresholdPattern = /.*[<>]([\d\.]+)/;
+    var finded_thresholds = expression.match(thresholdPattern);
+    if (finded_thresholds && finded_thresholds.length >= 2) {
+      var threshold = finded_thresholds[1];
+      threshold = Number(threshold);
+      return threshold;
+    } else {
+      return null;
+    }
+  }
+
   return {
     setters: [function (_lodash) {
       _ = _lodash.default;
@@ -209,7 +221,9 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
           var ttl = instanceSettings.jsonData.cacheTTL || '1h';
           this.cacheTTL = utils.parseInterval(ttl);
 
+          // Alerting options
           this.alertingEnabled = instanceSettings.jsonData.alerting;
+          this.addThresholds = instanceSettings.jsonData.addThresholds;
 
           this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -243,6 +257,12 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
             if (this.alertingEnabled) {
               this.alertQuery(options).then(function (alert) {
                 _this.setPanelAlertState(options.panelId, alert.state);
+
+                if (_this.addThresholds) {
+                  _.forEach(alert.thresholds, function (threshold) {
+                    _this.setPanelThreshold(options.panelId, threshold);
+                  });
+                }
               });
             }
 
@@ -600,9 +620,14 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
                 state = 'alerting';
               }
 
+              var thresholds = _.map(triggers, function (trigger) {
+                return getTriggerThreshold(trigger.expression);
+              });
+
               return {
                 panelId: options.panelId,
-                state: state
+                state: state,
+                thresholds: thresholds
               };
             });
           }
@@ -613,14 +638,7 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
               return elem.clientHeight && elem.clientWidth;
             });
 
-            var panelModels = _.flatten(_.map(this.dashboardSrv.dash.rows, function (row) {
-              if (row.collapse) {
-                return [];
-              } else {
-                return row.panels;
-              }
-            }));
-
+            var panelModels = this.getPanelModels();
             var panelIndex = _.findIndex(panelModels, function (panel) {
               return panel.id === panelId;
             });
@@ -640,6 +658,46 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
                   $(panelContainers[panelIndex]).removeClass("panel-has-alert");
                 }
               }
+            }
+          }
+        }, {
+          key: 'getPanelModels',
+          value: function getPanelModels() {
+            return _.flatten(_.map(this.dashboardSrv.dash.rows, function (row) {
+              if (row.collapse) {
+                return [];
+              } else {
+                return row.panels;
+              }
+            }));
+          }
+        }, {
+          key: 'getPanelModel',
+          value: function getPanelModel(panelId) {
+            var panelModels = this.getPanelModels();
+
+            return _.find(panelModels, function (panel) {
+              return panel.id === panelId;
+            });
+          }
+        }, {
+          key: 'setPanelThreshold',
+          value: function setPanelThreshold(panelId, threshold) {
+            var panel = this.getPanelModel(panelId);
+            var containsThreshold = _.find(panel.thresholds, { value: threshold });
+
+            if (panel && !containsThreshold) {
+              var thresholdOptions = {
+                colorMode: "custom",
+                fill: false,
+                line: true,
+                lineColor: "rgb(255, 0, 0)",
+                op: "gt",
+                value: threshold,
+                source: "zabbix"
+              };
+
+              panel.thresholds.push(thresholdOptions);
             }
           }
         }, {
