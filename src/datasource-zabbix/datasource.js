@@ -448,24 +448,25 @@ class ZabbixAPIDatasource {
         return row.panels;
       }
     }));
+
     let panelIndex = _.findIndex(panelModels, panel => {
       return panel.id === panelId;
     });
 
     if (panelIndex >= 0) {
+      let alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
+      $(panelContainers[panelIndex]).removeClass(alertClass);
+
       if (alertState) {
         if (alertState === 'alerting') {
-          let alertClass = "panel-has-alert panel-alert-state--" + alertState;
+          alertClass = "panel-has-alert panel-alert-state--" + alertState;
           $(panelContainers[panelIndex]).addClass(alertClass);
         }
         if (alertState === 'ok') {
-          let alertClass = "panel-alert-state--" + alertState;
+          alertClass = "panel-alert-state--" + alertState;
           $(panelContainers[panelIndex]).addClass(alertClass);
           $(panelContainers[panelIndex]).removeClass("panel-has-alert");
         }
-      } else {
-        let alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
-        $(panelContainers[panelIndex]).removeClass(alertClass);
       }
     }
   }

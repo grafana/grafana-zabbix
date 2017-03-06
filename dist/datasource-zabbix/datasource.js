@@ -620,24 +620,25 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
                 return row.panels;
               }
             }));
+
             var panelIndex = _.findIndex(panelModels, function (panel) {
               return panel.id === panelId;
             });
 
             if (panelIndex >= 0) {
+              var alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
+              $(panelContainers[panelIndex]).removeClass(alertClass);
+
               if (alertState) {
                 if (alertState === 'alerting') {
-                  var alertClass = "panel-has-alert panel-alert-state--" + alertState;
+                  alertClass = "panel-has-alert panel-alert-state--" + alertState;
                   $(panelContainers[panelIndex]).addClass(alertClass);
                 }
                 if (alertState === 'ok') {
-                  var _alertClass = "panel-alert-state--" + alertState;
-                  $(panelContainers[panelIndex]).addClass(_alertClass);
+                  alertClass = "panel-alert-state--" + alertState;
+                  $(panelContainers[panelIndex]).addClass(alertClass);
                   $(panelContainers[panelIndex]).removeClass("panel-has-alert");
                 }
-              } else {
-                var _alertClass2 = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
-                $(panelContainers[panelIndex]).removeClass(_alertClass2);
               }
             }
           }

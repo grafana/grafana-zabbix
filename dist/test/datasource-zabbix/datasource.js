@@ -514,24 +514,25 @@ var ZabbixAPIDatasource = function () {
           return row.panels;
         }
       }));
+
       var panelIndex = _lodash2.default.findIndex(panelModels, function (panel) {
         return panel.id === panelId;
       });
 
       if (panelIndex >= 0) {
+        var alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
+        (0, _jquery2.default)(panelContainers[panelIndex]).removeClass(alertClass);
+
         if (alertState) {
           if (alertState === 'alerting') {
-            var alertClass = "panel-has-alert panel-alert-state--" + alertState;
+            alertClass = "panel-has-alert panel-alert-state--" + alertState;
             (0, _jquery2.default)(panelContainers[panelIndex]).addClass(alertClass);
           }
           if (alertState === 'ok') {
-            var _alertClass = "panel-alert-state--" + alertState;
-            (0, _jquery2.default)(panelContainers[panelIndex]).addClass(_alertClass);
+            alertClass = "panel-alert-state--" + alertState;
+            (0, _jquery2.default)(panelContainers[panelIndex]).addClass(alertClass);
             (0, _jquery2.default)(panelContainers[panelIndex]).removeClass("panel-has-alert");
           }
-        } else {
-          var _alertClass2 = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
-          (0, _jquery2.default)(panelContainers[panelIndex]).removeClass(_alertClass2);
         }
       }
     }
