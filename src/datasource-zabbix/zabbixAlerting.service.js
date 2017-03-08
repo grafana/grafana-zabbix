@@ -9,15 +9,26 @@ class ZabbixAlertingService {
     this.dashboardSrv = dashboardSrv;
   }
 
+  isFullScreen() {
+    return this.dashboardSrv.dash.meta.fullscreen;
+  }
+
   setPanelAlertState(panelId, alertState) {
+    let panelIndex;
+
     let panelContainers = _.filter($('.panel-container'), elem => {
       return elem.clientHeight && elem.clientWidth;
     });
 
     let panelModels = this.getPanelModels();
-    let panelIndex = _.findIndex(panelModels, panel => {
-      return panel.id === panelId;
-    });
+
+    if (this.isFullScreen()) {
+      panelIndex = 0;
+    } else {
+      panelIndex = _.findIndex(panelModels, panel => {
+        return panel.id === panelId;
+      });
+    }
 
     if (panelIndex >= 0) {
       let alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";

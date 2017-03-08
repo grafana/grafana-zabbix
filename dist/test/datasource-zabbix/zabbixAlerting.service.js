@@ -28,16 +28,28 @@ var ZabbixAlertingService = function () {
   }
 
   _createClass(ZabbixAlertingService, [{
+    key: 'isFullScreen',
+    value: function isFullScreen() {
+      return this.dashboardSrv.dash.meta.fullscreen;
+    }
+  }, {
     key: 'setPanelAlertState',
     value: function setPanelAlertState(panelId, alertState) {
+      var panelIndex = void 0;
+
       var panelContainers = _lodash2.default.filter((0, _jquery2.default)('.panel-container'), function (elem) {
         return elem.clientHeight && elem.clientWidth;
       });
 
       var panelModels = this.getPanelModels();
-      var panelIndex = _lodash2.default.findIndex(panelModels, function (panel) {
-        return panel.id === panelId;
-      });
+
+      if (this.isFullScreen()) {
+        panelIndex = 0;
+      } else {
+        panelIndex = _lodash2.default.findIndex(panelModels, function (panel) {
+          return panel.id === panelId;
+        });
+      }
 
       if (panelIndex >= 0) {
         var alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";

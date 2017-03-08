@@ -48,16 +48,28 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
         }
 
         _createClass(ZabbixAlertingService, [{
+          key: 'isFullScreen',
+          value: function isFullScreen() {
+            return this.dashboardSrv.dash.meta.fullscreen;
+          }
+        }, {
           key: 'setPanelAlertState',
           value: function setPanelAlertState(panelId, alertState) {
+            var panelIndex = void 0;
+
             var panelContainers = _.filter($('.panel-container'), function (elem) {
               return elem.clientHeight && elem.clientWidth;
             });
 
             var panelModels = this.getPanelModels();
-            var panelIndex = _.findIndex(panelModels, function (panel) {
-              return panel.id === panelId;
-            });
+
+            if (this.isFullScreen()) {
+              panelIndex = 0;
+            } else {
+              panelIndex = _.findIndex(panelModels, function (panel) {
+                return panel.id === panelId;
+              });
+            }
 
             if (panelIndex >= 0) {
               var alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
