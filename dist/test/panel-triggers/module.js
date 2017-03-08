@@ -92,7 +92,7 @@ var TriggerPanelCtrl = function (_PanelCtrl) {
   _inherits(TriggerPanelCtrl, _PanelCtrl);
 
   /** @ngInject */
-  function TriggerPanelCtrl($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv) {
+  function TriggerPanelCtrl($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
     _classCallCheck(this, TriggerPanelCtrl);
 
     var _this = _possibleConstructorReturn(this, (TriggerPanelCtrl.__proto__ || Object.getPrototypeOf(TriggerPanelCtrl)).call(this, $scope, $injector));
@@ -100,6 +100,8 @@ var TriggerPanelCtrl = function (_PanelCtrl) {
     _this.datasourceSrv = datasourceSrv;
     _this.templateSrv = templateSrv;
     _this.contextSrv = contextSrv;
+    _this.dashboardSrv = dashboardSrv;
+
     _this.triggerStatusMap = triggerStatusMap;
     _this.defaultTimeFormat = defaultTimeFormat;
     _this.pageIndex = 0;
@@ -125,6 +127,11 @@ var TriggerPanelCtrl = function (_PanelCtrl) {
     key: 'onRefresh',
     value: function onRefresh() {
       var _this2 = this;
+
+      // ignore fetching data if another panel is in fullscreen
+      if (this.otherPanelInFullscreenMode()) {
+        return;
+      }
 
       // clear loading/error state
       delete this.error;
