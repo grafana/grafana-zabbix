@@ -81,6 +81,7 @@ var ZabbixAPIDatasource = function () {
     // Alerting options
     this.alertingEnabled = instanceSettings.jsonData.alerting;
     this.addThresholds = instanceSettings.jsonData.addThresholds;
+    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || 2;
 
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -498,6 +499,10 @@ var ZabbixAPIDatasource = function () {
 
         return _this7.zabbix.getAlerts(itemids);
       }).then(function (triggers) {
+        triggers = _lodash2.default.filter(triggers, function (trigger) {
+          return trigger.priority >= _this7.alertingMinSeverity;
+        });
+
         if (!triggers || triggers.length === 0) {
           return {};
         }

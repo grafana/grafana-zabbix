@@ -39,6 +39,7 @@ class ZabbixAPIDatasource {
     // Alerting options
     this.alertingEnabled = instanceSettings.jsonData.alerting;
     this.addThresholds = instanceSettings.jsonData.addThresholds;
+    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || 2;
 
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -433,6 +434,10 @@ class ZabbixAPIDatasource {
       return this.zabbix.getAlerts(itemids);
     })
     .then(triggers => {
+      triggers = _.filter(triggers, trigger => {
+        return trigger.priority >= this.alertingMinSeverity;
+      });
+
       if (!triggers || triggers.length === 0) {
         return {};
       }

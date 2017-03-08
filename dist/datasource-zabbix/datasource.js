@@ -223,6 +223,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           // Alerting options
           this.alertingEnabled = instanceSettings.jsonData.alerting;
           this.addThresholds = instanceSettings.jsonData.addThresholds;
+          this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || 2;
 
           this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -609,6 +610,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
               return _this7.zabbix.getAlerts(itemids);
             }).then(function (triggers) {
+              triggers = _.filter(triggers, function (trigger) {
+                return trigger.priority >= _this7.alertingMinSeverity;
+              });
+
               if (!triggers || triggers.length === 0) {
                 return {};
               }
