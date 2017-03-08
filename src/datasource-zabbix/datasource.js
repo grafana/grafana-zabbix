@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import $ from 'jquery';
 import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
@@ -7,15 +6,17 @@ import * as metricFunctions from './metricFunctions';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import './zabbix.js';
+import './zabbixAlerting.service.js';
 import {ZabbixAPIError} from './zabbixAPICore.service.js';
 
 class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, Zabbix) {
+  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
     this.dashboardSrv = dashboardSrv;
+    this.zabbixAlertingSrv = zabbixAlertingSrv;
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -64,11 +65,12 @@ class ZabbixAPIDatasource {
     // Get alerts for current panel
     if (this.alertingEnabled) {
       this.alertQuery(options).then(alert => {
-        this.setPanelAlertState(options.panelId, alert.state);
+        this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
 
+        this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
         if (this.addThresholds) {
           _.forEach(alert.thresholds, threshold => {
-            this.setPanelThreshold(options.panelId, threshold);
+            this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
           });
         }
       });
@@ -452,71 +454,6 @@ class ZabbixAPIDatasource {
         thresholds: thresholds
       };
     });
-  }
-
-  setPanelAlertState(panelId, alertState) {
-    let panelContainers = _.filter($('.panel-container'), elem => {
-      return elem.clientHeight && elem.clientWidth;
-    });
-
-    let panelModels = this.getPanelModels();
-    let panelIndex = _.findIndex(panelModels, panel => {
-      return panel.id === panelId;
-    });
-
-    if (panelIndex >= 0) {
-      let alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
-      $(panelContainers[panelIndex]).removeClass(alertClass);
-
-      if (alertState) {
-        if (alertState === 'alerting') {
-          alertClass = "panel-has-alert panel-alert-state--" + alertState;
-          $(panelContainers[panelIndex]).addClass(alertClass);
-        }
-        if (alertState === 'ok') {
-          alertClass = "panel-alert-state--" + alertState;
-          $(panelContainers[panelIndex]).addClass(alertClass);
-          $(panelContainers[panelIndex]).removeClass("panel-has-alert");
-        }
-      }
-    }
-  }
-
-  getPanelModels() {
-    return _.flatten(_.map(this.dashboardSrv.dash.rows, row => {
-      if (row.collapse) {
-        return [];
-      } else {
-        return row.panels;
-      }
-    }));
-  }
-
-  getPanelModel(panelId) {
-    let panelModels = this.getPanelModels();
-
-    return _.find(panelModels, panel => {
-      return panel.id === panelId;
-    });
-  }
-
-  setPanelThreshold(panelId, threshold) {
-    let panel = this.getPanelModel(panelId);
-    let containsThreshold = _.find(panel.thresholds, {value: threshold});
-
-    if (panel && !containsThreshold) {
-      let thresholdOptions = {
-        colorMode : "custom",
-        fill : false,
-        line : true,
-        lineColor: "rgb(255, 0, 0)",
-        op: "gt",
-        value: threshold,
-        source: "zabbix"
-      };
-
-      panel.thresholds.push(thresholdOptions);
-    }
   }
 
   // Replace template variables

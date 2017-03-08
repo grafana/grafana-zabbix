@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './dataProcessor', './responseHandler', './zabbix.js', './zabbixAPICore.service.js'], function (_export, _context) {
+System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './dataProcessor', './responseHandler', './zabbix.js', './zabbixAlerting.service.js', './zabbixAPICore.service.js'], function (_export, _context) {
   "use strict";
 
-  var _, $, dateMath, utils, migrations, metricFunctions, dataProcessor, responseHandler, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
+  var _, dateMath, utils, migrations, metricFunctions, dataProcessor, responseHandler, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -119,8 +119,6 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
   return {
     setters: [function (_lodash) {
       _ = _lodash.default;
-    }, function (_jquery) {
-      $ = _jquery.default;
     }, function (_appCoreUtilsDatemath) {
       dateMath = _appCoreUtilsDatemath;
     }, function (_utils) {
@@ -133,7 +131,7 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
       dataProcessor = _dataProcessor.default;
     }, function (_responseHandler) {
       responseHandler = _responseHandler.default;
-    }, function (_zabbixJs) {}, function (_zabbixAPICoreServiceJs) {
+    }, function (_zabbixJs) {}, function (_zabbixAlertingServiceJs) {}, function (_zabbixAPICoreServiceJs) {
       ZabbixAPIError = _zabbixAPICoreServiceJs.ZabbixAPIError;
     }],
     execute: function () {
@@ -196,12 +194,13 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
       _export('ZabbixAPIDatasource', ZabbixAPIDatasource = function () {
 
         /** @ngInject */
-        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, Zabbix) {
+        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
           _classCallCheck(this, ZabbixAPIDatasource);
 
           this.templateSrv = templateSrv;
           this.alertSrv = alertSrv;
           this.dashboardSrv = dashboardSrv;
+          this.zabbixAlertingSrv = zabbixAlertingSrv;
 
           // General data source settings
           this.name = instanceSettings.name;
@@ -256,11 +255,12 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
             // Get alerts for current panel
             if (this.alertingEnabled) {
               this.alertQuery(options).then(function (alert) {
-                _this.setPanelAlertState(options.panelId, alert.state);
+                _this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
 
+                _this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
                 if (_this.addThresholds) {
                   _.forEach(alert.thresholds, function (threshold) {
-                    _this.setPanelThreshold(options.panelId, threshold);
+                    _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
                   });
                 }
               });
@@ -630,75 +630,6 @@ System.register(['lodash', 'jquery', 'app/core/utils/datemath', './utils', './mi
                 thresholds: thresholds
               };
             });
-          }
-        }, {
-          key: 'setPanelAlertState',
-          value: function setPanelAlertState(panelId, alertState) {
-            var panelContainers = _.filter($('.panel-container'), function (elem) {
-              return elem.clientHeight && elem.clientWidth;
-            });
-
-            var panelModels = this.getPanelModels();
-            var panelIndex = _.findIndex(panelModels, function (panel) {
-              return panel.id === panelId;
-            });
-
-            if (panelIndex >= 0) {
-              var alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
-              $(panelContainers[panelIndex]).removeClass(alertClass);
-
-              if (alertState) {
-                if (alertState === 'alerting') {
-                  alertClass = "panel-has-alert panel-alert-state--" + alertState;
-                  $(panelContainers[panelIndex]).addClass(alertClass);
-                }
-                if (alertState === 'ok') {
-                  alertClass = "panel-alert-state--" + alertState;
-                  $(panelContainers[panelIndex]).addClass(alertClass);
-                  $(panelContainers[panelIndex]).removeClass("panel-has-alert");
-                }
-              }
-            }
-          }
-        }, {
-          key: 'getPanelModels',
-          value: function getPanelModels() {
-            return _.flatten(_.map(this.dashboardSrv.dash.rows, function (row) {
-              if (row.collapse) {
-                return [];
-              } else {
-                return row.panels;
-              }
-            }));
-          }
-        }, {
-          key: 'getPanelModel',
-          value: function getPanelModel(panelId) {
-            var panelModels = this.getPanelModels();
-
-            return _.find(panelModels, function (panel) {
-              return panel.id === panelId;
-            });
-          }
-        }, {
-          key: 'setPanelThreshold',
-          value: function setPanelThreshold(panelId, threshold) {
-            var panel = this.getPanelModel(panelId);
-            var containsThreshold = _.find(panel.thresholds, { value: threshold });
-
-            if (panel && !containsThreshold) {
-              var thresholdOptions = {
-                colorMode: "custom",
-                fill: false,
-                line: true,
-                lineColor: "rgb(255, 0, 0)",
-                op: "gt",
-                value: threshold,
-                source: "zabbix"
-              };
-
-              panel.thresholds.push(thresholdOptions);
-            }
           }
         }, {
           key: 'replaceTargetVariables',

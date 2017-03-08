@@ -13,10 +13,6 @@ var _lodash = require('lodash');
 
 var _lodash2 = _interopRequireDefault(_lodash);
 
-var _jquery = require('jquery');
-
-var _jquery2 = _interopRequireDefault(_jquery);
-
 var _datemath = require('app/core/utils/datemath');
 
 var dateMath = _interopRequireWildcard(_datemath);
@@ -43,6 +39,8 @@ var _responseHandler2 = _interopRequireDefault(_responseHandler);
 
 require('./zabbix.js');
 
+require('./zabbixAlerting.service.js');
+
 var _zabbixAPICoreService = require('./zabbixAPICore.service.js');
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
@@ -54,12 +52,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var ZabbixAPIDatasource = function () {
 
   /** @ngInject */
-  function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, Zabbix) {
+  function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
     _classCallCheck(this, ZabbixAPIDatasource);
 
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
     this.dashboardSrv = dashboardSrv;
+    this.zabbixAlertingSrv = zabbixAlertingSrv;
 
     // General data source settings
     this.name = instanceSettings.name;
@@ -114,11 +113,12 @@ var ZabbixAPIDatasource = function () {
       // Get alerts for current panel
       if (this.alertingEnabled) {
         this.alertQuery(options).then(function (alert) {
-          _this.setPanelAlertState(options.panelId, alert.state);
+          _this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
 
+          _this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
           if (_this.addThresholds) {
             _lodash2.default.forEach(alert.thresholds, function (threshold) {
-              _this.setPanelThreshold(options.panelId, threshold);
+              _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
             });
           }
         });
@@ -519,75 +519,6 @@ var ZabbixAPIDatasource = function () {
           thresholds: thresholds
         };
       });
-    }
-  }, {
-    key: 'setPanelAlertState',
-    value: function setPanelAlertState(panelId, alertState) {
-      var panelContainers = _lodash2.default.filter((0, _jquery2.default)('.panel-container'), function (elem) {
-        return elem.clientHeight && elem.clientWidth;
-      });
-
-      var panelModels = this.getPanelModels();
-      var panelIndex = _lodash2.default.findIndex(panelModels, function (panel) {
-        return panel.id === panelId;
-      });
-
-      if (panelIndex >= 0) {
-        var alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
-        (0, _jquery2.default)(panelContainers[panelIndex]).removeClass(alertClass);
-
-        if (alertState) {
-          if (alertState === 'alerting') {
-            alertClass = "panel-has-alert panel-alert-state--" + alertState;
-            (0, _jquery2.default)(panelContainers[panelIndex]).addClass(alertClass);
-          }
-          if (alertState === 'ok') {
-            alertClass = "panel-alert-state--" + alertState;
-            (0, _jquery2.default)(panelContainers[panelIndex]).addClass(alertClass);
-            (0, _jquery2.default)(panelContainers[panelIndex]).removeClass("panel-has-alert");
-          }
-        }
-      }
-    }
-  }, {
-    key: 'getPanelModels',
-    value: function getPanelModels() {
-      return _lodash2.default.flatten(_lodash2.default.map(this.dashboardSrv.dash.rows, function (row) {
-        if (row.collapse) {
-          return [];
-        } else {
-          return row.panels;
-        }
-      }));
-    }
-  }, {
-    key: 'getPanelModel',
-    value: function getPanelModel(panelId) {
-      var panelModels = this.getPanelModels();
-
-      return _lodash2.default.find(panelModels, function (panel) {
-        return panel.id === panelId;
-      });
-    }
-  }, {
-    key: 'setPanelThreshold',
-    value: function setPanelThreshold(panelId, threshold) {
-      var panel = this.getPanelModel(panelId);
-      var containsThreshold = _lodash2.default.find(panel.thresholds, { value: threshold });
-
-      if (panel && !containsThreshold) {
-        var thresholdOptions = {
-          colorMode: "custom",
-          fill: false,
-          line: true,
-          lineColor: "rgb(255, 0, 0)",
-          op: "gt",
-          value: threshold,
-          source: "zabbix"
-        };
-
-        panel.thresholds.push(thresholdOptions);
-      }
     }
 
     // Replace template variables
