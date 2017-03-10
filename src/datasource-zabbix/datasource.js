@@ -1,4 +1,3 @@
-//import angular from 'angular';
 import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
@@ -7,14 +6,17 @@ import * as metricFunctions from './metricFunctions';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import './zabbix.js';
+import './zabbixAlerting.service.js';
 import {ZabbixAPIError} from './zabbixAPICore.service.js';
 
 class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, alertSrv, Zabbix) {
+  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
+    this.dashboardSrv = dashboardSrv;
+    this.zabbixAlertingSrv = zabbixAlertingSrv;
 
     // General data source settings
     this.name             = instanceSettings.name;
@@ -33,6 +35,11 @@ class ZabbixAPIDatasource {
     // Set cache update interval
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
+
+    // Alerting options
+    this.alertingEnabled = instanceSettings.jsonData.alerting;
+    this.addThresholds = instanceSettings.jsonData.addThresholds;
+    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || 2;
 
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -55,6 +62,20 @@ class ZabbixAPIDatasource {
 
     let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
     let useTrends = (timeFrom <= useTrendsFrom) && this.trends;
+
+    // Get alerts for current panel
+    if (this.alertingEnabled) {
+      this.alertQuery(options).then(alert => {
+        this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
+
+        this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
+        if (this.addThresholds) {
+          _.forEach(alert.thresholds, threshold => {
+            this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
+          });
+        }
+      });
+    }
 
     // Create request for each target
     let promises = _.map(options.targets, target => {
@@ -394,6 +415,52 @@ class ZabbixAPIDatasource {
     });
   }
 
+  /**
+   * Get triggers and its details for panel's targets
+   * Returns alert state ('ok' if no fired triggers, or 'alerting' if at least 1 trigger is fired)
+   * or empty object if no related triggers are finded.
+   */
+  alertQuery(options) {
+    let enabled_targets = filterEnabledTargets(options.targets);
+    let getPanelItems = _.map(enabled_targets, target => {
+      return this.zabbix.getItemsFromTarget(target, {itemtype: 'num'});
+    });
+
+    return Promise.all(getPanelItems)
+    .then(results => {
+      let items = _.flatten(results);
+      let itemids = _.map(items, 'itemid');
+
+      return this.zabbix.getAlerts(itemids);
+    })
+    .then(triggers => {
+      triggers = _.filter(triggers, trigger => {
+        return trigger.priority >= this.alertingMinSeverity;
+      });
+
+      if (!triggers || triggers.length === 0) {
+        return {};
+      }
+
+      let state = 'ok';
+
+      let firedTriggers = _.filter(triggers, {value: '1'});
+      if (firedTriggers.length) {
+        state = 'alerting';
+      }
+
+      let thresholds = _.map(triggers, trigger => {
+        return getTriggerThreshold(trigger.expression);
+      });
+
+      return {
+        panelId: options.panelId,
+        state: state,
+        thresholds: thresholds
+      };
+    });
+  }
+
   // Replace template variables
   replaceTargetVariables(target, options) {
     let parts = ['group', 'host', 'application', 'item'];
@@ -503,6 +570,24 @@ function sequence(funcsArray) {
     }
     return result;
   };
+}
+
+function filterEnabledTargets(targets) {
+  return _.filter(targets, target => {
+    return !(target.hide || !target.group || !target.host || !target.item);
+  });
+}
+
+function getTriggerThreshold(expression) {
+  let thresholdPattern = /.*[<>]([\d\.]+)/;
+  let finded_thresholds = expression.match(thresholdPattern);
+  if (finded_thresholds && finded_thresholds.length >= 2) {
+    let threshold = finded_thresholds[1];
+    threshold = Number(threshold);
+    return threshold;
+  } else {
+    return null;
+  }
 }
 
 export {ZabbixAPIDatasource, zabbixTemplateFormat};

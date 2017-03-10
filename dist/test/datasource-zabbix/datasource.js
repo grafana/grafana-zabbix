@@ -7,8 +7,7 @@ exports.zabbixTemplateFormat = exports.ZabbixAPIDatasource = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); //import angular from 'angular';
-
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _lodash = require('lodash');
 
@@ -40,6 +39,8 @@ var _responseHandler2 = _interopRequireDefault(_responseHandler);
 
 require('./zabbix.js');
 
+require('./zabbixAlerting.service.js');
+
 var _zabbixAPICoreService = require('./zabbixAPICore.service.js');
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
@@ -51,11 +52,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var ZabbixAPIDatasource = function () {
 
   /** @ngInject */
-  function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, Zabbix) {
+  function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
     _classCallCheck(this, ZabbixAPIDatasource);
 
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
+    this.dashboardSrv = dashboardSrv;
+    this.zabbixAlertingSrv = zabbixAlertingSrv;
 
     // General data source settings
     this.name = instanceSettings.name;
@@ -74,6 +77,11 @@ var ZabbixAPIDatasource = function () {
     // Set cache update interval
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
+
+    // Alerting options
+    this.alertingEnabled = instanceSettings.jsonData.alerting;
+    this.addThresholds = instanceSettings.jsonData.addThresholds;
+    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || 2;
 
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -102,6 +110,20 @@ var ZabbixAPIDatasource = function () {
 
       var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
       var useTrends = timeFrom <= useTrendsFrom && this.trends;
+
+      // Get alerts for current panel
+      if (this.alertingEnabled) {
+        this.alertQuery(options).then(function (alert) {
+          _this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
+
+          _this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
+          if (_this.addThresholds) {
+            _lodash2.default.forEach(alert.thresholds, function (threshold) {
+              _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
+            });
+          }
+        });
+      }
 
       // Create request for each target
       var promises = _lodash2.default.map(options.targets, function (target) {
@@ -455,17 +477,66 @@ var ZabbixAPIDatasource = function () {
       });
     }
 
+    /**
+     * Get triggers and its details for panel's targets
+     * Returns alert state ('ok' if no fired triggers, or 'alerting' if at least 1 trigger is fired)
+     * or empty object if no related triggers are finded.
+     */
+
+  }, {
+    key: 'alertQuery',
+    value: function alertQuery(options) {
+      var _this7 = this;
+
+      var enabled_targets = filterEnabledTargets(options.targets);
+      var getPanelItems = _lodash2.default.map(enabled_targets, function (target) {
+        return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
+      });
+
+      return Promise.all(getPanelItems).then(function (results) {
+        var items = _lodash2.default.flatten(results);
+        var itemids = _lodash2.default.map(items, 'itemid');
+
+        return _this7.zabbix.getAlerts(itemids);
+      }).then(function (triggers) {
+        triggers = _lodash2.default.filter(triggers, function (trigger) {
+          return trigger.priority >= _this7.alertingMinSeverity;
+        });
+
+        if (!triggers || triggers.length === 0) {
+          return {};
+        }
+
+        var state = 'ok';
+
+        var firedTriggers = _lodash2.default.filter(triggers, { value: '1' });
+        if (firedTriggers.length) {
+          state = 'alerting';
+        }
+
+        var thresholds = _lodash2.default.map(triggers, function (trigger) {
+          return getTriggerThreshold(trigger.expression);
+        });
+
+        return {
+          panelId: options.panelId,
+          state: state,
+          thresholds: thresholds
+        };
+      });
+    }
+
     // Replace template variables
 
   }, {
     key: 'replaceTargetVariables',
     value: function replaceTargetVariables(target, options) {
-      var _this7 = this;
+      var _this8 = this;
 
       var parts = ['group', 'host', 'application', 'item'];
       _lodash2.default.forEach(parts, function (p) {
         if (target[p] && target[p].filter) {
-          target[p].filter = _this7.replaceTemplateVars(target[p].filter, options.scopedVars);
+          target[p].filter = _this8.replaceTemplateVars(target[p].filter, options.scopedVars);
         }
       });
       target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
@@ -473,9 +544,9 @@ var ZabbixAPIDatasource = function () {
       _lodash2.default.forEach(target.functions, function (func) {
         func.params = _lodash2.default.map(func.params, function (param) {
           if (typeof param === 'number') {
-            return +_this7.templateSrv.replace(param.toString(), options.scopedVars);
+            return +_this8.templateSrv.replace(param.toString(), options.scopedVars);
           } else {
-            return _this7.templateSrv.replace(param, options.scopedVars);
+            return _this8.templateSrv.replace(param, options.scopedVars);
           }
         });
       });
@@ -570,6 +641,24 @@ function sequence(funcsArray) {
     }
     return result;
   };
+}
+
+function filterEnabledTargets(targets) {
+  return _lodash2.default.filter(targets, function (target) {
+    return !(target.hide || !target.group || !target.host || !target.item);
+  });
+}
+
+function getTriggerThreshold(expression) {
+  var thresholdPattern = /.*[<>]([\d\.]+)/;
+  var finded_thresholds = expression.match(thresholdPattern);
+  if (finded_thresholds && finded_thresholds.length >= 2) {
+    var threshold = finded_thresholds[1];
+    threshold = Number(threshold);
+    return threshold;
+  } else {
+    return null;
+  }
 }
 
 exports.ZabbixAPIDatasource = ZabbixAPIDatasource;

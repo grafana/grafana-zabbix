@@ -19,9 +19,11 @@ describe('ZabbixDatasource', () => {
     };
     ctx.templateSrv = {};
     ctx.alertSrv = {};
+    ctx.dashboardSrv = {};
     ctx.zabbix = () => {};
 
-    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.zabbix);
+    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.dashboardSrv, ctx.zabbix);
+    ctx.ds.alertQuery = () => Q.when([]);
   });
 
   describe('When querying data', () => {

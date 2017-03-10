@@ -66,11 +66,13 @@ var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 class TriggerPanelCtrl extends PanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv) {
+  constructor($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.contextSrv = contextSrv;
+    this.dashboardSrv = dashboardSrv;
+
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
     this.pageIndex = 0;
@@ -91,6 +93,9 @@ class TriggerPanelCtrl extends PanelCtrl {
   }
 
   onRefresh() {
+    // ignore fetching data if another panel is in fullscreen
+    if (this.otherPanelInFullscreenMode()) { return; }
+
     // clear loading/error state
     delete this.error;
     this.loading = true;
