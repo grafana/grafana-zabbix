@@ -130,6 +130,18 @@ function limit(order, n, orderByFunc, timeseries) {
   }
 }
 
+function SUM(values) {
+  var sum = 0;
+  _.each(values, function(value) {
+    sum += value;
+  });
+  return sum;
+}
+
+function COUNT(values) {
+  return values.length;
+}
+
 function AVERAGE(values) {
   var sum = 0;
   _.each(values, function(value) {
@@ -289,6 +301,8 @@ let metricFunctions = {
   min: _.partial(aggregateWrapper, MIN),
   max: _.partial(aggregateWrapper, MAX),
   median: _.partial(aggregateWrapper, MEDIAN),
+  sum: _.partial(aggregateWrapper, SUM),
+  count: _.partial(aggregateWrapper, COUNT),
   sumSeries: sumSeries,
   top: _.partial(limit, 'top'),
   bottom: _.partial(limit, 'bottom'),
@@ -301,7 +315,9 @@ let aggregationFunctions = {
   avg: AVERAGE,
   min: MIN,
   max: MAX,
-  median: MEDIAN
+  median: MEDIAN,
+  sum: SUM,
+  count: COUNT
 };
 
 export default {
@@ -311,6 +327,8 @@ export default {
   MIN: MIN,
   MAX: MAX,
   MEDIAN: MEDIAN,
+  SUM: SUM,
+  COUNT: COUNT,
   unShiftTimeSeries: unShiftTimeSeries,
 
   get aggregationFunctions() {

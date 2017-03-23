@@ -29,7 +29,7 @@ addFuncDef({
   category: 'Transform',
   params: [
     { name: 'interval', type: 'string'},
-    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'median'] }
+    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }
   ],
   defaultParams: ['1m', 'avg'],
 });
@@ -96,11 +96,29 @@ addFuncDef({
 });
 
 addFuncDef({
+  name: 'sum',
+  category: 'Aggregate',
+  params: [
+    { name: 'interval', type: 'string' }
+  ],
+  defaultParams: ['1m'],
+});
+
+addFuncDef({
+  name: 'count',
+  category: 'Aggregate',
+  params: [
+    { name: 'interval', type: 'string' }
+  ],
+  defaultParams: ['1m'],
+});
+
+addFuncDef({
   name: 'aggregateBy',
   category: 'Aggregate',
   params: [
     { name: 'interval', type: 'string' },
-    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'median'] }
+    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }
   ],
   defaultParams: ['1m', 'avg'],
 });
@@ -112,7 +130,7 @@ addFuncDef({
   category: 'Filter',
   params: [
     { name: 'number', type: 'int' },
-    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'median'] }
+    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }
   ],
   defaultParams: [5, 'avg'],
 });
@@ -122,7 +140,7 @@ addFuncDef({
   category: 'Filter',
   params: [
     { name: 'number', type: 'int' },
-    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'median'] }
+    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }
   ],
   defaultParams: [5, 'avg'],
 });
@@ -133,7 +151,7 @@ addFuncDef({
   name: 'trendValue',
   category: 'Trends',
   params: [
-    { name: 'type', type: 'string', options: ['avg', 'min', 'max'] }
+    { name: 'type', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count'] }
   ],
   defaultParams: ['avg'],
 });
