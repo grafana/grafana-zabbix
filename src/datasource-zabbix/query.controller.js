@@ -79,7 +79,9 @@ export class ZabbixQueryController extends QueryCtrl {
         this.downsampleFunctionList = [
           {name: "avg", value: "avg"},
           {name: "min", value: "min"},
-          {name: "max", value: "max"}
+          {name: "max", value: "max"},
+          {name: "sum", value: "sum"},
+          {name: "count", value: "count"}
         ];
 
         this.initFilters();
