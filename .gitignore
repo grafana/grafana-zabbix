@@ -2,6 +2,7 @@
 *.sublime-project
 
 .idea/
+.vscode
 
 *.bat
 
