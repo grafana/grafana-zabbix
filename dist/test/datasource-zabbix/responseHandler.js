@@ -80,7 +80,7 @@ function handleSLAResponse(itservice, slaProperty, slaObject) {
 
 function convertHistoryPoint(point) {
   // Value must be a number for properly work
-  return [Number(point.value), point.clock * 1000];
+  return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
 }
 
 function convertTrendPoint(valueType, point) {
@@ -94,6 +94,12 @@ function convertTrendPoint(valueType, point) {
       break;
     case "avg":
       value = point.value_avg;
+      break;
+    case "sum":
+      value = point.value_sum;
+      break;
+    case "count":
+      value = point.value_count;
       break;
     default:
       value = point.value_avg;

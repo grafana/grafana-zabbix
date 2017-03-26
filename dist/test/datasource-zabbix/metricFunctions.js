@@ -48,7 +48,7 @@ function addFuncDef(funcDef) {
 addFuncDef({
   name: 'groupBy',
   category: 'Transform',
-  params: [{ name: 'interval', type: 'string' }, { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'median'] }],
+  params: [{ name: 'interval', type: 'string' }, { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }],
   defaultParams: ['1m', 'avg']
 });
 
@@ -104,9 +104,23 @@ addFuncDef({
 });
 
 addFuncDef({
+  name: 'sum',
+  category: 'Aggregate',
+  params: [{ name: 'interval', type: 'string' }],
+  defaultParams: ['1m']
+});
+
+addFuncDef({
+  name: 'count',
+  category: 'Aggregate',
+  params: [{ name: 'interval', type: 'string' }],
+  defaultParams: ['1m']
+});
+
+addFuncDef({
   name: 'aggregateBy',
   category: 'Aggregate',
-  params: [{ name: 'interval', type: 'string' }, { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'median'] }],
+  params: [{ name: 'interval', type: 'string' }, { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }],
   defaultParams: ['1m', 'avg']
 });
 
@@ -115,14 +129,14 @@ addFuncDef({
 addFuncDef({
   name: 'top',
   category: 'Filter',
-  params: [{ name: 'number', type: 'int' }, { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'median'] }],
+  params: [{ name: 'number', type: 'int' }, { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }],
   defaultParams: [5, 'avg']
 });
 
 addFuncDef({
   name: 'bottom',
   category: 'Filter',
-  params: [{ name: 'number', type: 'int' }, { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'median'] }],
+  params: [{ name: 'number', type: 'int' }, { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }],
   defaultParams: [5, 'avg']
 });
 
@@ -131,7 +145,7 @@ addFuncDef({
 addFuncDef({
   name: 'trendValue',
   category: 'Trends',
-  params: [{ name: 'type', type: 'string', options: ['avg', 'min', 'max'] }],
+  params: [{ name: 'type', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count'] }],
   defaultParams: ['avg']
 });
 

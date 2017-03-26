@@ -139,7 +139,7 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './utils', './metricFun
 
             if (target.mode === 0 || target.mode === 2) {
 
-              this.downsampleFunctionList = [{ name: "avg", value: "avg" }, { name: "min", value: "min" }, { name: "max", value: "max" }];
+              this.downsampleFunctionList = [{ name: "avg", value: "avg" }, { name: "min", value: "min" }, { name: "max", value: "max" }, { name: "sum", value: "sum" }, { name: "count", value: "count" }];
 
               this.initFilters();
             } else if (target.mode === 1) {

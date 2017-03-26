@@ -143,6 +143,18 @@ function limit(order, n, orderByFunc, timeseries) {
   }
 }
 
+function SUM(values) {
+  var sum = 0;
+  _lodash2.default.each(values, function (value) {
+    sum += value;
+  });
+  return sum;
+}
+
+function COUNT(values) {
+  return values.length;
+}
+
 function AVERAGE(values) {
   var sum = 0;
   _lodash2.default.each(values, function (value) {
@@ -296,6 +308,8 @@ var metricFunctions = {
   min: _lodash2.default.partial(aggregateWrapper, MIN),
   max: _lodash2.default.partial(aggregateWrapper, MAX),
   median: _lodash2.default.partial(aggregateWrapper, MEDIAN),
+  sum: _lodash2.default.partial(aggregateWrapper, SUM),
+  count: _lodash2.default.partial(aggregateWrapper, COUNT),
   sumSeries: sumSeries,
   top: _lodash2.default.partial(limit, 'top'),
   bottom: _lodash2.default.partial(limit, 'bottom'),
@@ -308,7 +322,9 @@ var aggregationFunctions = {
   avg: AVERAGE,
   min: MIN,
   max: MAX,
-  median: MEDIAN
+  median: MEDIAN,
+  sum: SUM,
+  count: COUNT
 };
 
 exports.default = {
@@ -318,6 +334,8 @@ exports.default = {
   MIN: MIN,
   MAX: MAX,
   MEDIAN: MEDIAN,
+  SUM: SUM,
+  COUNT: COUNT,
   unShiftTimeSeries: unShiftTimeSeries,
 
   get aggregationFunctions() {
