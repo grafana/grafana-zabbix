@@ -304,7 +304,7 @@ var ZabbixAPIDatasource = function () {
                 value = extractText(point.value, target.textFilter, target.useCaptureGroups);
               }
 
-              return [value, point.clock * 1000];
+              return [value, point.clock * 1000 + Math.round(point.ns / 1000000)];
             });
           });
         } else {

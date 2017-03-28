@@ -71,7 +71,7 @@ System.register(['lodash'], function (_export, _context) {
     }
   }function convertHistoryPoint(point) {
     // Value must be a number for properly work
-    return [Number(point.value), point.clock * 1000];
+    return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
   }
 
   function convertTrendPoint(valueType, point) {
