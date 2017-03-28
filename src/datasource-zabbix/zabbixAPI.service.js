@@ -189,6 +189,9 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       .then(expandItems);
 
       function expandItems(items) {
+        
+        if (typeof items === 'undefined') return [];
+        
         _.forEach(items, item => {
           item.item = item.name;
           item.name = utils.expandItemName(item.item, item.key_);
