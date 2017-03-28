@@ -34,9 +34,10 @@ describe('ZabbixDatasource', function () {
     ctx.templateSrv = {};
     ctx.alertSrv = {};
     ctx.dashboardSrv = {};
+    ctx.zabbixAlertingSrv = {};
     ctx.zabbix = function () {};
 
-    ctx.ds = new _module.Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.dashboardSrv, ctx.zabbix);
+    ctx.ds = new _module.Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.dashboardSrv, ctx.zabbixAlertingSrv, ctx.zabbix);
     ctx.ds.alertQuery = function () {
       return _q2.default.when([]);
     };
