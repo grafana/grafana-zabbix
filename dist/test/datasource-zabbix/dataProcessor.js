@@ -181,6 +181,19 @@ function setAlias(alias, timeseries) {
   return timeseries;
 }
 
+function replaceAlias(regexp, newAlias, timeseries) {
+  var pattern = void 0;
+  if (utils.isRegex(regexp)) {
+    pattern = utils.buildRegex(regexp);
+  } else {
+    pattern = regexp;
+  }
+
+  var alias = timeseries.target.replace(pattern, newAlias);
+  timeseries.target = alias;
+  return timeseries;
+}
+
 function setAliasByRegex(alias, timeseries) {
   timeseries.target = extractText(timeseries.target, alias);
   return timeseries;
@@ -315,7 +328,8 @@ var metricFunctions = {
   bottom: _lodash2.default.partial(limit, 'bottom'),
   timeShift: timeShift,
   setAlias: setAlias,
-  setAliasByRegex: setAliasByRegex
+  setAliasByRegex: setAliasByRegex,
+  replaceAlias: replaceAlias
 };
 
 var aggregationFunctions = {

@@ -211,6 +211,13 @@ System.register(['lodash', 'jquery'], function (_export, _context) {
         defaultParams: []
       });
 
+      addFuncDef({
+        name: 'replaceAlias',
+        category: 'Alias',
+        params: [{ name: 'regexp', type: 'string' }, { name: 'newAlias', type: 'string' }],
+        defaultParams: ['/(.*)/', '$1']
+      });
+
       _.each(categories, function (funcList, catName) {
         categories[catName] = _.sortBy(funcList, 'name');
       });

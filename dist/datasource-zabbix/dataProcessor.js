@@ -150,6 +150,17 @@ System.register(['lodash', './utils'], function (_export, _context) {
   }function setAlias(alias, timeseries) {
     timeseries.target = alias;
     return timeseries;
+  }function replaceAlias(regexp, newAlias, timeseries) {
+    var pattern = void 0;
+    if (utils.isRegex(regexp)) {
+      pattern = utils.buildRegex(regexp);
+    } else {
+      pattern = regexp;
+    }
+
+    var alias = timeseries.target.replace(pattern, newAlias);
+    timeseries.target = alias;
+    return timeseries;
   }function setAliasByRegex(alias, timeseries) {
     timeseries.target = extractText(timeseries.target, alias);
     return timeseries;
@@ -265,7 +276,8 @@ System.register(['lodash', './utils'], function (_export, _context) {
         bottom: _.partial(limit, 'bottom'),
         timeShift: timeShift,
         setAlias: setAlias,
-        setAliasByRegex: setAliasByRegex
+        setAliasByRegex: setAliasByRegex,
+        replaceAlias: replaceAlias
       };
       aggregationFunctions = {
         avg: AVERAGE,

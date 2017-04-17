@@ -174,6 +174,13 @@ addFuncDef({
   defaultParams: []
 });
 
+addFuncDef({
+  name: 'replaceAlias',
+  category: 'Alias',
+  params: [{ name: 'regexp', type: 'string' }, { name: 'newAlias', type: 'string' }],
+  defaultParams: ['/(.*)/', '$1']
+});
+
 _lodash2.default.each(categories, function (funcList, catName) {
   categories[catName] = _lodash2.default.sortBy(funcList, 'name');
 });

@@ -334,12 +334,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               var getHistoryPromise = void 0;
 
               if (useTrends) {
-                (function () {
-                  var valueType = _this2.getTrendValueType(target);
-                  getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
-                    return responseHandler.handleTrends(history, items, valueType);
-                  });
-                })();
+                var valueType = _this2.getTrendValueType(target);
+                getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
+                  return responseHandler.handleTrends(history, items, valueType);
+                });
               } else {
                 // Use history
                 getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
@@ -386,20 +384,18 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
             // Apply aggregations
             if (aggregationFunctions.length) {
-              (function () {
-                var dp = _.map(timeseries_data, 'datapoints');
-                dp = sequence(aggregationFunctions)(dp);
+              var dp = _.map(timeseries_data, 'datapoints');
+              dp = sequence(aggregationFunctions)(dp);
 
-                var aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
-                var lastAgg = _.findLast(target.functions, function (func) {
-                  return _.includes(aggFuncNames, func.def.name);
-                });
+              var aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
+              var lastAgg = _.findLast(target.functions, function (func) {
+                return _.includes(aggFuncNames, func.def.name);
+              });
 
-                timeseries_data = [{
-                  target: lastAgg.text,
-                  datapoints: dp
-                }];
-              })();
+              timeseries_data = [{
+                target: lastAgg.text,
+                datapoints: dp
+              }];
             }
 
             // Apply alias functions
@@ -419,12 +415,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               return func.def.name === 'timeShift';
             });
             if (timeShiftFunc) {
-              (function () {
-                var shift = timeShiftFunc.params[0];
-                _.forEach(timeseries_data, function (series) {
-                  series.datapoints = dataProcessor.unShiftTimeSeries(shift, series.datapoints);
-                });
-              })();
+              var shift = timeShiftFunc.params[0];
+              _.forEach(timeseries_data, function (series) {
+                series.datapoints = dataProcessor.unShiftTimeSeries(shift, series.datapoints);
+              });
             }
           }
         }, {

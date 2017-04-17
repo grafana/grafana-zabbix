@@ -168,6 +168,19 @@ function setAlias(alias, timeseries) {
   return timeseries;
 }
 
+function replaceAlias(regexp, newAlias, timeseries) {
+  let pattern;
+  if (utils.isRegex(regexp)) {
+    pattern = utils.buildRegex(regexp);
+  } else {
+    pattern = regexp;
+  }
+
+  let alias = timeseries.target.replace(pattern, newAlias);
+  timeseries.target = alias;
+  return timeseries;
+}
+
 function setAliasByRegex(alias, timeseries) {
   timeseries.target = extractText(timeseries.target, alias);
   return timeseries;
@@ -308,7 +321,8 @@ let metricFunctions = {
   bottom: _.partial(limit, 'bottom'),
   timeShift: timeShift,
   setAlias: setAlias,
-  setAliasByRegex: setAliasByRegex
+  setAliasByRegex: setAliasByRegex,
+  replaceAlias: replaceAlias
 };
 
 let aggregationFunctions = {
