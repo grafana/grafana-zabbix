@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Sum and count aggregations.
 - Expand user macros in items [#212](https://github.com/alexanderzobnin/grafana-zabbix/issues/212)
 - replaceAlias() function [#287](https://github.com/alexanderzobnin/grafana-zabbix/issues/287)
+- Additional `Range` config option for trends [#364](https://github.com/alexanderzobnin/grafana-zabbix/issues/364)
 
 ### Changed
 - Add template variables to dropdown metric list [#310](https://github.com/alexanderzobnin/grafana-zabbix/issues/310)
