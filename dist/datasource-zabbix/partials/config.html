@@ -27,51 +27,66 @@
     </input>
   </div>
 
+  <gf-form-switch class="gf-form" label-class="width-7"
+    label="Trends"
+    checked="ctrl.current.jsonData.trends"
+    switch-class="max-width-5">
+  </gf-form-switch>
   <div class="gf-form-inline">
-    <div class="gf-form">
-      <label class="gf-form-label width-7">Trends</label>
-    </div>
-    <gf-form-switch class="gf-form" label-class="width-5"
-      label="Enable"
-      checked="ctrl.current.jsonData.trends"
-      switch-class="max-width-6">
-    </gf-form-switch>
     <div class="gf-form" ng-if="ctrl.current.jsonData.trends">
       <span class="gf-form-label width-7">
-        Use from
+        After
+        <info-popover mode="right-normal">
+          Time after which trends will be used.
+          Best practice is to set this value to your history storage period (7d, 30d, etc).
+        </info-popover>
       </span>
       <input class="gf-form-input max-width-5"
-             type="text"
-             ng-model='ctrl.current.jsonData.trendsFrom'
-             placeholder="7d">
+        type="text"
+        ng-model='ctrl.current.jsonData.trendsFrom'
+        placeholder="7d">
+      </input>
+    </div>
+    <div class="gf-form" ng-if="ctrl.current.jsonData.trends">
+      <span class="gf-form-label width-7">
+        Range
+        <info-popover mode="right-normal">
+          Time range width after which trends will be used instead of history.
+          It's better to set this value in range of 4 to 7 days to prevent loading large amount of history data.
+        </info-popover>
+      </span>
+      <input class="gf-form-input max-width-5" type="text" ng-model='ctrl.current.jsonData.trendsRange' placeholder="4d">
       </input>
     </div>
   </div>
 
   <div class="gf-form">
     <span class="gf-form-label width-12">
-      Cache update interval
+      Cache TTL
+      <info-popover mode="right-normal">
+        Zabbix data source caches metric names in memory. Specify how often data will be updated.
+      </info-popover>
     </span>
-    <input class="gf-form-input max-width-4"
-           type="text"
-           ng-model='ctrl.current.jsonData.cacheTTL'
-           placeholder="1h">
+    <input class="gf-form-input max-width-5"
+      type="text"
+      ng-model='ctrl.current.jsonData.cacheTTL'
+      placeholder="1h">
     </input>
   </div>
 </div>
 
 <div class="gf-form-group">
   <h3 class="page-heading">Alerting</h3>
-  <gf-form-switch class="gf-form" label-class="width-8"
+  <gf-form-switch class="gf-form" label-class="width-9"
     label="Enable alerting"
     checked="ctrl.current.jsonData.alerting">
   </gf-form-switch>
-  <gf-form-switch class="gf-form" label-class="width-8"
+  <gf-form-switch class="gf-form" label-class="width-9"
     label="Add thresholds"
     checked="ctrl.current.jsonData.addThresholds">
   </gf-form-switch>
   <div class="gf-form max-width-20">
-    <span class="gf-form-label width-8">Min severity</span>
+    <span class="gf-form-label width-9">Min severity</span>
     <div class="gf-form-select-wrapper max-width-16">
       <select class="gf-form-input" ng-model="ctrl.current.jsonData.alertingMinSeverity"
         ng-options="s.val as s.text for s in [

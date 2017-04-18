@@ -31,6 +31,7 @@ class ZabbixAPIDatasource {
     // Use trends instead history since specified time
     this.trends           = instanceSettings.jsonData.trends;
     this.trendsFrom       = instanceSettings.jsonData.trendsFrom || '7d';
+    this.trendsRange      = instanceSettings.jsonData.trendsRange || '4d';
 
     // Set cache update interval
     var ttl = instanceSettings.jsonData.cacheTTL || '1h';
@@ -61,7 +62,13 @@ class ZabbixAPIDatasource {
     let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
 
     let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
-    let useTrends = (timeFrom <= useTrendsFrom) && this.trends;
+    let useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
+    let useTrends = this.trends && (
+      (timeFrom <= useTrendsFrom) ||
+      (timeTo - timeFrom >= useTrendsRange)
+    );
+
+    console.log(useTrends);
 
     // Get alerts for current panel
     if (this.alertingEnabled) {

@@ -215,6 +215,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           // Use trends instead history since specified time
           this.trends = instanceSettings.jsonData.trends;
           this.trendsFrom = instanceSettings.jsonData.trendsFrom || '7d';
+          this.trendsRange = instanceSettings.jsonData.trendsRange || '4d';
 
           // Set cache update interval
           var ttl = instanceSettings.jsonData.cacheTTL || '1h';
@@ -251,7 +252,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
 
             var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
-            var useTrends = timeFrom <= useTrendsFrom && this.trends;
+            var useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
+            var useTrends = this.trends && (timeFrom <= useTrendsFrom || timeTo - timeFrom >= useTrendsRange);
+
+            console.log(useTrends);
 
             // Get alerts for current panel
             if (this.alertingEnabled) {
@@ -334,10 +338,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               var getHistoryPromise = void 0;
 
               if (useTrends) {
-                var valueType = _this2.getTrendValueType(target);
-                getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
-                  return responseHandler.handleTrends(history, items, valueType);
-                });
+                (function () {
+                  var valueType = _this2.getTrendValueType(target);
+                  getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
+                    return responseHandler.handleTrends(history, items, valueType);
+                  });
+                })();
               } else {
                 // Use history
                 getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
@@ -384,18 +390,20 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
             // Apply aggregations
             if (aggregationFunctions.length) {
-              var dp = _.map(timeseries_data, 'datapoints');
-              dp = sequence(aggregationFunctions)(dp);
+              (function () {
+                var dp = _.map(timeseries_data, 'datapoints');
+                dp = sequence(aggregationFunctions)(dp);
 
-              var aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
-              var lastAgg = _.findLast(target.functions, function (func) {
-                return _.includes(aggFuncNames, func.def.name);
-              });
+                var aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
+                var lastAgg = _.findLast(target.functions, function (func) {
+                  return _.includes(aggFuncNames, func.def.name);
+                });
 
-              timeseries_data = [{
-                target: lastAgg.text,
-                datapoints: dp
-              }];
+                timeseries_data = [{
+                  target: lastAgg.text,
+                  datapoints: dp
+                }];
+              })();
             }
 
             // Apply alias functions
@@ -415,10 +423,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               return func.def.name === 'timeShift';
             });
             if (timeShiftFunc) {
-              var shift = timeShiftFunc.params[0];
-              _.forEach(timeseries_data, function (series) {
-                series.datapoints = dataProcessor.unShiftTimeSeries(shift, series.datapoints);
-              });
+              (function () {
+                var shift = timeShiftFunc.params[0];
+                _.forEach(timeseries_data, function (series) {
+                  series.datapoints = dataProcessor.unShiftTimeSeries(shift, series.datapoints);
+                });
+              })();
             }
           }
         }, {
