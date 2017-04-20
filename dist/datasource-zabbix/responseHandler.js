@@ -55,7 +55,34 @@ System.register(['lodash'], function (_export, _context) {
     return convertHistory(history, items, addHostName, convertPointCallback);
   }
 
-  function handleSLAResponse(itservice, slaProperty, slaObject) {
+  function handleText(history, items, target) {
+    var addHostName = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
+
+    var convertTextCallback = _.partial(convertText, target);
+    return convertHistory(history, items, addHostName, convertTextCallback);
+  }function convertText(target, point) {
+    var value = point.value;
+
+    // Regex-based extractor
+    if (target.textFilter) {
+      value = extractText(point.value, target.textFilter, target.useCaptureGroups);
+    }
+
+    return [value, point.clock * 1000 + Math.round(point.ns / 1000000)];
+  }
+
+  function extractText(str, pattern, useCaptureGroups) {
+    var extractPattern = new RegExp(pattern);
+    var extractedValue = extractPattern.exec(str);
+    if (extractedValue) {
+      if (useCaptureGroups) {
+        extractedValue = extractedValue[1];
+      } else {
+        extractedValue = extractedValue[0];
+      }
+    }
+    return extractedValue;
+  }function handleSLAResponse(itservice, slaProperty, slaObject) {
     var targetSLA = slaObject[itservice.serviceid].sla[0];
     if (slaProperty.property === 'status') {
       var targetStatus = parseInt(slaObject[itservice.serviceid].status);
@@ -69,12 +96,12 @@ System.register(['lodash'], function (_export, _context) {
         datapoints: [[targetSLA[slaProperty.property], targetSLA.from * 1000], [targetSLA[slaProperty.property], targetSLA.to * 1000]]
       };
     }
-  }function convertHistoryPoint(point) {
-    // Value must be a number for properly work
-    return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
   }
 
-  function convertTrendPoint(valueType, point) {
+  function convertHistoryPoint(point) {
+    // Value must be a number for properly work
+    return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
+  }function convertTrendPoint(valueType, point) {
     var value;
     switch (valueType) {
       case "min":
@@ -97,7 +124,9 @@ System.register(['lodash'], function (_export, _context) {
     }
 
     return [Number(value), point.clock * 1000];
-  }return {
+  }
+
+  return {
     setters: [function (_lodash) {
       _ = _lodash.default;
     }],
@@ -106,6 +135,7 @@ System.register(['lodash'], function (_export, _context) {
         handleHistory: handleHistory,
         convertHistory: convertHistory,
         handleTrends: handleTrends,
+        handleText: handleText,
         handleSLAResponse: handleSLAResponse
       });
 

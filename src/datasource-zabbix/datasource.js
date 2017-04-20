@@ -68,8 +68,6 @@ class ZabbixAPIDatasource {
       (timeTo - timeFrom >= useTrendsRange)
     );
 
-    console.log(useTrends);
-
     // Get alerts for current panel
     if (this.alertingEnabled) {
       this.alertQuery(options).then(alert => {
@@ -245,21 +243,9 @@ class ZabbixAPIDatasource {
       .then(items => {
         if (items.length) {
           return this.zabbix.getHistory(items, timeFrom, timeTo)
-            .then(history => {
-              return responseHandler.convertHistory(history, items, false, (point) => {
-                let value = point.value;
-
-                // Regex-based extractor
-                if (target.textFilter) {
-                  value = extractText(point.value, target.textFilter, target.useCaptureGroups);
-                }
-
-                return [
-                  value,
-                  point.clock * 1000 + Math.round(point.ns / 1000000)
-                ];
-              });
-            });
+          .then(history => {
+            return responseHandler.handleText(history, items, target);
+          });
         } else {
           return Promise.resolve([]);
         }
@@ -556,19 +542,6 @@ function replaceTemplateVars(templateSrv, target, scopedVars) {
     replacedTarget = '/^' + replacedTarget + '$/';
   }
   return replacedTarget;
-}
-
-function extractText(str, pattern, useCaptureGroups) {
-  let extractPattern = new RegExp(pattern);
-  let extractedValue = extractPattern.exec(str);
-  if (extractedValue) {
-    if (useCaptureGroups) {
-      extractedValue = extractedValue[1];
-    } else {
-      extractedValue = extractedValue[0];
-    }
-  }
-  return extractedValue;
 }
 
 // Apply function one by one:

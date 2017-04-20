@@ -47,6 +47,38 @@ function handleTrends(history, items, valueType, addHostName = true) {
   return convertHistory(history, items, addHostName, convertPointCallback);
 }
 
+function handleText(history, items, target, addHostName = true) {
+  let convertTextCallback = _.partial(convertText, target);
+  return convertHistory(history, items, addHostName, convertTextCallback);
+}
+
+function convertText(target, point) {
+  let value = point.value;
+
+  // Regex-based extractor
+  if (target.textFilter) {
+    value = extractText(point.value, target.textFilter, target.useCaptureGroups);
+  }
+
+  return [
+    value,
+    point.clock * 1000 + Math.round(point.ns / 1000000)
+  ];
+}
+
+function extractText(str, pattern, useCaptureGroups) {
+  let extractPattern = new RegExp(pattern);
+  let extractedValue = extractPattern.exec(str);
+  if (extractedValue) {
+    if (useCaptureGroups) {
+      extractedValue = extractedValue[1];
+    } else {
+      extractedValue = extractedValue[0];
+    }
+  }
+  return extractedValue;
+}
+
 function handleSLAResponse(itservice, slaProperty, slaObject) {
   var targetSLA = slaObject[itservice.serviceid].sla[0];
   if (slaProperty.property === 'status') {
@@ -108,6 +140,7 @@ export default {
   handleHistory: handleHistory,
   convertHistory: convertHistory,
   handleTrends: handleTrends,
+  handleText: handleText,
   handleSLAResponse: handleSLAResponse
 };
 

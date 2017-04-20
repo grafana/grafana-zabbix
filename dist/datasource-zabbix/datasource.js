@@ -74,19 +74,6 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
     return replacedTarget;
   }
 
-  function extractText(str, pattern, useCaptureGroups) {
-    var extractPattern = new RegExp(pattern);
-    var extractedValue = extractPattern.exec(str);
-    if (extractedValue) {
-      if (useCaptureGroups) {
-        extractedValue = extractedValue[1];
-      } else {
-        extractedValue = extractedValue[0];
-      }
-    }
-    return extractedValue;
-  }
-
   // Apply function one by one:
   // sequence([a(), b(), c()]) = c(b(a()));
   function sequence(funcsArray) {
@@ -254,8 +241,6 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
             var useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
             var useTrends = this.trends && (timeFrom <= useTrendsFrom || timeTo - timeFrom >= useTrendsRange);
-
-            console.log(useTrends);
 
             // Get alerts for current panel
             if (this.alertingEnabled) {
@@ -442,16 +427,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             return this.zabbix.getItemsFromTarget(target, options).then(function (items) {
               if (items.length) {
                 return _this3.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
-                  return responseHandler.convertHistory(history, items, false, function (point) {
-                    var value = point.value;
-
-                    // Regex-based extractor
-                    if (target.textFilter) {
-                      value = extractText(point.value, target.textFilter, target.useCaptureGroups);
-                    }
-
-                    return [value, point.clock * 1000 + Math.round(point.ns / 1000000)];
-                  });
+                  return responseHandler.handleText(history, items, target);
                 });
               } else {
                 return Promise.resolve([]);
