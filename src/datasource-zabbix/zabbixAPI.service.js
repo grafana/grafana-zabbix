@@ -187,15 +187,16 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
 
       return this.request('item.get', params)
       .then(expandItems);
+    }
 
-      function expandItems(items) {
-        _.forEach(items, item => {
-          item.item = item.name;
-          item.name = utils.expandItemName(item.item, item.key_);
-          return item;
-        });
-        return items;
-      }
+    getItemsInfo(itemids) {
+      var params = {
+        output: 'extend',
+        itemids: itemids
+      };
+
+      return this.request('item.get', params)
+      .then(expandItems);
     }
 
     getMacros(hostids) {
@@ -435,6 +436,15 @@ function isNotAuthorized(message) {
     message === "Not authorised." ||
     message === "Not authorized."
   );
+}
+
+function expandItems(items) {
+  _.forEach(items, item => {
+    item.item = item.name;
+    item.name = utils.expandItemName(item.item, item.key_);
+    return item;
+  });
+  return items;
 }
 
 angular

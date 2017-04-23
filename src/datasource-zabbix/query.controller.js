@@ -27,6 +27,11 @@ export class ZabbixQueryController extends QueryCtrl {
       2: {value: 'text', text: 'Text', mode: 2}
     };
 
+    this.resultFormats = [
+      { text: 'Time series', value: 'time_series' },
+      { text: 'Table', value: 'table' },
+    ];
+
     // Map functions for bs-typeahead
     this.getGroupNames = _.bind(this.getMetricNames, this, 'groupList');
     this.getHostNames = _.bind(this.getMetricNames, this, 'hostList', true);
@@ -57,6 +62,7 @@ export class ZabbixQueryController extends QueryCtrl {
       // Load default values
       var targetDefaults = {
         mode: 0,
+        resultFormat: 'time_series',
         group: { filter: "" },
         host: { filter: "" },
         application: { filter: "" },

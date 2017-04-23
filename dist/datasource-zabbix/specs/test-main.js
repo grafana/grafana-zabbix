@@ -31,6 +31,7 @@ prunk.mock('./css/query-editor.css!', 'no css, dude.');
 prunk.mock('app/plugins/sdk', {
   QueryCtrl: null
 });
+prunk.mock('app/core/table_model', {});
 prunk.mock('app/core/utils/datemath', datemathMock);
 prunk.mock('angular', angularMocks);
 prunk.mock('jquery', 'module not found');

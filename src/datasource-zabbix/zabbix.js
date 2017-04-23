@@ -27,6 +27,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       // Proxy methods
       this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
       this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
+      this.getItemsInfo = this.cachingProxy.getItemsInfo.bind(this.cachingProxy);
 
       this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
       this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);

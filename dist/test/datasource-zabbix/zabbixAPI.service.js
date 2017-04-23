@@ -216,15 +216,16 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         }
 
         return this.request('item.get', params).then(expandItems);
+      }
+    }, {
+      key: 'getItemsInfo',
+      value: function getItemsInfo(itemids) {
+        var params = {
+          output: 'extend',
+          itemids: itemids
+        };
 
-        function expandItems(items) {
-          _lodash2.default.forEach(items, function (item) {
-            item.item = item.name;
-            item.name = utils.expandItemName(item.item, item.key_);
-            return item;
-          });
-          return items;
-        }
+        return this.request('item.get', params).then(expandItems);
       }
     }, {
       key: 'getMacros',
@@ -480,6 +481,15 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
 
 function isNotAuthorized(message) {
   return message === "Session terminated, re-login, please." || message === "Not authorised." || message === "Not authorized.";
+}
+
+function expandItems(items) {
+  _lodash2.default.forEach(items, function (item) {
+    item.item = item.name;
+    item.name = utils.expandItemName(item.item, item.key_);
+    return item;
+  });
+  return items;
 }
 
 _angular2.default.module('grafana.services').factory('zabbixAPIService', ZabbixAPIServiceFactory);

@@ -155,6 +155,10 @@ var ZabbixAPIDatasource = function () {
             return [];
           }
 
+          if (target.resultFormat === 'table') {
+            return _this.queryItemsAsTable(target);
+          }
+
           if (!target.mode || target.mode === 0) {
             return _this.queryNumericData(target, timeFrom, timeTo, useTrends);
           } else if (target.mode === 2) {
@@ -176,8 +180,18 @@ var ZabbixAPIDatasource = function () {
       });
 
       // Data for panel (all targets)
-      return Promise.all(_lodash2.default.flatten(promises)).then(_lodash2.default.flatten).then(function (timeseries_data) {
-        return downsampleSeries(timeseries_data, options);
+      return Promise.all(_lodash2.default.flatten(promises)).then(_lodash2.default.flatten).then(function (data) {
+        var timeseries_data = _lodash2.default.filter(data, function (obj) {
+          return obj.constructor.name !== 'TableModel';
+        });
+
+        var table_data = _lodash2.default.filter(data, function (obj) {
+          return obj.constructor.name === 'TableModel';
+        });
+
+        timeseries_data = downsampleSeries(timeseries_data, options);
+        data = _lodash2.default.concat(timeseries_data, table_data);
+        return data;
       }).then(function (data) {
         return { data: data };
       });
@@ -305,6 +319,23 @@ var ZabbixAPIDatasource = function () {
         }
       });
     }
+  }, {
+    key: 'queryItemsAsTable',
+    value: function queryItemsAsTable(target) {
+      var _this4 = this;
+
+      var options = {};
+      return this.zabbix.getItemsFromTarget(target, options).then(function (items) {
+        if (items.length) {
+          var itemids = _lodash2.default.map(items, 'itemid');
+          return _this4.zabbix.getItemsInfo(itemids).then(function (items) {
+            return _responseHandler2.default.handleItemsAsTable(items);
+          });
+        } else {
+          return Promise.resolve([]);
+        }
+      });
+    }
 
     /**
      * Test connection to Zabbix API
@@ -314,12 +345,12 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'testDatasource',
     value: function testDatasource() {
-      var _this4 = this;
+      var _this5 = this;
 
       var zabbixVersion = void 0;
       return this.zabbix.getVersion().then(function (version) {
         zabbixVersion = version;
-        return _this4.zabbix.login();
+        return _this5.zabbix.login();
       }).then(function () {
         return {
           status: "success",
@@ -358,14 +389,14 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'metricFindQuery',
     value: function metricFindQuery(query) {
-      var _this5 = this;
+      var _this6 = this;
 
       var result = void 0;
       var parts = [];
 
       // Split query. Query structure: group.host.app.item
       _lodash2.default.each(query.split('.'), function (part) {
-        part = _this5.replaceTemplateVars(part, {});
+        part = _this6.replaceTemplateVars(part, {});
 
         // Replace wildcard to regex
         if (part === '*') {
@@ -407,7 +438,7 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'annotationQuery',
     value: function annotationQuery(options) {
-      var _this6 = this;
+      var _this7 = this;
 
       var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
       var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
@@ -438,7 +469,7 @@ var ZabbixAPIDatasource = function () {
         });
 
         var objectids = _lodash2.default.map(triggers, 'triggerid');
-        return _this6.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
+        return _this7.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
           var indexedTriggers = _lodash2.default.keyBy(triggers, 'triggerid');
 
           // Hide acknowledged events if option enabled
@@ -479,21 +510,21 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'alertQuery',
     value: function alertQuery(options) {
-      var _this7 = this;
+      var _this8 = this;
 
       var enabled_targets = filterEnabledTargets(options.targets);
       var getPanelItems = _lodash2.default.map(enabled_targets, function (target) {
-        return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
+        return _this8.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
       });
 
       return Promise.all(getPanelItems).then(function (results) {
         var items = _lodash2.default.flatten(results);
         var itemids = _lodash2.default.map(items, 'itemid');
 
-        return _this7.zabbix.getAlerts(itemids);
+        return _this8.zabbix.getAlerts(itemids);
       }).then(function (triggers) {
         triggers = _lodash2.default.filter(triggers, function (trigger) {
-          return trigger.priority >= _this7.alertingMinSeverity;
+          return trigger.priority >= _this8.alertingMinSeverity;
         });
 
         if (!triggers || triggers.length === 0) {
@@ -524,12 +555,12 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'replaceTargetVariables',
     value: function replaceTargetVariables(target, options) {
-      var _this8 = this;
+      var _this9 = this;
 
       var parts = ['group', 'host', 'application', 'item'];
       _lodash2.default.forEach(parts, function (p) {
         if (target[p] && target[p].filter) {
-          target[p].filter = _this8.replaceTemplateVars(target[p].filter, options.scopedVars);
+          target[p].filter = _this9.replaceTemplateVars(target[p].filter, options.scopedVars);
         }
       });
       target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
@@ -537,9 +568,9 @@ var ZabbixAPIDatasource = function () {
       _lodash2.default.forEach(target.functions, function (func) {
         func.params = _lodash2.default.map(func.params, function (param) {
           if (typeof param === 'number') {
-            return +_this8.templateSrv.replace(param.toString(), options.scopedVars);
+            return +_this9.templateSrv.replace(param.toString(), options.scopedVars);
           } else {
-            return _this8.templateSrv.replace(param, options.scopedVars);
+            return _this9.templateSrv.replace(param, options.scopedVars);
           }
         });
       });

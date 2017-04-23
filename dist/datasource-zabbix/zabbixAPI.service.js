@@ -167,15 +167,16 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
           }
 
           return this.request('item.get', params).then(expandItems);
+        }
+      }, {
+        key: 'getItemsInfo',
+        value: function getItemsInfo(itemids) {
+          var params = {
+            output: 'extend',
+            itemids: itemids
+          };
 
-          function expandItems(items) {
-            _.forEach(items, function (item) {
-              item.item = item.name;
-              item.name = utils.expandItemName(item.item, item.key_);
-              return item;
-            });
-            return items;
-          }
+          return this.request('item.get', params).then(expandItems);
         }
       }, {
         key: 'getMacros',
@@ -410,6 +411,15 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
 
   function isNotAuthorized(message) {
     return message === "Session terminated, re-login, please." || message === "Not authorised." || message === "Not authorized.";
+  }
+
+  function expandItems(items) {
+    _.forEach(items, function (item) {
+      item.item = item.name;
+      item.name = utils.expandItemName(item.item, item.key_);
+      return item;
+    });
+    return items;
   }
 
   return {

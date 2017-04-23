@@ -8,6 +8,10 @@ var _lodash = require('lodash');
 
 var _lodash2 = _interopRequireDefault(_lodash);
 
+var _table_model = require('app/core/table_model');
+
+var _table_model2 = _interopRequireDefault(_table_model);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -93,6 +97,28 @@ function extractText(str, pattern, useCaptureGroups) {
   return extractedValue;
 }
 
+function handleItemsAsTable(items) {
+  var table = new _table_model2.default();
+  var columns = [];
+
+  _lodash2.default.forEach(_lodash2.default.keys(_lodash2.default.head(items)), function (key) {
+    columns.push(key);
+  });
+  table.columns = _lodash2.default.map(columns, function (col) {
+    return { "text": col };
+  });
+
+  _lodash2.default.forEach(items, function (item) {
+    var row = [];
+    _lodash2.default.forEach(columns, function (key) {
+      row.push(item[key]);
+    });
+    table.rows.push(row);
+  });
+
+  return table;
+}
+
 function handleSLAResponse(itservice, slaProperty, slaObject) {
   var targetSLA = slaObject[itservice.serviceid].sla[0];
   if (slaProperty.property === 'status') {
@@ -144,7 +170,8 @@ exports.default = {
   convertHistory: convertHistory,
   handleTrends: handleTrends,
   handleText: handleText,
-  handleSLAResponse: handleSLAResponse
+  handleSLAResponse: handleSLAResponse,
+  handleItemsAsTable: handleItemsAsTable
 };
 
 // Fix for backward compatibility with lodash 2.4

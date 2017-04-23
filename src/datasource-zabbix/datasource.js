@@ -106,6 +106,10 @@ class ZabbixAPIDatasource {
           return [];
         }
 
+        if (target.resultFormat === 'table') {
+          return this.queryItemsAsTable(target);
+        }
+
         if (!target.mode || target.mode === 0) {
           return this.queryNumericData(target, timeFrom, timeTo, useTrends);
         } else if (target.mode === 2) {
@@ -130,8 +134,18 @@ class ZabbixAPIDatasource {
     // Data for panel (all targets)
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
-      .then(timeseries_data => {
-        return downsampleSeries(timeseries_data, options);
+      .then(data => {
+        let timeseries_data = _.filter(data, obj => {
+          return obj.constructor.name !== 'TableModel';
+        });
+
+        let table_data = _.filter(data, obj => {
+          return obj.constructor.name === 'TableModel';
+        });
+
+        timeseries_data =  downsampleSeries(timeseries_data, options);
+        data = _.concat(timeseries_data, table_data);
+        return data;
       })
       .then(data => {
         return { data: data };
@@ -246,6 +260,22 @@ class ZabbixAPIDatasource {
           .then(history => {
             return responseHandler.handleText(history, items, target);
           });
+        } else {
+          return Promise.resolve([]);
+        }
+      });
+  }
+
+  queryItemsAsTable(target) {
+    let options = {};
+    return this.zabbix.getItemsFromTarget(target, options)
+      .then(items => {
+        if (items.length) {
+          let itemids = _.map(items, 'itemid');
+          return this.zabbix.getItemsInfo(itemids)
+            .then(items => {
+              return responseHandler.handleItemsAsTable(items);
+            });
         } else {
           return Promise.resolve([]);
         }

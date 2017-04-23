@@ -48,6 +48,9 @@ function ZabbixCachingProxyFactory() {
       this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI),
                                              this.itemPromises, getRequestHash);
 
+      this.getItemsInfo = callAPIRequestOnce(_.bind(this.zabbixAPI.getItemsInfo, this.zabbixAPI),
+        this.itemPromises, getRequestHash);
+
       this.macroPromises = {};
       this.getMacrosOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getMacros, this.zabbixAPI),
                                              this.macroPromises, getRequestHash);

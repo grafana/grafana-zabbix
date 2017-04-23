@@ -89,6 +89,8 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './utils', './metricFun
             2: { value: 'text', text: 'Text', mode: 2 }
           };
 
+          _this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
+
           // Map functions for bs-typeahead
           _this.getGroupNames = _.bind(_this.getMetricNames, _this, 'groupList');
           _this.getHostNames = _.bind(_this.getMetricNames, _this, 'hostList', true);
@@ -121,6 +123,7 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './utils', './metricFun
             // Load default values
             var targetDefaults = {
               mode: 0,
+              resultFormat: 'time_series',
               group: { filter: "" },
               host: { filter: "" },
               application: { filter: "" },

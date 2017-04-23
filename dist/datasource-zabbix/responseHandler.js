@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash'], function (_export, _context) {
+System.register(['lodash', 'app/core/table_model'], function (_export, _context) {
   "use strict";
 
-  var _;
+  var _, TableModel;
 
   /**
    * Convert Zabbix API history.get response to Grafana format
@@ -82,7 +82,29 @@ System.register(['lodash'], function (_export, _context) {
       }
     }
     return extractedValue;
-  }function handleSLAResponse(itservice, slaProperty, slaObject) {
+  }function handleItemsAsTable(items) {
+    var table = new TableModel();
+    var columns = [];
+
+    _.forEach(_.keys(_.head(items)), function (key) {
+      columns.push(key);
+    });
+    table.columns = _.map(columns, function (col) {
+      return { "text": col };
+    });
+
+    _.forEach(items, function (item) {
+      var row = [];
+      _.forEach(columns, function (key) {
+        row.push(item[key]);
+      });
+      table.rows.push(row);
+    });
+
+    return table;
+  }
+
+  function handleSLAResponse(itservice, slaProperty, slaObject) {
     var targetSLA = slaObject[itservice.serviceid].sla[0];
     if (slaProperty.property === 'status') {
       var targetStatus = parseInt(slaObject[itservice.serviceid].status);
@@ -96,12 +118,12 @@ System.register(['lodash'], function (_export, _context) {
         datapoints: [[targetSLA[slaProperty.property], targetSLA.from * 1000], [targetSLA[slaProperty.property], targetSLA.to * 1000]]
       };
     }
-  }
-
-  function convertHistoryPoint(point) {
+  }function convertHistoryPoint(point) {
     // Value must be a number for properly work
     return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
-  }function convertTrendPoint(valueType, point) {
+  }
+
+  function convertTrendPoint(valueType, point) {
     var value;
     switch (valueType) {
       case "min":
@@ -124,11 +146,11 @@ System.register(['lodash'], function (_export, _context) {
     }
 
     return [Number(value), point.clock * 1000];
-  }
-
-  return {
+  }return {
     setters: [function (_lodash) {
       _ = _lodash.default;
+    }, function (_appCoreTable_model) {
+      TableModel = _appCoreTable_model.default;
     }],
     execute: function () {
       _export('default', {
@@ -136,7 +158,8 @@ System.register(['lodash'], function (_export, _context) {
         convertHistory: convertHistory,
         handleTrends: handleTrends,
         handleText: handleText,
-        handleSLAResponse: handleSLAResponse
+        handleSLAResponse: handleSLAResponse,
+        handleItemsAsTable: handleItemsAsTable
       });
 
       // Fix for backward compatibility with lodash 2.4

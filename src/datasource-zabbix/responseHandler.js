@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import TableModel from 'app/core/table_model';
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -79,6 +80,28 @@ function extractText(str, pattern, useCaptureGroups) {
   return extractedValue;
 }
 
+function handleItemsAsTable(items) {
+  let table = new TableModel();
+  let columns = [];
+
+  _.forEach(_.keys(_.head(items)), key => {
+    columns.push(key);
+  });
+  table.columns = _.map(columns, col => {
+    return { "text": col };
+  });
+
+  _.forEach(items, item => {
+    let row = [];
+    _.forEach(columns, key => {
+      row.push(item[key]);
+    });
+    table.rows.push(row);
+  });
+
+  return table;
+}
+
 function handleSLAResponse(itservice, slaProperty, slaObject) {
   var targetSLA = slaObject[itservice.serviceid].sla[0];
   if (slaProperty.property === 'status') {
@@ -141,7 +164,8 @@ export default {
   convertHistory: convertHistory,
   handleTrends: handleTrends,
   handleText: handleText,
-  handleSLAResponse: handleSLAResponse
+  handleSLAResponse: handleSLAResponse,
+  handleItemsAsTable: handleItemsAsTable
 };
 
 // Fix for backward compatibility with lodash 2.4

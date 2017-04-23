@@ -66,6 +66,8 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
       2: { value: 'text', text: 'Text', mode: 2 }
     };
 
+    _this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
+
     // Map functions for bs-typeahead
     _this.getGroupNames = _lodash2.default.bind(_this.getMetricNames, _this, 'groupList');
     _this.getHostNames = _lodash2.default.bind(_this.getMetricNames, _this, 'hostList', true);
@@ -98,6 +100,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
       // Load default values
       var targetDefaults = {
         mode: 0,
+        resultFormat: 'time_series',
         group: { filter: "" },
         host: { filter: "" },
         application: { filter: "" },
