@@ -47,6 +47,6 @@ docker run \
 Visit [Grafana XXL project](https://github.com/monitoringartist/grafana-xxl) for more details.
 
 ---
-:copyright: 2015-2016 Alexander Zobnin alexanderzobnin@gmail.com
+:copyright: 2015-2017 Alexander Zobnin alexanderzobnin@gmail.com
 
 Licensed under the Apache 2.0 License
