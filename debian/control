@@ -1,0 +1,16 @@
+Source: grafana-zabbix
+Section: admin
+Priority: optional
+Maintainer: Jens John <dev@2ion.de>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: https://github.com/alexanderzobnin/grafana-zabbix
+Vcs-Git: https://github.com/alexanderzobnin/grafana-zabbix.git
+Vcs-Browser: https://github.com/alexanderzobnin/grafana-zabbix
+
+Package: grafana-zabbix
+Architecture: all
+Depends: grafana (>= 2.5), grafana (<< 3)
+Suggests: zabbix-server
+Description:  Zabbix datasource for Grafana dashboard
+   Zabbix datasource for Grafana using the Zabbix JSON API.

@@ -1,0 +1,10 @@
+grafana-zabbix (2.5.1-1) unstable; urgency=low
+
+  * Initial package.
+  * Release for Grafana-2.5.x.
+  * Issue #109 - Annotations editor don't work in 2.5.
+  * Fixed UI styles at datasource configuration page.
+  * All settings from plugin.json file had been removed. Now all plugin
+    configurations can be changed only on datasource edit page
+
+ -- Jens John <dev@2ion.de>  Fri, 22 Jan 2016 04:03:26 +0000
