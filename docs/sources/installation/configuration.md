@@ -34,19 +34,29 @@ Direct access is still supported because in some cases it may be useful to acces
 ### Zabbix API details
 
 - **User** and **Password**: setup login for access to Zabbix API. Also check user's permissions
-in Zabbix if you can't get any groups and hosts in Grafana.
+    in Zabbix if you can't get any groups and hosts in Grafana.
 - **Trends**: enable if you use Zabbix 3.x or patch for trends
-support in Zabbix 2.x ([ZBXNEXT-1193](https://support.zabbix.com/browse/ZBXNEXT-1193)). This option
-strictly recommended for displaying long time periods (more than few days, depending of your item's
-updating interval in Zabbix) because few days of item history contains tons of points. Using trends
-will increase Grafana performance.
-    - **Use trends from**: time after which trends will be used. Default is **7d** (7 days).
-    You can set the time in Grafana format. Valid time specificators are:
+    support in Zabbix 2.x ([ZBXNEXT-1193](https://support.zabbix.com/browse/ZBXNEXT-1193)). This option
+    strictly recommended for displaying long time periods (more than few days, depending of your item's
+    updating interval in Zabbix) because few days of item history contains tons of points. Using trends
+    will increase Grafana performance.
+    - **After**: time after which trends will be used. 
+        Best practice is to set this value to your history storage period (7d, 30d, etc). Default is **7d** (7 days).
+        You can set the time in Grafana format. Valid time specificators are:
         - **h** - hours
         - **d** - days
         - **M** - months
-- **Cache update interval**: plugin caches some api requests for increasing performance. Set this
-value to desired cache lifetime (this option affect data like items list).
+    - **Range**: Time range width after which trends will be used instead of history.
+        It's better to set this value in range of 4 to 7 days to prevent loading large amount of history data.
+        Default is 4 days.
+- **Cache TTL**: plugin caches some api requests for increasing performance. Set this
+    value to desired cache lifetime (this option affect data like items list).
+
+### Alerting
+- **Enable alerting**: enable limited alerting support.
+- **Add thresholds**: get thresholds info from zabbix triggers and add it to graphs.
+    For example, if you have trigger `{Zabbix server:system.cpu.util[,iowait].avg(5m)}>20`, threshold will be set to 20.
+- **Min severity**: minimum trigger severity for showing alert info (OK/Problem).
 
 Then click _Add_ - datasource will be added and you can check connection using 
 _Test Connection_ button. This feature can help to find some mistakes like invalid user name 
