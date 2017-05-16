@@ -106,13 +106,6 @@ var ZabbixAPIDatasource = function () {
     value: function query(options) {
       var _this = this;
 
-      var timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
-      var timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
-
-      var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
-      var useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
-      var useTrends = this.trends && (timeFrom <= useTrendsFrom || timeTo - timeFrom >= useTrendsRange);
-
       // Get alerts for current panel
       if (this.alertingEnabled) {
         this.alertQuery(options).then(function (alert) {
@@ -129,6 +122,9 @@ var ZabbixAPIDatasource = function () {
 
       // Create request for each target
       var promises = _lodash2.default.map(options.targets, function (target) {
+        var timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
+        var timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
+
         // Prevent changes of original object
         target = _lodash2.default.cloneDeep(target);
         _this.replaceTargetVariables(target, options);
@@ -144,6 +140,10 @@ var ZabbixAPIDatasource = function () {
           timeFrom = time_from;
           timeTo = time_to;
         }
+
+        var useTrendsFrom = Math.ceil(dateMath.parse('now-' + _this.trendsFrom) / 1000);
+        var useTrendsRange = Math.ceil(utils.parseInterval(_this.trendsRange) / 1000);
+        var useTrends = _this.trends && (timeFrom <= useTrendsFrom || timeTo - timeFrom >= useTrendsRange);
 
         // Metrics or Text query mode
         if (target.mode !== 1) {

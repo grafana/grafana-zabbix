@@ -58,16 +58,6 @@ class ZabbixAPIDatasource {
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(options) {
-    let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
-    let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
-
-    let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
-    let useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
-    let useTrends = this.trends && (
-      (timeFrom <= useTrendsFrom) ||
-      (timeTo - timeFrom >= useTrendsRange)
-    );
-
     // Get alerts for current panel
     if (this.alertingEnabled) {
       this.alertQuery(options).then(alert => {
@@ -84,6 +74,9 @@ class ZabbixAPIDatasource {
 
     // Create request for each target
     let promises = _.map(options.targets, target => {
+      let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
+      let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
+
       // Prevent changes of original object
       target = _.cloneDeep(target);
       this.replaceTargetVariables(target, options);
@@ -95,6 +88,13 @@ class ZabbixAPIDatasource {
         timeFrom = time_from;
         timeTo = time_to;
       }
+
+      let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
+      let useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
+      let useTrends = this.trends && (
+        (timeFrom <= useTrendsFrom) ||
+        (timeTo - timeFrom >= useTrendsRange)
+      );
 
       // Metrics or Text query mode
       if (target.mode !== 1) {
