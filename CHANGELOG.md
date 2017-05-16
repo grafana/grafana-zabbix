@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Templatig issue when no values returned [#354](https://github.com/alexanderzobnin/grafana-zabbix/issues/354)
 - Add host name for multiple text metrics.
+- Timeshift issue (Datapoints outside time range) for multiple targets with timeshift(), [#338](https://github.com/alexanderzobnin/grafana-zabbix/issues/338)
 
 
 ## [3.3.0] - 2017-02-10
