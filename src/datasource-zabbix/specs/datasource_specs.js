@@ -14,7 +14,8 @@ describe('ZabbixDatasource', () => {
         username: 'zabbix',
         password: 'zabbix',
         trends: true,
-        trendsFrom: '7d'
+        trendsFrom: '14d',
+        trendsRange: '7d'
       }
     };
     ctx.templateSrv = {};
