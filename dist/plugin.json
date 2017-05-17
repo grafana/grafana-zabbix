@@ -22,7 +22,7 @@
     "links": [
       {"name": "GitHub", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
       {"name": "Docs", "url": "http://docs.grafana-zabbix.org"},
-      {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE.md"}
+      {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE"}
     ],
     "screenshots": [
       {"name": "Showcase", "path": "img/screenshot-showcase.png"},
@@ -31,8 +31,8 @@
       {"name": "Metric Editor", "path": "img/screenshot-metric_editor.png"},
       {"name": "Triggers", "path": "img/screenshot-triggers.png"}
     ],
-    "version": "3.3.0",
-    "updated": "2017-02-10"
+    "version": "3.4.0",
+    "updated": "2017-05-17"
   },
 
   "includes": [
