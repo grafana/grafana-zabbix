@@ -25,15 +25,22 @@ export function expandItemName(name, key) {
 function splitKeyParams(paramStr) {
   let params = [];
   let quoted = false;
+  let in_array = false;
   let split_symbol = ',';
   let param = '';
 
   _.forEach(paramStr, symbol => {
-    if (symbol === '"' && !quoted) {
-      quoted = true;
+    if (symbol === '"' && in_array) {
+      param += symbol;
     } else if (symbol === '"' && quoted) {
       quoted = false;
-    } else if (symbol === split_symbol && !quoted) {
+    } else if (symbol === '"' && !quoted) {
+      quoted = true;
+    } else if (symbol === '[' && !quoted) {
+      in_array  = true;
+    } else if (symbol === ']' && !quoted) {
+      in_array = false;
+    } else if (symbol === split_symbol && !quoted && !in_array) {
       params.push(param);
       param = '';
     } else {

@@ -31,15 +31,22 @@ System.register(['lodash', 'moment'], function (_export, _context) {
   function splitKeyParams(paramStr) {
     var params = [];
     var quoted = false;
+    var in_array = false;
     var split_symbol = ',';
     var param = '';
 
     _.forEach(paramStr, function (symbol) {
-      if (symbol === '"' && !quoted) {
-        quoted = true;
+      if (symbol === '"' && in_array) {
+        param += symbol;
       } else if (symbol === '"' && quoted) {
         quoted = false;
-      } else if (symbol === split_symbol && !quoted) {
+      } else if (symbol === '"' && !quoted) {
+        quoted = true;
+      } else if (symbol === '[' && !quoted) {
+        in_array = true;
+      } else if (symbol === ']' && !quoted) {
+        in_array = false;
+      } else if (symbol === split_symbol && !quoted && !in_array) {
         params.push(param);
         param = '';
       } else {
