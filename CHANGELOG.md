@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Item name expanding when key contains commas in quoted params, like my_key["a=1,b=2",c,d]
 
 ## [3.4.0] - 2017-05-17
 ### Added

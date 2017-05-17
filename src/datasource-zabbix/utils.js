@@ -12,13 +12,37 @@ export function expandItemName(name, key) {
 
   // extract params from key:
   // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
-  var key_params = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']')).split(',');
+  let key_params_str = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']'));
+  let key_params = splitKeyParams(key_params_str);
 
   // replace item parameters
-  for (var i = key_params.length; i >= 1; i--) {
+  for (let i = key_params.length; i >= 1; i--) {
     name = name.replace('$' + i, key_params[i - 1]);
   }
   return name;
+}
+
+function splitKeyParams(paramStr) {
+  let params = [];
+  let quoted = false;
+  let split_symbol = ',';
+  let param = '';
+
+  _.forEach(paramStr, symbol => {
+    if (symbol === '"' && !quoted) {
+      quoted = true;
+    } else if (symbol === '"' && quoted) {
+      quoted = false;
+    } else if (symbol === split_symbol && !quoted) {
+      params.push(param);
+      param = '';
+    } else {
+      param += symbol;
+    }
+  });
+
+  params.push(param);
+  return params;
 }
 
 // Pattern for testing regex

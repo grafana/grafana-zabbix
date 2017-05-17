@@ -16,7 +16,8 @@ System.register(['lodash', 'moment'], function (_export, _context) {
 
     // extract params from key:
     // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
-    var key_params = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']')).split(',');
+    var key_params_str = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']'));
+    var key_params = splitKeyParams(key_params_str);
 
     // replace item parameters
     for (var i = key_params.length; i >= 1; i--) {
@@ -25,10 +26,32 @@ System.register(['lodash', 'moment'], function (_export, _context) {
     return name;
   }
 
-  // Pattern for testing regex
-
   _export('expandItemName', expandItemName);
 
+  function splitKeyParams(paramStr) {
+    var params = [];
+    var quoted = false;
+    var split_symbol = ',';
+    var param = '';
+
+    _.forEach(paramStr, function (symbol) {
+      if (symbol === '"' && !quoted) {
+        quoted = true;
+      } else if (symbol === '"' && quoted) {
+        quoted = false;
+      } else if (symbol === split_symbol && !quoted) {
+        params.push(param);
+        param = '';
+      } else {
+        param += symbol;
+      }
+    });
+
+    params.push(param);
+    return params;
+  }
+
+  // Pattern for testing regex
   function isRegex(str) {
     return regexPattern.test(str);
   }
