@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [3.4.0] - 2017-05-17
 ### Added
-- **Alerting**: higlight panel contained metrics with fired triggers.
+- **Alerting**: highlight panel contained metrics with fired triggers.
 - **Alerting**: add thresholds to panels from zabbix triggers.
 - **Docs**: add docs for setAliasByRegex() from @v-zhuravlev
 - Support millisecond resolution on graphs. Patch from Jay Dawes <ajaxous@gmail.com>.
