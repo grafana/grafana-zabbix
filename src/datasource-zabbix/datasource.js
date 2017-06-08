@@ -89,8 +89,9 @@ class ZabbixAPIDatasource {
         timeFrom = time_from;
         timeTo = time_to;
       }
+      let timeRange = [timeFrom, timeTo];
 
-      let useTrends = this.isUseTrends([timeFrom, timeTo]);
+      let useTrends = this.isUseTrends(timeRange);
 
       // Metrics or Text query mode
       if (target.mode !== c.MODE_ITSERVICE) {
@@ -103,9 +104,9 @@ class ZabbixAPIDatasource {
         }
 
         if (!target.mode || target.mode === c.MODE_METRICS) {
-          return this.queryNumericData(target, timeFrom, timeTo, useTrends);
+          return this.queryNumericData(target, timeRange, useTrends);
         } else if (target.mode === c.MODE_TEXT) {
-          return this.queryTextData(target, timeFrom, timeTo);
+          return this.queryTextData(target, timeRange);
         }
       }
 
@@ -116,7 +117,7 @@ class ZabbixAPIDatasource {
           return [];
         }
 
-        return this.zabbix.getSLA(target.itservice.serviceid, timeFrom, timeTo)
+        return this.zabbix.getSLA(target.itservice.serviceid, timeRange)
         .then(slaObject => {
           return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
         });
@@ -134,7 +135,8 @@ class ZabbixAPIDatasource {
       });
   }
 
-  queryNumericData(target, timeFrom, timeTo, useTrends) {
+  queryNumericData(target, timeRange, useTrends) {
+    let [timeFrom, timeTo] = timeRange;
     let options = {
       itemtype: 'num'
     };
@@ -231,7 +233,8 @@ class ZabbixAPIDatasource {
     }
   }
 
-  queryTextData(target, timeFrom, timeTo) {
+  queryTextData(target, timeRange) {
+    let [timeFrom, timeTo] = timeRange;
     let options = {
       itemtype: 'text'
     };

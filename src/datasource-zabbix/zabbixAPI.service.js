@@ -323,7 +323,8 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       return this.request('service.get', params);
     }
 
-    getSLA(serviceids, timeFrom, timeTo) {
+    getSLA(serviceids, timeRange) {
+      let [timeFrom, timeTo] = timeRange;
       var params = {
         serviceids: serviceids,
         intervals: [{

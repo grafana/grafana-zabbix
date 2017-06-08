@@ -271,8 +271,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                 timeFrom = time_from;
                 timeTo = time_to;
               }
+              var timeRange = [timeFrom, timeTo];
 
-              var useTrends = _this.isUseTrends([timeFrom, timeTo]);
+              var useTrends = _this.isUseTrends(timeRange);
 
               // Metrics or Text query mode
               if (target.mode !== c.MODE_ITSERVICE) {
@@ -285,9 +286,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                 }
 
                 if (!target.mode || target.mode === c.MODE_METRICS) {
-                  return _this.queryNumericData(target, timeFrom, timeTo, useTrends);
+                  return _this.queryNumericData(target, timeRange, useTrends);
                 } else if (target.mode === c.MODE_TEXT) {
-                  return _this.queryTextData(target, timeFrom, timeTo);
+                  return _this.queryTextData(target, timeRange);
                 }
               }
 
@@ -298,7 +299,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                     return [];
                   }
 
-                  return _this.zabbix.getSLA(target.itservice.serviceid, timeFrom, timeTo).then(function (slaObject) {
+                  return _this.zabbix.getSLA(target.itservice.serviceid, timeRange).then(function (slaObject) {
                     return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
                   });
                 }
@@ -313,8 +314,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           }
         }, {
           key: 'queryNumericData',
-          value: function queryNumericData(target, timeFrom, timeTo, useTrends) {
+          value: function queryNumericData(target, timeRange, useTrends) {
             var _this2 = this;
+
+            var _timeRange = _slicedToArray(timeRange, 2),
+                timeFrom = _timeRange[0],
+                timeTo = _timeRange[1];
 
             var options = {
               itemtype: 'num'
@@ -418,8 +423,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           }
         }, {
           key: 'queryTextData',
-          value: function queryTextData(target, timeFrom, timeTo) {
+          value: function queryTextData(target, timeRange) {
             var _this3 = this;
+
+            var _timeRange2 = _slicedToArray(timeRange, 2),
+                timeFrom = _timeRange2[0],
+                timeTo = _timeRange2[1];
 
             var options = {
               itemtype: 'text'
@@ -645,9 +654,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'isUseTrends',
           value: function isUseTrends(timeRange) {
-            var _timeRange = _slicedToArray(timeRange, 2),
-                timeFrom = _timeRange[0],
-                timeTo = _timeRange[1];
+            var _timeRange3 = _slicedToArray(timeRange, 2),
+                timeFrom = _timeRange3[0],
+                timeTo = _timeRange3[1];
 
             var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
             var useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
