@@ -17,6 +17,10 @@ var _lodash = require('lodash');
 
 var _lodash2 = _interopRequireDefault(_lodash);
 
+var _constants = require('./constants');
+
+var c = _interopRequireWildcard(_constants);
+
 var _utils = require('./utils');
 
 var utils = _interopRequireWildcard(_utils);
@@ -61,9 +65,9 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     _this.templateSrv = templateSrv;
 
     _this.editorModes = {
-      0: { value: 'num', text: 'Metrics', mode: 0 },
-      1: { value: 'itservice', text: 'IT Services', mode: 1 },
-      2: { value: 'text', text: 'Text', mode: 2 }
+      0: { value: 'num', text: 'Metrics', mode: c.MODE_METRICS },
+      1: { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE },
+      2: { value: 'text', text: 'Text', mode: c.MODE_TEXT }
     };
 
     // Map functions for bs-typeahead
@@ -97,7 +101,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
 
       // Load default values
       var targetDefaults = {
-        mode: 0,
+        mode: c.MODE_METRICS,
         group: { filter: "" },
         host: { filter: "" },
         application: { filter: "" },
@@ -114,12 +118,12 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
         return metricFunctions.createFuncInstance(func.def, func.params);
       });
 
-      if (target.mode === 0 || target.mode === 2) {
+      if (target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
 
         this.downsampleFunctionList = [{ name: "avg", value: "avg" }, { name: "min", value: "min" }, { name: "max", value: "max" }, { name: "sum", value: "sum" }, { name: "count", value: "count" }];
 
         this.initFilters();
-      } else if (target.mode === 1) {
+      } else if (target.mode === c.MODE_ITSERVICE) {
         this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
         this.itserviceList = [{ name: "test" }];
         this.updateITServiceList();

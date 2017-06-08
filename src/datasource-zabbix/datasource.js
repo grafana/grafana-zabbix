@@ -3,6 +3,7 @@ import * as dateMath from 'app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
+import * as c from './constants';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import './zabbix.js';
@@ -40,7 +41,7 @@ class ZabbixAPIDatasource {
     // Alerting options
     this.alertingEnabled = instanceSettings.jsonData.alerting;
     this.addThresholds = instanceSettings.jsonData.addThresholds;
-    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || 2;
+    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -92,7 +93,7 @@ class ZabbixAPIDatasource {
       let useTrends = this.isUseTrends([timeFrom, timeTo]);
 
       // Metrics or Text query mode
-      if (target.mode !== 1) {
+      if (target.mode !== c.MODE_ITSERVICE) {
         // Migrate old targets
         target = migrations.migrate(target);
 
@@ -101,15 +102,15 @@ class ZabbixAPIDatasource {
           return [];
         }
 
-        if (!target.mode || target.mode === 0) {
+        if (!target.mode || target.mode === c.MODE_METRICS) {
           return this.queryNumericData(target, timeFrom, timeTo, useTrends);
-        } else if (target.mode === 2) {
+        } else if (target.mode === c.MODE_TEXT) {
           return this.queryTextData(target, timeFrom, timeTo);
         }
       }
 
       // IT services mode
-      else if (target.mode === 1) {
+      else if (target.mode === c.MODE_ITSERVICE) {
         // Don't show undefined and hidden targets
         if (target.hide || !target.itservice || !target.slaProperty) {
           return [];
@@ -342,10 +343,10 @@ class ZabbixAPIDatasource {
     var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
     var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
     var annotation = options.annotation;
-    var showOkEvents = annotation.showOkEvents ? [0, 1] : 1;
+    var showOkEvents = annotation.showOkEvents ? c.SHOW_ALL_EVENTS : c.SHOW_OK_EVENTS;
 
     // Show all triggers
-    var showTriggers = [0, 1];
+    var showTriggers = c.SHOW_ALL_TRIGGERS;
 
     var getTriggers = this.zabbix
       .getTriggers(this.replaceTemplateVars(annotation.group, {}),

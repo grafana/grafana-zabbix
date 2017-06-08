@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './dataProcessor', './responseHandler', './zabbix.js', './zabbixAlerting.service.js', './zabbixAPICore.service.js'], function (_export, _context) {
+System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './constants', './dataProcessor', './responseHandler', './zabbix.js', './zabbixAlerting.service.js', './zabbixAPICore.service.js'], function (_export, _context) {
   "use strict";
 
-  var _, dateMath, utils, migrations, metricFunctions, dataProcessor, responseHandler, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
+  var _, dateMath, utils, migrations, metricFunctions, c, dataProcessor, responseHandler, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -114,6 +114,8 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
       migrations = _migrations;
     }, function (_metricFunctions) {
       metricFunctions = _metricFunctions;
+    }, function (_constants) {
+      c = _constants;
     }, function (_dataProcessor) {
       dataProcessor = _dataProcessor.default;
     }, function (_responseHandler) {
@@ -211,7 +213,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           // Alerting options
           this.alertingEnabled = instanceSettings.jsonData.alerting;
           this.addThresholds = instanceSettings.jsonData.addThresholds;
-          this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || 2;
+          this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
           this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
@@ -273,7 +275,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               var useTrends = _this.isUseTrends([timeFrom, timeTo]);
 
               // Metrics or Text query mode
-              if (target.mode !== 1) {
+              if (target.mode !== c.MODE_ITSERVICE) {
                 // Migrate old targets
                 target = migrations.migrate(target);
 
@@ -282,15 +284,15 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                   return [];
                 }
 
-                if (!target.mode || target.mode === 0) {
+                if (!target.mode || target.mode === c.MODE_METRICS) {
                   return _this.queryNumericData(target, timeFrom, timeTo, useTrends);
-                } else if (target.mode === 2) {
+                } else if (target.mode === c.MODE_TEXT) {
                   return _this.queryTextData(target, timeFrom, timeTo);
                 }
               }
 
               // IT services mode
-              else if (target.mode === 1) {
+              else if (target.mode === c.MODE_ITSERVICE) {
                   // Don't show undefined and hidden targets
                   if (target.hide || !target.itservice || !target.slaProperty) {
                     return [];
@@ -515,10 +517,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
             var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
             var annotation = options.annotation;
-            var showOkEvents = annotation.showOkEvents ? [0, 1] : 1;
+            var showOkEvents = annotation.showOkEvents ? c.SHOW_ALL_EVENTS : c.SHOW_OK_EVENTS;
 
             // Show all triggers
-            var showTriggers = [0, 1];
+            var showTriggers = c.SHOW_ALL_TRIGGERS;
 
             var getTriggers = this.zabbix.getTriggers(this.replaceTemplateVars(annotation.group, {}), this.replaceTemplateVars(annotation.host, {}), this.replaceTemplateVars(annotation.application, {}), showTriggers);
 

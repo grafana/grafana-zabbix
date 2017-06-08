@@ -1,6 +1,7 @@
 import {QueryCtrl} from 'app/plugins/sdk';
 import angular from 'angular';
 import _ from 'lodash';
+import * as c from './constants';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
@@ -22,9 +23,9 @@ export class ZabbixQueryController extends QueryCtrl {
     this.templateSrv = templateSrv;
 
     this.editorModes = {
-      0: {value: 'num', text: 'Metrics', mode: 0},
-      1: {value: 'itservice', text: 'IT Services', mode: 1},
-      2: {value: 'text', text: 'Text', mode: 2}
+      0: {value: 'num',       text: 'Metrics',     mode: c.MODE_METRICS},
+      1: {value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE},
+      2: {value: 'text',      text: 'Text',        mode: c.MODE_TEXT}
     };
 
     // Map functions for bs-typeahead
@@ -56,7 +57,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
       // Load default values
       var targetDefaults = {
-        mode: 0,
+        mode: c.MODE_METRICS,
         group: { filter: "" },
         host: { filter: "" },
         application: { filter: "" },
@@ -73,8 +74,8 @@ export class ZabbixQueryController extends QueryCtrl {
         return metricFunctions.createFuncInstance(func.def, func.params);
       });
 
-      if (target.mode === 0 ||
-          target.mode === 2) {
+      if (target.mode === c.MODE_METRICS ||
+          target.mode === c.MODE_TEXT) {
 
         this.downsampleFunctionList = [
           {name: "avg", value: "avg"},
@@ -86,7 +87,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
         this.initFilters();
       }
-      else if (target.mode === 1) {
+      else if (target.mode === c.MODE_ITSERVICE) {
         this.slaPropertyList = [
           {name: "Status", property: "status"},
           {name: "SLA", property: "sla"},
