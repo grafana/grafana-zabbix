@@ -43,25 +43,33 @@ Enable, if you want to select multiple values at the same time.
 ### Value groups/tags (Experimental feature)
 
 ## Query Format
-Template variable query in Zabbix data source is a string which contains 4 parts divided by period (`.`):
+Template variable query in Zabbix data source is a string which contains 4 parts wrapped in braces (`{}`). You still can
+use a period (`.`), but it's deprecated and will be removed in future.
+
 ```
-{host group}.{host}.{application}.{item name}
+{host group}{host}{application}{item name}
 ```
-For example, `Zabbix servers.Zabbix server.CPU.*`
+
+For example, 
+```
+{Zabbix servers}{Zabbix server}{CPU}{*}
+{Frontend}{web01.mydomain.com}{*}{*}
+```
 
 Each part can be a name of corresponding metric or `*`, which means _all metrics_.
 
 Examples:
 
- - `*` returns list of all available Host Groups
- - `*.*` all hosts in Zabbix
- - `Network.*` returns all hosts in group Network
- - `Linux servers.*.*` returns all applications from hosts in Linux servers group
- - `Linux servers.backend01.CPU.*` returns all items from backend01 belonging to CPU application.
+ - `{*}` returns list of all available Host Groups
+ - `{*}{*}` all hosts in Zabbix
+ - `{Network}{*}` returns all hosts in group Network
+ - `{Linux servers}{*}{*}` returns all applications from hosts in Linux servers group
+ - `{Linux servers}{backend01}{CPU}{*}` returns all items from backend01 belonging to CPU application.
 
-You can use another variable as a part of query. For instance, you have variable _group_, which returns list of host groups and want to use it for querying hosts in selected group only. Here's a query for this case:
+You can use another variable as a part of query. For instance, you have variable _group_, which returns list of 
+host groups and want to use it for querying hosts in selected group only. Here's a query for this case:
 ```
-$group.*
+{$group}{*}
 ```
 
 ## Variables Usage
