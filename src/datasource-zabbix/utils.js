@@ -52,10 +52,6 @@ function splitKeyParams(paramStr) {
   return params;
 }
 
-///////////
-// MACRO //
-///////////
-
 const MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
 
 export function containsMacro(itemName) {
@@ -89,6 +85,31 @@ export function replaceMacro(item, macros) {
 function escapeMacro(macro) {
   macro = macro.replace(/\$/, '\\\$');
   return macro;
+}
+
+/**
+ * Split template query to parts of zabbix entities
+ * group.host.app.item -> [group, host, app, item]
+ * {group}{host.com} -> [group, host.com]
+ */
+export function splitTemplateQuery(query) {
+  let splitPattern = /{[^{}]*}/g;
+  let split;
+
+  if (isContainsBraces(query)) {
+    let result = query.match(splitPattern);
+    split = _.map(result, part => {
+      return _.trim(part, '{}');
+    });
+  } else {
+    split = query.split('.');
+  }
+
+  return split;
+}
+
+function isContainsBraces(query) {
+  return query.includes('{') && query.includes('}');
 }
 
 // Pattern for testing regex

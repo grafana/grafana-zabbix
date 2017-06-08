@@ -302,7 +302,7 @@ class ZabbixAPIDatasource {
     let parts = [];
 
     // Split query. Query structure: group.host.app.item
-    _.each(query.split('.'), part => {
+    _.each(utils.splitTemplateQuery(query), part => {
       part = this.replaceTemplateVars(part, {});
 
       // Replace wildcard to regex

@@ -375,7 +375,7 @@ var ZabbixAPIDatasource = function () {
       var parts = [];
 
       // Split query. Query structure: group.host.app.item
-      _lodash2.default.each(query.split('.'), function (part) {
+      _lodash2.default.each(utils.splitTemplateQuery(query), function (part) {
         part = _this5.replaceTemplateVars(part, {});
 
         // Replace wildcard to regex

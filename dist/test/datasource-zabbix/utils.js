@@ -7,6 +7,7 @@ exports.regexPattern = undefined;
 exports.expandItemName = expandItemName;
 exports.containsMacro = containsMacro;
 exports.replaceMacro = replaceMacro;
+exports.splitTemplateQuery = splitTemplateQuery;
 exports.isRegex = isRegex;
 exports.isTemplateVariable = isTemplateVariable;
 exports.buildRegex = buildRegex;
@@ -78,10 +79,6 @@ function splitKeyParams(paramStr) {
   return params;
 }
 
-///////////
-// MACRO //
-///////////
-
 var MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
 
 function containsMacro(itemName) {
@@ -115,6 +112,31 @@ function replaceMacro(item, macros) {
 function escapeMacro(macro) {
   macro = macro.replace(/\$/, '\\\$');
   return macro;
+}
+
+/**
+ * Split template query to parts of zabbix entities
+ * group.host.app.item -> [group, host, app, item]
+ * {group}{host.com} -> [group, host.com]
+ */
+function splitTemplateQuery(query) {
+  var splitPattern = /{[^{}]*}/g;
+  var split = void 0;
+
+  if (isContainsBraces(query)) {
+    var result = query.match(splitPattern);
+    split = _lodash2.default.map(result, function (part) {
+      return _lodash2.default.trim(part, '{}');
+    });
+  } else {
+    split = query.split('.');
+  }
+
+  return split;
+}
+
+function isContainsBraces(query) {
+  return query.includes('{') && query.includes('}');
 }
 
 // Pattern for testing regex

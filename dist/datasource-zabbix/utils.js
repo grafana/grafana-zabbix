@@ -56,13 +56,7 @@ System.register(['lodash', 'moment'], function (_export, _context) {
 
     params.push(param);
     return params;
-  }
-
-  ///////////
-  // MACRO //
-  ///////////
-
-  function containsMacro(itemName) {
+  }function containsMacro(itemName) {
     return MACRO_PATTERN.test(itemName);
   }
 
@@ -97,6 +91,33 @@ System.register(['lodash', 'moment'], function (_export, _context) {
   function escapeMacro(macro) {
     macro = macro.replace(/\$/, '\\\$');
     return macro;
+  }
+
+  /**
+   * Split template query to parts of zabbix entities
+   * group.host.app.item -> [group, host, app, item]
+   * {group}{host.com} -> [group, host.com]
+   */
+  function splitTemplateQuery(query) {
+    var splitPattern = /{[^{}]*}/g;
+    var split = void 0;
+
+    if (isContainsBraces(query)) {
+      var result = query.match(splitPattern);
+      split = _.map(result, function (part) {
+        return _.trim(part, '{}');
+      });
+    } else {
+      split = query.split('.');
+    }
+
+    return split;
+  }
+
+  _export('splitTemplateQuery', splitTemplateQuery);
+
+  function isContainsBraces(query) {
+    return query.includes('{') && query.includes('}');
   }
 
   // Pattern for testing regex

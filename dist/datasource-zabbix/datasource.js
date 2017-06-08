@@ -483,7 +483,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var parts = [];
 
             // Split query. Query structure: group.host.app.item
-            _.each(query.split('.'), function (part) {
+            _.each(utils.splitTemplateQuery(query), function (part) {
               part = _this5.replaceTemplateVars(part, {});
 
               // Replace wildcard to regex
