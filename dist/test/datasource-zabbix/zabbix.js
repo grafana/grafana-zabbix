@@ -188,7 +188,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
 
     }, {
       key: 'getTriggers',
-      value: function getTriggers(groupFilter, hostFilter, appFilter, showTriggers, hideHostsInMaintenance) {
+      value: function getTriggers(groupFilter, hostFilter, appFilter, options) {
         var _this5 = this;
 
         var promises = [this.getGroups(groupFilter), this.getHosts(groupFilter, hostFilter), this.getApps(groupFilter, hostFilter, appFilter)];
@@ -211,7 +211,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
 
           return query;
         }).then(function (query) {
-          return _this5.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, showTriggers, hideHostsInMaintenance);
+          return _this5.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options);
         });
       }
     }]);

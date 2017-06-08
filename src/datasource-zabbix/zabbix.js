@@ -137,7 +137,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
     /**
      * Build query - convert target filters to array of Zabbix items
      */
-    getTriggers(groupFilter, hostFilter, appFilter, showTriggers, hideHostsInMaintenance) {
+    getTriggers(groupFilter, hostFilter, appFilter, options) {
       let promises = [
         this.getGroups(groupFilter),
         this.getHosts(groupFilter, hostFilter),
@@ -163,8 +163,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
 
         return query;
       }).then(query => {
-        return this.zabbixAPI
-        .getTriggers(query.groupids, query.hostids, query.applicationids, showTriggers, hideHostsInMaintenance);
+        return this.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options);
       });
     }
   }

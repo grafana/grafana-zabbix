@@ -196,7 +196,11 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
               var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-              var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, showEvents, hideHostsInMaintenance);
+              var triggersOptions = {
+                showTriggers: showEvents,
+                hideHostsInMaintenance: hideHostsInMaintenance
+              };
+              var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
               return getTriggers.then(function (triggers) {
                 return _.map(triggers, _this3.formatTrigger.bind(_this3));
               });

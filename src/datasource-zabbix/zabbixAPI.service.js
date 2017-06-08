@@ -334,8 +334,10 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       return this.request('service.getsla', params);
     }
 
-    getTriggers(groupids, hostids, applicationids, showTriggers, hideHostsInMaintenance, timeFrom, timeTo) {
-      var params = {
+    getTriggers(groupids, hostids, applicationids, options) {
+      let {showTriggers, hideHostsInMaintenance, timeFrom, timeTo} = options;
+
+      let params = {
         output: 'extend',
         groupids: groupids,
         hostids: hostids,

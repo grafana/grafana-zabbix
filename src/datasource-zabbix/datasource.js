@@ -346,13 +346,15 @@ class ZabbixAPIDatasource {
     var showOkEvents = annotation.showOkEvents ? c.SHOW_ALL_EVENTS : c.SHOW_OK_EVENTS;
 
     // Show all triggers
-    var showTriggers = c.SHOW_ALL_TRIGGERS;
+    let triggersOptions = {
+      showTriggers: c.SHOW_ALL_TRIGGERS,
+      hideHostsInMaintenance: false
+    };
 
-    var getTriggers = this.zabbix
-      .getTriggers(this.replaceTemplateVars(annotation.group, {}),
-                   this.replaceTemplateVars(annotation.host, {}),
-                   this.replaceTemplateVars(annotation.application, {}),
-                   showTriggers);
+    var getTriggers = this.zabbix.getTriggers(this.replaceTemplateVars(annotation.group, {}),
+                                              this.replaceTemplateVars(annotation.host, {}),
+                                              this.replaceTemplateVars(annotation.application, {}),
+                                              triggersOptions);
 
     return getTriggers.then(triggers => {
 

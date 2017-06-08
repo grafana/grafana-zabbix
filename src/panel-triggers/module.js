@@ -134,7 +134,11 @@ class TriggerPanelCtrl extends PanelCtrl {
       var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
       var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-      var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, showEvents, hideHostsInMaintenance);
+      let triggersOptions = {
+        showTriggers: showEvents,
+        hideHostsInMaintenance: hideHostsInMaintenance
+      };
+      let getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
       return getTriggers.then(triggers => {
         return _.map(triggers, this.formatTrigger.bind(this));
       });

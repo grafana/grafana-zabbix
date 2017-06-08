@@ -306,7 +306,13 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
         }
       }, {
         key: 'getTriggers',
-        value: function getTriggers(groupids, hostids, applicationids, showTriggers, hideHostsInMaintenance, timeFrom, timeTo) {
+        value: function getTriggers(groupids, hostids, applicationids, options) {
+          var showTriggers = options.showTriggers,
+              hideHostsInMaintenance = options.hideHostsInMaintenance,
+              timeFrom = options.timeFrom,
+              timeTo = options.timeTo;
+
+
           var params = {
             output: 'extend',
             groupids: groupids,
