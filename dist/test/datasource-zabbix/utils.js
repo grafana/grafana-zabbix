@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.regexPattern = undefined;
 exports.expandItemName = expandItemName;
+exports.containsMacro = containsMacro;
+exports.replaceMacro = replaceMacro;
 exports.isRegex = isRegex;
 exports.isTemplateVariable = isTemplateVariable;
 exports.buildRegex = buildRegex;
@@ -74,6 +76,45 @@ function splitKeyParams(paramStr) {
 
   params.push(param);
   return params;
+}
+
+///////////
+// MACRO //
+///////////
+
+var MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
+
+function containsMacro(itemName) {
+  return MACRO_PATTERN.test(itemName);
+}
+
+function replaceMacro(item, macros) {
+  var itemName = item.name;
+  var item_macros = itemName.match(MACRO_PATTERN);
+  _lodash2.default.forEach(item_macros, function (macro) {
+    var host_macros = _lodash2.default.filter(macros, function (m) {
+      if (m.hostid) {
+        return m.hostid === item.hostid;
+      } else {
+        // Add global macros
+        return true;
+      }
+    });
+
+    var macro_def = _lodash2.default.find(host_macros, { macro: macro });
+    if (macro_def && macro_def.value) {
+      var macro_value = macro_def.value;
+      var macro_regex = new RegExp(escapeMacro(macro));
+      itemName = itemName.replace(macro_regex, macro_value);
+    }
+  });
+
+  return itemName;
+}
+
+function escapeMacro(macro) {
+  macro = macro.replace(/\$/, '\\\$');
+  return macro;
 }
 
 // Pattern for testing regex

@@ -3,7 +3,7 @@
 System.register(['lodash', 'moment'], function (_export, _context) {
   "use strict";
 
-  var _, moment, regexPattern;
+  var _, moment, MACRO_PATTERN, regexPattern;
 
   /**
    * Expand Zabbix item name
@@ -56,6 +56,47 @@ System.register(['lodash', 'moment'], function (_export, _context) {
 
     params.push(param);
     return params;
+  }
+
+  ///////////
+  // MACRO //
+  ///////////
+
+  function containsMacro(itemName) {
+    return MACRO_PATTERN.test(itemName);
+  }
+
+  _export('containsMacro', containsMacro);
+
+  function replaceMacro(item, macros) {
+    var itemName = item.name;
+    var item_macros = itemName.match(MACRO_PATTERN);
+    _.forEach(item_macros, function (macro) {
+      var host_macros = _.filter(macros, function (m) {
+        if (m.hostid) {
+          return m.hostid === item.hostid;
+        } else {
+          // Add global macros
+          return true;
+        }
+      });
+
+      var macro_def = _.find(host_macros, { macro: macro });
+      if (macro_def && macro_def.value) {
+        var macro_value = macro_def.value;
+        var macro_regex = new RegExp(escapeMacro(macro));
+        itemName = itemName.replace(macro_regex, macro_value);
+      }
+    });
+
+    return itemName;
+  }
+
+  _export('replaceMacro', replaceMacro);
+
+  function escapeMacro(macro) {
+    macro = macro.replace(/\$/, '\\\$');
+    return macro;
   }
 
   // Pattern for testing regex
@@ -186,6 +227,8 @@ System.register(['lodash', 'moment'], function (_export, _context) {
       moment = _moment.default;
     }],
     execute: function () {
+      MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
+
       _export('regexPattern', regexPattern = /^\/(.*)\/([gmi]*)$/m);
 
       _export('regexPattern', regexPattern);

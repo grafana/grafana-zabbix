@@ -52,8 +52,47 @@ function splitKeyParams(paramStr) {
   return params;
 }
 
+///////////
+// MACRO //
+///////////
+
+const MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
+
+export function containsMacro(itemName) {
+  return MACRO_PATTERN.test(itemName);
+}
+
+export function replaceMacro(item, macros) {
+  let itemName = item.name;
+  let item_macros = itemName.match(MACRO_PATTERN);
+  _.forEach(item_macros, macro => {
+    let host_macros = _.filter(macros, m => {
+      if (m.hostid) {
+        return m.hostid === item.hostid;
+      } else {
+        // Add global macros
+        return true;
+      }
+    });
+
+    let macro_def = _.find(host_macros, { macro: macro });
+    if (macro_def && macro_def.value) {
+      let macro_value = macro_def.value;
+      let macro_regex = new RegExp(escapeMacro(macro));
+      itemName = itemName.replace(macro_regex, macro_value);
+    }
+  });
+
+  return itemName;
+}
+
+function escapeMacro(macro) {
+  macro = macro.replace(/\$/, '\\\$');
+  return macro;
+}
+
 // Pattern for testing regex
-export var regexPattern = /^\/(.*)\/([gmi]*)$/m;
+export const regexPattern = /^\/(.*)\/([gmi]*)$/m;
 
 export function isRegex(str) {
   return regexPattern.test(str);

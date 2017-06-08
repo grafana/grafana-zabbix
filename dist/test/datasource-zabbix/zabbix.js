@@ -165,8 +165,8 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
         var hostids = getHostIds(items);
         return this.getMacros(hostids).then(function (macros) {
           _lodash2.default.forEach(items, function (item) {
-            if (containsMacro(item.name)) {
-              item.name = replaceMacro(item, macros);
+            if (utils.containsMacro(item.name)) {
+              item.name = utils.replaceMacro(item, macros);
             }
           });
           return items;
@@ -286,39 +286,4 @@ function getHostIds(items) {
     return _lodash2.default.map(item.hosts, 'hostid');
   });
   return _lodash2.default.uniq(_lodash2.default.flatten(hostIds));
-}
-
-var MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
-
-function containsMacro(itemName) {
-  return MACRO_PATTERN.test(itemName);
-}
-
-function replaceMacro(item, macros) {
-  var itemName = item.name;
-  var item_macros = itemName.match(MACRO_PATTERN);
-  _lodash2.default.forEach(item_macros, function (macro) {
-    var host_macros = _lodash2.default.filter(macros, function (m) {
-      if (m.hostid) {
-        return m.hostid === item.hostid;
-      } else {
-        // Add global macros
-        return true;
-      }
-    });
-
-    var macro_def = _lodash2.default.find(host_macros, { macro: macro });
-    if (macro_def && macro_def.value) {
-      var macro_value = macro_def.value;
-      var macro_regex = new RegExp(escapeMacro(macro));
-      itemName = itemName.replace(macro_regex, macro_value);
-    }
-  });
-
-  return itemName;
-}
-
-function escapeMacro(macro) {
-  macro = macro.replace(/\$/, '\\\$');
-  return macro;
 }

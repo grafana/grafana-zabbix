@@ -121,8 +121,8 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       return this.getMacros(hostids)
       .then(macros => {
         _.forEach(items, item => {
-          if (containsMacro(item.name)) {
-            item.name = replaceMacro(item, macros);
+          if (utils.containsMacro(item.name)) {
+            item.name = utils.replaceMacro(item, macros);
           }
         });
         return items;
@@ -238,39 +238,4 @@ function getHostIds(items) {
     return _.map(item.hosts, 'hostid');
   });
   return _.uniq(_.flatten(hostIds));
-}
-
-let MACRO_PATTERN = /{\$[A-Z0-9_\.]+}/g;
-
-function containsMacro(itemName) {
-  return MACRO_PATTERN.test(itemName);
-}
-
-function replaceMacro(item, macros) {
-  let itemName = item.name;
-  let item_macros = itemName.match(MACRO_PATTERN);
-  _.forEach(item_macros, macro => {
-    let host_macros = _.filter(macros, m => {
-      if (m.hostid) {
-        return m.hostid === item.hostid;
-      } else {
-        // Add global macros
-        return true;
-      }
-    });
-
-    let macro_def = _.find(host_macros, {macro: macro});
-    if (macro_def && macro_def.value) {
-      let macro_value = macro_def.value;
-      let macro_regex = new RegExp(escapeMacro(macro));
-      itemName = itemName.replace(macro_regex, macro_value);
-    }
-  });
-
-  return itemName;
-}
-
-function escapeMacro(macro)  {
-  macro = macro.replace(/\$/, '\\\$');
-  return macro;
 }
