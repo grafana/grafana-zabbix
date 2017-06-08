@@ -73,12 +73,12 @@ class ZabbixAPIDatasource {
     }
 
     // Create request for each target
-    let promises = _.map(options.targets, target => {
+    let promises = _.map(options.targets, t => {
       let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
       let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
 
       // Prevent changes of original object
-      target = _.cloneDeep(target);
+      let target = _.cloneDeep(t);
       this.replaceTargetVariables(target, options);
 
       // Apply Time-related functions (timeShift(), etc)
@@ -89,12 +89,7 @@ class ZabbixAPIDatasource {
         timeTo = time_to;
       }
 
-      let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
-      let useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
-      let useTrends = this.trends && (
-        (timeFrom <= useTrendsFrom) ||
-        (timeTo - timeFrom >= useTrendsRange)
-      );
+      let useTrends = this.isUseTrends([timeFrom, timeTo]);
 
       // Metrics or Text query mode
       if (target.mode !== 1) {
@@ -478,6 +473,16 @@ class ZabbixAPIDatasource {
     });
   }
 
+  isUseTrends(timeRange) {
+    let [timeFrom, timeTo] = timeRange;
+    let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
+    let useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
+    let useTrends = this.trends && (
+      (timeFrom <= useTrendsFrom) ||
+      (timeTo - timeFrom >= useTrendsRange)
+    );
+    return useTrends;
+  }
 }
 
 function bindFunctionDefs(functionDefs, category) {

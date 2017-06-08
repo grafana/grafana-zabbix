@@ -121,12 +121,12 @@ var ZabbixAPIDatasource = function () {
       }
 
       // Create request for each target
-      var promises = _lodash2.default.map(options.targets, function (target) {
+      var promises = _lodash2.default.map(options.targets, function (t) {
         var timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
         var timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
 
         // Prevent changes of original object
-        target = _lodash2.default.cloneDeep(target);
+        var target = _lodash2.default.cloneDeep(t);
         _this.replaceTargetVariables(target, options);
 
         // Apply Time-related functions (timeShift(), etc)
@@ -141,9 +141,7 @@ var ZabbixAPIDatasource = function () {
           timeTo = time_to;
         }
 
-        var useTrendsFrom = Math.ceil(dateMath.parse('now-' + _this.trendsFrom) / 1000);
-        var useTrendsRange = Math.ceil(utils.parseInterval(_this.trendsRange) / 1000);
-        var useTrends = _this.trends && (timeFrom <= useTrendsFrom || timeTo - timeFrom >= useTrendsRange);
+        var useTrends = _this.isUseTrends([timeFrom, timeTo]);
 
         // Metrics or Text query mode
         if (target.mode !== 1) {
@@ -543,6 +541,18 @@ var ZabbixAPIDatasource = function () {
           }
         });
       });
+    }
+  }, {
+    key: 'isUseTrends',
+    value: function isUseTrends(timeRange) {
+      var _timeRange = _slicedToArray(timeRange, 2),
+          timeFrom = _timeRange[0],
+          timeTo = _timeRange[1];
+
+      var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
+      var useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
+      var useTrends = this.trends && (timeFrom <= useTrendsFrom || timeTo - timeFrom >= useTrendsRange);
+      return useTrends;
     }
   }]);
 
