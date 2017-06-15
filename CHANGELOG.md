@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Fixed
 - Item name expanding when key contains commas in quoted params, like my_key["a=1,b=2",c,d]
+- Incorrect points order when trends are used [#202](https://github.com/alexanderzobnin/grafana-zabbix/issues/202)
 
 ### Changed
 - Template query format. New format is `{group}{host}{app}{item}`. It allows to use names with dot. Updated 
