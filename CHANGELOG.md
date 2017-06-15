@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Item name expanding when key contains commas in quoted params, like my_key["a=1,b=2",c,d]
 
+### Changed
+- Template query format. New format is `{group}{host}{app}{item}`. It allows to use names with dot. Updated 
+  [templating docs](http://docs.grafana-zabbix.org/guides/templating/#query-format), 
+  [#254](https://github.com/alexanderzobnin/grafana-zabbix/issues/254)
+
 ## [3.4.0] - 2017-05-17
 ### Added
 - **Alerting**: highlight panel contained metrics with fired triggers.
