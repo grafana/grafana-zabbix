@@ -14,3 +14,7 @@ export const SEV_DISASTER = 5;
 export const SHOW_ALL_TRIGGERS = [0, 1];
 export const SHOW_ALL_EVENTS = [0, 1];
 export const SHOW_OK_EVENTS = 1;
+
+// Data point
+export const DATAPOINT_VALUE = 0;
+export const DATAPOINT_TS = 1;

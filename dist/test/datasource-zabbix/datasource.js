@@ -205,6 +205,15 @@ var ZabbixAPIDatasource = function () {
             var valueType = _this2.getTrendValueType(target);
             getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
               return _responseHandler2.default.handleTrends(history, items, valueType);
+            }).then(function (timeseries) {
+              // Sort trend data, issue #202
+              _lodash2.default.forEach(timeseries, function (series) {
+                series.datapoints = _lodash2.default.sortBy(series.datapoints, function (point) {
+                  return point[c.DATAPOINT_TS];
+                });
+              });
+
+              return timeseries;
             });
           })();
         } else {

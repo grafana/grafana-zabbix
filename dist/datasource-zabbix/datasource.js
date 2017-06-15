@@ -332,6 +332,15 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                   var valueType = _this2.getTrendValueType(target);
                   getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
                     return responseHandler.handleTrends(history, items, valueType);
+                  }).then(function (timeseries) {
+                    // Sort trend data, issue #202
+                    _.forEach(timeseries, function (series) {
+                      series.datapoints = _.sortBy(series.datapoints, function (point) {
+                        return point[c.DATAPOINT_TS];
+                      });
+                    });
+
+                    return timeseries;
                   });
                 })();
               } else {

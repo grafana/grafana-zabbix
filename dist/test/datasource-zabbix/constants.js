@@ -19,3 +19,7 @@ var SEV_DISASTER = exports.SEV_DISASTER = 5;
 var SHOW_ALL_TRIGGERS = exports.SHOW_ALL_TRIGGERS = [0, 1];
 var SHOW_ALL_EVENTS = exports.SHOW_ALL_EVENTS = [0, 1];
 var SHOW_OK_EVENTS = exports.SHOW_OK_EVENTS = 1;
+
+// Data point
+var DATAPOINT_VALUE = exports.DATAPOINT_VALUE = 0;
+var DATAPOINT_TS = exports.DATAPOINT_TS = 1;

@@ -3,7 +3,7 @@
 System.register([], function (_export, _context) {
   "use strict";
 
-  var MODE_METRICS, MODE_TEXT, MODE_ITSERVICE, SEV_NOT_CLASSIFIED, SEV_INFORMATION, SEV_WARNING, SEV_AVERAGE, SEV_HIGH, SEV_DISASTER, SHOW_ALL_TRIGGERS, SHOW_ALL_EVENTS, SHOW_OK_EVENTS;
+  var MODE_METRICS, MODE_TEXT, MODE_ITSERVICE, SEV_NOT_CLASSIFIED, SEV_INFORMATION, SEV_WARNING, SEV_AVERAGE, SEV_HIGH, SEV_DISASTER, SHOW_ALL_TRIGGERS, SHOW_ALL_EVENTS, SHOW_OK_EVENTS, DATAPOINT_VALUE, DATAPOINT_TS;
   return {
     setters: [],
     execute: function () {
@@ -54,6 +54,14 @@ System.register([], function (_export, _context) {
       _export("SHOW_OK_EVENTS", SHOW_OK_EVENTS = 1);
 
       _export("SHOW_OK_EVENTS", SHOW_OK_EVENTS);
+
+      _export("DATAPOINT_VALUE", DATAPOINT_VALUE = 0);
+
+      _export("DATAPOINT_VALUE", DATAPOINT_VALUE);
+
+      _export("DATAPOINT_TS", DATAPOINT_TS = 1);
+
+      _export("DATAPOINT_TS", DATAPOINT_TS);
     }
   };
 });

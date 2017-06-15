@@ -147,15 +147,23 @@ class ZabbixAPIDatasource {
       if (useTrends) {
         let valueType = this.getTrendValueType(target);
         getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo)
-          .then(history => {
-            return responseHandler.handleTrends(history, items, valueType);
+        .then(history => {
+          return responseHandler.handleTrends(history, items, valueType);
+        })
+        .then(timeseries => {
+          // Sort trend data, issue #202
+          _.forEach(timeseries, series => {
+            series.datapoints = _.sortBy(series.datapoints, point => point[c.DATAPOINT_TS]);
           });
+
+          return timeseries;
+        });
       } else {
         // Use history
         getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
-          .then(history => {
-            return responseHandler.handleHistory(history, items);
-          });
+        .then(history => {
+          return responseHandler.handleHistory(history, items);
+        });
       }
 
       return getHistoryPromise.then(timeseries_data => {
