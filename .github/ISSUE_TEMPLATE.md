@@ -1,17 +1,26 @@
-#### I'm submitting a ...
+### I'm submitting a ...
 - [ ] Bug report
-- [ ] Feature request
+- [ ] Feature requestdd
 - [ ] Question / Support request
 
-#### For bug report please include this information:
-- What Grafana version are you using?
-- What Zabbix version are you using?
-- What zabbix plugin version are you using?
-- What OS are you running grafana on?
-- What did you do?
-- What was the expected result?
-- What happened instead?
+_If you don't send bug report, remove sections below_
+### For bug report please include this information:
 
-**IMPORTANT** If it relates to metric data visualization would be great to get:
+**Software Versions**
+
+| Grafana | Zabbix | Grafana-Zabbix Plugin |
+| ------- | ------ | --------------------- |
+| x.x.x   | x.x.x  | x.x.x                 |
+
+#### What did you do?
+_Describe here_
+
+#### What was the expected result?
+_Describe here_
+
+#### What happened instead?
+_Describe here_
+
+If it relates to metric data visualization would be great to get
 - An image or text representation of your metric query
 - The raw query and response for the network request (check this in chrome dev tools network tab, here you can see metric requests and other request, please include the request body and request response)
