@@ -81,7 +81,7 @@ describe('ZabbixDatasource', function () {
         ctx.ds.query(ctx.options);
 
         // Check that useTrends options is true
-        expect(ctx.ds.queryNumericData).to.have.been.calledWith(defined, defined, defined, true);
+        expect(ctx.ds.queryNumericData).to.have.been.calledWith(defined, defined, true);
       });
 
       done();
@@ -96,7 +96,7 @@ describe('ZabbixDatasource', function () {
         ctx.ds.query(ctx.options);
 
         // Check that useTrends options is false
-        expect(ctx.ds.queryNumericData).to.have.been.calledWith(defined, defined, defined, false);
+        expect(ctx.ds.queryNumericData).to.have.been.calledWith(defined, defined, false);
       });
       done();
     });
