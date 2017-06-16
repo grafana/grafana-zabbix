@@ -1,4 +1,8 @@
 ## Zabbix plugin for Grafana
+
+[![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](http://docs.grafana-zabbix.org)
+[![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey.svg?style=flat)](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE)
+
 Zabbix plugin allows to show different type of data from [Zabbix](http://www.zabbix.com/) 
 monitoring system.
 
