@@ -286,7 +286,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                 }
 
                 if (!target.mode || target.mode === c.MODE_METRICS) {
-                  return _this.queryNumericData(target, timeRange, useTrends);
+                  return _this.queryNumericData(target, timeRange, useTrends, options);
                 } else if (target.mode === c.MODE_TEXT) {
                   return _this.queryTextData(target, timeRange);
                 }
@@ -306,25 +306,23 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             });
 
             // Data for panel (all targets)
-            return Promise.all(_.flatten(promises)).then(_.flatten).then(function (timeseries_data) {
-              return downsampleSeries(timeseries_data, options);
-            }).then(function (data) {
+            return Promise.all(_.flatten(promises)).then(_.flatten).then(function (data) {
               return { data: data };
             });
           }
         }, {
           key: 'queryNumericData',
-          value: function queryNumericData(target, timeRange, useTrends) {
+          value: function queryNumericData(target, timeRange, useTrends, options) {
             var _this2 = this;
 
             var _timeRange = _slicedToArray(timeRange, 2),
                 timeFrom = _timeRange[0],
                 timeTo = _timeRange[1];
 
-            var options = {
+            var getItemOptions = {
               itemtype: 'num'
             };
-            return this.zabbix.getItemsFromTarget(target, options).then(function (items) {
+            return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
               var getHistoryPromise = void 0;
 
               if (useTrends) {
@@ -348,9 +346,11 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                 });
               }
 
-              return getHistoryPromise.then(function (timeseries_data) {
-                return _this2.applyDataProcessingFunctions(timeseries_data, target);
-              });
+              return getHistoryPromise;
+            }).then(function (timeseries) {
+              return _this2.applyDataProcessingFunctions(timeseries, target);
+            }).then(function (timeseries) {
+              return downsampleSeries(timeseries, options);
             }).catch(function (error) {
               console.log(error);
               return [];

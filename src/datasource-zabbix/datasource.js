@@ -104,7 +104,7 @@ class ZabbixAPIDatasource {
         }
 
         if (!target.mode || target.mode === c.MODE_METRICS) {
-          return this.queryNumericData(target, timeRange, useTrends);
+          return this.queryNumericData(target, timeRange, useTrends, options);
         } else if (target.mode === c.MODE_TEXT) {
           return this.queryTextData(target, timeRange);
         }
@@ -127,20 +127,17 @@ class ZabbixAPIDatasource {
     // Data for panel (all targets)
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
-      .then(timeseries_data => {
-        return downsampleSeries(timeseries_data, options);
-      })
       .then(data => {
         return { data: data };
       });
   }
 
-  queryNumericData(target, timeRange, useTrends) {
+  queryNumericData(target, timeRange, useTrends, options) {
     let [timeFrom, timeTo] = timeRange;
-    let options = {
+    let getItemOptions = {
       itemtype: 'num'
     };
-    return this.zabbix.getItemsFromTarget(target, options)
+    return this.zabbix.getItemsFromTarget(target, getItemOptions)
     .then(items => {
       let getHistoryPromise;
 
@@ -166,10 +163,10 @@ class ZabbixAPIDatasource {
         });
       }
 
-      return getHistoryPromise.then(timeseries_data => {
-        return this.applyDataProcessingFunctions(timeseries_data, target);
-      });
+      return getHistoryPromise;
     })
+    .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
+    .then(timeseries => downsampleSeries(timeseries, options))
     .catch(error => {
       console.log(error);
       return [];
