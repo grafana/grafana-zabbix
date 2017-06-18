@@ -19,17 +19,15 @@ var _moment = require('moment');
 
 var _moment2 = _interopRequireDefault(_moment);
 
+var _sdk = require('app/plugins/sdk');
+
 var _utils = require('../datasource-zabbix/utils');
 
 var utils = _interopRequireWildcard(_utils);
 
-var _sdk = require('app/plugins/sdk');
-
 var _editor = require('./editor');
 
 require('./ack-tooltip.directive');
-
-require('./css/panel_triggers.css!');
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -51,6 +49,11 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 * Copyright 2015 Alexander Zobnin alexanderzobnin@gmail.com
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 * Licensed under the Apache License, Version 2.0
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 */
+
+(0, _sdk.loadPluginCss)({
+  dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
+  light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
+});
 
 var defaultSeverity = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true }, { priority: 3, severity: 'Average', color: '#C15C17', show: true }, { priority: 4, severity: 'High', color: '#BF1B00', show: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true }];
 

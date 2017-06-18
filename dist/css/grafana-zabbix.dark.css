@@ -1,0 +1,96 @@
+.triggers-panel-wrapper .panel-content {
+  padding: 0; }
+
+.triggers-panel-wrapper .panel-title-container {
+  padding-bottom: 4px; }
+
+.triggers-panel-scroll {
+  overflow: auto; }
+
+.triggers-panel-container {
+  padding-top: 2.2em;
+  position: relative; }
+
+.triggers-panel-footer {
+  text-align: center;
+  font-size: 90%;
+  line-height: 2px; }
+  .triggers-panel-footer ul {
+    position: relative;
+    display: inline-block;
+    margin-left: 0;
+    margin-bottom: 0; }
+  .triggers-panel-footer ul > li {
+    display: inline; }
+  .triggers-panel-footer ul > li > a {
+    float: left;
+    padding: 4px 12px;
+    text-decoration: none;
+    border-left-width: 0; }
+    .triggers-panel-footer ul > li > a:hover {
+      background-color: #333; }
+    .triggers-panel-footer ul > li > a.active {
+      font-weight: bold;
+      color: #33B5E5; }
+
+.triggers-panel-table {
+  width: 100%;
+  border-collapse: collapse; }
+  .triggers-panel-table th {
+    padding: 0; }
+    .triggers-panel-table th:first-child .triggers-panel-table-header-inner {
+      padding-left: 15px; }
+  .triggers-panel-table td {
+    padding: 0.45em 0 0.45em 1.1em;
+    border-bottom: 2px solid #141414;
+    border-right: 2px solid #141414; }
+    .triggers-panel-table td:first-child {
+      padding-left: 15px; }
+    .triggers-panel-table td:last-child {
+      border-right: none; }
+
+.triggers-panel-header-bg {
+  background: #242222;
+  border-top: 2px solid #141414;
+  border-bottom: 2px solid #141414;
+  height: 2.0em;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0; }
+
+.triggers-panel-table-header-inner {
+  padding: 0.45em 0 0.45em 1.1em;
+  text-align: left;
+  color: #33B5E5;
+  position: absolute;
+  top: 0; }
+
+.triggers-panel-width-hack {
+  visibility: hidden;
+  height: 0px;
+  line-height: 0px; }
+
+.ack-tooltip .drop-content {
+  max-width: 70rem !important;
+  min-width: 30rem !important; }
+
+.ack-tooltip .ack-comments {
+  width: 60%; }
+
+.ack-tooltip .ack-add-button {
+  padding-top: 1rem; }
+
+.ack-tooltip table td, .ack-tooltip th {
+  padding-right: 1rem; }
+
+.ack-tooltip .ack-input-group {
+  padding-top: 1rem; }
+  .ack-tooltip .ack-input-group input {
+    border: 1px solid;
+    border-radius: 2px;
+    width: 50%; }
+  .ack-tooltip .ack-input-group button {
+    margin-left: 1rem; }
+
+/*# sourceMappingURL=grafana-zabbix.dark.css.map */
