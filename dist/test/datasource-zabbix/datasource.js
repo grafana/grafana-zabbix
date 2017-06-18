@@ -201,21 +201,19 @@ var ZabbixAPIDatasource = function () {
         var getHistoryPromise = void 0;
 
         if (useTrends) {
-          (function () {
-            var valueType = _this2.getTrendValueType(target);
-            getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
-              return _responseHandler2.default.handleTrends(history, items, valueType);
-            }).then(function (timeseries) {
-              // Sort trend data, issue #202
-              _lodash2.default.forEach(timeseries, function (series) {
-                series.datapoints = _lodash2.default.sortBy(series.datapoints, function (point) {
-                  return point[c.DATAPOINT_TS];
-                });
+          var valueType = _this2.getTrendValueType(target);
+          getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
+            return _responseHandler2.default.handleTrends(history, items, valueType);
+          }).then(function (timeseries) {
+            // Sort trend data, issue #202
+            _lodash2.default.forEach(timeseries, function (series) {
+              series.datapoints = _lodash2.default.sortBy(series.datapoints, function (point) {
+                return point[c.DATAPOINT_TS];
               });
-
-              return timeseries;
             });
-          })();
+
+            return timeseries;
+          });
         } else {
           // Use history
           getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
@@ -262,20 +260,18 @@ var ZabbixAPIDatasource = function () {
 
       // Apply aggregations
       if (aggregationFunctions.length) {
-        (function () {
-          var dp = _lodash2.default.map(timeseries_data, 'datapoints');
-          dp = sequence(aggregationFunctions)(dp);
+        var dp = _lodash2.default.map(timeseries_data, 'datapoints');
+        dp = sequence(aggregationFunctions)(dp);
 
-          var aggFuncNames = _lodash2.default.map(metricFunctions.getCategories()['Aggregate'], 'name');
-          var lastAgg = _lodash2.default.findLast(target.functions, function (func) {
-            return _lodash2.default.includes(aggFuncNames, func.def.name);
-          });
+        var aggFuncNames = _lodash2.default.map(metricFunctions.getCategories()['Aggregate'], 'name');
+        var lastAgg = _lodash2.default.findLast(target.functions, function (func) {
+          return _lodash2.default.includes(aggFuncNames, func.def.name);
+        });
 
-          timeseries_data = [{
-            target: lastAgg.text,
-            datapoints: dp
-          }];
-        })();
+        timeseries_data = [{
+          target: lastAgg.text,
+          datapoints: dp
+        }];
       }
 
       // Apply alias functions
@@ -295,12 +291,10 @@ var ZabbixAPIDatasource = function () {
         return func.def.name === 'timeShift';
       });
       if (timeShiftFunc) {
-        (function () {
-          var shift = timeShiftFunc.params[0];
-          _lodash2.default.forEach(timeseries_data, function (series) {
-            series.datapoints = _dataProcessor2.default.unShiftTimeSeries(shift, series.datapoints);
-          });
-        })();
+        var shift = timeShiftFunc.params[0];
+        _lodash2.default.forEach(timeseries_data, function (series) {
+          series.datapoints = _dataProcessor2.default.unShiftTimeSeries(shift, series.datapoints);
+        });
       }
     }
   }, {
