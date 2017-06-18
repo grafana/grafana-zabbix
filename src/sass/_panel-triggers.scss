@@ -1,10 +1,3 @@
-$tight-form-func-bg:        #333;
-$blue:                   #33B5E5;
-$dark-2:                 #1f1d1d;
-$body-bg:          rgb(20,20,20);
-
-$grafanaListAccent:         lighten($dark-2, 2%);
-
 .triggers-panel-wrapper {
   .panel-content {
     padding: 0;
@@ -80,6 +73,36 @@ $grafanaListAccent:         lighten($dark-2, 2%);
       border-right: none;
     }
   }
+
+  .zbx-field-colored {
+    color: $gray-6;
+  }
+
+  .zbx-description-icon {
+    float: right;
+    padding-right: 8px;
+    color: $gray-6;
+  }
+
+  // .zbx-field-info {
+  //   width: 7%;
+  // }
+
+  // .zbx-field-host {
+  //   width: 15%;
+  // }
+
+  // .zbx-field-status {
+  //   width: 9rem;
+  // }
+
+  // .zbx-field-severity {
+  //   width: 7%;
+  // }
+
+  // .zbx-field-lastchange {
+  //   width: 15%;
+  // }
 }
 
 .triggers-panel-header-bg {

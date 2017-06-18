@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'app/plugins/sdk', './editor', './ack-tooltip.directive', './css/panel_triggers.css!'], function (_export, _context) {
+System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource-zabbix/utils', './editor', './ack-tooltip.directive'], function (_export, _context) {
   "use strict";
 
-  var _, $, moment, utils, PanelCtrl, triggerPanelEditor, _createClass, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
+  var _, $, moment, loadPluginCss, utils, PanelCtrl, triggerPanelEditor, _createClass, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -54,13 +54,14 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
       $ = _jquery.default;
     }, function (_moment) {
       moment = _moment.default;
+    }, function (_appPluginsSdk) {
+      loadPluginCss = _appPluginsSdk.loadPluginCss;
+      PanelCtrl = _appPluginsSdk.PanelCtrl;
     }, function (_datasourceZabbixUtils) {
       utils = _datasourceZabbixUtils;
-    }, function (_appPluginsSdk) {
-      PanelCtrl = _appPluginsSdk.PanelCtrl;
     }, function (_editor) {
       triggerPanelEditor = _editor.triggerPanelEditor;
-    }, function (_ackTooltipDirective) {}, function (_cssPanel_triggersCss) {}],
+    }, function (_ackTooltipDirective) {}],
     execute: function () {
       _createClass = function () {
         function defineProperties(target, props) {
@@ -79,6 +80,24 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           return Constructor;
         };
       }();
+
+      /**
+       * Grafana-Zabbix
+       * Zabbix plugin for Grafana.
+       * http://github.com/alexanderzobnin/grafana-zabbix
+       *
+       * Trigger panel.
+       * This feature sponsored by CORE IT
+       * http://www.coreit.fr
+       *
+       * Copyright 2015 Alexander Zobnin alexanderzobnin@gmail.com
+       * Licensed under the Apache License, Version 2.0
+       */
+
+      loadPluginCss({
+        dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
+        light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
+      });
 
       defaultSeverity = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true }, { priority: 3, severity: 'Average', color: '#C15C17', show: true }, { priority: 4, severity: 'High', color: '#BF1B00', show: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true }];
       panelDefaults = {

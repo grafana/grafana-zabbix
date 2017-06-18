@@ -3,11 +3,6 @@
   "name": "Zabbix",
   "id": "alexanderzobnin-zabbix-app",
 
-  "css": {
-    "dark":  "css/dark.css",
-    "light":  "css/light.css"
-  },
-
   "info": {
     "description": "Zabbix plugin for Grafana",
     "author": {

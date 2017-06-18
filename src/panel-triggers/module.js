@@ -14,11 +14,16 @@
 import _ from 'lodash';
 import $ from 'jquery';
 import moment from 'moment';
+import {loadPluginCss} from 'app/plugins/sdk';
 import * as utils from '../datasource-zabbix/utils';
 import {PanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelEditor} from './editor';
 import './ack-tooltip.directive';
-import './css/panel_triggers.css!';
+
+loadPluginCss({
+  dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
+  light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
+});
 
 var defaultSeverity = [
   { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },

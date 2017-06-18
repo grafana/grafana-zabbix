@@ -95,7 +95,8 @@ module.exports = function(grunt) {
       },
       dist: {
         files: {
-          'dist/panel-triggers/css/panel_triggers.css' : 'src/panel-triggers/sass/panel_triggers.scss',
+          'dist/css/grafana-zabbix.light.css': 'src/sass/grafana-zabbix.light.scss',
+          'dist/css/grafana-zabbix.dark.css': 'src/sass/grafana-zabbix.dark.scss'
         }
       }
     },
@@ -127,20 +128,20 @@ module.exports = function(grunt) {
 
   grunt.registerTask('default', [
     'clean',
+    'sass',
     'copy:src_to_dist',
     'copy:pluginDef',
     'jshint',
     'jscs',
-    'sass',
     'babel',
     'mochaTest'
   ]);
 
   grunt.registerTask('watchTask', [
     'clean',
+    'sass',
     'copy:src_to_dist',
     'copy:pluginDef',
-    'sass',
     'babel',
     'jshint',
     'jscs'
