@@ -52,7 +52,8 @@
     color: #f4f5f8; }
   .triggers-panel-table .zbx-description-icon {
     float: right;
-    padding-right: 8px; }
+    padding-right: 8px;
+    color: #f4f5f8; }
 
 .triggers-panel-header-bg {
   background: #ECECEC;
