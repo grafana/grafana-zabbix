@@ -43,7 +43,8 @@
       "type": "dashboard",
       "name": "Zabbix Server Dashboard",
       "path": "dashboards/zabbix_server_dashboard.json",
-      "addToNav": true
+      "addToNav": true,
+      "defaultNav": true
     },
     {
       "type": "dashboard",
