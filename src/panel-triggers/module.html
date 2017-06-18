@@ -49,26 +49,29 @@
             </div>
           </td>
 
-          <td ng-if="ctrl.panel.statusField" style="background-color: {{trigger.color}}; color: white">
+          <td ng-if="ctrl.panel.statusField"
+            class="zbx-field-colored"
+            style="background-color: {{trigger.color}};">
             <div>
               {{ctrl.triggerStatusMap[trigger.value]}}
             </div>
           </td>
 
-          <td ng-if="ctrl.panel.severityField" style="background-color: {{trigger.color}}; color: white">
+          <td ng-if="ctrl.panel.severityField"
+            class="zbx-field-colored"
+            style="background-color: {{trigger.color}};">
             <div>
               {{trigger.severity}}
             </div>
           </td>
 
-          <td style="background-color: {{trigger.color}}; color: white">
+          <td class="zbx-field-colored" style="background-color: {{trigger.color}};">
             <div>
               {{trigger.description}}
               <a  ng-if="trigger.comments"
                   role="button"
                   ng-click="ctrl.switchComment(trigger)"
-                  class="pointer"
-                  style="float: right; padding-right: 8px"
+                  class="pointer zbx-description-icon"
                   bs-tooltip="'Show additional trigger description'"
                   data-placement="top">
                 <i class="fa fa-file-text-o"></i>

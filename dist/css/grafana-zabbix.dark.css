@@ -48,6 +48,11 @@
       padding-left: 15px; }
     .triggers-panel-table td:last-child {
       border-right: none; }
+  .triggers-panel-table .zbx-field-colored {
+    color: #f4f5f8; }
+  .triggers-panel-table .zbx-description-icon {
+    float: right;
+    padding-right: 8px; }
 
 .triggers-panel-header-bg {
   background: #242222;
