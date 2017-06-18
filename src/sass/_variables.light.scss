@@ -1,6 +1,33 @@
-$tight-form-func-bg:        #333;
-$blue:                   #33B5E5;
-$dark-2:                 #1f1d1d;
-$body-bg:          rgb(20,20,20);
+// Grays
+// -------------------------
+$black:            #000;
+$dark-1:           #141414;
+$dark-2:           #1f1d1d;
+$dark-3:           #292929;
+$dark-4:           #373737;
+$dark-5:           #444444;
+$gray-1:           #555555;
+$gray-2:           #7B7B7B;
+$gray-3:           #b3b3b3;
+$gray-4:           #D8D9DA;
+$gray-5:           #ECECEC;
+$gray-6:           #f4f5f8;
+$gray-7:           #fbfbfb;
 
-$grafanaListAccent:         lighten($dark-2, 2%);
+$white:            #fff;
+
+// Accent colors
+// -------------------------
+$blue:                  #2AB2E4;
+$blue-dark:             #3CAAD6;
+$green:                 #28B62C;
+$red:                   #FF4136;
+$yellow:                #FF851B;
+$orange:                #Ff7941;
+$pink:                  #E671B8;
+$purple:                #9954BB;
+$variable:              #2AB2E4;
+
+$body-bg :              $white;
+$tight-form-func-bg:    $gray-5;
+$grafanaListAccent:     $gray-5;
