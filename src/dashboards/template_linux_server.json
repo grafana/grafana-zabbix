@@ -24,7 +24,7 @@
             "CPU user time": "#EAB839"
           },
           "bars": false,
-          "datasource": null,
+          "datasource": "$datasource",
           "editable": true,
           "error": false,
           "fill": 3,
@@ -109,7 +109,7 @@
             "Processor load (1 min average per core)": "#1F78C1"
           },
           "bars": false,
-          "datasource": null,
+          "datasource": "$datasource",
           "editable": true,
           "error": false,
           "fill": 1,
@@ -201,7 +201,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": null,
+          "datasource": "$datasource",
           "editable": true,
           "error": false,
           "fill": 3,
@@ -300,7 +300,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": null,
+          "datasource": "$datasource",
           "editable": true,
           "error": false,
           "fill": 3,
@@ -435,55 +435,27 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "hide": 0,
+        "label": "Zabbix Data Source",
+        "name": "datasource",
+        "options": [],
+        "query": "alexanderzobnin-zabbix-datasource",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
         "allFormat": "regex values",
-        "current": {
-          "text": "Frontend",
-          "value": "Frontend"
-        },
-        "datasource": null,
+        "current": {},
+        "datasource": "$datasource",
         "hide": 0,
         "includeAll": false,
         "label": "Group",
         "multi": false,
         "multiFormat": "glob",
         "name": "group",
-        "options": [
-          {
-            "text": "Backend",
-            "value": "Backend",
-            "selected": false
-          },
-          {
-            "text": "Database servers",
-            "value": "Database servers",
-            "selected": false
-          },
-          {
-            "text": "Frontend",
-            "value": "Frontend",
-            "selected": true
-          },
-          {
-            "text": "Linux servers",
-            "value": "Linux servers",
-            "selected": false
-          },
-          {
-            "text": "Network",
-            "value": "Network",
-            "selected": false
-          },
-          {
-            "text": "Workstations",
-            "value": "Workstations",
-            "selected": false
-          },
-          {
-            "text": "Zabbix servers",
-            "value": "Zabbix servers",
-            "selected": false
-          }
-        ],
+        "options": [],
         "query": "*",
         "refresh": 1,
         "refresh_on_load": false,
@@ -492,29 +464,15 @@
       },
       {
         "allFormat": "glob",
-        "current": {
-          "text": "frontend01",
-          "value": "frontend01"
-        },
-        "datasource": null,
+        "current": {},
+        "datasource": "$datasource",
         "hide": 0,
         "includeAll": false,
         "label": "Host",
         "multi": false,
         "multiFormat": "glob",
         "name": "host",
-        "options": [
-          {
-            "text": "frontend01",
-            "value": "frontend01",
-            "selected": true
-          },
-          {
-            "text": "frontend02",
-            "value": "frontend02",
-            "selected": false
-          }
-        ],
+        "options": [],
         "query": "$group.*",
         "refresh": 1,
         "refresh_on_load": false,
@@ -523,11 +481,8 @@
       },
       {
         "allFormat": "regex values",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": null,
+        "current": {},
+        "datasource": "$datasource",
         "hide": 0,
         "hideLabel": false,
         "includeAll": true,
@@ -535,23 +490,7 @@
         "multi": true,
         "multiFormat": "regex values",
         "name": "netif",
-        "options": [
-          {
-            "text": "All",
-            "value": "$__all",
-            "selected": true
-          },
-          {
-            "text": "eth0",
-            "value": "eth0",
-            "selected": false
-          },
-          {
-            "text": "eth1",
-            "value": "eth1",
-            "selected": false
-          }
-        ],
+        "options": [],
         "query": "*.$host.Network interfaces.*",
         "refresh": 1,
         "refresh_on_load": false,
@@ -564,6 +503,6 @@
     "list": []
   },
   "schemaVersion": 12,
-  "version": 8,
+  "version": 9,
   "links": []
 }

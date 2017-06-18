@@ -26,7 +26,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": null,
+          "datasource": "$datasource",
           "editable": true,
           "error": false,
           "format": "none",
@@ -89,7 +89,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": null,
+          "datasource": "$datasource",
           "decimals": 0,
           "editable": true,
           "error": false,
@@ -153,7 +153,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": null,
+          "datasource": "$datasource",
           "editable": true,
           "error": false,
           "format": "none",
@@ -218,7 +218,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": null,
+          "datasource": "$datasource",
           "editable": true,
           "error": false,
           "fill": 1,
@@ -327,6 +327,7 @@
               "value": "avg"
             }
           ],
+          "datasource": "$datasource",
           "editable": true,
           "error": false,
           "fontSize": "100%",
@@ -423,7 +424,7 @@
               "functions": []
             }
           ],
-          "datasource": null,
+          "datasource": "$datasource",
           "renderer": "flot",
           "yaxes": [
             {
@@ -530,7 +531,7 @@
               "functions": []
             }
           ],
-          "datasource": null,
+          "datasource": "$datasource",
           "renderer": "flot",
           "yaxes": [
             {
@@ -592,6 +593,21 @@
       ]
     }
   ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "label": "Zabbix Data Source",
+        "name": "datasource",
+        "options": [],
+        "query": "alexanderzobnin-zabbix-datasource",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      }
+    ]
+  },
   "time": {
     "from": "now-6h",
     "to": "now"
@@ -621,13 +637,10 @@
       "30d"
     ]
   },
-  "templating": {
-    "list": []
-  },
   "annotations": {
     "list": []
   },
   "schemaVersion": 12,
-  "version": 6,
+  "version": 7,
   "links": []
 }
