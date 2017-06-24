@@ -13,7 +13,7 @@ Visualize your Zabbix metrics with the leading open source software for time ser
 
 - Select multiple metrics [by using Regex](http://docs.grafana-zabbix.org/guides/gettingstarted/#multiple-items-on-one-graph)
 - Create interactive and reusable dashboards with [template variables](http://docs.grafana-zabbix.org/guides/templating/)
-- Show events on graphs wiht [Annotations](http://docs.grafana.org/reference/annotations/)
+- Show events on graphs with [Annotations](http://docs.grafana.org/reference/annotations/)
 - Display active problems with Triggers panel
 - Transform and shape your data with [metric processing functions](http://docs.grafana-zabbix.org/reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
 - Find problems faster with [Alerting](http://docs.grafana-zabbix.org/reference/alerting/) feature
