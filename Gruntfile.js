@@ -4,10 +4,21 @@ module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-execute');
   grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-benchmark');
 
   grunt.initConfig({
 
-    clean: ["dist"],
+    clean: {
+      dist: {
+        src: ["dist"]
+      },
+      test: {
+        src: ["dist/test"]
+      },
+      tmp: {
+        src: ["tmp"]
+      }
+    },
 
     copy: {
       src_to_dist: {
@@ -40,7 +51,7 @@ module.exports = function(grunt) {
 
     babel: {
       options: {
-        presets:  ["es2015"]
+        presets: ["es2015"]
       },
       dist: {
         options: {
@@ -74,7 +85,15 @@ module.exports = function(grunt) {
           src: ['**/*.js'],
           dest: 'dist/test/specs'
         }]
-      }
+      },
+      distBenchmarks: {
+        files: [{
+          cwd: 'src/datasource-zabbix/benchmarks',
+          expand: true,
+          src: ['**/*.js'],
+          dest: 'dist/test/benchmarks'
+        }]
+      },
     },
 
     mochaTest: {
@@ -122,12 +141,22 @@ module.exports = function(grunt) {
       options: {
         config: ".jscs.json",
       },
+    },
+
+    benchmark: {
+      options: {
+        displayResults: true
+      },
+      timeseriesBench: {
+        src: ['dist/test/datasource-zabbix/benchmarks/*.js'],
+        dest: 'tmp/benchmark.csv'
+      }
     }
 
   });
 
   grunt.registerTask('default', [
-    'clean',
+    'clean:dist',
     'sass',
     'copy:src_to_dist',
     'copy:pluginDef',
@@ -138,12 +167,20 @@ module.exports = function(grunt) {
   ]);
 
   grunt.registerTask('watchTask', [
-    'clean',
+    'clean:dist',
     'sass',
     'copy:src_to_dist',
     'copy:pluginDef',
     'babel',
     'jshint',
     'jscs'
+  ]);
+
+  grunt.registerTask('bench', [
+    'clean:test',
+    'clean:tmp',
+    'babel:distTestNoSystemJs',
+    'babel:distTestsSpecsNoSystemJs',
+    'benchmark'
   ]);
 };
