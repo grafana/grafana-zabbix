@@ -23,8 +23,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var downsampleSeries = _timeseries2.default.downsample;
 var groupBy = _timeseries2.default.groupBy;
 var sumSeries = _timeseries2.default.sumSeries;
-var scale = _timeseries2.default.scale;
 var delta = _timeseries2.default.delta;
+var scale = function scale(factor, datapoints) {
+  return _timeseries2.default.scale(datapoints, factor);
+};
 
 var SUM = _timeseries2.default.SUM;
 var COUNT = _timeseries2.default.COUNT;
@@ -81,19 +83,19 @@ function extractText(str, pattern) {
 
 function groupByWrapper(interval, groupFunc, datapoints) {
   var groupByCallback = aggregationFunctions[groupFunc];
-  return groupBy(interval, groupByCallback, datapoints);
+  return groupBy(datapoints, interval, groupByCallback);
 }
 
 function aggregateByWrapper(interval, aggregateFunc, datapoints) {
   // Flatten all points in frame and then just use groupBy()
   var flattenedPoints = _lodash2.default.flatten(datapoints, true);
   var groupByCallback = aggregationFunctions[aggregateFunc];
-  return groupBy(interval, groupByCallback, flattenedPoints);
+  return groupBy(flattenedPoints, interval, groupByCallback);
 }
 
 function aggregateWrapper(groupByCallback, interval, datapoints) {
   var flattenedPoints = _lodash2.default.flatten(datapoints, true);
-  return groupBy(interval, groupByCallback, flattenedPoints);
+  return groupBy(flattenedPoints, interval, groupByCallback);
 }
 
 function timeShift(interval, range) {

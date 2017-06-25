@@ -2,6 +2,10 @@
  * timeseries.js
  *
  * This module contains functions for working with time series.
+ *
+ * datapoints - array of points where point is [value, timestamp]. In almost all cases (if other wasn't
+ * explicitly said) we assume datapoints are sorted by timestamp.
+ *
  */
 
 import _ from 'lodash';
@@ -62,7 +66,7 @@ function downsample(datapoints, time_to, ms_interval, func) {
  * Group points by given time interval
  * datapoints: [[<value>, <unixtime>], ...]
  */
-function groupBy(interval, groupByCallback, datapoints) {
+function groupBy(datapoints, interval, groupByCallback) {
   var ms_interval = utils.parseInterval(interval);
 
   // Calculate frame timestamps
@@ -88,7 +92,7 @@ function groupBy(interval, groupByCallback, datapoints) {
 
 /**
  * Summarize set of time series into one.
- * @param {object[]} timeseries
+ * @param {datapoints[]} timeseries array of time series
  */
 function sumSeries(timeseries) {
 
@@ -124,7 +128,7 @@ function sumSeries(timeseries) {
   return sortByTime(new_timeseries);
 }
 
-function scale(factor, datapoints) {
+function scale(datapoints, factor) {
   return _.map(datapoints, point => {
     return [
       point[0] * factor,

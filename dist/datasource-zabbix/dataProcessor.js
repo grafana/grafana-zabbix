@@ -3,7 +3,7 @@
 System.register(['lodash', './utils', './timeseries'], function (_export, _context) {
   "use strict";
 
-  var _, utils, ts, downsampleSeries, groupBy, sumSeries, scale, delta, SUM, COUNT, AVERAGE, MIN, MAX, MEDIAN, metricFunctions, aggregationFunctions;
+  var _, utils, ts, downsampleSeries, groupBy, sumSeries, delta, scale, SUM, COUNT, AVERAGE, MIN, MAX, MEDIAN, metricFunctions, aggregationFunctions;
 
   function limit(order, n, orderByFunc, timeseries) {
     var orderByCallback = aggregationFunctions[orderByFunc];
@@ -53,19 +53,19 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
 
   function groupByWrapper(interval, groupFunc, datapoints) {
     var groupByCallback = aggregationFunctions[groupFunc];
-    return groupBy(interval, groupByCallback, datapoints);
+    return groupBy(datapoints, interval, groupByCallback);
   }
 
   function aggregateByWrapper(interval, aggregateFunc, datapoints) {
     // Flatten all points in frame and then just use groupBy()
     var flattenedPoints = _.flatten(datapoints, true);
     var groupByCallback = aggregationFunctions[aggregateFunc];
-    return groupBy(interval, groupByCallback, flattenedPoints);
+    return groupBy(flattenedPoints, interval, groupByCallback);
   }
 
   function aggregateWrapper(groupByCallback, interval, datapoints) {
     var flattenedPoints = _.flatten(datapoints, true);
-    return groupBy(interval, groupByCallback, flattenedPoints);
+    return groupBy(flattenedPoints, interval, groupByCallback);
   }
 
   function timeShift(interval, range) {
@@ -94,8 +94,12 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
       downsampleSeries = ts.downsample;
       groupBy = ts.groupBy;
       sumSeries = ts.sumSeries;
-      scale = ts.scale;
       delta = ts.delta;
+
+      scale = function scale(factor, datapoints) {
+        return ts.scale(datapoints, factor);
+      };
+
       SUM = ts.SUM;
       COUNT = ts.COUNT;
       AVERAGE = ts.AVERAGE;
