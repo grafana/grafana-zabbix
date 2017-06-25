@@ -1,4 +1,7 @@
+# Alerting
+
 Since version 4.0 [Grafana](https://grafana.com/) has own alerting engine.
+
 > Alerting in Grafana allows you to attach rules to your dashboard panels. When you save the dashboard Grafana will extract the alert rules into a separate alert rule storage and schedule them for evaluation.
 
 > In the alert tab of the graph panel you can configure how often the alert rule should be evaluated and the conditions that need to be met for the alert to change state and trigger its notifications.
@@ -9,11 +12,11 @@ On the other hand, Zabbix has its own alerting system with triggers, events and 
 combine benefits of these systems into Zabbix plugin for Grafana. So how it works you'll ask? Grafana alerting feature 
 consists of two main parts:
 
-  - **Alerting execution engine**  
+- **Alerting execution engine**  
     The alert rules are evaluated in the Grafana backend in a scheduler and query execution engine that is part of core 
     Grafana. Only some data soures are supported right now. They include Graphite, Prometheus, InfluxDB and OpenTSDB.
-  - **Alerting visualisations**  
-    Alerts highlight panels with problems and you can easy to find it on dashboard.
+- **Alerting visualisations**  
+    Alerts highlight panels with problems and it can easily be found on the dashboard.
 
 So Zabbix plugin doesn't use execution engine and doesn't allow to configure rules in Grafana. But it fetches information
 about triggers related to metrics at particular panel and fires alert state for these panels.
@@ -27,8 +30,8 @@ So there are three possible cases for each panel:
       In this case panel will be highlighted with the red glow and broken heart icon.
     - All triggers are in the OK state.  
       Panel will be displayed with green heart icon without highlighting.
-  2. There aren't triggers related to items on panel.  
-    Panel will be displayed without any changes.
+  1. There aren't triggers related to items on panel.  
+     Panel will be displayed without any changes.
 
 Note, that only triggers with severity above than configured at Data Source config page will be used for panel state
 calculation.
