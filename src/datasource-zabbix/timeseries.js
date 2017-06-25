@@ -11,6 +11,9 @@
 import _ from 'lodash';
 import * as utils from './utils';
 
+const POINT_VALUE = 0;
+const POINT_TIMESTAMP = 1;
+
 /**
  * Downsample time series by using given function (avg, min, max).
  */
@@ -88,6 +91,34 @@ function groupBy(datapoints, interval, groupByCallback) {
   return sortByTime(_.map(grouped, function (value, timestamp) {
     return [Number(value), Number(timestamp)];
   }));
+}
+
+function groupBy_perf(datapoints, interval, groupByCallback) {
+  let ms_interval = utils.parseInterval(interval);
+  let grouped_series = [];
+  let frame_values = [];
+  let frame_value;
+  let frame_ts = datapoints.length ? getPointTimeFrame(datapoints[0][POINT_TIMESTAMP], ms_interval) : 0;
+  let point_frame_ts = frame_ts;
+  let point;
+
+  for (let i=0; i < datapoints.length; i++) {
+    point = datapoints[i];
+    point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], ms_interval);
+    if (point_frame_ts === frame_ts) {
+      frame_values.push(point[POINT_VALUE]);
+    } else {
+      frame_value = groupByCallback(frame_values);
+      grouped_series.push([frame_value, frame_ts]);
+      frame_ts = point_frame_ts;
+      frame_values = [point[POINT_VALUE]];
+    }
+  }
+
+  frame_value = groupByCallback(frame_values);
+  grouped_series.push([frame_value, frame_ts]);
+
+  return grouped_series;
 }
 
 /**
@@ -184,6 +215,18 @@ function MEDIAN(values) {
 // Utility functions //
 ///////////////////////
 
+/**
+ * For given point calculate corresponding time frame.
+ *
+ * |__*_|_*__|___*| -> |*___|*___|*___|
+ *
+ * @param {*} timestamp
+ * @param {*} ms_interval
+ */
+function getPointTimeFrame(timestamp, ms_interval) {
+  return Math.floor(timestamp / ms_interval) * ms_interval;
+}
+
 function sortByTime(series) {
   return _.sortBy(series, function (point) {
     return point[1];
@@ -250,6 +293,7 @@ function findNearestLeft(series, point) {
 const exportedFunctions = {
   downsample,
   groupBy,
+  groupBy_perf,
   sumSeries,
   scale,
   delta,

@@ -21,7 +21,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var downsampleSeries = _timeseries2.default.downsample;
-var groupBy = _timeseries2.default.groupBy;
+var groupBy = _timeseries2.default.groupBy_perf;
 var sumSeries = _timeseries2.default.sumSeries;
 var delta = _timeseries2.default.delta;
 var scale = function scale(factor, datapoints) {

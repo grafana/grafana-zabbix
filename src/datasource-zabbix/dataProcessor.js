@@ -3,7 +3,7 @@ import * as utils from './utils';
 import ts from './timeseries';
 
 let downsampleSeries = ts.downsample;
-let groupBy = ts.groupBy;
+let groupBy = ts.groupBy_perf;
 let sumSeries = ts.sumSeries;
 let delta = ts.delta;
 let scale = (factor, datapoints) => ts.scale(datapoints, factor);

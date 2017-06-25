@@ -92,7 +92,7 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
     }],
     execute: function () {
       downsampleSeries = ts.downsample;
-      groupBy = ts.groupBy;
+      groupBy = ts.groupBy_perf;
       sumSeries = ts.sumSeries;
       delta = ts.delta;
 

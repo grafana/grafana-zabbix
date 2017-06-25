@@ -17,9 +17,6 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
- * Downsample time series by using given function (avg, min, max).
- */
-/**
  * timeseries.js
  *
  * This module contains functions for working with time series.
@@ -29,6 +26,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  *
  */
 
+var POINT_VALUE = 0;
+var POINT_TIMESTAMP = 1;
+
+/**
+ * Downsample time series by using given function (avg, min, max).
+ */
 function downsample(datapoints, time_to, ms_interval, func) {
   var downsampledSeries = [];
   var timeWindow = {
@@ -101,6 +104,34 @@ function groupBy(datapoints, interval, groupByCallback) {
   return sortByTime(_lodash2.default.map(grouped, function (value, timestamp) {
     return [Number(value), Number(timestamp)];
   }));
+}
+
+function groupBy_perf(datapoints, interval, groupByCallback) {
+  var ms_interval = utils.parseInterval(interval);
+  var grouped_series = [];
+  var frame_values = [];
+  var frame_value = void 0;
+  var frame_ts = datapoints.length ? getPointTimeFrame(datapoints[0][POINT_TIMESTAMP], ms_interval) : 0;
+  var point_frame_ts = frame_ts;
+  var point = void 0;
+
+  for (var i = 0; i < datapoints.length; i++) {
+    point = datapoints[i];
+    point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], ms_interval);
+    if (point_frame_ts === frame_ts) {
+      frame_values.push(point[POINT_VALUE]);
+    } else {
+      frame_value = groupByCallback(frame_values);
+      grouped_series.push([frame_value, frame_ts]);
+      frame_ts = point_frame_ts;
+      frame_values = [point[POINT_VALUE]];
+    }
+  }
+
+  frame_value = groupByCallback(frame_values);
+  grouped_series.push([frame_value, frame_ts]);
+
+  return grouped_series;
 }
 
 /**
@@ -194,6 +225,18 @@ function MEDIAN(values) {
 // Utility functions //
 ///////////////////////
 
+/**
+ * For given point calculate corresponding time frame.
+ *
+ * |__*_|_*__|___*| -> |*___|*___|*___|
+ *
+ * @param {*} timestamp
+ * @param {*} ms_interval
+ */
+function getPointTimeFrame(timestamp, ms_interval) {
+  return Math.floor(timestamp / ms_interval) * ms_interval;
+}
+
 function sortByTime(series) {
   return _lodash2.default.sortBy(series, function (point) {
     return point[1];
@@ -260,6 +303,7 @@ function findNearestLeft(series, point) {
 var exportedFunctions = {
   downsample: downsample,
   groupBy: groupBy,
+  groupBy_perf: groupBy_perf,
   sumSeries: sumSeries,
   scale: scale,
   delta: delta,

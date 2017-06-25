@@ -37,4 +37,14 @@ module.exports = [{
       _timeseries2.default.sumSeries(prepeared_series);
     }
   }
+}, {
+  name: 'groupBy vs groupBy_perf',
+  tests: {
+    'groupBy()': function groupBy() {
+      _timeseries2.default.groupBy(datapoints, '5m', _timeseries2.default.AVERAGE);
+    },
+    'groupBy_perf()': function groupBy_perf() {
+      _timeseries2.default.groupBy_perf(datapoints, '5m', _timeseries2.default.AVERAGE);
+    }
+  }
 }];

@@ -31,5 +31,16 @@ module.exports = [
         ts.sumSeries(prepeared_series);
       }
     }
+  },
+  {
+    name: 'groupBy vs groupBy_perf',
+    tests: {
+      'groupBy()': () => {
+        ts.groupBy(datapoints, '5m', ts.AVERAGE);
+      },
+      'groupBy_perf()': () => {
+        ts.groupBy_perf(datapoints, '5m', ts.AVERAGE);
+      }
+    }
   }
 ];

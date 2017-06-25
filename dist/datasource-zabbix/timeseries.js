@@ -3,21 +3,11 @@
 System.register(['lodash', './utils'], function (_export, _context) {
   "use strict";
 
-  var _, utils, exportedFunctions;
+  var _, utils, POINT_VALUE, POINT_TIMESTAMP, exportedFunctions;
 
   /**
    * Downsample time series by using given function (avg, min, max).
    */
-  /**
-   * timeseries.js
-   *
-   * This module contains functions for working with time series.
-   *
-   * datapoints - array of points where point is [value, timestamp]. In almost all cases (if other wasn't
-   * explicitly said) we assume datapoints are sorted by timestamp.
-   *
-   */
-
   function downsample(datapoints, time_to, ms_interval, func) {
     var downsampledSeries = [];
     var timeWindow = {
@@ -92,6 +82,34 @@ System.register(['lodash', './utils'], function (_export, _context) {
     }));
   }
 
+  function groupBy_perf(datapoints, interval, groupByCallback) {
+    var ms_interval = utils.parseInterval(interval);
+    var grouped_series = [];
+    var frame_values = [];
+    var frame_value = void 0;
+    var frame_ts = datapoints.length ? getPointTimeFrame(datapoints[0][POINT_TIMESTAMP], ms_interval) : 0;
+    var point_frame_ts = frame_ts;
+    var point = void 0;
+
+    for (var i = 0; i < datapoints.length; i++) {
+      point = datapoints[i];
+      point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], ms_interval);
+      if (point_frame_ts === frame_ts) {
+        frame_values.push(point[POINT_VALUE]);
+      } else {
+        frame_value = groupByCallback(frame_values);
+        grouped_series.push([frame_value, frame_ts]);
+        frame_ts = point_frame_ts;
+        frame_values = [point[POINT_VALUE]];
+      }
+    }
+
+    frame_value = groupByCallback(frame_values);
+    grouped_series.push([frame_value, frame_ts]);
+
+    return grouped_series;
+  }
+
   /**
    * Summarize set of time series into one.
    * @param {datapoints[]} timeseries array of time series
@@ -128,11 +146,15 @@ System.register(['lodash', './utils'], function (_export, _context) {
     }
 
     return sortByTime(new_timeseries);
-  }function scale(datapoints, factor) {
+  }
+
+  function scale(datapoints, factor) {
     return _.map(datapoints, function (point) {
       return [point[0] * factor, point[1]];
     });
-  }function delta(datapoints) {
+  }
+
+  function delta(datapoints) {
     var newSeries = [];
     var deltaValue = void 0;
     for (var i = 1; i < datapoints.length; i++) {
@@ -140,25 +162,37 @@ System.register(['lodash', './utils'], function (_export, _context) {
       newSeries.push([deltaValue, datapoints[i][1]]);
     }
     return newSeries;
-  }function SUM(values) {
+  }
+
+  function SUM(values) {
     var sum = 0;
     _.each(values, function (value) {
       sum += value;
     });
     return sum;
-  }function COUNT(values) {
+  }
+
+  function COUNT(values) {
     return values.length;
-  }function AVERAGE(values) {
+  }
+
+  function AVERAGE(values) {
     var sum = 0;
     _.each(values, function (value) {
       sum += value;
     });
     return sum / values.length;
-  }function MIN(values) {
+  }
+
+  function MIN(values) {
     return _.min(values);
-  }function MAX(values) {
+  }
+
+  function MAX(values) {
     return _.max(values);
-  }function MEDIAN(values) {
+  }
+
+  function MEDIAN(values) {
     var sorted = _.sortBy(values);
     return sorted[Math.floor(sorted.length / 2)];
   }
@@ -166,6 +200,18 @@ System.register(['lodash', './utils'], function (_export, _context) {
   ///////////////////////
   // Utility functions //
   ///////////////////////
+
+  /**
+   * For given point calculate corresponding time frame.
+   *
+   * |__*_|_*__|___*| -> |*___|*___|*___|
+   *
+   * @param {*} timestamp
+   * @param {*} ms_interval
+   */
+  function getPointTimeFrame(timestamp, ms_interval) {
+    return Math.floor(timestamp / ms_interval) * ms_interval;
+  }
 
   function sortByTime(series) {
     return _.sortBy(series, function (point) {
@@ -194,13 +240,17 @@ System.register(['lodash', './utils'], function (_export, _context) {
       }
     }
     return series;
-  }function linearInterpolation(timestamp, left, right) {
+  }
+
+  function linearInterpolation(timestamp, left, right) {
     if (left[1] === right[1]) {
       return (left[0] + right[0]) / 2;
     } else {
       return left[0] + (right[0] - left[0]) / (right[1] - left[1]) * (timestamp - left[1]);
     }
-  }function findNearestRight(series, point) {
+  }
+
+  function findNearestRight(series, point) {
     var point_index = _.indexOf(series, point);
     var nearestRight;
     for (var i = point_index; i < series.length; i++) {
@@ -209,7 +259,9 @@ System.register(['lodash', './utils'], function (_export, _context) {
       }
     }
     return nearestRight;
-  }function findNearestLeft(series, point) {
+  }
+
+  function findNearestLeft(series, point) {
     var point_index = _.indexOf(series, point);
     var nearestLeft;
     for (var i = point_index; i > 0; i--) {
@@ -231,9 +283,12 @@ System.register(['lodash', './utils'], function (_export, _context) {
       utils = _utils;
     }],
     execute: function () {
+      POINT_VALUE = 0;
+      POINT_TIMESTAMP = 1;
       exportedFunctions = {
         downsample: downsample,
         groupBy: groupBy,
+        groupBy_perf: groupBy_perf,
         sumSeries: sumSeries,
         scale: scale,
         delta: delta,
