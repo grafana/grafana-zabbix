@@ -169,6 +169,17 @@ function scale(datapoints, factor) {
   });
 }
 
+function scale_perf(datapoints, factor) {
+  for (let i = 0; i < datapoints.length; i++) {
+    datapoints[i] = [
+      datapoints[i][POINT_VALUE] * factor,
+      datapoints[i][POINT_TIMESTAMP]
+    ];
+  }
+
+  return datapoints;
+}
+
 /**
  * Simple delta. Calculate value delta between points.
  * @param {*} datapoints
@@ -327,6 +338,7 @@ const exportedFunctions = {
   groupBy_perf,
   sumSeries,
   scale,
+  scale_perf,
   delta,
   rate,
   SUM,

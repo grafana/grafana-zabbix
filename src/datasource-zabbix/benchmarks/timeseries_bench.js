@@ -46,6 +46,17 @@ module.exports = [
     }
   },
   {
+    name: 'scale',
+    tests: {
+      'scale()': () => {
+        ts.scale(datapoints, 42);
+      },
+      'scale_perf()': () => {
+        ts.scale_perf(datapoints, 42);
+      }
+    }
+  },
+  {
     name: 'groupBy vs groupBy_perf',
     tests: {
       'groupBy()': () => {
