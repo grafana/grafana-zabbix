@@ -34,8 +34,15 @@ scale(0.01)
 ```
 delta()
 ```
-Convert absolute values to delta, for example, bits to bits/sec.
+Converts absolute values to delta. This function just calculate difference between values. For the per-second
+calculation use `rate()`.
 
+### rate
+```
+rate()
+```
+Calculates the per-second rate of increase of the time series. Resistant to counter reset. Suitable for converting of
+growing counters into the per-sercond rate.
 
 Aggregate
 ---------
