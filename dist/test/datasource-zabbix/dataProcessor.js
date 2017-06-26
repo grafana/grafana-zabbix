@@ -22,6 +22,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var downsampleSeries = _timeseries2.default.downsample;
 var groupBy = _timeseries2.default.groupBy_perf;
+var groupBy_exported = function groupBy_exported(interval, groupFunc, datapoints) {
+  return groupBy(datapoints, interval, groupFunc);
+};
 var sumSeries = _timeseries2.default.sumSeries;
 var delta = _timeseries2.default.delta;
 var scale = function scale(factor, datapoints) {
@@ -143,7 +146,7 @@ var aggregationFunctions = {
 
 exports.default = {
   downsampleSeries: downsampleSeries,
-  groupBy: groupBy,
+  groupBy: groupBy_exported,
   AVERAGE: AVERAGE,
   MIN: MIN,
   MAX: MAX,

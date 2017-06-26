@@ -4,6 +4,7 @@ import ts from './timeseries';
 
 let downsampleSeries = ts.downsample;
 let groupBy = ts.groupBy_perf;
+let groupBy_exported = (interval, groupFunc, datapoints) => groupBy(datapoints, interval, groupFunc);
 let sumSeries = ts.sumSeries;
 let delta = ts.delta;
 let scale = (factor, datapoints) => ts.scale(datapoints, factor);
@@ -126,7 +127,7 @@ let aggregationFunctions = {
 
 export default {
   downsampleSeries: downsampleSeries,
-  groupBy: groupBy,
+  groupBy: groupBy_exported,
   AVERAGE: AVERAGE,
   MIN: MIN,
   MAX: MAX,

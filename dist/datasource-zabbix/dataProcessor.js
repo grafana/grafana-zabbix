@@ -3,7 +3,7 @@
 System.register(['lodash', './utils', './timeseries'], function (_export, _context) {
   "use strict";
 
-  var _, utils, ts, downsampleSeries, groupBy, sumSeries, delta, scale, SUM, COUNT, AVERAGE, MIN, MAX, MEDIAN, metricFunctions, aggregationFunctions;
+  var _, utils, ts, downsampleSeries, groupBy, groupBy_exported, sumSeries, delta, scale, SUM, COUNT, AVERAGE, MIN, MAX, MEDIAN, metricFunctions, aggregationFunctions;
 
   function limit(order, n, orderByFunc, timeseries) {
     var orderByCallback = aggregationFunctions[orderByFunc];
@@ -93,6 +93,11 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
     execute: function () {
       downsampleSeries = ts.downsample;
       groupBy = ts.groupBy_perf;
+
+      groupBy_exported = function groupBy_exported(interval, groupFunc, datapoints) {
+        return groupBy(datapoints, interval, groupFunc);
+      };
+
       sumSeries = ts.sumSeries;
       delta = ts.delta;
 
@@ -136,7 +141,7 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
 
       _export('default', {
         downsampleSeries: downsampleSeries,
-        groupBy: groupBy,
+        groupBy: groupBy_exported,
         AVERAGE: AVERAGE,
         MIN: MIN,
         MAX: MAX,
