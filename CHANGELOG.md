@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [templating docs](http://docs.grafana-zabbix.org/guides/templating/#query-format), 
   [#254](https://github.com/alexanderzobnin/grafana-zabbix/issues/254)
 - Update included dashboards. Add templated zabbix datasource and use it for all metrics.
+- Improved performance of groupBy() functions (at 6-10x faster than old).
+
+### Added
+- rate() function, which calculates per-second rate for growing counters.
+- Benchmarks for time series functions. Used [Benchmark.js](https://github.com/bestiejs/benchmark.js) library.
+
 
 ## [3.4.0] - 2017-05-17
 ### Added
