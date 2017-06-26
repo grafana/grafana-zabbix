@@ -7,6 +7,7 @@ let groupBy = ts.groupBy_perf;
 let groupBy_exported = (interval, groupFunc, datapoints) => groupBy(datapoints, interval, groupFunc);
 let sumSeries = ts.sumSeries;
 let delta = ts.delta;
+let rate = ts.rate;
 let scale = (factor, datapoints) => ts.scale(datapoints, factor);
 
 let SUM = ts.SUM;
@@ -100,6 +101,7 @@ let metricFunctions = {
   groupBy: groupByWrapper,
   scale: scale,
   delta: delta,
+  rate: rate,
   aggregateBy: aggregateByWrapper,
   average: _.partial(aggregateWrapper, AVERAGE),
   min: _.partial(aggregateWrapper, MIN),

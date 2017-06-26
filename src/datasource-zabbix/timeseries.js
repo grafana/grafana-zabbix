@@ -4,7 +4,8 @@
  * This module contains functions for working with time series.
  *
  * datapoints - array of points where point is [value, timestamp]. In almost all cases (if other wasn't
- * explicitly said) we assume datapoints are sorted by timestamp.
+ * explicitly said) we assume datapoints are sorted by timestamp. Timestamp is the number of milliseconds
+ * since 1 January 1970 00:00:00 UTC.
  *
  */
 
@@ -168,12 +169,42 @@ function scale(datapoints, factor) {
   });
 }
 
+/**
+ * Simple delta. Calculate value delta between points.
+ * @param {*} datapoints
+ */
 function delta(datapoints) {
   let newSeries = [];
   let deltaValue;
   for (var i = 1; i < datapoints.length; i++) {
     deltaValue = datapoints[i][0] - datapoints[i - 1][0];
     newSeries.push([deltaValue, datapoints[i][1]]);
+  }
+  return newSeries;
+}
+
+/**
+ * Calculates rate per second. Resistant to counter reset.
+ * @param {*} datapoints
+ */
+function rate(datapoints) {
+  let newSeries = [];
+  let point, point_prev;
+  let valueDelta = 0;
+  let timeDelta = 0;
+  for (let i = 1; i < datapoints.length; i++) {
+    point = datapoints[i];
+    point_prev = datapoints[i - 1];
+
+    // Convert ms to seconds
+    timeDelta = (point[POINT_TIMESTAMP] - point_prev[POINT_TIMESTAMP]) / 1000;
+
+    // Handle counter reset - use previous value
+    if (point[POINT_VALUE] >= point_prev[POINT_VALUE]) {
+      valueDelta = (point[POINT_VALUE] - point_prev[POINT_VALUE]) / timeDelta;
+    }
+
+    newSeries.push([valueDelta, point[POINT_TIMESTAMP]]);
   }
   return newSeries;
 }
@@ -297,6 +328,7 @@ const exportedFunctions = {
   sumSeries,
   scale,
   delta,
+  rate,
   SUM,
   COUNT,
   AVERAGE,

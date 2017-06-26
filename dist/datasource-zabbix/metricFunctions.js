@@ -103,6 +103,13 @@ System.register(['lodash', 'jquery'], function (_export, _context) {
         defaultParams: []
       });
 
+      addFuncDef({
+        name: 'rate',
+        category: 'Transform',
+        params: [],
+        defaultParams: []
+      });
+
       // Aggregate
 
       addFuncDef({

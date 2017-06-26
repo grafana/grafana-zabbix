@@ -27,6 +27,7 @@ var groupBy_exported = function groupBy_exported(interval, groupFunc, datapoints
 };
 var sumSeries = _timeseries2.default.sumSeries;
 var delta = _timeseries2.default.delta;
+var rate = _timeseries2.default.rate;
 var scale = function scale(factor, datapoints) {
   return _timeseries2.default.scale(datapoints, factor);
 };
@@ -119,6 +120,7 @@ var metricFunctions = {
   groupBy: groupByWrapper,
   scale: scale,
   delta: delta,
+  rate: rate,
   aggregateBy: aggregateByWrapper,
   average: _lodash2.default.partial(aggregateWrapper, AVERAGE),
   min: _lodash2.default.partial(aggregateWrapper, MIN),
