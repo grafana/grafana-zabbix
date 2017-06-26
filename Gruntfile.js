@@ -85,15 +85,7 @@ module.exports = function(grunt) {
           src: ['**/*.js'],
           dest: 'dist/test/specs'
         }]
-      },
-      distBenchmarks: {
-        files: [{
-          cwd: 'src/datasource-zabbix/benchmarks',
-          expand: true,
-          src: ['**/*.js'],
-          dest: 'dist/test/benchmarks'
-        }]
-      },
+      }
     },
 
     mochaTest: {
