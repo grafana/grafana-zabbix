@@ -132,6 +132,7 @@ module.exports = function(grunt) {
         ignores: [
           'node_modules/*',
           'dist/*',
+          'src/datasource-zabbix/benchmarks/*'
         ]
       }
     },
