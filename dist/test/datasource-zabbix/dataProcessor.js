@@ -29,7 +29,7 @@ var sumSeries = _timeseries2.default.sumSeries;
 var delta = _timeseries2.default.delta;
 var rate = _timeseries2.default.rate;
 var scale = function scale(factor, datapoints) {
-  return _timeseries2.default.scale(datapoints, factor);
+  return _timeseries2.default.scale_perf(datapoints, factor);
 };
 
 var SUM = _timeseries2.default.SUM;

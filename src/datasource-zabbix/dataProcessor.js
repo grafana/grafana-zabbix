@@ -8,7 +8,7 @@ let groupBy_exported = (interval, groupFunc, datapoints) => groupBy(datapoints, 
 let sumSeries = ts.sumSeries;
 let delta = ts.delta;
 let rate = ts.rate;
-let scale = (factor, datapoints) => ts.scale(datapoints, factor);
+let scale = (factor, datapoints) => ts.scale_perf(datapoints, factor);
 
 let SUM = ts.SUM;
 let COUNT = ts.COUNT;

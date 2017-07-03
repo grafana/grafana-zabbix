@@ -103,7 +103,7 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
       rate = ts.rate;
 
       scale = function scale(factor, datapoints) {
-        return ts.scale(datapoints, factor);
+        return ts.scale_perf(datapoints, factor);
       };
 
       SUM = ts.SUM;

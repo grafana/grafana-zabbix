@@ -50,6 +50,16 @@ module.exports = [{
     }
   }
 }, {
+  name: 'scale',
+  tests: {
+    'scale()': function scale() {
+      _timeseries2.default.scale(datapoints, 42);
+    },
+    'scale_perf()': function scale_perf() {
+      _timeseries2.default.scale_perf(datapoints, 42);
+    }
+  }
+}, {
   name: 'groupBy vs groupBy_perf',
   tests: {
     'groupBy()': function groupBy() {

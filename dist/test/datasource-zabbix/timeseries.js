@@ -121,10 +121,16 @@ function groupBy_perf(datapoints, interval, groupByCallback) {
     point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], ms_interval);
     if (point_frame_ts === frame_ts) {
       frame_values.push(point[POINT_VALUE]);
-    } else {
+    } else if (point_frame_ts > frame_ts) {
       frame_value = groupByCallback(frame_values);
       grouped_series.push([frame_value, frame_ts]);
-      frame_ts = point_frame_ts;
+
+      // Move frame window to next non-empty interval and fill empty by null
+      frame_ts += ms_interval;
+      while (frame_ts < point_frame_ts) {
+        grouped_series.push([null, frame_ts]);
+        frame_ts += ms_interval;
+      }
       frame_values = [point[POINT_VALUE]];
     }
   }
@@ -179,6 +185,14 @@ function scale(datapoints, factor) {
   });
 }
 
+function scale_perf(datapoints, factor) {
+  for (var i = 0; i < datapoints.length; i++) {
+    datapoints[i] = [datapoints[i][POINT_VALUE] * factor, datapoints[i][POINT_TIMESTAMP]];
+  }
+
+  return datapoints;
+}
+
 /**
  * Simple delta. Calculate value delta between points.
  * @param {*} datapoints
@@ -220,24 +234,36 @@ function rate(datapoints) {
   return newSeries;
 }
 
-function SUM(values) {
-  var sum = 0;
-  _lodash2.default.each(values, function (value) {
-    sum += value;
-  });
-  return sum;
-}
-
 function COUNT(values) {
   return values.length;
 }
 
+function SUM(values) {
+  var sum = null;
+  for (var i = 0; i < values.length; i++) {
+    if (values[i] !== null) {
+      sum += values[i];
+    }
+  }
+  return sum;
+}
+
 function AVERAGE(values) {
-  var sum = 0;
-  _lodash2.default.each(values, function (value) {
-    sum += value;
-  });
-  return sum / values.length;
+  var values_non_null = getNonNullValues(values);
+  if (values_non_null.length === 0) {
+    return null;
+  }
+  return SUM(values_non_null) / values_non_null.length;
+}
+
+function getNonNullValues(values) {
+  var values_non_null = [];
+  for (var i = 0; i < values.length; i++) {
+    if (values[i] !== null) {
+      values_non_null.push(values[i]);
+    }
+  }
+  return values_non_null;
 }
 
 function MIN(values) {
@@ -338,6 +364,7 @@ var exportedFunctions = {
   groupBy_perf: groupBy_perf,
   sumSeries: sumSeries,
   scale: scale,
+  scale_perf: scale_perf,
   delta: delta,
   rate: rate,
   SUM: SUM,
