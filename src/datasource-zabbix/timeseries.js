@@ -226,24 +226,36 @@ function rate(datapoints) {
   return newSeries;
 }
 
-function SUM(values) {
-  var sum = 0;
-  _.each(values, function (value) {
-    sum += value;
-  });
-  return sum;
-}
-
 function COUNT(values) {
   return values.length;
 }
 
+function SUM(values) {
+  var sum = null;
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] !== null) {
+      sum += values[i];
+    }
+  }
+  return sum;
+}
+
 function AVERAGE(values) {
-  var sum = 0;
-  _.each(values, function (value) {
-    sum += value;
-  });
-  return sum / values.length;
+  let values_non_null = getNonNullValues(values);
+  if (values_non_null.length === 0) {
+    return null;
+  }
+  return SUM(values_non_null) / values_non_null.length;
+}
+
+function getNonNullValues(values) {
+  let values_non_null = [];
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] !== null) {
+      values_non_null.push(values[i]);
+    }
+  }
+  return values_non_null;
 }
 
 function MIN(values) {
