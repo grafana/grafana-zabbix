@@ -80,6 +80,13 @@ addFuncDef({
   defaultParams: [10]
 });
 
+addFuncDef({
+  name: 'expMovingAverage',
+  category: 'Transform',
+  params: [{ name: 'smoothing', type: 'float', options: [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9] }],
+  defaultParams: [0.2]
+});
+
 // Aggregate
 
 addFuncDef({

@@ -252,6 +252,22 @@ System.register(['lodash', './utils'], function (_export, _context) {
     return sma;
   }
 
+  function expMovingAverage(datapoints, a) {
+    var ema = [datapoints[0]];
+    var ema_prev = datapoints[0][POINT_VALUE];
+    var ema_cur = void 0;
+    for (var i = 1; i < datapoints.length; i++) {
+      if (datapoints[i][POINT_VALUE] !== null) {
+        ema_cur = a * datapoints[i][POINT_VALUE] + (1 - a) * ema_prev;
+        ema_prev = ema_cur;
+        ema.push([ema_cur, datapoints[i][POINT_TIMESTAMP]]);
+      } else {
+        ema.push([null, datapoints[i][POINT_TIMESTAMP]]);
+      }
+    }
+    return ema;
+  }
+
   function COUNT(values) {
     return values.length;
   }
@@ -395,6 +411,7 @@ System.register(['lodash', './utils'], function (_export, _context) {
         delta: delta,
         rate: rate,
         simpleMovingAverage: simpleMovingAverage,
+        expMovingAverage: expMovingAverage,
         SUM: SUM,
         COUNT: COUNT,
         AVERAGE: AVERAGE,

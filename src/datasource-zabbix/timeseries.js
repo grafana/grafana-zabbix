@@ -269,6 +269,22 @@ function simpleMovingAverage(datapoints, n) {
   return sma;
 }
 
+function expMovingAverage(datapoints, a) {
+  let ema = [datapoints[0]];
+  let ema_prev = datapoints[0][POINT_VALUE];
+  let ema_cur;
+  for (let i = 1; i < datapoints.length; i++) {
+    if (datapoints[i][POINT_VALUE] !== null) {
+      ema_cur = a * datapoints[i][POINT_VALUE] + (1 - a) * ema_prev;
+      ema_prev = ema_cur;
+      ema.push([ema_cur, datapoints[i][POINT_TIMESTAMP]]);
+    } else {
+      ema.push([null, datapoints[i][POINT_TIMESTAMP]]);
+    }
+  }
+  return ema;
+}
+
 function COUNT(values) {
   return values.length;
 }
@@ -403,6 +419,7 @@ const exportedFunctions = {
   delta,
   rate,
   simpleMovingAverage,
+  expMovingAverage,
   SUM,
   COUNT,
   AVERAGE,
