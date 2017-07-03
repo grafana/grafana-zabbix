@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [#254](https://github.com/alexanderzobnin/grafana-zabbix/issues/254)
 - Update included dashboards. Add templated zabbix datasource and use it for all metrics.
 - Improved performance of groupBy() functions (at 6-10x faster than old).
+- Fill empty intervals by _null_ when aggregations are used, [#388](https://github.com/alexanderzobnin/grafana-zabbix/issues/388)
 
 ### Added
 - rate() function, which calculates per-second rate for growing counters.
