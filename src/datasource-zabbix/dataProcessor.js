@@ -9,6 +9,7 @@ let sumSeries = ts.sumSeries;
 let delta = ts.delta;
 let rate = ts.rate;
 let scale = (factor, datapoints) => ts.scale_perf(datapoints, factor);
+let simpleMovingAverage = (n, datapoints) => ts.simpleMovingAverage(datapoints, n);
 
 let SUM = ts.SUM;
 let COUNT = ts.COUNT;
@@ -102,6 +103,7 @@ let metricFunctions = {
   scale: scale,
   delta: delta,
   rate: rate,
+  simpleMovingAverage: simpleMovingAverage,
   aggregateBy: aggregateByWrapper,
   average: _.partial(aggregateWrapper, AVERAGE),
   min: _.partial(aggregateWrapper, MIN),

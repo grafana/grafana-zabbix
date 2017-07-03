@@ -73,6 +73,13 @@ addFuncDef({
   defaultParams: []
 });
 
+addFuncDef({
+  name: 'simpleMovingAverage',
+  category: 'Transform',
+  params: [{ name: 'factor', type: 'int', options: [6, 10, 60, 600] }],
+  defaultParams: [10]
+});
+
 // Aggregate
 
 addFuncDef({

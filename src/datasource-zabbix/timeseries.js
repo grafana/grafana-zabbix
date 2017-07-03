@@ -226,6 +226,49 @@ function rate(datapoints) {
   return newSeries;
 }
 
+function simpleMovingAverage(datapoints, n) {
+  let sma = [];
+  let w_sum;
+  let w_avg = null;
+  let w_count = 0;
+
+  // Initial window
+  for (let j = n; j > 0; j--) {
+    if (datapoints[n - j][POINT_VALUE] !== null) {
+      w_avg += datapoints[n - j][POINT_VALUE];
+      w_count++;
+    }
+  }
+  if (w_count > 0) {
+    w_avg = w_avg / w_count;
+  } else {
+    w_avg = null;
+  }
+  sma.push([w_avg, datapoints[n - 1][POINT_TIMESTAMP]]);
+
+  for (let i = n; i < datapoints.length; i++) {
+    // Insert next value
+    if (datapoints[i][POINT_VALUE] !== null) {
+      w_sum = w_avg * w_count;
+      w_avg = (w_sum + datapoints[i][POINT_VALUE]) / (w_count + 1);
+      w_count++;
+    }
+    // Remove left side point
+    if (datapoints[i - n][POINT_VALUE] !== null) {
+      w_sum = w_avg * w_count;
+      if (w_count > 1) {
+        w_avg = (w_sum - datapoints[i - n][POINT_VALUE]) / (w_count - 1);
+        w_count--;
+      } else {
+        w_avg = null;
+        w_count = 0;
+      }
+    }
+    sma.push([w_avg, datapoints[i][POINT_TIMESTAMP]]);
+  }
+  return sma;
+}
+
 function COUNT(values) {
   return values.length;
 }
@@ -359,6 +402,7 @@ const exportedFunctions = {
   scale_perf,
   delta,
   rate,
+  simpleMovingAverage,
   SUM,
   COUNT,
   AVERAGE,
