@@ -96,10 +96,16 @@ System.register(['lodash', './utils'], function (_export, _context) {
       point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], ms_interval);
       if (point_frame_ts === frame_ts) {
         frame_values.push(point[POINT_VALUE]);
-      } else {
+      } else if (point_frame_ts > frame_ts) {
         frame_value = groupByCallback(frame_values);
         grouped_series.push([frame_value, frame_ts]);
-        frame_ts = point_frame_ts;
+
+        // Move frame window to next non-empty interval and fill empty by null
+        frame_ts += ms_interval;
+        while (frame_ts < point_frame_ts) {
+          grouped_series.push([null, frame_ts]);
+          frame_ts += ms_interval;
+        }
         frame_values = [point[POINT_VALUE]];
       }
     }
