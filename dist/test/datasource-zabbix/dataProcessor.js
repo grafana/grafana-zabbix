@@ -127,9 +127,10 @@ var metricFunctions = {
   scale: scale,
   delta: delta,
   rate: rate,
-  simpleMovingAverage: simpleMovingAverage,
-  expMovingAverage: expMovingAverage,
+  movingAverage: simpleMovingAverage,
+  exponentialMovingAverage: expMovingAverage,
   aggregateBy: aggregateByWrapper,
+  // Predefined aggs
   average: _lodash2.default.partial(aggregateWrapper, AVERAGE),
   min: _lodash2.default.partial(aggregateWrapper, MIN),
   max: _lodash2.default.partial(aggregateWrapper, MAX),

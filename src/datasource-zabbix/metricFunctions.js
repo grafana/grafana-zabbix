@@ -58,19 +58,19 @@ addFuncDef({
 });
 
 addFuncDef({
-  name: 'simpleMovingAverage',
+  name: 'movingAverage',
   category: 'Transform',
   params: [
-    { name: 'factor', type: 'int', options: [6, 10, 60, 600] }
+    { name: 'factor', type: 'int', options: [6, 10, 60, 100, 600] }
   ],
   defaultParams: [10],
 });
 
 addFuncDef({
-  name: 'expMovingAverage',
+  name: 'exponentialMovingAverage',
   category: 'Transform',
   params: [
-    { name: 'smoothing', type: 'float', options: [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9] }
+    { name: 'smoothing', type: 'float', options: [6, 10, 60, 100, 600] }
   ],
   defaultParams: [0.2],
 });

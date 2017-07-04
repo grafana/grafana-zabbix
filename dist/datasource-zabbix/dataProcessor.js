@@ -125,9 +125,10 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
         scale: scale,
         delta: delta,
         rate: rate,
-        simpleMovingAverage: simpleMovingAverage,
-        expMovingAverage: expMovingAverage,
+        movingAverage: simpleMovingAverage,
+        exponentialMovingAverage: expMovingAverage,
         aggregateBy: aggregateByWrapper,
+        // Predefined aggs
         average: _.partial(aggregateWrapper, AVERAGE),
         min: _.partial(aggregateWrapper, MIN),
         max: _.partial(aggregateWrapper, MAX),
