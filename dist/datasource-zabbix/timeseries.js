@@ -253,6 +253,10 @@ System.register(['lodash', './utils'], function (_export, _context) {
   }
 
   function expMovingAverage(datapoints, a) {
+    // Calculate a from window size
+    if (a > 1) {
+      a = 2 / (a + 1);
+    }
     var ema = [datapoints[0]];
     var ema_prev = datapoints[0][POINT_VALUE];
     var ema_cur = void 0;

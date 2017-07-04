@@ -270,6 +270,10 @@ function simpleMovingAverage(datapoints, n) {
 }
 
 function expMovingAverage(datapoints, a) {
+  // Calculate a from window size
+  if (a > 1) {
+    a = 2 / (a + 1);
+  }
   let ema = [datapoints[0]];
   let ema_prev = datapoints[0][POINT_VALUE];
   let ema_cur;
