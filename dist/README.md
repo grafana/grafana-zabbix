@@ -1,28 +1,22 @@
-## Zabbix plugin for Grafana
+# Zabbix plugin for Grafana
 
+[![GitHub version](https://badge.fury.io/gh/alexanderzobnin%2Fgrafana-zabbix.svg)](https://github.com/alexanderzobnin/grafana-zabbix/releases)
+[![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/CHANGELOG.md)
 [![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](http://docs.grafana-zabbix.org)
-[![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey.svg?style=flat)](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE)
 
-Zabbix plugin allows to show different type of data from [Zabbix](http://www.zabbix.com/) 
-monitoring system.
+Visualize your Zabbix metrics with the leading open source software for time series analytics.
 
 ### Live Demo
 
-Check out the [live demo](http://play.grafana-zabbix.org/) with dashboard examples.
+See all features overview and dashboards examples at Grafana-Zabbix [Live demo](http://play.grafana-zabbix.org) site.
 
 ### Features
 
-#### Flexible metric editor
- * Regex-based metric filtering
- * Client-side data processing functions
- * Template variables support
-
-#### Templated dashboards support
-Group, host, application or item names can be replaced with a template variable. This allows you to create generic dashboards that can quickly be changed to show stats for a specific cluster, server or application.
-
-#### Annotations support
- * Display zabbix events on graphs
- * Show acknowledges for problems
-
-#### Triggers panel
-Panel for showing Zabbix triggers (like Last 20 issues) with some customizable features.
+- Select multiple metrics [by using Regex](http://docs.grafana-zabbix.org/guides/gettingstarted/#multiple-items-on-one-graph)
+- Create interactive and reusable dashboards with [template variables](http://docs.grafana-zabbix.org/guides/templating/)
+- Show events on graphs with [Annotations](http://docs.grafana.org/reference/annotations/)
+- Display active problems with Triggers panel
+- Transform and shape your data with [metric processing functions](http://docs.grafana-zabbix.org/reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
+- Find problems faster with [Alerting](http://docs.grafana-zabbix.org/reference/alerting/) feature
+- Mix metrics from multiple data sources in the same dashboard or even graph
+- Discover and share [dashboards](https://grafana.com/dashboards) in the official library
