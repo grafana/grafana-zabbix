@@ -1,6 +1,7 @@
 # Zabbix plugin for Grafana
 
 [![GitHub version](https://badge.fury.io/gh/alexanderzobnin%2Fgrafana-zabbix.svg)](https://github.com/alexanderzobnin/grafana-zabbix/releases)
+[![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/CHANGELOG.md)
 [![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](http://docs.grafana-zabbix.org)
 [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Follow)](https://twitter.com/alexanderzobnin)
 [![Donate](https://img.shields.io/badge/donate-paypal-2c9eda.svg?style=flat&colorA=0b3684)](https://paypal.me/alexanderzobnin/10)
