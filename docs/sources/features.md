@@ -6,6 +6,12 @@ page_description: Grafana-Zabbix Feature Highlights.
 Grafana in couple with Grafana-Zabbix plugin allows to create great dashboards. There is some
 features:
 
-- Rich graphing with Grafana
-- Template variables allow to create reusable dashboards
-
+- Rich graphing features
+- Create interactive and reusable dashboards with [template variables](http://docs.grafana-zabbix.org/guides/templating/)
+- Show events on graphs with [Annotations](http://docs.grafana.org/reference/annotations/)
+- Select multiple metrics [by using Regex](http://docs.grafana-zabbix.org/guides/gettingstarted/#multiple-items-on-one-graph)
+- Display active problems with Triggers panel
+- Transform and shape your data with [metric processing functions](http://docs.grafana-zabbix.org/reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
+- Find problems faster with [Alerting](http://docs.grafana-zabbix.org/reference/alerting/) feature
+- Mix metrics from multiple data sources in the same dashboard or even graph
+- Discover and share [dashboards](https://grafana.com/dashboards) in the official library
