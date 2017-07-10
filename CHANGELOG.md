@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [3.5.1] - 2017-07-10
+### Fixed
+- Bug with alerting when template queries are used, [#424](https://github.com/alexanderzobnin/grafana-zabbix/issues/424)
+
+
 ## [3.5.0] - 2017-07-05
 ### Fixed
 - Item name expanding when key contains commas in quoted params, like my_key["a=1,b=2",c,d]
