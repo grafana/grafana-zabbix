@@ -595,7 +595,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var _this7 = this;
 
             var enabled_targets = filterEnabledTargets(options.targets);
-            var getPanelItems = _.map(enabled_targets, function (target) {
+            var getPanelItems = _.map(enabled_targets, function (t) {
+              var target = _.cloneDeep(t);
+              _this7.replaceTargetVariables(target, options);
               return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
             });
 

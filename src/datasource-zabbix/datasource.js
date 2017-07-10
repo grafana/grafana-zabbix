@@ -424,7 +424,9 @@ class ZabbixAPIDatasource {
    */
   alertQuery(options) {
     let enabled_targets = filterEnabledTargets(options.targets);
-    let getPanelItems = _.map(enabled_targets, target => {
+    let getPanelItems = _.map(enabled_targets, t => {
+      let target = _.cloneDeep(t);
+      this.replaceTargetVariables(target, options);
       return this.zabbix.getItemsFromTarget(target, {itemtype: 'num'});
     });
 

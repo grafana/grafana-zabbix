@@ -499,7 +499,9 @@ var ZabbixAPIDatasource = function () {
       var _this7 = this;
 
       var enabled_targets = filterEnabledTargets(options.targets);
-      var getPanelItems = _lodash2.default.map(enabled_targets, function (target) {
+      var getPanelItems = _lodash2.default.map(enabled_targets, function (t) {
+        var target = _lodash2.default.cloneDeep(t);
+        _this7.replaceTargetVariables(target, options);
         return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
       });
 
