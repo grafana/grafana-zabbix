@@ -103,27 +103,31 @@ function groupBy_perf(datapoints, interval, groupByCallback) {
   let point_frame_ts = frame_ts;
   let point;
 
-  for (let i=0; i < datapoints.length; i++) {
-    point = datapoints[i];
-    point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], ms_interval);
-    if (point_frame_ts === frame_ts) {
-      frame_values.push(point[POINT_VALUE]);
-    } else if (point_frame_ts > frame_ts) {
-      frame_value = groupByCallback(frame_values);
-      grouped_series.push([frame_value, frame_ts]);
+  if (datapoints.length > 0) {
 
-      // Move frame window to next non-empty interval and fill empty by null
-      frame_ts += ms_interval;
-      while (frame_ts < point_frame_ts) {
-        grouped_series.push([null, frame_ts]);
+    for (let i=0; i < datapoints.length; i++) {
+      point = datapoints[i];
+      point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], ms_interval);
+      if (point_frame_ts === frame_ts) {
+        frame_values.push(point[POINT_VALUE]);
+      } else if (point_frame_ts > frame_ts) {
+        frame_value = groupByCallback(frame_values);
+        grouped_series.push([frame_value, frame_ts]);
+
+        // Move frame window to next non-empty interval and fill empty by null
         frame_ts += ms_interval;
+        while (frame_ts < point_frame_ts) {
+          grouped_series.push([null, frame_ts]);
+          frame_ts += ms_interval;
+        }
+        frame_values = [point[POINT_VALUE]];
       }
-      frame_values = [point[POINT_VALUE]];
     }
-  }
 
-  frame_value = groupByCallback(frame_values);
-  grouped_series.push([frame_value, frame_ts]);
+    frame_value = groupByCallback(frame_values);
+    grouped_series.push([frame_value, frame_ts]);
+
+  }
 
   return grouped_series;
 }
