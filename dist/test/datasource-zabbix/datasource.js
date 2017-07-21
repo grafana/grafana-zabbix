@@ -57,8 +57,6 @@ var ZabbixAPIDatasource = function () {
 
   /** @ngInject */
   function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, datasourceSrv, zabbixAlertingSrv, Zabbix) {
-    var _this = this;
-
     _classCallCheck(this, ZabbixAPIDatasource);
 
     this.templateSrv = templateSrv;
@@ -66,6 +64,9 @@ var ZabbixAPIDatasource = function () {
     this.dashboardSrv = dashboardSrv;
     this.datasourceSrv = datasourceSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
+
+    // Use custom format for template variables
+    this.replaceTemplateVars = _lodash2.default.partial(replaceTemplateVars, this.templateSrv);
 
     // General data source settings
     this.name = instanceSettings.name;
@@ -91,61 +92,48 @@ var ZabbixAPIDatasource = function () {
     this.addThresholds = instanceSettings.jsonData.addThresholds;
     this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
-    this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
-
-    // Try to use direct DB connection
+    // Direct DB Connection options
     this.enableDirectDBConnection = instanceSettings.jsonData.dbConnection.enable;
-    if (this.enableDirectDBConnection) {
-      this.loadSQLDataSource(instanceSettings.jsonData.dbConnection.datasourceId).then(function () {}).catch(function (error) {
-        _this.enableDirectDBConnection = false;
-        _this.alertSrv.set("SQL Data Source Error", error, 'error');
-      });
-    }
+    this.sqlDatasourceId = instanceSettings.jsonData.dbConnection.datasourceId;
 
-    // Use custom format for template variables
-    this.replaceTemplateVars = _lodash2.default.partial(replaceTemplateVars, this.templateSrv);
+    var zabbixOptions = {
+      username: this.username,
+      password: this.password,
+      basicAuth: this.basicAuth,
+      withCredentials: this.withCredentials,
+      cacheTTL: this.cacheTTL,
+      enableDirectDBConnection: this.enableDirectDBConnection,
+      sqlDatasourceId: this.sqlDatasourceId
+    };
+
+    this.zabbix = new Zabbix(this.url, zabbixOptions);
   }
 
+  ////////////////////////
+  // Datasource methods //
+  ////////////////////////
+
+  /**
+   * Query panel data. Calls for each panel in dashboard.
+   * @param  {Object} options   Contains time range, targets and other info.
+   * @return {Object} Grafana metrics object with timeseries data for each target.
+   */
+
+
   _createClass(ZabbixAPIDatasource, [{
-    key: 'loadSQLDataSource',
-    value: function loadSQLDataSource(datasourceId) {
-      var _this2 = this;
-
-      var ds = _lodash2.default.find(this.datasourceSrv.getAll(), { 'id': datasourceId });
-      if (ds) {
-        return this.datasourceSrv.loadDatasource(ds.name).then(function (ds) {
-          console.log('Data source loaded', ds);
-          _this2.sqlDataSource = ds;
-        });
-      } else {
-        return Promise.reject('SQL Data Source with ID ' + datasourceId + ' not found');
-      }
-    }
-
-    ////////////////////////
-    // Datasource methods //
-    ////////////////////////
-
-    /**
-     * Query panel data. Calls for each panel in dashboard.
-     * @param  {Object} options   Contains time range, targets and other info.
-     * @return {Object} Grafana metrics object with timeseries data for each target.
-     */
-
-  }, {
     key: 'query',
     value: function query(options) {
-      var _this3 = this;
+      var _this = this;
 
       // Get alerts for current panel
       if (this.alertingEnabled) {
         this.alertQuery(options).then(function (alert) {
-          _this3.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
+          _this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
 
-          _this3.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
-          if (_this3.addThresholds) {
+          _this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
+          if (_this.addThresholds) {
             _lodash2.default.forEach(alert.thresholds, function (threshold) {
-              _this3.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
+              _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
             });
           }
         });
@@ -158,7 +146,7 @@ var ZabbixAPIDatasource = function () {
 
         // Prevent changes of original object
         var target = _lodash2.default.cloneDeep(t);
-        _this3.replaceTargetVariables(target, options);
+        _this.replaceTargetVariables(target, options);
 
         // Apply Time-related functions (timeShift(), etc)
         var timeFunctions = bindFunctionDefs(target.functions, 'Time');
@@ -173,7 +161,7 @@ var ZabbixAPIDatasource = function () {
         }
         var timeRange = [timeFrom, timeTo];
 
-        var useTrends = _this3.isUseTrends(timeRange);
+        var useTrends = _this.isUseTrends(timeRange);
 
         // Metrics or Text query mode
         if (target.mode !== c.MODE_ITSERVICE) {
@@ -186,9 +174,9 @@ var ZabbixAPIDatasource = function () {
           }
 
           if (!target.mode || target.mode === c.MODE_METRICS) {
-            return _this3.queryNumericData(target, timeRange, useTrends, options);
+            return _this.queryNumericData(target, timeRange, useTrends, options);
           } else if (target.mode === c.MODE_TEXT) {
-            return _this3.queryTextData(target, timeRange);
+            return _this.queryTextData(target, timeRange);
           }
         }
 
@@ -199,7 +187,7 @@ var ZabbixAPIDatasource = function () {
               return [];
             }
 
-            return _this3.zabbix.getSLA(target.itservice.serviceid, timeRange).then(function (slaObject) {
+            return _this.zabbix.getSLA(target.itservice.serviceid, timeRange).then(function (slaObject) {
               return _responseHandler2.default.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
             });
           }
@@ -213,7 +201,7 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'queryNumericData',
     value: function queryNumericData(target, timeRange, useTrends, options) {
-      var _this4 = this;
+      var _this2 = this;
 
       var _timeRange = _slicedToArray(timeRange, 2),
           timeFrom = _timeRange[0],
@@ -226,8 +214,8 @@ var ZabbixAPIDatasource = function () {
         var getHistoryPromise = void 0;
 
         if (useTrends) {
-          var valueType = _this4.getTrendValueType(target);
-          getHistoryPromise = _this4.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
+          var valueType = _this2.getTrendValueType(target);
+          getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
             return _responseHandler2.default.handleTrends(history, items, valueType);
           }).then(function (timeseries) {
             // Sort trend data, issue #202
@@ -241,14 +229,14 @@ var ZabbixAPIDatasource = function () {
           });
         } else {
           // Use history
-          getHistoryPromise = _this4.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
+          getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
             return _responseHandler2.default.handleHistory(history, items);
           });
         }
 
         return getHistoryPromise;
       }).then(function (timeseries) {
-        return _this4.applyDataProcessingFunctions(timeseries, target);
+        return _this2.applyDataProcessingFunctions(timeseries, target);
       }).then(function (timeseries) {
         return downsampleSeries(timeseries, options);
       }).catch(function (error) {
@@ -327,7 +315,7 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'queryTextData',
     value: function queryTextData(target, timeRange) {
-      var _this5 = this;
+      var _this3 = this;
 
       var _timeRange2 = _slicedToArray(timeRange, 2),
           timeFrom = _timeRange2[0],
@@ -338,7 +326,7 @@ var ZabbixAPIDatasource = function () {
       };
       return this.zabbix.getItemsFromTarget(target, options).then(function (items) {
         if (items.length) {
-          return _this5.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
+          return _this3.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
             return _responseHandler2.default.handleText(history, items, target);
           });
         } else {
@@ -355,12 +343,12 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'testDatasource',
     value: function testDatasource() {
-      var _this6 = this;
+      var _this4 = this;
 
       var zabbixVersion = void 0;
       return this.zabbix.getVersion().then(function (version) {
         zabbixVersion = version;
-        return _this6.zabbix.login();
+        return _this4.zabbix.login();
       }).then(function () {
         return {
           status: "success",
@@ -399,14 +387,14 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'metricFindQuery',
     value: function metricFindQuery(query) {
-      var _this7 = this;
+      var _this5 = this;
 
       var result = void 0;
       var parts = [];
 
       // Split query. Query structure: group.host.app.item
       _lodash2.default.each(utils.splitTemplateQuery(query), function (part) {
-        part = _this7.replaceTemplateVars(part, {});
+        part = _this5.replaceTemplateVars(part, {});
 
         // Replace wildcard to regex
         if (part === '*') {
@@ -448,7 +436,7 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'annotationQuery',
     value: function annotationQuery(options) {
-      var _this8 = this;
+      var _this6 = this;
 
       var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
       var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
@@ -466,7 +454,7 @@ var ZabbixAPIDatasource = function () {
       return getTriggers.then(function (triggers) {
 
         // Filter triggers by description
-        var triggerName = _this8.replaceTemplateVars(annotation.trigger, {});
+        var triggerName = _this6.replaceTemplateVars(annotation.trigger, {});
         if (utils.isRegex(triggerName)) {
           triggers = _lodash2.default.filter(triggers, function (trigger) {
             return utils.buildRegex(triggerName).test(trigger.description);
@@ -483,7 +471,7 @@ var ZabbixAPIDatasource = function () {
         });
 
         var objectids = _lodash2.default.map(triggers, 'triggerid');
-        return _this8.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
+        return _this6.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
           var indexedTriggers = _lodash2.default.keyBy(triggers, 'triggerid');
 
           // Hide acknowledged events if option enabled
@@ -524,23 +512,23 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'alertQuery',
     value: function alertQuery(options) {
-      var _this9 = this;
+      var _this7 = this;
 
       var enabled_targets = filterEnabledTargets(options.targets);
       var getPanelItems = _lodash2.default.map(enabled_targets, function (t) {
         var target = _lodash2.default.cloneDeep(t);
-        _this9.replaceTargetVariables(target, options);
-        return _this9.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
+        _this7.replaceTargetVariables(target, options);
+        return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
       });
 
       return Promise.all(getPanelItems).then(function (results) {
         var items = _lodash2.default.flatten(results);
         var itemids = _lodash2.default.map(items, 'itemid');
 
-        return _this9.zabbix.getAlerts(itemids);
+        return _this7.zabbix.getAlerts(itemids);
       }).then(function (triggers) {
         triggers = _lodash2.default.filter(triggers, function (trigger) {
-          return trigger.priority >= _this9.alertingMinSeverity;
+          return trigger.priority >= _this7.alertingMinSeverity;
         });
 
         if (!triggers || triggers.length === 0) {
@@ -571,12 +559,12 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'replaceTargetVariables',
     value: function replaceTargetVariables(target, options) {
-      var _this10 = this;
+      var _this8 = this;
 
       var parts = ['group', 'host', 'application', 'item'];
       _lodash2.default.forEach(parts, function (p) {
         if (target[p] && target[p].filter) {
-          target[p].filter = _this10.replaceTemplateVars(target[p].filter, options.scopedVars);
+          target[p].filter = _this8.replaceTemplateVars(target[p].filter, options.scopedVars);
         }
       });
       target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
@@ -584,9 +572,9 @@ var ZabbixAPIDatasource = function () {
       _lodash2.default.forEach(target.functions, function (func) {
         func.params = _lodash2.default.map(func.params, function (param) {
           if (typeof param === 'number') {
-            return +_this10.templateSrv.replace(param.toString(), options.scopedVars);
+            return +_this8.templateSrv.replace(param.toString(), options.scopedVars);
           } else {
-            return _this10.templateSrv.replace(param, options.scopedVars);
+            return _this8.templateSrv.replace(param, options.scopedVars);
           }
         });
       });

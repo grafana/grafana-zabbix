@@ -3,15 +3,20 @@ import _ from 'lodash';
 import * as utils from './utils';
 import './zabbixAPI.service.js';
 import './zabbixCachingProxy.service.js';
+import './zabbixDBConnector';
 
 // Use factory() instead service() for multiple data sources support.
 // Each Zabbix data source instance should initialize its own API instance.
 
 /** @ngInject */
-function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
+function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) {
 
   class Zabbix {
-    constructor(url, username, password, basicAuth, withCredentials, cacheTTL) {
+    constructor(url, options) {
+      let {
+        username, password, basicAuth, withCredentials, cacheTTL,
+        enableDirectDBConnection, sqlDatasourceId
+      } = options;
 
       // Initialize Zabbix API
       var ZabbixAPI = zabbixAPIService;
@@ -36,6 +41,10 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
       this.getVersion = this.zabbixAPI.getVersion.bind(this.zabbixAPI);
       this.login = this.zabbixAPI.login.bind(this.zabbixAPI);
+
+      if (enableDirectDBConnection) {
+        this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
+      }
     }
 
     getItemsFromTarget(target, options) {

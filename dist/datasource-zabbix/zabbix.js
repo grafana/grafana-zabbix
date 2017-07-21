@@ -1,6 +1,6 @@
 'use strict';
 
-System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './zabbixCachingProxy.service.js'], function (_export, _context) {
+System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './zabbixCachingProxy.service.js', './zabbixDBConnector'], function (_export, _context) {
   "use strict";
 
   var angular, _, utils, _createClass;
@@ -27,10 +27,19 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
   // Each Zabbix data source instance should initialize its own API instance.
 
   /** @ngInject */
-  function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
+  function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) {
     var Zabbix = function () {
-      function Zabbix(url, username, password, basicAuth, withCredentials, cacheTTL) {
+      function Zabbix(url, options) {
         _classCallCheck(this, Zabbix);
+
+        var username = options.username,
+            password = options.password,
+            basicAuth = options.basicAuth,
+            withCredentials = options.withCredentials,
+            cacheTTL = options.cacheTTL,
+            enableDirectDBConnection = options.enableDirectDBConnection,
+            sqlDatasourceId = options.sqlDatasourceId;
+
 
         // Initialize Zabbix API
         var ZabbixAPI = zabbixAPIService;
@@ -55,6 +64,10 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
         this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
         this.getVersion = this.zabbixAPI.getVersion.bind(this.zabbixAPI);
         this.login = this.zabbixAPI.login.bind(this.zabbixAPI);
+
+        if (enableDirectDBConnection) {
+          this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
+        }
       }
 
       _createClass(Zabbix, [{
@@ -274,7 +287,7 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
       _ = _lodash.default;
     }, function (_utils) {
       utils = _utils;
-    }, function (_zabbixAPIServiceJs) {}, function (_zabbixCachingProxyServiceJs) {}],
+    }, function (_zabbixAPIServiceJs) {}, function (_zabbixCachingProxyServiceJs) {}, function (_zabbixDBConnector) {}],
     execute: function () {
       _createClass = function () {
         function defineProperties(target, props) {

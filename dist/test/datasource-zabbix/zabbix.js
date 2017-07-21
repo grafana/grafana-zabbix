@@ -18,6 +18,8 @@ require('./zabbixAPI.service.js');
 
 require('./zabbixCachingProxy.service.js');
 
+require('./zabbixDBConnector');
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -30,12 +32,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // Each Zabbix data source instance should initialize its own API instance.
 
 /** @ngInject */
-function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
+function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) {
   var Zabbix = function () {
-    function Zabbix(url, username, password, basicAuth, withCredentials, cacheTTL) {
+    function Zabbix(url, options) {
       _classCallCheck(this, Zabbix);
 
+      var username = options.username,
+          password = options.password,
+          basicAuth = options.basicAuth,
+          withCredentials = options.withCredentials,
+          cacheTTL = options.cacheTTL,
+          enableDirectDBConnection = options.enableDirectDBConnection,
+          sqlDatasourceId = options.sqlDatasourceId;
+
       // Initialize Zabbix API
+
       var ZabbixAPI = zabbixAPIService;
       this.zabbixAPI = new ZabbixAPI(url, username, password, basicAuth, withCredentials);
 
@@ -58,6 +69,10 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
       this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
       this.getVersion = this.zabbixAPI.getVersion.bind(this.zabbixAPI);
       this.login = this.zabbixAPI.login.bind(this.zabbixAPI);
+
+      if (enableDirectDBConnection) {
+        this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
+      }
     }
 
     _createClass(Zabbix, [{

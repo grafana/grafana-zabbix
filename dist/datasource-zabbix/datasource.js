@@ -184,8 +184,6 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
         /** @ngInject */
         function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, datasourceSrv, zabbixAlertingSrv, Zabbix) {
-          var _this = this;
-
           _classCallCheck(this, ZabbixAPIDatasource);
 
           this.templateSrv = templateSrv;
@@ -193,6 +191,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           this.dashboardSrv = dashboardSrv;
           this.datasourceSrv = datasourceSrv;
           this.zabbixAlertingSrv = zabbixAlertingSrv;
+
+          // Use custom format for template variables
+          this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
 
           // General data source settings
           this.name = instanceSettings.name;
@@ -218,50 +219,48 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           this.addThresholds = instanceSettings.jsonData.addThresholds;
           this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
-          this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
-
-          // Try to use direct DB connection
+          // Direct DB Connection options
           this.enableDirectDBConnection = instanceSettings.jsonData.dbConnection.enable;
-          if (this.enableDirectDBConnection) {
-            this.loadSQLDataSource(instanceSettings.jsonData.dbConnection.datasourceId).then(function () {}).catch(function (error) {
-              _this.enableDirectDBConnection = false;
-              _this.alertSrv.set("SQL Data Source Error", error, 'error');
-            });
-          }
+          this.sqlDatasourceId = instanceSettings.jsonData.dbConnection.datasourceId;
 
-          // Use custom format for template variables
-          this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+          var zabbixOptions = {
+            username: this.username,
+            password: this.password,
+            basicAuth: this.basicAuth,
+            withCredentials: this.withCredentials,
+            cacheTTL: this.cacheTTL,
+            enableDirectDBConnection: this.enableDirectDBConnection,
+            sqlDatasourceId: this.sqlDatasourceId
+          };
+
+          this.zabbix = new Zabbix(this.url, zabbixOptions);
         }
 
-        _createClass(ZabbixAPIDatasource, [{
-          key: 'loadSQLDataSource',
-          value: function loadSQLDataSource(datasourceId) {
-            var _this2 = this;
+        ////////////////////////
+        // Datasource methods //
+        ////////////////////////
 
-            var ds = _.find(this.datasourceSrv.getAll(), { 'id': datasourceId });
-            if (ds) {
-              return this.datasourceSrv.loadDatasource(ds.name).then(function (ds) {
-                console.log('Data source loaded', ds);
-                _this2.sqlDataSource = ds;
-              });
-            } else {
-              return Promise.reject('SQL Data Source with ID ' + datasourceId + ' not found');
-            }
-          }
-        }, {
+        /**
+         * Query panel data. Calls for each panel in dashboard.
+         * @param  {Object} options   Contains time range, targets and other info.
+         * @return {Object} Grafana metrics object with timeseries data for each target.
+         */
+
+
+        _createClass(ZabbixAPIDatasource, [{
           key: 'query',
           value: function query(options) {
-            var _this3 = this;
+            var _this = this;
 
             // Get alerts for current panel
             if (this.alertingEnabled) {
               this.alertQuery(options).then(function (alert) {
-                _this3.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
+                _this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
 
-                _this3.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
-                if (_this3.addThresholds) {
+                _this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
+                if (_this.addThresholds) {
                   _.forEach(alert.thresholds, function (threshold) {
-                    _this3.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
+                    _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
                   });
                 }
               });
@@ -274,7 +273,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
               // Prevent changes of original object
               var target = _.cloneDeep(t);
-              _this3.replaceTargetVariables(target, options);
+              _this.replaceTargetVariables(target, options);
 
               // Apply Time-related functions (timeShift(), etc)
               var timeFunctions = bindFunctionDefs(target.functions, 'Time');
@@ -289,7 +288,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               }
               var timeRange = [timeFrom, timeTo];
 
-              var useTrends = _this3.isUseTrends(timeRange);
+              var useTrends = _this.isUseTrends(timeRange);
 
               // Metrics or Text query mode
               if (target.mode !== c.MODE_ITSERVICE) {
@@ -302,9 +301,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                 }
 
                 if (!target.mode || target.mode === c.MODE_METRICS) {
-                  return _this3.queryNumericData(target, timeRange, useTrends, options);
+                  return _this.queryNumericData(target, timeRange, useTrends, options);
                 } else if (target.mode === c.MODE_TEXT) {
-                  return _this3.queryTextData(target, timeRange);
+                  return _this.queryTextData(target, timeRange);
                 }
               }
 
@@ -315,7 +314,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                     return [];
                   }
 
-                  return _this3.zabbix.getSLA(target.itservice.serviceid, timeRange).then(function (slaObject) {
+                  return _this.zabbix.getSLA(target.itservice.serviceid, timeRange).then(function (slaObject) {
                     return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
                   });
                 }
@@ -329,7 +328,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'queryNumericData',
           value: function queryNumericData(target, timeRange, useTrends, options) {
-            var _this4 = this;
+            var _this2 = this;
 
             var _timeRange = _slicedToArray(timeRange, 2),
                 timeFrom = _timeRange[0],
@@ -342,8 +341,8 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               var getHistoryPromise = void 0;
 
               if (useTrends) {
-                var valueType = _this4.getTrendValueType(target);
-                getHistoryPromise = _this4.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
+                var valueType = _this2.getTrendValueType(target);
+                getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
                   return responseHandler.handleTrends(history, items, valueType);
                 }).then(function (timeseries) {
                   // Sort trend data, issue #202
@@ -357,14 +356,14 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                 });
               } else {
                 // Use history
-                getHistoryPromise = _this4.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
+                getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
                   return responseHandler.handleHistory(history, items);
                 });
               }
 
               return getHistoryPromise;
             }).then(function (timeseries) {
-              return _this4.applyDataProcessingFunctions(timeseries, target);
+              return _this2.applyDataProcessingFunctions(timeseries, target);
             }).then(function (timeseries) {
               return downsampleSeries(timeseries, options);
             }).catch(function (error) {
@@ -443,7 +442,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'queryTextData',
           value: function queryTextData(target, timeRange) {
-            var _this5 = this;
+            var _this3 = this;
 
             var _timeRange2 = _slicedToArray(timeRange, 2),
                 timeFrom = _timeRange2[0],
@@ -454,7 +453,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             };
             return this.zabbix.getItemsFromTarget(target, options).then(function (items) {
               if (items.length) {
-                return _this5.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
+                return _this3.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
                   return responseHandler.handleText(history, items, target);
                 });
               } else {
@@ -465,12 +464,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'testDatasource',
           value: function testDatasource() {
-            var _this6 = this;
+            var _this4 = this;
 
             var zabbixVersion = void 0;
             return this.zabbix.getVersion().then(function (version) {
               zabbixVersion = version;
-              return _this6.zabbix.login();
+              return _this4.zabbix.login();
             }).then(function () {
               return {
                 status: "success",
@@ -496,14 +495,14 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'metricFindQuery',
           value: function metricFindQuery(query) {
-            var _this7 = this;
+            var _this5 = this;
 
             var result = void 0;
             var parts = [];
 
             // Split query. Query structure: group.host.app.item
             _.each(utils.splitTemplateQuery(query), function (part) {
-              part = _this7.replaceTemplateVars(part, {});
+              part = _this5.replaceTemplateVars(part, {});
 
               // Replace wildcard to regex
               if (part === '*') {
@@ -540,7 +539,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'annotationQuery',
           value: function annotationQuery(options) {
-            var _this8 = this;
+            var _this6 = this;
 
             var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
             var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
@@ -558,7 +557,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             return getTriggers.then(function (triggers) {
 
               // Filter triggers by description
-              var triggerName = _this8.replaceTemplateVars(annotation.trigger, {});
+              var triggerName = _this6.replaceTemplateVars(annotation.trigger, {});
               if (utils.isRegex(triggerName)) {
                 triggers = _.filter(triggers, function (trigger) {
                   return utils.buildRegex(triggerName).test(trigger.description);
@@ -575,7 +574,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               });
 
               var objectids = _.map(triggers, 'triggerid');
-              return _this8.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
+              return _this6.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
                 var indexedTriggers = _.keyBy(triggers, 'triggerid');
 
                 // Hide acknowledged events if option enabled
@@ -609,23 +608,23 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'alertQuery',
           value: function alertQuery(options) {
-            var _this9 = this;
+            var _this7 = this;
 
             var enabled_targets = filterEnabledTargets(options.targets);
             var getPanelItems = _.map(enabled_targets, function (t) {
               var target = _.cloneDeep(t);
-              _this9.replaceTargetVariables(target, options);
-              return _this9.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
+              _this7.replaceTargetVariables(target, options);
+              return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
             });
 
             return Promise.all(getPanelItems).then(function (results) {
               var items = _.flatten(results);
               var itemids = _.map(items, 'itemid');
 
-              return _this9.zabbix.getAlerts(itemids);
+              return _this7.zabbix.getAlerts(itemids);
             }).then(function (triggers) {
               triggers = _.filter(triggers, function (trigger) {
-                return trigger.priority >= _this9.alertingMinSeverity;
+                return trigger.priority >= _this7.alertingMinSeverity;
               });
 
               if (!triggers || triggers.length === 0) {
@@ -653,12 +652,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'replaceTargetVariables',
           value: function replaceTargetVariables(target, options) {
-            var _this10 = this;
+            var _this8 = this;
 
             var parts = ['group', 'host', 'application', 'item'];
             _.forEach(parts, function (p) {
               if (target[p] && target[p].filter) {
-                target[p].filter = _this10.replaceTemplateVars(target[p].filter, options.scopedVars);
+                target[p].filter = _this8.replaceTemplateVars(target[p].filter, options.scopedVars);
               }
             });
             target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
@@ -666,9 +665,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             _.forEach(target.functions, function (func) {
               func.params = _.map(func.params, function (param) {
                 if (typeof param === 'number') {
-                  return +_this10.templateSrv.replace(param.toString(), options.scopedVars);
+                  return +_this8.templateSrv.replace(param.toString(), options.scopedVars);
                 } else {
-                  return _this10.templateSrv.replace(param, options.scopedVars);
+                  return _this8.templateSrv.replace(param, options.scopedVars);
                 }
               });
             });

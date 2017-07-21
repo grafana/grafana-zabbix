@@ -20,6 +20,9 @@ class ZabbixAPIDatasource {
     this.datasourceSrv = datasourceSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
 
+    // Use custom format for template variables
+    this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+
     // General data source settings
     this.name             = instanceSettings.name;
     this.url              = instanceSettings.url;
@@ -44,33 +47,21 @@ class ZabbixAPIDatasource {
     this.addThresholds = instanceSettings.jsonData.addThresholds;
     this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
-    this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
-
-    // Try to use direct DB connection
+    // Direct DB Connection options
     this.enableDirectDBConnection = instanceSettings.jsonData.dbConnection.enable;
-    if (this.enableDirectDBConnection) {
-      this.loadSQLDataSource(instanceSettings.jsonData.dbConnection.datasourceId)
-      .then(() => {})
-      .catch(error => {
-        this.enableDirectDBConnection = false;
-        this.alertSrv.set("SQL Data Source Error", error, 'error');
-      });
-    }
+    this.sqlDatasourceId = instanceSettings.jsonData.dbConnection.datasourceId;
 
-    // Use custom format for template variables
-    this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
-  }
+    let zabbixOptions = {
+      username: this.username,
+      password: this.password,
+      basicAuth: this.basicAuth,
+      withCredentials: this.withCredentials,
+      cacheTTL: this.cacheTTL,
+      enableDirectDBConnection: this.enableDirectDBConnection,
+      sqlDatasourceId: this.sqlDatasourceId
+    };
 
-  loadSQLDataSource(datasourceId) {
-    let ds = _.find(this.datasourceSrv.getAll(), {'id': datasourceId});
-    if (ds) {
-      return this.datasourceSrv.loadDatasource(ds.name).then(ds => {
-        console.log('Data source loaded', ds);
-        this.sqlDataSource = ds;
-      });
-    } else {
-      return Promise.reject(`SQL Data Source with ID ${datasourceId} not found`);
-    }
+    this.zabbix = new Zabbix(this.url, zabbixOptions);
   }
 
   ////////////////////////
