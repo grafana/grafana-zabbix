@@ -1,13 +1,25 @@
 import angular from 'angular';
 import _ from 'lodash';
 
+const DEFAULT_QUERY_LIMIT = 10000;
+const HISTORY_TO_TABLE_MAP = {
+  '0': 'history',
+  '1': 'history_str',
+  '2': 'history_log',
+  '3': 'history_uint',
+  '4': 'history_text'
+};
+
 /** @ngInject */
 function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
 
   class ZabbixDBConnector {
 
-    constructor(sqlDataSourceId) {
+    constructor(sqlDataSourceId, options = {}) {
+      let {limit} = options;
+
       this.sqlDataSourceId = sqlDataSourceId;
+      this.limit = limit || DEFAULT_QUERY_LIMIT;
 
       // Try to load DS with given id to check it's exist
       this.loadSQLDataSource(sqlDataSourceId);
@@ -25,12 +37,39 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
       }
     }
 
+    getHistory(items, timeFrom, timeTill) {
+      // Group items by value type and perform request for each value type
+      let grouped_items = _.groupBy(items, 'value_type');
+      let promises = _.map(grouped_items, (items, value_type) => {
+        let itemids = _.map(items, 'itemid').join(', ');
+        let table = HISTORY_TO_TABLE_MAP[value_type];
+
+        let query = `
+          SELECT itemid AS metric, clock AS time_sec, ns, value
+            FROM ${table}
+            WHERE itemid IN (${itemids})
+              AND clock > ${timeFrom} AND clock < ${timeTill}
+        `;
+
+        return this.invokeSQLQuery(query);
+      });
+
+      return Promise.all(promises).then(results => {
+        return _.flatten(results);
+      });
+    }
+
+    handleHistory(history, items, addHostName = true) {
+      return convertHistory(history, items, addHostName);
+    }
+
     invokeSQLQuery(query) {
       let queryDef = {
         refId: 'A',
-        format: 'table',
+        format: 'time_series',
         datasourceId: this.sqlDataSourceId,
-        rawSql: query
+        rawSql: query,
+        maxDataPoints: this.limit
       };
 
       return backendSrv.datasourceRequest({
@@ -43,7 +82,7 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
       .then(response => {
         let results = response.data.results;
         if (results['A']) {
-          return _.head(results['A'].tables);
+          return results['A'].series;
         } else {
           return null;
         }
@@ -57,3 +96,25 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
 angular
   .module('grafana.services')
   .factory('ZabbixDBConnector', ZabbixDBConnectorFactory);
+
+///////////////////////////////////////////////////////////////////////////////
+
+function convertHistory(time_series, items, addHostName) {
+  var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
+  let grafanaSeries = _.map(time_series, series => {
+    let itemid = series.name;
+    let datapoints = series.points;
+    var item = _.find(items, {'itemid': itemid});
+    var alias = item.name;
+    if (_.keys(hosts).length > 1 && addHostName) { //only when actual multi hosts selected
+      var host = _.find(hosts, {'hostid': item.hostid});
+      alias = host.name + ": " + alias;
+    }
+    return {
+      target: alias,
+      datapoints: datapoints
+    };
+  });
+
+  return _.sortBy(grafanaSeries, 'target');
+}

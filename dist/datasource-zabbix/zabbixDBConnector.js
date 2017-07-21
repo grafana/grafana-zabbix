@@ -3,7 +3,7 @@
 System.register(['angular', 'lodash'], function (_export, _context) {
   "use strict";
 
-  var angular, _, _createClass;
+  var angular, _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -15,9 +15,15 @@ System.register(['angular', 'lodash'], function (_export, _context) {
   function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
     var ZabbixDBConnector = function () {
       function ZabbixDBConnector(sqlDataSourceId) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
         _classCallCheck(this, ZabbixDBConnector);
 
+        var limit = options.limit;
+
+
         this.sqlDataSourceId = sqlDataSourceId;
+        this.limit = limit || DEFAULT_QUERY_LIMIT;
 
         // Try to load DS with given id to check it's exist
         this.loadSQLDataSource(sqlDataSourceId);
@@ -36,13 +42,41 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           }
         }
       }, {
+        key: 'getHistory',
+        value: function getHistory(items, timeFrom, timeTill) {
+          var _this = this;
+
+          // Group items by value type and perform request for each value type
+          var grouped_items = _.groupBy(items, 'value_type');
+          var promises = _.map(grouped_items, function (items, value_type) {
+            var itemids = _.map(items, 'itemid').join(', ');
+            var table = HISTORY_TO_TABLE_MAP[value_type];
+
+            var query = '\n          SELECT itemid AS metric, clock AS time_sec, ns, value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n        ';
+
+            return _this.invokeSQLQuery(query);
+          });
+
+          return Promise.all(promises).then(function (results) {
+            return _.flatten(results);
+          });
+        }
+      }, {
+        key: 'handleHistory',
+        value: function handleHistory(history, items) {
+          var addHostName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+          return convertHistory(history, items, addHostName);
+        }
+      }, {
         key: 'invokeSQLQuery',
         value: function invokeSQLQuery(query) {
           var queryDef = {
             refId: 'A',
-            format: 'table',
+            format: 'time_series',
             datasourceId: this.sqlDataSourceId,
-            rawSql: query
+            rawSql: query,
+            maxDataPoints: this.limit
           };
 
           return backendSrv.datasourceRequest({
@@ -54,7 +88,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           }).then(function (response) {
             var results = response.data.results;
             if (results['A']) {
-              return _.head(results['A'].tables);
+              return results['A'].series;
             } else {
               return null;
             }
@@ -68,6 +102,28 @@ System.register(['angular', 'lodash'], function (_export, _context) {
     return ZabbixDBConnector;
   }
 
+  ///////////////////////////////////////////////////////////////////////////////
+
+  function convertHistory(time_series, items, addHostName) {
+    var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
+    var grafanaSeries = _.map(time_series, function (series) {
+      var itemid = series.name;
+      var datapoints = series.points;
+      var item = _.find(items, { 'itemid': itemid });
+      var alias = item.name;
+      if (_.keys(hosts).length > 1 && addHostName) {
+        //only when actual multi hosts selected
+        var host = _.find(hosts, { 'hostid': item.hostid });
+        alias = host.name + ": " + alias;
+      }
+      return {
+        target: alias,
+        datapoints: datapoints
+      };
+    });
+
+    return _.sortBy(grafanaSeries, 'target');
+  }
   return {
     setters: [function (_angular) {
       angular = _angular.default;
@@ -93,6 +149,14 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         };
       }();
 
+      DEFAULT_QUERY_LIMIT = 10000;
+      HISTORY_TO_TABLE_MAP = {
+        '0': 'history',
+        '1': 'history_str',
+        '2': 'history_log',
+        '3': 'history_uint',
+        '4': 'history_text'
+      };
       angular.module('grafana.services').factory('ZabbixDBConnector', ZabbixDBConnectorFactory);
     }
   };

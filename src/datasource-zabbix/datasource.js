@@ -172,10 +172,13 @@ class ZabbixAPIDatasource {
         });
       } else {
         // Use history
-        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
-        .then(history => {
-          return responseHandler.handleHistory(history, items);
-        });
+        if (this.enableDirectDBConnection) {
+          getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
+          .then(history => this.zabbix.dbConnector.handleHistory(history, items));
+        } else {
+          getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
+          .then(history => responseHandler.handleHistory(history, items));
+        }
       }
 
       return getHistoryPromise;

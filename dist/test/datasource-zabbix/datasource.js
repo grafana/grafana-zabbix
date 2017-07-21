@@ -229,9 +229,15 @@ var ZabbixAPIDatasource = function () {
           });
         } else {
           // Use history
-          getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
-            return _responseHandler2.default.handleHistory(history, items);
-          });
+          if (_this2.enableDirectDBConnection) {
+            getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
+              return _this2.zabbix.dbConnector.handleHistory(history, items);
+            });
+          } else {
+            getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
+              return _responseHandler2.default.handleHistory(history, items);
+            });
+          }
         }
 
         return getHistoryPromise;

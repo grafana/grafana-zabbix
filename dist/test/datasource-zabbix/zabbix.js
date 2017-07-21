@@ -72,6 +72,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) 
 
       if (enableDirectDBConnection) {
         this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
+        this.getHistory = this.dbConnector.getHistory.bind(this.dbConnector);
       }
     }
 
