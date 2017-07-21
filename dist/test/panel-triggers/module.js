@@ -165,6 +165,7 @@ var TriggerPanelCtrl = function (_PanelCtrl) {
       return this.datasourceSrv.get(this.panel.datasource).then(function (datasource) {
         var zabbix = datasource.zabbix;
         _this3.zabbix = zabbix;
+        _this3.datasource = datasource;
         var showEvents = _this3.panel.showEvents.value;
         var triggerFilter = _this3.panel.triggers;
         var hideHostsInMaintenance = _this3.panel.hideHostsInMaintenance;
@@ -178,10 +179,10 @@ var TriggerPanelCtrl = function (_PanelCtrl) {
           showTriggers: showEvents,
           hideHostsInMaintenance: hideHostsInMaintenance
         };
-        var getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
-        return getTriggers.then(function (triggers) {
-          return _lodash2.default.map(triggers, _this3.formatTrigger.bind(_this3));
-        });
+
+        return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
+      }).then(function (triggers) {
+        return _lodash2.default.map(triggers, _this3.formatTrigger.bind(_this3));
       });
     }
   }, {
@@ -231,6 +232,7 @@ var TriggerPanelCtrl = function (_PanelCtrl) {
 
       // Filter triggers by description
       var triggerFilter = this.panel.triggers.trigger.filter;
+      triggerFilter = this.datasource.replaceTemplateVars(triggerFilter);
       if (triggerFilter) {
         triggerList = _filterTriggers(triggerList, triggerFilter);
       }

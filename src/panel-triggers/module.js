@@ -130,6 +130,7 @@ class TriggerPanelCtrl extends PanelCtrl {
     .then(datasource => {
       var zabbix = datasource.zabbix;
       this.zabbix = zabbix;
+      this.datasource = datasource;
       var showEvents = this.panel.showEvents.value;
       var triggerFilter = this.panel.triggers;
       var hideHostsInMaintenance = this.panel.hideHostsInMaintenance;
@@ -143,10 +144,11 @@ class TriggerPanelCtrl extends PanelCtrl {
         showTriggers: showEvents,
         hideHostsInMaintenance: hideHostsInMaintenance
       };
-      let getTriggers = zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
-      return getTriggers.then(triggers => {
-        return _.map(triggers, this.formatTrigger.bind(this));
-      });
+
+      return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
+    })
+    .then(triggers => {
+      return _.map(triggers, this.formatTrigger.bind(this));
     });
   }
 
@@ -191,6 +193,7 @@ class TriggerPanelCtrl extends PanelCtrl {
   filterTriggers(triggerList) {
     // Filter triggers by description
     var triggerFilter = this.panel.triggers.trigger.filter;
+    triggerFilter = this.datasource.replaceTemplateVars(triggerFilter);
     if (triggerFilter) {
       triggerList = filterTriggers(triggerList, triggerFilter);
     }
