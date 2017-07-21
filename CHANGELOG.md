@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Template variables support in annotations and triggers panel (trigger name field), [#428](https://github.com/alexanderzobnin/grafana-zabbix/issues/428)
 
 
 ## [3.5.1] - 2017-07-10
