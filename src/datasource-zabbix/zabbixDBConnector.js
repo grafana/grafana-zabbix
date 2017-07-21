@@ -37,7 +37,10 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
       }
     }
 
-    getHistory(items, timeFrom, timeTill) {
+    getHistory(items, timeFrom, timeTill, intervalMs) {
+      let intervalSec = Math.ceil(intervalMs / 1000);
+      let aggFunction = 'AVG';
+
       // Group items by value type and perform request for each value type
       let grouped_items = _.groupBy(items, 'value_type');
       let promises = _.map(grouped_items, (items, value_type) => {
@@ -45,10 +48,11 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
         let table = HISTORY_TO_TABLE_MAP[value_type];
 
         let query = `
-          SELECT itemid AS metric, clock AS time_sec, value
+          SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(value) as value
             FROM ${table}
             WHERE itemid IN (${itemids})
               AND clock > ${timeFrom} AND clock < ${timeTill}
+            GROUP BY time_sec DIV ${intervalSec}, metric
         `;
 
         return this.invokeSQLQuery(query);

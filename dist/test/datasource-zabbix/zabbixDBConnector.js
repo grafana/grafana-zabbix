@@ -55,8 +55,11 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
       }
     }, {
       key: 'getHistory',
-      value: function getHistory(items, timeFrom, timeTill) {
+      value: function getHistory(items, timeFrom, timeTill, intervalMs) {
         var _this = this;
+
+        var intervalSec = Math.ceil(intervalMs / 1000);
+        var aggFunction = 'AVG';
 
         // Group items by value type and perform request for each value type
         var grouped_items = _lodash2.default.groupBy(items, 'value_type');
@@ -64,7 +67,7 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
           var itemids = _lodash2.default.map(items, 'itemid').join(', ');
           var table = HISTORY_TO_TABLE_MAP[value_type];
 
-          var query = '\n          SELECT itemid AS metric, clock AS time_sec, value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n        ';
+          var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(value) as value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
 
           return _this.invokeSQLQuery(query);
         });
