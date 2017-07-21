@@ -76,6 +76,24 @@
 </div>
 
 <div class="gf-form-group">
+  <h3 class="page-heading">Direct DB Connection</h3>
+  <gf-form-switch class="gf-form" label-class="width-9"
+    label="Enable"
+    checked="ctrl.current.jsonData.dbConnection.enable">
+  </gf-form-switch>
+  <div ng-if="ctrl.current.jsonData.dbConnection.enable">
+    <div class="gf-form max-width-20">
+    <span class="gf-form-label width-9">SQL Data Source</span>
+    <div class="gf-form-select-wrapper max-width-16">
+      <select class="gf-form-input" ng-model="ctrl.current.jsonData.dbConnection.datasourceId"
+        ng-options="ds.id as ds.name for ds in ctrl.sqlDataSources">
+      </select>
+    </div>
+  </div>
+  </div>
+</div>
+
+<div class="gf-form-group">
   <h3 class="page-heading">Alerting</h3>
   <gf-form-switch class="gf-form" label-class="width-9"
     label="Enable alerting"

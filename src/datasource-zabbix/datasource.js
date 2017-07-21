@@ -13,10 +13,11 @@ import {ZabbixAPIError} from './zabbixAPICore.service.js';
 class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
+  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, datasourceSrv, zabbixAlertingSrv, Zabbix) {
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
     this.dashboardSrv = dashboardSrv;
+    this.datasourceSrv = datasourceSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
 
     // General data source settings
@@ -45,8 +46,31 @@ class ZabbixAPIDatasource {
 
     this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
 
+    // Try to use direct DB connection
+    this.enableDirectDBConnection = instanceSettings.jsonData.dbConnection.enable;
+    if (this.enableDirectDBConnection) {
+      this.loadSQLDataSource(instanceSettings.jsonData.dbConnection.datasourceId)
+      .then(() => {})
+      .catch(error => {
+        this.enableDirectDBConnection = false;
+        this.alertSrv.set("SQL Data Source Error", error, 'error');
+      });
+    }
+
     // Use custom format for template variables
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+  }
+
+  loadSQLDataSource(datasourceId) {
+    let ds = _.find(this.datasourceSrv.getAll(), {'id': datasourceId});
+    if (ds) {
+      return this.datasourceSrv.loadDatasource(ds.name).then(ds => {
+        console.log('Data source loaded', ds);
+        this.sqlDataSource = ds;
+      });
+    } else {
+      return Promise.reject(`SQL Data Source with ID ${datasourceId} not found`);
+    }
   }
 
   ////////////////////////
