@@ -439,13 +439,14 @@ var ZabbixAPIDatasource = function () {
       return getTriggers.then(function (triggers) {
 
         // Filter triggers by description
-        if (utils.isRegex(annotation.trigger)) {
+        var triggerName = _this6.replaceTemplateVars(annotation.trigger, {});
+        if (utils.isRegex(triggerName)) {
           triggers = _lodash2.default.filter(triggers, function (trigger) {
-            return utils.buildRegex(annotation.trigger).test(trigger.description);
+            return utils.buildRegex(triggerName).test(trigger.description);
           });
-        } else if (annotation.trigger) {
+        } else if (triggerName) {
           triggers = _lodash2.default.filter(triggers, function (trigger) {
-            return trigger.description === annotation.trigger;
+            return trigger.description === triggerName;
           });
         }
 

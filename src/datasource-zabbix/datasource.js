@@ -367,13 +367,14 @@ class ZabbixAPIDatasource {
     return getTriggers.then(triggers => {
 
       // Filter triggers by description
-      if (utils.isRegex(annotation.trigger)) {
+      let triggerName = this.replaceTemplateVars(annotation.trigger, {});
+      if (utils.isRegex(triggerName)) {
         triggers = _.filter(triggers, trigger => {
-          return utils.buildRegex(annotation.trigger).test(trigger.description);
+          return utils.buildRegex(triggerName).test(trigger.description);
         });
-      } else if (annotation.trigger) {
+      } else if (triggerName) {
         triggers = _.filter(triggers, trigger => {
-          return trigger.description === annotation.trigger;
+          return trigger.description === triggerName;
         });
       }
 
