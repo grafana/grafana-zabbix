@@ -55,6 +55,10 @@
           placeholder="trigger name"
           class="gf-form-input"
           ng-style="editor.panel.triggers.trigger.style"
+          ng-class="{
+            'zbx-variable': editor.isVariable(editor.panel.triggers.trigger.filter),
+            'zbx-regex': editor.isRegex(editor.panel.triggers.trigger.filter)
+          }"
           empty-to-null>
       </div>
     </div>
