@@ -45,7 +45,7 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
         let table = HISTORY_TO_TABLE_MAP[value_type];
 
         let query = `
-          SELECT itemid AS metric, clock AS time_sec, ns, value
+          SELECT itemid AS metric, clock AS time_sec, value
             FROM ${table}
             WHERE itemid IN (${itemids})
               AND clock > ${timeFrom} AND clock < ${timeTill}

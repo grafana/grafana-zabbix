@@ -52,7 +52,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
             var itemids = _.map(items, 'itemid').join(', ');
             var table = HISTORY_TO_TABLE_MAP[value_type];
 
-            var query = '\n          SELECT itemid AS metric, clock AS time_sec, ns, value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n        ';
+            var query = '\n          SELECT itemid AS metric, clock AS time_sec, value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n        ';
 
             return _this.invokeSQLQuery(query);
           });
