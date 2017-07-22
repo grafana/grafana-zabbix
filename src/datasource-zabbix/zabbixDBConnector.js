@@ -75,8 +75,8 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
       });
     }
 
-    handleHistory(history, items, addHostName = true) {
-      return convertHistory(history, items, addHostName);
+    handleGrafanaTSResponse(history, items, addHostName = true) {
+      return convertGrafanaTSResponse(history, items, addHostName);
     }
 
     invokeSQLQuery(query) {
@@ -115,7 +115,7 @@ angular
 
 ///////////////////////////////////////////////////////////////////////////////
 
-function convertHistory(time_series, items, addHostName) {
+function convertGrafanaTSResponse(time_series, items, addHostName) {
   var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
   let grafanaSeries = _.map(time_series, series => {
     let itemid = series.name;

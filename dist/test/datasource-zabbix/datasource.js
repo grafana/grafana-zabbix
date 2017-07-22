@@ -232,7 +232,7 @@ var ZabbixAPIDatasource = function () {
           // Use history
           if (_this2.enableDirectDBConnection) {
             getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo, options).then(function (history) {
-              return _this2.zabbix.dbConnector.handleHistory(history, items);
+              return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
             });
           } else {
             getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {

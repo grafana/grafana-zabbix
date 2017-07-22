@@ -91,11 +91,11 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
         });
       }
     }, {
-      key: 'handleHistory',
-      value: function handleHistory(history, items) {
+      key: 'handleGrafanaTSResponse',
+      value: function handleGrafanaTSResponse(history, items) {
         var addHostName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
-        return convertHistory(history, items, addHostName);
+        return convertGrafanaTSResponse(history, items, addHostName);
       }
     }, {
       key: 'invokeSQLQuery',
@@ -135,7 +135,7 @@ _angular2.default.module('grafana.services').factory('ZabbixDBConnector', Zabbix
 
 ///////////////////////////////////////////////////////////////////////////////
 
-function convertHistory(time_series, items, addHostName) {
+function convertGrafanaTSResponse(time_series, items, addHostName) {
   var hosts = _lodash2.default.uniqBy(_lodash2.default.flatten(_lodash2.default.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
   var grafanaSeries = _lodash2.default.map(time_series, function (series) {
     var itemid = series.name;

@@ -71,11 +71,11 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           });
         }
       }, {
-        key: 'handleHistory',
-        value: function handleHistory(history, items) {
+        key: 'handleGrafanaTSResponse',
+        value: function handleGrafanaTSResponse(history, items) {
           var addHostName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
-          return convertHistory(history, items, addHostName);
+          return convertGrafanaTSResponse(history, items, addHostName);
         }
       }, {
         key: 'invokeSQLQuery',
@@ -113,7 +113,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
 
   ///////////////////////////////////////////////////////////////////////////////
 
-  function convertHistory(time_series, items, addHostName) {
+  function convertGrafanaTSResponse(time_series, items, addHostName) {
     var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
     var grafanaSeries = _.map(time_series, function (series) {
       var itemid = series.name;

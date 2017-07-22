@@ -175,7 +175,7 @@ class ZabbixAPIDatasource {
         // Use history
         if (this.enableDirectDBConnection) {
           getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo, options)
-          .then(history => this.zabbix.dbConnector.handleHistory(history, items));
+          .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
         } else {
           getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
           .then(history => responseHandler.handleHistory(history, items));
