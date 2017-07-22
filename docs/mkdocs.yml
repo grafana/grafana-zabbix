@@ -28,5 +28,6 @@ pages:
     - 'Triggers Panel': 'reference/panel-triggers.md'
     - 'Functions': 'reference/functions.md'
     - 'Alerting': 'reference/alerting.md'
+    - 'Direct DB Connection': 'reference/direct-db-connection.md'
 # - Tutorials:
 #     - 'Building Host Dashboard': 'tutorials/host_dashboard.md'
