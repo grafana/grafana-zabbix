@@ -82,6 +82,7 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
 
           var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(value) as value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
 
+          query = compactSQLQuery(query);
           return _this.invokeSQLQuery(query);
         });
 
@@ -153,4 +154,8 @@ function convertHistory(time_series, items, addHostName) {
   });
 
   return _lodash2.default.sortBy(grafanaSeries, 'target');
+}
+
+function compactSQLQuery(query) {
+  return query.replace(/\s+/g, ' ');
 }

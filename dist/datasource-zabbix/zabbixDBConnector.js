@@ -62,6 +62,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
 
             var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(value) as value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
 
+            query = compactSQLQuery(query);
             return _this.invokeSQLQuery(query);
           });
 
@@ -131,6 +132,10 @@ System.register(['angular', 'lodash'], function (_export, _context) {
     });
 
     return _.sortBy(grafanaSeries, 'target');
+  }
+
+  function compactSQLQuery(query) {
+    return query.replace(/\s+/g, ' ');
   }
   return {
     setters: [function (_angular) {

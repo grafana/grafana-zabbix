@@ -66,6 +66,7 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
             GROUP BY time_sec DIV ${intervalSec}, metric
         `;
 
+        query = compactSQLQuery(query);
         return this.invokeSQLQuery(query);
       });
 
@@ -132,4 +133,8 @@ function convertHistory(time_series, items, addHostName) {
   });
 
   return _.sortBy(grafanaSeries, 'target');
+}
+
+function compactSQLQuery(query) {
+  return query.replace(/\s+/g, ' ');
 }
