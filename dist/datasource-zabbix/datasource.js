@@ -23,10 +23,23 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
     });
   }
 
+  function getConsolidateBy(target) {
+    var consolidateBy = 'avg';
+    var funcDef = _.find(target.functions, function (func) {
+      return func.def.name === 'consolidateBy';
+    });
+    if (funcDef && funcDef.params && funcDef.params.length) {
+      consolidateBy = funcDef.params[0];
+    }
+    return consolidateBy;
+  }
+
   function downsampleSeries(timeseries_data, options) {
+    var defaultAgg = dataProcessor.aggregationFunctions['avg'];
+    var consolidateByFunc = dataProcessor.aggregationFunctions[options.consolidateBy] || defaultAgg;
     return _.map(timeseries_data, function (timeseries) {
       if (timeseries.datapoints.length > options.maxDataPoints) {
-        timeseries.datapoints = dataProcessor.groupBy(options.interval, dataProcessor.AVERAGE, timeseries.datapoints);
+        timeseries.datapoints = dataProcessor.groupBy(options.interval, consolidateByFunc, timeseries.datapoints);
       }
       return timeseries;
     });
@@ -339,6 +352,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             };
             return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
               var getHistoryPromise = void 0;
+              options.consolidateBy = getConsolidateBy(target);
 
               if (useTrends) {
                 var valueType = _this2.getTrendValueType(target);

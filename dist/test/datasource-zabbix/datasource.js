@@ -212,6 +212,7 @@ var ZabbixAPIDatasource = function () {
       };
       return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
         var getHistoryPromise = void 0;
+        options.consolidateBy = getConsolidateBy(target);
 
         if (useTrends) {
           var valueType = _this2.getTrendValueType(target);
@@ -614,10 +615,23 @@ function bindFunctionDefs(functionDefs, category) {
   });
 }
 
+function getConsolidateBy(target) {
+  var consolidateBy = 'avg';
+  var funcDef = _lodash2.default.find(target.functions, function (func) {
+    return func.def.name === 'consolidateBy';
+  });
+  if (funcDef && funcDef.params && funcDef.params.length) {
+    consolidateBy = funcDef.params[0];
+  }
+  return consolidateBy;
+}
+
 function downsampleSeries(timeseries_data, options) {
+  var defaultAgg = _dataProcessor2.default.aggregationFunctions['avg'];
+  var consolidateByFunc = _dataProcessor2.default.aggregationFunctions[options.consolidateBy] || defaultAgg;
   return _lodash2.default.map(timeseries_data, function (timeseries) {
     if (timeseries.datapoints.length > options.maxDataPoints) {
-      timeseries.datapoints = _dataProcessor2.default.groupBy(options.interval, _dataProcessor2.default.AVERAGE, timeseries.datapoints);
+      timeseries.datapoints = _dataProcessor2.default.groupBy(options.interval, consolidateByFunc, timeseries.datapoints);
     }
     return timeseries;
   });

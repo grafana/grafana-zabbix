@@ -155,6 +155,7 @@ class ZabbixAPIDatasource {
     return this.zabbix.getItemsFromTarget(target, getItemOptions)
     .then(items => {
       let getHistoryPromise;
+      options.consolidateBy = getConsolidateBy(target);
 
       if (useTrends) {
         let valueType = this.getTrendValueType(target);
@@ -529,11 +530,24 @@ function bindFunctionDefs(functionDefs, category) {
   });
 }
 
+function getConsolidateBy(target) {
+  let consolidateBy = 'avg';
+  let funcDef = _.find(target.functions, func => {
+    return func.def.name === 'consolidateBy';
+  });
+  if (funcDef && funcDef.params && funcDef.params.length) {
+    consolidateBy = funcDef.params[0];
+  }
+  return consolidateBy;
+}
+
 function downsampleSeries(timeseries_data, options) {
+  let defaultAgg = dataProcessor.aggregationFunctions['avg'];
+  let consolidateByFunc = dataProcessor.aggregationFunctions[options.consolidateBy] || defaultAgg;
   return _.map(timeseries_data, timeseries => {
     if (timeseries.datapoints.length > options.maxDataPoints) {
       timeseries.datapoints = dataProcessor
-        .groupBy(options.interval, dataProcessor.AVERAGE, timeseries.datapoints);
+        .groupBy(options.interval, consolidateByFunc, timeseries.datapoints);
     }
     return timeseries;
   });
