@@ -231,7 +231,7 @@ var ZabbixAPIDatasource = function () {
         } else {
           // Use history
           if (_this2.enableDirectDBConnection) {
-            getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo, options.intervalMs).then(function (history) {
+            getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo, options).then(function (history) {
               return _this2.zabbix.dbConnector.handleHistory(history, items);
             });
           } else {

@@ -23,6 +23,14 @@ var HISTORY_TO_TABLE_MAP = {
   '4': 'history_text'
 };
 
+var consolidateByFunc = {
+  'avg': 'AVG',
+  'min': 'MIN',
+  'max': 'MAX',
+  'sum': 'SUM',
+  'count': 'COUNT'
+};
+
 /** @ngInject */
 function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
   var ZabbixDBConnector = function () {
@@ -55,11 +63,16 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
       }
     }, {
       key: 'getHistory',
-      value: function getHistory(items, timeFrom, timeTill, intervalMs) {
+      value: function getHistory(items, timeFrom, timeTill, options) {
         var _this = this;
 
+        var intervalMs = options.intervalMs,
+            consolidateBy = options.consolidateBy;
+
         var intervalSec = Math.ceil(intervalMs / 1000);
-        var aggFunction = 'AVG';
+
+        consolidateBy = consolidateBy || 'avg';
+        var aggFunction = consolidateByFunc[consolidateBy];
 
         // Group items by value type and perform request for each value type
         var grouped_items = _lodash2.default.groupBy(items, 'value_type');

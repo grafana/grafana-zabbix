@@ -10,6 +10,14 @@ const HISTORY_TO_TABLE_MAP = {
   '4': 'history_text'
 };
 
+const consolidateByFunc = {
+  'avg': 'AVG',
+  'min': 'MIN',
+  'max': 'MAX',
+  'sum': 'SUM',
+  'count': 'COUNT'
+};
+
 /** @ngInject */
 function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
 
@@ -37,9 +45,12 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
       }
     }
 
-    getHistory(items, timeFrom, timeTill, intervalMs) {
+    getHistory(items, timeFrom, timeTill, options) {
+      let {intervalMs, consolidateBy} = options;
       let intervalSec = Math.ceil(intervalMs / 1000);
-      let aggFunction = 'AVG';
+
+      consolidateBy = consolidateBy || 'avg';
+      let aggFunction = consolidateByFunc[consolidateBy];
 
       // Group items by value type and perform request for each value type
       let grouped_items = _.groupBy(items, 'value_type');

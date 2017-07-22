@@ -3,7 +3,7 @@
 System.register(['angular', 'lodash'], function (_export, _context) {
   "use strict";
 
-  var angular, _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP;
+  var angular, _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, consolidateByFunc;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -43,11 +43,16 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         }
       }, {
         key: 'getHistory',
-        value: function getHistory(items, timeFrom, timeTill, intervalMs) {
+        value: function getHistory(items, timeFrom, timeTill, options) {
           var _this = this;
 
+          var intervalMs = options.intervalMs,
+              consolidateBy = options.consolidateBy;
+
           var intervalSec = Math.ceil(intervalMs / 1000);
-          var aggFunction = 'AVG';
+
+          consolidateBy = consolidateBy || 'avg';
+          var aggFunction = consolidateByFunc[consolidateBy];
 
           // Group items by value type and perform request for each value type
           var grouped_items = _.groupBy(items, 'value_type');
@@ -159,6 +164,13 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         '2': 'history_log',
         '3': 'history_uint',
         '4': 'history_text'
+      };
+      consolidateByFunc = {
+        'avg': 'AVG',
+        'min': 'MIN',
+        'max': 'MAX',
+        'sum': 'SUM',
+        'count': 'COUNT'
       };
       angular.module('grafana.services').factory('ZabbixDBConnector', ZabbixDBConnectorFactory);
     }
