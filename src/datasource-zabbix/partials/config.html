@@ -99,19 +99,21 @@
     label="Enable alerting"
     checked="ctrl.current.jsonData.alerting">
   </gf-form-switch>
-  <gf-form-switch class="gf-form" label-class="width-9"
-    label="Add thresholds"
-    checked="ctrl.current.jsonData.addThresholds">
-  </gf-form-switch>
-  <div class="gf-form max-width-20">
-    <span class="gf-form-label width-9">Min severity</span>
-    <div class="gf-form-select-wrapper max-width-16">
-      <select class="gf-form-input" ng-model="ctrl.current.jsonData.alertingMinSeverity"
-        ng-options="s.val as s.text for s in [
-          {val: 0, text: 'Not classified'}, {val: 1, text:'Information'},
-          {val: 2, text: 'Warning'}, {val: 3, text: 'Average'},
-          {val: 4, text: 'High'}, {val: 5, text: 'Disaster'}]">
-      </select>
+  <div ng-if="ctrl.current.jsonData.alerting">
+    <gf-form-switch class="gf-form" label-class="width-9"
+      label="Add thresholds"
+      checked="ctrl.current.jsonData.addThresholds">
+    </gf-form-switch>
+    <div class="gf-form max-width-20">
+      <span class="gf-form-label width-9">Min severity</span>
+      <div class="gf-form-select-wrapper max-width-16">
+        <select class="gf-form-input" ng-model="ctrl.current.jsonData.alertingMinSeverity"
+          ng-options="s.val as s.text for s in [
+            {val: 0, text: 'Not classified'}, {val: 1, text:'Information'},
+            {val: 2, text: 'Warning'}, {val: 3, text: 'Average'},
+            {val: 4, text: 'High'}, {val: 5, text: 'Disaster'}]">
+        </select>
+      </div>
     </div>
   </div>
 </div>
