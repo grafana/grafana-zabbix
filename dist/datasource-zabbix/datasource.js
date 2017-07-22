@@ -355,19 +355,24 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               options.consolidateBy = getConsolidateBy(target);
 
               if (useTrends) {
-                var valueType = _this2.getTrendValueType(target);
-                getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
-                  return responseHandler.handleTrends(history, items, valueType);
-                }).then(function (timeseries) {
-                  // Sort trend data, issue #202
-                  _.forEach(timeseries, function (series) {
-                    series.datapoints = _.sortBy(series.datapoints, function (point) {
-                      return point[c.DATAPOINT_TS];
-                    });
+                if (_this2.enableDirectDBConnection) {
+                  getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo, options).then(function (history) {
+                    return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
                   });
-
-                  return timeseries;
-                });
+                } else {
+                  var valueType = _this2.getTrendValueType(target);
+                  getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
+                    return responseHandler.handleTrends(history, items, valueType);
+                  }).then(function (timeseries) {
+                    // Sort trend data, issue #202
+                    _.forEach(timeseries, function (series) {
+                      series.datapoints = _.sortBy(series.datapoints, function (point) {
+                        return point[c.DATAPOINT_TS];
+                      });
+                    });
+                    return timeseries;
+                  });
+                }
               } else {
                 // Use history
                 if (_this2.enableDirectDBConnection) {

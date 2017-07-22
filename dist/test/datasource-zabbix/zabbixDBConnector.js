@@ -23,12 +23,23 @@ var HISTORY_TO_TABLE_MAP = {
   '4': 'history_text'
 };
 
+var TREND_TO_TABLE_MAP = {
+  '0': 'trends',
+  '3': 'trends_uint'
+};
+
 var consolidateByFunc = {
   'avg': 'AVG',
   'min': 'MIN',
   'max': 'MAX',
   'sum': 'SUM',
   'count': 'COUNT'
+};
+
+var consolidateByTrendColumns = {
+  'avg': 'value_avg',
+  'min': 'value_min',
+  'max': 'value_max'
 };
 
 /** @ngInject */
@@ -84,6 +95,37 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
 
           query = compactSQLQuery(query);
           return _this.invokeSQLQuery(query);
+        });
+
+        return Promise.all(promises).then(function (results) {
+          return _lodash2.default.flatten(results);
+        });
+      }
+    }, {
+      key: 'getTrends',
+      value: function getTrends(items, timeFrom, timeTill, options) {
+        var _this2 = this;
+
+        var intervalMs = options.intervalMs,
+            consolidateBy = options.consolidateBy;
+
+        var intervalSec = Math.ceil(intervalMs / 1000);
+
+        consolidateBy = consolidateBy || 'avg';
+        var aggFunction = consolidateByFunc[consolidateBy];
+
+        // Group items by value type and perform request for each value type
+        var grouped_items = _lodash2.default.groupBy(items, 'value_type');
+        var promises = _lodash2.default.map(grouped_items, function (items, value_type) {
+          var itemids = _lodash2.default.map(items, 'itemid').join(', ');
+          var table = TREND_TO_TABLE_MAP[value_type];
+          var valueColumn = _lodash2.default.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
+          valueColumn = consolidateByTrendColumns[valueColumn];
+
+          var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(' + valueColumn + ') as value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
+
+          query = compactSQLQuery(query);
+          return _this2.invokeSQLQuery(query);
         });
 
         return Promise.all(promises).then(function (results) {

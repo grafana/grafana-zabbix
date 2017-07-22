@@ -3,7 +3,7 @@
 System.register(['angular', 'lodash'], function (_export, _context) {
   "use strict";
 
-  var angular, _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, consolidateByFunc;
+  var angular, _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, TREND_TO_TABLE_MAP, consolidateByFunc, consolidateByTrendColumns;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -64,6 +64,37 @@ System.register(['angular', 'lodash'], function (_export, _context) {
 
             query = compactSQLQuery(query);
             return _this.invokeSQLQuery(query);
+          });
+
+          return Promise.all(promises).then(function (results) {
+            return _.flatten(results);
+          });
+        }
+      }, {
+        key: 'getTrends',
+        value: function getTrends(items, timeFrom, timeTill, options) {
+          var _this2 = this;
+
+          var intervalMs = options.intervalMs,
+              consolidateBy = options.consolidateBy;
+
+          var intervalSec = Math.ceil(intervalMs / 1000);
+
+          consolidateBy = consolidateBy || 'avg';
+          var aggFunction = consolidateByFunc[consolidateBy];
+
+          // Group items by value type and perform request for each value type
+          var grouped_items = _.groupBy(items, 'value_type');
+          var promises = _.map(grouped_items, function (items, value_type) {
+            var itemids = _.map(items, 'itemid').join(', ');
+            var table = TREND_TO_TABLE_MAP[value_type];
+            var valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
+            valueColumn = consolidateByTrendColumns[valueColumn];
+
+            var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(' + valueColumn + ') as value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
+
+            query = compactSQLQuery(query);
+            return _this2.invokeSQLQuery(query);
           });
 
           return Promise.all(promises).then(function (results) {
@@ -170,12 +201,21 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         '3': 'history_uint',
         '4': 'history_text'
       };
+      TREND_TO_TABLE_MAP = {
+        '0': 'trends',
+        '3': 'trends_uint'
+      };
       consolidateByFunc = {
         'avg': 'AVG',
         'min': 'MIN',
         'max': 'MAX',
         'sum': 'SUM',
         'count': 'COUNT'
+      };
+      consolidateByTrendColumns = {
+        'avg': 'value_avg',
+        'min': 'value_min',
+        'max': 'value_max'
       };
       angular.module('grafana.services').factory('ZabbixDBConnector', ZabbixDBConnectorFactory);
     }

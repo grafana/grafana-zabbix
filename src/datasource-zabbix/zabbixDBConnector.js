@@ -10,12 +10,23 @@ const HISTORY_TO_TABLE_MAP = {
   '4': 'history_text'
 };
 
+const TREND_TO_TABLE_MAP = {
+  '0': 'trends',
+  '3': 'trends_uint'
+};
+
 const consolidateByFunc = {
   'avg': 'AVG',
   'min': 'MIN',
   'max': 'MAX',
   'sum': 'SUM',
   'count': 'COUNT'
+};
+
+const consolidateByTrendColumns = {
+  'avg': 'value_avg',
+  'min': 'value_min',
+  'max': 'value_max'
 };
 
 /** @ngInject */
@@ -60,6 +71,38 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
 
         let query = `
           SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(value) as value
+            FROM ${table}
+            WHERE itemid IN (${itemids})
+              AND clock > ${timeFrom} AND clock < ${timeTill}
+            GROUP BY time_sec DIV ${intervalSec}, metric
+        `;
+
+        query = compactSQLQuery(query);
+        return this.invokeSQLQuery(query);
+      });
+
+      return Promise.all(promises).then(results => {
+        return _.flatten(results);
+      });
+    }
+
+    getTrends(items, timeFrom, timeTill, options) {
+      let {intervalMs, consolidateBy} = options;
+      let intervalSec = Math.ceil(intervalMs / 1000);
+
+      consolidateBy = consolidateBy || 'avg';
+      let aggFunction = consolidateByFunc[consolidateBy];
+
+      // Group items by value type and perform request for each value type
+      let grouped_items = _.groupBy(items, 'value_type');
+      let promises = _.map(grouped_items, (items, value_type) => {
+        let itemids = _.map(items, 'itemid').join(', ');
+        let table = TREND_TO_TABLE_MAP[value_type];
+        let valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
+        valueColumn = consolidateByTrendColumns[valueColumn];
+
+        let query = `
+          SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(${valueColumn}) as value
             FROM ${table}
             WHERE itemid IN (${itemids})
               AND clock > ${timeFrom} AND clock < ${timeTill}
