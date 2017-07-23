@@ -45,16 +45,25 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
         var ZabbixAPI = zabbixAPIService;
         this.zabbixAPI = new ZabbixAPI(url, username, password, basicAuth, withCredentials);
 
+        if (enableDirectDBConnection) {
+          this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
+        }
+
         // Initialize caching proxy for requests
         var cacheOptions = {
           enabled: true,
           ttl: cacheTTL
         };
-        this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, cacheOptions);
+        this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, this.dbConnector, cacheOptions);
 
         // Proxy methods
         this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
         this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
+
+        if (enableDirectDBConnection) {
+          this.getHistoryDB = this.cachingProxy.getHistoryDB.bind(this.cachingProxy);
+          this.getTrendsDB = this.cachingProxy.getTrendsDB.bind(this.cachingProxy);
+        }
 
         this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
         this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
@@ -64,12 +73,6 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
         this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
         this.getVersion = this.zabbixAPI.getVersion.bind(this.zabbixAPI);
         this.login = this.zabbixAPI.login.bind(this.zabbixAPI);
-
-        if (enableDirectDBConnection) {
-          this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
-          this.getHistoryDB = this.dbConnector.getHistory.bind(this.dbConnector);
-          this.getTrendsDB = this.dbConnector.getTrends.bind(this.dbConnector);
-        }
       }
 
       _createClass(Zabbix, [{

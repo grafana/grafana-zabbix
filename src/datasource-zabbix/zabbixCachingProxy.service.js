@@ -8,8 +8,9 @@ import _ from 'lodash';
 function ZabbixCachingProxyFactory() {
 
   class ZabbixCachingProxy {
-    constructor(zabbixAPI, cacheOptions) {
+    constructor(zabbixAPI, zabbixDBConnector, cacheOptions) {
       this.zabbixAPI = zabbixAPI;
+      this.dbConnector = zabbixDBConnector;
       this.cacheEnabled = cacheOptions.enabled;
       this.ttl          = cacheOptions.ttl || 600000; // 10 minutes by default
 
@@ -30,6 +31,13 @@ function ZabbixCachingProxyFactory() {
       // Don't run duplicated history requests
       this.getHistory = callAPIRequestOnce(_.bind(this.zabbixAPI.getHistory, this.zabbixAPI),
                                            this.historyPromises, getHistoryRequestHash);
+
+      if (this.dbConnector) {
+        this.getHistoryDB = callAPIRequestOnce(_.bind(this.dbConnector.getHistory, this.dbConnector),
+                                               this.historyPromises, getDBQueryHash);
+        this.getTrendsDB = callAPIRequestOnce(_.bind(this.dbConnector.getTrends, this.dbConnector),
+                                              this.historyPromises, getDBQueryHash);
+      }
 
       // Don't run duplicated requests
       this.groupPromises = {};
@@ -192,6 +200,14 @@ function getRequestHash(args) {
 function getHistoryRequestHash(args) {
   let itemids = _.map(args[0], 'itemid');
   let stamp = itemids.join() + args[1] + args[2];
+  return stamp.getHash();
+}
+
+function getDBQueryHash(args) {
+  let itemids = _.map(args[0], 'itemid');
+  let consolidateBy = args[3].consolidateBy;
+  let intervalMs = args[3].intervalMs;
+  let stamp = itemids.join() + args[1] + args[2] + consolidateBy + intervalMs;
   return stamp.getHash();
 }
 
