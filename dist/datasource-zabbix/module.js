@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['./datasource', './query.controller'], function (_export, _context) {
+System.register(['./datasource', './query.controller', './config.controller'], function (_export, _context) {
   "use strict";
 
-  var ZabbixAPIDatasource, ZabbixQueryController, ZabbixConfigController, ZabbixQueryOptionsController, ZabbixAnnotationsQueryController;
+  var ZabbixAPIDatasource, ZabbixQueryController, ZabbixDSConfigController, ZabbixQueryOptionsController, ZabbixAnnotationsQueryController;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -16,14 +16,10 @@ System.register(['./datasource', './query.controller'], function (_export, _cont
       ZabbixAPIDatasource = _datasource.ZabbixAPIDatasource;
     }, function (_queryController) {
       ZabbixQueryController = _queryController.ZabbixQueryController;
+    }, function (_configController) {
+      ZabbixDSConfigController = _configController.ZabbixDSConfigController;
     }],
     execute: function () {
-      _export('ConfigCtrl', ZabbixConfigController = function ZabbixConfigController() {
-        _classCallCheck(this, ZabbixConfigController);
-      });
-
-      ZabbixConfigController.templateUrl = 'datasource-zabbix/partials/config.html';
-
       _export('QueryOptionsCtrl', ZabbixQueryOptionsController = function ZabbixQueryOptionsController() {
         _classCallCheck(this, ZabbixQueryOptionsController);
       });
@@ -38,7 +34,7 @@ System.register(['./datasource', './query.controller'], function (_export, _cont
 
       _export('Datasource', ZabbixAPIDatasource);
 
-      _export('ConfigCtrl', ZabbixConfigController);
+      _export('ConfigCtrl', ZabbixDSConfigController);
 
       _export('QueryCtrl', ZabbixQueryController);
 

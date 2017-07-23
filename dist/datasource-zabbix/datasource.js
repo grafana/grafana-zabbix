@@ -23,10 +23,23 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
     });
   }
 
+  function getConsolidateBy(target) {
+    var consolidateBy = 'avg';
+    var funcDef = _.find(target.functions, function (func) {
+      return func.def.name === 'consolidateBy';
+    });
+    if (funcDef && funcDef.params && funcDef.params.length) {
+      consolidateBy = funcDef.params[0];
+    }
+    return consolidateBy;
+  }
+
   function downsampleSeries(timeseries_data, options) {
+    var defaultAgg = dataProcessor.aggregationFunctions['avg'];
+    var consolidateByFunc = dataProcessor.aggregationFunctions[options.consolidateBy] || defaultAgg;
     return _.map(timeseries_data, function (timeseries) {
       if (timeseries.datapoints.length > options.maxDataPoints) {
-        timeseries.datapoints = dataProcessor.groupBy(options.interval, dataProcessor.AVERAGE, timeseries.datapoints);
+        timeseries.datapoints = dataProcessor.groupBy(options.interval, consolidateByFunc, timeseries.datapoints);
       }
       return timeseries;
     });
@@ -191,6 +204,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           this.dashboardSrv = dashboardSrv;
           this.zabbixAlertingSrv = zabbixAlertingSrv;
 
+          // Use custom format for template variables
+          this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+
           // General data source settings
           this.name = instanceSettings.name;
           this.url = instanceSettings.url;
@@ -215,10 +231,21 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           this.addThresholds = instanceSettings.jsonData.addThresholds;
           this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
-          this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
+          // Direct DB Connection options
+          this.enableDirectDBConnection = instanceSettings.jsonData.dbConnection.enable;
+          this.sqlDatasourceId = instanceSettings.jsonData.dbConnection.datasourceId;
 
-          // Use custom format for template variables
-          this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+          var zabbixOptions = {
+            username: this.username,
+            password: this.password,
+            basicAuth: this.basicAuth,
+            withCredentials: this.withCredentials,
+            cacheTTL: this.cacheTTL,
+            enableDirectDBConnection: this.enableDirectDBConnection,
+            sqlDatasourceId: this.sqlDatasourceId
+          };
+
+          this.zabbix = new Zabbix(this.url, zabbixOptions);
         }
 
         ////////////////////////
@@ -324,26 +351,38 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             };
             return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
               var getHistoryPromise = void 0;
+              options.consolidateBy = getConsolidateBy(target);
 
               if (useTrends) {
-                var valueType = _this2.getTrendValueType(target);
-                getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
-                  return responseHandler.handleTrends(history, items, valueType);
-                }).then(function (timeseries) {
-                  // Sort trend data, issue #202
-                  _.forEach(timeseries, function (series) {
-                    series.datapoints = _.sortBy(series.datapoints, function (point) {
-                      return point[c.DATAPOINT_TS];
-                    });
+                if (_this2.enableDirectDBConnection) {
+                  getHistoryPromise = _this2.zabbix.getTrendsDB(items, timeFrom, timeTo, options).then(function (history) {
+                    return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
                   });
-
-                  return timeseries;
-                });
+                } else {
+                  var valueType = _this2.getTrendValueType(target);
+                  getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
+                    return responseHandler.handleTrends(history, items, valueType);
+                  }).then(function (timeseries) {
+                    // Sort trend data, issue #202
+                    _.forEach(timeseries, function (series) {
+                      series.datapoints = _.sortBy(series.datapoints, function (point) {
+                        return point[c.DATAPOINT_TS];
+                      });
+                    });
+                    return timeseries;
+                  });
+                }
               } else {
                 // Use history
-                getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
-                  return responseHandler.handleHistory(history, items);
-                });
+                if (_this2.enableDirectDBConnection) {
+                  getHistoryPromise = _this2.zabbix.getHistoryDB(items, timeFrom, timeTo, options).then(function (history) {
+                    return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
+                  });
+                } else {
+                  getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
+                    return responseHandler.handleHistory(history, items);
+                  });
+                }
               }
 
               return getHistoryPromise;

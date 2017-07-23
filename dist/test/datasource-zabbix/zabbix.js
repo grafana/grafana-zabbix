@@ -18,6 +18,8 @@ require('./zabbixAPI.service.js');
 
 require('./zabbixCachingProxy.service.js');
 
+require('./zabbixDBConnector');
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -30,25 +32,43 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // Each Zabbix data source instance should initialize its own API instance.
 
 /** @ngInject */
-function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
+function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) {
   var Zabbix = function () {
-    function Zabbix(url, username, password, basicAuth, withCredentials, cacheTTL) {
+    function Zabbix(url, options) {
       _classCallCheck(this, Zabbix);
 
+      var username = options.username,
+          password = options.password,
+          basicAuth = options.basicAuth,
+          withCredentials = options.withCredentials,
+          cacheTTL = options.cacheTTL,
+          enableDirectDBConnection = options.enableDirectDBConnection,
+          sqlDatasourceId = options.sqlDatasourceId;
+
       // Initialize Zabbix API
+
       var ZabbixAPI = zabbixAPIService;
       this.zabbixAPI = new ZabbixAPI(url, username, password, basicAuth, withCredentials);
+
+      if (enableDirectDBConnection) {
+        this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
+      }
 
       // Initialize caching proxy for requests
       var cacheOptions = {
         enabled: true,
         ttl: cacheTTL
       };
-      this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, cacheOptions);
+      this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, this.dbConnector, cacheOptions);
 
       // Proxy methods
       this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
       this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
+
+      if (enableDirectDBConnection) {
+        this.getHistoryDB = this.cachingProxy.getHistoryDB.bind(this.cachingProxy);
+        this.getTrendsDB = this.cachingProxy.getTrendsDB.bind(this.cachingProxy);
+      }
 
       this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
       this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);

@@ -80,7 +80,8 @@ System.register(['lodash', 'jquery'], function (_export, _context) {
         Filter: [],
         Trends: [],
         Time: [],
-        Alias: []
+        Alias: [],
+        Special: []
       };
       addFuncDef({
         name: 'groupBy',
@@ -223,6 +224,14 @@ System.register(['lodash', 'jquery'], function (_export, _context) {
         category: 'Alias',
         params: [{ name: 'regexp', type: 'string' }, { name: 'newAlias', type: 'string' }],
         defaultParams: ['/(.*)/', '$1']
+      });
+
+      // Special
+      addFuncDef({
+        name: 'consolidateBy',
+        category: 'Special',
+        params: [{ name: 'type', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count'] }],
+        defaultParams: ['avg']
       });
 
       _.each(categories, function (funcList, catName) {

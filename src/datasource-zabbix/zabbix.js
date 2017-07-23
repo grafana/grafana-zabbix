@@ -3,30 +3,44 @@ import _ from 'lodash';
 import * as utils from './utils';
 import './zabbixAPI.service.js';
 import './zabbixCachingProxy.service.js';
+import './zabbixDBConnector';
 
 // Use factory() instead service() for multiple data sources support.
 // Each Zabbix data source instance should initialize its own API instance.
 
 /** @ngInject */
-function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy) {
+function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) {
 
   class Zabbix {
-    constructor(url, username, password, basicAuth, withCredentials, cacheTTL) {
+    constructor(url, options) {
+      let {
+        username, password, basicAuth, withCredentials, cacheTTL,
+        enableDirectDBConnection, sqlDatasourceId
+      } = options;
 
       // Initialize Zabbix API
       var ZabbixAPI = zabbixAPIService;
       this.zabbixAPI = new ZabbixAPI(url, username, password, basicAuth, withCredentials);
+
+      if (enableDirectDBConnection) {
+        this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
+      }
 
       // Initialize caching proxy for requests
       let cacheOptions = {
         enabled: true,
         ttl: cacheTTL
       };
-      this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, cacheOptions);
+      this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, this.dbConnector, cacheOptions);
 
       // Proxy methods
       this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
       this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
+
+      if (enableDirectDBConnection) {
+        this.getHistoryDB = this.cachingProxy.getHistoryDB.bind(this.cachingProxy);
+        this.getTrendsDB = this.cachingProxy.getTrendsDB.bind(this.cachingProxy);
+      }
 
       this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
       this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);

@@ -19,6 +19,9 @@ class ZabbixAPIDatasource {
     this.dashboardSrv = dashboardSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
 
+    // Use custom format for template variables
+    this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+
     // General data source settings
     this.name             = instanceSettings.name;
     this.url              = instanceSettings.url;
@@ -43,10 +46,21 @@ class ZabbixAPIDatasource {
     this.addThresholds = instanceSettings.jsonData.addThresholds;
     this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
-    this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
+    // Direct DB Connection options
+    this.enableDirectDBConnection = instanceSettings.jsonData.dbConnection.enable;
+    this.sqlDatasourceId = instanceSettings.jsonData.dbConnection.datasourceId;
 
-    // Use custom format for template variables
-    this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+    let zabbixOptions = {
+      username: this.username,
+      password: this.password,
+      basicAuth: this.basicAuth,
+      withCredentials: this.withCredentials,
+      cacheTTL: this.cacheTTL,
+      enableDirectDBConnection: this.enableDirectDBConnection,
+      sqlDatasourceId: this.sqlDatasourceId
+    };
+
+    this.zabbix = new Zabbix(this.url, zabbixOptions);
   }
 
   ////////////////////////
@@ -140,27 +154,33 @@ class ZabbixAPIDatasource {
     return this.zabbix.getItemsFromTarget(target, getItemOptions)
     .then(items => {
       let getHistoryPromise;
+      options.consolidateBy = getConsolidateBy(target);
 
       if (useTrends) {
-        let valueType = this.getTrendValueType(target);
-        getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo)
-        .then(history => {
-          return responseHandler.handleTrends(history, items, valueType);
-        })
-        .then(timeseries => {
-          // Sort trend data, issue #202
-          _.forEach(timeseries, series => {
-            series.datapoints = _.sortBy(series.datapoints, point => point[c.DATAPOINT_TS]);
+        if (this.enableDirectDBConnection) {
+          getHistoryPromise = this.zabbix.getTrendsDB(items, timeFrom, timeTo, options)
+          .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
+        } else {
+          let valueType = this.getTrendValueType(target);
+          getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo)
+          .then(history => responseHandler.handleTrends(history, items, valueType))
+          .then(timeseries => {
+            // Sort trend data, issue #202
+            _.forEach(timeseries, series => {
+              series.datapoints = _.sortBy(series.datapoints, point => point[c.DATAPOINT_TS]);
+            });
+            return timeseries;
           });
-
-          return timeseries;
-        });
+        }
       } else {
         // Use history
-        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
-        .then(history => {
-          return responseHandler.handleHistory(history, items);
-        });
+        if (this.enableDirectDBConnection) {
+          getHistoryPromise = this.zabbix.getHistoryDB(items, timeFrom, timeTo, options)
+          .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
+        } else {
+          getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
+          .then(history => responseHandler.handleHistory(history, items));
+        }
       }
 
       return getHistoryPromise;
@@ -511,11 +531,24 @@ function bindFunctionDefs(functionDefs, category) {
   });
 }
 
+function getConsolidateBy(target) {
+  let consolidateBy = 'avg';
+  let funcDef = _.find(target.functions, func => {
+    return func.def.name === 'consolidateBy';
+  });
+  if (funcDef && funcDef.params && funcDef.params.length) {
+    consolidateBy = funcDef.params[0];
+  }
+  return consolidateBy;
+}
+
 function downsampleSeries(timeseries_data, options) {
+  let defaultAgg = dataProcessor.aggregationFunctions['avg'];
+  let consolidateByFunc = dataProcessor.aggregationFunctions[options.consolidateBy] || defaultAgg;
   return _.map(timeseries_data, timeseries => {
     if (timeseries.datapoints.length > options.maxDataPoints) {
       timeseries.datapoints = dataProcessor
-        .groupBy(options.interval, dataProcessor.AVERAGE, timeseries.datapoints);
+        .groupBy(options.interval, consolidateByFunc, timeseries.datapoints);
     }
     return timeseries;
   });
