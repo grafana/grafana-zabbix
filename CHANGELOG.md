@@ -1,10 +1,16 @@
 # Change Log
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- `consolidateBy` function, which allows to specify aggregation function for time series data.
+- Direct DB Connection, which allows to use existing SQL data source for querying history data directly from Zabbix database.
+- **Docs**: Direct DB Connection reference and configuration.
+
 ### Fixed
 - Template variables support in annotations and triggers panel (trigger name field), [#428](https://github.com/alexanderzobnin/grafana-zabbix/issues/428)
 
