@@ -196,13 +196,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
       _export('ZabbixAPIDatasource', ZabbixAPIDatasource = function () {
 
         /** @ngInject */
-        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, datasourceSrv, zabbixAlertingSrv, Zabbix) {
+        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
           _classCallCheck(this, ZabbixAPIDatasource);
 
           this.templateSrv = templateSrv;
           this.alertSrv = alertSrv;
           this.dashboardSrv = dashboardSrv;
-          this.datasourceSrv = datasourceSrv;
           this.zabbixAlertingSrv = zabbixAlertingSrv;
 
           // Use custom format for template variables
