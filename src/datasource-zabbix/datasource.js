@@ -159,7 +159,7 @@ class ZabbixAPIDatasource {
 
       if (useTrends) {
         if (this.enableDirectDBConnection) {
-          getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo, options)
+          getHistoryPromise = this.zabbix.getTrendsDB(items, timeFrom, timeTo, options)
           .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
         } else {
           let valueType = this.getTrendValueType(target);
@@ -176,7 +176,7 @@ class ZabbixAPIDatasource {
       } else {
         // Use history
         if (this.enableDirectDBConnection) {
-          getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo, options)
+          getHistoryPromise = this.zabbix.getHistoryDB(items, timeFrom, timeTo, options)
           .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
         } else {
           getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)

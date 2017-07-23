@@ -67,8 +67,8 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
 
         if (enableDirectDBConnection) {
           this.dbConnector = new ZabbixDBConnector(sqlDatasourceId);
-          this.getHistory = this.dbConnector.getHistory.bind(this.dbConnector);
-          this.getTrend = this.dbConnector.getTrends.bind(this.dbConnector);
+          this.getHistoryDB = this.dbConnector.getHistory.bind(this.dbConnector);
+          this.getTrendsDB = this.dbConnector.getTrends.bind(this.dbConnector);
         }
       }
 

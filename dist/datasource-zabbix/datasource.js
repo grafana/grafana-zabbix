@@ -356,7 +356,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
               if (useTrends) {
                 if (_this2.enableDirectDBConnection) {
-                  getHistoryPromise = _this2.zabbix.getTrend(items, timeFrom, timeTo, options).then(function (history) {
+                  getHistoryPromise = _this2.zabbix.getTrendsDB(items, timeFrom, timeTo, options).then(function (history) {
                     return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
                   });
                 } else {
@@ -376,7 +376,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               } else {
                 // Use history
                 if (_this2.enableDirectDBConnection) {
-                  getHistoryPromise = _this2.zabbix.getHistory(items, timeFrom, timeTo, options).then(function (history) {
+                  getHistoryPromise = _this2.zabbix.getHistoryDB(items, timeFrom, timeTo, options).then(function (history) {
                     return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
                   });
                 } else {
