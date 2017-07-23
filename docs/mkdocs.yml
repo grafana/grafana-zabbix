@@ -18,6 +18,7 @@ pages:
 - Installation:
     - 'Installation': 'installation/index.md'
     - 'Configuration': 'installation/configuration.md'
+    - 'SQL Data Source Configuration': 'installation/configuration-sql.md'
     - 'Upgrade': 'installation/upgrade.md'
     - 'Troubleshooting': 'installation/troubleshooting.md'
 - User Guides:
