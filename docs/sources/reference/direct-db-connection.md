@@ -8,7 +8,7 @@ returns huge amount of data. In order to display it, plugin should adjust time s
 by using [consolidateBy](/reference/functions/#consolidateby) function. Ultimately, Grafana displays this reduced
 time series, but that data should be loaded and processed on the client side first. Direct DB Connection solves this
 two problems by moving consolidation to the server side. Thus, client get ready-to-use dataset which has much smaller
-size. Data loads faster and client don't spend time for data processing.
+size. Data loads faster and client doesn't spend time for data processing.
 
 Also, many users point better performance of direct database queries versus API calls. This caused by several reasons,
 such as additional PHP layer and additional SQL queries (user permissions checks).
