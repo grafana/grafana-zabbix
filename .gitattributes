@@ -1,3 +1,4 @@
 # Don't diff files in dist/
 *.map binary
 dist/** binary
+*.svg filter=lfs diff=lfs merge=lfs -text
