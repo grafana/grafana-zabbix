@@ -126,15 +126,7 @@ class ZabbixAPIDatasource {
 
       // IT services mode
       else if (target.mode === c.MODE_ITSERVICE) {
-        // Don't show undefined and hidden targets
-        if (target.hide || !target.itservice || !target.slaProperty) {
-          return [];
-        }
-
-        return this.zabbix.getSLA(target.itservice.serviceid, timeRange)
-        .then(slaObject => {
-          return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
-        });
+        return this.queryITServiceData(target, timeRange, options);
       }
     });
 
@@ -274,6 +266,45 @@ class ZabbixAPIDatasource {
           return Promise.resolve([]);
         }
       });
+  }
+
+  queryITServiceData(target, timeRange, options) {
+    // Don't show undefined and hidden targets
+    if (target.hide || (!target.itservice && !target.itServiceFilter) || !target.slaProperty) {
+      return [];
+    }
+
+    let itServiceIds = [];
+    let itServices = [];
+    let itServiceFilter;
+    let isOldVersion = target.itservice && !target.itServiceFilter;
+
+    if (isOldVersion) {
+      // Backward compatibility
+      itServiceFilter = '/.*/';
+    } else {
+      itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, options.scopedVars);
+    }
+
+    return this.zabbix.getITServices(itServiceFilter)
+    .then(itservices => {
+      itServices = itservices;
+      if (isOldVersion) {
+        itServices = _.filter(itServices, {'serviceid': target.itservice.serviceid});
+      }
+
+      itServiceIds = _.map(itServices, 'serviceid');
+      return itServiceIds;
+    })
+    .then(serviceids => {
+      return this.zabbix.getSLA(serviceids, timeRange);
+    })
+    .then(slaResponse => {
+      return _.map(itServiceIds, serviceid => {
+        let itservice = _.find(itServices, {'serviceid': serviceid});
+        return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
+      });
+    });
   }
 
   /**

@@ -28,11 +28,20 @@ export class ZabbixQueryController extends QueryCtrl {
       2: {value: 'text',      text: 'Text',        mode: c.MODE_TEXT}
     };
 
+    this.slaPropertyList = [
+      {name: "Status", property: "status"},
+      {name: "SLA", property: "sla"},
+      {name: "OK time", property: "okTime"},
+      {name: "Problem time", property: "problemTime"},
+      {name: "Down time", property: "downtimeTime"}
+    ];
+
     // Map functions for bs-typeahead
     this.getGroupNames = _.bind(this.getMetricNames, this, 'groupList');
     this.getHostNames = _.bind(this.getMetricNames, this, 'hostList', true);
     this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
     this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
+    this.getITServices = _.bind(this.getMetricNames, this, 'itServiceList');
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
@@ -88,15 +97,8 @@ export class ZabbixQueryController extends QueryCtrl {
         this.initFilters();
       }
       else if (target.mode === c.MODE_ITSERVICE) {
-        this.slaPropertyList = [
-          {name: "Status", property: "status"},
-          {name: "SLA", property: "sla"},
-          {name: "OK time", property: "okTime"},
-          {name: "Problem time", property: "problemTime"},
-          {name: "Down time", property: "downtimeTime"}
-        ];
-        this.itserviceList = [{name: "test"}];
-        this.updateITServiceList();
+        _.defaults(target, {slaProperty: {name: "SLA", property: "sla"}});
+        this.suggestITServices();
       }
     };
 
@@ -170,6 +172,14 @@ export class ZabbixQueryController extends QueryCtrl {
     .then(items => {
       this.metric.itemList = items;
       return items;
+    });
+  }
+
+  suggestITServices() {
+    return this.zabbix.getITService()
+    .then(itservices => {
+      this.metric.itServiceList = itservices;
+      return itservices;
     });
   }
 

@@ -201,6 +201,13 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) 
           return filterByQuery(items, itemFilter);
         });
       }
+    }, {
+      key: 'getITServices',
+      value: function getITServices(itServiceFilter) {
+        return this.cachingProxy.getITServices().then(function (itServices) {
+          return findByFilter(itServices, itServiceFilter);
+        });
+      }
 
       /**
        * Build query - convert target filters to array of Zabbix items

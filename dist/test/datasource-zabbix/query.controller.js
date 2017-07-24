@@ -70,11 +70,14 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
       2: { value: 'text', text: 'Text', mode: c.MODE_TEXT }
     };
 
+    _this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
+
     // Map functions for bs-typeahead
     _this.getGroupNames = _lodash2.default.bind(_this.getMetricNames, _this, 'groupList');
     _this.getHostNames = _lodash2.default.bind(_this.getMetricNames, _this, 'hostList', true);
     _this.getApplicationNames = _lodash2.default.bind(_this.getMetricNames, _this, 'appList');
     _this.getItemNames = _lodash2.default.bind(_this.getMetricNames, _this, 'itemList');
+    _this.getITServices = _lodash2.default.bind(_this.getMetricNames, _this, 'itServiceList');
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', function () {
@@ -124,9 +127,8 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
 
         this.initFilters();
       } else if (target.mode === c.MODE_ITSERVICE) {
-        this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
-        this.itserviceList = [{ name: "test" }];
-        this.updateITServiceList();
+        _lodash2.default.defaults(target, { slaProperty: { name: "SLA", property: "sla" } });
+        this.suggestITServices();
       }
     };
 
@@ -213,6 +215,16 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
       });
     }
   }, {
+    key: 'suggestITServices',
+    value: function suggestITServices() {
+      var _this6 = this;
+
+      return this.zabbix.getITService().then(function (itservices) {
+        _this6.metric.itServiceList = itservices;
+        return itservices;
+      });
+    }
+  }, {
     key: 'isRegex',
     value: function isRegex(str) {
       return utils.isRegex(str);
@@ -246,11 +258,11 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
   }, {
     key: 'isContainsVariables',
     value: function isContainsVariables() {
-      var _this6 = this;
+      var _this7 = this;
 
       return _lodash2.default.some(['group', 'host', 'application'], function (field) {
-        if (_this6.target[field] && _this6.target[field].filter) {
-          return utils.isTemplateVariable(_this6.target[field].filter, _this6.templateSrv.variables);
+        if (_this7.target[field] && _this7.target[field].filter) {
+          return utils.isTemplateVariable(_this7.target[field].filter, _this7.templateSrv.variables);
         } else {
           return false;
         }
@@ -365,11 +377,11 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
   }, {
     key: 'updateITServiceList',
     value: function updateITServiceList() {
-      var _this7 = this;
+      var _this8 = this;
 
       this.zabbix.getITService().then(function (iteservices) {
-        _this7.itserviceList = [];
-        _this7.itserviceList = _this7.itserviceList.concat(iteservices);
+        _this8.itserviceList = [];
+        _this8.itserviceList = _this8.itserviceList.concat(iteservices);
       });
     }
 
