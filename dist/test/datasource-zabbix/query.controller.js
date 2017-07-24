@@ -9,10 +9,6 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _sdk = require('app/plugins/sdk');
 
-var _angular = require('angular');
-
-var _angular2 = _interopRequireDefault(_angular);
-
 var _lodash = require('lodash');
 
 var _lodash2 = _interopRequireDefault(_lodash);
@@ -104,14 +100,14 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
 
       // Load default values
       var targetDefaults = {
-        mode: c.MODE_METRICS,
-        group: { filter: "" },
-        host: { filter: "" },
-        application: { filter: "" },
-        item: { filter: "" },
-        functions: [],
-        options: {
-          showDisabledItems: false
+        'mode': c.MODE_METRICS,
+        'group': { 'filter': "" },
+        'host': { 'filter': "" },
+        'application': { 'filter': "" },
+        'item': { 'filter': "" },
+        'functions': [],
+        'options': {
+          'showDisabledItems': false
         }
       };
       _lodash2.default.defaults(target, targetDefaults);
@@ -122,8 +118,6 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
       });
 
       if (target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
-
-        this.downsampleFunctionList = [{ name: "avg", value: "avg" }, { name: "min", value: "min" }, { name: "max", value: "max" }, { name: "sum", value: "sum" }, { name: "count", value: "count" }];
 
         this.initFilters();
       } else if (target.mode === c.MODE_ITSERVICE) {
@@ -364,38 +358,6 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     value: function switchEditorMode(mode) {
       this.target.mode = mode;
       this.init();
-    }
-
-    /////////////////
-    // IT Services //
-    /////////////////
-
-    /**
-     * Update list of IT services
-     */
-
-  }, {
-    key: 'updateITServiceList',
-    value: function updateITServiceList() {
-      var _this8 = this;
-
-      this.zabbix.getITService().then(function (iteservices) {
-        _this8.itserviceList = [];
-        _this8.itserviceList = _this8.itserviceList.concat(iteservices);
-      });
-    }
-
-    /**
-     * Call when IT service is selected.
-     */
-
-  }, {
-    key: 'selectITService',
-    value: function selectITService() {
-      if (!_lodash2.default.isEqual(this.oldTarget, this.target) && _lodash2.default.isEmpty(this.target.errors)) {
-        this.oldTarget = _angular2.default.copy(this.target);
-        this.panelCtrl.refresh();
-      }
     }
   }]);
 

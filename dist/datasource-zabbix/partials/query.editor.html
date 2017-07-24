@@ -37,7 +37,7 @@
       <label class="gf-form-label query-keyword">Property</label>
       <div class="gf-form-select-wrapper">
         <select class="gf-form-input"
-          ng-change="ctrl.selectITService()"
+          ng-change="ctrl.onTargetBlur()"
           ng-model="ctrl.target.slaProperty"
           ng-options="slaProperty.name for slaProperty in ctrl.slaPropertyList track by slaProperty.name">
         </select>
