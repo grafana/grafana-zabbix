@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['app/plugins/sdk', 'angular', 'lodash', './constants', './utils', './metricFunctions', './migrations', './add-metric-function.directive', './metric-function-editor.directive', './css/query-editor.css!'], function (_export, _context) {
+System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metricFunctions', './migrations', './add-metric-function.directive', './metric-function-editor.directive', './css/query-editor.css!'], function (_export, _context) {
   "use strict";
 
-  var QueryCtrl, angular, _, c, utils, metricFunctions, migrations, _createClass, ZabbixQueryController;
+  var QueryCtrl, _, c, utils, metricFunctions, migrations, _createClass, ZabbixQueryController;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -38,8 +38,6 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './constants', './utils
   return {
     setters: [function (_appPluginsSdk) {
       QueryCtrl = _appPluginsSdk.QueryCtrl;
-    }, function (_angular) {
-      angular = _angular.default;
     }, function (_lodash) {
       _ = _lodash.default;
     }, function (_constants) {
@@ -91,11 +89,14 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './constants', './utils
             2: { value: 'text', text: 'Text', mode: c.MODE_TEXT }
           };
 
+          _this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
+
           // Map functions for bs-typeahead
           _this.getGroupNames = _.bind(_this.getMetricNames, _this, 'groupList');
           _this.getHostNames = _.bind(_this.getMetricNames, _this, 'hostList', true);
           _this.getApplicationNames = _.bind(_this.getMetricNames, _this, 'appList');
           _this.getItemNames = _.bind(_this.getMetricNames, _this, 'itemList');
+          _this.getITServices = _.bind(_this.getMetricNames, _this, 'itServiceList');
 
           // Update metric suggestion when template variable was changed
           $rootScope.$on('template-variable-value-updated', function () {
@@ -122,14 +123,14 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './constants', './utils
 
             // Load default values
             var targetDefaults = {
-              mode: c.MODE_METRICS,
-              group: { filter: "" },
-              host: { filter: "" },
-              application: { filter: "" },
-              item: { filter: "" },
-              functions: [],
-              options: {
-                showDisabledItems: false
+              'mode': c.MODE_METRICS,
+              'group': { 'filter': "" },
+              'host': { 'filter': "" },
+              'application': { 'filter': "" },
+              'item': { 'filter': "" },
+              'functions': [],
+              'options': {
+                'showDisabledItems': false
               }
             };
             _.defaults(target, targetDefaults);
@@ -141,13 +142,10 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './constants', './utils
 
             if (target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
 
-              this.downsampleFunctionList = [{ name: "avg", value: "avg" }, { name: "min", value: "min" }, { name: "max", value: "max" }, { name: "sum", value: "sum" }, { name: "count", value: "count" }];
-
               this.initFilters();
             } else if (target.mode === c.MODE_ITSERVICE) {
-              this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
-              this.itserviceList = [{ name: "test" }];
-              this.updateITServiceList();
+              _.defaults(target, { slaProperty: { name: "SLA", property: "sla" } });
+              this.suggestITServices();
             }
           };
 
@@ -231,6 +229,16 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './constants', './utils
             });
           }
         }, {
+          key: 'suggestITServices',
+          value: function suggestITServices() {
+            var _this6 = this;
+
+            return this.zabbix.getITService().then(function (itservices) {
+              _this6.metric.itServiceList = itservices;
+              return itservices;
+            });
+          }
+        }, {
           key: 'isRegex',
           value: function isRegex(str) {
             return utils.isRegex(str);
@@ -259,11 +267,11 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './constants', './utils
         }, {
           key: 'isContainsVariables',
           value: function isContainsVariables() {
-            var _this6 = this;
+            var _this7 = this;
 
             return _.some(['group', 'host', 'application'], function (field) {
-              if (_this6.target[field] && _this6.target[field].filter) {
-                return utils.isTemplateVariable(_this6.target[field].filter, _this6.templateSrv.variables);
+              if (_this7.target[field] && _this7.target[field].filter) {
+                return utils.isTemplateVariable(_this7.target[field].filter, _this7.templateSrv.variables);
               } else {
                 return false;
               }
@@ -356,24 +364,6 @@ System.register(['app/plugins/sdk', 'angular', 'lodash', './constants', './utils
           value: function switchEditorMode(mode) {
             this.target.mode = mode;
             this.init();
-          }
-        }, {
-          key: 'updateITServiceList',
-          value: function updateITServiceList() {
-            var _this7 = this;
-
-            this.zabbix.getITService().then(function (iteservices) {
-              _this7.itserviceList = [];
-              _this7.itserviceList = _this7.itserviceList.concat(iteservices);
-            });
-          }
-        }, {
-          key: 'selectITService',
-          value: function selectITService() {
-            if (!_.isEqual(this.oldTarget, this.target) && _.isEmpty(this.target.errors)) {
-              this.oldTarget = angular.copy(this.target);
-              this.panelCtrl.refresh();
-            }
           }
         }]);
 

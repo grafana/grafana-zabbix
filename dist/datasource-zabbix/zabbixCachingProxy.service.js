@@ -46,7 +46,8 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           history: {},
           trends: {},
           macros: {},
-          globalMacros: {}
+          globalMacros: {},
+          itServices: {}
         };
 
         this.historyPromises = {};
@@ -71,6 +72,9 @@ System.register(['angular', 'lodash'], function (_export, _context) {
 
         this.itemPromises = {};
         this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI), this.itemPromises, getRequestHash);
+
+        this.itServicesPromises = {};
+        this.getITServicesOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getITService, this.zabbixAPI), this.itServicesPromises, getRequestHash);
 
         this.macroPromises = {};
         this.getMacrosOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getMacros, this.zabbixAPI), this.macroPromises, getRequestHash);
@@ -125,6 +129,11 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         value: function getItems(hostids, appids, itemtype) {
           var params = [hostids, appids, itemtype];
           return this.proxyRequest(this.getItemsOnce, params, this.cache.items);
+        }
+      }, {
+        key: 'getITServices',
+        value: function getITServices() {
+          return this.proxyRequest(this.getITServicesOnce, [], this.cache.itServices);
         }
       }, {
         key: 'getMacros',

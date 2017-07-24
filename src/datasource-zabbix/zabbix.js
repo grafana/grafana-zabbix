@@ -148,6 +148,11 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) 
       .then(items => filterByQuery(items, itemFilter));
     }
 
+    getITServices(itServiceFilter) {
+      return this.cachingProxy.getITServices()
+      .then(itServices => findByFilter(itServices, itServiceFilter));
+    }
+
     /**
      * Build query - convert target filters to array of Zabbix items
      */

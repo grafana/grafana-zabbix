@@ -187,6 +187,13 @@ System.register(['angular', 'lodash', './utils', './zabbixAPI.service.js', './za
           });
         }
       }, {
+        key: 'getITServices',
+        value: function getITServices(itServiceFilter) {
+          return this.cachingProxy.getITServices().then(function (itServices) {
+            return findByFilter(itServices, itServiceFilter);
+          });
+        }
+      }, {
         key: 'getTriggers',
         value: function getTriggers(groupFilter, hostFilter, appFilter, options) {
           var _this5 = this;

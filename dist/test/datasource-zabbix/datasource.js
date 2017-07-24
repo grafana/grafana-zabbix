@@ -181,14 +181,7 @@ var ZabbixAPIDatasource = function () {
 
         // IT services mode
         else if (target.mode === c.MODE_ITSERVICE) {
-            // Don't show undefined and hidden targets
-            if (target.hide || !target.itservice || !target.slaProperty) {
-              return [];
-            }
-
-            return _this.zabbix.getSLA(target.itservice.serviceid, timeRange).then(function (slaObject) {
-              return _responseHandler2.default.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
-            });
+            return _this.queryITServiceData(target, timeRange, options);
           }
       });
 
@@ -345,6 +338,45 @@ var ZabbixAPIDatasource = function () {
         }
       });
     }
+  }, {
+    key: 'queryITServiceData',
+    value: function queryITServiceData(target, timeRange, options) {
+      var _this4 = this;
+
+      // Don't show undefined and hidden targets
+      if (target.hide || !target.itservice && !target.itServiceFilter || !target.slaProperty) {
+        return [];
+      }
+
+      var itServiceIds = [];
+      var itServices = [];
+      var itServiceFilter = void 0;
+      var isOldVersion = target.itservice && !target.itServiceFilter;
+
+      if (isOldVersion) {
+        // Backward compatibility
+        itServiceFilter = '/.*/';
+      } else {
+        itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, options.scopedVars);
+      }
+
+      return this.zabbix.getITServices(itServiceFilter).then(function (itservices) {
+        itServices = itservices;
+        if (isOldVersion) {
+          itServices = _lodash2.default.filter(itServices, { 'serviceid': target.itservice.serviceid });
+        }
+
+        itServiceIds = _lodash2.default.map(itServices, 'serviceid');
+        return itServiceIds;
+      }).then(function (serviceids) {
+        return _this4.zabbix.getSLA(serviceids, timeRange);
+      }).then(function (slaResponse) {
+        return _lodash2.default.map(itServiceIds, function (serviceid) {
+          var itservice = _lodash2.default.find(itServices, { 'serviceid': serviceid });
+          return _responseHandler2.default.handleSLAResponse(itservice, target.slaProperty, slaResponse);
+        });
+      });
+    }
 
     /**
      * Test connection to Zabbix API
@@ -354,12 +386,12 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'testDatasource',
     value: function testDatasource() {
-      var _this4 = this;
+      var _this5 = this;
 
       var zabbixVersion = void 0;
       return this.zabbix.getVersion().then(function (version) {
         zabbixVersion = version;
-        return _this4.zabbix.login();
+        return _this5.zabbix.login();
       }).then(function () {
         return {
           status: "success",
@@ -398,14 +430,14 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'metricFindQuery',
     value: function metricFindQuery(query) {
-      var _this5 = this;
+      var _this6 = this;
 
       var result = void 0;
       var parts = [];
 
       // Split query. Query structure: group.host.app.item
       _lodash2.default.each(utils.splitTemplateQuery(query), function (part) {
-        part = _this5.replaceTemplateVars(part, {});
+        part = _this6.replaceTemplateVars(part, {});
 
         // Replace wildcard to regex
         if (part === '*') {
@@ -447,7 +479,7 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'annotationQuery',
     value: function annotationQuery(options) {
-      var _this6 = this;
+      var _this7 = this;
 
       var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
       var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
@@ -465,7 +497,7 @@ var ZabbixAPIDatasource = function () {
       return getTriggers.then(function (triggers) {
 
         // Filter triggers by description
-        var triggerName = _this6.replaceTemplateVars(annotation.trigger, {});
+        var triggerName = _this7.replaceTemplateVars(annotation.trigger, {});
         if (utils.isRegex(triggerName)) {
           triggers = _lodash2.default.filter(triggers, function (trigger) {
             return utils.buildRegex(triggerName).test(trigger.description);
@@ -482,7 +514,7 @@ var ZabbixAPIDatasource = function () {
         });
 
         var objectids = _lodash2.default.map(triggers, 'triggerid');
-        return _this6.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
+        return _this7.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
           var indexedTriggers = _lodash2.default.keyBy(triggers, 'triggerid');
 
           // Hide acknowledged events if option enabled
@@ -523,23 +555,23 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'alertQuery',
     value: function alertQuery(options) {
-      var _this7 = this;
+      var _this8 = this;
 
       var enabled_targets = filterEnabledTargets(options.targets);
       var getPanelItems = _lodash2.default.map(enabled_targets, function (t) {
         var target = _lodash2.default.cloneDeep(t);
-        _this7.replaceTargetVariables(target, options);
-        return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
+        _this8.replaceTargetVariables(target, options);
+        return _this8.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
       });
 
       return Promise.all(getPanelItems).then(function (results) {
         var items = _lodash2.default.flatten(results);
         var itemids = _lodash2.default.map(items, 'itemid');
 
-        return _this7.zabbix.getAlerts(itemids);
+        return _this8.zabbix.getAlerts(itemids);
       }).then(function (triggers) {
         triggers = _lodash2.default.filter(triggers, function (trigger) {
-          return trigger.priority >= _this7.alertingMinSeverity;
+          return trigger.priority >= _this8.alertingMinSeverity;
         });
 
         if (!triggers || triggers.length === 0) {
@@ -570,12 +602,12 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'replaceTargetVariables',
     value: function replaceTargetVariables(target, options) {
-      var _this8 = this;
+      var _this9 = this;
 
       var parts = ['group', 'host', 'application', 'item'];
       _lodash2.default.forEach(parts, function (p) {
         if (target[p] && target[p].filter) {
-          target[p].filter = _this8.replaceTemplateVars(target[p].filter, options.scopedVars);
+          target[p].filter = _this9.replaceTemplateVars(target[p].filter, options.scopedVars);
         }
       });
       target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
@@ -583,9 +615,9 @@ var ZabbixAPIDatasource = function () {
       _lodash2.default.forEach(target.functions, function (func) {
         func.params = _lodash2.default.map(func.params, function (param) {
           if (typeof param === 'number') {
-            return +_this8.templateSrv.replace(param.toString(), options.scopedVars);
+            return +_this9.templateSrv.replace(param.toString(), options.scopedVars);
           } else {
-            return _this8.templateSrv.replace(param, options.scopedVars);
+            return _this9.templateSrv.replace(param, options.scopedVars);
           }
         });
       });

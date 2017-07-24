@@ -20,24 +20,26 @@
   <div class="gf-form-inline" ng-show="ctrl.target.mode == 1">
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">IT Service</label>
-      <div class="gf-form-select-wrapper max-width-20">
-        <select class="gf-form-input"
-              ng-change="ctrl.selectITService()"
-              ng-model="ctrl.target.itservice"
-              bs-tooltip="ctrl.target.itservice.name.length > 25 ? ctrl.target.itservice.name : ''"
-              ng-options="itservice.name for itservice in ctrl.itserviceList track by itservice.name">
-          <option value="">-- Select IT service --</option>
-        </select>
-      </div>
+      <input type="text"
+        ng-model="ctrl.target.itServiceFilter"
+        bs-typeahead="ctrl.getITServices"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.itServiceFilter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.itServiceFilter)
+        }">
+      </input>
     </div>
     <div class="gf-form">
-      <label class="gf-form-label query-keyword">IT service property</label>
+      <label class="gf-form-label query-keyword">Property</label>
       <div class="gf-form-select-wrapper">
         <select class="gf-form-input"
-              ng-change="ctrl.selectITService()"
-              ng-model="ctrl.target.slaProperty"
-              ng-options="slaProperty.name for slaProperty in ctrl.slaPropertyList track by slaProperty.name">
-          <option value="">-- Property --</option>
+          ng-change="ctrl.onTargetBlur()"
+          ng-model="ctrl.target.slaProperty"
+          ng-options="slaProperty.name for slaProperty in ctrl.slaPropertyList track by slaProperty.name">
         </select>
       </div>
     </div>

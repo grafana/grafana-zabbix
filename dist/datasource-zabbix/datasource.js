@@ -321,14 +321,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
               // IT services mode
               else if (target.mode === c.MODE_ITSERVICE) {
-                  // Don't show undefined and hidden targets
-                  if (target.hide || !target.itservice || !target.slaProperty) {
-                    return [];
-                  }
-
-                  return _this.zabbix.getSLA(target.itservice.serviceid, timeRange).then(function (slaObject) {
-                    return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
-                  });
+                  return _this.queryITServiceData(target, timeRange, options);
                 }
             });
 
@@ -486,14 +479,53 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             });
           }
         }, {
+          key: 'queryITServiceData',
+          value: function queryITServiceData(target, timeRange, options) {
+            var _this4 = this;
+
+            // Don't show undefined and hidden targets
+            if (target.hide || !target.itservice && !target.itServiceFilter || !target.slaProperty) {
+              return [];
+            }
+
+            var itServiceIds = [];
+            var itServices = [];
+            var itServiceFilter = void 0;
+            var isOldVersion = target.itservice && !target.itServiceFilter;
+
+            if (isOldVersion) {
+              // Backward compatibility
+              itServiceFilter = '/.*/';
+            } else {
+              itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, options.scopedVars);
+            }
+
+            return this.zabbix.getITServices(itServiceFilter).then(function (itservices) {
+              itServices = itservices;
+              if (isOldVersion) {
+                itServices = _.filter(itServices, { 'serviceid': target.itservice.serviceid });
+              }
+
+              itServiceIds = _.map(itServices, 'serviceid');
+              return itServiceIds;
+            }).then(function (serviceids) {
+              return _this4.zabbix.getSLA(serviceids, timeRange);
+            }).then(function (slaResponse) {
+              return _.map(itServiceIds, function (serviceid) {
+                var itservice = _.find(itServices, { 'serviceid': serviceid });
+                return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
+              });
+            });
+          }
+        }, {
           key: 'testDatasource',
           value: function testDatasource() {
-            var _this4 = this;
+            var _this5 = this;
 
             var zabbixVersion = void 0;
             return this.zabbix.getVersion().then(function (version) {
               zabbixVersion = version;
-              return _this4.zabbix.login();
+              return _this5.zabbix.login();
             }).then(function () {
               return {
                 status: "success",
@@ -519,14 +551,14 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'metricFindQuery',
           value: function metricFindQuery(query) {
-            var _this5 = this;
+            var _this6 = this;
 
             var result = void 0;
             var parts = [];
 
             // Split query. Query structure: group.host.app.item
             _.each(utils.splitTemplateQuery(query), function (part) {
-              part = _this5.replaceTemplateVars(part, {});
+              part = _this6.replaceTemplateVars(part, {});
 
               // Replace wildcard to regex
               if (part === '*') {
@@ -563,7 +595,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'annotationQuery',
           value: function annotationQuery(options) {
-            var _this6 = this;
+            var _this7 = this;
 
             var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
             var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
@@ -581,7 +613,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             return getTriggers.then(function (triggers) {
 
               // Filter triggers by description
-              var triggerName = _this6.replaceTemplateVars(annotation.trigger, {});
+              var triggerName = _this7.replaceTemplateVars(annotation.trigger, {});
               if (utils.isRegex(triggerName)) {
                 triggers = _.filter(triggers, function (trigger) {
                   return utils.buildRegex(triggerName).test(trigger.description);
@@ -598,7 +630,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               });
 
               var objectids = _.map(triggers, 'triggerid');
-              return _this6.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
+              return _this7.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
                 var indexedTriggers = _.keyBy(triggers, 'triggerid');
 
                 // Hide acknowledged events if option enabled
@@ -632,23 +664,23 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'alertQuery',
           value: function alertQuery(options) {
-            var _this7 = this;
+            var _this8 = this;
 
             var enabled_targets = filterEnabledTargets(options.targets);
             var getPanelItems = _.map(enabled_targets, function (t) {
               var target = _.cloneDeep(t);
-              _this7.replaceTargetVariables(target, options);
-              return _this7.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
+              _this8.replaceTargetVariables(target, options);
+              return _this8.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
             });
 
             return Promise.all(getPanelItems).then(function (results) {
               var items = _.flatten(results);
               var itemids = _.map(items, 'itemid');
 
-              return _this7.zabbix.getAlerts(itemids);
+              return _this8.zabbix.getAlerts(itemids);
             }).then(function (triggers) {
               triggers = _.filter(triggers, function (trigger) {
-                return trigger.priority >= _this7.alertingMinSeverity;
+                return trigger.priority >= _this8.alertingMinSeverity;
               });
 
               if (!triggers || triggers.length === 0) {
@@ -676,12 +708,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'replaceTargetVariables',
           value: function replaceTargetVariables(target, options) {
-            var _this8 = this;
+            var _this9 = this;
 
             var parts = ['group', 'host', 'application', 'item'];
             _.forEach(parts, function (p) {
               if (target[p] && target[p].filter) {
-                target[p].filter = _this8.replaceTemplateVars(target[p].filter, options.scopedVars);
+                target[p].filter = _this9.replaceTemplateVars(target[p].filter, options.scopedVars);
               }
             });
             target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
@@ -689,9 +721,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             _.forEach(target.functions, function (func) {
               func.params = _.map(func.params, function (param) {
                 if (typeof param === 'number') {
-                  return +_this8.templateSrv.replace(param.toString(), options.scopedVars);
+                  return +_this9.templateSrv.replace(param.toString(), options.scopedVars);
                 } else {
-                  return _this8.templateSrv.replace(param, options.scopedVars);
+                  return _this9.templateSrv.replace(param, options.scopedVars);
                 }
               });
             });

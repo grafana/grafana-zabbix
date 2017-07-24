@@ -39,7 +39,8 @@ function ZabbixCachingProxyFactory() {
         history: {},
         trends: {},
         macros: {},
-        globalMacros: {}
+        globalMacros: {},
+        itServices: {}
       };
 
       this.historyPromises = {};
@@ -64,6 +65,9 @@ function ZabbixCachingProxyFactory() {
 
       this.itemPromises = {};
       this.getItemsOnce = callAPIRequestOnce(_lodash2.default.bind(this.zabbixAPI.getItems, this.zabbixAPI), this.itemPromises, getRequestHash);
+
+      this.itServicesPromises = {};
+      this.getITServicesOnce = callAPIRequestOnce(_lodash2.default.bind(this.zabbixAPI.getITService, this.zabbixAPI), this.itServicesPromises, getRequestHash);
 
       this.macroPromises = {};
       this.getMacrosOnce = callAPIRequestOnce(_lodash2.default.bind(this.zabbixAPI.getMacros, this.zabbixAPI), this.macroPromises, getRequestHash);
@@ -124,6 +128,11 @@ function ZabbixCachingProxyFactory() {
       value: function getItems(hostids, appids, itemtype) {
         var params = [hostids, appids, itemtype];
         return this.proxyRequest(this.getItemsOnce, params, this.cache.items);
+      }
+    }, {
+      key: 'getITServices',
+      value: function getITServices() {
+        return this.proxyRequest(this.getITServicesOnce, [], this.cache.itServices);
       }
     }, {
       key: 'getMacros',

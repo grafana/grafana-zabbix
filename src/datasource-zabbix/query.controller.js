@@ -1,5 +1,4 @@
 import {QueryCtrl} from 'app/plugins/sdk';
-import angular from 'angular';
 import _ from 'lodash';
 import * as c from './constants';
 import * as utils from './utils';
@@ -28,11 +27,20 @@ export class ZabbixQueryController extends QueryCtrl {
       2: {value: 'text',      text: 'Text',        mode: c.MODE_TEXT}
     };
 
+    this.slaPropertyList = [
+      {name: "Status", property: "status"},
+      {name: "SLA", property: "sla"},
+      {name: "OK time", property: "okTime"},
+      {name: "Problem time", property: "problemTime"},
+      {name: "Down time", property: "downtimeTime"}
+    ];
+
     // Map functions for bs-typeahead
     this.getGroupNames = _.bind(this.getMetricNames, this, 'groupList');
     this.getHostNames = _.bind(this.getMetricNames, this, 'hostList', true);
     this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
     this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
+    this.getITServices = _.bind(this.getMetricNames, this, 'itServiceList');
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
@@ -57,14 +65,14 @@ export class ZabbixQueryController extends QueryCtrl {
 
       // Load default values
       var targetDefaults = {
-        mode: c.MODE_METRICS,
-        group: { filter: "" },
-        host: { filter: "" },
-        application: { filter: "" },
-        item: { filter: "" },
-        functions: [],
-        options: {
-          showDisabledItems: false
+        'mode': c.MODE_METRICS,
+        'group': { 'filter': "" },
+        'host': { 'filter': "" },
+        'application': { 'filter': "" },
+        'item': { 'filter': "" },
+        'functions': [],
+        'options': {
+          'showDisabledItems': false
         }
       };
       _.defaults(target, targetDefaults);
@@ -77,26 +85,11 @@ export class ZabbixQueryController extends QueryCtrl {
       if (target.mode === c.MODE_METRICS ||
           target.mode === c.MODE_TEXT) {
 
-        this.downsampleFunctionList = [
-          {name: "avg", value: "avg"},
-          {name: "min", value: "min"},
-          {name: "max", value: "max"},
-          {name: "sum", value: "sum"},
-          {name: "count", value: "count"}
-        ];
-
         this.initFilters();
       }
       else if (target.mode === c.MODE_ITSERVICE) {
-        this.slaPropertyList = [
-          {name: "Status", property: "status"},
-          {name: "SLA", property: "sla"},
-          {name: "OK time", property: "okTime"},
-          {name: "Problem time", property: "problemTime"},
-          {name: "Down time", property: "downtimeTime"}
-        ];
-        this.itserviceList = [{name: "test"}];
-        this.updateITServiceList();
+        _.defaults(target, {slaProperty: {name: "SLA", property: "sla"}});
+        this.suggestITServices();
       }
     };
 
@@ -170,6 +163,14 @@ export class ZabbixQueryController extends QueryCtrl {
     .then(items => {
       this.metric.itemList = items;
       return items;
+    });
+  }
+
+  suggestITServices() {
+    return this.zabbix.getITService()
+    .then(itservices => {
+      this.metric.itServiceList = itservices;
+      return itservices;
     });
   }
 
@@ -292,30 +293,6 @@ export class ZabbixQueryController extends QueryCtrl {
   switchEditorMode(mode) {
     this.target.mode = mode;
     this.init();
-  }
-
-  /////////////////
-  // IT Services //
-  /////////////////
-
-  /**
-   * Update list of IT services
-   */
-  updateITServiceList() {
-    this.zabbix.getITService().then((iteservices) => {
-      this.itserviceList = [];
-      this.itserviceList = this.itserviceList.concat(iteservices);
-    });
-  }
-
-  /**
-   * Call when IT service is selected.
-   */
-  selectITService() {
-    if (!_.isEqual(this.oldTarget, this.target) && _.isEmpty(this.target.errors)) {
-      this.oldTarget = angular.copy(this.target);
-      this.panelCtrl.refresh();
-    }
   }
 }
 
