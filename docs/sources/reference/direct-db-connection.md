@@ -13,6 +13,14 @@ size. Data loads faster and client doesn't spend time for data processing.
 Also, many users point better performance of direct database queries versus API calls. This caused by several reasons,
 such as additional PHP layer and additional SQL queries (user permissions checks).
 
+## Data Flow
+
+This chart illustrates how plugin uses both Zabbix API and MySQL data source for querying different types
+of data from Zabbix. MySQL data source is used only for pulling history and trend data instead of `history.get`
+and `trend.get` API calls.
+
+[![Direct DB Connection](../img/reference-direct-db-connection.svg)](../img/reference-direct-db-connection.svg)
+
 ## Query structure
 
 Grafana-Zabbix uses queries like this for getting history:
