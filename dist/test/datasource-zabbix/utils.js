@@ -5,6 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.regexPattern = undefined;
 exports.expandItemName = expandItemName;
+exports.expandItems = expandItems;
 exports.containsMacro = containsMacro;
 exports.replaceMacro = replaceMacro;
 exports.splitTemplateQuery = splitTemplateQuery;
@@ -47,6 +48,15 @@ function expandItemName(name, key) {
     name = name.replace('$' + i, key_params[i - 1]);
   }
   return name;
+}
+
+function expandItems(items) {
+  _lodash2.default.forEach(items, function (item) {
+    item.item = item.name;
+    item.name = expandItemName(item.item, item.key_);
+    return item;
+  });
+  return items;
 }
 
 function splitKeyParams(paramStr) {

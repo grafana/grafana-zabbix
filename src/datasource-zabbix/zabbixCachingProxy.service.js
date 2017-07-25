@@ -57,6 +57,10 @@ function ZabbixCachingProxyFactory() {
       this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI),
                                              this.itemPromises, getRequestHash);
 
+      this.itemByIdPromises = {};
+      this.getItemsByIdOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItemsByIDs, this.zabbixAPI),
+                                                 this.itemPromises, getRequestHash);
+
       this.itServicesPromises = {};
       this.getITServicesOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getITService, this.zabbixAPI),
                                                   this.itServicesPromises, getRequestHash);
@@ -114,6 +118,11 @@ function ZabbixCachingProxyFactory() {
     getItems(hostids, appids, itemtype) {
       let params = [hostids, appids, itemtype];
       return this.proxyRequest(this.getItemsOnce, params, this.cache.items);
+    }
+
+    getItemsByIDs(itemids) {
+      let params = [itemids];
+      return this.proxyRequest(this.getItemsByIdOnce, params, this.cache.items);
     }
 
     getITServices() {

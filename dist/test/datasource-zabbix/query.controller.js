@@ -70,6 +70,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     _this.getApplicationNames = _lodash2.default.bind(_this.getMetricNames, _this, 'appList');
     _this.getItemNames = _lodash2.default.bind(_this.getMetricNames, _this, 'itemList');
     _this.getITServices = _lodash2.default.bind(_this.getMetricNames, _this, 'itServiceList');
+    _this.getVariables = _lodash2.default.bind(_this.getTemplateVariables, _this);
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', function () {
@@ -153,8 +154,8 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
       return metrics;
     }
   }, {
-    key: 'getVariables',
-    value: function getVariables() {
+    key: 'getTemplateVariables',
+    value: function getTemplateVariables() {
       return _lodash2.default.map(this.templateSrv.variables, function (variable) {
         return '$' + variable.name;
       });

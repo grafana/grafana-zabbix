@@ -28,6 +28,16 @@ System.register(['lodash', 'moment'], function (_export, _context) {
 
   _export('expandItemName', expandItemName);
 
+  function expandItems(items) {
+    _.forEach(items, function (item) {
+      item.item = item.name;
+      item.name = expandItemName(item.item, item.key_);
+      return item;
+    });
+    return items;
+  }
+  _export('expandItems', expandItems);
+
   function splitKeyParams(paramStr) {
     var params = [];
     var quoted = false;
@@ -56,7 +66,9 @@ System.register(['lodash', 'moment'], function (_export, _context) {
 
     params.push(param);
     return params;
-  }function containsMacro(itemName) {
+  }
+
+  function containsMacro(itemName) {
     return MACRO_PATTERN.test(itemName);
   }
 

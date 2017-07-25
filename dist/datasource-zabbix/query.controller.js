@@ -93,6 +93,7 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
           _this.getApplicationNames = _.bind(_this.getMetricNames, _this, 'appList');
           _this.getItemNames = _.bind(_this.getMetricNames, _this, 'itemList');
           _this.getITServices = _.bind(_this.getMetricNames, _this, 'itServiceList');
+          _this.getVariables = _.bind(_this.getTemplateVariables, _this);
 
           // Update metric suggestion when template variable was changed
           $rootScope.$on('template-variable-value-updated', function () {
@@ -173,8 +174,8 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
             return metrics;
           }
         }, {
-          key: 'getVariables',
-          value: function getVariables() {
+          key: 'getTemplateVariables',
+          value: function getTemplateVariables() {
             return _.map(this.templateSrv.variables, function (variable) {
               return '$' + variable.name;
             });

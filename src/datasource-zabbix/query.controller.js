@@ -42,6 +42,7 @@ export class ZabbixQueryController extends QueryCtrl {
     this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
     this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
     this.getITServices = _.bind(this.getMetricNames, this, 'itServiceList');
+    this.getVariables = _.bind(this.getTemplateVariables, this);
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
@@ -124,7 +125,7 @@ export class ZabbixQueryController extends QueryCtrl {
     return metrics;
   }
 
-  getVariables() {
+  getTemplateVariables() {
     return _.map(this.templateSrv.variables, variable => {
       return '$' + variable.name;
     });

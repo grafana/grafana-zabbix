@@ -22,6 +22,15 @@ export function expandItemName(name, key) {
   return name;
 }
 
+export function expandItems(items) {
+  _.forEach(items, item => {
+    item.item = item.name;
+    item.name = expandItemName(item.item, item.key_);
+    return item;
+  });
+  return items;
+}
+
 function splitKeyParams(paramStr) {
   let params = [];
   let quoted = false;
