@@ -60,11 +60,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     _this.replaceTemplateVars = _this.datasource.replaceTemplateVars;
     _this.templateSrv = templateSrv;
 
-    _this.editorModes = {
-      0: { value: 'num', text: 'Metrics', mode: c.MODE_METRICS },
-      1: { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE },
-      2: { value: 'text', text: 'Text', mode: c.MODE_TEXT }
-    };
+    _this.editorModes = [{ value: 'num', text: 'Metrics', mode: c.MODE_METRICS }, { value: 'text', text: 'Text', mode: c.MODE_TEXT }, { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE }, { value: 'itemid', text: 'Item ID', mode: c.MODE_ITEMID }];
 
     _this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
 
@@ -133,7 +129,8 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
   _createClass(ZabbixQueryController, [{
     key: 'initFilters',
     value: function initFilters() {
-      var itemtype = this.editorModes[this.target.mode].value;
+      var itemtype = _lodash2.default.find(this.editorModes, { 'mode': this.target.mode });
+      itemtype = itemtype ? itemtype.value : null;
       return Promise.all([this.suggestGroups(), this.suggestHosts(), this.suggestApps(), this.suggestItems(itemtype)]);
     }
 
@@ -154,6 +151,13 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
       }
 
       return metrics;
+    }
+  }, {
+    key: 'getVariables',
+    value: function getVariables() {
+      return _lodash2.default.map(this.templateSrv.variables, function (variable) {
+        return '$' + variable.name;
+      });
     }
   }, {
     key: 'suggestGroups',

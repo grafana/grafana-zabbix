@@ -48,7 +48,7 @@
     </div>
   </div>
 
-  <div class="gf-form-inline" ng-hide="ctrl.target.mode == 1">
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == 0 || ctrl.target.mode == 2">
     <!-- Select Group -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Group</label>
@@ -85,7 +85,7 @@
     </div>
   </div>
 
-  <div class="gf-form-inline" ng-hide="ctrl.target.mode == 1">
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == 0 || ctrl.target.mode == 2">
     <!-- Select Application -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Application</label>
@@ -167,6 +167,31 @@
 
     <gf-form-switch class="gf-form" label="Use capture groups" checked="ctrl.target.useCaptureGroups" on-change="ctrl.onTargetBlur()">
     </gf-form-switch>
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
+  </div>
+
+  <!-- IT Service editor -->
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == 3">
+    <div class="gf-form max-width-20">
+      <label class="gf-form-label query-keyword width-7">Item IDs</label>
+      <input type="text"
+        ng-model="ctrl.target.itemids"
+        bs-typeahead="ctrl.getVariables"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.itServiceFilter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.itServiceFilter)
+        }">
+      </input>
+    </div>
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
   </div>
 
 </query-editor-row>
