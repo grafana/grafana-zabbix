@@ -356,6 +356,7 @@ var ZabbixAPIDatasource = function () {
       var _this5 = this;
 
       var itemids = target.itemids;
+      itemids = this.templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
       itemids = _lodash2.default.map(itemids.split(','), function (itemid) {
         return itemid.trim();
       });
@@ -739,6 +740,13 @@ function zabbixTemplateFormat(value) {
 
   var escapedValues = _lodash2.default.map(value, utils.escapeRegex);
   return '(' + escapedValues.join('|') + ')';
+}
+
+function zabbixItemIdsTemplateFormat(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.join(',');
 }
 
 /**

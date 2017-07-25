@@ -279,6 +279,7 @@ class ZabbixAPIDatasource {
 
   queryItemIdData(target, timeRange, useTrends, options) {
     let itemids = target.itemids;
+    itemids = this.templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
     itemids = _.map(itemids.split(','), itemid => itemid.trim());
 
     if (!itemids) {
@@ -645,6 +646,13 @@ function zabbixTemplateFormat(value) {
 
   var escapedValues = _.map(value, utils.escapeRegex);
   return '(' + escapedValues.join('|') + ')';
+}
+
+function zabbixItemIdsTemplateFormat(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.join(',');
 }
 
 /**

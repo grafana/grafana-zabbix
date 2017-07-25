@@ -71,6 +71,13 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
     return '(' + escapedValues.join('|') + ')';
   }
 
+  function zabbixItemIdsTemplateFormat(value) {
+    if (typeof value === 'string') {
+      return value;
+    }
+    return value.join(',');
+  }
+
   /**
    * If template variables are used in request, replace it using regex format
    * and wrap with '/' for proper multi-value work. Example:
@@ -496,6 +503,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var _this5 = this;
 
             var itemids = target.itemids;
+            itemids = this.templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
             itemids = _.map(itemids.split(','), function (itemid) {
               return itemid.trim();
             });
