@@ -364,6 +364,7 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
           value: function switchEditorMode(mode) {
             this.target.mode = mode;
             this.init();
+            this.targetChanged();
           }
         }]);
 

@@ -293,6 +293,7 @@ export class ZabbixQueryController extends QueryCtrl {
   switchEditorMode(mode) {
     this.target.mode = mode;
     this.init();
+    this.targetChanged();
   }
 }
 

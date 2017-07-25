@@ -358,6 +358,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     value: function switchEditorMode(mode) {
       this.target.mode = mode;
       this.init();
+      this.targetChanged();
     }
   }]);
 
