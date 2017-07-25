@@ -99,7 +99,7 @@ System.register(['lodash', 'moment'], function (_export, _context) {
    * {group}{host.com} -> [group, host.com]
    */
   function splitTemplateQuery(query) {
-    var splitPattern = /{[^{}]*}/g;
+    var splitPattern = /\{[^\{\}]*\}|\{\/.*\/\}/g;
     var split = void 0;
 
     if (isContainsBraces(query)) {
@@ -117,7 +117,8 @@ System.register(['lodash', 'moment'], function (_export, _context) {
   _export('splitTemplateQuery', splitTemplateQuery);
 
   function isContainsBraces(query) {
-    return query.includes('{') && query.includes('}');
+    var bracesPattern = /^\{.+\}$/;
+    return bracesPattern.test(query);
   }
 
   // Pattern for testing regex

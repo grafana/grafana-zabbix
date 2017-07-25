@@ -86,4 +86,46 @@ describe('Utils', function () {
       done();
     });
   });
+
+  describe('splitTemplateQuery()', function () {
+
+    // Backward compatibility
+    it('should properly split query in old format', function (done) {
+      var test_cases = [{
+        query: '/alu/./tw-(nyc|que|brx|dwt|brk)-sta_(w|d)*-alu-[0-9{2}/',
+        expected: ['/alu/', '/tw-(nyc|que|brx|dwt|brk)-sta_(\w|\d)*-alu-[0-9{2}/']
+      }, {
+        query: 'a.b.c.d',
+        expected: ['a', 'b', 'c', 'd']
+      }];
+
+      _lodash2.default.each(test_cases, function (test_case) {
+        var splitQuery = utils.splitTemplateQuery(test_case.query);
+        expect(splitQuery).to.eql(test_case.expected);
+      });
+      done();
+    });
+
+    it('should properly split query', function (done) {
+      var test_cases = [{
+        query: '{alu}{/tw-(nyc|que|brx|dwt|brk)-sta_(w|d)*-alu-[0-9]*/}',
+        expected: ['alu', '/tw-(nyc|que|brx|dwt|brk)-sta_(\w|\d)*-alu-[0-9]*/']
+      }, {
+        query: '{alu}{/tw-(nyc|que|brx|dwt|brk)-sta_(w|d)*-alu-[0-9]{2}/}',
+        expected: ['alu', '/tw-(nyc|que|brx|dwt|brk)-sta_(\w|\d)*-alu-[0-9]{2}/']
+      }, {
+        query: '{a}{b}{c}{d}',
+        expected: ['a', 'b', 'c', 'd']
+      }, {
+        query: '{a}{b.c.d}',
+        expected: ['a', 'b.c.d']
+      }];
+
+      _lodash2.default.each(test_cases, function (test_case) {
+        var splitQuery = utils.splitTemplateQuery(test_case.query);
+        expect(splitQuery).to.eql(test_case.expected);
+      });
+      done();
+    });
+  });
 });

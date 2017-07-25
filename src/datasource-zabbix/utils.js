@@ -93,7 +93,7 @@ function escapeMacro(macro) {
  * {group}{host.com} -> [group, host.com]
  */
 export function splitTemplateQuery(query) {
-  let splitPattern = /{[^{}]*}/g;
+  let splitPattern = /\{[^\{\}]*\}|\{\/.*\/\}/g;
   let split;
 
   if (isContainsBraces(query)) {
@@ -109,7 +109,8 @@ export function splitTemplateQuery(query) {
 }
 
 function isContainsBraces(query) {
-  return query.includes('{') && query.includes('}');
+  let bracesPattern = /^\{.+\}$/;
+  return bracesPattern.test(query);
 }
 
 // Pattern for testing regex
