@@ -24,10 +24,13 @@ System.register(['angular', 'lodash'], function (_export, _context) {
 
         this.sqlDataSourceId = sqlDataSourceId;
         this.limit = limit || DEFAULT_QUERY_LIMIT;
-
-        // Try to load DS with given id to check it's exist
-        this.loadSQLDataSource(sqlDataSourceId);
       }
+
+      /**
+       * Try to load DS with given id to check it's exist.
+       * @param {*} datasourceId ID of SQL data source
+       */
+
 
       _createClass(ZabbixDBConnector, [{
         key: 'loadSQLDataSource',
@@ -40,6 +43,12 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           } else {
             return Promise.reject('SQL Data Source with ID ' + datasourceId + ' not found');
           }
+        }
+      }, {
+        key: 'testSQLDataSource',
+        value: function testSQLDataSource() {
+          var testQuery = 'SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1';
+          return this.invokeSQLQuery(testQuery);
         }
       }, {
         key: 'getHistory',
@@ -60,7 +69,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
             var itemids = _.map(items, 'itemid').join(', ');
             var table = HISTORY_TO_TABLE_MAP[value_type];
 
-            var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(value) as value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
+            var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(value) AS value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
 
             query = compactSQLQuery(query);
             return _this.invokeSQLQuery(query);
@@ -91,7 +100,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
             var valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
             valueColumn = consolidateByTrendColumns[valueColumn];
 
-            var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(' + valueColumn + ') as value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
+            var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(' + valueColumn + ') AS value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
 
             query = compactSQLQuery(query);
             return _this2.invokeSQLQuery(query);

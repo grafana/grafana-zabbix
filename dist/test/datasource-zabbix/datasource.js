@@ -393,6 +393,12 @@ var ZabbixAPIDatasource = function () {
         zabbixVersion = version;
         return _this5.zabbix.login();
       }).then(function () {
+        if (_this5.enableDirectDBConnection) {
+          return _this5.zabbix.dbConnector.testSQLDataSource();
+        } else {
+          return Promise.resolve();
+        }
+      }).then(function () {
         return {
           status: "success",
           title: "Success",
@@ -404,6 +410,12 @@ var ZabbixAPIDatasource = function () {
             status: "error",
             title: error.message,
             message: error.data
+          };
+        } else if (error.data && error.data.message) {
+          return {
+            status: "error",
+            title: "Connection failed",
+            message: error.data.message
           };
         } else {
           return {

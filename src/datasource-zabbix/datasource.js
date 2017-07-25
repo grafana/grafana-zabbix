@@ -319,6 +319,13 @@ class ZabbixAPIDatasource {
       return this.zabbix.login();
     })
     .then(() => {
+      if (this.enableDirectDBConnection) {
+        return this.zabbix.dbConnector.testSQLDataSource();
+      } else {
+        return Promise.resolve();
+      }
+    })
+    .then(() => {
       return {
         status: "success",
         title: "Success",
@@ -331,6 +338,12 @@ class ZabbixAPIDatasource {
           status: "error",
           title: error.message,
           message: error.data
+        };
+      } else if (error.data && error.data.message) {
+        return {
+          status: "error",
+          title: "Connection failed",
+          message: error.data.message
         };
       } else {
         return {

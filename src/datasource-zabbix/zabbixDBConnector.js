@@ -39,11 +39,12 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
 
       this.sqlDataSourceId = sqlDataSourceId;
       this.limit = limit || DEFAULT_QUERY_LIMIT;
-
-      // Try to load DS with given id to check it's exist
-      this.loadSQLDataSource(sqlDataSourceId);
     }
 
+    /**
+     * Try to load DS with given id to check it's exist.
+     * @param {*} datasourceId ID of SQL data source
+     */
     loadSQLDataSource(datasourceId) {
       let ds = _.find(datasourceSrv.getAll(), {'id': datasourceId});
       if (ds) {
@@ -54,6 +55,14 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
       } else {
         return Promise.reject(`SQL Data Source with ID ${datasourceId} not found`);
       }
+    }
+
+    /**
+     * Try to invoke test query for one of Zabbix database tables.
+     */
+    testSQLDataSource() {
+      let testQuery = `SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1`;
+      return this.invokeSQLQuery(testQuery);
     }
 
     getHistory(items, timeFrom, timeTill, options) {
@@ -70,7 +79,7 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
         let table = HISTORY_TO_TABLE_MAP[value_type];
 
         let query = `
-          SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(value) as value
+          SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(value) AS value
             FROM ${table}
             WHERE itemid IN (${itemids})
               AND clock > ${timeFrom} AND clock < ${timeTill}
@@ -102,7 +111,7 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
         valueColumn = consolidateByTrendColumns[valueColumn];
 
         let query = `
-          SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(${valueColumn}) as value
+          SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(${valueColumn}) AS value
             FROM ${table}
             WHERE itemid IN (${itemids})
               AND clock > ${timeFrom} AND clock < ${timeTill}
