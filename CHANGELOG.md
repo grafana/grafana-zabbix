@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+
+## [3.6.0] - 2017-07-26
 ### Added
 - Direct DB Connection, which allows to use existing SQL data source for querying history data directly from Zabbix database.
 - **Docs**: Direct DB Connection reference and configuration.
