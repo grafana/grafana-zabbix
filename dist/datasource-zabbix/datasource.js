@@ -315,7 +315,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               var useTrends = _this.isUseTrends(timeRange);
 
               // Metrics or Text query mode
-              if (target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
+              if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
                 // Migrate old targets
                 target = migrations.migrate(target);
 
