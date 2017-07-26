@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
-- `consolidateBy` function, which allows to specify aggregation function for time series data.
 - Direct DB Connection, which allows to use existing SQL data source for querying history data directly from Zabbix database.
 - **Docs**: Direct DB Connection reference and configuration.
+- `consolidateBy` function, which allows to specify aggregation function for time series data.
 - `movingAverage` and `exponentialMovingAverage` functions.
+- _Item ID_ editor mode for querying items by id.
 
 ### Changed
 - IT Services query editor. Now user able to select multiple services by using regex, [#415](https://github.com/alexanderzobnin/grafana-zabbix/issues/415)
