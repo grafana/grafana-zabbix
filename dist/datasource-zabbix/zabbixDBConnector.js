@@ -157,7 +157,6 @@ System.register(['angular', 'lodash'], function (_export, _context) {
     var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
     var grafanaSeries = _.map(time_series, function (series) {
       var itemid = series.name;
-      var datapoints = series.points;
       var item = _.find(items, { 'itemid': itemid });
       var alias = item.name;
       if (_.keys(hosts).length > 1 && addHostName) {
@@ -165,6 +164,9 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         var host = _.find(hosts, { 'hostid': item.hostid });
         alias = host.name + ": " + alias;
       }
+      // zabbixCachingProxy deduplicates requests and returns one time series for equal queries.
+      // Clone is needed to prevent changing of series object shared between all targets.
+      var datapoints = _.cloneDeep(series.points);
       return {
         target: alias,
         datapoints: datapoints

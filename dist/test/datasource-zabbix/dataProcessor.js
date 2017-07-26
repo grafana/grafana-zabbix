@@ -31,6 +31,12 @@ var rate = _timeseries2.default.rate;
 var scale = function scale(factor, datapoints) {
   return _timeseries2.default.scale_perf(datapoints, factor);
 };
+var simpleMovingAverage = function simpleMovingAverage(n, datapoints) {
+  return _timeseries2.default.simpleMovingAverage(datapoints, n);
+};
+var expMovingAverage = function expMovingAverage(a, datapoints) {
+  return _timeseries2.default.expMovingAverage(datapoints, a);
+};
 
 var SUM = _timeseries2.default.SUM;
 var COUNT = _timeseries2.default.COUNT;
@@ -121,7 +127,10 @@ var metricFunctions = {
   scale: scale,
   delta: delta,
   rate: rate,
+  movingAverage: simpleMovingAverage,
+  exponentialMovingAverage: expMovingAverage,
   aggregateBy: aggregateByWrapper,
+  // Predefined aggs
   average: _lodash2.default.partial(aggregateWrapper, AVERAGE),
   min: _lodash2.default.partial(aggregateWrapper, MIN),
   max: _lodash2.default.partial(aggregateWrapper, MAX),

@@ -9,6 +9,8 @@ let sumSeries = ts.sumSeries;
 let delta = ts.delta;
 let rate = ts.rate;
 let scale = (factor, datapoints) => ts.scale_perf(datapoints, factor);
+let simpleMovingAverage = (n, datapoints) => ts.simpleMovingAverage(datapoints, n);
+let expMovingAverage = (a, datapoints) => ts.expMovingAverage(datapoints, a);
 
 let SUM = ts.SUM;
 let COUNT = ts.COUNT;
@@ -102,7 +104,10 @@ let metricFunctions = {
   scale: scale,
   delta: delta,
   rate: rate,
+  movingAverage: simpleMovingAverage,
+  exponentialMovingAverage: expMovingAverage,
   aggregateBy: aggregateByWrapper,
+  // Predefined aggs
   average: _.partial(aggregateWrapper, AVERAGE),
   min: _.partial(aggregateWrapper, MIN),
   max: _.partial(aggregateWrapper, MAX),

@@ -113,7 +113,8 @@ class ZabbixAPIDatasource {
       let useTrends = this.isUseTrends(timeRange);
 
       // Metrics or Text query mode
-      if (target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
+      if (!target.mode || target.mode === c.MODE_METRICS ||
+          target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
         // Migrate old targets
         target = migrations.migrate(target);
 
@@ -216,10 +217,10 @@ class ZabbixAPIDatasource {
     let aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
 
     // Apply transformation functions
-    timeseries_data = _.map(timeseries_data, timeseries => {
+    timeseries_data = _.cloneDeep(_.map(timeseries_data, timeseries => {
       timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
       return timeseries;
-    });
+    }));
 
     // Apply filter functions
     if (filterFunctions.length) {

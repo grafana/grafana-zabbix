@@ -209,6 +209,97 @@ System.register(['lodash', './utils'], function (_export, _context) {
     return newSeries;
   }
 
+  function simpleMovingAverage(datapoints, n) {
+    var sma = [];
+    var w_sum = void 0;
+    var w_avg = null;
+    var w_count = 0;
+
+    // Initial window
+    for (var j = n; j > 0; j--) {
+      if (datapoints[n - j][POINT_VALUE] !== null) {
+        w_avg += datapoints[n - j][POINT_VALUE];
+        w_count++;
+      }
+    }
+    if (w_count > 0) {
+      w_avg = w_avg / w_count;
+    } else {
+      w_avg = null;
+    }
+    sma.push([w_avg, datapoints[n - 1][POINT_TIMESTAMP]]);
+
+    for (var i = n; i < datapoints.length; i++) {
+      // Insert next value
+      if (datapoints[i][POINT_VALUE] !== null) {
+        w_sum = w_avg * w_count;
+        w_avg = (w_sum + datapoints[i][POINT_VALUE]) / (w_count + 1);
+        w_count++;
+      }
+      // Remove left side point
+      if (datapoints[i - n][POINT_VALUE] !== null) {
+        w_sum = w_avg * w_count;
+        if (w_count > 1) {
+          w_avg = (w_sum - datapoints[i - n][POINT_VALUE]) / (w_count - 1);
+          w_count--;
+        } else {
+          w_avg = null;
+          w_count = 0;
+        }
+      }
+      sma.push([w_avg, datapoints[i][POINT_TIMESTAMP]]);
+    }
+    return sma;
+  }
+
+  function expMovingAverage(datapoints, n) {
+    var ema = [datapoints[0]];
+    var ema_prev = datapoints[0][POINT_VALUE];
+    var ema_cur = void 0;
+    var a = void 0;
+
+    if (n > 1) {
+      // Calculate a from window size
+      a = 2 / (n + 1);
+
+      // Initial window, use simple moving average
+      var w_avg = null;
+      var w_count = 0;
+      for (var j = n; j > 0; j--) {
+        if (datapoints[n - j][POINT_VALUE] !== null) {
+          w_avg += datapoints[n - j][POINT_VALUE];
+          w_count++;
+        }
+      }
+      if (w_count > 0) {
+        w_avg = w_avg / w_count;
+        // Actually, we should set timestamp from datapoints[n-1] and start calculation of EMA from n.
+        // But in order to start EMA from first point (not from Nth) we should expand time range and request N additional
+        // points outside left side of range. We can't do that, so this trick is used for pretty view of first N points.
+        // We calculate AVG for first N points, but then start from 2nd point, not from Nth. In general, it means we
+        // assume that previous N values (0-N, 0-(N-1), ..., 0-1) have the same average value as a first N values.
+        ema = [[w_avg, datapoints[0][POINT_TIMESTAMP]]];
+        ema_prev = w_avg;
+        n = 1;
+      }
+    } else {
+      // Use predefined a and start from 1st point (use it as initial EMA value)
+      a = n;
+      n = 1;
+    }
+
+    for (var i = n; i < datapoints.length; i++) {
+      if (datapoints[i][POINT_VALUE] !== null) {
+        ema_cur = a * datapoints[i][POINT_VALUE] + (1 - a) * ema_prev;
+        ema_prev = ema_cur;
+        ema.push([ema_cur, datapoints[i][POINT_TIMESTAMP]]);
+      } else {
+        ema.push([null, datapoints[i][POINT_TIMESTAMP]]);
+      }
+    }
+    return ema;
+  }
+
   function COUNT(values) {
     return values.length;
   }
@@ -351,6 +442,8 @@ System.register(['lodash', './utils'], function (_export, _context) {
         scale_perf: scale_perf,
         delta: delta,
         rate: rate,
+        simpleMovingAverage: simpleMovingAverage,
+        expMovingAverage: expMovingAverage,
         SUM: SUM,
         COUNT: COUNT,
         AVERAGE: AVERAGE,

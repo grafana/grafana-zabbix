@@ -111,6 +111,20 @@ System.register(['lodash', 'jquery'], function (_export, _context) {
         defaultParams: []
       });
 
+      addFuncDef({
+        name: 'movingAverage',
+        category: 'Transform',
+        params: [{ name: 'factor', type: 'int', options: [6, 10, 60, 100, 600] }],
+        defaultParams: [10]
+      });
+
+      addFuncDef({
+        name: 'exponentialMovingAverage',
+        category: 'Transform',
+        params: [{ name: 'smoothing', type: 'float', options: [6, 10, 60, 100, 600] }],
+        defaultParams: [0.2]
+      });
+
       // Aggregate
 
       addFuncDef({
