@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [3.6.1] - 2017-07-26
+### Fixed
+- _cannot read property 'enable' of undefined_ error after upgrade, [#436](https://github.com/alexanderzobnin/grafana-zabbix/issues/436)
+
+
 ## [3.6.0] - 2017-07-26
 ### Added
 - Direct DB Connection, which allows to use existing SQL data source for querying history data directly from Zabbix database.
