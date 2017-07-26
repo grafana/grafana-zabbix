@@ -1,15 +1,33 @@
 # Change Log
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- `consolidateBy` function, which allows to specify aggregation function for time series data.
+- Direct DB Connection, which allows to use existing SQL data source for querying history data directly from Zabbix database.
+- **Docs**: Direct DB Connection reference and configuration.
+
+### Changed
+- IT Services query editor. Now user able to select multiple services by using regex, [#415](https://github.com/alexanderzobnin/grafana-zabbix/issues/415)
+
 ### Fixed
-- Item name expanding when key contains commas in quoted params, like my_key["a=1,b=2",c,d]
-- Incorrect points order when trends are used [#202](https://github.com/alexanderzobnin/grafana-zabbix/issues/202)
-- Triggers panel styles for light theme
-- Bug with text metrics when singlestat or table shows NaN, [#325](https://github.com/alexanderzobnin/grafana-zabbix/issues/325)
+- Template variables support in annotations and triggers panel (trigger name field), [#428](https://github.com/alexanderzobnin/grafana-zabbix/issues/428)
+- Parsing of template variable query with braces, [#432](https://github.com/alexanderzobnin/grafana-zabbix/issues/432)
+
+
+## [3.5.1] - 2017-07-10
+### Fixed
+- Bug with alerting when template queries are used, [#424](https://github.com/alexanderzobnin/grafana-zabbix/issues/424)
+
+
+## [3.5.0] - 2017-07-05
+### Added
+- rate() function, which calculates per-second rate for growing counters.
+- Benchmarks for time series functions. Used [Benchmark.js](https://github.com/bestiejs/benchmark.js) library.
 
 ### Changed
 - Template query format. New format is `{group}{host}{app}{item}`. It allows to use names with dot. Updated 
@@ -19,9 +37,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Improved performance of groupBy() functions (at 6-10x faster than old).
 - Fill empty intervals by _null_ when aggregations are used, [#388](https://github.com/alexanderzobnin/grafana-zabbix/issues/388)
 
-### Added
-- rate() function, which calculates per-second rate for growing counters.
-- Benchmarks for time series functions. Used [Benchmark.js](https://github.com/bestiejs/benchmark.js) library.
+### Fixed
+- Item name expanding when key contains commas in quoted params, like my_key["a=1,b=2",c,d]
+- Incorrect points order when trends are used [#202](https://github.com/alexanderzobnin/grafana-zabbix/issues/202)
+- Triggers panel styles for light theme
+- Bug with text metrics when singlestat or table shows NaN, [#325](https://github.com/alexanderzobnin/grafana-zabbix/issues/325)
 
 
 ## [3.4.0] - 2017-05-17

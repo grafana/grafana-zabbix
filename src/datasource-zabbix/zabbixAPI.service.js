@@ -165,10 +165,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         sortfield: 'name',
         webitems: true,
         filter: {},
-        selectHosts: [
-          'hostid',
-          'name'
-        ]
+        selectHosts: ['hostid', 'name']
       };
       if (hostids) {
         params.hostids = hostids;
@@ -186,16 +183,25 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       }
 
       return this.request('item.get', params)
-      .then(expandItems);
+      .then(utils.expandItems);
+    }
 
-      function expandItems(items) {
-        _.forEach(items, item => {
-          item.item = item.name;
-          item.name = utils.expandItemName(item.item, item.key_);
-          return item;
-        });
-        return items;
-      }
+    getItemsByIDs(itemids) {
+      var params = {
+        itemids: itemids,
+        output: [
+          'name', 'key_',
+          'value_type',
+          'hostid',
+          'status',
+          'state'
+        ],
+        webitems: true,
+        selectHosts: ['hostid', 'name']
+      };
+
+      return this.request('item.get', params)
+      .then(utils.expandItems);
     }
 
     getMacros(hostids) {

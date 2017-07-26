@@ -22,10 +22,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 /** @ngInject */
 function ZabbixCachingProxyFactory() {
   var ZabbixCachingProxy = function () {
-    function ZabbixCachingProxy(zabbixAPI, cacheOptions) {
+    function ZabbixCachingProxy(zabbixAPI, zabbixDBConnector, cacheOptions) {
       _classCallCheck(this, ZabbixCachingProxy);
 
       this.zabbixAPI = zabbixAPI;
+      this.dbConnector = zabbixDBConnector;
       this.cacheEnabled = cacheOptions.enabled;
       this.ttl = cacheOptions.ttl || 600000; // 10 minutes by default
 
@@ -38,13 +39,19 @@ function ZabbixCachingProxyFactory() {
         history: {},
         trends: {},
         macros: {},
-        globalMacros: {}
+        globalMacros: {},
+        itServices: {}
       };
 
       this.historyPromises = {};
 
       // Don't run duplicated history requests
       this.getHistory = callAPIRequestOnce(_lodash2.default.bind(this.zabbixAPI.getHistory, this.zabbixAPI), this.historyPromises, getHistoryRequestHash);
+
+      if (this.dbConnector) {
+        this.getHistoryDB = callAPIRequestOnce(_lodash2.default.bind(this.dbConnector.getHistory, this.dbConnector), this.historyPromises, getDBQueryHash);
+        this.getTrendsDB = callAPIRequestOnce(_lodash2.default.bind(this.dbConnector.getTrends, this.dbConnector), this.historyPromises, getDBQueryHash);
+      }
 
       // Don't run duplicated requests
       this.groupPromises = {};
@@ -58,6 +65,12 @@ function ZabbixCachingProxyFactory() {
 
       this.itemPromises = {};
       this.getItemsOnce = callAPIRequestOnce(_lodash2.default.bind(this.zabbixAPI.getItems, this.zabbixAPI), this.itemPromises, getRequestHash);
+
+      this.itemByIdPromises = {};
+      this.getItemsByIdOnce = callAPIRequestOnce(_lodash2.default.bind(this.zabbixAPI.getItemsByIDs, this.zabbixAPI), this.itemPromises, getRequestHash);
+
+      this.itServicesPromises = {};
+      this.getITServicesOnce = callAPIRequestOnce(_lodash2.default.bind(this.zabbixAPI.getITService, this.zabbixAPI), this.itServicesPromises, getRequestHash);
 
       this.macroPromises = {};
       this.getMacrosOnce = callAPIRequestOnce(_lodash2.default.bind(this.zabbixAPI.getMacros, this.zabbixAPI), this.macroPromises, getRequestHash);
@@ -118,6 +131,17 @@ function ZabbixCachingProxyFactory() {
       value: function getItems(hostids, appids, itemtype) {
         var params = [hostids, appids, itemtype];
         return this.proxyRequest(this.getItemsOnce, params, this.cache.items);
+      }
+    }, {
+      key: 'getItemsByIDs',
+      value: function getItemsByIDs(itemids) {
+        var params = [itemids];
+        return this.proxyRequest(this.getItemsByIdOnce, params, this.cache.items);
+      }
+    }, {
+      key: 'getITServices',
+      value: function getITServices() {
+        return this.proxyRequest(this.getITServicesOnce, [], this.cache.itServices);
       }
     }, {
       key: 'getMacros',
@@ -207,6 +231,14 @@ function getRequestHash(args) {
 function getHistoryRequestHash(args) {
   var itemids = _lodash2.default.map(args[0], 'itemid');
   var stamp = itemids.join() + args[1] + args[2];
+  return stamp.getHash();
+}
+
+function getDBQueryHash(args) {
+  var itemids = _lodash2.default.map(args[0], 'itemid');
+  var consolidateBy = args[3].consolidateBy;
+  var intervalMs = args[3].intervalMs;
+  var stamp = itemids.join() + args[1] + args[2] + consolidateBy + intervalMs;
   return stamp.getHash();
 }
 

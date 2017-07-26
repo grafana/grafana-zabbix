@@ -5,6 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.regexPattern = undefined;
 exports.expandItemName = expandItemName;
+exports.expandItems = expandItems;
 exports.containsMacro = containsMacro;
 exports.replaceMacro = replaceMacro;
 exports.splitTemplateQuery = splitTemplateQuery;
@@ -47,6 +48,15 @@ function expandItemName(name, key) {
     name = name.replace('$' + i, key_params[i - 1]);
   }
   return name;
+}
+
+function expandItems(items) {
+  _lodash2.default.forEach(items, function (item) {
+    item.item = item.name;
+    item.name = expandItemName(item.item, item.key_);
+    return item;
+  });
+  return items;
 }
 
 function splitKeyParams(paramStr) {
@@ -120,7 +130,7 @@ function escapeMacro(macro) {
  * {group}{host.com} -> [group, host.com]
  */
 function splitTemplateQuery(query) {
-  var splitPattern = /{[^{}]*}/g;
+  var splitPattern = /\{[^\{\}]*\}|\{\/.*\/\}/g;
   var split = void 0;
 
   if (isContainsBraces(query)) {
@@ -136,7 +146,8 @@ function splitTemplateQuery(query) {
 }
 
 function isContainsBraces(query) {
-  return query.includes('{') && query.includes('}');
+  var bracesPattern = /^\{.+\}$/;
+  return bracesPattern.test(query);
 }
 
 // Pattern for testing regex

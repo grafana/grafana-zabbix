@@ -166,16 +166,19 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
             params.filter.value_type = [1, 2, 4];
           }
 
-          return this.request('item.get', params).then(expandItems);
+          return this.request('item.get', params).then(utils.expandItems);
+        }
+      }, {
+        key: 'getItemsByIDs',
+        value: function getItemsByIDs(itemids) {
+          var params = {
+            itemids: itemids,
+            output: ['name', 'key_', 'value_type', 'hostid', 'status', 'state'],
+            webitems: true,
+            selectHosts: ['hostid', 'name']
+          };
 
-          function expandItems(items) {
-            _.forEach(items, function (item) {
-              item.item = item.name;
-              item.name = utils.expandItemName(item.item, item.key_);
-              return item;
-            });
-            return items;
-          }
+          return this.request('item.get', params).then(utils.expandItems);
         }
       }, {
         key: 'getMacros',

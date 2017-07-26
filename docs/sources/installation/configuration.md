@@ -52,7 +52,23 @@ Direct access is still supported because in some cases it may be useful to acces
 - **Cache TTL**: plugin caches some api requests for increasing performance. Set this
     value to desired cache lifetime (this option affect data like items list).
 
+### Direct DB Connection
+
+Direct DB Connection allows plugin to use existing SQL data source for querying history data directly from Zabbix
+database. This way usually faster than pulling data from Zabbix API, especially on the wide time ranges, and reduces
+amount of data transfered.
+
+Read [how to configure](/installation/configuration-sql) SQL data source in Grafana.
+
+- **Enable**: enable Direct DB Connection.
+- **SQL Data Source**: Select SQL Data Source for Zabbix database.
+
+#### Supported databases
+
+Now only **MySQL** is supported by Grafana.
+
 ### Alerting
+
 - **Enable alerting**: enable limited alerting support.
 - **Add thresholds**: get thresholds info from zabbix triggers and add it to graphs.
     For example, if you have trigger `{Zabbix server:system.cpu.util[,iowait].avg(5m)}>20`, threshold will be set to 20.
@@ -65,10 +81,12 @@ or password, wrong api url.
 ![Test Connection](../img/installation-test_connection.png)
 
 ## Import example dashboards
+
 You can import dashboard examples from _Dashboards_ tab in plugin config.
 ![Import dashboards](../img/installation-plugin-dashboards.png)
 
 ## Note about Zabbix 2.2 or less
+
 Zabbix API (api_jsonrpc.php) before zabbix 2.4 don't allow cross-domain requests (CORS). And you
 can get HTTP error 412 (Precondition Failed).
 To fix it add this code to api_jsonrpc.php immediately after the copyright:
@@ -83,17 +101,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   return;
 }
 ```
+
 before
 
 ```php
 require_once dirname(__FILE__).'/include/func.inc.php';
 require_once dirname(__FILE__).'/include/classes/core/CHttpRequest.php';
 ```
+
 [Full fix listing](https://gist.github.com/alexanderzobnin/f2348f318d7a93466a0c).
 For more details see zabbix issues [ZBXNEXT-1377](https://support.zabbix.com/browse/ZBXNEXT-1377)
 and [ZBX-8459](https://support.zabbix.com/browse/ZBX-8459).
 
 ## Note about Browser Cache
+
 After updating plugin, clear browser cache and reload application page. See details
 for [Chrome](https://support.google.com/chrome/answer/95582),
 [Firefox](https://support.mozilla.org/en-US/kb/how-clear-firefox-cache). You need to clear cache

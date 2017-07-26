@@ -9,13 +9,9 @@ var _datasource = require('./datasource');
 
 var _query = require('./query.controller');
 
+var _config = require('./config.controller');
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var ZabbixConfigController = function ZabbixConfigController() {
-  _classCallCheck(this, ZabbixConfigController);
-};
-
-ZabbixConfigController.templateUrl = 'datasource-zabbix/partials/config.html';
 
 var ZabbixQueryOptionsController = function ZabbixQueryOptionsController() {
   _classCallCheck(this, ZabbixQueryOptionsController);
@@ -30,7 +26,7 @@ var ZabbixAnnotationsQueryController = function ZabbixAnnotationsQueryController
 ZabbixAnnotationsQueryController.templateUrl = 'datasource-zabbix/partials/annotations.editor.html';
 
 exports.Datasource = _datasource.ZabbixAPIDatasource;
-exports.ConfigCtrl = ZabbixConfigController;
+exports.ConfigCtrl = _config.ZabbixDSConfigController;
 exports.QueryCtrl = _query.ZabbixQueryController;
 exports.QueryOptionsCtrl = ZabbixQueryOptionsController;
 exports.AnnotationsQueryCtrl = ZabbixAnnotationsQueryController;

@@ -15,7 +15,10 @@ describe('ZabbixDatasource', () => {
         password: 'zabbix',
         trends: true,
         trendsFrom: '14d',
-        trendsRange: '7d'
+        trendsRange: '7d',
+        dbConnection: {
+          enabled: false
+        }
       }
     };
     ctx.templateSrv = {};

@@ -7,7 +7,7 @@
         <select class="gf-form-input"
               ng-change="ctrl.switchEditorMode(ctrl.target.mode)"
               ng-model="ctrl.target.mode"
-              ng-options="v.mode as v.text for (k, v) in ctrl.editorModes">
+              ng-options="m.mode as m.text for m in ctrl.editorModes">
         </select>
       </div>
     </div>
@@ -17,27 +17,29 @@
   </div>
 
   <!-- IT Service editor -->
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == 1">
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.ITSERVICE">
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">IT Service</label>
-      <div class="gf-form-select-wrapper max-width-20">
-        <select class="gf-form-input"
-              ng-change="ctrl.selectITService()"
-              ng-model="ctrl.target.itservice"
-              bs-tooltip="ctrl.target.itservice.name.length > 25 ? ctrl.target.itservice.name : ''"
-              ng-options="itservice.name for itservice in ctrl.itserviceList track by itservice.name">
-          <option value="">-- Select IT service --</option>
-        </select>
-      </div>
+      <input type="text"
+        ng-model="ctrl.target.itServiceFilter"
+        bs-typeahead="ctrl.getITServices"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.itServiceFilter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.itServiceFilter)
+        }">
+      </input>
     </div>
     <div class="gf-form">
-      <label class="gf-form-label query-keyword">IT service property</label>
+      <label class="gf-form-label query-keyword">Property</label>
       <div class="gf-form-select-wrapper">
         <select class="gf-form-input"
-              ng-change="ctrl.selectITService()"
-              ng-model="ctrl.target.slaProperty"
-              ng-options="slaProperty.name for slaProperty in ctrl.slaPropertyList track by slaProperty.name">
-          <option value="">-- Property --</option>
+          ng-change="ctrl.onTargetBlur()"
+          ng-model="ctrl.target.slaProperty"
+          ng-options="slaProperty.name for slaProperty in ctrl.slaPropertyList track by slaProperty.name">
         </select>
       </div>
     </div>
@@ -46,7 +48,7 @@
     </div>
   </div>
 
-  <div class="gf-form-inline" ng-hide="ctrl.target.mode == 1">
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.TEXT">
     <!-- Select Group -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Group</label>
@@ -83,7 +85,7 @@
     </div>
   </div>
 
-  <div class="gf-form-inline" ng-hide="ctrl.target.mode == 1">
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.TEXT">
     <!-- Select Application -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Application</label>
@@ -129,7 +131,7 @@
   <!-- Query options -->
   <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
     <div class="gf-form offset-width-7">
-      <gf-form-switch class="gf-form" ng-hide="ctrl.target.mode == 2"
+      <gf-form-switch class="gf-form"
         label="Show disabled items"
         checked="ctrl.target.options.showDisabledItems"
         on-change="ctrl.onQueryOptionChange()">
@@ -137,8 +139,30 @@
     </div>
   </div>
 
+  <!-- Item IDs editor mode -->
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.ITEMID">
+    <div class="gf-form max-width-20">
+      <label class="gf-form-label query-keyword width-7">Item IDs</label>
+      <input type="text"
+        ng-model="ctrl.target.itemids"
+        bs-typeahead="ctrl.getVariables"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.itServiceFilter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.itServiceFilter)
+        }">
+      </input>
+    </div>
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
+  </div>
+
   <!-- Metric processing functions -->
-  <div class="gf-form-inline" ng-hide="ctrl.target.mode">
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.ITEMID">
     <div class="gf-form">
       <label class="gf-form-label query-keyword width-7">Functions</label>
       <div ng-repeat="func in ctrl.target.functions" class="gf-form-label query-part" metric-function-editor></div>
@@ -151,7 +175,7 @@
   </div>
 
   <!-- Text mode options -->
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == 2">
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.TEXT">
     <!-- Text metric regex -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Text filter</label>
@@ -165,6 +189,8 @@
 
     <gf-form-switch class="gf-form" label="Use capture groups" checked="ctrl.target.useCaptureGroups" on-change="ctrl.onTargetBlur()">
     </gf-form-switch>
+    <div class="gf-form gf-form--grow">
+      <div class="gf-form-label gf-form-label--grow"></div>
+    </div>
   </div>
-
 </query-editor-row>

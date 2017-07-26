@@ -19,6 +19,9 @@ class ZabbixAPIDatasource {
     this.dashboardSrv = dashboardSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
 
+    // Use custom format for template variables
+    this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+
     // General data source settings
     this.name             = instanceSettings.name;
     this.url              = instanceSettings.url;
@@ -43,10 +46,21 @@ class ZabbixAPIDatasource {
     this.addThresholds = instanceSettings.jsonData.addThresholds;
     this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
-    this.zabbix = new Zabbix(this.url, this.username, this.password, this.basicAuth, this.withCredentials, this.cacheTTL);
+    // Direct DB Connection options
+    this.enableDirectDBConnection = instanceSettings.jsonData.dbConnection.enable;
+    this.sqlDatasourceId = instanceSettings.jsonData.dbConnection.datasourceId;
 
-    // Use custom format for template variables
-    this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+    let zabbixOptions = {
+      username: this.username,
+      password: this.password,
+      basicAuth: this.basicAuth,
+      withCredentials: this.withCredentials,
+      cacheTTL: this.cacheTTL,
+      enableDirectDBConnection: this.enableDirectDBConnection,
+      sqlDatasourceId: this.sqlDatasourceId
+    };
+
+    this.zabbix = new Zabbix(this.url, zabbixOptions);
   }
 
   ////////////////////////
@@ -75,6 +89,11 @@ class ZabbixAPIDatasource {
 
     // Create request for each target
     let promises = _.map(options.targets, t => {
+      // Don't request undefined and hidden targets
+      if (t.hide) {
+        return [];
+      }
+
       let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
       let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
 
@@ -94,7 +113,7 @@ class ZabbixAPIDatasource {
       let useTrends = this.isUseTrends(timeRange);
 
       // Metrics or Text query mode
-      if (target.mode !== c.MODE_ITSERVICE) {
+      if (target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
         // Migrate old targets
         target = migrations.migrate(target);
 
@@ -107,20 +126,12 @@ class ZabbixAPIDatasource {
           return this.queryNumericData(target, timeRange, useTrends, options);
         } else if (target.mode === c.MODE_TEXT) {
           return this.queryTextData(target, timeRange);
+        } else if (target.mode === c.MODE_ITEMID) {
+          return this.queryItemIdData(target, timeRange, useTrends, options);
         }
-      }
-
-      // IT services mode
-      else if (target.mode === c.MODE_ITSERVICE) {
-        // Don't show undefined and hidden targets
-        if (target.hide || !target.itservice || !target.slaProperty) {
-          return [];
-        }
-
-        return this.zabbix.getSLA(target.itservice.serviceid, timeRange)
-        .then(slaObject => {
-          return responseHandler.handleSLAResponse(target.itservice, target.slaProperty, slaObject);
-        });
+      } else if (target.mode === c.MODE_ITSERVICE) {
+        // IT services mode
+        return this.queryITServiceData(target, timeRange, options);
       }
     });
 
@@ -132,39 +143,55 @@ class ZabbixAPIDatasource {
       });
   }
 
+  /**
+   * Query target data for Metrics mode
+   */
   queryNumericData(target, timeRange, useTrends, options) {
-    let [timeFrom, timeTo] = timeRange;
     let getItemOptions = {
       itemtype: 'num'
     };
     return this.zabbix.getItemsFromTarget(target, getItemOptions)
     .then(items => {
-      let getHistoryPromise;
+      return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    });
+  }
 
-      if (useTrends) {
+  /**
+   * Query history for numeric items
+   */
+  queryNumericDataForItems(items, target, timeRange, useTrends, options) {
+    let [timeFrom, timeTo] = timeRange;
+    let getHistoryPromise;
+    options.consolidateBy = getConsolidateBy(target);
+
+    if (useTrends) {
+      if (this.enableDirectDBConnection) {
+        getHistoryPromise = this.zabbix.getTrendsDB(items, timeFrom, timeTo, options)
+        .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
+      } else {
         let valueType = this.getTrendValueType(target);
         getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo)
-        .then(history => {
-          return responseHandler.handleTrends(history, items, valueType);
-        })
+        .then(history => responseHandler.handleTrends(history, items, valueType))
         .then(timeseries => {
           // Sort trend data, issue #202
           _.forEach(timeseries, series => {
             series.datapoints = _.sortBy(series.datapoints, point => point[c.DATAPOINT_TS]);
           });
-
           return timeseries;
         });
-      } else {
-        // Use history
-        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
-        .then(history => {
-          return responseHandler.handleHistory(history, items);
-        });
       }
+    } else {
+      // Use history
+      if (this.enableDirectDBConnection) {
+        getHistoryPromise = this.zabbix.getHistoryDB(items, timeFrom, timeTo, options)
+        .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
+      } else {
+        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
+        .then(history => responseHandler.handleHistory(history, items));
+      }
+    }
 
-      return getHistoryPromise;
-    })
+    return getHistoryPromise
     .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
     .then(timeseries => downsampleSeries(timeseries, options))
     .catch(error => {
@@ -238,6 +265,9 @@ class ZabbixAPIDatasource {
     }
   }
 
+  /**
+   * Query target data for Text mode
+   */
   queryTextData(target, timeRange) {
     let [timeFrom, timeTo] = timeRange;
     let options = {
@@ -257,6 +287,66 @@ class ZabbixAPIDatasource {
   }
 
   /**
+   * Query target data for Item ID mode
+   */
+  queryItemIdData(target, timeRange, useTrends, options) {
+    let itemids = target.itemids;
+    itemids = this.templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
+    itemids = _.map(itemids.split(','), itemid => itemid.trim());
+
+    if (!itemids) {
+      return [];
+    }
+
+    return this.zabbix.getItemsByIDs(itemids)
+    .then(items => {
+      return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    });
+  }
+
+  /**
+   * Query target data for IT Services mode
+   */
+  queryITServiceData(target, timeRange, options) {
+    // Don't show undefined and hidden targets
+    if (target.hide || (!target.itservice && !target.itServiceFilter) || !target.slaProperty) {
+      return [];
+    }
+
+    let itServiceIds = [];
+    let itServices = [];
+    let itServiceFilter;
+    let isOldVersion = target.itservice && !target.itServiceFilter;
+
+    if (isOldVersion) {
+      // Backward compatibility
+      itServiceFilter = '/.*/';
+    } else {
+      itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, options.scopedVars);
+    }
+
+    return this.zabbix.getITServices(itServiceFilter)
+    .then(itservices => {
+      itServices = itservices;
+      if (isOldVersion) {
+        itServices = _.filter(itServices, {'serviceid': target.itservice.serviceid});
+      }
+
+      itServiceIds = _.map(itServices, 'serviceid');
+      return itServiceIds;
+    })
+    .then(serviceids => {
+      return this.zabbix.getSLA(serviceids, timeRange);
+    })
+    .then(slaResponse => {
+      return _.map(itServiceIds, serviceid => {
+        let itservice = _.find(itServices, {'serviceid': serviceid});
+        return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
+      });
+    });
+  }
+
+  /**
    * Test connection to Zabbix API
    * @return {object} Connection status and Zabbix API version
    */
@@ -266,6 +356,13 @@ class ZabbixAPIDatasource {
     .then(version => {
       zabbixVersion = version;
       return this.zabbix.login();
+    })
+    .then(() => {
+      if (this.enableDirectDBConnection) {
+        return this.zabbix.dbConnector.testSQLDataSource();
+      } else {
+        return Promise.resolve();
+      }
     })
     .then(() => {
       return {
@@ -280,6 +377,12 @@ class ZabbixAPIDatasource {
           status: "error",
           title: error.message,
           message: error.data
+        };
+      } else if (error.data && error.data.message) {
+        return {
+          status: "error",
+          title: "Connection failed",
+          message: error.data.message
         };
       } else {
         return {
@@ -367,13 +470,14 @@ class ZabbixAPIDatasource {
     return getTriggers.then(triggers => {
 
       // Filter triggers by description
-      if (utils.isRegex(annotation.trigger)) {
+      let triggerName = this.replaceTemplateVars(annotation.trigger, {});
+      if (utils.isRegex(triggerName)) {
         triggers = _.filter(triggers, trigger => {
-          return utils.buildRegex(annotation.trigger).test(trigger.description);
+          return utils.buildRegex(triggerName).test(trigger.description);
         });
-      } else if (annotation.trigger) {
+      } else if (triggerName) {
         triggers = _.filter(triggers, trigger => {
-          return trigger.description === annotation.trigger;
+          return trigger.description === triggerName;
         });
       }
 
@@ -424,7 +528,9 @@ class ZabbixAPIDatasource {
    */
   alertQuery(options) {
     let enabled_targets = filterEnabledTargets(options.targets);
-    let getPanelItems = _.map(enabled_targets, target => {
+    let getPanelItems = _.map(enabled_targets, t => {
+      let target = _.cloneDeep(t);
+      this.replaceTargetVariables(target, options);
       return this.zabbix.getItemsFromTarget(target, {itemtype: 'num'});
     });
 
@@ -508,11 +614,24 @@ function bindFunctionDefs(functionDefs, category) {
   });
 }
 
+function getConsolidateBy(target) {
+  let consolidateBy = 'avg';
+  let funcDef = _.find(target.functions, func => {
+    return func.def.name === 'consolidateBy';
+  });
+  if (funcDef && funcDef.params && funcDef.params.length) {
+    consolidateBy = funcDef.params[0];
+  }
+  return consolidateBy;
+}
+
 function downsampleSeries(timeseries_data, options) {
+  let defaultAgg = dataProcessor.aggregationFunctions['avg'];
+  let consolidateByFunc = dataProcessor.aggregationFunctions[options.consolidateBy] || defaultAgg;
   return _.map(timeseries_data, timeseries => {
     if (timeseries.datapoints.length > options.maxDataPoints) {
       timeseries.datapoints = dataProcessor
-        .groupBy(options.interval, dataProcessor.AVERAGE, timeseries.datapoints);
+        .groupBy(options.interval, consolidateByFunc, timeseries.datapoints);
     }
     return timeseries;
   });
@@ -542,6 +661,13 @@ function zabbixTemplateFormat(value) {
 
   var escapedValues = _.map(value, utils.escapeRegex);
   return '(' + escapedValues.join('|') + ')';
+}
+
+function zabbixItemIdsTemplateFormat(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.join(',');
 }
 
 /**

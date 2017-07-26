@@ -76,24 +76,53 @@
 </div>
 
 <div class="gf-form-group">
+  <h3 class="page-heading">Direct DB Connection</h3>
+  <gf-form-switch class="gf-form" label-class="width-12"
+    label="Enable"
+    checked="ctrl.current.jsonData.dbConnection.enable">
+  </gf-form-switch>
+  <div ng-if="ctrl.current.jsonData.dbConnection.enable">
+    <div class="gf-form max-width-20">
+    <span class="gf-form-label width-12">
+      SQL Data Source
+      <info-popover mode="right-normal">
+        Select SQL Data Source for Zabbix database.
+        In order to use this feature you should <a href="/datasources/new" target="_blank">create</a> and
+        configure it first. Zabbix plugin uses this data source for querying history data directly from database.
+        This way usually faster than pulling data from Zabbix API, especially on the wide time ranges, and reduces
+        amount of data transfered.
+      </info-popover>
+    </span>
+    <div class="gf-form-select-wrapper max-width-16">
+      <select class="gf-form-input" ng-model="ctrl.current.jsonData.dbConnection.datasourceId"
+        ng-options="ds.id as ds.name for ds in ctrl.sqlDataSources">
+      </select>
+    </div>
+  </div>
+  </div>
+</div>
+
+<div class="gf-form-group">
   <h3 class="page-heading">Alerting</h3>
-  <gf-form-switch class="gf-form" label-class="width-9"
+  <gf-form-switch class="gf-form" label-class="width-12"
     label="Enable alerting"
     checked="ctrl.current.jsonData.alerting">
   </gf-form-switch>
-  <gf-form-switch class="gf-form" label-class="width-9"
-    label="Add thresholds"
-    checked="ctrl.current.jsonData.addThresholds">
-  </gf-form-switch>
-  <div class="gf-form max-width-20">
-    <span class="gf-form-label width-9">Min severity</span>
-    <div class="gf-form-select-wrapper max-width-16">
-      <select class="gf-form-input" ng-model="ctrl.current.jsonData.alertingMinSeverity"
-        ng-options="s.val as s.text for s in [
-          {val: 0, text: 'Not classified'}, {val: 1, text:'Information'},
-          {val: 2, text: 'Warning'}, {val: 3, text: 'Average'},
-          {val: 4, text: 'High'}, {val: 5, text: 'Disaster'}]">
-      </select>
+  <div ng-if="ctrl.current.jsonData.alerting">
+    <gf-form-switch class="gf-form" label-class="width-12"
+      label="Add thresholds"
+      checked="ctrl.current.jsonData.addThresholds">
+    </gf-form-switch>
+    <div class="gf-form max-width-20">
+      <span class="gf-form-label width-12">Min severity</span>
+      <div class="gf-form-select-wrapper max-width-16">
+        <select class="gf-form-input" ng-model="ctrl.current.jsonData.alertingMinSeverity"
+          ng-options="s.val as s.text for s in [
+            {val: 0, text: 'Not classified'}, {val: 1, text:'Information'},
+            {val: 2, text: 'Warning'}, {val: 3, text: 'Average'},
+            {val: 4, text: 'High'}, {val: 5, text: 'Disaster'}]">
+        </select>
+      </div>
     </div>
   </div>
 </div>
