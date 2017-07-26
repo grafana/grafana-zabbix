@@ -49,3 +49,12 @@ SELECT itemid AS metric, clock AS time_sec, {aggFunc}({valueColumn}) as value
 
 As you can see, plugin uses aggregation by given time interval. This interval is provided by Grafana and depends on the
 panel with in pixels. Thus, Grafana always gets data in necessary resolution.
+
+## Functions usage with Direct DB Connection
+
+There's only one function affecting backend. This function is `consolidateBy`. It changes what data comes from 
+the backend. Other functions still work on the client side and transform data come from the backend. So you should
+clearly understand that you work with pre-aggregated data (by AVG, MAX, MIN, etc). For example, you want to group 
+values by 1 hour interval and `max` function. But if you just apply `groupBy(10m, max)` function, result will be wrong,
+because you transform data aggregated by default `AVG` function. You should use `consolidateBy(max)` coupled with
+`groupBy(10m, max)` in order to get precise result.
