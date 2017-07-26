@@ -47,8 +47,9 @@ class ZabbixAPIDatasource {
     this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
 
     // Direct DB Connection options
-    this.enableDirectDBConnection = instanceSettings.jsonData.dbConnection.enable;
-    this.sqlDatasourceId = instanceSettings.jsonData.dbConnection.datasourceId;
+    let dbConnectionOptions = instanceSettings.jsonData.dbConnection || {};
+    this.enableDirectDBConnection = dbConnectionOptions.enable;
+    this.sqlDatasourceId = dbConnectionOptions.datasourceId;
 
     let zabbixOptions = {
       username: this.username,
