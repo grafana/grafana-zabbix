@@ -171,13 +171,15 @@ function convertGrafanaTSResponse(time_series, items, addHostName) {
   var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
   let grafanaSeries = _.map(time_series, series => {
     let itemid = series.name;
-    let datapoints = series.points;
     var item = _.find(items, {'itemid': itemid});
     var alias = item.name;
     if (_.keys(hosts).length > 1 && addHostName) { //only when actual multi hosts selected
       var host = _.find(hosts, {'hostid': item.hostid});
       alias = host.name + ": " + alias;
     }
+    // zabbixCachingProxy deduplicates requests and returns one time series for equal queries.
+    // Clone is needed to prevent changing of series object shared between all targets.
+    let datapoints = _.cloneDeep(series.points);
     return {
       target: alias,
       datapoints: datapoints

@@ -289,10 +289,10 @@ var ZabbixAPIDatasource = function () {
       var aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
 
       // Apply transformation functions
-      timeseries_data = _lodash2.default.map(timeseries_data, function (timeseries) {
+      timeseries_data = _lodash2.default.cloneDeep(_lodash2.default.map(timeseries_data, function (timeseries) {
         timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
         return timeseries;
-      });
+      }));
 
       // Apply filter functions
       if (filterFunctions.length) {

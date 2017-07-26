@@ -426,10 +426,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
 
             // Apply transformation functions
-            timeseries_data = _.map(timeseries_data, function (timeseries) {
+            timeseries_data = _.cloneDeep(_.map(timeseries_data, function (timeseries) {
               timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
               return timeseries;
-            });
+            }));
 
             // Apply filter functions
             if (filterFunctions.length) {

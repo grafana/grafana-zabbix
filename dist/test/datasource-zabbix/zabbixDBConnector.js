@@ -195,7 +195,6 @@ function convertGrafanaTSResponse(time_series, items, addHostName) {
   var hosts = _lodash2.default.uniqBy(_lodash2.default.flatten(_lodash2.default.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
   var grafanaSeries = _lodash2.default.map(time_series, function (series) {
     var itemid = series.name;
-    var datapoints = series.points;
     var item = _lodash2.default.find(items, { 'itemid': itemid });
     var alias = item.name;
     if (_lodash2.default.keys(hosts).length > 1 && addHostName) {
@@ -203,6 +202,9 @@ function convertGrafanaTSResponse(time_series, items, addHostName) {
       var host = _lodash2.default.find(hosts, { 'hostid': item.hostid });
       alias = host.name + ": " + alias;
     }
+    // zabbixCachingProxy deduplicates requests and returns one time series for equal queries.
+    // Clone is needed to prevent changing of series object shared between all targets.
+    var datapoints = _lodash2.default.cloneDeep(series.points);
     return {
       target: alias,
       datapoints: datapoints

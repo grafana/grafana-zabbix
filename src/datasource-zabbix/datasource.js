@@ -217,10 +217,10 @@ class ZabbixAPIDatasource {
     let aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
 
     // Apply transformation functions
-    timeseries_data = _.map(timeseries_data, timeseries => {
+    timeseries_data = _.cloneDeep(_.map(timeseries_data, timeseries => {
       timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
       return timeseries;
-    });
+    }));
 
     // Apply filter functions
     if (filterFunctions.length) {
