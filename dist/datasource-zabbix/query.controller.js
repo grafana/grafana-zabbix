@@ -83,10 +83,13 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
           _this.replaceTemplateVars = _this.datasource.replaceTemplateVars;
           _this.templateSrv = templateSrv;
 
-          _this.editorModes = {
-            0: { value: 'num', text: 'Metrics', mode: c.MODE_METRICS },
-            1: { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE },
-            2: { value: 'text', text: 'Text', mode: c.MODE_TEXT }
+          _this.editorModes = [{ value: 'num', text: 'Metrics', mode: c.MODE_METRICS }, { value: 'text', text: 'Text', mode: c.MODE_TEXT }, { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE }, { value: 'itemid', text: 'Item ID', mode: c.MODE_ITEMID }];
+
+          _this.$scope.editorMode = {
+            METRICS: c.MODE_METRICS,
+            TEXT: c.MODE_TEXT,
+            ITSERVICE: c.MODE_ITSERVICE,
+            ITEMID: c.MODE_ITEMID
           };
 
           _this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
@@ -97,6 +100,7 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
           _this.getApplicationNames = _.bind(_this.getMetricNames, _this, 'appList');
           _this.getItemNames = _.bind(_this.getMetricNames, _this, 'itemList');
           _this.getITServices = _.bind(_this.getMetricNames, _this, 'itServiceList');
+          _this.getVariables = _.bind(_this.getTemplateVariables, _this);
 
           // Update metric suggestion when template variable was changed
           $rootScope.$on('template-variable-value-updated', function () {
@@ -156,7 +160,8 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
         _createClass(ZabbixQueryController, [{
           key: 'initFilters',
           value: function initFilters() {
-            var itemtype = this.editorModes[this.target.mode].value;
+            var itemtype = _.find(this.editorModes, { 'mode': this.target.mode });
+            itemtype = itemtype ? itemtype.value : null;
             return Promise.all([this.suggestGroups(), this.suggestHosts(), this.suggestApps(), this.suggestItems(itemtype)]);
           }
         }, {
@@ -174,6 +179,13 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
             }
 
             return metrics;
+          }
+        }, {
+          key: 'getTemplateVariables',
+          value: function getTemplateVariables() {
+            return _.map(this.templateSrv.variables, function (variable) {
+              return '$' + variable.name;
+            });
           }
         }, {
           key: 'suggestGroups',

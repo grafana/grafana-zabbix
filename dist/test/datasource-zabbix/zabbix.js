@@ -64,6 +64,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) 
       // Proxy methods
       this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
       this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
+      this.getItemsByIDs = this.cachingProxy.getItemsByIDs.bind(this.cachingProxy);
 
       if (enableDirectDBConnection) {
         this.getHistoryDB = this.cachingProxy.getHistoryDB.bind(this.cachingProxy);

@@ -60,10 +60,13 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     _this.replaceTemplateVars = _this.datasource.replaceTemplateVars;
     _this.templateSrv = templateSrv;
 
-    _this.editorModes = {
-      0: { value: 'num', text: 'Metrics', mode: c.MODE_METRICS },
-      1: { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE },
-      2: { value: 'text', text: 'Text', mode: c.MODE_TEXT }
+    _this.editorModes = [{ value: 'num', text: 'Metrics', mode: c.MODE_METRICS }, { value: 'text', text: 'Text', mode: c.MODE_TEXT }, { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE }, { value: 'itemid', text: 'Item ID', mode: c.MODE_ITEMID }];
+
+    _this.$scope.editorMode = {
+      METRICS: c.MODE_METRICS,
+      TEXT: c.MODE_TEXT,
+      ITSERVICE: c.MODE_ITSERVICE,
+      ITEMID: c.MODE_ITEMID
     };
 
     _this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
@@ -74,6 +77,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     _this.getApplicationNames = _lodash2.default.bind(_this.getMetricNames, _this, 'appList');
     _this.getItemNames = _lodash2.default.bind(_this.getMetricNames, _this, 'itemList');
     _this.getITServices = _lodash2.default.bind(_this.getMetricNames, _this, 'itServiceList');
+    _this.getVariables = _lodash2.default.bind(_this.getTemplateVariables, _this);
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', function () {
@@ -133,7 +137,8 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
   _createClass(ZabbixQueryController, [{
     key: 'initFilters',
     value: function initFilters() {
-      var itemtype = this.editorModes[this.target.mode].value;
+      var itemtype = _lodash2.default.find(this.editorModes, { 'mode': this.target.mode });
+      itemtype = itemtype ? itemtype.value : null;
       return Promise.all([this.suggestGroups(), this.suggestHosts(), this.suggestApps(), this.suggestItems(itemtype)]);
     }
 
@@ -154,6 +159,13 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
       }
 
       return metrics;
+    }
+  }, {
+    key: 'getTemplateVariables',
+    value: function getTemplateVariables() {
+      return _lodash2.default.map(this.templateSrv.variables, function (variable) {
+        return '$' + variable.name;
+      });
     }
   }, {
     key: 'suggestGroups',

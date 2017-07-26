@@ -1,7 +1,8 @@
 // Editor modes
 export const MODE_METRICS = 0;
-export const MODE_TEXT = 2;
 export const MODE_ITSERVICE = 1;
+export const MODE_TEXT = 2;
+export const MODE_ITEMID = 3;
 
 // Triggers severity
 export const SEV_NOT_CLASSIFIED = 0;

@@ -73,6 +73,9 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         this.itemPromises = {};
         this.getItemsOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItems, this.zabbixAPI), this.itemPromises, getRequestHash);
 
+        this.itemByIdPromises = {};
+        this.getItemsByIdOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getItemsByIDs, this.zabbixAPI), this.itemPromises, getRequestHash);
+
         this.itServicesPromises = {};
         this.getITServicesOnce = callAPIRequestOnce(_.bind(this.zabbixAPI.getITService, this.zabbixAPI), this.itServicesPromises, getRequestHash);
 
@@ -129,6 +132,12 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         value: function getItems(hostids, appids, itemtype) {
           var params = [hostids, appids, itemtype];
           return this.proxyRequest(this.getItemsOnce, params, this.cache.items);
+        }
+      }, {
+        key: 'getItemsByIDs',
+        value: function getItemsByIDs(itemids) {
+          var params = [itemids];
+          return this.proxyRequest(this.getItemsByIdOnce, params, this.cache.items);
         }
       }, {
         key: 'getITServices',

@@ -21,10 +21,18 @@ export class ZabbixQueryController extends QueryCtrl {
     this.replaceTemplateVars = this.datasource.replaceTemplateVars;
     this.templateSrv = templateSrv;
 
-    this.editorModes = {
-      0: {value: 'num',       text: 'Metrics',     mode: c.MODE_METRICS},
-      1: {value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE},
-      2: {value: 'text',      text: 'Text',        mode: c.MODE_TEXT}
+    this.editorModes = [
+      {value: 'num',       text: 'Metrics',     mode: c.MODE_METRICS},
+      {value: 'text',      text: 'Text',        mode: c.MODE_TEXT},
+      {value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE},
+      {value: 'itemid',    text: 'Item ID',     mode: c.MODE_ITEMID}
+    ];
+
+    this.$scope.editorMode = {
+      METRICS: c.MODE_METRICS,
+      TEXT: c.MODE_TEXT,
+      ITSERVICE: c.MODE_ITSERVICE,
+      ITEMID: c.MODE_ITEMID
     };
 
     this.slaPropertyList = [
@@ -41,6 +49,7 @@ export class ZabbixQueryController extends QueryCtrl {
     this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
     this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
     this.getITServices = _.bind(this.getMetricNames, this, 'itServiceList');
+    this.getVariables = _.bind(this.getTemplateVariables, this);
 
     // Update metric suggestion when template variable was changed
     $rootScope.$on('template-variable-value-updated', () => this.onVariableChange());
@@ -97,7 +106,8 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   initFilters() {
-    let itemtype = this.editorModes[this.target.mode].value;
+    let itemtype = _.find(this.editorModes, {'mode': this.target.mode});
+    itemtype = itemtype ? itemtype.value : null;
     return Promise.all([
       this.suggestGroups(),
       this.suggestHosts(),
@@ -120,6 +130,12 @@ export class ZabbixQueryController extends QueryCtrl {
     }
 
     return metrics;
+  }
+
+  getTemplateVariables() {
+    return _.map(this.templateSrv.variables, variable => {
+      return '$' + variable.name;
+    });
   }
 
   suggestGroups() {
