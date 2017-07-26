@@ -44,6 +44,42 @@ rate()
 Calculates the per-second rate of increase of the time series. Resistant to counter reset. Suitable for converting of
 growing counters into the per-sercond rate.
 
+### movingAverage
+```
+movingAverage(windowSize)
+```
+Graphs the moving average of a metric over a fixed number of past points, specified by `windowSize` param.
+
+Examples:
+```
+movingAverage(60)
+calculates moving average over 60 points (if metric has 1 second resolution it matches 1 minute window)
+```
+
+### exponentialMovingAverage
+```
+exponentialMovingAverage(windowSize)
+```
+Takes a series of values and a window size and produces an exponential moving average utilizing the following formula:  
+`ema(current) = constant * (Current Value) + (1 - constant) * ema(previous)`
+
+The Constant is calculated as:  
+`constant = 2 / (windowSize + 1)`
+
+If windowSize < 1 (0.1, for instance), Constant wouldn't be calculated and will be taken directly from windowSize
+(Constant = windowSize).
+
+It's a bit tricky to graph EMA from the first point of series (not from Nth = windowSize). In order to do it,
+plugin should fetch previous N points first and calculate simple moving average for it. To avoid it, plugin uses this
+hack: assume, previous N points have the same average values as first N (windowSize). So you should keep this fact
+in mind and don't rely on first N points interval.
+
+Examples:
+```
+movingAverage(60)
+calculates moving average over 60 points (if metric has 1 second resolution it matches 1 minute window)
+```
+
 Aggregate
 ---------
 
