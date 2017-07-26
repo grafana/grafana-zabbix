@@ -154,6 +154,7 @@ function sumSeries(timeseries) {
   new_timestamps = _lodash2.default.sortBy(new_timestamps);
 
   var interpolated_timeseries = _lodash2.default.map(timeseries, function (series) {
+    series = fillZeroes(series, new_timestamps);
     var timestamps = _lodash2.default.map(series, function (point) {
       return point[1];
     });
@@ -393,6 +394,30 @@ function sortByTime(series) {
 }
 
 /**
+ * Fill empty front and end of series by zeroes.
+ *
+ * |   ***   |    |   ***   |
+ * |___   ___| -> |***   ***|
+ * @param {*} series
+ * @param {*} timestamps
+ */
+function fillZeroes(series, timestamps) {
+  var prepend = [];
+  var append = [];
+  var new_point = void 0;
+  for (var i = 0; i < timestamps.length; i++) {
+    if (timestamps[i] < series[0][POINT_TIMESTAMP]) {
+      new_point = [0, timestamps[i]];
+      prepend.push(new_point);
+    } else if (timestamps[i] > series[series.length - 1][POINT_TIMESTAMP]) {
+      new_point = [0, timestamps[i]];
+      append.push(new_point);
+    }
+  }
+  return _lodash2.default.concat(_lodash2.default.concat(prepend, series), append);
+}
+
+/**
  * Interpolate series with gaps
  */
 function interpolateSeries(series) {
@@ -401,8 +426,8 @@ function interpolateSeries(series) {
   // Interpolate series
   for (var i = series.length - 1; i >= 0; i--) {
     if (!series[i][0]) {
-      left = findNearestLeft(series, series[i]);
-      right = findNearestRight(series, series[i]);
+      left = findNearestLeft(series, i);
+      right = findNearestRight(series, i);
       if (!left) {
         left = right;
       }
@@ -423,26 +448,22 @@ function linearInterpolation(timestamp, left, right) {
   }
 }
 
-function findNearestRight(series, point) {
-  var point_index = _lodash2.default.indexOf(series, point);
-  var nearestRight;
-  for (var i = point_index; i < series.length; i++) {
+function findNearestRight(series, pointIndex) {
+  for (var i = pointIndex; i < series.length; i++) {
     if (series[i][0] !== null) {
       return series[i];
     }
   }
-  return nearestRight;
+  return null;
 }
 
-function findNearestLeft(series, point) {
-  var point_index = _lodash2.default.indexOf(series, point);
-  var nearestLeft;
-  for (var i = point_index; i > 0; i--) {
+function findNearestLeft(series, pointIndex) {
+  for (var i = pointIndex; i > 0; i--) {
     if (series[i][0] !== null) {
       return series[i];
     }
   }
-  return nearestLeft;
+  return null;
 }
 
 ////////////
