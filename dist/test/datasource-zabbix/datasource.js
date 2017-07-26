@@ -195,10 +195,32 @@ var ZabbixAPIDatasource = function () {
         return { data: data };
       });
     }
+
+    /**
+     * Query target data for Metrics mode
+     */
+
+  }, {
+    key: 'queryNumericData',
+    value: function queryNumericData(target, timeRange, useTrends, options) {
+      var _this2 = this;
+
+      var getItemOptions = {
+        itemtype: 'num'
+      };
+      return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
+        return _this2.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+      });
+    }
+
+    /**
+     * Query history for numeric items
+     */
+
   }, {
     key: 'queryNumericDataForItems',
     value: function queryNumericDataForItems(items, target, timeRange, useTrends, options) {
-      var _this2 = this;
+      var _this3 = this;
 
       var _timeRange = _slicedToArray(timeRange, 2),
           timeFrom = _timeRange[0],
@@ -210,7 +232,7 @@ var ZabbixAPIDatasource = function () {
       if (useTrends) {
         if (this.enableDirectDBConnection) {
           getHistoryPromise = this.zabbix.getTrendsDB(items, timeFrom, timeTo, options).then(function (history) {
-            return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
+            return _this3.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
           });
         } else {
           var valueType = this.getTrendValueType(target);
@@ -230,7 +252,7 @@ var ZabbixAPIDatasource = function () {
         // Use history
         if (this.enableDirectDBConnection) {
           getHistoryPromise = this.zabbix.getHistoryDB(items, timeFrom, timeTo, options).then(function (history) {
-            return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
+            return _this3.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
           });
         } else {
           getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
@@ -240,24 +262,12 @@ var ZabbixAPIDatasource = function () {
       }
 
       return getHistoryPromise.then(function (timeseries) {
-        return _this2.applyDataProcessingFunctions(timeseries, target);
+        return _this3.applyDataProcessingFunctions(timeseries, target);
       }).then(function (timeseries) {
         return downsampleSeries(timeseries, options);
       }).catch(function (error) {
         console.log(error);
         return [];
-      });
-    }
-  }, {
-    key: 'queryNumericData',
-    value: function queryNumericData(target, timeRange, useTrends, options) {
-      var _this3 = this;
-
-      var getItemOptions = {
-        itemtype: 'num'
-      };
-      return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
-        return _this3.queryNumericDataForItems(items, target, timeRange, useTrends, options);
       });
     }
   }, {
@@ -328,6 +338,11 @@ var ZabbixAPIDatasource = function () {
         });
       }
     }
+
+    /**
+     * Query target data for Text mode
+     */
+
   }, {
     key: 'queryTextData',
     value: function queryTextData(target, timeRange) {
@@ -350,6 +365,11 @@ var ZabbixAPIDatasource = function () {
         }
       });
     }
+
+    /**
+     * Query target data for Item ID mode
+     */
+
   }, {
     key: 'queryItemIdData',
     value: function queryItemIdData(target, timeRange, useTrends, options) {
@@ -369,6 +389,11 @@ var ZabbixAPIDatasource = function () {
         return _this5.queryNumericDataForItems(items, target, timeRange, useTrends, options);
       });
     }
+
+    /**
+     * Query target data for IT Services mode
+     */
+
   }, {
     key: 'queryITServiceData',
     value: function queryITServiceData(target, timeRange, options) {

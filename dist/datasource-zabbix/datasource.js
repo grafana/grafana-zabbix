@@ -343,9 +343,21 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             });
           }
         }, {
+          key: 'queryNumericData',
+          value: function queryNumericData(target, timeRange, useTrends, options) {
+            var _this2 = this;
+
+            var getItemOptions = {
+              itemtype: 'num'
+            };
+            return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
+              return _this2.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+            });
+          }
+        }, {
           key: 'queryNumericDataForItems',
           value: function queryNumericDataForItems(items, target, timeRange, useTrends, options) {
-            var _this2 = this;
+            var _this3 = this;
 
             var _timeRange = _slicedToArray(timeRange, 2),
                 timeFrom = _timeRange[0],
@@ -357,7 +369,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             if (useTrends) {
               if (this.enableDirectDBConnection) {
                 getHistoryPromise = this.zabbix.getTrendsDB(items, timeFrom, timeTo, options).then(function (history) {
-                  return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
+                  return _this3.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
                 });
               } else {
                 var valueType = this.getTrendValueType(target);
@@ -377,7 +389,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               // Use history
               if (this.enableDirectDBConnection) {
                 getHistoryPromise = this.zabbix.getHistoryDB(items, timeFrom, timeTo, options).then(function (history) {
-                  return _this2.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
+                  return _this3.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
                 });
               } else {
                 getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
@@ -387,24 +399,12 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             }
 
             return getHistoryPromise.then(function (timeseries) {
-              return _this2.applyDataProcessingFunctions(timeseries, target);
+              return _this3.applyDataProcessingFunctions(timeseries, target);
             }).then(function (timeseries) {
               return downsampleSeries(timeseries, options);
             }).catch(function (error) {
               console.log(error);
               return [];
-            });
-          }
-        }, {
-          key: 'queryNumericData',
-          value: function queryNumericData(target, timeRange, useTrends, options) {
-            var _this3 = this;
-
-            var getItemOptions = {
-              itemtype: 'num'
-            };
-            return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
-              return _this3.queryNumericDataForItems(items, target, timeRange, useTrends, options);
             });
           }
         }, {

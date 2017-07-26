@@ -143,6 +143,22 @@ class ZabbixAPIDatasource {
       });
   }
 
+  /**
+   * Query target data for Metrics mode
+   */
+  queryNumericData(target, timeRange, useTrends, options) {
+    let getItemOptions = {
+      itemtype: 'num'
+    };
+    return this.zabbix.getItemsFromTarget(target, getItemOptions)
+    .then(items => {
+      return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    });
+  }
+
+  /**
+   * Query history for numeric items
+   */
   queryNumericDataForItems(items, target, timeRange, useTrends, options) {
     let [timeFrom, timeTo] = timeRange;
     let getHistoryPromise;
@@ -181,16 +197,6 @@ class ZabbixAPIDatasource {
     .catch(error => {
       console.log(error);
       return [];
-    });
-  }
-
-  queryNumericData(target, timeRange, useTrends, options) {
-    let getItemOptions = {
-      itemtype: 'num'
-    };
-    return this.zabbix.getItemsFromTarget(target, getItemOptions)
-    .then(items => {
-      return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
     });
   }
 
@@ -259,6 +265,9 @@ class ZabbixAPIDatasource {
     }
   }
 
+  /**
+   * Query target data for Text mode
+   */
   queryTextData(target, timeRange) {
     let [timeFrom, timeTo] = timeRange;
     let options = {
@@ -277,6 +286,9 @@ class ZabbixAPIDatasource {
       });
   }
 
+  /**
+   * Query target data for Item ID mode
+   */
   queryItemIdData(target, timeRange, useTrends, options) {
     let itemids = target.itemids;
     itemids = this.templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
@@ -292,6 +304,9 @@ class ZabbixAPIDatasource {
     });
   }
 
+  /**
+   * Query target data for IT Services mode
+   */
   queryITServiceData(target, timeRange, options) {
     // Don't show undefined and hidden targets
     if (target.hide || (!target.itservice && !target.itServiceFilter) || !target.slaProperty) {
