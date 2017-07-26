@@ -28,6 +28,13 @@ export class ZabbixQueryController extends QueryCtrl {
       {value: 'itemid',    text: 'Item ID',     mode: c.MODE_ITEMID}
     ];
 
+    this.$scope.editorMode = {
+      METRICS: c.MODE_METRICS,
+      TEXT: c.MODE_TEXT,
+      ITSERVICE: c.MODE_ITSERVICE,
+      ITEMID: c.MODE_ITEMID
+    };
+
     this.slaPropertyList = [
       {name: "Status", property: "status"},
       {name: "SLA", property: "sla"},
