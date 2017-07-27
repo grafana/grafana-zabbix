@@ -49,7 +49,7 @@ As you can see, the Grafana-Zabbix plugin uses aggregation by a given time inter
 ## Functions usage with Direct DB Connection
 
 
-There's only one function affecting the backend. This function is `consolidateBy`, which changes what data comes from 
+There's only one function affecting the backend. This function is `consolidateBy`. It changes what data comes from 
 the backend. Other functions still work on the client side and transform data that comes from the backend. So you should
 clearly understand that this is pre-aggregated data (by AVG, MAX, MIN, etc). 
 
