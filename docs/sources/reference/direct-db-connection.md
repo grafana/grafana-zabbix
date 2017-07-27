@@ -48,6 +48,9 @@ As you can see, the Grafana-Zabbix plugin uses aggregation by a given time inter
 
 ## Functions usage with Direct DB Connection
 
-There's only one function that changes what data comes from the backend: `consolidateBy`. Other functions still work on the client side and transform data from the backend. So mak sure to work with pre-aggregated data (by AVG, MAX, MIN, etc). 
 
-For example, let's say you want to group values by 1 hour intervals and the `max` function. If you just apply `groupBy(10m, max)` function, the result will be incorrect because the transform data aggregated by the default `AVG` function. You should use `consolidateBy(max)` coupled with `groupBy(10m, max)` in order to get the correct result.
+There's only one function affecting the backend. This function is `consolidateBy`, which changes what data comes from 
+the backend. Other functions still work on the client side and transform data that comes from the backend. So you should
+clearly understand that this is pre-aggregated data (by AVG, MAX, MIN, etc). 
+
+For example, say you want to group values by 1 hour interval and `max` function. If you just apply `groupBy(10m, max)` function, your result will be wrong, because you would transform data aggregated by default `AVG` function. You should use `consolidateBy(max)` coupled with `groupBy(10m, max)` in order to get a precise result.
