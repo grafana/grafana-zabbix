@@ -95,6 +95,10 @@ function groupBy(datapoints, interval, groupByCallback) {
 }
 
 function groupBy_perf(datapoints, interval, groupByCallback) {
+  if (datapoints.length === 0) {
+    return [];
+  }
+
   let ms_interval = utils.parseInterval(interval);
   let grouped_series = [];
   let frame_values = [];
