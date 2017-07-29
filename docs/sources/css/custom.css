@@ -1,38 +1,82 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto|Source+Code+Pro');
+
 .wy-side-nav-search, .wy-nav-top {
-	background-color: #8e3030
+  background-color: #8e3030
 }
 
-p {
-	margin-bottom: 24px;
+/* Content container */
+.wy-nav-content {
+  max-width: 1200px;
+}
+
+.rst-content {
+  color: #404040;
+  font-family: 'Roboto', 'Lato', 'proxima-nova', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.rst-content p {
+  margin-bottom: 24px;
+  font-size: 18px;
+  line-height: 28px;
+}
+
+.rst-content img {
+  max-width: 80%;
+  max-height: 800px;
 }
 
 .rst-content blockquote {
-	margin-left: 0px;
-	padding: 0 1em;
-	color: #777;
-	border-left: 0.25em solid #ddd;
+  margin-left: 0px;
+  padding: 0 1em;
+  color: #777;
+  border-left: 0.25em solid #ddd;
 }
 
 code, .rst-content tt {
-	font-size: 85%;
-	color: #404040;
-	background-color: #f4f4f4;
-	padding: 1px 5px;
-	border-radius: 2px;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 90%;
+  color: #404040;
+  background-color: #f4f4f4;
+  padding: 1px 5px;
+  border-radius: 2px;
+  border: 0;
 }
 
+
+/**
+ * Colors are from solarized scheme.
+ */
 .hljs {
-	font-size: 100%;
-	line-height: 1.5;
-	padding: 1em 0.5em;
-	border-radius: 4px;
-	border-color: #f4f4f4;
+  background-color: #fdf6e3;
+  color: #657b83;
+  border-color: #eee8d5;
+
+  font-size: 100%;
+  line-height: 1.5;
+  padding: 1em 0.5em;
+  border-radius: 4px;
+}
+
+.hljs-keyword {
+  color: #dc322f;
+}
+
+.hljs-built_in {
+  color: #268bd2;
+}
+
+.hljs-string {
+  color: #859900;
+}
+
+.hljs-variable {
+  color: #6c71c4;
 }
 
 .btn-neutral:hover {
-	background-color: #8e3030 !important;
-	color: #f4f4f4 !important;
-	box-shadow:
-		0px 1px 2px -1px rgba(255,255,255,0.5) inset,
-		0px -2px 0px 0px rgba(0, 0, 0, 0.2) inset;
+  background-color: #8e3030 !important;
+  color: #f4f4f4 !important;
+  box-shadow:
+    0px 1px 2px -1px rgba(255,255,255,0.5) inset,
+    0px -2px 0px 0px rgba(0, 0, 0, 0.2) inset;
 }
