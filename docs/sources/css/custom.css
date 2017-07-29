@@ -9,14 +9,38 @@
   max-width: 1200px;
 }
 
-.rst-content {
+.rst-content .section {
   color: #404040;
   font-family: 'Roboto', 'Lato', 'proxima-nova', 'Helvetica Neue', Arial, sans-serif;
 }
 
+.rst-content p, .rst-content ul, .rst-content ol {
+  font-size: 18px;
+}
+
+.rst-content h1 {
+  font-size: 200%;
+}
+
+.rst-content h2 {
+  font-size: 175%;
+}
+
+.rst-content h3 {
+  font-size: 150%;
+}
+
+.rst-content h4 {
+  font-size: 125%;
+}
+
 .rst-content p {
   margin-bottom: 24px;
-  font-size: 18px;
+  line-height: 28px;
+}
+
+.rst-content li {
+  margin-bottom: 8px;
   line-height: 28px;
 }
 
@@ -26,10 +50,11 @@
 }
 
 .rst-content blockquote {
-  margin-left: 0px;
+  max-width: 80%;
+  margin-left: 24px;
   padding: 0 1em;
   color: #777;
-  border-left: 0.25em solid #ddd;
+  border-left: 6px solid #ddd;
 }
 
 code, .rst-content tt {
@@ -39,7 +64,7 @@ code, .rst-content tt {
   background-color: #f4f4f4;
   padding: 1px 5px;
   border-radius: 2px;
-  border: 0;
+  border-width: 0;
 }
 
 
@@ -47,14 +72,18 @@ code, .rst-content tt {
  * Colors are from solarized scheme.
  */
 .hljs {
+  max-width: 100%;
+
   background-color: #fdf6e3;
   color: #657b83;
+
+  border-width: 0 0 0 6px;
   border-color: #eee8d5;
+  border-left-color: #268bd2;
 
   font-size: 100%;
   line-height: 1.5;
-  padding: 1em 0.5em;
-  border-radius: 4px;
+  padding: 0.5em 1em;
 }
 
 .hljs-keyword {
