@@ -1,10 +1,10 @@
 Functions reference
 ===================
 
-Transform
----------
+## Transform
 
-### groupBy
+
+### _groupBy_
 
 ```
 groupBy(interval, function)
@@ -17,8 +17,9 @@ Examples:
 groupBy(10m, avg)
 groupBy(1h, median)
 ```
+---
 
-### scale
+### _scale_
 ```
 scale(factor)
 ```
@@ -29,22 +30,25 @@ Examples:
 scale(100)
 scale(0.01)
 ```
+---
 
-### delta
+### _delta_
 ```
 delta()
 ```
 Converts absolute values to delta. This function just calculate difference between values. For the per-second
 calculation use `rate()`.
+---
 
-### rate
+### _rate_
 ```
 rate()
 ```
 Calculates the per-second rate of increase of the time series. Resistant to counter reset. Suitable for converting of
 growing counters into the per-sercond rate.
+---
 
-### movingAverage
+### _movingAverage_
 ```
 movingAverage(windowSize)
 ```
@@ -55,8 +59,9 @@ Examples:
 movingAverage(60)
 calculates moving average over 60 points (if metric has 1 second resolution it matches 1 minute window)
 ```
+---
 
-### exponentialMovingAverage
+### _exponentialMovingAverage_
 ```
 exponentialMovingAverage(windowSize)
 ```
@@ -79,11 +84,11 @@ Examples:
 movingAverage(60)
 calculates moving average over 60 points (if metric has 1 second resolution it matches 1 minute window)
 ```
+---
 
-Aggregate
----------
+## Aggregate
 
-### aggregateBy
+### _aggregateBy_
 ```
 aggregateBy(interval, function)
 ```
@@ -95,37 +100,44 @@ Examples:
 aggregateBy(10m, avg)
 aggregateBy(1h, median)
 ```
+---
 
-### sumSeries
+### _sumSeries_
 ```
 sumSeries()
 ```
 
 This will add metrics together and return the sum at each datapoint. This method required interpolation of each timeseries so it may cause high CPU load. Try to combine it with _groupBy()_ function to reduce load.
 
-### average
+---
+
+### _average_
 ```
 average(interval)
 ```
 **Deprecated**, use `aggregateBy(interval, avg)` instead.
 
-### min
+---
+
+### _min_
 ```
 min(interval)
 ```
 **Deprecated**, use `aggregateBy(interval, min)` instead.
 
-### max
+---
+
+### _max_
 ```
 max(interval)
 ```
 **Deprecated**, use `aggregateBy(interval, max)` instead.
 
+---
 
-Filter
----------
+## Filter
 
-### top
+### _top_
 
 ```
 top(N, value)
@@ -138,8 +150,9 @@ Examples:
 top(10, avg)
 top(5, max)
 ```
+---
 
-### bottom
+### _bottom_
 
 ```
 bottom(N, value)
@@ -151,20 +164,22 @@ Examples:
 ```
 bottom(5, avg)
 ```
-
+---
 
 ## Trends
 
-### trendValue
+### _trendValue_
 ```
 trendValue(valueType)
 ```
 
 Specifying type of trend value returned by Zabbix when trends are used (avg, min or max).
 
+---
+
 ## Time
 
-### timeShift
+### _timeShift_
 ```
 timeShift(interval)
 ```
@@ -175,10 +190,11 @@ timeShift(24h)  - shift metric back in 24h hours
 timeShift(-24h) - the same result as for timeShift(24h)
 timeShift(+1d)  - shift metric forward in 1 day
 ```
+---
 
 ## Alias
 
-### setAlias
+### _setAlias_
 ```
 setAlias(alias)
 ```
@@ -189,8 +205,9 @@ Examples:
 ```
 setAlias(load)
 ```
+---
 
-### setAliasByRegex
+### _setAliasByRegex_
 ```
 setAliasByRegex(regex)
 ```
@@ -201,8 +218,9 @@ Examples:
 ```
 setAlias(Zabbix busy [a-zA-Z]+)
 ```
+---
 
-### replaceAlias
+### _replaceAlias_
 ```
 replaceAlias(pattern, newAlias)
 ```
@@ -233,10 +251,11 @@ replaceAlias(/.*CPU (.*) time/, $1) -> system
 backend01: CPU system time
 replaceAlias(/(.*): CPU (.*) time/, $1 - $2) -> backend01 - system
 ```
+---
 
 ## Special
 
-### consolidateBy
+### _consolidateBy_
 ```
 consolidateBy(consolidationFunc)
 ```
@@ -244,3 +263,5 @@ consolidateBy(consolidationFunc)
 When a graph is drawn where width of the graph size in pixels is smaller than the number of datapoints to be graphed, plugin consolidates the values to to prevent line overlap. The consolidateBy() function changes the consolidation function from the default of average to one of `sum`, `min`, `max` or `count`.
 
 Valid function names are `sum`, `avg`, `min`, `max` and `count`.
+
+---
