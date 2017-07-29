@@ -80,3 +80,18 @@ code, .rst-content tt {
     0px 1px 2px -1px rgba(255,255,255,0.5) inset,
     0px -2px 0px 0px rgba(0, 0, 0, 0.2) inset;
 }
+
+/* Functions list tweaks */
+
+h3 em {
+  padding-top: 20px;
+  font-style: normal;
+  padding-bottom: 2px;
+  border-bottom: 4px;
+  border-bottom-style: solid;
+  border-bottom-color: #268bd2;
+}
+
+hr {
+  margin: 24px 0 48px 0;
+}
