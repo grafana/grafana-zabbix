@@ -1,7 +1,13 @@
 @import url('https://fonts.googleapis.com/css?family=Roboto|Source+Code+Pro');
 
 .wy-side-nav-search, .wy-nav-top {
-  background-color: #8e3030
+  background-color: #8e3030;
+}
+
+.wy-side-nav-search input[type=text] {
+  border-radius: 2px;
+  width: 100%;
+  border-color: #e3e3e3;
 }
 
 /* Content container */
@@ -14,34 +20,15 @@
   font-family: 'Roboto', 'Lato', 'proxima-nova', 'Helvetica Neue', Arial, sans-serif;
 }
 
-.rst-content p, .rst-content ul, .rst-content ol {
-  font-size: 18px;
-}
-
-.rst-content h1 {
-  font-size: 200%;
-}
-
-.rst-content h2 {
-  font-size: 175%;
-}
-
-.rst-content h3 {
-  font-size: 150%;
-}
-
-.rst-content h4 {
-  font-size: 125%;
-}
-
 .rst-content p {
-  margin-bottom: 24px;
-  line-height: 28px;
+  margin-bottom: 16px;
+  line-height: 24px;
 }
 
 .rst-content li {
-  margin-bottom: 8px;
-  line-height: 28px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  line-height: 24px;
 }
 
 .rst-content img {
@@ -51,11 +38,13 @@
 
 .rst-content blockquote {
   max-width: 80%;
-  margin-left: 24px;
+  margin-left: 0em;
   padding: 0 1em;
-  color: #777;
-  border-left: 6px solid #ddd;
+  color: #757575;
+  border-left: 6px solid #e0e0e0;
 }
+
+/* Source code highlighting */
 
 code, .rst-content tt {
   font-family: 'Source Code Pro', monospace;
@@ -67,21 +56,18 @@ code, .rst-content tt {
   border-width: 0;
 }
 
-
-/**
- * Colors are from solarized scheme.
- */
 .hljs {
   max-width: 100%;
 
+  /* Colors are from solarized scheme. */
   background-color: #fdf6e3;
   color: #657b83;
 
-  border-width: 0 0 0 6px;
+  border-width: 0 0 0 4px;
   border-color: #eee8d5;
   border-left-color: #268bd2;
 
-  font-size: 100%;
+  font-size: 90%;
   line-height: 1.5;
   padding: 0.5em 1em;
 }
@@ -113,12 +99,15 @@ code, .rst-content tt {
 /* Functions list tweaks */
 
 h3 em {
+  font-family: 'Source Code Pro', monospace;
+  line-height: 2;
   padding-top: 20px;
   font-style: normal;
   padding-bottom: 2px;
-  border-bottom: 4px;
+  border-bottom: 2px;
   border-bottom-style: solid;
-  border-bottom-color: #268bd2;
+  border-bottom-color: #2aa198;
+  /* color: #cb4b16; */
 }
 
 hr {
