@@ -78,12 +78,13 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
         let itemids = _.map(items, 'itemid').join(', ');
         let table = HISTORY_TO_TABLE_MAP[value_type];
 
+        let time_expression = `clock DIV ${intervalSec} * ${intervalSec}`;
         let query = `
-          SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(value) AS value
+          SELECT itemid AS metric, ${time_expression} AS time_sec, ${aggFunction}(value) AS value
             FROM ${table}
             WHERE itemid IN (${itemids})
               AND clock > ${timeFrom} AND clock < ${timeTill}
-            GROUP BY time_sec DIV ${intervalSec}, metric
+            GROUP BY ${time_expression}, metric
         `;
 
         query = compactSQLQuery(query);
@@ -110,12 +111,13 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
         let valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
         valueColumn = consolidateByTrendColumns[valueColumn];
 
+        let time_expression = `clock DIV ${intervalSec} * ${intervalSec}`;
         let query = `
-          SELECT itemid AS metric, clock AS time_sec, ${aggFunction}(${valueColumn}) AS value
+          SELECT itemid AS metric, ${time_expression} AS time_sec, ${aggFunction}(${valueColumn}) AS value
             FROM ${table}
             WHERE itemid IN (${itemids})
               AND clock > ${timeFrom} AND clock < ${timeTill}
-            GROUP BY time_sec DIV ${intervalSec}, metric
+            GROUP BY ${time_expression}, metric
         `;
 
         query = compactSQLQuery(query);

@@ -105,7 +105,8 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
           var itemids = _lodash2.default.map(items, 'itemid').join(', ');
           var table = HISTORY_TO_TABLE_MAP[value_type];
 
-          var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(value) AS value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
+          var time_expression = 'clock DIV ' + intervalSec + ' * ' + intervalSec;
+          var query = '\n          SELECT itemid AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(value) AS value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY ' + time_expression + ', metric\n        ';
 
           query = compactSQLQuery(query);
           return _this.invokeSQLQuery(query);
@@ -136,7 +137,8 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
           var valueColumn = _lodash2.default.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
           valueColumn = consolidateByTrendColumns[valueColumn];
 
-          var query = '\n          SELECT itemid AS metric, clock AS time_sec, ' + aggFunction + '(' + valueColumn + ') AS value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY time_sec DIV ' + intervalSec + ', metric\n        ';
+          var time_expression = 'clock DIV ' + intervalSec + ' * ' + intervalSec;
+          var query = '\n          SELECT itemid AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(' + valueColumn + ') AS value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY ' + time_expression + ', metric\n        ';
 
           query = compactSQLQuery(query);
           return _this2.invokeSQLQuery(query);
