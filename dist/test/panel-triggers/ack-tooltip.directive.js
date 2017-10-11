@@ -8,11 +8,18 @@ var _jquery = require('jquery');
 
 var _jquery2 = _interopRequireDefault(_jquery);
 
-var _tetherDrop = require('tether-drop');
-
-var _tetherDrop2 = _interopRequireDefault(_tetherDrop);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+System.config({
+  paths: {
+    tether: System.getConfig().baseURL + "plugins/alexanderzobnin-zabbix-app/vendor/npm/tether.min.js"
+  }
+});
+
+var Drop = void 0;
+System.amdRequire(["plugins/alexanderzobnin-zabbix-app/vendor/npm/drop.min.js"], function (drop) {
+  Drop = drop;
+});
 
 /** @ngInject */
 _angular2.default.module('grafana.directives').directive('ackTooltip', function ($sanitize, $compile) {
@@ -69,7 +76,7 @@ _angular2.default.module('grafana.directives').directive('ackTooltip', function 
         tooltip += addAckButtonTemplate;
         tooltip += '</div>';
 
-        var drop = new _tetherDrop2.default({
+        var drop = new Drop({
           target: element[0],
           content: tooltip,
           position: "bottom left",

@@ -1,6 +1,16 @@
 import angular from 'angular';
 import $ from 'jquery';
-import Drop from 'tether-drop';
+
+System.config({
+  paths: {
+    tether: System.getConfig().baseURL + "plugins/alexanderzobnin-zabbix-app/vendor/npm/tether.min.js"
+  }
+});
+
+let Drop;
+System.amdRequire(["plugins/alexanderzobnin-zabbix-app/vendor/npm/drop.min.js"], (drop) => {
+  Drop = drop;
+});
 
 /** @ngInject */
 angular

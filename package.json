@@ -42,7 +42,8 @@
     "moment": "~2.14.1",
     "prunk": "~1.2.1",
     "q": "~1.4.1",
-    "sinon-chai": "~2.8.0"
+    "sinon-chai": "~2.8.0",
+    "tether-drop": "^1.4.2"
   },
   "dependencies": {
     "lodash": "~4.0.0"

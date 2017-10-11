@@ -1,6 +1,6 @@
 'use strict';
 
-System.register(['angular', 'jquery', 'tether-drop'], function (_export, _context) {
+System.register(['angular', 'jquery'], function (_export, _context) {
   "use strict";
 
   var angular, $, Drop;
@@ -9,10 +9,20 @@ System.register(['angular', 'jquery', 'tether-drop'], function (_export, _contex
       angular = _angular.default;
     }, function (_jquery) {
       $ = _jquery.default;
-    }, function (_tetherDrop) {
-      Drop = _tetherDrop.default;
     }],
     execute: function () {
+
+      System.config({
+        paths: {
+          tether: System.getConfig().baseURL + "plugins/alexanderzobnin-zabbix-app/vendor/npm/tether.min.js"
+        }
+      });
+
+      Drop = void 0;
+
+      System.amdRequire(["plugins/alexanderzobnin-zabbix-app/vendor/npm/drop.min.js"], function (drop) {
+        Drop = drop;
+      });
 
       /** @ngInject */
       angular.module('grafana.directives').directive('ackTooltip', function ($sanitize, $compile) {
