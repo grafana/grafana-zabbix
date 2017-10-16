@@ -36,6 +36,12 @@ function limit(order, n, orderByFunc, timeseries) {
   }
 }
 
+function sortSeries(direction, timeseries) {
+  return _.orderBy(timeseries, [function (ts) {
+    return ts.target.toLowerCase();
+  }], direction);
+}
+
 function setAlias(alias, timeseries) {
   timeseries.target = alias;
   return timeseries;
@@ -125,6 +131,7 @@ let metricFunctions = {
   sumSeries: sumSeries,
   top: _.partial(limit, 'top'),
   bottom: _.partial(limit, 'bottom'),
+  sortSeries: sortSeries,
   timeShift: timeShift,
   setAlias: setAlias,
   setAliasByRegex: setAliasByRegex,
