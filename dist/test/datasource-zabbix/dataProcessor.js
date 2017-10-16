@@ -62,6 +62,12 @@ function limit(order, n, orderByFunc, timeseries) {
   }
 }
 
+function sortSeries(direction, timeseries) {
+  return _lodash2.default.orderBy(timeseries, [function (ts) {
+    return ts.target.toLowerCase();
+  }], direction);
+}
+
 function setAlias(alias, timeseries) {
   timeseries.target = alias;
   return timeseries;
@@ -148,6 +154,7 @@ var metricFunctions = {
   sumSeries: sumSeries,
   top: _lodash2.default.partial(limit, 'top'),
   bottom: _lodash2.default.partial(limit, 'bottom'),
+  sortSeries: sortSeries,
   timeShift: timeShift,
   setAlias: setAlias,
   setAliasByRegex: setAliasByRegex,

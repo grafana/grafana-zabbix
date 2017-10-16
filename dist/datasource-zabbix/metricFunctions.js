@@ -206,6 +206,13 @@ System.register(['lodash', 'jquery'], function (_export, _context) {
         defaultParams: [5, 'avg']
       });
 
+      addFuncDef({
+        name: 'sortSeries',
+        category: 'Filter',
+        params: [{ name: 'direction', type: 'string', options: ['asc', 'desc'] }],
+        defaultParams: ['asc']
+      });
+
       // Trends
 
       addFuncDef({

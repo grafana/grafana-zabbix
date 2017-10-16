@@ -169,6 +169,13 @@ addFuncDef({
   defaultParams: [5, 'avg']
 });
 
+addFuncDef({
+  name: 'sortSeries',
+  category: 'Filter',
+  params: [{ name: 'direction', type: 'string', options: ['asc', 'desc'] }],
+  defaultParams: ['asc']
+});
+
 // Trends
 
 addFuncDef({
