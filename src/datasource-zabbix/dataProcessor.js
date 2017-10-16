@@ -18,6 +18,7 @@ let AVERAGE = ts.AVERAGE;
 let MIN = ts.MIN;
 let MAX = ts.MAX;
 let MEDIAN = ts.MEDIAN;
+let PERCENTIL = ts.PERCENTIL;
 
 function limit(order, n, orderByFunc, timeseries) {
   let orderByCallback = aggregationFunctions[orderByFunc];
@@ -82,6 +83,12 @@ function aggregateWrapper(groupByCallback, interval, datapoints) {
   return groupBy(flattenedPoints, interval, groupByCallback);
 }
 
+function percentil(interval, n, datapoints) {
+  var flattenedPoints = _.flatten(datapoints, true);
+  var groupByCallback = _.partial(PERCENTIL, n);
+  return groupBy(flattenedPoints, interval, groupByCallback);
+}
+
 function timeShift(interval, range) {
   let shift = utils.parseTimeShiftInterval(interval) / 1000;
   return _.map(range, time => {
@@ -108,6 +115,7 @@ let metricFunctions = {
   exponentialMovingAverage: expMovingAverage,
   aggregateBy: aggregateByWrapper,
   // Predefined aggs
+  percentil: percentil,
   average: _.partial(aggregateWrapper, AVERAGE),
   min: _.partial(aggregateWrapper, MIN),
   max: _.partial(aggregateWrapper, MAX),

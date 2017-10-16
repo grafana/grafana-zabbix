@@ -322,6 +322,11 @@ function expMovingAverage(datapoints, n) {
   return ema;
 }
 
+function PERCENTIL(n, values) {
+  var sorted = _.sortBy(values);
+  return sorted[Math.floor(sorted.length * n / 100)];
+}
+
 function COUNT(values) {
   return values.length;
 }
@@ -482,7 +487,8 @@ const exportedFunctions = {
   AVERAGE,
   MIN,
   MAX,
-  MEDIAN
+  MEDIAN,
+  PERCENTIL
 };
 
 export default exportedFunctions;
