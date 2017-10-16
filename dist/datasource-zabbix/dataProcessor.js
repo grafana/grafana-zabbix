@@ -3,7 +3,7 @@
 System.register(['lodash', './utils', './timeseries'], function (_export, _context) {
   "use strict";
 
-  var _, utils, ts, downsampleSeries, groupBy, groupBy_exported, sumSeries, delta, rate, scale, simpleMovingAverage, expMovingAverage, SUM, COUNT, AVERAGE, MIN, MAX, MEDIAN, metricFunctions, aggregationFunctions;
+  var _, utils, ts, downsampleSeries, groupBy, groupBy_exported, sumSeries, delta, rate, scale, simpleMovingAverage, expMovingAverage, SUM, COUNT, AVERAGE, MIN, MAX, MEDIAN, PERCENTIL, metricFunctions, aggregationFunctions;
 
   function limit(order, n, orderByFunc, timeseries) {
     var orderByCallback = aggregationFunctions[orderByFunc];
@@ -68,6 +68,12 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
     return groupBy(flattenedPoints, interval, groupByCallback);
   }
 
+  function percentil(interval, n, datapoints) {
+    var flattenedPoints = _.flatten(datapoints, true);
+    var groupByCallback = _.partial(PERCENTIL, n);
+    return groupBy(flattenedPoints, interval, groupByCallback);
+  }
+
   function timeShift(interval, range) {
     var shift = utils.parseTimeShiftInterval(interval) / 1000;
     return _.map(range, function (time) {
@@ -120,6 +126,7 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
       MIN = ts.MIN;
       MAX = ts.MAX;
       MEDIAN = ts.MEDIAN;
+      PERCENTIL = ts.PERCENTIL;
       metricFunctions = {
         groupBy: groupByWrapper,
         scale: scale,
@@ -129,6 +136,7 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
         exponentialMovingAverage: expMovingAverage,
         aggregateBy: aggregateByWrapper,
         // Predefined aggs
+        percentil: percentil,
         average: _.partial(aggregateWrapper, AVERAGE),
         min: _.partial(aggregateWrapper, MIN),
         max: _.partial(aggregateWrapper, MAX),

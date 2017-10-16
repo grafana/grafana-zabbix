@@ -44,6 +44,7 @@ var AVERAGE = _timeseries2.default.AVERAGE;
 var MIN = _timeseries2.default.MIN;
 var MAX = _timeseries2.default.MAX;
 var MEDIAN = _timeseries2.default.MEDIAN;
+var PERCENTIL = _timeseries2.default.PERCENTIL;
 
 function limit(order, n, orderByFunc, timeseries) {
   var orderByCallback = aggregationFunctions[orderByFunc];
@@ -108,6 +109,12 @@ function aggregateWrapper(groupByCallback, interval, datapoints) {
   return groupBy(flattenedPoints, interval, groupByCallback);
 }
 
+function percentil(interval, n, datapoints) {
+  var flattenedPoints = _lodash2.default.flatten(datapoints, true);
+  var groupByCallback = _lodash2.default.partial(PERCENTIL, n);
+  return groupBy(flattenedPoints, interval, groupByCallback);
+}
+
 function timeShift(interval, range) {
   var shift = utils.parseTimeShiftInterval(interval) / 1000;
   return _lodash2.default.map(range, function (time) {
@@ -131,6 +138,7 @@ var metricFunctions = {
   exponentialMovingAverage: expMovingAverage,
   aggregateBy: aggregateByWrapper,
   // Predefined aggs
+  percentil: percentil,
   average: _lodash2.default.partial(aggregateWrapper, AVERAGE),
   min: _lodash2.default.partial(aggregateWrapper, MIN),
   max: _lodash2.default.partial(aggregateWrapper, MAX),

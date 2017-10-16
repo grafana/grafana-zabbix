@@ -330,6 +330,11 @@ function expMovingAverage(datapoints, n) {
   return ema;
 }
 
+function PERCENTIL(n, values) {
+  var sorted = _lodash2.default.sortBy(values);
+  return sorted[Math.floor(sorted.length * n / 100)];
+}
+
 function COUNT(values) {
   return values.length;
 }
@@ -490,7 +495,8 @@ var exportedFunctions = {
   AVERAGE: AVERAGE,
   MIN: MIN,
   MAX: MAX,
-  MEDIAN: MEDIAN
+  MEDIAN: MEDIAN,
+  PERCENTIL: PERCENTIL
 };
 
 exports.default = exportedFunctions;

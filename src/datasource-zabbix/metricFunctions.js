@@ -108,9 +108,9 @@ addFuncDef({
   category: 'Aggregate',
   params: [
     { name: 'interval', type: 'string' },
-    { name: 'percent', type: 'string' }
+    { name: 'percent', type: 'float', options: [25, 50, 75, 90, 95, 99, 99.9] }
   ],
-  defaultParams: ['1m','95'],
+  defaultParams: ['1m', 95],
 });
 
 addFuncDef({

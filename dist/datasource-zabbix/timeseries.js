@@ -305,6 +305,11 @@ System.register(['lodash', './utils'], function (_export, _context) {
     return ema;
   }
 
+  function PERCENTIL(n, values) {
+    var sorted = _.sortBy(values);
+    return sorted[Math.floor(sorted.length * n / 100)];
+  }
+
   function COUNT(values) {
     return values.length;
   }
@@ -474,7 +479,8 @@ System.register(['lodash', './utils'], function (_export, _context) {
         AVERAGE: AVERAGE,
         MIN: MIN,
         MAX: MAX,
-        MEDIAN: MEDIAN
+        MEDIAN: MEDIAN,
+        PERCENTIL: PERCENTIL
       };
 
       _export('default', exportedFunctions);
