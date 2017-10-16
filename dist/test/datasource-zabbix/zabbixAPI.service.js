@@ -177,7 +177,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       key: 'getApps',
       value: function getApps(hostids) {
         var params = {
-          output: ['applicationid', 'name'],
+          output: 'extend',
           hostids: hostids
         };
 

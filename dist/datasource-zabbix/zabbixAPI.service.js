@@ -135,7 +135,7 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
         key: 'getApps',
         value: function getApps(hostids) {
           var params = {
-            output: ['applicationid', 'name'],
+            output: 'extend',
             hostids: hostids
           };
 
