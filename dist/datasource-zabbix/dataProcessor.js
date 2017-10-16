@@ -21,6 +21,12 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
     }
   }
 
+  function sortSeries(direction, timeseries) {
+    return _.orderBy(timeseries, [function (ts) {
+      return ts.target.toLowerCase();
+    }], direction);
+  }
+
   function setAlias(alias, timeseries) {
     timeseries.target = alias;
     return timeseries;
@@ -146,6 +152,7 @@ System.register(['lodash', './utils', './timeseries'], function (_export, _conte
         sumSeries: sumSeries,
         top: _.partial(limit, 'top'),
         bottom: _.partial(limit, 'bottom'),
+        sortSeries: sortSeries,
         timeShift: timeShift,
         setAlias: setAlias,
         setAliasByRegex: setAliasByRegex,
