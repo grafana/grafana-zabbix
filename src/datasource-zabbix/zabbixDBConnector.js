@@ -241,10 +241,12 @@ const TEST_MYSQL_QUERY = `SELECT itemid AS metric, clock AS time_sec, value_avg 
 // PostgreSQL //
 ////////////////
 
+const itemid_format = 'FM99999999999999999999';
+
 function buildPostgresHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
   let time_expression = `clock / ${intervalSec} * ${intervalSec}`;
   let query = `
-    SELECT DISTINCT to_char(itemid, 'FM9999999999999') AS metric,
+    SELECT DISTINCT to_char(itemid, '${itemid_format}') AS metric,
       ${time_expression} AS time,
       ${aggFunction}(value) OVER (PARTITION BY clock / ${intervalSec}) AS value
     FROM ${table}
@@ -259,7 +261,7 @@ function buildPostgresHistoryQuery(itemids, table, timeFrom, timeTill, intervalS
 function buildPostgresTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
   let time_expression = `clock / ${intervalSec} * ${intervalSec}`;
   let query = `
-    SELECT DISTINCT to_char(itemid, 'FM9999999999999') AS metric,
+    SELECT DISTINCT to_char(itemid, '${itemid_format}') AS metric,
       ${time_expression} AS time,
       ${aggFunction}(${valueColumn}) OVER (PARTITION BY clock / ${intervalSec}) AS value
     FROM ${table}
@@ -272,6 +274,6 @@ function buildPostgresTrendsQuery(itemids, table, timeFrom, timeTill, intervalSe
 }
 
 const TEST_POSTGRES_QUERY = `
-  SELECT to_char(itemid, 'FM9999999999999') AS metric, clock AS time, value_avg AS value
+  SELECT to_char(itemid, '${itemid_format}') AS metric, clock AS time, value_avg AS value
   FROM trends_uint LIMIT 1
 `;

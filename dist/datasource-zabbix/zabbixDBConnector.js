@@ -3,7 +3,7 @@
 System.register(['angular', 'lodash'], function (_export, _context) {
   "use strict";
 
-  var angular, _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, TREND_TO_TABLE_MAP, consolidateByFunc, consolidateByTrendColumns, TEST_MYSQL_QUERY, TEST_POSTGRES_QUERY;
+  var angular, _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, TREND_TO_TABLE_MAP, consolidateByFunc, consolidateByTrendColumns, TEST_MYSQL_QUERY, itemid_format, TEST_POSTGRES_QUERY;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -226,19 +226,15 @@ System.register(['angular', 'lodash'], function (_export, _context) {
     return query;
   }
 
-  ////////////////
-  // PostgreSQL //
-  ////////////////
-
   function buildPostgresHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
     var time_expression = 'clock / ' + intervalSec + ' * ' + intervalSec;
-    var query = '\n    SELECT DISTINCT to_char(itemid, \'FM9999999999999\') AS metric,\n      ' + time_expression + ' AS time,\n      ' + aggFunction + '(value) OVER (PARTITION BY clock / ' + intervalSec + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY metric, clock, value\n    ORDER BY time ASC\n  ';
+    var query = '\n    SELECT DISTINCT to_char(itemid, \'' + itemid_format + '\') AS metric,\n      ' + time_expression + ' AS time,\n      ' + aggFunction + '(value) OVER (PARTITION BY clock / ' + intervalSec + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY metric, clock, value\n    ORDER BY time ASC\n  ';
     return query;
   }
 
   function buildPostgresTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
     var time_expression = 'clock / ' + intervalSec + ' * ' + intervalSec;
-    var query = '\n    SELECT DISTINCT to_char(itemid, \'FM9999999999999\') AS metric,\n      ' + time_expression + ' AS time,\n      ' + aggFunction + '(' + valueColumn + ') OVER (PARTITION BY clock / ' + intervalSec + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY metric, clock, ' + valueColumn + '\n    ORDER BY time ASC\n  ';
+    var query = '\n    SELECT DISTINCT to_char(itemid, \'' + itemid_format + '\') AS metric,\n      ' + time_expression + ' AS time,\n      ' + aggFunction + '(' + valueColumn + ') OVER (PARTITION BY clock / ' + intervalSec + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY metric, clock, ' + valueColumn + '\n    ORDER BY time ASC\n  ';
     return query;
   }
 
@@ -292,7 +288,8 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         'max': 'value_max'
       };
       angular.module('grafana.services').factory('ZabbixDBConnector', ZabbixDBConnectorFactory);TEST_MYSQL_QUERY = 'SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1';
-      TEST_POSTGRES_QUERY = '\n  SELECT to_char(itemid, \'FM9999999999999\') AS metric, clock AS time, value_avg AS value\n  FROM trends_uint LIMIT 1\n';
+      itemid_format = 'FM99999999999999999999';
+      TEST_POSTGRES_QUERY = '\n  SELECT to_char(itemid, \'' + itemid_format + '\') AS metric, clock AS time, value_avg AS value\n  FROM trends_uint LIMIT 1\n';
     }
   };
 });
