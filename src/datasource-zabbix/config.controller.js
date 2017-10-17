@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-const SUPPORTED_SQL_DS = ['mysql'];
+const SUPPORTED_SQL_DS = ['mysql', 'postgres'];
 
 const defaultConfig = {
   dbConnection: {

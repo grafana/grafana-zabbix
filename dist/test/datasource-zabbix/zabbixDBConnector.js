@@ -55,6 +55,8 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
 
       this.sqlDataSourceId = sqlDataSourceId;
       this.limit = limit || DEFAULT_QUERY_LIMIT;
+
+      this.loadSQLDataSource(sqlDataSourceId);
     }
 
     /**
@@ -66,10 +68,13 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
     _createClass(ZabbixDBConnector, [{
       key: 'loadSQLDataSource',
       value: function loadSQLDataSource(datasourceId) {
+        var _this = this;
+
         var ds = _lodash2.default.find(datasourceSrv.getAll(), { 'id': datasourceId });
         if (ds) {
           return datasourceSrv.loadDatasource(ds.name).then(function (ds) {
-            console.log('SQL data source loaded', ds);
+            _this.sqlDataSourceType = ds.meta.id;
+            return ds;
           });
         } else {
           return Promise.reject('SQL Data Source with ID ' + datasourceId + ' not found');
@@ -83,13 +88,16 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
     }, {
       key: 'testSQLDataSource',
       value: function testSQLDataSource() {
-        var testQuery = 'SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1';
+        var testQuery = TEST_MYSQL_QUERY;
+        if (this.sqlDataSourceType === 'postgres') {
+          testQuery = TEST_POSTGRES_QUERY;
+        }
         return this.invokeSQLQuery(testQuery);
       }
     }, {
       key: 'getHistory',
       value: function getHistory(items, timeFrom, timeTill, options) {
-        var _this = this;
+        var _this2 = this;
 
         var intervalMs = options.intervalMs,
             consolidateBy = options.consolidateBy;
@@ -105,11 +113,11 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
           var itemids = _lodash2.default.map(items, 'itemid').join(', ');
           var table = HISTORY_TO_TABLE_MAP[value_type];
 
-          var time_expression = 'clock DIV ' + intervalSec + ' * ' + intervalSec;
-          var query = '\n          SELECT itemid AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(value) AS value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY ' + time_expression + ', metric\n        ';
+          var dialect = _this2.sqlDataSourceType;
+          var query = buildSQLHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, dialect);
 
           query = compactSQLQuery(query);
-          return _this.invokeSQLQuery(query);
+          return _this2.invokeSQLQuery(query);
         });
 
         return Promise.all(promises).then(function (results) {
@@ -119,7 +127,7 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
     }, {
       key: 'getTrends',
       value: function getTrends(items, timeFrom, timeTill, options) {
-        var _this2 = this;
+        var _this3 = this;
 
         var intervalMs = options.intervalMs,
             consolidateBy = options.consolidateBy;
@@ -137,11 +145,11 @@ function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
           var valueColumn = _lodash2.default.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
           valueColumn = consolidateByTrendColumns[valueColumn];
 
-          var time_expression = 'clock DIV ' + intervalSec + ' * ' + intervalSec;
-          var query = '\n          SELECT itemid AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(' + valueColumn + ') AS value\n            FROM ' + table + '\n            WHERE itemid IN (' + itemids + ')\n              AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n            GROUP BY ' + time_expression + ', metric\n        ';
+          var dialect = _this3.sqlDataSourceType;
+          var query = buildSQLTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn, dialect);
 
           query = compactSQLQuery(query);
-          return _this2.invokeSQLQuery(query);
+          return _this3.invokeSQLQuery(query);
         });
 
         return Promise.all(promises).then(function (results) {
@@ -219,3 +227,59 @@ function convertGrafanaTSResponse(time_series, items, addHostName) {
 function compactSQLQuery(query) {
   return query.replace(/\s+/g, ' ');
 }
+
+function buildSQLHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
+  var dialect = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 'mysql';
+
+  if (dialect === 'postgres') {
+    return buildPostgresHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction);
+  } else {
+    return buildMysqlHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction);
+  }
+}
+
+function buildSQLTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
+  var dialect = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 'mysql';
+
+  if (dialect === 'postgres') {
+    return buildPostgresTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn);
+  } else {
+    return buildMysqlTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn);
+  }
+}
+
+///////////
+// MySQL //
+///////////
+
+function buildMysqlHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
+  var time_expression = 'clock DIV ' + intervalSec + ' * ' + intervalSec;
+  var query = '\n    SELECT itemid AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(value) AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY ' + time_expression + ', metric\n    ORDER BY time_sec ASC\n  ';
+  return query;
+}
+
+function buildMysqlTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
+  var time_expression = 'clock DIV ' + intervalSec + ' * ' + intervalSec;
+  var query = '\n    SELECT itemid AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(' + valueColumn + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY ' + time_expression + ', metric\n    ORDER BY time_sec ASC\n  ';
+  return query;
+}
+
+var TEST_MYSQL_QUERY = 'SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1';
+
+////////////////
+// PostgreSQL //
+////////////////
+
+function buildPostgresHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
+  var time_expression = 'clock / ' + intervalSec + ' * ' + intervalSec;
+  var query = '\n    SELECT DISTINCT to_char(itemid, \'FM9999999999999\') AS metric,\n      ' + time_expression + ' AS time,\n      ' + aggFunction + '(value) OVER (PARTITION BY clock / ' + intervalSec + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY metric, clock, value\n    ORDER BY time ASC\n  ';
+  return query;
+}
+
+function buildPostgresTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
+  var time_expression = 'clock / ' + intervalSec + ' * ' + intervalSec;
+  var query = '\n    SELECT DISTINCT to_char(itemid, \'FM9999999999999\') AS metric,\n      ' + time_expression + ' AS time,\n      ' + aggFunction + '(' + valueColumn + ') OVER (PARTITION BY clock / ' + intervalSec + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY metric, clock, ' + valueColumn + '\n    ORDER BY time ASC\n  ';
+  return query;
+}
+
+var TEST_POSTGRES_QUERY = '\n  SELECT to_char(itemid, \'FM9999999999999\') AS metric, clock AS time, value_avg AS value\n  FROM trends_uint LIMIT 1\n';
