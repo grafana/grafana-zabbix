@@ -34,7 +34,7 @@ System.register(['lodash'], function (_export, _context) {
         };
       }();
 
-      SUPPORTED_SQL_DS = ['mysql'];
+      SUPPORTED_SQL_DS = ['mysql', 'postgres'];
       defaultConfig = {
         dbConnection: {
           enable: false
