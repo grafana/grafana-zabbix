@@ -6,7 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- PostgreSQL support for Direct DB Connection.
+- `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447)
+- `percentil()` function
 
+### Fixed
+- Direct DB connection doesn't work with `ONLY_FULL_GROUP_BY` option enabled, [#445](https://github.com/alexanderzobnin/grafana-zabbix/issues/445)
+- Application selection doesn't work, [#352](https://github.com/alexanderzobnin/grafana-zabbix/issues/352)
+- "data points outside time range" error when there is no datapoints and aggregation function is used
 
 ## [3.6.1] - 2017-07-26
 ### Fixed
