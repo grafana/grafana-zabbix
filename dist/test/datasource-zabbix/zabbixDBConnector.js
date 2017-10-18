@@ -274,13 +274,13 @@ var itemid_format = 'FM99999999999999999999';
 
 function buildPostgresHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
   var time_expression = 'clock / ' + intervalSec + ' * ' + intervalSec;
-  var query = '\n    SELECT DISTINCT to_char(itemid, \'' + itemid_format + '\') AS metric,\n      ' + time_expression + ' AS time,\n      ' + aggFunction + '(value) OVER (PARTITION BY clock / ' + intervalSec + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY metric, clock, value\n    ORDER BY time ASC\n  ';
+  var query = '\n    SELECT to_char(itemid, \'' + itemid_format + '\') AS metric, ' + time_expression + ' AS time, ' + aggFunction + '(value) AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY 1, 2\n    ORDER BY time ASC\n  ';
   return query;
 }
 
 function buildPostgresTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
   var time_expression = 'clock / ' + intervalSec + ' * ' + intervalSec;
-  var query = '\n    SELECT DISTINCT to_char(itemid, \'' + itemid_format + '\') AS metric,\n      ' + time_expression + ' AS time,\n      ' + aggFunction + '(' + valueColumn + ') OVER (PARTITION BY clock / ' + intervalSec + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY metric, clock, ' + valueColumn + '\n    ORDER BY time ASC\n  ';
+  var query = '\n    SELECT to_char(itemid, \'' + itemid_format + '\') AS metric, ' + time_expression + ' AS time, ' + aggFunction + '(' + valueColumn + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY 1, 2\n    ORDER BY time ASC\n  ';
   return query;
 }
 

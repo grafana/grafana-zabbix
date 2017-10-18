@@ -246,13 +246,11 @@ const itemid_format = 'FM99999999999999999999';
 function buildPostgresHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
   let time_expression = `clock / ${intervalSec} * ${intervalSec}`;
   let query = `
-    SELECT DISTINCT to_char(itemid, '${itemid_format}') AS metric,
-      ${time_expression} AS time,
-      ${aggFunction}(value) OVER (PARTITION BY clock / ${intervalSec}) AS value
+    SELECT to_char(itemid, '${itemid_format}') AS metric, ${time_expression} AS time, ${aggFunction}(value) AS value
     FROM ${table}
     WHERE itemid IN (${itemids})
       AND clock > ${timeFrom} AND clock < ${timeTill}
-    GROUP BY metric, clock, value
+    GROUP BY 1, 2
     ORDER BY time ASC
   `;
   return query;
@@ -261,13 +259,11 @@ function buildPostgresHistoryQuery(itemids, table, timeFrom, timeTill, intervalS
 function buildPostgresTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
   let time_expression = `clock / ${intervalSec} * ${intervalSec}`;
   let query = `
-    SELECT DISTINCT to_char(itemid, '${itemid_format}') AS metric,
-      ${time_expression} AS time,
-      ${aggFunction}(${valueColumn}) OVER (PARTITION BY clock / ${intervalSec}) AS value
+    SELECT to_char(itemid, '${itemid_format}') AS metric, ${time_expression} AS time, ${aggFunction}(${valueColumn}) AS value
     FROM ${table}
     WHERE itemid IN (${itemids})
       AND clock > ${timeFrom} AND clock < ${timeTill}
-    GROUP BY metric, clock, ${valueColumn}
+    GROUP BY 1, 2
     ORDER BY time ASC
   `;
   return query;
