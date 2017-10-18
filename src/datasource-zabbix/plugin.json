@@ -6,6 +6,10 @@
   "metrics": true,
   "annotations": true,
 
+  "queryOptions": {
+    "maxDataPoints": true
+  },
+
   "info": {
     "author": {
       "name": "Alexander Zobnin",
