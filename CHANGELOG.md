@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Direct DB connection doesn't work with `ONLY_FULL_GROUP_BY` option enabled, [#445](https://github.com/alexanderzobnin/grafana-zabbix/issues/445)
 - Application selection doesn't work, [#352](https://github.com/alexanderzobnin/grafana-zabbix/issues/352)
 - "data points outside time range" error when there is no datapoints and aggregation function is used
+- Missed Max data points option in Grafana 4.5+
+- Missed query editor help in Grafana 4.5+
 
 ## [3.6.1] - 2017-07-26
 ### Fixed
