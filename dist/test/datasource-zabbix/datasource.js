@@ -73,26 +73,28 @@ var ZabbixAPIDatasource = function () {
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
 
+    var jsonData = instanceSettings.jsonData;
+
     // Zabbix API credentials
-    this.username = instanceSettings.jsonData.username;
-    this.password = instanceSettings.jsonData.password;
+    this.username = jsonData.username;
+    this.password = jsonData.password;
 
     // Use trends instead history since specified time
-    this.trends = instanceSettings.jsonData.trends;
-    this.trendsFrom = instanceSettings.jsonData.trendsFrom || '7d';
-    this.trendsRange = instanceSettings.jsonData.trendsRange || '4d';
+    this.trends = jsonData.trends;
+    this.trendsFrom = jsonData.trendsFrom || '7d';
+    this.trendsRange = jsonData.trendsRange || '4d';
 
     // Set cache update interval
-    var ttl = instanceSettings.jsonData.cacheTTL || '1h';
+    var ttl = jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
     // Alerting options
-    this.alertingEnabled = instanceSettings.jsonData.alerting;
-    this.addThresholds = instanceSettings.jsonData.addThresholds;
-    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
+    this.alertingEnabled = jsonData.alerting;
+    this.addThresholds = jsonData.addThresholds;
+    this.alertingMinSeverity = jsonData.alertingMinSeverity || c.SEV_WARNING;
 
     // Direct DB Connection options
-    var dbConnectionOptions = instanceSettings.jsonData.dbConnection || {};
+    var dbConnectionOptions = jsonData.dbConnection || {};
     this.enableDirectDBConnection = dbConnectionOptions.enable;
     this.sqlDatasourceId = dbConnectionOptions.datasourceId;
 
