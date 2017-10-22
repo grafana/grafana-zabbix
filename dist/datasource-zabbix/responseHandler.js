@@ -98,10 +98,21 @@ System.register(['lodash'], function (_export, _context) {
     }
   }
 
-  function convertHistoryPoint(point) {
+  function handleTriggersResponse(triggers, timeRange) {
+    if (_.isNumber(triggers)) {
+      return {
+        target: "triggers count",
+        datapoints: [[triggers, timeRange[1]]]
+      };
+    } else {
+      return triggers;
+    }
+  }function convertHistoryPoint(point) {
     // Value must be a number for properly work
     return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
-  }function convertTrendPoint(valueType, point) {
+  }
+
+  function convertTrendPoint(valueType, point) {
     var value;
     switch (valueType) {
       case "min":
@@ -124,9 +135,7 @@ System.register(['lodash'], function (_export, _context) {
     }
 
     return [Number(value), point.clock * 1000];
-  }
-
-  return {
+  }return {
     setters: [function (_lodash) {
       _ = _lodash.default;
     }],
@@ -136,7 +145,8 @@ System.register(['lodash'], function (_export, _context) {
         convertHistory: convertHistory,
         handleTrends: handleTrends,
         handleText: handleText,
-        handleSLAResponse: handleSLAResponse
+        handleSLAResponse: handleSLAResponse,
+        handleTriggersResponse: handleTriggersResponse
       });
 
       // Fix for backward compatibility with lodash 2.4

@@ -8,6 +8,7 @@ var MODE_METRICS = exports.MODE_METRICS = 0;
 var MODE_ITSERVICE = exports.MODE_ITSERVICE = 1;
 var MODE_TEXT = exports.MODE_TEXT = 2;
 var MODE_ITEMID = exports.MODE_ITEMID = 3;
+var MODE_TRIGGERS = exports.MODE_TRIGGERS = 4;
 
 // Triggers severity
 var SEV_NOT_CLASSIFIED = exports.SEV_NOT_CLASSIFIED = 0;

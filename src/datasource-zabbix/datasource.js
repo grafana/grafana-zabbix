@@ -136,6 +136,10 @@ class ZabbixAPIDatasource {
       } else if (target.mode === c.MODE_ITSERVICE) {
         // IT services mode
         return this.queryITServiceData(target, timeRange, options);
+      } else if (target.mode === c.MODE_TRIGGERS) {
+        return this.queryTriggersData(target, timeRange);
+      } else {
+        return [];
       }
     });
 
@@ -347,6 +351,24 @@ class ZabbixAPIDatasource {
         let itservice = _.find(itServices, {'serviceid': serviceid});
         return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
       });
+    });
+  }
+
+  queryTriggersData(target, timeRange) {
+    let [timeFrom, timeTo] = timeRange;
+    return this.zabbix.getHostsFromTarget(target)
+    .then((results) => {
+      let [hosts, apps] = results;
+      if (hosts.length) {
+        let hostids = _.map(hosts, 'hostid');
+        let appids = _.map(apps, 'applicationid');
+        return this.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.options.countTriggers, timeFrom, timeTo)
+        .then((triggers) => {
+          return responseHandler.handleTriggersResponse(triggers, timeRange);
+        });
+      } else {
+        return Promise.resolve([]);
+      }
     });
   }
 

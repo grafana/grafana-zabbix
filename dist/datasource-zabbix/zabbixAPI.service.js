@@ -413,6 +413,37 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
 
           return this.request('trigger.get', params);
         }
+      }, {
+        key: 'getHostAlerts',
+        value: function getHostAlerts(hostids, applicationids, minSeverity, count, timeFrom, timeTo) {
+          var params = {
+            output: 'extend',
+            hostids: hostids,
+            min_severity: minSeverity,
+            filter: { value: 1 },
+            expandDescription: true,
+            expandData: true,
+            expandComment: true,
+            monitored: true,
+            skipDependent: true,
+            selectLastEvent: 'extend'
+          };
+
+          if (count) {
+            params.countOutput = true;
+          }
+
+          if (applicationids && applicationids.length) {
+            params.applicationids = applicationids;
+          }
+
+          if (timeFrom || timeTo) {
+            params.lastChangeSince = timeFrom;
+            params.lastChangeTill = timeTo;
+          }
+
+          return this.request('trigger.get', params);
+        }
       }]);
 
       return ZabbixAPI;

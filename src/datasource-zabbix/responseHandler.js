@@ -100,6 +100,19 @@ function handleSLAResponse(itservice, slaProperty, slaObject) {
   }
 }
 
+function handleTriggersResponse(triggers, timeRange) {
+  if (_.isNumber(triggers)) {
+    return {
+      target: "triggers count",
+      datapoints: [
+        [triggers, timeRange[1]]
+      ]
+    };
+  } else {
+    return triggers;
+  }
+}
+
 function convertHistoryPoint(point) {
   // Value must be a number for properly work
   return [
@@ -141,7 +154,8 @@ export default {
   convertHistory: convertHistory,
   handleTrends: handleTrends,
   handleText: handleText,
-  handleSLAResponse: handleSLAResponse
+  handleSLAResponse: handleSLAResponse,
+  handleTriggersResponse: handleTriggersResponse
 };
 
 // Fix for backward compatibility with lodash 2.4

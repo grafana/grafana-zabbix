@@ -1,5 +1,7 @@
 'use strict';
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _angular = require('angular');
@@ -74,6 +76,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) 
       this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
       this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
       this.getAlerts = this.zabbixAPI.getAlerts.bind(this.zabbixAPI);
+      this.getHostAlerts = this.zabbixAPI.getHostAlerts.bind(this.zabbixAPI);
       this.getAcknowledges = this.zabbixAPI.getAcknowledges.bind(this.zabbixAPI);
       this.getITService = this.zabbixAPI.getITService.bind(this.zabbixAPI);
       this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
@@ -89,6 +92,24 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) 
           return target[p].filter;
         });
         return this.getItems.apply(this, _toConsumableArray(filters).concat([options]));
+      }
+    }, {
+      key: 'getHostsFromTarget',
+      value: function getHostsFromTarget(target) {
+        var parts = ['group', 'host', 'application'];
+        var filters = _lodash2.default.map(parts, function (p) {
+          return target[p].filter;
+        });
+        return Promise.all([this.getHosts.apply(this, _toConsumableArray(filters)), this.getApps.apply(this, _toConsumableArray(filters))]).then(function (results) {
+          var _results = _slicedToArray(results, 2),
+              hosts = _results[0],
+              apps = _results[1];
+
+          if (apps.appFilterEmpty) {
+            apps = [];
+          }
+          return [hosts, apps];
+        });
       }
     }, {
       key: 'getAllGroups',
