@@ -582,13 +582,13 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                 return {
                   status: "error",
                   title: error.message,
-                  message: error.data
+                  message: error.message
                 };
               } else if (error.data && error.data.message) {
                 return {
                   status: "error",
                   title: "Connection failed",
-                  message: error.data.message
+                  message: "Connection failed: " + error.data.message
                 };
               } else {
                 return {

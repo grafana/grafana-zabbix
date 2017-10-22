@@ -53,7 +53,7 @@ class ZabbixAPICoreService {
 
   datasourceRequest(requestOptions) {
     return this.backendSrv.datasourceRequest(requestOptions)
-    .then(response => {
+    .then((response) => {
       if (!response.data) {
         return Promise.reject(new ZabbixAPIError({data: "General Error, no data"}));
       } else if (response.data.error) {
@@ -64,9 +64,6 @@ class ZabbixAPICoreService {
 
       // Success
       return response.data.result;
-    })
-    .catch(() => {
-      return Promise.reject(new ZabbixAPIError({data: "Connection Error"}));
     });
   }
 
@@ -94,14 +91,14 @@ class ZabbixAPICoreService {
 // Define zabbix API exception type
 export class ZabbixAPIError {
   constructor(error) {
-    this.code = error.code;
-    this.name = error.data;
-    this.message = error.data;
-    this.data = error.data;
+    this.code = error.code || null;
+    this.name = error.message || "";
+    this.data = error.data || "";
+    this.message = "Zabbix API Error: " + this.name + " " + this.data;
   }
 
   toString() {
-    return this.name + ": " + this.message;
+    return this.name + " " + this.data;
   }
 }
 
