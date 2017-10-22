@@ -129,7 +129,8 @@
       </div>
     </div>
 
-    <gf-form-switch class="gf-form" label="Count" checked="ctrl.target.countTriggers" on-change="ctrl.onTargetBlur()">
+    <gf-form-switch class="gf-form" label="Count" ng-show="ctrl.target.mode == editorMode.TRIGGERS"
+      checked="ctrl.target.countTriggers" on-change="ctrl.onTargetBlur()">
     </gf-form-switch>
 
     <div class="gf-form gf-form--grow">
