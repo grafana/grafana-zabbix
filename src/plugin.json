@@ -45,12 +45,6 @@
       "path": "dashboards/zabbix_server_dashboard.json",
       "addToNav": true,
       "defaultNav": true
-    },
-    {
-      "type": "dashboard",
-      "name": "Template Linux Server",
-      "path": "dashboards/template_linux_server.json",
-      "addToNav": true
     }
   ],
 
