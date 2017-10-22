@@ -49,6 +49,7 @@ _prunk2.default.mock('app/plugins/sdk', {
   QueryCtrl: null
 });
 _prunk2.default.mock('app/core/utils/datemath', datemathMock);
+_prunk2.default.mock('app/core/table_model', {});
 _prunk2.default.mock('angular', angularMocks);
 _prunk2.default.mock('jquery', 'module not found');
 
