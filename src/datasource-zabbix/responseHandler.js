@@ -1,4 +1,6 @@
 import _ from 'lodash';
+import TableModel from 'app/core/table_model';
+import * as c from './constants';
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -105,12 +107,38 @@ function handleTriggersResponse(triggers, timeRange) {
     return {
       target: "triggers count",
       datapoints: [
-        [triggers, timeRange[1]]
+        [triggers, timeRange[1] * 1000]
       ]
     };
   } else {
-    return triggers;
+    let stats = getTriggerStats(triggers);
+    let table = new TableModel();
+    table.addColumn({text: 'Host group'});
+    _.each(_.orderBy(c.TRIGGER_SEVERITY, ['val'], ['desc']), (severity) => {
+      table.addColumn({text: severity.text});
+    });
+    _.each(stats, (severity_stats, group) => {
+      let row = _.map(_.orderBy(_.toPairs(severity_stats), (s) => s[0], ['desc']), (s) => s[1]);
+      row = _.concat([group], ...row);
+      table.rows.push(row);
+    });
+    return table;
   }
+}
+
+function getTriggerStats(triggers) {
+  let groups = _.uniq(_.flattenDeep(_.map(triggers, (trigger) => _.map(trigger.groups, 'name'))));
+  // let severity = _.map(c.TRIGGER_SEVERITY, 'text');
+  let stats = {};
+  _.each(groups, (group) => {
+    stats[group] = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0}; // severity:count
+  });
+  _.each(triggers, (trigger) => {
+    _.each(trigger.groups, (group) => {
+      stats[group.name][trigger.priority]++;
+    });
+  });
+  return stats;
 }
 
 function convertHistoryPoint(point) {

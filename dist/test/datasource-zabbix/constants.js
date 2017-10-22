@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -25,3 +25,5 @@ var SHOW_OK_EVENTS = exports.SHOW_OK_EVENTS = 1;
 // Data point
 var DATAPOINT_VALUE = exports.DATAPOINT_VALUE = 0;
 var DATAPOINT_TS = exports.DATAPOINT_TS = 1;
+
+var TRIGGER_SEVERITY = exports.TRIGGER_SEVERITY = [{ val: 0, text: 'Not classified' }, { val: 1, text: 'Information' }, { val: 2, text: 'Warning' }, { val: 3, text: 'Average' }, { val: 4, text: 'High' }, { val: 5, text: 'Disaster' }];

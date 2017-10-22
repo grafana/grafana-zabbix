@@ -95,7 +95,7 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
 
           _this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
 
-          _this.triggerSeverity = [{ val: 0, text: 'Not classified' }, { val: 1, text: 'Information' }, { val: 2, text: 'Warning' }, { val: 3, text: 'Average' }, { val: 4, text: 'High' }, { val: 5, text: 'Disaster' }];
+          _this.triggerSeverity = c.TRIGGER_SEVERITY;
 
           // Map functions for bs-typeahead
           _this.getGroupNames = _.bind(_this.getMetricNames, _this, 'groupList');
@@ -137,9 +137,9 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
               'item': { 'filter': "" },
               'functions': [],
               'minSeverity': 3,
+              'countTriggers': true,
               'options': {
-                'showDisabledItems': false,
-                'countTriggers': true
+                'showDisabledItems': false
               }
             };
             _.defaults(target, targetDefaults);
@@ -360,8 +360,7 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
           key: 'renderQueryOptionsText',
           value: function renderQueryOptionsText() {
             var optionsMap = {
-              showDisabledItems: "Show disabled items",
-              countTriggers: "Count Triggers"
+              showDisabledItems: "Show disabled items"
             };
             var options = [];
             _.forOwn(this.target.options, function (value, key) {

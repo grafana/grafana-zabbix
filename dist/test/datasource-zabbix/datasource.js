@@ -457,7 +457,7 @@ var ZabbixAPIDatasource = function () {
         if (hosts.length) {
           var hostids = _lodash2.default.map(hosts, 'hostid');
           var appids = _lodash2.default.map(apps, 'applicationid');
-          return _this7.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.options.countTriggers, timeFrom, timeTo).then(function (triggers) {
+          return _this7.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.countTriggers, timeFrom, timeTo).then(function (triggers) {
             return _responseHandler2.default.handleTriggersResponse(triggers, timeRange);
           });
         } else {

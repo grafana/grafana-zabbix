@@ -579,7 +579,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               if (hosts.length) {
                 var hostids = _.map(hosts, 'hostid');
                 var appids = _.map(apps, 'applicationid');
-                return _this7.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.options.countTriggers, timeFrom, timeTo).then(function (triggers) {
+                return _this7.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.countTriggers, timeFrom, timeTo).then(function (triggers) {
                   return responseHandler.handleTriggersResponse(triggers, timeRange);
                 });
               } else {

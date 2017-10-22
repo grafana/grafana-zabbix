@@ -426,7 +426,9 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
             expandComment: true,
             monitored: true,
             skipDependent: true,
-            selectLastEvent: 'extend'
+            selectLastEvent: 'extend',
+            selectGroups: 'extend',
+            selectHosts: ['host', 'name']
           };
 
           if (count) {

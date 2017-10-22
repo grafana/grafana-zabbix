@@ -118,9 +118,9 @@
         }">
     </div>
 
-    <div class="gf-form max-width-20" ng-show="ctrl.target.mode == editorMode.TRIGGERS">
+    <div class="gf-form max-width-23" ng-show="ctrl.target.mode == editorMode.TRIGGERS">
       <label class="gf-form-label query-keyword width-8">Min Severity</label>
-      <div class="gf-form-select-wrapper width-20">
+      <div class="gf-form-select-wrapper width-16">
         <select class="gf-form-input"
               ng-change="ctrl.onTargetBlur()"
               ng-model="ctrl.target.minSeverity"
@@ -129,9 +129,12 @@
       </div>
     </div>
 
+    <gf-form-switch class="gf-form" label="Count" checked="ctrl.target.countTriggers" on-change="ctrl.onTargetBlur()">
+    </gf-form-switch>
+
     <div class="gf-form gf-form--grow">
       <label class="gf-form-label gf-form-label--grow">
-        <a ng-click="ctrl.toggleQueryOptions()">
+        <a ng-click="ctrl.toggleQueryOptions()" ng-hide="ctrl.target.mode == editorMode.TRIGGERS">
           <i class="fa fa-caret-down" ng-show="ctrl.showQueryOptions"></i>
           <i class="fa fa-caret-right" ng-hide="ctrl.showQueryOptions"></i>
           {{ctrl.queryOptionsText}}
@@ -146,13 +149,6 @@
       <gf-form-switch class="gf-form"
         label="Show disabled items"
         checked="ctrl.target.options.showDisabledItems"
-        on-change="ctrl.onQueryOptionChange()">
-      </gf-form-switch>
-    </div>
-    <div class="gf-form offset-width-7" ng-show="ctrl.target.mode == editorMode.TRIGGERS">
-      <gf-form-switch class="gf-form"
-        label="Count triggers"
-        checked="ctrl.target.options.countTriggers"
         on-change="ctrl.onQueryOptionChange()">
       </gf-form-switch>
     </div>

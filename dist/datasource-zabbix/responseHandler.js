@@ -1,9 +1,21 @@
 'use strict';
 
-System.register(['lodash'], function (_export, _context) {
+System.register(['lodash', 'app/core/table_model', './constants'], function (_export, _context) {
   "use strict";
 
-  var _;
+  var _, TableModel, c;
+
+  function _toConsumableArray(arr) {
+    if (Array.isArray(arr)) {
+      for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {
+        arr2[i] = arr[i];
+      }
+
+      return arr2;
+    } else {
+      return Array.from(arr);
+    }
+  }
 
   /**
    * Convert Zabbix API history.get response to Grafana format
@@ -102,17 +114,47 @@ System.register(['lodash'], function (_export, _context) {
     if (_.isNumber(triggers)) {
       return {
         target: "triggers count",
-        datapoints: [[triggers, timeRange[1]]]
+        datapoints: [[triggers, timeRange[1] * 1000]]
       };
     } else {
-      return triggers;
+      var stats = getTriggerStats(triggers);
+      var table = new TableModel();
+      table.addColumn({ text: 'Host group' });
+      _.each(_.orderBy(c.TRIGGER_SEVERITY, ['val'], ['desc']), function (severity) {
+        table.addColumn({ text: severity.text });
+      });
+      _.each(stats, function (severity_stats, group) {
+        var row = _.map(_.orderBy(_.toPairs(severity_stats), function (s) {
+          return s[0];
+        }, ['desc']), function (s) {
+          return s[1];
+        });
+        row = _.concat.apply(_, [[group]].concat(_toConsumableArray(row)));
+        table.rows.push(row);
+      });
+      return table;
     }
-  }function convertHistoryPoint(point) {
-    // Value must be a number for properly work
-    return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
+  }function getTriggerStats(triggers) {
+    var groups = _.uniq(_.flattenDeep(_.map(triggers, function (trigger) {
+      return _.map(trigger.groups, 'name');
+    })));
+    // let severity = _.map(c.TRIGGER_SEVERITY, 'text');
+    var stats = {};
+    _.each(groups, function (group) {
+      stats[group] = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; // severity:count
+    });
+    _.each(triggers, function (trigger) {
+      _.each(trigger.groups, function (group) {
+        stats[group.name][trigger.priority]++;
+      });
+    });
+    return stats;
   }
 
-  function convertTrendPoint(valueType, point) {
+  function convertHistoryPoint(point) {
+    // Value must be a number for properly work
+    return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
+  }function convertTrendPoint(valueType, point) {
     var value;
     switch (valueType) {
       case "min":
@@ -135,9 +177,15 @@ System.register(['lodash'], function (_export, _context) {
     }
 
     return [Number(value), point.clock * 1000];
-  }return {
+  }
+
+  return {
     setters: [function (_lodash) {
       _ = _lodash.default;
+    }, function (_appCoreTable_model) {
+      TableModel = _appCoreTable_model.default;
+    }, function (_constants) {
+      c = _constants;
     }],
     execute: function () {
       _export('default', {

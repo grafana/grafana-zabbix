@@ -20,3 +20,12 @@ export const SHOW_OK_EVENTS = 1;
 // Data point
 export const DATAPOINT_VALUE = 0;
 export const DATAPOINT_TS = 1;
+
+export const TRIGGER_SEVERITY = [
+  {val: 0, text: 'Not classified'},
+  {val: 1, text: 'Information'},
+  {val: 2, text: 'Warning'},
+  {val: 3, text: 'Average'},
+  {val: 4, text: 'High'},
+  {val: 5, text: 'Disaster'}
+];

@@ -45,11 +45,7 @@ export class ZabbixQueryController extends QueryCtrl {
       {name: "Down time", property: "downtimeTime"}
     ];
 
-    this.triggerSeverity = [
-      {val: 0, text: 'Not classified'}, {val: 1, text:'Information'},
-      {val: 2, text: 'Warning'}, {val: 3, text: 'Average'},
-      {val: 4, text: 'High'}, {val: 5, text: 'Disaster'}
-    ];
+    this.triggerSeverity = c.TRIGGER_SEVERITY;
 
     // Map functions for bs-typeahead
     this.getGroupNames = _.bind(this.getMetricNames, this, 'groupList');
@@ -89,9 +85,9 @@ export class ZabbixQueryController extends QueryCtrl {
         'item': { 'filter': "" },
         'functions': [],
         'minSeverity': 3,
+        'countTriggers': true,
         'options': {
-          'showDisabledItems': false,
-          'countTriggers': true
+          'showDisabledItems': false
         }
       };
       _.defaults(target, targetDefaults);
@@ -293,8 +289,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
   renderQueryOptionsText() {
     var optionsMap = {
-      showDisabledItems: "Show disabled items",
-      countTriggers: "Count Triggers"
+      showDisabledItems: "Show disabled items"
     };
     var options = [];
     _.forOwn(this.target.options, (value, key) => {
