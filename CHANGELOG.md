@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - PostgreSQL support for Direct DB Connection.
+- _Triggers_ query mode which allows to count active alerts by group, host and application, [#141](https://github.com/alexanderzobnin/grafana-zabbix/issues/141)
 - `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447)
 - `percentil()` function
 
