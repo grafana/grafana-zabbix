@@ -25,6 +25,7 @@ describe('ZabbixDatasource', function () {
   beforeEach(function () {
     ctx.instanceSettings = {
       jsonData: {
+        alerting: true,
         username: 'zabbix',
         password: 'zabbix',
         trends: true,
@@ -42,15 +43,15 @@ describe('ZabbixDatasource', function () {
     ctx.zabbix = function () {};
 
     ctx.ds = new _module.Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.dashboardSrv, ctx.zabbixAlertingSrv, ctx.zabbix);
-    ctx.ds.alertQuery = function () {
-      return _q2.default.when([]);
-    };
   });
 
   describe('When querying data', function () {
     beforeEach(function () {
       ctx.ds.replaceTemplateVars = function (str) {
         return str;
+      };
+      ctx.ds.alertQuery = function () {
+        return _q2.default.when([]);
       };
     });
 
@@ -321,6 +322,117 @@ describe('ZabbixDatasource', function () {
       ctx.ds.metricFindQuery(query);
       expect(getHosts).to.have.been.calledWith('/.*/');
       done();
+    });
+  });
+
+  describe('When quering alerts', function () {
+    var options = {};
+
+    beforeEach(function () {
+      ctx.ds.replaceTemplateVars = function (str) {
+        return str;
+      };
+
+      var targetItems = [{
+        "itemid": "1",
+        "name": "test item",
+        "key_": "test.key",
+        "value_type": "3",
+        "hostid": "10631",
+        "status": "0",
+        "state": "0",
+        "hosts": [{ "hostid": "10631", "name": "Test host" }],
+        "item": "Test item"
+      }];
+      ctx.ds.zabbix.getItemsFromTarget = function () {
+        return Promise.resolve(targetItems);
+      };
+
+      options = {
+        "panelId": 10,
+        "targets": [{
+          "application": { "filter": "" },
+          "group": { "filter": "Test group" },
+          "host": { "filter": "Test host" },
+          "item": { "filter": "Test item" }
+        }]
+      };
+    });
+
+    it('should return threshold when comparative symbol is `less than`', function () {
+
+      var itemTriggers = [{
+        "triggerid": "15383",
+        "priority": "4",
+        "expression": "{15915}<100"
+      }];
+
+      ctx.ds.zabbix.getAlerts = function () {
+        return Promise.resolve(itemTriggers);
+      };
+
+      return ctx.ds.alertQuery(options).then(function (resp) {
+        expect(resp.thresholds.length).to.equal(1);
+        expect(resp.thresholds[0]).to.equal(100);
+        return resp;
+      });
+    });
+
+    it('should return threshold when comparative symbol is `less than or equal`', function () {
+
+      var itemTriggers = [{
+        "triggerid": "15383",
+        "priority": "4",
+        "expression": "{15915}<=100"
+      }];
+
+      ctx.ds.zabbix.getAlerts = function () {
+        return Promise.resolve(itemTriggers);
+      };
+
+      return ctx.ds.alertQuery(options).then(function (resp) {
+        expect(resp.thresholds.length).to.equal(1);
+        expect(resp.thresholds[0]).to.equal(100);
+        return resp;
+      });
+    });
+
+    it('should return threshold when comparative symbol is `greater than or equal`', function () {
+
+      var itemTriggers = [{
+        "triggerid": "15383",
+        "priority": "4",
+        "expression": "{15915}>=30"
+      }];
+
+      ctx.ds.zabbix.getAlerts = function () {
+        return Promise.resolve(itemTriggers);
+      };
+
+      return ctx.ds.alertQuery(options).then(function (resp) {
+        expect(resp.thresholds.length).to.equal(1);
+        expect(resp.thresholds[0]).to.equal(30);
+        return resp;
+      });
+    });
+
+    it('should return threshold when comparative symbol is `equal`', function () {
+
+      var itemTriggers = [{
+        "triggerid": "15383",
+        "priority": "4",
+        "expression": "{15915}=50"
+      }];
+
+      ctx.ds.zabbix.getAlerts = function () {
+        return Promise.resolve(itemTriggers);
+      };
+
+      return ctx.ds.alertQuery(options).then(function (resp) {
+        expect(resp.thresholds.length).to.equal(1);
+        expect(resp.thresholds[0]).to.equal(50);
+        return resp;
+      });
     });
   });
 });

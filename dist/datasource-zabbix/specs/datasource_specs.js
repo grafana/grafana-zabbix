@@ -11,6 +11,7 @@ describe('ZabbixDatasource', () => {
   beforeEach(() => {
     ctx.instanceSettings = {
       jsonData: {
+        alerting: true,
         username: 'zabbix',
         password: 'zabbix',
         trends: true,
@@ -28,12 +29,12 @@ describe('ZabbixDatasource', () => {
     ctx.zabbix = () => {};
 
     ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.dashboardSrv, ctx.zabbixAlertingSrv, ctx.zabbix);
-    ctx.ds.alertQuery = () => Q.when([]);
   });
 
   describe('When querying data', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
+      ctx.ds.alertQuery = () => Q.when([]);
     });
 
     ctx.options = {
@@ -147,7 +148,7 @@ describe('ZabbixDatasource', () => {
   describe('When invoking metricFindQuery()', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
-      ctx.ds.zabbix =  {
+      ctx.ds.zabbix = {
         getGroups: () => Q.when([]),
         getHosts: () => Q.when([]),
         getApps: () => Q.when([]),
@@ -234,4 +235,106 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When quering alerts', () => {
+    let options = {};
+
+    beforeEach(() => {
+      ctx.ds.replaceTemplateVars = (str) => str;
+
+      let targetItems = [{
+        "itemid": "1",
+        "name": "test item",
+        "key_": "test.key",
+        "value_type": "3",
+        "hostid": "10631",
+        "status": "0",
+        "state": "0",
+        "hosts": [{"hostid": "10631", "name": "Test host"}],
+        "item": "Test item"
+      }];
+      ctx.ds.zabbix.getItemsFromTarget = () => Promise.resolve(targetItems);
+
+      options = {
+        "panelId": 10,
+        "targets": [{
+          "application": {"filter": ""},
+          "group": {"filter": "Test group"},
+          "host": {"filter": "Test host"},
+          "item": {"filter": "Test item"},
+        }]
+      };
+    });
+
+    it('should return threshold when comparative symbol is `less than`', () => {
+
+      let itemTriggers = [{
+        "triggerid": "15383",
+        "priority": "4",
+        "expression": "{15915}<100",
+      }];
+
+      ctx.ds.zabbix.getAlerts = () => Promise.resolve(itemTriggers);
+
+      return ctx.ds.alertQuery(options)
+        .then(resp => {
+          expect(resp.thresholds.length).to.equal(1);
+          expect(resp.thresholds[0]).to.equal(100);
+          return resp;
+        });
+    });
+
+    it('should return threshold when comparative symbol is `less than or equal`', () => {
+
+      let itemTriggers = [{
+        "triggerid": "15383",
+        "priority": "4",
+        "expression": "{15915}<=100",
+      }];
+
+      ctx.ds.zabbix.getAlerts = () => Promise.resolve(itemTriggers);
+
+      return ctx.ds.alertQuery(options)
+        .then(resp => {
+          expect(resp.thresholds.length).to.equal(1);
+          expect(resp.thresholds[0]).to.equal(100);
+          return resp;
+        });
+    });
+
+    it('should return threshold when comparative symbol is `greater than or equal`', () => {
+
+      let itemTriggers = [{
+        "triggerid": "15383",
+        "priority": "4",
+        "expression": "{15915}>=30",
+      }];
+
+      ctx.ds.zabbix.getAlerts = () => Promise.resolve(itemTriggers);
+
+      return ctx.ds.alertQuery(options)
+        .then(resp => {
+          expect(resp.thresholds.length).to.equal(1);
+          expect(resp.thresholds[0]).to.equal(30);
+          return resp;
+        });
+    });
+
+    it('should return threshold when comparative symbol is `equal`', () => {
+
+      let itemTriggers = [{
+        "triggerid": "15383",
+        "priority": "4",
+        "expression": "{15915}=50",
+      }];
+
+      ctx.ds.zabbix.getAlerts = () => Promise.resolve(itemTriggers);
+
+      return ctx.ds.alertQuery(options)
+        .then(resp => {
+          expect(resp.thresholds.length).to.equal(1);
+          expect(resp.thresholds[0]).to.equal(50);
+          return resp;
+        });
+    });
+  });
 });

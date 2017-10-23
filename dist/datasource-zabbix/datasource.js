@@ -112,7 +112,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
   }
 
   function getTriggerThreshold(expression) {
-    var thresholdPattern = /.*[<>]([\d\.]+)/;
+    var thresholdPattern = /.*[<>=]{1,2}([\d\.]+)/;
     var finded_thresholds = expression.match(thresholdPattern);
     if (finded_thresholds && finded_thresholds.length >= 2) {
       var threshold = finded_thresholds[1];
