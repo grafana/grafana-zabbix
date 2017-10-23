@@ -3,6 +3,19 @@
   "name": "Zabbix",
   "id": "alexanderzobnin-zabbix-datasource",
 
+  "includes": [
+    {
+      "type": "dashboard",
+      "name": "Zabbix System Status",
+      "path": "../dashboards/zabbix_system_status.json"
+    },
+    {
+      "type": "dashboard",
+      "name": "Zabbix Template Linux Server",
+      "path": "../dashboards/template_linux_server.json"
+    }
+  ],
+
   "metrics": true,
   "annotations": true,
 

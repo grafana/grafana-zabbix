@@ -22,12 +22,26 @@ and `trend.get` API calls.
 
 Below is an example query for getting history in the Grafana-Zabbix Plugin:
 
+**MySQL**:
 ```sql
 SELECT itemid AS metric, clock AS time_sec, {aggFunc}(value) as value
-  FROM {historyTable}
-  WHERE itemid IN ({itemids})
-    AND clock > {timeFrom} AND clock < {timeTill}
-  GROUP BY time_sec DIV {intervalSec}, metric
+FROM {historyTable}
+WHERE itemid IN ({itemids})
+  AND clock > {timeFrom} AND clock < {timeTill}
+GROUP BY time_sec DIV {intervalSec}, metric
+ORDER BY time_sec ASC
+```
+
+**PostgreSQL**:
+```sql
+SELECT to_char(itemid, 'FM99999999999999999999') AS metric, 
+  clock / {intervalSec} * {intervalSec} AS time, 
+  {aggFunc}(value) AS value
+FROM {historyTable}
+WHERE itemid IN ({itemids})
+  AND clock > {timeFrom} AND clock < {timeTill}
+GROUP BY 1, 2
+ORDER BY time ASC
 ```
 
 where `{aggFunc}` is one of `[AVG, MIN, MAX, SUM, COUNT]` aggregation functions, `{historyTable}` is a history table,
@@ -36,13 +50,29 @@ where `{aggFunc}` is one of `[AVG, MIN, MAX, SUM, COUNT]` aggregation functions,
 When getting trends, the plugin additionally queries a particular value column (`value_avg`, `value_min` or `value_max`) which
 depends on `consolidateBy` function value:
 
+**MySQL**:
 ```sql
 SELECT itemid AS metric, clock AS time_sec, {aggFunc}({valueColumn}) as value
-  FROM {trendsTable}
-  WHERE itemid IN ({itemids})
-    AND clock > {timeFrom} AND clock < {timeTill}
-  GROUP BY time_sec DIV {intervalSec}, metric
+FROM {trendsTable}
+WHERE itemid IN ({itemids})
+  AND clock > {timeFrom} AND clock < {timeTill}
+GROUP BY time_sec DIV {intervalSec}, metric
+ORDER BY time_sec ASC
 ```
+
+**PostgreSQL**:
+```sql
+SELECT to_char(itemid, 'FM99999999999999999999') AS metric, 
+  clock / {intervalSec} * {intervalSec} AS time, 
+  {aggFunc}({valueColumn}) AS value
+FROM {trendsTable}
+WHERE itemid IN ({itemids})
+  AND clock > {timeFrom} AND clock < {timeTill}
+GROUP BY 1, 2
+ORDER BY time ASC
+```
+
+**Note**: these queries may be changed in future, so look into sources for actual query structure.
 
 As you can see, the Grafana-Zabbix plugin uses aggregation by a given time interval. This interval is provided by Grafana and depends on the panel width in pixels. Thus, Grafana displays the data in the proper resolution.
 

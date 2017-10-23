@@ -28,26 +28,28 @@ class ZabbixAPIDatasource {
     this.basicAuth        = instanceSettings.basicAuth;
     this.withCredentials  = instanceSettings.withCredentials;
 
+    const jsonData = instanceSettings.jsonData;
+
     // Zabbix API credentials
-    this.username         = instanceSettings.jsonData.username;
-    this.password         = instanceSettings.jsonData.password;
+    this.username         = jsonData.username;
+    this.password         = jsonData.password;
 
     // Use trends instead history since specified time
-    this.trends           = instanceSettings.jsonData.trends;
-    this.trendsFrom       = instanceSettings.jsonData.trendsFrom || '7d';
-    this.trendsRange      = instanceSettings.jsonData.trendsRange || '4d';
+    this.trends           = jsonData.trends;
+    this.trendsFrom       = jsonData.trendsFrom || '7d';
+    this.trendsRange      = jsonData.trendsRange || '4d';
 
     // Set cache update interval
-    var ttl = instanceSettings.jsonData.cacheTTL || '1h';
+    var ttl = jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
     // Alerting options
-    this.alertingEnabled = instanceSettings.jsonData.alerting;
-    this.addThresholds = instanceSettings.jsonData.addThresholds;
-    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
+    this.alertingEnabled =     jsonData.alerting;
+    this.addThresholds =       jsonData.addThresholds;
+    this.alertingMinSeverity = jsonData.alertingMinSeverity || c.SEV_WARNING;
 
     // Direct DB Connection options
-    let dbConnectionOptions = instanceSettings.jsonData.dbConnection || {};
+    let dbConnectionOptions = jsonData.dbConnection || {};
     this.enableDirectDBConnection = dbConnectionOptions.enable;
     this.sqlDatasourceId = dbConnectionOptions.datasourceId;
 
@@ -134,6 +136,10 @@ class ZabbixAPIDatasource {
       } else if (target.mode === c.MODE_ITSERVICE) {
         // IT services mode
         return this.queryITServiceData(target, timeRange, options);
+      } else if (target.mode === c.MODE_TRIGGERS) {
+        return this.queryTriggersData(target, timeRange);
+      } else {
+        return [];
       }
     });
 
@@ -348,6 +354,24 @@ class ZabbixAPIDatasource {
     });
   }
 
+  queryTriggersData(target, timeRange) {
+    let [timeFrom, timeTo] = timeRange;
+    return this.zabbix.getHostsFromTarget(target)
+    .then((results) => {
+      let [hosts, apps] = results;
+      if (hosts.length) {
+        let hostids = _.map(hosts, 'hostid');
+        let appids = _.map(apps, 'applicationid');
+        return this.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.countTriggers, timeFrom, timeTo)
+        .then((triggers) => {
+          return responseHandler.handleTriggersResponse(triggers, timeRange);
+        });
+      } else {
+        return Promise.resolve([]);
+      }
+    });
+  }
+
   /**
    * Test connection to Zabbix API
    * @return {object} Connection status and Zabbix API version
@@ -378,13 +402,13 @@ class ZabbixAPIDatasource {
         return {
           status: "error",
           title: error.message,
-          message: error.data
+          message: error.message
         };
       } else if (error.data && error.data.message) {
         return {
           status: "error",
           title: "Connection failed",
-          message: error.data.message
+          message: "Connection failed: " + error.data.message
         };
       } else {
         return {

@@ -26,3 +26,6 @@ This mode is suitable for rendering charts in grafana by passing itemids as url 
 1. Save dashboard.
 1. Click to graph title and select _Share_ -> _Direct link rendered image_.
 1. Use this URL for graph png image and set `var-itemids` param to desired IDs. Note, for multiple IDs you should pass multiple params, like `&var-itemids=28276&var-itemids=28277`.
+
+##### Triggers
+Active triggers count for selected hosts or table data like Zabbix _System status_ panel on the main dashboard.

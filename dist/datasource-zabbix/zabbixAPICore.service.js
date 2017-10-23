@@ -100,8 +100,6 @@ System.register(['angular'], function (_export, _context) {
 
               // Success
               return response.data.result;
-            }).catch(function () {
-              return Promise.reject(new ZabbixAPIError({ data: "Connection Error" }));
             });
           }
         }, {
@@ -127,16 +125,16 @@ System.register(['angular'], function (_export, _context) {
         function ZabbixAPIError(error) {
           _classCallCheck(this, ZabbixAPIError);
 
-          this.code = error.code;
-          this.name = error.data;
-          this.message = error.data;
-          this.data = error.data;
+          this.code = error.code || null;
+          this.name = error.message || "";
+          this.data = error.data || "";
+          this.message = "Zabbix API Error: " + this.name + " " + this.data;
         }
 
         _createClass(ZabbixAPIError, [{
           key: 'toString',
           value: function toString() {
-            return this.name + ": " + this.message;
+            return this.name + " " + this.data;
           }
         }]);
 

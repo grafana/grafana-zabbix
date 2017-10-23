@@ -1,20 +1,25 @@
 {
-  "id": null,
-  "title": "Template Linux Server",
-  "originalTitle": "Template Linux Server",
-  "tags": [
-    "zabbix",
-    "example"
+  "__inputs": [
+    {
+      "name": "DS_NAME",
+      "type": "datasource",
+      "pluginId": "alexanderzobnin-zabbix-datasource"
+    }
   ],
-  "style": "dark",
-  "timezone": "browser",
+  "title": "Zabbix Template Linux Server",
+  "revision": 1,
+  "annotations": {
+    "list": []
+  },
   "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
   "hideControls": false,
-  "sharedCrosshair": false,
+  "id": null,
+  "links": [],
   "rows": [
     {
       "collapse": false,
-      "editable": true,
       "height": "250px",
       "panels": [
         {
@@ -24,16 +29,13 @@
             "CPU user time": "#EAB839"
           },
           "bars": false,
-          "datasource": "$datasource",
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "${DS_NAME}",
           "editable": true,
           "error": false,
           "fill": 3,
-          "grid": {
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
+          "grid": {},
           "id": 1,
           "legend": {
             "avg": false,
@@ -53,6 +55,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
+          "spaceLength": 10,
           "span": 6,
           "stack": true,
           "steppedLine": false,
@@ -61,6 +64,7 @@
               "application": {
                 "filter": "CPU"
               },
+              "countTriggers": true,
               "functions": [],
               "group": {
                 "filter": "$group"
@@ -71,21 +75,31 @@
               "item": {
                 "filter": "/CPU/"
               },
+              "minSeverity": 3,
               "mode": 0,
+              "options": {
+                "showDisabledItems": false
+              },
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
           "title": "CPU",
           "tooltip": {
             "msResolution": false,
             "shared": true,
+            "sort": 0,
             "value_type": "individual"
           },
           "type": "graph",
           "xaxis": {
-            "show": true
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
           },
           "yaxes": [
             {
@@ -109,16 +123,13 @@
             "Processor load (1 min average per core)": "#1F78C1"
           },
           "bars": false,
-          "datasource": "$datasource",
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "${DS_NAME}",
           "editable": true,
           "error": false,
           "fill": 1,
-          "grid": {
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
+          "grid": {},
           "id": 2,
           "legend": {
             "avg": false,
@@ -138,6 +149,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
+          "spaceLength": 10,
           "span": 6,
           "stack": false,
           "steppedLine": false,
@@ -146,6 +158,7 @@
               "application": {
                 "filter": "CPU"
               },
+              "countTriggers": true,
               "functions": [],
               "group": {
                 "filter": "$group"
@@ -156,21 +169,31 @@
               "item": {
                 "filter": "Processor load (15 min average per core)"
               },
+              "minSeverity": 3,
               "mode": 0,
+              "options": {
+                "showDisabledItems": false
+              },
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
           "title": "System load",
           "tooltip": {
             "msResolution": false,
             "shared": true,
+            "sort": 0,
             "value_type": "cumulative"
           },
           "type": "graph",
           "xaxis": {
-            "show": true
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
           },
           "yaxes": [
             {
@@ -190,27 +213,27 @@
           ]
         }
       ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
       "showTitle": true,
-      "title": "CPU"
+      "title": "CPU",
+      "titleSize": "h6"
     },
     {
       "collapse": false,
-      "editable": true,
       "height": "250px",
       "panels": [
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": "$datasource",
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "${DS_NAME}",
           "editable": true,
           "error": false,
           "fill": 3,
-          "grid": {
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
+          "grid": {},
           "id": 3,
           "legend": {
             "alignAsTable": false,
@@ -233,20 +256,14 @@
           "points": false,
           "renderer": "flot",
           "repeat": "netif",
-          "scopedVars": {
-            "netif": {
-              "text": "eth0",
-              "value": "eth0",
-              "selected": false
-            }
-          },
           "seriesOverrides": [
             {
               "alias": "/Incoming/",
               "transform": "negative-Y"
             }
           ],
-          "span": 6,
+          "spaceLength": 10,
+          "span": 12,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -254,6 +271,7 @@
               "application": {
                 "filter": ""
               },
+              "countTriggers": true,
               "functions": [],
               "group": {
                 "filter": "$group"
@@ -264,21 +282,31 @@
               "item": {
                 "filter": "/$netif/"
               },
+              "minSeverity": 3,
               "mode": 0,
+              "options": {
+                "showDisabledItems": false
+              },
               "refId": "A"
             }
           ],
+          "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
           "title": "Network traffic on $netif",
           "tooltip": {
             "msResolution": false,
             "shared": true,
+            "sort": 0,
             "value_type": "cumulative"
           },
           "type": "graph",
           "xaxis": {
-            "show": true
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
           },
           "yaxes": [
             {
@@ -296,113 +324,96 @@
               "show": true
             }
           ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "datasource": "$datasource",
-          "editable": true,
-          "error": false,
-          "fill": 3,
-          "grid": {
-            "threshold1": null,
-            "threshold1Color": "rgba(216, 200, 27, 0.27)",
-            "threshold2": null,
-            "threshold2Color": "rgba(234, 112, 112, 0.22)"
-          },
-          "id": 4,
-          "legend": {
-            "alignAsTable": false,
-            "avg": false,
-            "current": false,
-            "max": false,
-            "min": false,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": false
-          },
-          "lines": true,
-          "linewidth": 2,
-          "links": [],
-          "minSpan": 4,
-          "nullPointMode": "connected",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "repeat": null,
-          "scopedVars": {
-            "netif": {
-              "text": "eth1",
-              "value": "eth1",
-              "selected": false
-            }
-          },
-          "seriesOverrides": [
-            {
-              "alias": "/Incoming/",
-              "transform": "negative-Y"
-            }
-          ],
-          "span": 6,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "application": {
-                "filter": ""
-              },
-              "functions": [],
-              "group": {
-                "filter": "$group"
-              },
-              "host": {
-                "filter": "$host"
-              },
-              "item": {
-                "filter": "/$netif/"
-              },
-              "mode": 0,
-              "refId": "A"
-            }
-          ],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Network traffic on $netif",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "value_type": "cumulative"
-          },
-          "type": "graph",
-          "xaxis": {
-            "show": true
-          },
-          "yaxes": [
-            {
-              "format": "bps",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            }
-          ],
-          "repeatIteration": 1460635040618,
-          "repeatPanelId": 3
         }
       ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
       "showTitle": true,
-      "title": "Network"
+      "title": "Network",
+      "titleSize": "h6"
     }
   ],
+  "schemaVersion": 14,
+  "style": "dark",
+  "tags": [
+    "zabbix",
+    "example"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allFormat": "regex values",
+        "allValue": null,
+        "current": {},
+        "datasource": "${DS_NAME}",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Group",
+        "multi": false,
+        "multiFormat": "glob",
+        "name": "group",
+        "options": [],
+        "query": "*",
+        "refresh": 1,
+        "refresh_on_load": false,
+        "regex": "",
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allFormat": "glob",
+        "allValue": null,
+        "current": {},
+        "datasource": "${DS_NAME}",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Host",
+        "multi": false,
+        "multiFormat": "glob",
+        "name": "host",
+        "options": [],
+        "query": "$group.*",
+        "refresh": 1,
+        "refresh_on_load": false,
+        "regex": "",
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allFormat": "regex values",
+        "allValue": null,
+        "current": {},
+        "datasource": "${DS_NAME}",
+        "hide": 0,
+        "hideLabel": false,
+        "includeAll": true,
+        "label": "Network interface",
+        "multi": true,
+        "multiFormat": "regex values",
+        "name": "netif",
+        "options": [],
+        "query": "*.$host.Network interfaces.*",
+        "refresh": 1,
+        "refresh_on_load": false,
+        "regex": "/(?:Incoming|Outgoing) network traffic on (.*)/",
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
   "time": {
     "from": "now-3h",
     "to": "now"
@@ -432,77 +443,5 @@
       "30d"
     ]
   },
-  "templating": {
-    "list": [
-      {
-        "current": {},
-        "hide": 0,
-        "label": "Zabbix Data Source",
-        "name": "datasource",
-        "options": [],
-        "query": "alexanderzobnin-zabbix-datasource",
-        "refresh": 1,
-        "regex": "",
-        "type": "datasource"
-      },
-      {
-        "allFormat": "regex values",
-        "current": {},
-        "datasource": "$datasource",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Group",
-        "multi": false,
-        "multiFormat": "glob",
-        "name": "group",
-        "options": [],
-        "query": "*",
-        "refresh": 1,
-        "refresh_on_load": false,
-        "regex": "",
-        "type": "query"
-      },
-      {
-        "allFormat": "glob",
-        "current": {},
-        "datasource": "$datasource",
-        "hide": 0,
-        "includeAll": false,
-        "label": "Host",
-        "multi": false,
-        "multiFormat": "glob",
-        "name": "host",
-        "options": [],
-        "query": "$group.*",
-        "refresh": 1,
-        "refresh_on_load": false,
-        "regex": "",
-        "type": "query"
-      },
-      {
-        "allFormat": "regex values",
-        "current": {},
-        "datasource": "$datasource",
-        "hide": 0,
-        "hideLabel": false,
-        "includeAll": true,
-        "label": "Network interface",
-        "multi": true,
-        "multiFormat": "regex values",
-        "name": "netif",
-        "options": [],
-        "query": "*.$host.Network interfaces.*",
-        "refresh": 1,
-        "refresh_on_load": false,
-        "regex": "/(?:Incoming|Outgoing) network traffic on (.*)/",
-        "type": "query"
-      }
-    ]
-  },
-  "annotations": {
-    "list": []
-  },
-  "schemaVersion": 12,
-  "version": 9,
-  "links": []
+  "timezone": "browser"
 }

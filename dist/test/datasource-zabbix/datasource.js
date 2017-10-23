@@ -73,26 +73,28 @@ var ZabbixAPIDatasource = function () {
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
 
+    var jsonData = instanceSettings.jsonData;
+
     // Zabbix API credentials
-    this.username = instanceSettings.jsonData.username;
-    this.password = instanceSettings.jsonData.password;
+    this.username = jsonData.username;
+    this.password = jsonData.password;
 
     // Use trends instead history since specified time
-    this.trends = instanceSettings.jsonData.trends;
-    this.trendsFrom = instanceSettings.jsonData.trendsFrom || '7d';
-    this.trendsRange = instanceSettings.jsonData.trendsRange || '4d';
+    this.trends = jsonData.trends;
+    this.trendsFrom = jsonData.trendsFrom || '7d';
+    this.trendsRange = jsonData.trendsRange || '4d';
 
     // Set cache update interval
-    var ttl = instanceSettings.jsonData.cacheTTL || '1h';
+    var ttl = jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
 
     // Alerting options
-    this.alertingEnabled = instanceSettings.jsonData.alerting;
-    this.addThresholds = instanceSettings.jsonData.addThresholds;
-    this.alertingMinSeverity = instanceSettings.jsonData.alertingMinSeverity || c.SEV_WARNING;
+    this.alertingEnabled = jsonData.alerting;
+    this.addThresholds = jsonData.addThresholds;
+    this.alertingMinSeverity = jsonData.alertingMinSeverity || c.SEV_WARNING;
 
     // Direct DB Connection options
-    var dbConnectionOptions = instanceSettings.jsonData.dbConnection || {};
+    var dbConnectionOptions = jsonData.dbConnection || {};
     this.enableDirectDBConnection = dbConnectionOptions.enable;
     this.sqlDatasourceId = dbConnectionOptions.datasourceId;
 
@@ -188,6 +190,10 @@ var ZabbixAPIDatasource = function () {
         } else if (target.mode === c.MODE_ITSERVICE) {
           // IT services mode
           return _this.queryITServiceData(target, timeRange, options);
+        } else if (target.mode === c.MODE_TRIGGERS) {
+          return _this.queryTriggersData(target, timeRange);
+        } else {
+          return [];
         }
       });
 
@@ -434,6 +440,31 @@ var ZabbixAPIDatasource = function () {
         });
       });
     }
+  }, {
+    key: 'queryTriggersData',
+    value: function queryTriggersData(target, timeRange) {
+      var _this7 = this;
+
+      var _timeRange3 = _slicedToArray(timeRange, 2),
+          timeFrom = _timeRange3[0],
+          timeTo = _timeRange3[1];
+
+      return this.zabbix.getHostsFromTarget(target).then(function (results) {
+        var _results = _slicedToArray(results, 2),
+            hosts = _results[0],
+            apps = _results[1];
+
+        if (hosts.length) {
+          var hostids = _lodash2.default.map(hosts, 'hostid');
+          var appids = _lodash2.default.map(apps, 'applicationid');
+          return _this7.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.countTriggers, timeFrom, timeTo).then(function (triggers) {
+            return _responseHandler2.default.handleTriggersResponse(triggers, timeRange);
+          });
+        } else {
+          return Promise.resolve([]);
+        }
+      });
+    }
 
     /**
      * Test connection to Zabbix API
@@ -443,15 +474,15 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'testDatasource',
     value: function testDatasource() {
-      var _this7 = this;
+      var _this8 = this;
 
       var zabbixVersion = void 0;
       return this.zabbix.getVersion().then(function (version) {
         zabbixVersion = version;
-        return _this7.zabbix.login();
+        return _this8.zabbix.login();
       }).then(function () {
-        if (_this7.enableDirectDBConnection) {
-          return _this7.zabbix.dbConnector.testSQLDataSource();
+        if (_this8.enableDirectDBConnection) {
+          return _this8.zabbix.dbConnector.testSQLDataSource();
         } else {
           return Promise.resolve();
         }
@@ -466,13 +497,13 @@ var ZabbixAPIDatasource = function () {
           return {
             status: "error",
             title: error.message,
-            message: error.data
+            message: error.message
           };
         } else if (error.data && error.data.message) {
           return {
             status: "error",
             title: "Connection failed",
-            message: error.data.message
+            message: "Connection failed: " + error.data.message
           };
         } else {
           return {
@@ -499,14 +530,14 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'metricFindQuery',
     value: function metricFindQuery(query) {
-      var _this8 = this;
+      var _this9 = this;
 
       var result = void 0;
       var parts = [];
 
       // Split query. Query structure: group.host.app.item
       _lodash2.default.each(utils.splitTemplateQuery(query), function (part) {
-        part = _this8.replaceTemplateVars(part, {});
+        part = _this9.replaceTemplateVars(part, {});
 
         // Replace wildcard to regex
         if (part === '*') {
@@ -548,7 +579,7 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'annotationQuery',
     value: function annotationQuery(options) {
-      var _this9 = this;
+      var _this10 = this;
 
       var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
       var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
@@ -566,7 +597,7 @@ var ZabbixAPIDatasource = function () {
       return getTriggers.then(function (triggers) {
 
         // Filter triggers by description
-        var triggerName = _this9.replaceTemplateVars(annotation.trigger, {});
+        var triggerName = _this10.replaceTemplateVars(annotation.trigger, {});
         if (utils.isRegex(triggerName)) {
           triggers = _lodash2.default.filter(triggers, function (trigger) {
             return utils.buildRegex(triggerName).test(trigger.description);
@@ -583,7 +614,7 @@ var ZabbixAPIDatasource = function () {
         });
 
         var objectids = _lodash2.default.map(triggers, 'triggerid');
-        return _this9.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
+        return _this10.zabbix.getEvents(objectids, timeFrom, timeTo, showOkEvents).then(function (events) {
           var indexedTriggers = _lodash2.default.keyBy(triggers, 'triggerid');
 
           // Hide acknowledged events if option enabled
@@ -624,23 +655,23 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'alertQuery',
     value: function alertQuery(options) {
-      var _this10 = this;
+      var _this11 = this;
 
       var enabled_targets = filterEnabledTargets(options.targets);
       var getPanelItems = _lodash2.default.map(enabled_targets, function (t) {
         var target = _lodash2.default.cloneDeep(t);
-        _this10.replaceTargetVariables(target, options);
-        return _this10.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
+        _this11.replaceTargetVariables(target, options);
+        return _this11.zabbix.getItemsFromTarget(target, { itemtype: 'num' });
       });
 
       return Promise.all(getPanelItems).then(function (results) {
         var items = _lodash2.default.flatten(results);
         var itemids = _lodash2.default.map(items, 'itemid');
 
-        return _this10.zabbix.getAlerts(itemids);
+        return _this11.zabbix.getAlerts(itemids);
       }).then(function (triggers) {
         triggers = _lodash2.default.filter(triggers, function (trigger) {
-          return trigger.priority >= _this10.alertingMinSeverity;
+          return trigger.priority >= _this11.alertingMinSeverity;
         });
 
         if (!triggers || triggers.length === 0) {
@@ -671,12 +702,12 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'replaceTargetVariables',
     value: function replaceTargetVariables(target, options) {
-      var _this11 = this;
+      var _this12 = this;
 
       var parts = ['group', 'host', 'application', 'item'];
       _lodash2.default.forEach(parts, function (p) {
         if (target[p] && target[p].filter) {
-          target[p].filter = _this11.replaceTemplateVars(target[p].filter, options.scopedVars);
+          target[p].filter = _this12.replaceTemplateVars(target[p].filter, options.scopedVars);
         }
       });
       target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
@@ -684,9 +715,9 @@ var ZabbixAPIDatasource = function () {
       _lodash2.default.forEach(target.functions, function (func) {
         func.params = _lodash2.default.map(func.params, function (param) {
           if (typeof param === 'number') {
-            return +_this11.templateSrv.replace(param.toString(), options.scopedVars);
+            return +_this12.templateSrv.replace(param.toString(), options.scopedVars);
           } else {
-            return _this11.templateSrv.replace(param, options.scopedVars);
+            return _this12.templateSrv.replace(param, options.scopedVars);
           }
         });
       });
@@ -694,9 +725,9 @@ var ZabbixAPIDatasource = function () {
   }, {
     key: 'isUseTrends',
     value: function isUseTrends(timeRange) {
-      var _timeRange3 = _slicedToArray(timeRange, 2),
-          timeFrom = _timeRange3[0],
-          timeTo = _timeRange3[1];
+      var _timeRange4 = _slicedToArray(timeRange, 2),
+          timeFrom = _timeRange4[0],
+          timeTo = _timeRange4[1];
 
       var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
       var useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
@@ -809,7 +840,7 @@ function filterEnabledTargets(targets) {
 }
 
 function getTriggerThreshold(expression) {
-  var thresholdPattern = /.*[<>=]{1,2}([\d\.]+)/;
+  var thresholdPattern = /.*[<>]([\d\.]+)/;
   var finded_thresholds = expression.match(thresholdPattern);
   if (finded_thresholds && finded_thresholds.length >= 2) {
     var threshold = finded_thresholds[1];

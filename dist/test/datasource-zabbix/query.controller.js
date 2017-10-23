@@ -60,16 +60,19 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     _this.replaceTemplateVars = _this.datasource.replaceTemplateVars;
     _this.templateSrv = templateSrv;
 
-    _this.editorModes = [{ value: 'num', text: 'Metrics', mode: c.MODE_METRICS }, { value: 'text', text: 'Text', mode: c.MODE_TEXT }, { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE }, { value: 'itemid', text: 'Item ID', mode: c.MODE_ITEMID }];
+    _this.editorModes = [{ value: 'num', text: 'Metrics', mode: c.MODE_METRICS }, { value: 'text', text: 'Text', mode: c.MODE_TEXT }, { value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE }, { value: 'itemid', text: 'Item ID', mode: c.MODE_ITEMID }, { value: 'triggers', text: 'Triggers', mode: c.MODE_TRIGGERS }];
 
     _this.$scope.editorMode = {
       METRICS: c.MODE_METRICS,
       TEXT: c.MODE_TEXT,
       ITSERVICE: c.MODE_ITSERVICE,
-      ITEMID: c.MODE_ITEMID
+      ITEMID: c.MODE_ITEMID,
+      TRIGGERS: c.MODE_TRIGGERS
     };
 
     _this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
+
+    _this.triggerSeverity = c.TRIGGER_SEVERITY;
 
     // Map functions for bs-typeahead
     _this.getGroupNames = _lodash2.default.bind(_this.getMetricNames, _this, 'groupList');
@@ -110,6 +113,8 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
         'application': { 'filter': "" },
         'item': { 'filter': "" },
         'functions': [],
+        'minSeverity': 3,
+        'countTriggers': true,
         'options': {
           'showDisabledItems': false
         }
@@ -121,8 +126,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
         return metricFunctions.createFuncInstance(func.def, func.params);
       });
 
-      if (target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
-
+      if (target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT || target.mode === c.MODE_TRIGGERS) {
         this.initFilters();
       } else if (target.mode === c.MODE_ITSERVICE) {
         _lodash2.default.defaults(target, { slaProperty: { name: "SLA", property: "sla" } });
@@ -131,6 +135,7 @@ var ZabbixQueryController = exports.ZabbixQueryController = function (_QueryCtrl
     };
 
     _this.init();
+    _this.queryOptionsText = _this.renderQueryOptionsText();
     return _this;
   }
 

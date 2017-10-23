@@ -26,8 +26,8 @@
       {"name": "Metric Editor", "path": "img/screenshot-metric_editor.png"},
       {"name": "Triggers", "path": "img/screenshot-triggers.png"}
     ],
-    "version": "3.6.1",
-    "updated": "2017-07-26"
+    "version": "3.7.0",
+    "updated": "2017-10-22"
   },
 
   "includes": [
@@ -45,12 +45,6 @@
       "path": "dashboards/zabbix_server_dashboard.json",
       "addToNav": true,
       "defaultNav": true
-    },
-    {
-      "type": "dashboard",
-      "name": "Template Linux Server",
-      "path": "dashboards/template_linux_server.json",
-      "addToNav": true
     }
   ],
 

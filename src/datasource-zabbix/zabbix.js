@@ -46,6 +46,7 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) 
       this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
       this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
       this.getAlerts = this.zabbixAPI.getAlerts.bind(this.zabbixAPI);
+      this.getHostAlerts = this.zabbixAPI.getHostAlerts.bind(this.zabbixAPI);
       this.getAcknowledges = this.zabbixAPI.getAcknowledges.bind(this.zabbixAPI);
       this.getITService = this.zabbixAPI.getITService.bind(this.zabbixAPI);
       this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
@@ -57,6 +58,21 @@ function ZabbixFactory(zabbixAPIService, ZabbixCachingProxy, ZabbixDBConnector) 
       let parts = ['group', 'host', 'application', 'item'];
       let filters = _.map(parts, p => target[p].filter);
       return this.getItems(...filters, options);
+    }
+
+    getHostsFromTarget(target) {
+      let parts = ['group', 'host', 'application'];
+      let filters = _.map(parts, p => target[p].filter);
+      return Promise.all([
+        this.getHosts(...filters),
+        this.getApps(...filters),
+      ]).then((results) => {
+        let [hosts, apps] = results;
+        if (apps.appFilterEmpty) {
+          apps = [];
+        }
+        return [hosts, apps];
+      });
     }
 
     getAllGroups() {

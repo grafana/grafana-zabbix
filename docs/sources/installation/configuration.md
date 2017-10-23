@@ -65,7 +65,7 @@ Read [how to configure](/installation/configuration-sql) SQL data source in Graf
 
 #### Supported databases
 
-Now only **MySQL** is supported by Grafana.
+**MySQL** and **PostgreSQL** are supported by Grafana.
 
 ### Alerting
 

@@ -433,6 +433,38 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
 
       return this.request('trigger.get', params);
     }
+
+    getHostAlerts(hostids, applicationids, minSeverity, count, timeFrom, timeTo) {
+      var params = {
+        output: 'extend',
+        hostids: hostids,
+        min_severity: minSeverity,
+        filter: { value: 1 },
+        expandDescription: true,
+        expandData: true,
+        expandComment: true,
+        monitored: true,
+        skipDependent: true,
+        selectLastEvent: 'extend',
+        selectGroups: 'extend',
+        selectHosts: ['host', 'name']
+      };
+
+      if (count) {
+        params.countOutput = true;
+      }
+
+      if (applicationids && applicationids.length) {
+        params.applicationids = applicationids;
+      }
+
+      if (timeFrom || timeTo) {
+        params.lastChangeSince = timeFrom;
+        params.lastChangeTill = timeTo;
+      }
+
+      return this.request('trigger.get', params);
+    }
   }
 
   return ZabbixAPI;
