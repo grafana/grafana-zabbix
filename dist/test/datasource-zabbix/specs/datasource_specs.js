@@ -325,7 +325,7 @@ describe('ZabbixDatasource', function () {
     });
   });
 
-  describe('When quering alerts', function () {
+  describe('When querying alerts', function () {
     var options = {};
 
     beforeEach(function () {

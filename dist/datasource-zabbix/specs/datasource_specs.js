@@ -235,7 +235,7 @@ describe('ZabbixDatasource', () => {
     });
   });
 
-  describe('When quering alerts', () => {
+  describe('When querying alerts', () => {
     let options = {};
 
     beforeEach(() => {
