@@ -53,11 +53,11 @@ _prunk2.default.mock('app/core/table_model', {});
 _prunk2.default.mock('angular', angularMocks);
 _prunk2.default.mock('jquery', 'module not found');
 
-// Setup jsdom
 // Required for loading angularjs
-global.document = (0, _jsdom.jsdom)('<html><head><script></script></head><body></body></html>');
-global.window = global.document.parentWindow;
-global.navigator = window.navigator = {};
+var dom = new _jsdom.JSDOM('<html><head><script></script></head><body></body></html>');
+// Setup jsdom
+global.window = dom.window;
+global.document = global.window.document;
 global.Node = window.Node;
 
 // Setup Chai
