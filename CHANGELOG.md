@@ -6,11 +6,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.7.0] - 2017-10-24
 ### Added
 - PostgreSQL support for Direct DB Connection.
 - _Triggers_ query mode which allows to count active alerts by group, host and application, [#141](https://github.com/alexanderzobnin/grafana-zabbix/issues/141)
 - `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447)
 - `percentil()` function
+- _Zabbix System Status_ example dashboard.
+
+### Changed
+- Included dashboards moved to data source. Go to the data source config to import it.
 
 ### Fixed
 - Direct DB connection doesn't work with `ONLY_FULL_GROUP_BY` option enabled, [#445](https://github.com/alexanderzobnin/grafana-zabbix/issues/445)
