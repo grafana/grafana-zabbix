@@ -730,7 +730,7 @@ function filterEnabledTargets(targets) {
 }
 
 function getTriggerThreshold(expression) {
-  let thresholdPattern = /.*[<>]([\d\.]+)/;
+  let thresholdPattern = /.*[<>=]{1,2}([\d\.]+)/;
   let finded_thresholds = expression.match(thresholdPattern);
   if (finded_thresholds && finded_thresholds.length >= 2) {
     let threshold = finded_thresholds[1];

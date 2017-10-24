@@ -2,7 +2,7 @@
 /* globals global: false */
 
 import prunk from 'prunk';
-import {jsdom} from 'jsdom';
+import {JSDOM} from 'jsdom';
 import chai from 'chai';
 // import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -36,11 +36,11 @@ prunk.mock('app/core/table_model', {});
 prunk.mock('angular', angularMocks);
 prunk.mock('jquery', 'module not found');
 
-// Setup jsdom
 // Required for loading angularjs
-global.document = jsdom('<html><head><script></script></head><body></body></html>');
-global.window = global.document.parentWindow;
-global.navigator = window.navigator = {};
+let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
+// Setup jsdom
+global.window = dom.window;
+global.document = global.window.document;
 global.Node = window.Node;
 
 // Setup Chai

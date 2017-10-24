@@ -840,7 +840,7 @@ function filterEnabledTargets(targets) {
 }
 
 function getTriggerThreshold(expression) {
-  var thresholdPattern = /.*[<>]([\d\.]+)/;
+  var thresholdPattern = /.*[<>=]{1,2}([\d\.]+)/;
   var finded_thresholds = expression.match(thresholdPattern);
   if (finded_thresholds && finded_thresholds.length >= 2) {
     var threshold = finded_thresholds[1];
