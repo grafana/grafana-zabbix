@@ -18,6 +18,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var AUTO_THRESHOLDS_KEYWORD = "$auto";
+
 var ZabbixAlertingService = function () {
 
   /** @ngInject */
@@ -89,6 +91,21 @@ var ZabbixAlertingService = function () {
       });
     }
   }, {
+    key: 'setSingleStatThresholds',
+    value: function setSingleStatThresholds(panelId, thresholds) {
+      if (!thresholds || thresholds.length === 0) {
+        return;
+      }
+
+      var panel = this.getPanelModel(panelId);
+      if (panel && panel.type === "singlestat" && panel.thresholds === AUTO_THRESHOLDS_KEYWORD) {
+        var parsedThresholds = parseThresholds(thresholds);
+        panel.thresholds = parsedThresholds.join();
+        var maxThreshold = parsedThresholds[1];
+        panel.gauge.maxValue = Math.ceil(maxThreshold * 1.1);
+      }
+    }
+  }, {
     key: 'setPanelThreshold',
     value: function setPanelThreshold(panelId, threshold) {
       var panel = this.getPanelModel(panelId);
@@ -123,5 +140,15 @@ var ZabbixAlertingService = function () {
 
   return ZabbixAlertingService;
 }();
+
+function parseThresholds(thresholds) {
+  if (thresholds.length === 1) {
+    return [thresholds[0], thresholds[0]];
+  }
+
+  return [thresholds[0], thresholds[thresholds.length - 1]].sort(function (a, b) {
+    return a - b;
+  });
+}
 
 _angular2.default.module('grafana.services').service('zabbixAlertingSrv', ZabbixAlertingService);

@@ -2,6 +2,8 @@ import _ from 'lodash';
 import $ from 'jquery';
 import angular from 'angular';
 
+const AUTO_THRESHOLDS_KEYWORD = "$auto";
+
 class ZabbixAlertingService {
 
   /** @ngInject */
@@ -66,6 +68,20 @@ class ZabbixAlertingService {
     });
   }
 
+  setSingleStatThresholds(panelId, thresholds) {
+    if (!thresholds || thresholds.length === 0) {
+      return;
+    }
+
+    let panel = this.getPanelModel(panelId);
+    if (panel && panel.type === "singlestat" && panel.thresholds === AUTO_THRESHOLDS_KEYWORD) {
+      let parsedThresholds = parseThresholds(thresholds);
+      panel.thresholds = parsedThresholds.join();
+      let maxThreshold = parsedThresholds[1];
+      panel.gauge.maxValue = Math.ceil(maxThreshold * 1.1);
+    }
+  }
+
   setPanelThreshold(panelId, threshold) {
     let panel = this.getPanelModel(panelId);
     let containsThreshold = _.find(panel.thresholds, {value: threshold});
@@ -95,6 +111,14 @@ class ZabbixAlertingService {
     }
   }
 
+}
+
+function parseThresholds(thresholds) {
+  if(thresholds.length === 1) {
+    return [thresholds[0], thresholds[0]];
+  }
+
+  return [thresholds[0], thresholds[thresholds.length -1]].sort((a, b) => a - b);
 }
 
 angular

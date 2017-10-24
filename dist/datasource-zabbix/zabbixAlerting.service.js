@@ -3,12 +3,22 @@
 System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
   "use strict";
 
-  var _, $, angular, _createClass, ZabbixAlertingService;
+  var _, $, angular, _createClass, AUTO_THRESHOLDS_KEYWORD, ZabbixAlertingService;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
       throw new TypeError("Cannot call a class as a function");
     }
+  }
+
+  function parseThresholds(thresholds) {
+    if (thresholds.length === 1) {
+      return [thresholds[0], thresholds[0]];
+    }
+
+    return [thresholds[0], thresholds[thresholds.length - 1]].sort(function (a, b) {
+      return a - b;
+    });
   }
 
   return {
@@ -37,6 +47,8 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
           return Constructor;
         };
       }();
+
+      AUTO_THRESHOLDS_KEYWORD = "$auto";
 
       ZabbixAlertingService = function () {
 
@@ -107,6 +119,21 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
             return _.find(panelModels, function (panel) {
               return panel.id === panelId;
             });
+          }
+        }, {
+          key: 'setSingleStatThresholds',
+          value: function setSingleStatThresholds(panelId, thresholds) {
+            if (!thresholds || thresholds.length === 0) {
+              return;
+            }
+
+            var panel = this.getPanelModel(panelId);
+            if (panel && panel.type === "singlestat" && panel.thresholds === AUTO_THRESHOLDS_KEYWORD) {
+              var parsedThresholds = parseThresholds(thresholds);
+              panel.thresholds = parsedThresholds.join();
+              var maxThreshold = parsedThresholds[1];
+              panel.gauge.maxValue = Math.ceil(maxThreshold * 1.1);
+            }
           }
         }, {
           key: 'setPanelThreshold',

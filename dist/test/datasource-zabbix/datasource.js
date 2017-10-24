@@ -137,6 +137,7 @@ var ZabbixAPIDatasource = function () {
             _lodash2.default.forEach(alert.thresholds, function (threshold) {
               _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
             });
+            _this.zabbixAlertingSrv.setSingleStatThresholds(options.panelId, alert.thresholds);
           }
         });
       }
@@ -687,6 +688,8 @@ var ZabbixAPIDatasource = function () {
 
         var thresholds = _lodash2.default.map(triggers, function (trigger) {
           return getTriggerThreshold(trigger.expression);
+        }).filter(function (trigger) {
+          return trigger != null;
         });
 
         return {

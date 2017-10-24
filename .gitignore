@@ -3,6 +3,7 @@
 
 .idea/
 .vscode
+*iml
 
 *.bat
 
