@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - PostgreSQL support for Direct DB Connection.
 - _Triggers_ query mode which allows to count active alerts by group, host and application, [#141](https://github.com/alexanderzobnin/grafana-zabbix/issues/141)
-- `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447)
-- `percentil()` function
+- `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447), thanks for [@mdorenkamp](https://github.com/mdorenkamp)
+- `percentil()` function, thanks for [@pedrohrf](https://github.com/pedrohrf)
 - _Zabbix System Status_ example dashboard.
 
 ### Changed
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - "data points outside time range" error when there is no datapoints and aggregation function is used
 - Missed Max data points option in Grafana 4.5+
 - Missed query editor help in Grafana 4.5+
+- Alert threshold detection with `<=` `>=` `=` operators, thanks for [@akotynski](https://github.com/akotynski).
 
 ## [3.6.1] - 2017-07-26
 ### Fixed
