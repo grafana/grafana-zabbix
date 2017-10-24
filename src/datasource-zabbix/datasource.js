@@ -116,8 +116,7 @@ class ZabbixAPIDatasource {
       let useTrends = this.isUseTrends(timeRange);
 
       // Metrics or Text query mode
-      if (!target.mode || target.mode === c.MODE_METRICS ||
-          target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
+      if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
         // Migrate old targets
         target = migrations.migrate(target);
 
@@ -130,13 +129,18 @@ class ZabbixAPIDatasource {
           return this.queryNumericData(target, timeRange, useTrends, options);
         } else if (target.mode === c.MODE_TEXT) {
           return this.queryTextData(target, timeRange);
-        } else if (target.mode === c.MODE_ITEMID) {
-          return this.queryItemIdData(target, timeRange, useTrends, options);
         }
+      } else if (target.mode === c.MODE_ITEMID) {
+        // Item ID mode
+        if (!target.itemids) {
+          return [];
+        }
+        return this.queryItemIdData(target, timeRange, useTrends, options);
       } else if (target.mode === c.MODE_ITSERVICE) {
         // IT services mode
         return this.queryITServiceData(target, timeRange, options);
       } else if (target.mode === c.MODE_TRIGGERS) {
+        // Triggers mode
         return this.queryTriggersData(target, timeRange);
       } else {
         return [];

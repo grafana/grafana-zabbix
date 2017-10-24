@@ -318,7 +318,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               var useTrends = _this.isUseTrends(timeRange);
 
               // Metrics or Text query mode
-              if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
+              if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
                 // Migrate old targets
                 target = migrations.migrate(target);
 
@@ -331,13 +331,18 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                   return _this.queryNumericData(target, timeRange, useTrends, options);
                 } else if (target.mode === c.MODE_TEXT) {
                   return _this.queryTextData(target, timeRange);
-                } else if (target.mode === c.MODE_ITEMID) {
-                  return _this.queryItemIdData(target, timeRange, useTrends, options);
                 }
+              } else if (target.mode === c.MODE_ITEMID) {
+                // Item ID mode
+                if (!target.itemids) {
+                  return [];
+                }
+                return _this.queryItemIdData(target, timeRange, useTrends, options);
               } else if (target.mode === c.MODE_ITSERVICE) {
                 // IT services mode
                 return _this.queryITServiceData(target, timeRange, options);
               } else if (target.mode === c.MODE_TRIGGERS) {
+                // Triggers mode
                 return _this.queryTriggersData(target, timeRange);
               } else {
                 return [];
