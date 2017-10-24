@@ -45,6 +45,12 @@ export class ZabbixQueryController extends QueryCtrl {
       {name: "Down time", property: "downtimeTime"}
     ];
 
+    this.ackFilters = [
+      {text: 'all triggers', value: 2},
+      {text: 'unacknowledged', value: 0},
+      {text: 'acknowledged', value: 1},
+    ];
+
     this.triggerSeverity = c.TRIGGER_SEVERITY;
 
     // Map functions for bs-typeahead
@@ -84,8 +90,11 @@ export class ZabbixQueryController extends QueryCtrl {
         'application': { 'filter': "" },
         'item': { 'filter': "" },
         'functions': [],
-        'minSeverity': 3,
-        'countTriggers': true,
+        'triggers': {
+          'count': true,
+          'minSeverity': 3,
+          'acknowledged': 2
+        },
         'options': {
           'showDisabledItems': false
         }

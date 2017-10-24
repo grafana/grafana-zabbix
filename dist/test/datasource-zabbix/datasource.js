@@ -457,7 +457,14 @@ var ZabbixAPIDatasource = function () {
         if (hosts.length) {
           var hostids = _lodash2.default.map(hosts, 'hostid');
           var appids = _lodash2.default.map(apps, 'applicationid');
-          return _this7.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.countTriggers, timeFrom, timeTo).then(function (triggers) {
+          var options = {
+            minSeverity: target.triggers.minSeverity,
+            acknowledged: target.triggers.acknowledged,
+            count: target.triggers.count,
+            timeFrom: timeFrom,
+            timeTo: timeTo
+          };
+          return _this7.zabbix.getHostAlerts(hostids, appids, options).then(function (triggers) {
             return _responseHandler2.default.handleTriggersResponse(triggers, timeRange);
           });
         } else {

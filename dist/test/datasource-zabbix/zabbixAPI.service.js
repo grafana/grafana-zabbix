@@ -487,7 +487,13 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       }
     }, {
       key: 'getHostAlerts',
-      value: function getHostAlerts(hostids, applicationids, minSeverity, count, timeFrom, timeTo) {
+      value: function getHostAlerts(hostids, applicationids, options) {
+        var minSeverity = options.minSeverity,
+            acknowledged = options.acknowledged,
+            count = options.count,
+            timeFrom = options.timeFrom,
+            timeTo = options.timeTo;
+
         var params = {
           output: 'extend',
           hostids: hostids,
@@ -503,7 +509,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
           selectHosts: ['host', 'name']
         };
 
-        if (count) {
+        if (count && acknowledged !== 0 && acknowledged !== 1) {
           params.countOutput = true;
         }
 
@@ -516,7 +522,15 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
           params.lastChangeTill = timeTo;
         }
 
-        return this.request('trigger.get', params);
+        return this.request('trigger.get', params).then(function (triggers) {
+          if (!count || acknowledged === 0 || acknowledged === 1) {
+            triggers = filterTriggersByAcknowledge(triggers, acknowledged);
+            if (count) {
+              triggers = triggers.length;
+            }
+          }
+          return triggers;
+        });
       }
     }]);
 
@@ -524,6 +538,20 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
   }();
 
   return ZabbixAPI;
+}
+
+function filterTriggersByAcknowledge(triggers, acknowledged) {
+  if (acknowledged === 0) {
+    return _lodash2.default.filter(triggers, function (trigger) {
+      return trigger.lastEvent.acknowledged === "0";
+    });
+  } else if (acknowledged === 1) {
+    return _lodash2.default.filter(triggers, function (trigger) {
+      return trigger.lastEvent.acknowledged === "1";
+    });
+  } else {
+    return triggers;
+  }
 }
 
 function isNotAuthorized(message) {

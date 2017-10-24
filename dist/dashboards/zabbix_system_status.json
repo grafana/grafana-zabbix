@@ -171,7 +171,6 @@
               "application": {
                 "filter": ""
               },
-              "countTriggers": false,
               "functions": [],
               "group": {
                 "filter": "/.*/"
@@ -182,11 +181,11 @@
               "item": {
                 "filter": ""
               },
-              "minSeverity": 0,
               "mode": 4,
-              "options": {
-                "countTriggers": false,
-                "showDisabledItems": false
+              "triggers": {
+                "count": false,
+                "minSeverity": 0,
+                "acknowledged": 2
               },
               "refId": "A",
               "target": ""
@@ -269,7 +268,6 @@
               "application": {
                 "filter": ""
               },
-              "countTriggers": true,
               "functions": [],
               "group": {
                 "filter": "$group"
@@ -280,10 +278,11 @@
               "item": {
                 "filter": ""
               },
-              "minSeverity": 3,
               "mode": 4,
-              "options": {
-                "showDisabledItems": false
+              "triggers": {
+                "count": true,
+                "minSeverity": 3,
+                "acknowledged": 2
               },
               "refId": "A",
               "target": ""

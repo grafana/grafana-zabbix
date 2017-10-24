@@ -362,7 +362,14 @@ class ZabbixAPIDatasource {
       if (hosts.length) {
         let hostids = _.map(hosts, 'hostid');
         let appids = _.map(apps, 'applicationid');
-        return this.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.countTriggers, timeFrom, timeTo)
+        let options = {
+          minSeverity: target.triggers.minSeverity,
+          acknowledged: target.triggers.acknowledged,
+          count: target.triggers.count,
+          timeFrom: timeFrom,
+          timeTo: timeTo
+        };
+        return this.zabbix.getHostAlerts(hostids, appids, options)
         .then((triggers) => {
           return responseHandler.handleTriggersResponse(triggers, timeRange);
         });
