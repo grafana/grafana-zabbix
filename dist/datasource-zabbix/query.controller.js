@@ -95,6 +95,8 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
 
           _this.slaPropertyList = [{ name: "Status", property: "status" }, { name: "SLA", property: "sla" }, { name: "OK time", property: "okTime" }, { name: "Problem time", property: "problemTime" }, { name: "Down time", property: "downtimeTime" }];
 
+          _this.ackFilters = [{ text: 'all triggers', value: 2 }, { text: 'unacknowledged', value: 0 }, { text: 'acknowledged', value: 1 }];
+
           _this.triggerSeverity = c.TRIGGER_SEVERITY;
 
           // Map functions for bs-typeahead
@@ -136,8 +138,11 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
               'application': { 'filter': "" },
               'item': { 'filter': "" },
               'functions': [],
-              'minSeverity': 3,
-              'countTriggers': true,
+              'triggers': {
+                'count': true,
+                'minSeverity': 3,
+                'acknowledged': 2
+              },
               'options': {
                 'showDisabledItems': false
               }

@@ -117,8 +117,7 @@ class ZabbixAPIDatasource {
       let useTrends = this.isUseTrends(timeRange);
 
       // Metrics or Text query mode
-      if (!target.mode || target.mode === c.MODE_METRICS ||
-          target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
+      if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
         // Migrate old targets
         target = migrations.migrate(target);
 
@@ -131,13 +130,18 @@ class ZabbixAPIDatasource {
           return this.queryNumericData(target, timeRange, useTrends, options);
         } else if (target.mode === c.MODE_TEXT) {
           return this.queryTextData(target, timeRange);
-        } else if (target.mode === c.MODE_ITEMID) {
-          return this.queryItemIdData(target, timeRange, useTrends, options);
         }
+      } else if (target.mode === c.MODE_ITEMID) {
+        // Item ID mode
+        if (!target.itemids) {
+          return [];
+        }
+        return this.queryItemIdData(target, timeRange, useTrends, options);
       } else if (target.mode === c.MODE_ITSERVICE) {
         // IT services mode
         return this.queryITServiceData(target, timeRange, options);
       } else if (target.mode === c.MODE_TRIGGERS) {
+        // Triggers mode
         return this.queryTriggersData(target, timeRange);
       } else {
         return [];
@@ -363,7 +367,14 @@ class ZabbixAPIDatasource {
       if (hosts.length) {
         let hostids = _.map(hosts, 'hostid');
         let appids = _.map(apps, 'applicationid');
-        return this.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.countTriggers, timeFrom, timeTo)
+        let options = {
+          minSeverity: target.triggers.minSeverity,
+          acknowledged: target.triggers.acknowledged,
+          count: target.triggers.count,
+          timeFrom: timeFrom,
+          timeTo: timeTo
+        };
+        return this.zabbix.getHostAlerts(hostids, appids, options)
         .then((triggers) => {
           return responseHandler.handleTriggersResponse(triggers, timeRange);
         });
@@ -566,6 +577,9 @@ class ZabbixAPIDatasource {
       let items = _.flatten(results);
       let itemids = _.map(items, 'itemid');
 
+      if (itemids.length === 0) {
+        return [];
+      }
       return this.zabbix.getAlerts(itemids);
     })
     .then(triggers => {
@@ -731,7 +745,7 @@ function filterEnabledTargets(targets) {
 }
 
 function getTriggerThreshold(expression) {
-  let thresholdPattern = /.*[<>]([\d\.]+)/;
+  let thresholdPattern = /.*[<>=]{1,2}([\d\.]+)/;
   let finded_thresholds = expression.match(thresholdPattern);
   if (finded_thresholds && finded_thresholds.length >= 2) {
     let threshold = finded_thresholds[1];

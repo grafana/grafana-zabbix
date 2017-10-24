@@ -137,7 +137,6 @@ var ZabbixAPIDatasource = function () {
             _lodash2.default.forEach(alert.thresholds, function (threshold) {
               _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
             });
-            _this.zabbixAlertingSrv.setSingleStatThresholds(options.panelId, alert.thresholds);
           }
         });
       }
@@ -172,7 +171,7 @@ var ZabbixAPIDatasource = function () {
         var useTrends = _this.isUseTrends(timeRange);
 
         // Metrics or Text query mode
-        if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT || target.mode === c.MODE_ITEMID) {
+        if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
           // Migrate old targets
           target = migrations.migrate(target);
 
@@ -185,13 +184,18 @@ var ZabbixAPIDatasource = function () {
             return _this.queryNumericData(target, timeRange, useTrends, options);
           } else if (target.mode === c.MODE_TEXT) {
             return _this.queryTextData(target, timeRange);
-          } else if (target.mode === c.MODE_ITEMID) {
-            return _this.queryItemIdData(target, timeRange, useTrends, options);
           }
+        } else if (target.mode === c.MODE_ITEMID) {
+          // Item ID mode
+          if (!target.itemids) {
+            return [];
+          }
+          return _this.queryItemIdData(target, timeRange, useTrends, options);
         } else if (target.mode === c.MODE_ITSERVICE) {
           // IT services mode
           return _this.queryITServiceData(target, timeRange, options);
         } else if (target.mode === c.MODE_TRIGGERS) {
+          // Triggers mode
           return _this.queryTriggersData(target, timeRange);
         } else {
           return [];
@@ -458,7 +462,14 @@ var ZabbixAPIDatasource = function () {
         if (hosts.length) {
           var hostids = _lodash2.default.map(hosts, 'hostid');
           var appids = _lodash2.default.map(apps, 'applicationid');
-          return _this7.zabbix.getHostAlerts(hostids, appids, target.minSeverity, target.countTriggers, timeFrom, timeTo).then(function (triggers) {
+          var options = {
+            minSeverity: target.triggers.minSeverity,
+            acknowledged: target.triggers.acknowledged,
+            count: target.triggers.count,
+            timeFrom: timeFrom,
+            timeTo: timeTo
+          };
+          return _this7.zabbix.getHostAlerts(hostids, appids, options).then(function (triggers) {
             return _responseHandler2.default.handleTriggersResponse(triggers, timeRange);
           });
         } else {
@@ -669,6 +680,9 @@ var ZabbixAPIDatasource = function () {
         var items = _lodash2.default.flatten(results);
         var itemids = _lodash2.default.map(items, 'itemid');
 
+        if (itemids.length === 0) {
+          return [];
+        }
         return _this11.zabbix.getAlerts(itemids);
       }).then(function (triggers) {
         triggers = _lodash2.default.filter(triggers, function (trigger) {
@@ -688,8 +702,6 @@ var ZabbixAPIDatasource = function () {
 
         var thresholds = _lodash2.default.map(triggers, function (trigger) {
           return getTriggerThreshold(trigger.expression);
-        }).filter(function (trigger) {
-          return trigger != null;
         });
 
         return {
@@ -843,7 +855,7 @@ function filterEnabledTargets(targets) {
 }
 
 function getTriggerThreshold(expression) {
-  var thresholdPattern = /.*[<>]([\d\.]+)/;
+  var thresholdPattern = /.*[<>=]{1,2}([\d\.]+)/;
   var finded_thresholds = expression.match(thresholdPattern);
   if (finded_thresholds && finded_thresholds.length >= 2) {
     var threshold = finded_thresholds[1];

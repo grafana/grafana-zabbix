@@ -434,8 +434,9 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       return this.request('trigger.get', params);
     }
 
-    getHostAlerts(hostids, applicationids, minSeverity, count, timeFrom, timeTo) {
-      var params = {
+    getHostAlerts(hostids, applicationids, options) {
+      let {minSeverity, acknowledged, count, timeFrom, timeTo} = options;
+      let params = {
         output: 'extend',
         hostids: hostids,
         min_severity: minSeverity,
@@ -450,7 +451,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         selectHosts: ['host', 'name']
       };
 
-      if (count) {
+      if (count && acknowledged !== 0 && acknowledged !== 1) {
         params.countOutput = true;
       }
 
@@ -463,11 +464,30 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         params.lastChangeTill = timeTo;
       }
 
-      return this.request('trigger.get', params);
+      return this.request('trigger.get', params)
+      .then((triggers) => {
+        if (!count || acknowledged === 0 || acknowledged === 1) {
+          triggers = filterTriggersByAcknowledge(triggers, acknowledged);
+          if (count) {
+            triggers = triggers.length;
+          }
+        }
+        return triggers;
+      });
     }
   }
 
   return ZabbixAPI;
+}
+
+function filterTriggersByAcknowledge(triggers, acknowledged) {
+  if (acknowledged === 0) {
+    return _.filter(triggers, (trigger) => trigger.lastEvent.acknowledged === "0");
+  } else if (acknowledged === 1) {
+    return _.filter(triggers, (trigger) => trigger.lastEvent.acknowledged === "1");
+  } else {
+    return triggers;
+  }
 }
 
 function isNotAuthorized(message) {

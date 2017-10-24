@@ -415,7 +415,13 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
         }
       }, {
         key: 'getHostAlerts',
-        value: function getHostAlerts(hostids, applicationids, minSeverity, count, timeFrom, timeTo) {
+        value: function getHostAlerts(hostids, applicationids, options) {
+          var minSeverity = options.minSeverity,
+              acknowledged = options.acknowledged,
+              count = options.count,
+              timeFrom = options.timeFrom,
+              timeTo = options.timeTo;
+
           var params = {
             output: 'extend',
             hostids: hostids,
@@ -431,7 +437,7 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
             selectHosts: ['host', 'name']
           };
 
-          if (count) {
+          if (count && acknowledged !== 0 && acknowledged !== 1) {
             params.countOutput = true;
           }
 
@@ -444,7 +450,15 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
             params.lastChangeTill = timeTo;
           }
 
-          return this.request('trigger.get', params);
+          return this.request('trigger.get', params).then(function (triggers) {
+            if (!count || acknowledged === 0 || acknowledged === 1) {
+              triggers = filterTriggersByAcknowledge(triggers, acknowledged);
+              if (count) {
+                triggers = triggers.length;
+              }
+            }
+            return triggers;
+          });
         }
       }]);
 
@@ -452,6 +466,20 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
     }();
 
     return ZabbixAPI;
+  }
+
+  function filterTriggersByAcknowledge(triggers, acknowledged) {
+    if (acknowledged === 0) {
+      return _.filter(triggers, function (trigger) {
+        return trigger.lastEvent.acknowledged === "0";
+      });
+    } else if (acknowledged === 1) {
+      return _.filter(triggers, function (trigger) {
+        return trigger.lastEvent.acknowledged === "1";
+      });
+    } else {
+      return triggers;
+    }
   }
 
   function isNotAuthorized(message) {
