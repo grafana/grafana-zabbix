@@ -771,6 +771,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               var items = _.flatten(results);
               var itemids = _.map(items, 'itemid');
 
+              if (itemids.length === 0) {
+                return [];
+              }
               return _this11.zabbix.getAlerts(itemids);
             }).then(function (triggers) {
               triggers = _.filter(triggers, function (trigger) {

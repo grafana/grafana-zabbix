@@ -576,6 +576,9 @@ class ZabbixAPIDatasource {
       let items = _.flatten(results);
       let itemids = _.map(items, 'itemid');
 
+      if (itemids.length === 0) {
+        return [];
+      }
       return this.zabbix.getAlerts(itemids);
     })
     .then(triggers => {

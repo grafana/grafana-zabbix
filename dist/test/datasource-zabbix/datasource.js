@@ -680,6 +680,9 @@ var ZabbixAPIDatasource = function () {
         var items = _lodash2.default.flatten(results);
         var itemids = _lodash2.default.map(items, 'itemid');
 
+        if (itemids.length === 0) {
+          return [];
+        }
         return _this11.zabbix.getAlerts(itemids);
       }).then(function (triggers) {
         triggers = _lodash2.default.filter(triggers, function (trigger) {
