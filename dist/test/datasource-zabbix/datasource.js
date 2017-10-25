@@ -134,9 +134,7 @@ var ZabbixAPIDatasource = function () {
 
           _this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
           if (_this.addThresholds) {
-            _lodash2.default.forEach(alert.thresholds, function (threshold) {
-              _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
-            });
+            _this.zabbixAlertingSrv.setThresholds(options.panelId, alert.thresholds);
           }
         });
       }

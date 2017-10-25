@@ -11,6 +11,47 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
     }
   }
 
+  function setGraphThreshold(panel, threshold) {
+    var containsThreshold = _.find(panel.thresholds, { value: threshold });
+
+    if (panel && panel.type === "graph" && !containsThreshold) {
+      var thresholdOptions = {
+        colorMode: "custom",
+        fill: false,
+        line: true,
+        lineColor: "rgb(255, 0, 0)",
+        op: "gt",
+        value: threshold,
+        source: "zabbix"
+      };
+
+      panel.thresholds.push(thresholdOptions);
+    }
+  }
+
+  function setAlarmBoxThresholds(panel, thresholds) {
+    if (panel.type === "btplc-alarm-box-panel") {
+      var thresh = thresholds.sort(function (a, b) {
+        return a - b;
+      }).map(function (value, index, array) {
+        return {
+          color: getColor(index, array.length),
+          value: value
+        };
+      });
+      panel.thresholds = panel.thresholds.concat(thresh);
+    }
+  }
+
+  function setSingleStatThresholds(panel, thresholds) {
+    if (panel.type === "singlestat" && panel.thresholds === AUTO_THRESHOLDS_KEYWORD) {
+      var parsedThresholds = parseThresholds(thresholds);
+      panel.thresholds = parsedThresholds.join();
+      var maxThreshold = parsedThresholds[1];
+      panel.gauge.maxValue = Math.ceil(maxThreshold * 1.1);
+    }
+  }
+
   function parseThresholds(thresholds) {
     if (thresholds.length === 1) {
       return [thresholds[0], thresholds[0]];
@@ -19,6 +60,13 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
     return [thresholds[0], thresholds[thresholds.length - 1]].sort(function (a, b) {
       return a - b;
     });
+  }
+
+  function getColor(index, thresholdsCount) {
+    var scale = 255 / thresholdsCount;
+
+    var g = Math.floor((index + 1) * scale);
+    return 'rgb(255, ' + (255 - g) + ', 0)';
   }
 
   return {
@@ -121,39 +169,23 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
             });
           }
         }, {
-          key: 'setSingleStatThresholds',
-          value: function setSingleStatThresholds(panelId, thresholds) {
+          key: 'setThresholds',
+          value: function setThresholds(panelId, thresholds) {
             if (!thresholds || thresholds.length === 0) {
               return;
             }
 
             var panel = this.getPanelModel(panelId);
-            if (panel && panel.type === "singlestat" && panel.thresholds === AUTO_THRESHOLDS_KEYWORD) {
-              var parsedThresholds = parseThresholds(thresholds);
-              panel.thresholds = parsedThresholds.join();
-              var maxThreshold = parsedThresholds[1];
-              panel.gauge.maxValue = Math.ceil(maxThreshold * 1.1);
+            if (!panel) {
+              return;
             }
-          }
-        }, {
-          key: 'setPanelThreshold',
-          value: function setPanelThreshold(panelId, threshold) {
-            var panel = this.getPanelModel(panelId);
-            var containsThreshold = _.find(panel.thresholds, { value: threshold });
 
-            if (panel && panel.type === "graph" && !containsThreshold) {
-              var thresholdOptions = {
-                colorMode: "custom",
-                fill: false,
-                line: true,
-                lineColor: "rgb(255, 0, 0)",
-                op: "gt",
-                value: threshold,
-                source: "zabbix"
-              };
+            thresholds.forEach(function (threshold) {
+              setGraphThreshold(panel, threshold);
+            });
 
-              panel.thresholds.push(thresholdOptions);
-            }
+            setSingleStatThresholds(panel, thresholds);
+            setAlarmBoxThresholds(panel, thresholds);
           }
         }, {
           key: 'removeZabbixThreshold',

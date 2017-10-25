@@ -83,10 +83,7 @@ class ZabbixAPIDatasource {
 
         this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
         if (this.addThresholds) {
-          _.forEach(alert.thresholds, threshold => {
-            this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
-          });
-          this.zabbixAlertingSrv.setSingleStatThresholds(options.panelId, alert.thresholds);
+          this.zabbixAlertingSrv.setThresholds(options.panelId, alert.thresholds);
         }
       });
     }
@@ -600,7 +597,7 @@ class ZabbixAPIDatasource {
 
       let thresholds = _.map(triggers, trigger => {
         return getTriggerThreshold(trigger.expression);
-      }).filter(trigger => trigger != null);
+      });
 
       return {
         panelId: options.panelId,

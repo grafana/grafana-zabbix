@@ -281,9 +281,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
                 _this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
                 if (_this.addThresholds) {
-                  _.forEach(alert.thresholds, function (threshold) {
-                    _this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
-                  });
+                  _this.zabbixAlertingSrv.setThresholds(options.panelId, alert.thresholds);
                 }
               });
             }
