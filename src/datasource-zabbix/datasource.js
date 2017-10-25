@@ -77,8 +77,9 @@ class ZabbixAPIDatasource {
    */
   query(options) {
     // Get alerts for current panel
+    let emptyPromise = Promise.resolve();
     if (this.alertingEnabled) {
-      this.alertQuery(options).then(alert => {
+      emptyPromise = this.alertQuery(options).then(alert => {
         this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
 
         this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
@@ -146,11 +147,11 @@ class ZabbixAPIDatasource {
     });
 
     // Data for panel (all targets)
-    return Promise.all(_.flatten(promises))
+    return emptyPromise.then(() => Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(data => {
         return { data: data };
-      });
+      }));
   }
 
   /**

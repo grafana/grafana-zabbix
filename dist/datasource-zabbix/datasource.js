@@ -275,8 +275,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var _this = this;
 
             // Get alerts for current panel
+            var emptyPromise = Promise.resolve();
             if (this.alertingEnabled) {
-              this.alertQuery(options).then(function (alert) {
+              emptyPromise = this.alertQuery(options).then(function (alert) {
                 _this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
 
                 _this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
@@ -348,8 +349,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             });
 
             // Data for panel (all targets)
-            return Promise.all(_.flatten(promises)).then(_.flatten).then(function (data) {
-              return { data: data };
+            return emptyPromise.then(function () {
+              return Promise.all(_.flatten(promises)).then(_.flatten).then(function (data) {
+                return { data: data };
+              });
             });
           }
         }, {
