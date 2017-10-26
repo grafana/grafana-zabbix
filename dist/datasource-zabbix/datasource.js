@@ -364,6 +364,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               itemtype: 'num'
             };
             return this.zabbix.getItemsFromTarget(target, getItemOptions).then(function (items) {
+              _this2.setDescription(items, options);
               return _this2.queryNumericDataForItems(items, target, timeRange, useTrends, options);
             });
           }
@@ -837,6 +838,18 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             var useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
             var useTrends = this.trends && (timeFrom <= useTrendsFrom || timeTo - timeFrom >= useTrendsRange);
             return useTrends;
+          }
+        }, {
+          key: 'setDescription',
+          value: function setDescription(items, options) {
+            var panelModel = this.dashboardSrv.dash.getPanelById(options.panelId);
+            var desc = items.map(function (i) {
+              return i.description;
+            });
+            desc = desc.length === 1 ? desc[0] : desc;
+            panelModel.scopedVars.description = {
+              value: desc
+            };
           }
         }]);
 

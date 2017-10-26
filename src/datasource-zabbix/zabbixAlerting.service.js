@@ -2,8 +2,6 @@ import _ from 'lodash';
 import $ from 'jquery';
 import angular from 'angular';
 
-const AUTO_THRESHOLDS_KEYWORD = "$auto";
-
 class ZabbixAlertingService {
 
   /** @ngInject */
@@ -129,11 +127,17 @@ function setAlarmBoxThresholds(panel, thresholds) {
 }
 
 function setSingleStatThresholds(panel, thresholds) {
-  if (panel.type === "singlestat" && panel.thresholds === AUTO_THRESHOLDS_KEYWORD) {
+  if (panel.type === "singlestat") {
     let parsedThresholds = parseThresholds(thresholds);
-    panel.thresholds = parsedThresholds.join();
+    let thresholdsString = parsedThresholds.join();
+    panel.thresholds = thresholdsString;
     let maxThreshold = parsedThresholds[1];
     panel.gauge.maxValue = Math.ceil(maxThreshold * 1.1);
+
+    panel.scopedVars.thresholds = {
+      text: thresholdsString,
+      value: thresholdsString
+    };
   }
 }
 

@@ -18,8 +18,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var AUTO_THRESHOLDS_KEYWORD = "$auto";
-
 var ZabbixAlertingService = function () {
 
   /** @ngInject */
@@ -158,11 +156,17 @@ function setAlarmBoxThresholds(panel, thresholds) {
 }
 
 function setSingleStatThresholds(panel, thresholds) {
-  if (panel.type === "singlestat" && panel.thresholds === AUTO_THRESHOLDS_KEYWORD) {
+  if (panel.type === "singlestat") {
     var parsedThresholds = parseThresholds(thresholds);
-    panel.thresholds = parsedThresholds.join();
+    var thresholdsString = parsedThresholds.join();
+    panel.thresholds = thresholdsString;
     var maxThreshold = parsedThresholds[1];
     panel.gauge.maxValue = Math.ceil(maxThreshold * 1.1);
+
+    panel.scopedVars.thresholds = {
+      text: thresholdsString,
+      value: thresholdsString
+    };
   }
 }
 

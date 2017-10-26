@@ -3,7 +3,7 @@
 System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
   "use strict";
 
-  var _, $, angular, _createClass, AUTO_THRESHOLDS_KEYWORD, ZabbixAlertingService;
+  var _, $, angular, _createClass, ZabbixAlertingService;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -44,11 +44,17 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
   }
 
   function setSingleStatThresholds(panel, thresholds) {
-    if (panel.type === "singlestat" && panel.thresholds === AUTO_THRESHOLDS_KEYWORD) {
+    if (panel.type === "singlestat") {
       var parsedThresholds = parseThresholds(thresholds);
-      panel.thresholds = parsedThresholds.join();
+      var thresholdsString = parsedThresholds.join();
+      panel.thresholds = thresholdsString;
       var maxThreshold = parsedThresholds[1];
       panel.gauge.maxValue = Math.ceil(maxThreshold * 1.1);
+
+      panel.scopedVars.thresholds = {
+        text: thresholdsString,
+        value: thresholdsString
+      };
     }
   }
 
@@ -95,8 +101,6 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
           return Constructor;
         };
       }();
-
-      AUTO_THRESHOLDS_KEYWORD = "$auto";
 
       ZabbixAlertingService = function () {
 

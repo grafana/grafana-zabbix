@@ -196,7 +196,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       key: 'getItems',
       value: function getItems(hostids, appids, itemtype) {
         var params = {
-          output: ['name', 'key_', 'value_type', 'hostid', 'status', 'state'],
+          output: ['name', 'key_', 'value_type', 'hostid', 'status', 'state', 'description'],
           sortfield: 'name',
           webitems: true,
           filter: {},

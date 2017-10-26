@@ -160,7 +160,8 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
           'value_type',
           'hostid',
           'status',
-          'state'
+          'state',
+          'description'
         ],
         sortfield: 'name',
         webitems: true,

@@ -163,6 +163,7 @@ class ZabbixAPIDatasource {
     };
     return this.zabbix.getItemsFromTarget(target, getItemOptions)
     .then(items => {
+      this.setDescription(items, options);
       return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
     });
   }
@@ -638,6 +639,15 @@ class ZabbixAPIDatasource {
       (timeTo - timeFrom >= useTrendsRange)
     );
     return useTrends;
+  }
+
+  setDescription(items, options) {
+    let panelModel = this.dashboardSrv.dash.getPanelById(options.panelId);
+    let desc = items.map(i => i.description);
+    desc = desc.length === 1 ? desc[0] : desc;
+    panelModel.scopedVars.description = {
+      value: desc
+    };
   }
 }
 
