@@ -14,6 +14,10 @@
 # Builded docs
 docs/site/
 
+# Tests
+dist/test/
+dist/test-setup/
+
 vendor/npm
 src/vendor/npm
 node_modules
