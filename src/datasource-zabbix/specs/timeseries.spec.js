@@ -13,7 +13,7 @@ describe('timeseries processing functions', () => {
       let expected = [[2, 1], [4, 2], [5, 3]];
 
       let result = ts.sumSeries(series);
-      expect(result).to.eql(expected);
+      expect(result).toEqual(expected);
       done();
     });
 
@@ -27,7 +27,7 @@ describe('timeseries processing functions', () => {
       let expected = [[1, 1], [4, 2], [5, 3]];
 
       let result = ts.sumSeries(series);
-      expect(result).to.eql(expected);
+      expect(result).toEqual(expected);
       done();
     });
   });

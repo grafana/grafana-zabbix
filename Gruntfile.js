@@ -112,18 +112,6 @@ module.exports = function(grunt) {
       }
     },
 
-    mochaTest: {
-      test: {
-        options: {
-          reporter: 'spec'
-        },
-        src: [
-          'dist/test/datasource-zabbix/specs/test-main.js',
-          'dist/test/datasource-zabbix/specs/*_specs.js'
-        ]
-      }
-    },
-
     sass: {
       options: {
         sourceMap: true
@@ -178,8 +166,7 @@ module.exports = function(grunt) {
     'copy',
     'jshint',
     'jscs',
-    'babel',
-    'mochaTest'
+    'babel'
   ]);
 
   grunt.registerTask('watchTask', [
@@ -193,12 +180,11 @@ module.exports = function(grunt) {
     'jscs'
   ]);
 
-  grunt.registerTask('test', [
+  grunt.registerTask('buildTest', [
     'clean:test',
     'clean:tmp',
     'babel:distTestNoSystemJs',
-    'babel:distTestsSpecsNoSystemJs',
-    'mochaTest'
+    'babel:distTestsSpecsNoSystemJs'
   ]);
 
   grunt.registerTask('bench', [

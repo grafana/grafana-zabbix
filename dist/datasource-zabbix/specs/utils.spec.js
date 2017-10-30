@@ -26,7 +26,7 @@ describe('Utils', () => {
 
       _.each(test_cases, test_case => {
         let expandedName = utils.expandItemName(test_case.name, test_case.key);
-        expect(expandedName).to.equal(test_case.expected);
+        expect(expandedName).toBe(test_case.expected);
       });
       done();
     });
@@ -57,7 +57,7 @@ describe('Utils', () => {
 
       _.each(test_cases, test_case => {
         let expandedName = utils.expandItemName(test_case.name, test_case.key);
-        expect(expandedName).to.equal(test_case.expected);
+        expect(expandedName).toBe(test_case.expected);
       });
       done();
     });
@@ -83,7 +83,7 @@ describe('Utils', () => {
 
       _.each(test_cases, test_case => {
         let expandedName = utils.expandItemName(test_case.name, test_case.key);
-        expect(expandedName).to.equal(test_case.expected);
+        expect(expandedName).toBe(test_case.expected);
       });
       done();
     });
@@ -106,7 +106,7 @@ describe('Utils', () => {
 
       _.each(test_cases, test_case => {
         let splitQuery = utils.splitTemplateQuery(test_case.query);
-        expect(splitQuery).to.eql(test_case.expected);
+        expect(splitQuery).toEqual(test_case.expected);
       });
       done();
     });
@@ -133,7 +133,7 @@ describe('Utils', () => {
 
       _.each(test_cases, test_case => {
         let splitQuery = utils.splitTemplateQuery(test_case.query);
-        expect(splitQuery).to.eql(test_case.expected);
+        expect(splitQuery).toEqual(test_case.expected);
       });
       done();
     });

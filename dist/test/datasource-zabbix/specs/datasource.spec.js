@@ -1,26 +1,21 @@
 "use strict";
 
-var _module = require("../module");
+var _lodash = require("lodash");
 
-var _datasource = require("../datasource");
+var _lodash2 = _interopRequireDefault(_lodash);
 
 var _q = require("q");
 
 var _q2 = _interopRequireDefault(_q);
 
-var _sinon = require("sinon");
+var _module = require("../module");
 
-var _sinon2 = _interopRequireDefault(_sinon);
-
-var _lodash = require("lodash");
-
-var _lodash2 = _interopRequireDefault(_lodash);
+var _datasource = require("../datasource");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 describe('ZabbixDatasource', function () {
   var ctx = {};
-  var defined = _sinon2.default.match.defined;
 
   beforeEach(function () {
     ctx.instanceSettings = {
@@ -71,7 +66,7 @@ describe('ZabbixDatasource', function () {
         range: { from: 'now-6h', to: 'now' }
       };
       ctx.ds.query(options).then(function (result) {
-        expect(result.data).to.have.length(0);
+        expect(result.data.length).toBe(0);
         done();
       });
     });
@@ -81,11 +76,13 @@ describe('ZabbixDatasource', function () {
 
       _lodash2.default.forEach(ranges, function (range) {
         ctx.options.range.from = range;
-        ctx.ds.queryNumericData = _sinon2.default.spy();
+        ctx.ds.queryNumericData = jest.fn();
         ctx.ds.query(ctx.options);
 
         // Check that useTrends options is true
-        expect(ctx.ds.queryNumericData).to.have.been.calledWith(defined, defined, true, _sinon2.default.match.any);
+        var callArgs = ctx.ds.queryNumericData.mock.calls[0];
+        expect(callArgs[2]).toBe(true);
+        ctx.ds.queryNumericData.mockClear();
       });
 
       done();
@@ -96,11 +93,13 @@ describe('ZabbixDatasource', function () {
 
       _lodash2.default.forEach(ranges, function (range) {
         ctx.options.range.from = range;
-        ctx.ds.queryNumericData = _sinon2.default.spy();
+        ctx.ds.queryNumericData = jest.fn();
         ctx.ds.query(ctx.options);
 
         // Check that useTrends options is false
-        expect(ctx.ds.queryNumericData).to.have.been.calledWith(defined, defined, false, _sinon2.default.match.any);
+        var callArgs = ctx.ds.queryNumericData.mock.calls[0];
+        expect(callArgs[2]).toBe(false);
+        ctx.ds.queryNumericData.mockClear();
       });
       done();
     });
@@ -114,7 +113,7 @@ describe('ZabbixDatasource', function () {
       };
 
       var result = ctx.ds.replaceTemplateVars(target);
-      expect(result).to.equal(expectedResult);
+      expect(result).toBe(expectedResult);
       done();
     }
 
@@ -164,25 +163,16 @@ describe('ZabbixDatasource', function () {
         return str;
       };
       ctx.ds.zabbix = {
-        getGroups: function getGroups() {
-          return _q2.default.when([]);
-        },
-        getHosts: function getHosts() {
-          return _q2.default.when([]);
-        },
-        getApps: function getApps() {
-          return _q2.default.when([]);
-        },
-        getItems: function getItems() {
-          return _q2.default.when([]);
-        }
+        getGroups: jest.fn().mockReturnValue(_q2.default.when([])),
+        getHosts: jest.fn().mockReturnValue(_q2.default.when([])),
+        getApps: jest.fn().mockReturnValue(_q2.default.when([])),
+        getItems: jest.fn().mockReturnValue(_q2.default.when([]))
       };
     });
 
     it('should return groups', function (done) {
       var tests = [{ query: '*', expect: '/.*/' }, { query: '', expect: '' }, { query: 'Backend', expect: 'Backend' }, { query: 'Back*', expect: 'Back*' }];
 
-      var getGroups = _sinon2.default.spy(ctx.ds.zabbix, 'getGroups');
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
@@ -192,8 +182,8 @@ describe('ZabbixDatasource', function () {
           var test = _step.value;
 
           ctx.ds.metricFindQuery(test.query);
-          expect(getGroups).to.have.been.calledWith(test.expect);
-          getGroups.reset();
+          expect(ctx.ds.zabbix.getGroups).toBeCalledWith(test.expect);
+          ctx.ds.zabbix.getGroups.mockClear();
         }
       } catch (err) {
         _didIteratorError = true;
@@ -214,9 +204,8 @@ describe('ZabbixDatasource', function () {
     });
 
     it('should return hosts', function (done) {
-      var tests = [{ query: '*.*', expect: '/.*/' }, { query: '.', expect: '' }, { query: 'Backend.*', expect: 'Backend' }, { query: 'Back*.', expect: 'Back*' }];
+      var tests = [{ query: '*.*', expect: ['/.*/', '/.*/'] }, { query: '.', expect: ['', ''] }, { query: 'Backend.*', expect: ['Backend', '/.*/'] }, { query: 'Back*.', expect: ['Back*', ''] }];
 
-      var getHosts = _sinon2.default.spy(ctx.ds.zabbix, 'getHosts');
       var _iteratorNormalCompletion2 = true;
       var _didIteratorError2 = false;
       var _iteratorError2 = undefined;
@@ -226,8 +215,8 @@ describe('ZabbixDatasource', function () {
           var test = _step2.value;
 
           ctx.ds.metricFindQuery(test.query);
-          expect(getHosts).to.have.been.calledWith(test.expect);
-          getHosts.reset();
+          expect(ctx.ds.zabbix.getHosts).toBeCalledWith(test.expect[0], test.expect[1]);
+          ctx.ds.zabbix.getHosts.mockClear();
         }
       } catch (err) {
         _didIteratorError2 = true;
@@ -248,9 +237,8 @@ describe('ZabbixDatasource', function () {
     });
 
     it('should return applications', function (done) {
-      var tests = [{ query: '*.*.*', expect: ['/.*/', '/.*/'] }, { query: '.*.', expect: ['', '/.*/'] }, { query: 'Backend.backend01.*', expect: ['Backend', 'backend01'] }, { query: 'Back*.*.', expect: ['Back*', '/.*/'] }];
+      var tests = [{ query: '*.*.*', expect: ['/.*/', '/.*/', '/.*/'] }, { query: '.*.', expect: ['', '/.*/', ''] }, { query: 'Backend.backend01.*', expect: ['Backend', 'backend01', '/.*/'] }, { query: 'Back*.*.', expect: ['Back*', '/.*/', ''] }];
 
-      var getApps = _sinon2.default.spy(ctx.ds.zabbix, 'getApps');
       var _iteratorNormalCompletion3 = true;
       var _didIteratorError3 = false;
       var _iteratorError3 = undefined;
@@ -260,8 +248,8 @@ describe('ZabbixDatasource', function () {
           var test = _step3.value;
 
           ctx.ds.metricFindQuery(test.query);
-          expect(getApps).to.have.been.calledWith(test.expect[0], test.expect[1]);
-          getApps.reset();
+          expect(ctx.ds.zabbix.getApps).toBeCalledWith(test.expect[0], test.expect[1], test.expect[2]);
+          ctx.ds.zabbix.getApps.mockClear();
         }
       } catch (err) {
         _didIteratorError3 = true;
@@ -282,9 +270,8 @@ describe('ZabbixDatasource', function () {
     });
 
     it('should return items', function (done) {
-      var tests = [{ query: '*.*.*.*', expect: ['/.*/', '/.*/', ''] }, { query: '.*.*.*', expect: ['', '/.*/', ''] }, { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', ''] }, { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu'] }];
+      var tests = [{ query: '*.*.*.*', expect: ['/.*/', '/.*/', '', '/.*/'] }, { query: '.*.*.*', expect: ['', '/.*/', '', '/.*/'] }, { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', '/.*/'] }, { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu', '/.*/'] }];
 
-      var getItems = _sinon2.default.spy(ctx.ds.zabbix, 'getItems');
       var _iteratorNormalCompletion4 = true;
       var _didIteratorError4 = false;
       var _iteratorError4 = undefined;
@@ -294,8 +281,8 @@ describe('ZabbixDatasource', function () {
           var test = _step4.value;
 
           ctx.ds.metricFindQuery(test.query);
-          expect(getItems).to.have.been.calledWith(test.expect[0], test.expect[1], test.expect[2]);
-          getItems.reset();
+          expect(ctx.ds.zabbix.getItems).toBeCalledWith(test.expect[0], test.expect[1], test.expect[2], test.expect[3]);
+          ctx.ds.zabbix.getItems.mockClear();
         }
       } catch (err) {
         _didIteratorError4 = true;
@@ -318,9 +305,8 @@ describe('ZabbixDatasource', function () {
     it('should invoke method with proper arguments', function (done) {
       var query = '*.*';
 
-      var getHosts = _sinon2.default.spy(ctx.ds.zabbix, 'getHosts');
       ctx.ds.metricFindQuery(query);
-      expect(getHosts).to.have.been.calledWith('/.*/');
+      expect(ctx.ds.zabbix.getHosts).toBeCalledWith('/.*/', '/.*/');
       done();
     });
   });
@@ -372,8 +358,8 @@ describe('ZabbixDatasource', function () {
       };
 
       return ctx.ds.alertQuery(options).then(function (resp) {
-        expect(resp.thresholds.length).to.equal(1);
-        expect(resp.thresholds[0]).to.equal(100);
+        expect(resp.thresholds).toHaveLength(1);
+        expect(resp.thresholds[0]).toBe(100);
         return resp;
       });
     });
@@ -391,8 +377,8 @@ describe('ZabbixDatasource', function () {
       };
 
       return ctx.ds.alertQuery(options).then(function (resp) {
-        expect(resp.thresholds.length).to.equal(1);
-        expect(resp.thresholds[0]).to.equal(100);
+        expect(resp.thresholds.length).toBe(1);
+        expect(resp.thresholds[0]).toBe(100);
         return resp;
       });
     });
@@ -410,8 +396,8 @@ describe('ZabbixDatasource', function () {
       };
 
       return ctx.ds.alertQuery(options).then(function (resp) {
-        expect(resp.thresholds.length).to.equal(1);
-        expect(resp.thresholds[0]).to.equal(30);
+        expect(resp.thresholds.length).toBe(1);
+        expect(resp.thresholds[0]).toBe(30);
         return resp;
       });
     });
@@ -429,8 +415,8 @@ describe('ZabbixDatasource', function () {
       };
 
       return ctx.ds.alertQuery(options).then(function (resp) {
-        expect(resp.thresholds.length).to.equal(1);
-        expect(resp.thresholds[0]).to.equal(50);
+        expect(resp.thresholds.length).toBe(1);
+        expect(resp.thresholds[0]).toBe(50);
         return resp;
       });
     });

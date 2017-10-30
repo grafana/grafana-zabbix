@@ -35,6 +35,7 @@
     "require": true,
     "Chromath": false,
     "setImmediate": true,
+    "jest": true,
     "expect": true,
     "it": true,
     "describe": true,

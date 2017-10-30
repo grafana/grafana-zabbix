@@ -15,7 +15,7 @@ describe('timeseries processing functions', function () {
       var expected = [[2, 1], [4, 2], [5, 3]];
 
       var result = _timeseries2.default.sumSeries(series);
-      expect(result).to.eql(expected);
+      expect(result).toEqual(expected);
       done();
     });
 
@@ -26,7 +26,7 @@ describe('timeseries processing functions', function () {
       var expected = [[1, 1], [4, 2], [5, 3]];
 
       var result = _timeseries2.default.sumSeries(series);
-      expect(result).to.eql(expected);
+      expect(result).toEqual(expected);
       done();
     });
   });

@@ -1,12 +1,10 @@
+import _ from 'lodash';
+import Q from "q";
 import {Datasource} from "../module";
 import {zabbixTemplateFormat} from "../datasource";
-import Q from "q";
-import sinon from 'sinon';
-import _ from 'lodash';
 
 describe('ZabbixDatasource', () => {
   let ctx = {};
-  let defined = sinon.match.defined;
 
   beforeEach(() => {
     ctx.instanceSettings = {
@@ -55,7 +53,7 @@ describe('ZabbixDatasource', () => {
         range: {from: 'now-6h', to: 'now'}
       };
       ctx.ds.query(options).then(result => {
-        expect(result.data).to.have.length(0);
+        expect(result.data.length).toBe(0);
         done();
       });
     });
@@ -65,12 +63,13 @@ describe('ZabbixDatasource', () => {
 
       _.forEach(ranges, range => {
         ctx.options.range.from = range;
-        ctx.ds.queryNumericData = sinon.spy();
+        ctx.ds.queryNumericData = jest.fn();
         ctx.ds.query(ctx.options);
 
         // Check that useTrends options is true
-        expect(ctx.ds.queryNumericData)
-          .to.have.been.calledWith(defined, defined, true, sinon.match.any);
+        let callArgs = ctx.ds.queryNumericData.mock.calls[0];
+        expect(callArgs[2]).toBe(true);
+        ctx.ds.queryNumericData.mockClear();
       });
 
       done();
@@ -81,12 +80,13 @@ describe('ZabbixDatasource', () => {
 
       _.forEach(ranges, range => {
         ctx.options.range.from = range;
-        ctx.ds.queryNumericData = sinon.spy();
+        ctx.ds.queryNumericData = jest.fn();
         ctx.ds.query(ctx.options);
 
         // Check that useTrends options is false
-        expect(ctx.ds.queryNumericData)
-          .to.have.been.calledWith(defined, defined, false, sinon.match.any);
+        let callArgs = ctx.ds.queryNumericData.mock.calls[0];
+        expect(callArgs[2]).toBe(false);
+        ctx.ds.queryNumericData.mockClear();
       });
       done();
     });
@@ -101,7 +101,7 @@ describe('ZabbixDatasource', () => {
       };
 
       let result = ctx.ds.replaceTemplateVars(target);
-      expect(result).to.equal(expectedResult);
+      expect(result).toBe(expectedResult);
       done();
     }
 
@@ -149,10 +149,10 @@ describe('ZabbixDatasource', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
       ctx.ds.zabbix = {
-        getGroups: () => Q.when([]),
-        getHosts: () => Q.when([]),
-        getApps: () => Q.when([]),
-        getItems: () => Q.when([])
+        getGroups: jest.fn().mockReturnValue(Q.when([])),
+        getHosts: jest.fn().mockReturnValue(Q.when([])),
+        getApps: jest.fn().mockReturnValue(Q.when([])),
+        getItems: jest.fn().mockReturnValue(Q.when([]))
       };
     });
 
@@ -161,66 +161,62 @@ describe('ZabbixDatasource', () => {
         {query: '*',        expect: '/.*/'},
         {query: '',         expect: ''},
         {query: 'Backend',  expect: 'Backend'},
-        {query: 'Back*',    expect: 'Back*'}
+        {query: 'Back*',    expect: 'Back*'},
       ];
 
-      let getGroups = sinon.spy(ctx.ds.zabbix, 'getGroups');
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(getGroups).to.have.been.calledWith(test.expect);
-        getGroups.reset();
+        expect(ctx.ds.zabbix.getGroups).toBeCalledWith(test.expect);
+        ctx.ds.zabbix.getGroups.mockClear();
       }
       done();
     });
 
     it('should return hosts', (done) => {
       const tests = [
-        {query: '*.*',       expect: '/.*/'},
-        {query: '.',         expect: ''},
-        {query: 'Backend.*', expect: 'Backend'},
-        {query: 'Back*.',    expect: 'Back*'}
+        {query: '*.*',       expect: ['/.*/', '/.*/']},
+        {query: '.',         expect: ['', '']},
+        {query: 'Backend.*', expect: ['Backend', '/.*/']},
+        {query: 'Back*.',    expect: ['Back*', '']},
       ];
 
-      let getHosts = sinon.spy(ctx.ds.zabbix, 'getHosts');
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(getHosts).to.have.been.calledWith(test.expect);
-        getHosts.reset();
+        expect(ctx.ds.zabbix.getHosts).toBeCalledWith(test.expect[0], test.expect[1]);
+        ctx.ds.zabbix.getHosts.mockClear();
       }
       done();
     });
 
     it('should return applications', (done) => {
       const tests = [
-        {query: '*.*.*',               expect: ['/.*/', '/.*/']},
-        {query: '.*.',                 expect: ['', '/.*/']},
-        {query: 'Backend.backend01.*', expect: ['Backend', 'backend01']},
-        {query: 'Back*.*.',            expect: ['Back*', '/.*/']}
+        {query: '*.*.*',               expect: ['/.*/', '/.*/', '/.*/']},
+        {query: '.*.',                 expect: ['', '/.*/', '']},
+        {query: 'Backend.backend01.*', expect: ['Backend', 'backend01', '/.*/']},
+        {query: 'Back*.*.',            expect: ['Back*', '/.*/', '']}
       ];
 
-      let getApps = sinon.spy(ctx.ds.zabbix, 'getApps');
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(getApps).to.have.been.calledWith(test.expect[0], test.expect[1]);
-        getApps.reset();
+        expect(ctx.ds.zabbix.getApps).toBeCalledWith(test.expect[0], test.expect[1], test.expect[2]);
+        ctx.ds.zabbix.getApps.mockClear();
       }
       done();
     });
 
     it('should return items', (done) => {
       const tests = [
-        {query: '*.*.*.*',               expect: ['/.*/', '/.*/', '']},
-        {query: '.*.*.*',                expect: ['', '/.*/', '']},
-        {query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '']},
-        {query: 'Back*.*.cpu.*',         expect: ['Back*', '/.*/', 'cpu']}
+        {query: '*.*.*.*',               expect: ['/.*/', '/.*/', '', '/.*/']},
+        {query: '.*.*.*',                expect: ['', '/.*/', '', '/.*/']},
+        {query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', '/.*/']},
+        {query: 'Back*.*.cpu.*',         expect: ['Back*', '/.*/', 'cpu', '/.*/']}
       ];
 
-      let getItems = sinon.spy(ctx.ds.zabbix, 'getItems');
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(getItems)
-          .to.have.been.calledWith(test.expect[0], test.expect[1], test.expect[2]);
-        getItems.reset();
+        expect(ctx.ds.zabbix.getItems)
+          .toBeCalledWith(test.expect[0], test.expect[1], test.expect[2], test.expect[3]);
+        ctx.ds.zabbix.getItems.mockClear();
       }
       done();
     });
@@ -228,9 +224,8 @@ describe('ZabbixDatasource', () => {
     it('should invoke method with proper arguments', (done) => {
       let query = '*.*';
 
-      let getHosts = sinon.spy(ctx.ds.zabbix, 'getHosts');
       ctx.ds.metricFindQuery(query);
-      expect(getHosts).to.have.been.calledWith('/.*/');
+      expect(ctx.ds.zabbix.getHosts).toBeCalledWith('/.*/', '/.*/');
       done();
     });
   });
@@ -277,8 +272,8 @@ describe('ZabbixDatasource', () => {
 
       return ctx.ds.alertQuery(options)
         .then(resp => {
-          expect(resp.thresholds.length).to.equal(1);
-          expect(resp.thresholds[0]).to.equal(100);
+          expect(resp.thresholds).toHaveLength(1);
+          expect(resp.thresholds[0]).toBe(100);
           return resp;
         });
     });
@@ -295,8 +290,8 @@ describe('ZabbixDatasource', () => {
 
       return ctx.ds.alertQuery(options)
         .then(resp => {
-          expect(resp.thresholds.length).to.equal(1);
-          expect(resp.thresholds[0]).to.equal(100);
+          expect(resp.thresholds.length).toBe(1);
+          expect(resp.thresholds[0]).toBe(100);
           return resp;
         });
     });
@@ -313,8 +308,8 @@ describe('ZabbixDatasource', () => {
 
       return ctx.ds.alertQuery(options)
         .then(resp => {
-          expect(resp.thresholds.length).to.equal(1);
-          expect(resp.thresholds[0]).to.equal(30);
+          expect(resp.thresholds.length).toBe(1);
+          expect(resp.thresholds[0]).toBe(30);
           return resp;
         });
     });
@@ -331,8 +326,8 @@ describe('ZabbixDatasource', () => {
 
       return ctx.ds.alertQuery(options)
         .then(resp => {
-          expect(resp.thresholds.length).to.equal(1);
-          expect(resp.thresholds[0]).to.equal(50);
+          expect(resp.thresholds.length).toBe(1);
+          expect(resp.thresholds[0]).toBe(50);
           return resp;
         });
     });
