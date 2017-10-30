@@ -9,3 +9,6 @@ coverage:
     changes: no
 
 comment: false
+
+ignore:
+  - "dist/test/test-setup/**/*"
