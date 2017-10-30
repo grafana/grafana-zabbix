@@ -15,8 +15,8 @@
 docs/site/
 
 # Tests
-dist/test/
-dist/test-setup/
+# dist/test/
+# dist/test-setup/
 
 vendor/npm
 src/vendor/npm
