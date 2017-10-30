@@ -4,4 +4,4 @@ machine:
 
 test:
   override:
-    - npm run build
+    - npm run codecov
