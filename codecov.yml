@@ -11,4 +11,4 @@ coverage:
 comment: false
 
 ignore:
-  - "dist/test/test-setup/**/*"
+  - "dist/test/test-setup"
