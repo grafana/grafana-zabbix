@@ -4,4 +4,4 @@ machine:
 
 test:
   override:
-    - npm run codecov
+    - npm run ci-test
