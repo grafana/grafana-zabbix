@@ -33,7 +33,7 @@ describe('Utils', function () {
 
       _lodash2.default.each(test_cases, function (test_case) {
         var expandedName = utils.expandItemName(test_case.name, test_case.key);
-        expect(expandedName).to.equal(test_case.expected);
+        expect(expandedName).toBe(test_case.expected);
       });
       done();
     });
@@ -59,7 +59,7 @@ describe('Utils', function () {
 
       _lodash2.default.each(test_cases, function (test_case) {
         var expandedName = utils.expandItemName(test_case.name, test_case.key);
-        expect(expandedName).to.equal(test_case.expected);
+        expect(expandedName).toBe(test_case.expected);
       });
       done();
     });
@@ -81,7 +81,7 @@ describe('Utils', function () {
 
       _lodash2.default.each(test_cases, function (test_case) {
         var expandedName = utils.expandItemName(test_case.name, test_case.key);
-        expect(expandedName).to.equal(test_case.expected);
+        expect(expandedName).toBe(test_case.expected);
       });
       done();
     });
@@ -101,7 +101,7 @@ describe('Utils', function () {
 
       _lodash2.default.each(test_cases, function (test_case) {
         var splitQuery = utils.splitTemplateQuery(test_case.query);
-        expect(splitQuery).to.eql(test_case.expected);
+        expect(splitQuery).toEqual(test_case.expected);
       });
       done();
     });
@@ -123,7 +123,7 @@ describe('Utils', function () {
 
       _lodash2.default.each(test_cases, function (test_case) {
         var splitQuery = utils.splitTemplateQuery(test_case.query);
-        expect(splitQuery).to.eql(test_case.expected);
+        expect(splitQuery).toEqual(test_case.expected);
       });
       done();
     });
