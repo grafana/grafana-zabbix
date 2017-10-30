@@ -193,6 +193,14 @@ module.exports = function(grunt) {
     'jscs'
   ]);
 
+  grunt.registerTask('test', [
+    'clean:test',
+    'clean:tmp',
+    'babel:distTestNoSystemJs',
+    'babel:distTestsSpecsNoSystemJs',
+    'mochaTest'
+  ]);
+
   grunt.registerTask('bench', [
     'clean:test',
     'clean:tmp',
