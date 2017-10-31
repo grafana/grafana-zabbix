@@ -175,16 +175,9 @@ module.exports = function(grunt) {
     'copy:vendor_to_dist',
     'copy:src_to_dist',
     'copy:pluginDef',
-    'babel',
+    'babel:dist',
     'jshint',
     'jscs'
-  ]);
-
-  grunt.registerTask('buildTest', [
-    'clean:test',
-    'clean:tmp',
-    'babel:distTestNoSystemJs',
-    'babel:distTestsSpecsNoSystemJs'
   ]);
 
   grunt.registerTask('bench', [

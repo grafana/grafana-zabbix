@@ -4,8 +4,7 @@
   "version": "3.6.0",
   "description": "Zabbix plugin for Grafana",
   "scripts": {
-    "test": "./node_modules/.bin/grunt buildTest && jest",
-    "jest": "jest",
+    "test": "jest",
     "build": "./node_modules/.bin/grunt && jest",
     "watch": "./node_modules/.bin/grunt watch",
     "codecov": "./node_modules/.bin/grunt && jest --coverage && codecov",
