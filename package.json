@@ -5,11 +5,11 @@
   "description": "Zabbix plugin for Grafana",
   "scripts": {
     "test": "jest",
-    "build": "./node_modules/.bin/grunt && jest",
-    "watch": "./node_modules/.bin/grunt watch",
-    "codecov": "./node_modules/.bin/grunt && jest --coverage && codecov",
-    "ci-test": "./node_modules/.bin/grunt && jest --coverage && codecov",
-    "benchmark": "./node_modules/.bin/grunt bench"
+    "build": "grunt && jest",
+    "watch": "grunt watch",
+    "codecov": "grunt && jest --coverage && codecov",
+    "ci-test": "grunt && jest --coverage && codecov",
+    "benchmark": "grunt bench"
   },
   "repository": {
     "type": "git",
