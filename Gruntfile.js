@@ -166,7 +166,7 @@ module.exports = function(grunt) {
     'copy',
     'jshint',
     'jscs',
-    'babel'
+    'babel:dist'
   ]);
 
   grunt.registerTask('watchTask', [

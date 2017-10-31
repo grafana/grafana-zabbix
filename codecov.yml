@@ -1,7 +1,7 @@
 coverage:
   precision: 2
   round: down
-  range: "50...100"
+  range: 50...100
 
   status:
     project: yes
@@ -12,3 +12,4 @@ comment: false
 
 ignore:
   - "dist/test/test-setup/.*"
+  - "src/test-setup/.*"

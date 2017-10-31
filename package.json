@@ -5,6 +5,7 @@
   "description": "Zabbix plugin for Grafana",
   "scripts": {
     "test": "./node_modules/.bin/grunt buildTest && jest",
+    "jest": "jest",
     "build": "./node_modules/.bin/grunt && jest",
     "watch": "./node_modules/.bin/grunt watch",
     "codecov": "./node_modules/.bin/grunt && jest --coverage && codecov",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "babel": "~6.5.1",
+    "babel-jest": "^21.2.0",
     "babel-plugin-transform-es2015-for-of": "^6.6.0",
     "babel-plugin-transform-es2015-modules-systemjs": "^6.5.0",
     "babel-preset-es2015": "^6.5.0",
