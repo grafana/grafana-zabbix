@@ -8,7 +8,8 @@
     "build": "./node_modules/.bin/grunt && jest",
     "watch": "./node_modules/.bin/grunt watch",
     "codecov": "./node_modules/.bin/grunt && jest --coverage && codecov",
-    "ci-test": "./node_modules/.bin/grunt && jest --coverage && codecov"
+    "ci-test": "./node_modules/.bin/grunt && jest --coverage && codecov",
+    "benchmark": "./node_modules/.bin/grunt bench"
   },
   "repository": {
     "type": "git",
