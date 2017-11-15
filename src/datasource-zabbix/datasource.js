@@ -645,6 +645,7 @@ class ZabbixAPIDatasource {
     let panelModel = this.dashboardSrv.dash.getPanelById(options.panelId);
     let desc = items.map(i => i.description);
     desc = desc.length === 1 ? desc[0] : desc;
+    panelModel.scopedVars = panelModel.scopedVars || {};
     panelModel.scopedVars.description = {
       value: desc
     };
