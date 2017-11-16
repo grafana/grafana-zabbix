@@ -32,7 +32,7 @@ class DatasourceSelectorCtrl {
       multi: true,
       current: {value: datasources, text: datasources.join(" + ")},
       options: _.map(options, (ds) => {
-        return {text: ds, value: ds};
+        return {text: ds, value: ds, selected: _.includes(datasources, ds)};
       })
     };
   }

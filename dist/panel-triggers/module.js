@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource-zabbix/utils', './editor', './ack-tooltip.directive'], function (_export, _context) {
+System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource-zabbix/utils', './options_tab', './triggers_tab', './ack-tooltip.directive'], function (_export, _context) {
   "use strict";
 
-  var _, $, moment, loadPluginCss, utils, PanelCtrl, triggerPanelEditor, _createClass, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
+  var _, $, moment, loadPluginCss, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, _createClass, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -59,8 +59,10 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
       PanelCtrl = _appPluginsSdk.PanelCtrl;
     }, function (_datasourceZabbixUtils) {
       utils = _datasourceZabbixUtils;
-    }, function (_editor) {
-      triggerPanelEditor = _editor.triggerPanelEditor;
+    }, function (_options_tab) {
+      triggerPanelOptionsTab = _options_tab.triggerPanelOptionsTab;
+    }, function (_triggers_tab) {
+      triggerPanelTriggersTab = _triggers_tab.triggerPanelTriggersTab;
     }, function (_ackTooltipDirective) {}],
     execute: function () {
       _createClass = function () {
@@ -101,13 +103,14 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
 
       defaultSeverity = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true }, { priority: 3, severity: 'Average', color: '#C15C17', show: true }, { priority: 4, severity: 'High', color: '#BF1B00', show: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true }];
       panelDefaults = {
-        datasource: null,
+        datasources: [],
         triggers: {
           group: { filter: "" },
           host: { filter: "" },
           application: { filter: "" },
           trigger: { filter: "" }
         },
+        targets: {},
         hostField: true,
         statusField: false,
         severityField: false,
@@ -124,7 +127,8 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
         ackEventColor: 'rgba(0, 0, 0, 0)',
         scroll: true,
         pageSize: 10,
-        fontSize: '100%'
+        fontSize: '100%',
+        schemaVersion: 2
       };
       triggerStatusMap = {
         '0': 'OK',
@@ -151,26 +155,44 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
           _this.pageIndex = 0;
           _this.triggerList = [];
           _this.currentTriggersPage = [];
+          _this.datasources = {};
+
+          _this.migratePanelConfig();
 
           // Load panel defaults
           // _.cloneDeep() need for prevent changing shared defaultSeverity.
           // Load object "by value" istead "by reference".
           _.defaults(_this.panel, _.cloneDeep(panelDefaults));
 
+          _this.initDatasources();
           _this.events.on('init-edit-mode', _this.onInitEditMode.bind(_this));
           _this.events.on('refresh', _this.onRefresh.bind(_this));
           return _this;
         }
 
         _createClass(TriggerPanelCtrl, [{
+          key: 'initDatasources',
+          value: function initDatasources() {
+            var _this2 = this;
+
+            _.each(this.panel.datasources, function (ds) {
+              // Load datasource
+              _this2.datasourceSrv.get(ds).then(function (datasource) {
+                _this2.datasources[ds] = datasource;
+                _this2.datasources[ds].queryBuilder = datasource.queryBuilder;
+              });
+            });
+          }
+        }, {
           key: 'onInitEditMode',
           value: function onInitEditMode() {
-            this.addEditorTab('Options', triggerPanelEditor, 2);
+            this.addEditorTab('Triggers', triggerPanelTriggersTab, 2);
+            this.addEditorTab('Options', triggerPanelOptionsTab, 3);
           }
         }, {
           key: 'onRefresh',
           value: function onRefresh() {
-            var _this2 = this;
+            var _this3 = this;
 
             // ignore fetching data if another panel is in fullscreen
             if (this.otherPanelInFullscreenMode()) {
@@ -183,60 +205,80 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
 
             return this.refreshData().then(function (triggerList) {
               // Limit triggers number
-              _this2.triggerList = triggerList.slice(0, _this2.panel.limit);
+              _this3.triggerList = triggerList.slice(0, _this3.panel.limit);
 
-              _this2.getCurrentTriggersPage();
+              _this3.getCurrentTriggersPage();
 
               // Notify panel that request is finished
-              _this2.loading = false;
+              _this3.loading = false;
 
-              _this2.render(_this2.triggerList);
+              _this3.render(_this3.triggerList);
             });
           }
         }, {
           key: 'refreshData',
           value: function refreshData() {
-            return this.getTriggers().then(this.getAcknowledges.bind(this)).then(this.filterTriggers.bind(this));
+            return this.getTriggers();
+          }
+        }, {
+          key: 'migratePanelConfig',
+          value: function migratePanelConfig() {
+            if (!this.panel.datasources || this.panel.datasource && !this.panel.datasources.length) {
+              this.panel.datasources = [this.panel.datasource];
+              this.panel.targets[this.panel.datasource] = this.panel.triggers;
+            } else if (_.isEmpty(this.panel.targets)) {
+              this.panel.targets[this.panel.datasources[0]] = this.panel.triggers;
+            }
           }
         }, {
           key: 'getTriggers',
           value: function getTriggers() {
-            var _this3 = this;
+            var _this4 = this;
 
-            return this.datasourceSrv.get(this.panel.datasource).then(function (datasource) {
-              var zabbix = datasource.zabbix;
-              _this3.zabbix = zabbix;
-              _this3.datasource = datasource;
-              var showEvents = _this3.panel.showEvents.value;
-              var triggerFilter = _this3.panel.triggers;
-              var hideHostsInMaintenance = _this3.panel.hideHostsInMaintenance;
+            var promises = _.map(this.panel.datasources, function (ds) {
+              return _this4.datasourceSrv.get(ds).then(function (datasource) {
+                var zabbix = datasource.zabbix;
+                _this4.zabbix = zabbix;
+                _this4.datasource = datasource;
+                var showEvents = _this4.panel.showEvents.value;
+                var triggerFilter = _this4.panel.targets[ds];
+                var hideHostsInMaintenance = _this4.panel.hideHostsInMaintenance;
 
-              // Replace template variables
-              var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
-              var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
-              var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
+                // Replace template variables
+                var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
+                var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
+                var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-              var triggersOptions = {
-                showTriggers: showEvents,
-                hideHostsInMaintenance: hideHostsInMaintenance
-              };
+                var triggersOptions = {
+                  showTriggers: showEvents,
+                  hideHostsInMaintenance: hideHostsInMaintenance
+                };
 
-              return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
+                return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
+              }).then(function (triggers) {
+                return _this4.getAcknowledges(triggers, ds);
+              }).then(function (triggers) {
+                return _this4.filterTriggers(triggers, ds);
+              });
+            });
+
+            return Promise.all(promises).then(function (results) {
+              return _.flatten(results);
             }).then(function (triggers) {
-              return _.map(triggers, _this3.formatTrigger.bind(_this3));
+              return _.map(triggers, _this4.formatTrigger.bind(_this4));
             });
           }
         }, {
           key: 'getAcknowledges',
-          value: function getAcknowledges(triggerList) {
-            var _this4 = this;
+          value: function getAcknowledges(triggerList, ds) {
+            var _this5 = this;
 
             // Request acknowledges for trigger
             var eventids = _.map(triggerList, function (trigger) {
               return trigger.lastEvent.eventid;
             });
 
-            return this.zabbix.getAcknowledges(eventids).then(function (events) {
+            return this.datasources[ds].zabbix.getAcknowledges(eventids).then(function (events) {
 
               // Map events to triggers
               _.each(triggerList, function (trigger) {
@@ -247,18 +289,18 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
                 if (event) {
                   trigger.acknowledges = _.map(event.acknowledges, function (ack) {
                     var timestamp = moment.unix(ack.clock);
-                    if (_this4.panel.customLastChangeFormat) {
-                      ack.time = timestamp.format(_this4.panel.lastChangeFormat);
+                    if (_this5.panel.customLastChangeFormat) {
+                      ack.time = timestamp.format(_this5.panel.lastChangeFormat);
                     } else {
-                      ack.time = timestamp.format(_this4.defaultTimeFormat);
+                      ack.time = timestamp.format(_this5.defaultTimeFormat);
                     }
                     ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
                     return ack;
                   });
 
                   // Mark acknowledged triggers with different color
-                  if (_this4.panel.markAckEvents && trigger.acknowledges.length) {
-                    trigger.color = _this4.panel.ackEventColor;
+                  if (_this5.panel.markAckEvents && trigger.acknowledges.length) {
+                    trigger.color = _this5.panel.ackEventColor;
                   }
                 }
               });
@@ -268,12 +310,12 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
           }
         }, {
           key: 'filterTriggers',
-          value: function filterTriggers(triggerList) {
-            var _this5 = this;
+          value: function filterTriggers(triggerList, ds) {
+            var _this6 = this;
 
             // Filter triggers by description
-            var triggerFilter = this.panel.triggers.trigger.filter;
-            triggerFilter = this.datasource.replaceTemplateVars(triggerFilter);
+            var triggerFilter = this.panel.targets[ds].trigger.filter;
+            triggerFilter = this.datasources[ds].replaceTemplateVars(triggerFilter);
             if (triggerFilter) {
               triggerList = _filterTriggers(triggerList, triggerFilter);
             }
@@ -291,7 +333,7 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
 
             // Filter triggers by severity
             triggerList = _.filter(triggerList, function (trigger) {
-              return _this5.panel.triggerSeverity[trigger.priority].show;
+              return _this6.panel.triggerSeverity[trigger.priority].show;
             });
 
             // Sort triggers

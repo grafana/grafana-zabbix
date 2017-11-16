@@ -17,7 +17,8 @@ import moment from 'moment';
 import {loadPluginCss} from 'app/plugins/sdk';
 import * as utils from '../datasource-zabbix/utils';
 import {PanelCtrl} from 'app/plugins/sdk';
-import {triggerPanelEditor} from './editor';
+import {triggerPanelOptionsTab} from './options_tab';
+import {triggerPanelTriggersTab} from './triggers_tab';
 import './ack-tooltip.directive';
 
 loadPluginCss({
@@ -35,13 +36,14 @@ var defaultSeverity = [
 ];
 
 var panelDefaults = {
-  datasource: null,
+  datasources: [],
   triggers: {
     group: {filter: ""},
     host: {filter: ""},
     application: {filter: ""},
     trigger: {filter: ""}
   },
+  targets: {},
   hostField: true,
   statusField: false,
   severityField: false,
@@ -59,6 +61,7 @@ var panelDefaults = {
   scroll: true,
   pageSize: 10,
   fontSize: '100%',
+  schemaVersion: 2
 };
 
 var triggerStatusMap = {
@@ -83,18 +86,34 @@ class TriggerPanelCtrl extends PanelCtrl {
     this.pageIndex = 0;
     this.triggerList = [];
     this.currentTriggersPage = [];
+    this.datasources = {};
+
+    this.migratePanelConfig();
 
     // Load panel defaults
     // _.cloneDeep() need for prevent changing shared defaultSeverity.
     // Load object "by value" istead "by reference".
     _.defaults(this.panel, _.cloneDeep(panelDefaults));
 
+    this.initDatasources();
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
     this.events.on('refresh', this.onRefresh.bind(this));
   }
 
+  initDatasources() {
+    _.each(this.panel.datasources, (ds) => {
+      // Load datasource
+      this.datasourceSrv.get(ds)
+      .then(datasource => {
+        this.datasources[ds] = datasource;
+        this.datasources[ds].queryBuilder = datasource.queryBuilder;
+      });
+    });
+  }
+
   onInitEditMode() {
-    this.addEditorTab('Options', triggerPanelEditor, 2);
+    this.addEditorTab('Triggers', triggerPanelTriggersTab, 2);
+    this.addEditorTab('Options', triggerPanelOptionsTab, 3);
   }
 
   onRefresh() {
@@ -120,45 +139,61 @@ class TriggerPanelCtrl extends PanelCtrl {
   }
 
   refreshData() {
-    return this.getTriggers()
-    .then(this.getAcknowledges.bind(this))
-    .then(this.filterTriggers.bind(this));
+    return this.getTriggers();
+  }
+
+  migratePanelConfig() {
+    if (!this.panel.datasources || (this.panel.datasource && !this.panel.datasources.length)) {
+      this.panel.datasources = [this.panel.datasource];
+      this.panel.targets[this.panel.datasource] = this.panel.triggers;
+    } else if (_.isEmpty(this.panel.targets)) {
+      this.panel.targets[this.panel.datasources[0]] = this.panel.triggers;
+    }
   }
 
   getTriggers() {
-    return this.datasourceSrv.get(this.panel.datasource)
-    .then(datasource => {
-      var zabbix = datasource.zabbix;
-      this.zabbix = zabbix;
-      this.datasource = datasource;
-      var showEvents = this.panel.showEvents.value;
-      var triggerFilter = this.panel.triggers;
-      var hideHostsInMaintenance = this.panel.hideHostsInMaintenance;
+    let promises = _.map(this.panel.datasources, (ds) => {
+      return this.datasourceSrv.get(ds)
+      .then(datasource => {
+        var zabbix = datasource.zabbix;
+        this.zabbix = zabbix;
+        this.datasource = datasource;
+        var showEvents = this.panel.showEvents.value;
+        var triggerFilter = this.panel.targets[ds];
+        var hideHostsInMaintenance = this.panel.hideHostsInMaintenance;
 
-      // Replace template variables
-      var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
-      var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
-      var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
+        // Replace template variables
+        var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
+        var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
+        var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-      let triggersOptions = {
-        showTriggers: showEvents,
-        hideHostsInMaintenance: hideHostsInMaintenance
-      };
+        let triggersOptions = {
+          showTriggers: showEvents,
+          hideHostsInMaintenance: hideHostsInMaintenance
+        };
 
-      return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
-    })
+        return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
+      }).then((triggers) => {
+        return this.getAcknowledges(triggers, ds);
+      }).then((triggers) => {
+        return this.filterTriggers(triggers, ds);
+      });
+    });
+
+    return Promise.all(promises)
+    .then(results => _.flatten(results))
     .then(triggers => {
       return _.map(triggers, this.formatTrigger.bind(this));
     });
   }
 
-  getAcknowledges(triggerList) {
+  getAcknowledges(triggerList, ds) {
     // Request acknowledges for trigger
     var eventids = _.map(triggerList, trigger => {
       return trigger.lastEvent.eventid;
     });
 
-    return this.zabbix.getAcknowledges(eventids)
+    return this.datasources[ds].zabbix.getAcknowledges(eventids)
     .then(events => {
 
       // Map events to triggers
@@ -190,10 +225,10 @@ class TriggerPanelCtrl extends PanelCtrl {
     });
   }
 
-  filterTriggers(triggerList) {
+  filterTriggers(triggerList, ds) {
     // Filter triggers by description
-    var triggerFilter = this.panel.triggers.trigger.filter;
-    triggerFilter = this.datasource.replaceTemplateVars(triggerFilter);
+    var triggerFilter = this.panel.targets[ds].trigger.filter;
+    triggerFilter = this.datasources[ds].replaceTemplateVars(triggerFilter);
     if (triggerFilter) {
       triggerList = filterTriggers(triggerList, triggerFilter);
     }
