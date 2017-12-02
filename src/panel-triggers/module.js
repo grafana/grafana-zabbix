@@ -19,6 +19,7 @@ import * as utils from '../datasource-zabbix/utils';
 import {PanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelOptionsTab} from './options_tab';
 import {triggerPanelTriggersTab} from './triggers_tab';
+import {migratePanelSchema} from './migrations';
 import './ack-tooltip.directive';
 
 loadPluginCss({
@@ -26,7 +27,16 @@ loadPluginCss({
   light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
 });
 
-var defaultSeverity = [
+const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
+
+export const DEFAULT_TARGET = {
+  group: {filter: ""},
+  host: {filter: ""},
+  application: {filter: ""},
+  trigger: {filter: ""}
+};
+
+const defaultSeverity = [
   { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },
   { priority: 1, severity: 'Information',     color: '#82B5D8', show: true },
   { priority: 2, severity: 'Warning',         color: '#E5AC0E', show: true },
@@ -35,7 +45,7 @@ var defaultSeverity = [
   { priority: 5, severity: 'Disaster',        color: '#890F02', show: true }
 ];
 
-var panelDefaults = {
+const panelDefaults = {
   datasources: [],
   triggers: {
     group: {filter: ""},
@@ -64,12 +74,12 @@ var panelDefaults = {
   schemaVersion: 2
 };
 
-var triggerStatusMap = {
+const triggerStatusMap = {
   '0': 'OK',
   '1': 'Problem'
 };
 
-var defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
+const defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 
 class TriggerPanelCtrl extends PanelCtrl {
 
@@ -81,6 +91,7 @@ class TriggerPanelCtrl extends PanelCtrl {
     this.contextSrv = contextSrv;
     this.dashboardSrv = dashboardSrv;
 
+    this.editorTabIndex = 1;
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = defaultTimeFormat;
     this.pageIndex = 0;
@@ -88,12 +99,16 @@ class TriggerPanelCtrl extends PanelCtrl {
     this.currentTriggersPage = [];
     this.datasources = {};
 
-    this.migratePanelConfig();
-
-    // Load panel defaults
-    // _.cloneDeep() need for prevent changing shared defaultSeverity.
-    // Load object "by value" istead "by reference".
     _.defaults(this.panel, _.cloneDeep(panelDefaults));
+    this.panel = migratePanelSchema(this.panel);
+
+    this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
+    if (this.panel.datasources.length === 0) {
+      this.panel.datasources.push(this.available_datasources[0]);
+    }
+    if (_.isEmpty(this.panel.targets)) {
+      this.panel.targets[this.panel.datasources[0]] = DEFAULT_TARGET;
+    }
 
     this.initDatasources();
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
@@ -101,19 +116,34 @@ class TriggerPanelCtrl extends PanelCtrl {
   }
 
   initDatasources() {
-    _.each(this.panel.datasources, (ds) => {
+    let promises = _.map(this.panel.datasources, (ds) => {
       // Load datasource
-      this.datasourceSrv.get(ds)
+      return this.datasourceSrv.get(ds)
       .then(datasource => {
         this.datasources[ds] = datasource;
-        this.datasources[ds].queryBuilder = datasource.queryBuilder;
+        return datasource;
       });
+    });
+    return Promise.all(promises);
+  }
+
+  getZabbixDataSources() {
+    return _.filter(this.datasourceSrv.getMetricSources(), datasource => {
+      return datasource.meta.id === ZABBIX_DS_ID && datasource.value;
     });
   }
 
   onInitEditMode() {
-    this.addEditorTab('Triggers', triggerPanelTriggersTab, 2);
-    this.addEditorTab('Options', triggerPanelOptionsTab, 3);
+    this.addEditorTab('Triggers', triggerPanelTriggersTab, 1);
+    this.addEditorTab('Options', triggerPanelOptionsTab, 2);
+  }
+
+  setTimeQueryStart() {
+    this.timing.queryStart = new Date().getTime();
+  }
+
+  setTimeQueryEnd() {
+    this.timing.queryEnd = new Date().getTime();
   }
 
   onRefresh() {
@@ -123,32 +153,41 @@ class TriggerPanelCtrl extends PanelCtrl {
     // clear loading/error state
     delete this.error;
     this.loading = true;
+    this.setTimeQueryStart();
 
-    return this.refreshData()
+    return this.getTriggers()
     .then(triggerList => {
-      // Limit triggers number
-      this.triggerList  = triggerList.slice(0, this.panel.limit);
-
-      this.getCurrentTriggersPage();
-
       // Notify panel that request is finished
       this.loading = false;
+      this.setTimeQueryEnd();
 
+      // Limit triggers number
+      this.triggerList = triggerList.slice(0, this.panel.limit);
+      this.getCurrentTriggersPage();
       this.render(this.triggerList);
+    })
+    .catch(err => {
+      // if cancelled  keep loading set to true
+      if (err.cancelled) {
+        console.log('Panel request cancelled', err);
+        return;
+      }
+
+      this.loading = false;
+      this.error = err.message || "Request Error";
+
+      if (err.data) {
+        if (err.data.message) {
+          this.error = err.data.message;
+        }
+        if (err.data.error) {
+          this.error = err.data.error;
+        }
+      }
+
+      this.events.emit('data-error', err);
+      console.log('Panel data error:', err);
     });
-  }
-
-  refreshData() {
-    return this.getTriggers();
-  }
-
-  migratePanelConfig() {
-    if (!this.panel.datasources || (this.panel.datasource && !this.panel.datasources.length)) {
-      this.panel.datasources = [this.panel.datasource];
-      this.panel.targets[this.panel.datasource] = this.panel.triggers;
-    } else if (_.isEmpty(this.panel.targets)) {
-      this.panel.targets[this.panel.datasources[0]] = this.panel.triggers;
-    }
   }
 
   getTriggers() {
@@ -156,8 +195,6 @@ class TriggerPanelCtrl extends PanelCtrl {
       return this.datasourceSrv.get(ds)
       .then(datasource => {
         var zabbix = datasource.zabbix;
-        this.zabbix = zabbix;
-        this.datasource = datasource;
         var showEvents = this.panel.showEvents.value;
         var triggerFilter = this.panel.targets[ds];
         var hideHostsInMaintenance = this.panel.hideHostsInMaintenance;
@@ -182,6 +219,9 @@ class TriggerPanelCtrl extends PanelCtrl {
 
     return Promise.all(promises)
     .then(results => _.flatten(results))
+    .then((triggers) => {
+      return this.sortTriggers(triggers);
+    })
     .then(triggers => {
       return _.map(triggers, this.formatTrigger.bind(this));
     });
@@ -249,13 +289,15 @@ class TriggerPanelCtrl extends PanelCtrl {
       return this.panel.triggerSeverity[trigger.priority].show;
     });
 
-    // Sort triggers
+    return triggerList;
+  }
+
+  sortTriggers(triggerList) {
     if (this.panel.sortTriggersBy.value === 'priority') {
       triggerList = _.sortBy(triggerList, 'priority').reverse();
     } else {
       triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
     }
-
     return triggerList;
   }
 
@@ -341,8 +383,9 @@ class TriggerPanelCtrl extends PanelCtrl {
       let endPos = Math.min(startPos + pageSize, ctrl.triggerList.length);
       ctrl.currentTriggersPage = ctrl.triggerList.slice(startPos, endPos);
 
-      scope.$apply();
-      renderPanel();
+      scope.$apply(() => {
+        renderPanel();
+      });
     }
 
     function appendPaginationControls(footerElem) {
@@ -378,6 +421,7 @@ class TriggerPanelCtrl extends PanelCtrl {
       appendPaginationControls(footerElem);
 
       rootElem.css({'max-height': panel.scroll ? getTableHeight() : '' });
+      ctrl.renderingCompleted();
     }
 
     elem.on('click', '.triggers-panel-page-link', switchPage);
@@ -390,9 +434,10 @@ class TriggerPanelCtrl extends PanelCtrl {
     ctrl.events.on('render', (renderData) => {
       data = renderData || data;
       if (data) {
-        renderPanel();
+        scope.$apply(() => {
+          renderPanel();
+        });
       }
-      ctrl.renderingCompleted();
     });
   }
 }

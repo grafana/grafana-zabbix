@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource-zabbix/utils', './options_tab', './triggers_tab', './ack-tooltip.directive'], function (_export, _context) {
+System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource-zabbix/utils', './options_tab', './triggers_tab', './migrations', './ack-tooltip.directive'], function (_export, _context) {
   "use strict";
 
-  var _, $, moment, loadPluginCss, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, _createClass, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
+  var _, $, moment, loadPluginCss, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, _createClass, ZABBIX_DS_ID, DEFAULT_TARGET, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -63,6 +63,8 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
       triggerPanelOptionsTab = _options_tab.triggerPanelOptionsTab;
     }, function (_triggers_tab) {
       triggerPanelTriggersTab = _triggers_tab.triggerPanelTriggersTab;
+    }, function (_migrations) {
+      migratePanelSchema = _migrations.migratePanelSchema;
     }, function (_ackTooltipDirective) {}],
     execute: function () {
       _createClass = function () {
@@ -100,6 +102,17 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
         dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
         light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
       });
+
+      ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
+
+      _export('DEFAULT_TARGET', DEFAULT_TARGET = {
+        group: { filter: "" },
+        host: { filter: "" },
+        application: { filter: "" },
+        trigger: { filter: "" }
+      });
+
+      _export('DEFAULT_TARGET', DEFAULT_TARGET);
 
       defaultSeverity = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true }, { priority: 3, severity: 'Average', color: '#C15C17', show: true }, { priority: 4, severity: 'High', color: '#BF1B00', show: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true }];
       panelDefaults = {
@@ -150,6 +163,7 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
           _this.contextSrv = contextSrv;
           _this.dashboardSrv = dashboardSrv;
 
+          _this.editorTabIndex = 1;
           _this.triggerStatusMap = triggerStatusMap;
           _this.defaultTimeFormat = defaultTimeFormat;
           _this.pageIndex = 0;
@@ -157,12 +171,16 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
           _this.currentTriggersPage = [];
           _this.datasources = {};
 
-          _this.migratePanelConfig();
-
-          // Load panel defaults
-          // _.cloneDeep() need for prevent changing shared defaultSeverity.
-          // Load object "by value" istead "by reference".
           _.defaults(_this.panel, _.cloneDeep(panelDefaults));
+          _this.panel = migratePanelSchema(_this.panel);
+
+          _this.available_datasources = _.map(_this.getZabbixDataSources(), 'name');
+          if (_this.panel.datasources.length === 0) {
+            _this.panel.datasources.push(_this.available_datasources[0]);
+          }
+          if (_.isEmpty(_this.panel.targets)) {
+            _this.panel.targets[_this.panel.datasources[0]] = DEFAULT_TARGET;
+          }
 
           _this.initDatasources();
           _this.events.on('init-edit-mode', _this.onInitEditMode.bind(_this));
@@ -175,19 +193,37 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
           value: function initDatasources() {
             var _this2 = this;
 
-            _.each(this.panel.datasources, function (ds) {
+            var promises = _.map(this.panel.datasources, function (ds) {
               // Load datasource
-              _this2.datasourceSrv.get(ds).then(function (datasource) {
+              return _this2.datasourceSrv.get(ds).then(function (datasource) {
                 _this2.datasources[ds] = datasource;
-                _this2.datasources[ds].queryBuilder = datasource.queryBuilder;
+                return datasource;
               });
+            });
+            return Promise.all(promises);
+          }
+        }, {
+          key: 'getZabbixDataSources',
+          value: function getZabbixDataSources() {
+            return _.filter(this.datasourceSrv.getMetricSources(), function (datasource) {
+              return datasource.meta.id === ZABBIX_DS_ID && datasource.value;
             });
           }
         }, {
           key: 'onInitEditMode',
           value: function onInitEditMode() {
-            this.addEditorTab('Triggers', triggerPanelTriggersTab, 2);
-            this.addEditorTab('Options', triggerPanelOptionsTab, 3);
+            this.addEditorTab('Triggers', triggerPanelTriggersTab, 1);
+            this.addEditorTab('Options', triggerPanelOptionsTab, 2);
+          }
+        }, {
+          key: 'setTimeQueryStart',
+          value: function setTimeQueryStart() {
+            this.timing.queryStart = new Date().getTime();
+          }
+        }, {
+          key: 'setTimeQueryEnd',
+          value: function setTimeQueryEnd() {
+            this.timing.queryEnd = new Date().getTime();
           }
         }, {
           key: 'onRefresh',
@@ -202,33 +238,39 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
             // clear loading/error state
             delete this.error;
             this.loading = true;
+            this.setTimeQueryStart();
 
-            return this.refreshData().then(function (triggerList) {
-              // Limit triggers number
-              _this3.triggerList = triggerList.slice(0, _this3.panel.limit);
-
-              _this3.getCurrentTriggersPage();
-
+            return this.getTriggers().then(function (triggerList) {
               // Notify panel that request is finished
               _this3.loading = false;
+              _this3.setTimeQueryEnd();
 
+              // Limit triggers number
+              _this3.triggerList = triggerList.slice(0, _this3.panel.limit);
+              _this3.getCurrentTriggersPage();
               _this3.render(_this3.triggerList);
+            }).catch(function (err) {
+              // if cancelled  keep loading set to true
+              if (err.cancelled) {
+                console.log('Panel request cancelled', err);
+                return;
+              }
+
+              _this3.loading = false;
+              _this3.error = err.message || "Request Error";
+
+              if (err.data) {
+                if (err.data.message) {
+                  _this3.error = err.data.message;
+                }
+                if (err.data.error) {
+                  _this3.error = err.data.error;
+                }
+              }
+
+              _this3.events.emit('data-error', err);
+              console.log('Panel data error:', err);
             });
-          }
-        }, {
-          key: 'refreshData',
-          value: function refreshData() {
-            return this.getTriggers();
-          }
-        }, {
-          key: 'migratePanelConfig',
-          value: function migratePanelConfig() {
-            if (!this.panel.datasources || this.panel.datasource && !this.panel.datasources.length) {
-              this.panel.datasources = [this.panel.datasource];
-              this.panel.targets[this.panel.datasource] = this.panel.triggers;
-            } else if (_.isEmpty(this.panel.targets)) {
-              this.panel.targets[this.panel.datasources[0]] = this.panel.triggers;
-            }
           }
         }, {
           key: 'getTriggers',
@@ -238,8 +280,6 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
             var promises = _.map(this.panel.datasources, function (ds) {
               return _this4.datasourceSrv.get(ds).then(function (datasource) {
                 var zabbix = datasource.zabbix;
-                _this4.zabbix = zabbix;
-                _this4.datasource = datasource;
                 var showEvents = _this4.panel.showEvents.value;
                 var triggerFilter = _this4.panel.targets[ds];
                 var hideHostsInMaintenance = _this4.panel.hideHostsInMaintenance;
@@ -264,6 +304,8 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
 
             return Promise.all(promises).then(function (results) {
               return _.flatten(results);
+            }).then(function (triggers) {
+              return _this4.sortTriggers(triggers);
             }).then(function (triggers) {
               return _.map(triggers, _this4.formatTrigger.bind(_this4));
             });
@@ -336,13 +378,16 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
               return _this6.panel.triggerSeverity[trigger.priority].show;
             });
 
-            // Sort triggers
+            return triggerList;
+          }
+        }, {
+          key: 'sortTriggers',
+          value: function sortTriggers(triggerList) {
             if (this.panel.sortTriggersBy.value === 'priority') {
               triggerList = _.sortBy(triggerList, 'priority').reverse();
             } else {
               triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
             }
-
             return triggerList;
           }
         }, {
@@ -431,8 +476,9 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
               var endPos = Math.min(startPos + pageSize, ctrl.triggerList.length);
               ctrl.currentTriggersPage = ctrl.triggerList.slice(startPos, endPos);
 
-              scope.$apply();
-              renderPanel();
+              scope.$apply(function () {
+                renderPanel();
+              });
             }
 
             function appendPaginationControls(footerElem) {
@@ -468,6 +514,7 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
               appendPaginationControls(footerElem);
 
               rootElem.css({ 'max-height': panel.scroll ? getTableHeight() : '' });
+              ctrl.renderingCompleted();
             }
 
             elem.on('click', '.triggers-panel-page-link', switchPage);
@@ -480,9 +527,10 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
             ctrl.events.on('render', function (renderData) {
               data = renderData || data;
               if (data) {
-                renderPanel();
+                scope.$apply(function () {
+                  renderPanel();
+                });
               }
-              ctrl.renderingCompleted();
             });
           }
         }]);

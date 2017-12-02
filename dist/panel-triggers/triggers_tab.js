@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', '../datasource-zabbix/utils', './datasource-selector.directive', '../datasource-zabbix/css/query-editor.css!'], function (_export, _context) {
+System.register(['lodash', '../datasource-zabbix/utils', './datasource-selector.directive', '../datasource-zabbix/css/query-editor.css!', './module'], function (_export, _context) {
   "use strict";
 
-  var _, utils, _createClass, ZABBIX_DS_ID, DEFAULT_TARGET, TriggersTabCtrl;
+  var _, utils, DEFAULT_TARGET, _createClass, TriggersTabCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -27,7 +27,9 @@ System.register(['lodash', '../datasource-zabbix/utils', './datasource-selector.
       _ = _lodash.default;
     }, function (_datasourceZabbixUtils) {
       utils = _datasourceZabbixUtils;
-    }, function (_datasourceSelectorDirective) {}, function (_datasourceZabbixCssQueryEditorCss) {}],
+    }, function (_datasourceSelectorDirective) {}, function (_datasourceZabbixCssQueryEditorCss) {}, function (_module) {
+      DEFAULT_TARGET = _module.DEFAULT_TARGET;
+    }],
     execute: function () {
       _createClass = function () {
         function defineProperties(target, props) {
@@ -47,40 +49,26 @@ System.register(['lodash', '../datasource-zabbix/utils', './datasource-selector.
         };
       }();
 
-      ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
-      DEFAULT_TARGET = {
-        group: { filter: "" },
-        host: { filter: "" },
-        application: { filter: "" },
-        trigger: { filter: "" }
-      };
-
       TriggersTabCtrl = function () {
 
         /** @ngInject */
-        function TriggersTabCtrl($scope, $rootScope, uiSegmentSrv, datasourceSrv, templateSrv) {
+        function TriggersTabCtrl($scope, $rootScope, uiSegmentSrv, templateSrv) {
           _classCallCheck(this, TriggersTabCtrl);
 
           $scope.editor = this;
           this.panelCtrl = $scope.ctrl;
           this.panel = this.panelCtrl.panel;
-          this.datasourceSrv = datasourceSrv;
           this.templateSrv = templateSrv;
+          this.datasources = this.panelCtrl.datasources;
 
           // Load scope defaults
           var scopeDefaults = {
-            datasources: {},
             getGroupNames: {},
             getHostNames: {},
             getApplicationNames: {},
             oldTarget: _.cloneDeep(this.panel.targets)
           };
           _.defaultsDeep(this, scopeDefaults);
-
-          this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
-          if (!this.panel.datasource) {
-            this.panel.datasource = this.available_datasources[0];
-          }
 
           this.initDatasources();
           this.panelCtrl.refresh();
@@ -91,47 +79,42 @@ System.register(['lodash', '../datasource-zabbix/utils', './datasource-selector.
           value: function initDatasources() {
             var _this = this;
 
-            _.each(this.panel.datasources, function (ds) {
-              // Load datasource
-              _this.datasourceSrv.get(ds).then(function (datasource) {
-                _this.panelCtrl.datasources[ds] = datasource;
-                _this.datasources[ds] = datasource;
-
-                // Map functions for bs-typeahead
-                _this.getGroupNames[ds] = _.bind(_this.suggestGroups, _this, datasource);
-                _this.getHostNames[ds] = _.bind(_this.suggestHosts, _this, datasource);
-                _this.getApplicationNames[ds] = _.bind(_this.suggestApps, _this, datasource);
+            return this.panelCtrl.initDatasources().then(function (datasources) {
+              _.each(datasources, function (datasource) {
+                _this.bindSuggestionFunctions(datasource);
               });
             });
           }
         }, {
-          key: 'getZabbixDataSources',
-          value: function getZabbixDataSources() {
-            return _.filter(this.datasourceSrv.getMetricSources(), function (datasource) {
-              return datasource.meta.id === ZABBIX_DS_ID && datasource.value;
-            });
+          key: 'bindSuggestionFunctions',
+          value: function bindSuggestionFunctions(datasource) {
+            // Map functions for bs-typeahead
+            var ds = datasource.name;
+            this.getGroupNames[ds] = _.bind(this.suggestGroups, this, datasource);
+            this.getHostNames[ds] = _.bind(this.suggestHosts, this, datasource);
+            this.getApplicationNames[ds] = _.bind(this.suggestApps, this, datasource);
           }
         }, {
           key: 'suggestGroups',
-          value: function suggestGroups(ds, query, callback) {
-            return ds.zabbix.getAllGroups().then(function (groups) {
+          value: function suggestGroups(datasource, query, callback) {
+            return datasource.zabbix.getAllGroups().then(function (groups) {
               return _.map(groups, 'name');
             }).then(callback);
           }
         }, {
           key: 'suggestHosts',
-          value: function suggestHosts(ds, query, callback) {
-            var groupFilter = ds.replaceTemplateVars(this.panel.targets[ds.name].group.filter);
-            return ds.zabbix.getAllHosts(groupFilter).then(function (hosts) {
+          value: function suggestHosts(datasource, query, callback) {
+            var groupFilter = datasource.replaceTemplateVars(this.panel.targets[datasource.name].group.filter);
+            return datasource.zabbix.getAllHosts(groupFilter).then(function (hosts) {
               return _.map(hosts, 'name');
             }).then(callback);
           }
         }, {
           key: 'suggestApps',
-          value: function suggestApps(ds, query, callback) {
-            var groupFilter = ds.replaceTemplateVars(this.panel.targets[ds.name].group.filter);
-            var hostFilter = ds.replaceTemplateVars(this.panel.targets[ds.name].host.filter);
-            return ds.zabbix.getAllApps(groupFilter, hostFilter).then(function (apps) {
+          value: function suggestApps(datasource, query, callback) {
+            var groupFilter = datasource.replaceTemplateVars(this.panel.targets[datasource.name].group.filter);
+            var hostFilter = datasource.replaceTemplateVars(this.panel.targets[datasource.name].host.filter);
+            return datasource.zabbix.getAllApps(groupFilter, hostFilter).then(function (apps) {
               return _.map(apps, 'name');
             }).then(callback);
           }
@@ -150,12 +133,15 @@ System.register(['lodash', '../datasource-zabbix/utils', './datasource-selector.
         }, {
           key: 'parseTarget',
           value: function parseTarget() {
-            this.initDatasources();
-            var newTarget = _.cloneDeep(this.panel.targets);
-            if (!_.isEqual(this.oldTarget, newTarget)) {
-              this.oldTarget = newTarget;
-            }
-            this.panelCtrl.refresh();
+            var _this3 = this;
+
+            this.initDatasources().then(function () {
+              var newTarget = _.cloneDeep(_this3.panel.targets);
+              if (!_.isEqual(_this3.oldTarget, newTarget)) {
+                _this3.oldTarget = newTarget;
+              }
+              _this3.panelCtrl.refresh();
+            });
           }
         }, {
           key: 'isRegex',
