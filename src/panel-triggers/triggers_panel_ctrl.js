@@ -27,7 +27,7 @@ export const DEFAULT_SEVERITY = [
 
 const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
-const panelDefaults = {
+export const PANEL_DEFAULTS = {
   schemaVersion: 2,
   datasources: [],
   targets: {},
@@ -81,7 +81,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.datasources = {};
 
     this.panel = migratePanelSchema(this.panel);
-    _.defaults(this.panel, _.cloneDeep(panelDefaults));
+    _.defaults(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
     this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
     if (this.panel.datasources.length === 0) {
@@ -200,11 +200,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     return Promise.all(promises)
     .then(results => _.flatten(results))
-    .then((triggers) => {
-      return this.sortTriggers(triggers);
-    })
     .then(triggers => {
       return _.map(triggers, this.formatTrigger.bind(this));
+    })
+    .then((triggers) => {
+      return this.sortTriggers(triggers);
     });
   }
 

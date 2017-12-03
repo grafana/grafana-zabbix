@@ -1,6 +1,5 @@
 import {TriggerPanelCtrl} from '../triggers_panel_ctrl';
-import {DEFAULT_TARGET} from '../triggers_panel_ctrl';
-import {DEFAULT_SEVERITY} from '../triggers_panel_ctrl';
+import {DEFAULT_TARGET, DEFAULT_SEVERITY} from '../triggers_panel_ctrl';
 
 describe('Triggers Panel schema migration', () => {
   let ctx = {};
@@ -39,7 +38,7 @@ describe('Triggers Panel schema migration', () => {
     };
   });
 
-  it('should update old panel schema', (done) => {
+  it('should update old panel schema', () => {
     let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
 
     let expected = {
@@ -71,10 +70,9 @@ describe('Triggers Panel schema migration', () => {
     };
 
     expect(updatedPanelCtrl.panel).toEqual(expected);
-    done();
   });
 
-  it('should create new panel with default schema', (done) => {
+  it('should create new panel with default schema', () => {
     ctx.scope.panel = {};
     let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
 
@@ -107,6 +105,5 @@ describe('Triggers Panel schema migration', () => {
     };
 
     expect(updatedPanelCtrl.panel).toEqual(expected);
-    done();
   });
 });

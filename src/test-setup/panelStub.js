@@ -6,8 +6,10 @@ export class PanelCtrl {
     this.$injector = $injector;
     this.$scope = $scope;
     this.panel = $scope.panel;
+    this.timing = {};
     this.events = {
-      on: () => {}
+      on: () => {},
+      emit: () => {}
     };
   }
 

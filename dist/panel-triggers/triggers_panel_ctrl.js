@@ -3,7 +3,7 @@
 System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'app/plugins/sdk', './options_tab', './triggers_tab', './migrations'], function (_export, _context) {
   "use strict";
 
-  var _, $, moment, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, _createClass, ZABBIX_DS_ID, DEFAULT_TARGET, DEFAULT_SEVERITY, DEFAULT_TIME_FORMAT, panelDefaults, triggerStatusMap, TriggerPanelCtrl;
+  var _, $, moment, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, _createClass, ZABBIX_DS_ID, DEFAULT_TARGET, DEFAULT_SEVERITY, DEFAULT_TIME_FORMAT, PANEL_DEFAULTS, triggerStatusMap, TriggerPanelCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -99,7 +99,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
       _export('DEFAULT_SEVERITY', DEFAULT_SEVERITY);
 
       DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
-      panelDefaults = {
+
+      _export('PANEL_DEFAULTS', PANEL_DEFAULTS = {
         schemaVersion: 2,
         datasources: [],
         targets: {},
@@ -127,7 +128,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         triggerSeverity: DEFAULT_SEVERITY,
         okEventColor: 'rgba(0, 245, 153, 0.45)',
         ackEventColor: 'rgba(0, 0, 0, 0)'
-      };
+      });
+
+      _export('PANEL_DEFAULTS', PANEL_DEFAULTS);
+
       triggerStatusMap = {
         '0': 'OK',
         '1': 'Problem'
@@ -156,7 +160,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           _this.datasources = {};
 
           _this.panel = migratePanelSchema(_this.panel);
-          _.defaults(_this.panel, _.cloneDeep(panelDefaults));
+          _.defaults(_this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
           _this.available_datasources = _.map(_this.getZabbixDataSources(), 'name');
           if (_this.panel.datasources.length === 0) {
@@ -289,9 +293,9 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             return Promise.all(promises).then(function (results) {
               return _.flatten(results);
             }).then(function (triggers) {
-              return _this4.sortTriggers(triggers);
-            }).then(function (triggers) {
               return _.map(triggers, _this4.formatTrigger.bind(_this4));
+            }).then(function (triggers) {
+              return _this4.sortTriggers(triggers);
             });
           }
         }, {
