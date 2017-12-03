@@ -122,7 +122,7 @@
       label-class="width-16"
       label="Custom Last change format"
       checked="editor.panel.customLastChangeFormat"
-      on-change="ctrl.render()">
+      on-change="editor.panelCtrl.refresh()">
     </gf-form-switch>
     <div class="gf-form" ng-if="editor.panel.customLastChangeFormat">
       <label class="gf-form-label width-3">

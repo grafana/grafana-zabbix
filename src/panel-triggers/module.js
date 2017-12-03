@@ -45,41 +45,41 @@ const defaultSeverity = [
   { priority: 5, severity: 'Disaster',        color: '#890F02', show: true }
 ];
 
+const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
+
 const panelDefaults = {
+  schemaVersion: 2,
   datasources: [],
-  triggers: {
-    group: {filter: ""},
-    host: {filter: ""},
-    application: {filter: ""},
-    trigger: {filter: ""}
-  },
   targets: {},
+  // Fields
   hostField: true,
   statusField: false,
   severityField: false,
   lastChangeField: true,
   ageField: true,
   infoField: true,
-  limit: 10,
-  showTriggers: 'all triggers',
+  // Options
   hideHostsInMaintenance: false,
+  showTriggers: 'all triggers',
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
   showEvents: { text: 'Problems', value: '1' },
+  limit: 10,
+  // View options
+  fontSize: '100%',
+  pageSize: 10,
+  scroll: true,
+  customLastChangeFormat: false,
+  lastChangeFormat: "",
+  // Triggers severity and colors
   triggerSeverity: defaultSeverity,
   okEventColor: 'rgba(0, 245, 153, 0.45)',
-  ackEventColor: 'rgba(0, 0, 0, 0)',
-  scroll: true,
-  pageSize: 10,
-  fontSize: '100%',
-  schemaVersion: 2
+  ackEventColor: 'rgba(0, 0, 0, 0)'
 };
 
 const triggerStatusMap = {
   '0': 'OK',
   '1': 'Problem'
 };
-
-const defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 
 class TriggerPanelCtrl extends PanelCtrl {
 
@@ -93,7 +93,7 @@ class TriggerPanelCtrl extends PanelCtrl {
 
     this.editorTabIndex = 1;
     this.triggerStatusMap = triggerStatusMap;
-    this.defaultTimeFormat = defaultTimeFormat;
+    this.defaultTimeFormat = DEFAULT_TIME_FORMAT;
     this.pageIndex = 0;
     this.triggerList = [];
     this.currentTriggersPage = [];

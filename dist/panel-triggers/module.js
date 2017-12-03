@@ -3,7 +3,7 @@
 System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource-zabbix/utils', './options_tab', './triggers_tab', './migrations', './ack-tooltip.directive'], function (_export, _context) {
   "use strict";
 
-  var _, $, moment, loadPluginCss, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, _createClass, ZABBIX_DS_ID, DEFAULT_TARGET, defaultSeverity, panelDefaults, triggerStatusMap, defaultTimeFormat, TriggerPanelCtrl;
+  var _, $, moment, loadPluginCss, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, _createClass, ZABBIX_DS_ID, DEFAULT_TARGET, defaultSeverity, DEFAULT_TIME_FORMAT, panelDefaults, triggerStatusMap, TriggerPanelCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -115,39 +115,39 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
       _export('DEFAULT_TARGET', DEFAULT_TARGET);
 
       defaultSeverity = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true }, { priority: 3, severity: 'Average', color: '#C15C17', show: true }, { priority: 4, severity: 'High', color: '#BF1B00', show: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true }];
+      DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
       panelDefaults = {
+        schemaVersion: 2,
         datasources: [],
-        triggers: {
-          group: { filter: "" },
-          host: { filter: "" },
-          application: { filter: "" },
-          trigger: { filter: "" }
-        },
         targets: {},
+        // Fields
         hostField: true,
         statusField: false,
         severityField: false,
         lastChangeField: true,
         ageField: true,
         infoField: true,
-        limit: 10,
-        showTriggers: 'all triggers',
+        // Options
         hideHostsInMaintenance: false,
+        showTriggers: 'all triggers',
         sortTriggersBy: { text: 'last change', value: 'lastchange' },
         showEvents: { text: 'Problems', value: '1' },
+        limit: 10,
+        // View options
+        fontSize: '100%',
+        pageSize: 10,
+        scroll: true,
+        customLastChangeFormat: false,
+        lastChangeFormat: "",
+        // Triggers severity and colors
         triggerSeverity: defaultSeverity,
         okEventColor: 'rgba(0, 245, 153, 0.45)',
-        ackEventColor: 'rgba(0, 0, 0, 0)',
-        scroll: true,
-        pageSize: 10,
-        fontSize: '100%',
-        schemaVersion: 2
+        ackEventColor: 'rgba(0, 0, 0, 0)'
       };
       triggerStatusMap = {
         '0': 'OK',
         '1': 'Problem'
       };
-      defaultTimeFormat = "DD MMM YYYY HH:mm:ss";
 
       _export('PanelCtrl', _export('TriggerPanelCtrl', TriggerPanelCtrl = function (_PanelCtrl) {
         _inherits(TriggerPanelCtrl, _PanelCtrl);
@@ -165,7 +165,7 @@ System.register(['lodash', 'jquery', 'moment', 'app/plugins/sdk', '../datasource
 
           _this.editorTabIndex = 1;
           _this.triggerStatusMap = triggerStatusMap;
-          _this.defaultTimeFormat = defaultTimeFormat;
+          _this.defaultTimeFormat = DEFAULT_TIME_FORMAT;
           _this.pageIndex = 0;
           _this.triggerList = [];
           _this.currentTriggersPage = [];
