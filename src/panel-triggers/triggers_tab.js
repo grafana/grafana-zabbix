@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as utils from '../datasource-zabbix/utils';
 import './datasource-selector.directive';
 import '../datasource-zabbix/css/query-editor.css!';
-import {DEFAULT_TARGET} from './module';
+import {DEFAULT_TARGET} from './triggers_panel_ctrl';
 
 class TriggersTabCtrl {
 
