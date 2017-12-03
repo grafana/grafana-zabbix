@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Multiple data sources support for triggers panel, [#431](https://github.com/alexanderzobnin/grafana-zabbix/issues/431)
+- Text color selector for triggers panel, [#361](https://github.com/alexanderzobnin/grafana-zabbix/issues/361)
+
+### Changed
+- Tests migrated to [Jest](http://facebook.github.io/jest/)
+
+### Fixed
+- Triggers panel refreshing issues
 
 ## [3.7.0] - 2017-10-24
 ### Added
