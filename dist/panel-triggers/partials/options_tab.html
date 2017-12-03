@@ -1,0 +1,199 @@
+<div class="editor-row">
+  <div class="section gf-form-group">
+    <h5 class="section-heading">Show fields</h5>
+    <gf-form-switch class="gf-form"
+      label-class="width-9"
+      label="Host name"
+      checked="editor.panel.hostField"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+    <gf-form-switch class="gf-form"
+      label-class="width-9"
+      label="Technical name"
+      checked="editor.panel.hostTechNameField"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+    <gf-form-switch class="gf-form"
+      label-class="width-9"
+      label="Status"
+      checked="editor.panel.statusField"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+    <gf-form-switch class="gf-form"
+      label-class="width-9"
+      label="Severity"
+      checked="editor.panel.severityField"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+    <gf-form-switch class="gf-form"
+      label-class="width-9"
+      label="Last change"
+      checked="editor.panel.lastChangeField"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+    <gf-form-switch class="gf-form"
+      label-class="width-9"
+      label="Age"
+      checked="editor.panel.ageField"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+    <gf-form-switch class="gf-form"
+      label-class="width-9"
+      label="Info"
+      checked="editor.panel.infoField"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+  </div>
+
+  <div class="section gf-form-group">
+    <h5 class="section-heading">Options</h5>
+    <gf-form-switch class="gf-form"
+      label-class="width-15"
+      label="Hide hosts in maintenance"
+      checked="editor.panel.hideHostsInMaintenance"
+      on-change="ctrl.refresh()">
+    </gf-form-switch>
+    <div class="gf-form">
+      <label class="gf-form-label width-8">Acknowledged</label>
+      <div class="gf-form-select-wrapper width-12">
+        <select class="gf-form-input"
+          ng-model="editor.panel.showTriggers"
+          ng-options="f for f in editor.ackFilters"
+          ng-change="editor.panelCtrl.refresh()">
+        </select>
+      </div>
+    </div>
+    <div class="gf-form">
+      <label class="gf-form-label width-8">Sort by</label>
+      <div class="gf-form-select-wrapper width-12">
+        <select class="gf-form-input"
+          ng-model="editor.panel.sortTriggersBy"
+          ng-options="f.text for f in editor.sortByFields track by f.value"
+          ng-change="editor.panelCtrl.refresh()">
+        </select>
+      </div>
+    </div>
+    <div class="gf-form">
+      <label class="gf-form-label width-8">Show events</label>
+      <div class="gf-form-select-wrapper width-12">
+        <select class="gf-form-input"
+          ng-model="editor.panel.showEvents"
+          ng-options="f.text for f in editor.showEventsFields track by f.value"
+          ng-change="editor.panelCtrl.refresh()">
+        </select>
+      </div>
+    </div>
+    <div class="gf-form">
+      <label class="gf-form-label width-8">Limit triggers</label>
+      <input class="gf-form-input width-5"
+        type="number"
+        ng-model="editor.panel.limit"
+        ng-model-onblur
+        ng-change="editor.panelCtrl.refresh()">
+    </div>
+  </div>
+
+  <div class="section gf-form-group">
+    <h5 class="section-heading">View options</h5>
+    <div class="gf-form max-width-14">
+      <label class="gf-form-label width-8">Font size</label>
+      <div class="gf-form-select-wrapper max-width-6">
+        <select class="gf-form-input"
+            ng-model="editor.panel.fontSize"
+            ng-options="f for f in editor.fontSizes"
+            ng-change="editor.panelCtrl.render()"></select>
+      </div>
+    </div>
+    <div class="gf-form">
+      <label class="gf-form-label width-8">Page size</label>
+      <input class="gf-form-input width-6"
+        type="number"
+        ng-model="editor.panel.pageSize"
+        ng-model-onblur
+        ng-change="editor.panelCtrl.refresh()">
+    </div>
+    <gf-form-switch class="gf-form"
+      label-class="width-8"
+      label="Enable scroll"
+      checked="editor.panel.scroll"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+    <gf-form-switch class="gf-form"
+      label-class="width-16"
+      label="Custom Last change format"
+      checked="editor.panel.customLastChangeFormat"
+      on-change="editor.panelCtrl.refresh()">
+    </gf-form-switch>
+    <div class="gf-form" ng-if="editor.panel.customLastChangeFormat">
+      <label class="gf-form-label width-3">
+        <a href="http://momentjs.com/docs/#/displaying/format/" target="_blank">
+          <tip>See moment.js dosc for time format.</tip>
+        </a>
+      </label>
+      <input class="gf-form-input width-18"
+        type="text"
+        placeholder="dddd, MMMM Do YYYY, h:mm:ss a"
+        empty-to-null
+        ng-model-onblur
+        ng-model="editor.panel.lastChangeFormat"
+        ng-change="editor.panelCtrl.refresh()">
+    </div>
+  </div>
+
+  <div class="section gf-form-group">
+    <h5 class="section-heading">Triggers severity and colors</h5>
+    <div class="gf-form-inline" ng-repeat="trigger in editor.panel.triggerSeverity">
+      <div class="gf-form">
+        <label class="gf-form-label width-3">{{ trigger.priority }}</label>
+        <input type="text"
+          class="gf-form-input width-12"
+          empty-to-null
+          ng-model="trigger.severity"
+          style="color: white"
+          ng-style="{background: trigger.color}"
+          ng-model-onblur
+          ng-change="editor.panelCtrl.refresh()">
+        <span class="gf-form-label">
+          <spectrum-picker ng-model="trigger.color" ng-change="editor.panelCtrl.refresh()"></spectrum-picker>
+        </span>
+      </div>
+      <gf-form-switch class="gf-form"
+        label-class="width-0"
+        label="Show"
+        checked="trigger.show"
+        on-change="editor.panelCtrl.refresh()">
+      </gf-form-switch>
+    </div>
+
+    <div class="gf-form-inline">
+      <div class="gf-form">
+        <label class="gf-form-label width-3">&nbsp;</label>
+        <label class="gf-form-input width-12"
+          ng-style="{background:editor.panel.ackEventColor}">
+          Acknowledged color
+        </label>
+        <span class="gf-form-label">
+          <spectrum-picker ng-model="editor.panel.ackEventColor" ng-change="editor.panelCtrl.refresh()"></spectrum-picker>
+        </span>
+      </div>
+      <gf-form-switch class="gf-form"
+        label-class="width-0"
+        label="Show"
+        checked="editor.panel.markAckEvents"
+        on-change="editor.panelCtrl.refresh()">
+      </gf-form-switch>
+    </div>
+    <div class="gf-form-inline">
+      <div class="gf-form">
+        <label class="gf-form-label width-3">&nbsp;</label>
+        <label class="gf-form-input width-12"
+          ng-style="{background:editor.panel.okEventColor}">
+          OK event color
+        </label>
+        <span class="gf-form-label">
+          <spectrum-picker ng-model="editor.panel.okEventColor" ng-change="editor.panelCtrl.refresh()"></spectrum-picker>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
