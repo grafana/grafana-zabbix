@@ -118,6 +118,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         limit: 10,
         // View options
         fontSize: '100%',
+        fontColor: null,
         pageSize: 10,
         scroll: true,
         customLastChangeFormat: false,
@@ -523,7 +524,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
       _export('TriggerPanelCtrl', TriggerPanelCtrl);
 
-      TriggerPanelCtrl.templateUrl = 'panel-triggers/module.html';
+      TriggerPanelCtrl.templateUrl = 'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/partials/module.html';
     }
   };
 });

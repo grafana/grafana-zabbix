@@ -46,6 +46,7 @@ const panelDefaults = {
   limit: 10,
   // View options
   fontSize: '100%',
+  fontColor: null,
   pageSize: 10,
   scroll: true,
   customLastChangeFormat: false,
@@ -422,7 +423,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 }
 
-TriggerPanelCtrl.templateUrl = 'panel-triggers/module.html';
+TriggerPanelCtrl.templateUrl = 'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/partials/module.html';
 
 function filterTriggers(triggers, triggerFilter) {
   if (utils.isRegex(triggerFilter)) {

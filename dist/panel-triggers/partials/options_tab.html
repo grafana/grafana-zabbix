@@ -104,6 +104,12 @@
             ng-change="editor.panelCtrl.render()"></select>
       </div>
     </div>
+    <div class="gf-form max-width-14">
+      <label class="gf-form-label width-8">Font color</label>
+      <span class="gf-form-label">
+        <spectrum-picker ng-model="editor.panel.fontColor" ng-change="editor.panelCtrl.refresh()"></spectrum-picker>
+      </span>
+    </div>
     <div class="gf-form">
       <label class="gf-form-label width-8">Page size</label>
       <input class="gf-form-input width-6"
@@ -149,8 +155,7 @@
           class="gf-form-input width-12"
           empty-to-null
           ng-model="trigger.severity"
-          style="color: white"
-          ng-style="{background: trigger.color}"
+          ng-style="{background: trigger.color, color: editor.panel.fontColor}"
           ng-model-onblur
           ng-change="editor.panelCtrl.refresh()">
         <span class="gf-form-label">
@@ -169,7 +174,7 @@
       <div class="gf-form">
         <label class="gf-form-label width-3">&nbsp;</label>
         <label class="gf-form-input width-12"
-          ng-style="{background:editor.panel.ackEventColor}">
+          ng-style="{background:editor.panel.ackEventColor, color: editor.panel.fontColor}">
           Acknowledged color
         </label>
         <span class="gf-form-label">
@@ -187,7 +192,7 @@
       <div class="gf-form">
         <label class="gf-form-label width-3">&nbsp;</label>
         <label class="gf-form-input width-12"
-          ng-style="{background:editor.panel.okEventColor}">
+          ng-style="{background:editor.panel.okEventColor, color: editor.panel.fontColor}">
           OK event color
         </label>
         <span class="gf-form-label">

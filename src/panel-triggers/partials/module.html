@@ -49,23 +49,22 @@
             </div>
           </td>
 
-          <td ng-if="ctrl.panel.statusField"
-            class="zbx-field-colored"
-            style="background-color: {{trigger.color}};">
+          <td ng-if="ctrl.panel.statusField" class="zbx-field-colored"
+            ng-style="{background: trigger.color, color: ctrl.panel.fontColor}">
             <div>
               {{ctrl.triggerStatusMap[trigger.value]}}
             </div>
           </td>
 
-          <td ng-if="ctrl.panel.severityField"
-            class="zbx-field-colored"
-            style="background-color: {{trigger.color}};">
+          <td ng-if="ctrl.panel.severityField" class="zbx-field-colored"
+            ng-style="{background: trigger.color, color: ctrl.panel.fontColor}">
             <div>
               {{trigger.severity}}
             </div>
           </td>
 
-          <td class="zbx-field-colored" style="background-color: {{trigger.color}};">
+          <td class="zbx-field-colored"
+            ng-style="{background: trigger.color, color: ctrl.panel.fontColor}">
             <div>
               {{trigger.description}}
               <a  ng-if="trigger.comments"
