@@ -1,20 +1,27 @@
-.triggers-panel-wrapper .panel-content {
-  padding: 0; }
-
-.triggers-panel-wrapper .panel-title-container {
-  padding-bottom: 4px; }
-
 .triggers-panel-scroll {
   overflow: auto; }
 
 .triggers-panel-container {
-  padding-top: 2.2em;
   position: relative; }
+  .triggers-panel-container .zabbix-hostname {
+    color: #767980;
+    margin-left: 1rem;
+    font-weight: bold; }
+  .triggers-panel-container .alert-list-info.alert-list-info-left {
+    color: #acb6bf; }
+  .triggers-panel-container .trigger-info-block {
+    display: inline; }
+    .triggers-panel-container .trigger-info-block i {
+      margin-right: 0.4rem; }
+    .triggers-panel-container .trigger-info-block i,
+    .triggers-panel-container .trigger-info-block a {
+      color: #767980; }
 
 .triggers-panel-footer {
   text-align: center;
   font-size: 90%;
-  line-height: 2px; }
+  line-height: 2px;
+  padding-top: 4px; }
   .triggers-panel-footer ul {
     position: relative;
     display: inline-block;
@@ -28,54 +35,10 @@
     text-decoration: none;
     border-left-width: 0; }
     .triggers-panel-footer ul > li > a:hover {
-      background-color: #ECECEC; }
+      background-color: #dde4ed; }
     .triggers-panel-footer ul > li > a.active {
       font-weight: bold;
       color: #2AB2E4; }
-
-.triggers-panel-table {
-  width: 100%;
-  border-collapse: collapse; }
-  .triggers-panel-table th {
-    padding: 0; }
-    .triggers-panel-table th:first-child .triggers-panel-table-header-inner {
-      padding-left: 15px; }
-  .triggers-panel-table td {
-    padding: 0.45em 0 0.45em 1.1em;
-    border-bottom: 2px solid #fff;
-    border-right: 2px solid #fff; }
-    .triggers-panel-table td:first-child {
-      padding-left: 15px; }
-    .triggers-panel-table td:last-child {
-      border-right: none; }
-  .triggers-panel-table .zbx-field-colored {
-    color: #f4f5f8; }
-  .triggers-panel-table .zbx-description-icon {
-    float: right;
-    padding-right: 8px;
-    color: #f4f5f8; }
-
-.triggers-panel-header-bg {
-  background: #ECECEC;
-  border-top: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  height: 2.0em;
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0; }
-
-.triggers-panel-table-header-inner {
-  padding: 0.45em 0 0.45em 1.1em;
-  text-align: left;
-  color: #2AB2E4;
-  position: absolute;
-  top: 0; }
-
-.triggers-panel-width-hack {
-  visibility: hidden;
-  height: 0px;
-  line-height: 0px; }
 
 .ack-tooltip .drop-content {
   max-width: 70rem !important;

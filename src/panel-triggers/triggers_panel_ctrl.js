@@ -59,7 +59,7 @@ export const PANEL_DEFAULTS = {
 
 const triggerStatusMap = {
   '0': 'OK',
-  '1': 'Problem'
+  '1': 'PROBLEM'
 };
 
 export class TriggerPanelCtrl extends PanelCtrl {
@@ -135,6 +135,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     delete this.error;
     this.loading = true;
     this.setTimeQueryStart();
+    this.pageIndex = 0;
 
     return this.getTriggers()
     .then(triggerList => {
@@ -199,13 +200,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     });
 
     return Promise.all(promises)
-    .then(results => _.flatten(results))
-    .then(triggers => {
-      return _.map(triggers, this.formatTrigger.bind(this));
-    })
-    .then((triggers) => {
-      return this.sortTriggers(triggers);
-    });
+    .then(results => _.flatten(results));
   }
 
   getAcknowledges(triggerList, ds) {
@@ -234,11 +229,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
             ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
             return ack;
           });
-
-          // Mark acknowledged triggers with different color
-          if (this.panel.markAckEvents && trigger.acknowledges.length) {
-            trigger.color = this.panel.ackEventColor;
-          }
         }
       });
 
@@ -275,26 +265,16 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   sortTriggers(triggerList) {
     if (this.panel.sortTriggersBy.value === 'priority') {
-      triggerList = _.sortBy(triggerList, 'priority').reverse();
+      triggerList = _.sortBy(triggerList, ['priority', 'triggerid']).reverse();
     } else {
-      triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
+      triggerList = _.sortBy(triggerList, ['lastchangeUnix', 'triggerid']).reverse();
     }
     return triggerList;
   }
 
-  formatTrigger(trigger) {
+  formatTrigger(zabbixTrigger) {
+    let trigger = _.cloneDeep(zabbixTrigger);
     let triggerObj = trigger;
-
-    // Format last change and age
-    trigger.lastchangeUnix = Number(trigger.lastchange);
-    let timestamp = moment.unix(trigger.lastchangeUnix);
-    if (this.panel.customLastChangeFormat) {
-      // User defined format
-      triggerObj.lastchange = timestamp.format(this.panel.lastChangeFormat);
-    } else {
-      triggerObj.lastchange = timestamp.format(this.defaultTimeFormat);
-    }
-    triggerObj.age = timestamp.fromNow(true);
 
     // Set host that the trigger belongs
     if (trigger.hosts.length) {
@@ -302,17 +282,47 @@ export class TriggerPanelCtrl extends PanelCtrl {
       triggerObj.hostTechName = trigger.hosts[0].host;
     }
 
-    // Set color
+    // Format last change and age
+    trigger.lastchangeUnix = Number(trigger.lastchange);
+    triggerObj = this.setTriggerLastChange(triggerObj);
+    triggerObj = this.setTriggerSeverity(triggerObj);
+    return triggerObj;
+  }
+
+  updateTriggerFormat(trigger) {
+    trigger = this.setTriggerLastChange(trigger);
+    trigger = this.setTriggerSeverity(trigger);
+    return trigger;
+  }
+
+  setTriggerSeverity(trigger) {
     if (trigger.value === '1') {
       // Problem state
-      triggerObj.color = this.panel.triggerSeverity[trigger.priority].color;
+      trigger.color = this.panel.triggerSeverity[trigger.priority].color;
     } else {
       // OK state
-      triggerObj.color = this.panel.okEventColor;
+      trigger.color = this.panel.okEventColor;
+    }
+    trigger.severity = this.panel.triggerSeverity[trigger.priority].severity;
+
+    // Mark acknowledged triggers with different color
+    if (this.panel.markAckEvents && trigger.acknowledges && trigger.acknowledges.length) {
+      trigger.color = this.panel.ackEventColor;
     }
 
-    triggerObj.severity = this.panel.triggerSeverity[trigger.priority].severity;
-    return triggerObj;
+    return trigger;
+  }
+
+  setTriggerLastChange(trigger) {
+    let timestamp = moment.unix(trigger.lastchangeUnix);
+    if (this.panel.customLastChangeFormat) {
+      // User defined format
+      trigger.lastchange = timestamp.format(this.panel.lastChangeFormat);
+    } else {
+      trigger.lastchange = timestamp.format(this.defaultTimeFormat);
+    }
+    trigger.age = timestamp.fromNow(true);
+    return trigger;
   }
 
   switchComment(trigger) {
@@ -339,20 +349,29 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return this.currentTriggersPage;
   }
 
-  link(scope, elem, attrs, ctrl) {
-    var data;
-    var panel = ctrl.panel;
-    var pageCount = 0;
-    data = ctrl.triggerList;
+  formatHostName(trigger) {
+    if (this.panel.hostField && this.panel.hostTechNameField) {
+      return `${trigger.host} (${trigger.hostTechName})`;
+    } else if (this.panel.hostField || this.panel.hostTechNameField) {
+      return trigger.host || trigger.hostTechName;
+    } else {
+      return "";
+    }
+  }
 
-    function getTableHeight() {
-      var panelHeight = ctrl.height;
+  link(scope, elem, attrs, ctrl) {
+    let panel = ctrl.panel;
+    let pageCount = 0;
+    let data = ctrl.triggerList;
+
+    function getContentHeight() {
+      let panelHeight = ctrl.height;
 
       if (pageCount > 1) {
-        panelHeight -= 26;
+        panelHeight -= 36;
       }
 
-      return (panelHeight - 31) + 'px';
+      return panelHeight + 'px';
     }
 
     function switchPage(e) {
@@ -372,52 +391,68 @@ export class TriggerPanelCtrl extends PanelCtrl {
     function appendPaginationControls(footerElem) {
       footerElem.empty();
 
-      var pageSize = ctrl.panel.pageSize || 5;
+      let pageSize = ctrl.panel.pageSize || 5;
       pageCount = Math.ceil(data.length / pageSize);
       if (pageCount === 1) {
         return;
       }
 
-      var startPage = Math.max(ctrl.pageIndex - 3, 0);
-      var endPage = Math.min(pageCount, startPage + 9);
+      let startPage = Math.max(ctrl.pageIndex - 3, 0);
+      let endPage = Math.min(pageCount, startPage + 9);
 
-      var paginationList = $('<ul></ul>');
+      let paginationList = $('<ul></ul>');
 
-      for (var i = startPage; i < endPage; i++) {
-        var activeClass = i === ctrl.pageIndex ? 'active' : '';
-        var pageLinkElem = $('<li><a class="triggers-panel-page-link pointer ' + activeClass + '">' + (i+1) + '</a></li>');
+      for (let i = startPage; i < endPage; i++) {
+        let activeClass = i === ctrl.pageIndex ? 'active' : '';
+        let pageLinkElem = $('<li><a class="triggers-panel-page-link pointer ' + activeClass + '">' + (i+1) + '</a></li>');
         paginationList.append(pageLinkElem);
       }
 
       footerElem.append(paginationList);
     }
 
+    function setFontSize() {
+      const fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1));
+      let triggerCardElem = elem.find('.card-item-wrapper');
+      if (fontSize && fontSize !== 100) {
+        triggerCardElem.find('.alert-list-icon').css({'font-size': fontSize + '%'});
+        triggerCardElem.find('.alert-list-title').css({'font-size': fontSize + '%'});
+        triggerCardElem.find('.alert-list-text').css({'font-size': fontSize * 0.8 + '%'});
+      } else {
+        // remove css
+        triggerCardElem.find('.alert-list-icon').css({'font-size': fontSize + '%'});
+      }
+    }
+
     function renderPanel() {
-      var panelElem = elem.parents('.panel');
-      var rootElem = elem.find('.triggers-panel-scroll');
-      var footerElem = elem.find('.triggers-panel-footer');
-
-      elem.css({'font-size': panel.fontSize});
-      panelElem.addClass('triggers-panel-wrapper');
+      let rootElem = elem.find('.triggers-panel-scroll');
+      let footerElem = elem.find('.triggers-panel-footer');
       appendPaginationControls(footerElem);
-
-      rootElem.css({'max-height': panel.scroll ? getTableHeight() : '' });
+      setFontSize();
+      rootElem.css({'max-height': panel.scroll ? getContentHeight() : '' });
+      rootElem.css({'height': getContentHeight()});
       ctrl.renderingCompleted();
     }
 
     elem.on('click', '.triggers-panel-page-link', switchPage);
 
-    var unbindDestroy = scope.$on('$destroy', function() {
+    let unbindDestroy = scope.$on('$destroy', function() {
       elem.off('click', '.triggers-panel-page-link');
       unbindDestroy();
     });
 
     ctrl.events.on('render', (renderData) => {
-      data = renderData || data;
+      if (renderData) {
+        renderData = _.map(renderData, ctrl.formatTrigger.bind(ctrl));
+        data = renderData;
+      } else {
+        data = _.map(data, ctrl.updateTriggerFormat.bind(ctrl));
+      }
+      data = ctrl.sortTriggers(data);
       if (data) {
-        scope.$apply(() => {
-          renderPanel();
-        });
+        ctrl.triggerList = data;
+        ctrl.getCurrentTriggersPage();
+        renderPanel();
       }
     });
   }

@@ -1,25 +1,37 @@
-.triggers-panel-wrapper {
-  .panel-content {
-    padding: 0;
-  }
-  .panel-title-container {
-    padding-bottom: 4px;
-  }
-}
-
 .triggers-panel-scroll {
   overflow: auto;
 }
 
 .triggers-panel-container {
-  padding-top: 2.2em;
   position: relative;
+
+  .zabbix-hostname {
+    color: $gray-2;
+    margin-left: 1rem;
+    font-weight: bold;
+  }
+
+  .alert-list-info.alert-list-info-left {
+    color: $gray-3;
+  }
+
+  .trigger-info-block {
+    display: inline;
+    i {
+      margin-right: 0.4rem;
+    }
+    i,
+    a {
+      color: $gray-2;
+    }
+  }
 }
 
 .triggers-panel-footer {
   text-align: center;
   font-size: 90%;
   line-height: 2px;
+  padding-top: 4px;
 
   ul {
     position: relative;
@@ -45,89 +57,6 @@
       color: $blue;
     }
   }
-}
-
-.triggers-panel-table {
-  width: 100%;
-  border-collapse: collapse;
-
-  th {
-    padding: 0;
-
-    &:first-child {
-      .triggers-panel-table-header-inner {
-        padding-left: 15px;
-      }
-    }
-  }
-
-  td {
-    padding: 0.45em 0 0.45em 1.1em;
-    border-bottom: 2px solid $body-bg;
-    border-right: 2px solid $body-bg;
-
-    &:first-child {
-      padding-left: 15px;
-    }
-    &:last-child {
-      border-right: none;
-    }
-  }
-
-  .zbx-field-colored {
-    color: $gray-6;
-  }
-
-  .zbx-description-icon {
-    float: right;
-    padding-right: 8px;
-    color: $gray-6;
-  }
-
-  // .zbx-field-info {
-  //   width: 7%;
-  // }
-
-  // .zbx-field-host {
-  //   width: 15%;
-  // }
-
-  // .zbx-field-status {
-  //   width: 9rem;
-  // }
-
-  // .zbx-field-severity {
-  //   width: 7%;
-  // }
-
-  // .zbx-field-lastchange {
-  //   width: 15%;
-  // }
-}
-
-.triggers-panel-header-bg {
-  background: $grafanaListAccent;
-  border-top: 2px solid $body-bg;
-  border-bottom: 2px solid $body-bg;
-  height: 2.0em;
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-}
-
-.triggers-panel-table-header-inner {
-  padding: 0.45em 0 0.45em 1.1em;
-  text-align: left;
-  color: $blue;
-  position: absolute;
-  top: 0;
-}
-
-.triggers-panel-width-hack {
-  visibility: hidden;
-  height: 0px;
-  line-height: 0px;
 }
 
 .ack-tooltip {

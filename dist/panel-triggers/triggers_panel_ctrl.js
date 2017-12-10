@@ -134,7 +134,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
       triggerStatusMap = {
         '0': 'OK',
-        '1': 'Problem'
+        '1': 'PROBLEM'
       };
 
       _export('TriggerPanelCtrl', TriggerPanelCtrl = function (_PanelCtrl) {
@@ -227,6 +227,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             delete this.error;
             this.loading = true;
             this.setTimeQueryStart();
+            this.pageIndex = 0;
 
             return this.getTriggers().then(function (triggerList) {
               // Notify panel that request is finished
@@ -292,10 +293,6 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
             return Promise.all(promises).then(function (results) {
               return _.flatten(results);
-            }).then(function (triggers) {
-              return _.map(triggers, _this4.formatTrigger.bind(_this4));
-            }).then(function (triggers) {
-              return _this4.sortTriggers(triggers);
             });
           }
         }, {
@@ -327,11 +324,6 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                     ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
                     return ack;
                   });
-
-                  // Mark acknowledged triggers with different color
-                  if (_this5.panel.markAckEvents && trigger.acknowledges.length) {
-                    trigger.color = _this5.panel.ackEventColor;
-                  }
                 }
               });
 
@@ -372,27 +364,17 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           key: 'sortTriggers',
           value: function sortTriggers(triggerList) {
             if (this.panel.sortTriggersBy.value === 'priority') {
-              triggerList = _.sortBy(triggerList, 'priority').reverse();
+              triggerList = _.sortBy(triggerList, ['priority', 'triggerid']).reverse();
             } else {
-              triggerList = _.sortBy(triggerList, 'lastchangeUnix').reverse();
+              triggerList = _.sortBy(triggerList, ['lastchangeUnix', 'triggerid']).reverse();
             }
             return triggerList;
           }
         }, {
           key: 'formatTrigger',
-          value: function formatTrigger(trigger) {
+          value: function formatTrigger(zabbixTrigger) {
+            var trigger = _.cloneDeep(zabbixTrigger);
             var triggerObj = trigger;
-
-            // Format last change and age
-            trigger.lastchangeUnix = Number(trigger.lastchange);
-            var timestamp = moment.unix(trigger.lastchangeUnix);
-            if (this.panel.customLastChangeFormat) {
-              // User defined format
-              triggerObj.lastchange = timestamp.format(this.panel.lastChangeFormat);
-            } else {
-              triggerObj.lastchange = timestamp.format(this.defaultTimeFormat);
-            }
-            triggerObj.age = timestamp.fromNow(true);
 
             // Set host that the trigger belongs
             if (trigger.hosts.length) {
@@ -400,17 +382,50 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               triggerObj.hostTechName = trigger.hosts[0].host;
             }
 
-            // Set color
+            // Format last change and age
+            trigger.lastchangeUnix = Number(trigger.lastchange);
+            triggerObj = this.setTriggerLastChange(triggerObj);
+            triggerObj = this.setTriggerSeverity(triggerObj);
+            return triggerObj;
+          }
+        }, {
+          key: 'updateTriggerFormat',
+          value: function updateTriggerFormat(trigger) {
+            trigger = this.setTriggerLastChange(trigger);
+            trigger = this.setTriggerSeverity(trigger);
+            return trigger;
+          }
+        }, {
+          key: 'setTriggerSeverity',
+          value: function setTriggerSeverity(trigger) {
             if (trigger.value === '1') {
               // Problem state
-              triggerObj.color = this.panel.triggerSeverity[trigger.priority].color;
+              trigger.color = this.panel.triggerSeverity[trigger.priority].color;
             } else {
               // OK state
-              triggerObj.color = this.panel.okEventColor;
+              trigger.color = this.panel.okEventColor;
+            }
+            trigger.severity = this.panel.triggerSeverity[trigger.priority].severity;
+
+            // Mark acknowledged triggers with different color
+            if (this.panel.markAckEvents && trigger.acknowledges && trigger.acknowledges.length) {
+              trigger.color = this.panel.ackEventColor;
             }
 
-            triggerObj.severity = this.panel.triggerSeverity[trigger.priority].severity;
-            return triggerObj;
+            return trigger;
+          }
+        }, {
+          key: 'setTriggerLastChange',
+          value: function setTriggerLastChange(trigger) {
+            var timestamp = moment.unix(trigger.lastchangeUnix);
+            if (this.panel.customLastChangeFormat) {
+              // User defined format
+              trigger.lastchange = timestamp.format(this.panel.lastChangeFormat);
+            } else {
+              trigger.lastchange = timestamp.format(this.defaultTimeFormat);
+            }
+            trigger.age = timestamp.fromNow(true);
+            return trigger;
           }
         }, {
           key: 'switchComment',
@@ -438,21 +453,31 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             return this.currentTriggersPage;
           }
         }, {
+          key: 'formatHostName',
+          value: function formatHostName(trigger) {
+            if (this.panel.hostField && this.panel.hostTechNameField) {
+              return trigger.host + ' (' + trigger.hostTechName + ')';
+            } else if (this.panel.hostField || this.panel.hostTechNameField) {
+              return trigger.host || trigger.hostTechName;
+            } else {
+              return "";
+            }
+          }
+        }, {
           key: 'link',
           value: function link(scope, elem, attrs, ctrl) {
-            var data;
             var panel = ctrl.panel;
             var pageCount = 0;
-            data = ctrl.triggerList;
+            var data = ctrl.triggerList;
 
-            function getTableHeight() {
+            function getContentHeight() {
               var panelHeight = ctrl.height;
 
               if (pageCount > 1) {
-                panelHeight -= 26;
+                panelHeight -= 36;
               }
 
-              return panelHeight - 31 + 'px';
+              return panelHeight + 'px';
             }
 
             function switchPage(e) {
@@ -492,16 +517,26 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               footerElem.append(paginationList);
             }
 
+            function setFontSize() {
+              var fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1));
+              var triggerCardElem = elem.find('.card-item-wrapper');
+              if (fontSize && fontSize !== 100) {
+                triggerCardElem.find('.alert-list-icon').css({ 'font-size': fontSize + '%' });
+                triggerCardElem.find('.alert-list-title').css({ 'font-size': fontSize + '%' });
+                triggerCardElem.find('.alert-list-text').css({ 'font-size': fontSize * 0.8 + '%' });
+              } else {
+                // remove css
+                triggerCardElem.find('.alert-list-icon').css({ 'font-size': fontSize + '%' });
+              }
+            }
+
             function renderPanel() {
-              var panelElem = elem.parents('.panel');
               var rootElem = elem.find('.triggers-panel-scroll');
               var footerElem = elem.find('.triggers-panel-footer');
-
-              elem.css({ 'font-size': panel.fontSize });
-              panelElem.addClass('triggers-panel-wrapper');
               appendPaginationControls(footerElem);
-
-              rootElem.css({ 'max-height': panel.scroll ? getTableHeight() : '' });
+              setFontSize();
+              rootElem.css({ 'max-height': panel.scroll ? getContentHeight() : '' });
+              rootElem.css({ 'height': getContentHeight() });
               ctrl.renderingCompleted();
             }
 
@@ -513,11 +548,17 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             });
 
             ctrl.events.on('render', function (renderData) {
-              data = renderData || data;
+              if (renderData) {
+                renderData = _.map(renderData, ctrl.formatTrigger.bind(ctrl));
+                data = renderData;
+              } else {
+                data = _.map(data, ctrl.updateTriggerFormat.bind(ctrl));
+              }
+              data = ctrl.sortTriggers(data);
               if (data) {
-                scope.$apply(function () {
-                  renderPanel();
-                });
+                ctrl.triggerList = data;
+                ctrl.getCurrentTriggersPage();
+                renderPanel();
               }
             });
           }
