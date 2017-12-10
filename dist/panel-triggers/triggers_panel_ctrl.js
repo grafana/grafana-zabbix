@@ -3,7 +3,7 @@
 System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'app/plugins/sdk', './options_tab', './triggers_tab', './migrations'], function (_export, _context) {
   "use strict";
 
-  var _, $, moment, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, _createClass, ZABBIX_DS_ID, DEFAULT_TARGET, DEFAULT_SEVERITY, DEFAULT_TIME_FORMAT, PANEL_DEFAULTS, triggerStatusMap, TriggerPanelCtrl;
+  var _, $, moment, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, _createClass, _get, ZABBIX_DS_ID, DEFAULT_TARGET, DEFAULT_SEVERITY, DEFAULT_TIME_FORMAT, PANEL_DEFAULTS, triggerStatusMap, TriggerPanelCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -83,6 +83,31 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         };
       }();
 
+      _get = function get(object, property, receiver) {
+        if (object === null) object = Function.prototype;
+        var desc = Object.getOwnPropertyDescriptor(object, property);
+
+        if (desc === undefined) {
+          var parent = Object.getPrototypeOf(object);
+
+          if (parent === null) {
+            return undefined;
+          } else {
+            return get(parent, property, receiver);
+          }
+        } else if ("value" in desc) {
+          return desc.value;
+        } else {
+          var getter = desc.get;
+
+          if (getter === undefined) {
+            return undefined;
+          }
+
+          return getter.call(receiver);
+        }
+      };
+
       ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
 
       _export('DEFAULT_TARGET', DEFAULT_TARGET = {
@@ -137,7 +162,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         _inherits(TriggerPanelCtrl, _PanelCtrl);
 
         /** @ngInject */
-        function TriggerPanelCtrl($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
+        function TriggerPanelCtrl($scope, $injector, $element, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
           _classCallCheck(this, TriggerPanelCtrl);
 
           var _this = _possibleConstructorReturn(this, (TriggerPanelCtrl.__proto__ || Object.getPrototypeOf(TriggerPanelCtrl)).call(this, $scope, $injector));
@@ -146,6 +171,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           _this.templateSrv = templateSrv;
           _this.contextSrv = contextSrv;
           _this.dashboardSrv = dashboardSrv;
+          _this.scope = $scope;
+          _this.$timeout = $timeout;
 
           _this.editorTabIndex = 1;
           _this.triggerStatusMap = triggerStatusMap;
@@ -225,15 +252,12 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             this.setTimeQueryStart();
             this.pageIndex = 0;
 
-            return this.getTriggers().then(function (triggerList) {
+            return this.getTriggers().then(function (zabbixTriggers) {
               // Notify panel that request is finished
               _this3.loading = false;
               _this3.setTimeQueryEnd();
 
-              // Limit triggers number
-              _this3.triggerList = triggerList.slice(0, _this3.panel.limit);
-              _this3.getCurrentTriggersPage();
-              _this3.render(_this3.triggerList);
+              _this3.render(zabbixTriggers);
             }).catch(function (err) {
               // if cancelled  keep loading set to true
               if (err.cancelled) {
@@ -258,16 +282,38 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             });
           }
         }, {
-          key: 'getTriggers',
-          value: function getTriggers() {
+          key: 'render',
+          value: function render(zabbixTriggers) {
             var _this4 = this;
 
+            var triggers = zabbixTriggers || this.triggerList;
+
+            if (zabbixTriggers) {
+              triggers = _.map(triggers, this.formatTrigger.bind(this));
+            } else {
+              triggers = _.map(triggers, this.updateTriggerFormat.bind(this));
+            }
+            triggers = this.sortTriggers(triggers);
+            // Limit triggers number
+            triggers = triggers.slice(0, this.panel.limit);
+            this.triggerList = triggers;
+            this.getCurrentTriggersPage();
+
+            this.$timeout(function () {
+              _get(TriggerPanelCtrl.prototype.__proto__ || Object.getPrototypeOf(TriggerPanelCtrl.prototype), 'render', _this4).call(_this4, _this4.triggerList);
+            });
+          }
+        }, {
+          key: 'getTriggers',
+          value: function getTriggers() {
+            var _this5 = this;
+
             var promises = _.map(this.panel.datasources, function (ds) {
-              return _this4.datasourceSrv.get(ds).then(function (datasource) {
+              return _this5.datasourceSrv.get(ds).then(function (datasource) {
                 var zabbix = datasource.zabbix;
-                var showEvents = _this4.panel.showEvents.value;
-                var triggerFilter = _this4.panel.targets[ds];
-                var hideHostsInMaintenance = _this4.panel.hideHostsInMaintenance;
+                var showEvents = _this5.panel.showEvents.value;
+                var triggerFilter = _this5.panel.targets[ds];
+                var hideHostsInMaintenance = _this5.panel.hideHostsInMaintenance;
 
                 // Replace template variables
                 var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
@@ -281,9 +327,9 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
                 return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
               }).then(function (triggers) {
-                return _this4.getAcknowledges(triggers, ds);
+                return _this5.getAcknowledges(triggers, ds);
               }).then(function (triggers) {
-                return _this4.filterTriggers(triggers, ds);
+                return _this5.filterTriggers(triggers, ds);
               });
             });
 
@@ -294,7 +340,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'getAcknowledges',
           value: function getAcknowledges(triggerList, ds) {
-            var _this5 = this;
+            var _this6 = this;
 
             // Request acknowledges for trigger
             var eventids = _.map(triggerList, function (trigger) {
@@ -312,10 +358,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                 if (event) {
                   trigger.acknowledges = _.map(event.acknowledges, function (ack) {
                     var timestamp = moment.unix(ack.clock);
-                    if (_this5.panel.customLastChangeFormat) {
-                      ack.time = timestamp.format(_this5.panel.lastChangeFormat);
+                    if (_this6.panel.customLastChangeFormat) {
+                      ack.time = timestamp.format(_this6.panel.lastChangeFormat);
                     } else {
-                      ack.time = timestamp.format(_this5.defaultTimeFormat);
+                      ack.time = timestamp.format(_this6.defaultTimeFormat);
                     }
                     ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
                     return ack;
@@ -329,7 +375,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'filterTriggers',
           value: function filterTriggers(triggerList, ds) {
-            var _this6 = this;
+            var _this7 = this;
 
             // Filter triggers by description
             var triggerFilter = this.panel.targets[ds].trigger.filter;
@@ -351,7 +397,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
             // Filter triggers by severity
             triggerList = _.filter(triggerList, function (trigger) {
-              return _this6.panel.triggerSeverity[trigger.priority].show;
+              return _this7.panel.triggerSeverity[trigger.priority].show;
             });
 
             return triggerList;
@@ -464,15 +510,20 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           value: function link(scope, elem, attrs, ctrl) {
             var panel = ctrl.panel;
             var pageCount = 0;
-            var data = ctrl.triggerList;
+            var triggerList = ctrl.triggerList;
+
+            scope.$watchGroup(['ctrl.currentTriggersPage', 'ctrl.triggerList'], renderPanel);
+            elem.on('click', '.triggers-panel-page-link', switchPage);
+            ctrl.events.on('render', function (renderData) {
+              triggerList = renderData || triggerList;
+              renderPanel();
+            });
 
             function getContentHeight() {
               var panelHeight = ctrl.height;
-
               if (pageCount > 1) {
                 panelHeight -= 36;
               }
-
               return panelHeight + 'px';
             }
 
@@ -480,10 +531,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               var el = $(e.currentTarget);
               ctrl.pageIndex = parseInt(el.text(), 10) - 1;
 
-              var pageSize = ctrl.panel.pageSize || 10;
+              var pageSize = panel.pageSize || 10;
               var startPos = ctrl.pageIndex * pageSize;
-              var endPos = Math.min(startPos + pageSize, ctrl.triggerList.length);
-              ctrl.currentTriggersPage = ctrl.triggerList.slice(startPos, endPos);
+              var endPos = Math.min(startPos + pageSize, triggerList.length);
+              ctrl.currentTriggersPage = triggerList.slice(startPos, endPos);
 
               scope.$apply(function () {
                 renderPanel();
@@ -493,8 +544,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             function appendPaginationControls(footerElem) {
               footerElem.empty();
 
-              var pageSize = ctrl.panel.pageSize || 5;
-              pageCount = Math.ceil(data.length / pageSize);
+              var pageSize = panel.pageSize || 5;
+              pageCount = Math.ceil(triggerList.length / pageSize);
               if (pageCount === 1) {
                 return;
               }
@@ -519,10 +570,12 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               if (fontSize && fontSize !== 100) {
                 triggerCardElem.find('.alert-list-icon').css({ 'font-size': fontSize + '%' });
                 triggerCardElem.find('.alert-list-title').css({ 'font-size': fontSize + '%' });
-                triggerCardElem.find('.alert-list-text').css({ 'font-size': fontSize * 0.8 + '%' });
+                triggerCardElem.find('.alert-list-text').css({ 'font-size': fontSize * 0.7 + '%' });
               } else {
                 // remove css
-                triggerCardElem.find('.alert-list-icon').css({ 'font-size': fontSize + '%' });
+                triggerCardElem.find('.alert-list-icon').css({ 'font-size': '' });
+                triggerCardElem.find('.alert-list-title').css({ 'font-size': '' });
+                triggerCardElem.find('.alert-list-text').css({ 'font-size': '' });
               }
             }
 
@@ -530,32 +583,15 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               var rootElem = elem.find('.triggers-panel-scroll');
               var footerElem = elem.find('.triggers-panel-footer');
               appendPaginationControls(footerElem);
-              setFontSize();
               rootElem.css({ 'max-height': getContentHeight() });
               rootElem.css({ 'height': getContentHeight() });
+              setFontSize();
               ctrl.renderingCompleted();
             }
-
-            elem.on('click', '.triggers-panel-page-link', switchPage);
 
             var unbindDestroy = scope.$on('$destroy', function () {
               elem.off('click', '.triggers-panel-page-link');
               unbindDestroy();
-            });
-
-            ctrl.events.on('render', function (renderData) {
-              if (renderData) {
-                renderData = _.map(renderData, ctrl.formatTrigger.bind(ctrl));
-                data = renderData;
-              } else {
-                data = _.map(data, ctrl.updateTriggerFormat.bind(ctrl));
-              }
-              data = ctrl.sortTriggers(data);
-              if (data) {
-                ctrl.triggerList = data;
-                ctrl.getCurrentTriggersPage();
-                renderPanel();
-              }
             });
           }
         }]);

@@ -61,12 +61,14 @@ const triggerStatusMap = {
 export class TriggerPanelCtrl extends PanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $element, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
+  constructor($scope, $injector, $element, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.contextSrv = contextSrv;
     this.dashboardSrv = dashboardSrv;
+    this.scope = $scope;
+    this.$timeout = $timeout;
 
     this.editorTabIndex = 1;
     this.triggerStatusMap = triggerStatusMap;
@@ -134,15 +136,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.pageIndex = 0;
 
     return this.getTriggers()
-    .then(triggerList => {
+    .then(zabbixTriggers => {
       // Notify panel that request is finished
       this.loading = false;
       this.setTimeQueryEnd();
 
-      // Limit triggers number
-      this.triggerList = triggerList.slice(0, this.panel.limit);
-      this.getCurrentTriggersPage();
-      this.render(this.triggerList);
+      this.render(zabbixTriggers);
     })
     .catch(err => {
       // if cancelled  keep loading set to true
@@ -165,6 +164,25 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
       this.events.emit('data-error', err);
       console.log('Panel data error:', err);
+    });
+  }
+
+  render(zabbixTriggers) {
+    let triggers = zabbixTriggers || this.triggerList;
+
+    if (zabbixTriggers) {
+      triggers = _.map(triggers, this.formatTrigger.bind(this));
+    } else {
+      triggers = _.map(triggers, this.updateTriggerFormat.bind(this));
+    }
+    triggers = this.sortTriggers(triggers);
+    // Limit triggers number
+    triggers = triggers.slice(0, this.panel.limit);
+    this.triggerList = triggers;
+    this.getCurrentTriggersPage();
+
+    this.$timeout(() => {
+      super.render(this.triggerList);
     });
   }
 
@@ -358,15 +376,20 @@ export class TriggerPanelCtrl extends PanelCtrl {
   link(scope, elem, attrs, ctrl) {
     let panel = ctrl.panel;
     let pageCount = 0;
-    let data = ctrl.triggerList;
+    let triggerList = ctrl.triggerList;
+
+    scope.$watchGroup(['ctrl.currentTriggersPage', 'ctrl.triggerList'], renderPanel);
+    elem.on('click', '.triggers-panel-page-link', switchPage);
+    ctrl.events.on('render', (renderData) => {
+      triggerList = renderData || triggerList;
+      renderPanel();
+    });
 
     function getContentHeight() {
       let panelHeight = ctrl.height;
-
       if (pageCount > 1) {
         panelHeight -= 36;
       }
-
       return panelHeight + 'px';
     }
 
@@ -374,10 +397,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
       let el = $(e.currentTarget);
       ctrl.pageIndex = (parseInt(el.text(), 10)-1);
 
-      let pageSize = ctrl.panel.pageSize || 10;
+      let pageSize = panel.pageSize || 10;
       let startPos = ctrl.pageIndex * pageSize;
-      let endPos = Math.min(startPos + pageSize, ctrl.triggerList.length);
-      ctrl.currentTriggersPage = ctrl.triggerList.slice(startPos, endPos);
+      let endPos = Math.min(startPos + pageSize, triggerList.length);
+      ctrl.currentTriggersPage = triggerList.slice(startPos, endPos);
 
       scope.$apply(() => {
         renderPanel();
@@ -387,8 +410,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
     function appendPaginationControls(footerElem) {
       footerElem.empty();
 
-      let pageSize = ctrl.panel.pageSize || 5;
-      pageCount = Math.ceil(data.length / pageSize);
+      let pageSize = panel.pageSize || 5;
+      pageCount = Math.ceil(triggerList.length / pageSize);
       if (pageCount === 1) {
         return;
       }
@@ -413,10 +436,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
       if (fontSize && fontSize !== 100) {
         triggerCardElem.find('.alert-list-icon').css({'font-size': fontSize + '%'});
         triggerCardElem.find('.alert-list-title').css({'font-size': fontSize + '%'});
-        triggerCardElem.find('.alert-list-text').css({'font-size': fontSize * 0.8 + '%'});
+        triggerCardElem.find('.alert-list-text').css({'font-size': fontSize * 0.7 + '%'});
       } else {
         // remove css
-        triggerCardElem.find('.alert-list-icon').css({'font-size': fontSize + '%'});
+        triggerCardElem.find('.alert-list-icon').css({'font-size': ''});
+        triggerCardElem.find('.alert-list-title').css({'font-size': ''});
+        triggerCardElem.find('.alert-list-text').css({'font-size': ''});
       }
     }
 
@@ -424,32 +449,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
       let rootElem = elem.find('.triggers-panel-scroll');
       let footerElem = elem.find('.triggers-panel-footer');
       appendPaginationControls(footerElem);
-      setFontSize();
       rootElem.css({'max-height': getContentHeight()});
       rootElem.css({'height': getContentHeight()});
+      setFontSize();
       ctrl.renderingCompleted();
     }
-
-    elem.on('click', '.triggers-panel-page-link', switchPage);
 
     let unbindDestroy = scope.$on('$destroy', function() {
       elem.off('click', '.triggers-panel-page-link');
       unbindDestroy();
-    });
-
-    ctrl.events.on('render', (renderData) => {
-      if (renderData) {
-        renderData = _.map(renderData, ctrl.formatTrigger.bind(ctrl));
-        data = renderData;
-      } else {
-        data = _.map(data, ctrl.updateTriggerFormat.bind(ctrl));
-      }
-      data = ctrl.sortTriggers(data);
-      if (data) {
-        ctrl.triggerList = data;
-        ctrl.getCurrentTriggersPage();
-        renderPanel();
-      }
     });
   }
 }

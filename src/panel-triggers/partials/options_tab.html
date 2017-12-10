@@ -41,7 +41,7 @@
         <select class="gf-form-input"
           ng-model="editor.panel.showTriggers"
           ng-options="f for f in editor.ackFilters"
-          ng-change="editor.panelCtrl.refresh()">
+          ng-change="ctrl.refresh()">
         </select>
       </div>
     </div>
@@ -61,7 +61,7 @@
         <select class="gf-form-input"
           ng-model="editor.panel.showEvents"
           ng-options="f.text for f in editor.showEventsFields track by f.value"
-          ng-change="editor.panelCtrl.refresh()">
+          ng-change="ctrl.refresh()">
         </select>
       </div>
     </div>
@@ -71,7 +71,7 @@
         type="number"
         ng-model="editor.panel.limit"
         ng-model-onblur
-        ng-change="editor.panelCtrl.refresh()">
+        ng-change="ctrl.refresh()">
     </div>
   </div>
 
@@ -83,7 +83,7 @@
         <select class="gf-form-input"
             ng-model="editor.panel.fontSize"
             ng-options="f for f in editor.fontSizes"
-            ng-change="editor.panelCtrl.render()"></select>
+            ng-change="ctrl.render()"></select>
       </div>
     </div>
     <div class="gf-form">
@@ -139,7 +139,7 @@
         label-class="width-0"
         label="Show"
         checked="trigger.show"
-        on-change="editor.panelCtrl.refresh()">
+        on-change="ctrl.refresh()">
       </gf-form-switch>
     </div>
 
@@ -161,7 +161,7 @@
         label-class="width-0"
         label="Show"
         checked="editor.panel.markAckEvents"
-        on-change="editor.panelCtrl.refresh()">
+        on-change="ctrl.refresh()">
       </gf-form-switch>
     </div>
     <div class="gf-form-inline">
