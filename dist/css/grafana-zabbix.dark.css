@@ -62,4 +62,11 @@
   .ack-tooltip .ack-input-group button {
     margin-left: 1rem; }
 
+.triggers-severity-config.gf-form-label {
+  padding-top: 4px;
+  padding-bottom: 4px; }
+
+.triggers-severity-config .icon-gf {
+  font-size: 200%; }
+
 /*# sourceMappingURL=grafana-zabbix.dark.css.map */

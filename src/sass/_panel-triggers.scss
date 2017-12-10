@@ -92,3 +92,14 @@
     }
   }
 }
+
+.triggers-severity-config {
+  &.gf-form-label {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .icon-gf {
+    font-size: 200%;
+  }
+}

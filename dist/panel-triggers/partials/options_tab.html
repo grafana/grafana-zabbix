@@ -25,24 +25,6 @@
       checked="editor.panel.severityField"
       on-change="ctrl.render()">
     </gf-form-switch>
-    <gf-form-switch class="gf-form"
-      label-class="width-9"
-      label="Last change"
-      checked="editor.panel.lastChangeField"
-      on-change="ctrl.render()">
-    </gf-form-switch>
-    <gf-form-switch class="gf-form"
-      label-class="width-9"
-      label="Age"
-      checked="editor.panel.ageField"
-      on-change="ctrl.render()">
-    </gf-form-switch>
-    <gf-form-switch class="gf-form"
-      label-class="width-9"
-      label="Info"
-      checked="editor.panel.infoField"
-      on-change="ctrl.render()">
-    </gf-form-switch>
   </div>
 
   <div class="section gf-form-group">
@@ -104,12 +86,6 @@
             ng-change="editor.panelCtrl.render()"></select>
       </div>
     </div>
-    <div class="gf-form max-width-14">
-      <label class="gf-form-label width-8">Font color</label>
-      <span class="gf-form-label">
-        <spectrum-picker ng-model="editor.panel.fontColor" ng-change="ctrl.render()"></spectrum-picker>
-      </span>
-    </div>
     <div class="gf-form">
       <label class="gf-form-label width-8">Page size</label>
       <input class="gf-form-input width-6"
@@ -118,12 +94,6 @@
         ng-model-onblur
         ng-change="ctrl.render()">
     </div>
-    <gf-form-switch class="gf-form"
-      label-class="width-8"
-      label="Enable scroll"
-      checked="editor.panel.scroll"
-      on-change="ctrl.render()">
-    </gf-form-switch>
     <gf-form-switch class="gf-form"
       label-class="width-16"
       label="Custom Last change format"
@@ -151,11 +121,14 @@
     <div class="gf-form-inline" ng-repeat="trigger in editor.panel.triggerSeverity">
       <div class="gf-form">
         <label class="gf-form-label width-3">{{ trigger.priority }}</label>
+        <label class="gf-form-label triggers-severity-config"
+          ng-style="{color: trigger.color}">
+          <i class="icon-gf icon-gf-critical"></i>
+        </label>
         <input type="text"
           class="gf-form-input width-12"
           empty-to-null
           ng-model="trigger.severity"
-          ng-style="{background: trigger.color, color: editor.panel.fontColor}"
           ng-model-onblur
           ng-change="ctrl.render()">
         <span class="gf-form-label">
@@ -173,8 +146,11 @@
     <div class="gf-form-inline">
       <div class="gf-form">
         <label class="gf-form-label width-3">&nbsp;</label>
-        <label class="gf-form-input width-12"
-          ng-style="{background:editor.panel.ackEventColor, color: editor.panel.fontColor}">
+        <label class="gf-form-label triggers-severity-config"
+          ng-style="{color: editor.panel.ackEventColor}">
+          <i class="icon-gf icon-gf-critical"></i>
+        </label>
+        <label class="gf-form-label width-12">
           Acknowledged color
         </label>
         <span class="gf-form-label">
@@ -191,8 +167,11 @@
     <div class="gf-form-inline">
       <div class="gf-form">
         <label class="gf-form-label width-3">&nbsp;</label>
-        <label class="gf-form-input width-12"
-          ng-style="{background:editor.panel.okEventColor, color: editor.panel.fontColor}">
+        <label class="gf-form-label triggers-severity-config"
+          ng-style="{color: editor.panel.okEventColor}">
+          <i class="icon-gf icon-gf-critical"></i>
+        </label>
+        <label class="gf-form-label width-12">
           OK event color
         </label>
         <span class="gf-form-label">

@@ -28,16 +28,14 @@ export const DEFAULT_SEVERITY = [
 const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
 export const PANEL_DEFAULTS = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   datasources: [],
   targets: {},
   // Fields
   hostField: true,
-  statusField: false,
-  severityField: false,
-  lastChangeField: true,
-  ageField: true,
-  infoField: true,
+  hostTechNameField: false,
+  statusField: true,
+  severityField: true,
   // Options
   hideHostsInMaintenance: false,
   showTriggers: 'all triggers',
@@ -46,9 +44,7 @@ export const PANEL_DEFAULTS = {
   limit: 10,
   // View options
   fontSize: '100%',
-  fontColor: null,
   pageSize: 10,
-  scroll: true,
   customLastChangeFormat: false,
   lastChangeFormat: "",
   // Triggers severity and colors
@@ -429,7 +425,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       let footerElem = elem.find('.triggers-panel-footer');
       appendPaginationControls(footerElem);
       setFontSize();
-      rootElem.css({'max-height': panel.scroll ? getContentHeight() : '' });
+      rootElem.css({'max-height': getContentHeight()});
       rootElem.css({'height': getContentHeight()});
       ctrl.renderingCompleted();
     }
