@@ -420,9 +420,9 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           key: 'sortTriggers',
           value: function sortTriggers(triggerList) {
             if (this.panel.sortTriggersBy.value === 'priority') {
-              triggerList = _.sortBy(triggerList, ['priority', 'triggerid']).reverse();
+              triggerList = _.orderBy(triggerList, ['priority', 'triggerid'], ['desc', 'desc']);
             } else {
-              triggerList = _.sortBy(triggerList, ['lastchangeUnix', 'triggerid']).reverse();
+              triggerList = _.orderBy(triggerList, ['lastchangeUnix', 'triggerid'], ['desc', 'desc']);
             }
             return triggerList;
           }
