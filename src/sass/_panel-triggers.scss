@@ -18,11 +18,8 @@
   .trigger-info-block {
     display: inline;
 
-    i {
-      margin-right: 0.4rem;
-    }
-
     i, a {
+      margin-left: 0.4rem;
       color: $gray-2;
     }
 
