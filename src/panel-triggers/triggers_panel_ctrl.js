@@ -210,6 +210,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
         return this.getAcknowledges(triggers, ds);
       }).then((triggers) => {
         return this.filterTriggers(triggers, ds);
+      }).then((triggers) => {
+        return this.addTriggerDataSource(triggers, ds);
       });
     });
 
@@ -275,6 +277,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
     });
 
     return triggerList;
+  }
+
+  addTriggerDataSource(triggers, ds) {
+    _.each(triggers, (trigger) => {
+      trigger.datasource = ds;
+    });
+    return triggers;
   }
 
   sortTriggers(triggerList) {

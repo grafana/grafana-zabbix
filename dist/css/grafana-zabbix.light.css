@@ -13,9 +13,13 @@
     display: inline; }
     .triggers-panel-container .trigger-info-block i {
       margin-right: 0.4rem; }
-    .triggers-panel-container .trigger-info-block i,
-    .triggers-panel-container .trigger-info-block a {
+    .triggers-panel-container .trigger-info-block i, .triggers-panel-container .trigger-info-block a {
       color: #767980; }
+    .triggers-panel-container .trigger-info-block .zabbix-trigger-source {
+      margin-right: 1.5rem;
+      font-weight: bold; }
+      .triggers-panel-container .trigger-info-block .zabbix-trigger-source .gicon-datasources {
+        opacity: 0.4; }
 
 .triggers-panel-footer {
   text-align: center;

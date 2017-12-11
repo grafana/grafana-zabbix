@@ -330,6 +330,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                 return _this5.getAcknowledges(triggers, ds);
               }).then(function (triggers) {
                 return _this5.filterTriggers(triggers, ds);
+              }).then(function (triggers) {
+                return _this5.addTriggerDataSource(triggers, ds);
               });
             });
 
@@ -401,6 +403,14 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             });
 
             return triggerList;
+          }
+        }, {
+          key: 'addTriggerDataSource',
+          value: function addTriggerDataSource(triggers, ds) {
+            _.each(triggers, function (trigger) {
+              trigger.datasource = ds;
+            });
+            return triggers;
           }
         }, {
           key: 'sortTriggers',

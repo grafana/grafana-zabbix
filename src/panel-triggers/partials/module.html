@@ -33,10 +33,13 @@
               </div>
             </div>
             <div class="alert-list-footer">
-              <span class="alert-list-text">{{trigger.lastchange}}</span>
-              <span class="alert-list-text">
-                <!--Img Link-->
-              </span>
+              <div class="trigger-info-block">
+                <span ng-if="ctrl.panel.datasources.length > 1" class="alert-list-text zabbix-trigger-source">
+                  <i class="gicon gicon-datasources"></i>
+                  {{trigger.datasource}}
+                </span>
+                <span class="alert-list-text">{{trigger.lastchange}}</span>
+              </div>
 
               <div class="trigger-info-block">
                 <a ng-if="trigger.url" href="{{trigger.url}}" target="_blank">

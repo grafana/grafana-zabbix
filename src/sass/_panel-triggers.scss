@@ -17,12 +17,21 @@
 
   .trigger-info-block {
     display: inline;
+
     i {
       margin-right: 0.4rem;
     }
-    i,
-    a {
+
+    i, a {
       color: $gray-2;
+    }
+
+    .zabbix-trigger-source {
+      margin-right: 1.5rem;
+      font-weight: bold;
+      .gicon-datasources {
+        opacity: 0.4;
+      }
     }
   }
 }
