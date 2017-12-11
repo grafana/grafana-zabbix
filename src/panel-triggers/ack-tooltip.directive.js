@@ -111,7 +111,11 @@ angular
 
           function closeDrop() {
             setTimeout(function() {
-              drop.destroy();
+              try {
+                drop.destroy();
+              } catch (err) {
+                console.log('drop.destroy() error: ', err.message);
+              }
             });
           }
 
