@@ -139,7 +139,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         showTriggers: 'all triggers',
         sortTriggersBy: { text: 'last change', value: 'lastchange' },
         showEvents: { text: 'Problems', value: '1' },
-        limit: 10,
+        limit: 100,
         // View options
         fontSize: '100%',
         pageSize: 10,
