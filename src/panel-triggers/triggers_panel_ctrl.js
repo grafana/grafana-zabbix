@@ -61,7 +61,7 @@ const triggerStatusMap = {
 export class TriggerPanelCtrl extends PanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $element, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
+  constructor($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;

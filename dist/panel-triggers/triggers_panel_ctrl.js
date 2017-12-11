@@ -162,7 +162,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         _inherits(TriggerPanelCtrl, _PanelCtrl);
 
         /** @ngInject */
-        function TriggerPanelCtrl($scope, $injector, $element, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
+        function TriggerPanelCtrl($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
           _classCallCheck(this, TriggerPanelCtrl);
 
           var _this = _possibleConstructorReturn(this, (TriggerPanelCtrl.__proto__ || Object.getPrototypeOf(TriggerPanelCtrl)).call(this, $scope, $injector));

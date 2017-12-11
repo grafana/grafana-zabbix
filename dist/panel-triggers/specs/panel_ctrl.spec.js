@@ -1,10 +1,13 @@
 import _ from 'lodash';
 import {TriggerPanelCtrl} from '../triggers_panel_ctrl';
 import {PANEL_DEFAULTS, DEFAULT_TARGET} from '../triggers_panel_ctrl';
+// import { create } from 'domain';
 
 describe('TriggerPanelCtrl', () => {
   let ctx = {};
   let datasourceSrvMock, zabbixDSMock;
+  let timeoutMock = () => {};
+  let createPanelCtrl;
 
   beforeEach(() => {
     ctx = {scope: {panel: PANEL_DEFAULTS}};
@@ -26,12 +29,13 @@ describe('TriggerPanelCtrl', () => {
       },
       get: () => Promise.resolve(zabbixDSMock)
     };
+    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
   });
 
   describe('When adding new panel', () => {
     it('should suggest all zabbix data sources', () => {
       ctx.scope.panel = {};
-      let panelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
+      let panelCtrl = createPanelCtrl();
       expect(panelCtrl.available_datasources).toEqual([
         'zabbix_default', 'zabbix'
       ]);
@@ -39,7 +43,7 @@ describe('TriggerPanelCtrl', () => {
 
     it('should load first zabbix data source as default', () => {
       ctx.scope.panel = {};
-      let panelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
+      let panelCtrl = createPanelCtrl();
       expect(panelCtrl.panel.datasources).toEqual([
         'zabbix_default'
       ]);
@@ -63,7 +67,7 @@ describe('TriggerPanelCtrl', () => {
     });
 
     it('should sort triggers', (done) => {
-      let panelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
+      let panelCtrl = createPanelCtrl();
       panelCtrl.onRefresh().then(() => {
         let trigger_ids = _.map(panelCtrl.triggerList, 'triggerid');
         expect(trigger_ids).toEqual([

@@ -10,6 +10,8 @@ describe('Triggers Panel schema migration', () => {
     get: () => Promise.resolve({})
   };
 
+  let timeoutMock = () => {};
+
   beforeEach(() => {
     ctx = {
       scope: {
@@ -39,29 +41,25 @@ describe('Triggers Panel schema migration', () => {
   });
 
   it('should update old panel schema', () => {
-    let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
+    let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
 
     let expected = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       datasources: ['zabbix'],
       targets: {
         'zabbix': DEFAULT_TARGET
       },
       hostField: true,
+      hostTechNameField: false,
       statusField: false,
       severityField: false,
-      lastChangeField: true,
-      ageField: true,
-      infoField: true,
       hideHostsInMaintenance: false,
       showTriggers: 'all triggers',
       sortTriggersBy: { text: 'last change', value: 'lastchange' },
       showEvents: { text: 'Problems', value: '1' },
       limit: 10,
       fontSize: '100%',
-      fontColor: null,
       pageSize: 10,
-      scroll: true,
       customLastChangeFormat: false,
       lastChangeFormat: "",
       triggerSeverity: DEFAULT_SEVERITY,
@@ -77,26 +75,22 @@ describe('Triggers Panel schema migration', () => {
     let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
 
     let expected = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       datasources: ['zabbix_default'],
       targets: {
         'zabbix_default': DEFAULT_TARGET
       },
       hostField: true,
-      statusField: false,
-      severityField: false,
-      lastChangeField: true,
-      ageField: true,
-      infoField: true,
+      hostTechNameField: false,
+      statusField: true,
+      severityField: true,
       hideHostsInMaintenance: false,
       showTriggers: 'all triggers',
       sortTriggersBy: { text: 'last change', value: 'lastchange' },
       showEvents: { text: 'Problems', value: '1' },
-      limit: 10,
+      limit: 100,
       fontSize: '100%',
-      fontColor: null,
       pageSize: 10,
-      scroll: true,
       customLastChangeFormat: false,
       lastChangeFormat: "",
       triggerSeverity: DEFAULT_SEVERITY,

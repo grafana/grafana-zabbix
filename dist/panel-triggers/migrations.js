@@ -3,22 +3,31 @@
 System.register([], function (_export, _context) {
   "use strict";
 
+  var CURRENT_SCHEMA_VERSION;
   function migratePanelSchema(panel) {
     if (isEmptyPanel(panel)) {
       return panel;
     }
 
     var schemaVersion = getSchemaVersion(panel);
-    switch (schemaVersion) {
-      case 1:
-        panel.datasources = [panel.datasource];
-        panel.targets = {};
-        panel.targets[panel.datasources[0]] = panel.triggers;
+    panel.schemaVersion = CURRENT_SCHEMA_VERSION;
 
-        // delete old props
-        delete panel.triggers;
-        delete panel.datasource;
-        break;
+    if (schemaVersion < 2) {
+      panel.datasources = [panel.datasource];
+      panel.targets = {};
+      panel.targets[panel.datasources[0]] = panel.triggers;
+
+      // delete old props
+      delete panel.triggers;
+      delete panel.datasource;
+    }
+
+    if (schemaVersion < 3) {
+      // delete old props
+      delete panel.lastChangeField;
+      delete panel.ageField;
+      delete panel.infoField;
+      delete panel.scroll;
     }
 
     return panel;
@@ -35,7 +44,9 @@ System.register([], function (_export, _context) {
   }
   return {
     setters: [],
-    execute: function () {}
+    execute: function () {
+      CURRENT_SCHEMA_VERSION = 3;
+    }
   };
 });
 //# sourceMappingURL=migrations.js.map
