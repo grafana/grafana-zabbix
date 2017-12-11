@@ -369,6 +369,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                     return ack;
                   });
                 }
+
+                if (!trigger.lastEvent.eventid) {
+                  trigger.lastEvent = null;
+                }
               });
 
               return triggerList;
@@ -487,13 +491,22 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'acknowledgeTrigger',
           value: function acknowledgeTrigger(trigger, message) {
-            var eventid = trigger.lastEvent.eventid;
+            var _this8 = this;
+
+            var eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
             var grafana_user = this.contextSrv.user.name;
             var ack_message = grafana_user + ' (Grafana): ' + message;
-            return this.datasourceSrv.get(this.panel.datasource).then(function (datasource) {
-              var zabbixAPI = datasource.zabbix.zabbixAPI;
-              return zabbixAPI.acknowledgeEvent(eventid, ack_message);
-            }).then(this.onRefresh.bind(this));
+            return this.datasourceSrv.get(trigger.datasource).then(function (datasource) {
+              if (eventid) {
+                return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
+              } else {
+                return Promise.reject({ message: 'Trigger has no events. Nothing to acknowledge.' });
+              }
+            }).then(this.onRefresh.bind(this)).catch(function (err) {
+              _this8.error = err.message || "Acknowledge Error";
+              _this8.events.emit('data-error', err);
+              console.log('Panel data error:', err);
+            });
           }
         }, {
           key: 'getCurrentTriggersPage',

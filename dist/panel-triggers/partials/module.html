@@ -50,7 +50,7 @@
                   <i class="fa fa-question-circle"></i>
                 </span>
 
-                <ack-tooltip ack="trigger.acknowledges" trigger="trigger"
+                <ack-tooltip ng-if="trigger.lastEvent" ack="trigger.acknowledges" trigger="trigger"
                   on-ack="ctrl.acknowledgeTrigger" context="ctrl">
                 </ack-tooltip>
               </div>

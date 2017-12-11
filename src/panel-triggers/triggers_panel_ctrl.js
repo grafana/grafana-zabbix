@@ -246,6 +246,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
             return ack;
           });
         }
+
+        if (!trigger.lastEvent.eventid) {
+          trigger.lastEvent = null;
+        }
       });
 
       return triggerList;
@@ -353,15 +357,23 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   acknowledgeTrigger(trigger, message) {
-    let eventid = trigger.lastEvent.eventid;
+    let eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
     let grafana_user = this.contextSrv.user.name;
     let ack_message = grafana_user + ' (Grafana): ' + message;
-    return this.datasourceSrv.get(this.panel.datasource)
+    return this.datasourceSrv.get(trigger.datasource)
     .then(datasource => {
-      let zabbixAPI = datasource.zabbix.zabbixAPI;
-      return zabbixAPI.acknowledgeEvent(eventid, ack_message);
+      if (eventid) {
+        return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
+      } else {
+        return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
+      }
     })
-    .then(this.onRefresh.bind(this));
+    .then(this.onRefresh.bind(this))
+    .catch((err) => {
+      this.error = err.message || "Acknowledge Error";
+      this.events.emit('data-error', err);
+      console.log('Panel data error:', err);
+    });
   }
 
   getCurrentTriggersPage() {
