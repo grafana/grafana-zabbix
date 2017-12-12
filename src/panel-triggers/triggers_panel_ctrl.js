@@ -36,6 +36,7 @@ export const PANEL_DEFAULTS = {
   hostTechNameField: false,
   statusField: true,
   severityField: true,
+  descriptionField: true,
   // Options
   hideHostsInMaintenance: false,
   showTriggers: 'all triggers',

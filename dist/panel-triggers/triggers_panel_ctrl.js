@@ -134,6 +134,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         hostTechNameField: false,
         statusField: true,
         severityField: true,
+        descriptionField: true,
         // Options
         hideHostsInMaintenance: false,
         showTriggers: 'all triggers',

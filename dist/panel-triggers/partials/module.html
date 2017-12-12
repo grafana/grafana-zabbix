@@ -28,7 +28,9 @@
                   </span>
                   for {{trigger.age}}
 
-                  <span class="alert-list-info alert-list-info-left">{{trigger.comments}}</span>
+                  <span class="alert-list-info alert-list-info-left" ng-if="ctrl.panel.descriptionField">
+                    {{trigger.comments}}
+                  </span>
                 </p>
               </div>
             </div>
