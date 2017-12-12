@@ -414,6 +414,23 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return iconClass;
   }
 
+  getStatusClass(trigger) {
+    let statusClass = '';
+
+    if (trigger.value === '1') {
+      statusClass = 'alert-state-critical';
+    } else {
+      statusClass = 'alert-state-ok';
+    }
+
+    let durationSec = (Date.now() - trigger.lastchangeUnix * 1000) / 1000;
+    if (durationSec < 3000) {
+      statusClass += ' zabbix-trigger--blinked';
+    }
+
+    return statusClass;
+  }
+
   link(scope, elem, attrs, ctrl) {
     let panel = ctrl.panel;
     let pageCount = 0;

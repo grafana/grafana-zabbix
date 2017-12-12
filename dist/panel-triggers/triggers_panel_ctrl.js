@@ -550,6 +550,24 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             return iconClass;
           }
         }, {
+          key: 'getStatusClass',
+          value: function getStatusClass(trigger) {
+            var statusClass = '';
+
+            if (trigger.value === '1') {
+              statusClass = 'alert-state-critical';
+            } else {
+              statusClass = 'alert-state-ok';
+            }
+
+            var durationSec = (Date.now() - trigger.lastchangeUnix * 1000) / 1000;
+            if (durationSec < 3000) {
+              statusClass += ' zabbix-trigger--blinked';
+            }
+
+            return statusClass;
+          }
+        }, {
           key: 'link',
           value: function link(scope, elem, attrs, ctrl) {
             var panel = ctrl.panel;
