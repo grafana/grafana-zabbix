@@ -293,9 +293,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   sortTriggers(triggerList) {
     if (this.panel.sortTriggersBy.value === 'priority') {
-      triggerList = _.orderBy(triggerList, ['priority', 'triggerid'], ['desc', 'desc']);
+      triggerList = _.orderBy(triggerList, ['priority', 'lastchangeUnix', 'triggerid'], ['desc', 'desc', 'desc']);
     } else {
-      triggerList = _.orderBy(triggerList, ['lastchangeUnix', 'triggerid'], ['desc', 'desc']);
+      triggerList = _.orderBy(triggerList, ['lastchangeUnix', 'priority', 'triggerid'], ['desc', 'desc', 'desc']);
     }
     return triggerList;
   }

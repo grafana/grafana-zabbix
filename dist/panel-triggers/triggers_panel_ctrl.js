@@ -421,9 +421,9 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           key: 'sortTriggers',
           value: function sortTriggers(triggerList) {
             if (this.panel.sortTriggersBy.value === 'priority') {
-              triggerList = _.orderBy(triggerList, ['priority', 'triggerid'], ['desc', 'desc']);
+              triggerList = _.orderBy(triggerList, ['priority', 'lastchangeUnix', 'triggerid'], ['desc', 'desc', 'desc']);
             } else {
-              triggerList = _.orderBy(triggerList, ['lastchangeUnix', 'triggerid'], ['desc', 'desc']);
+              triggerList = _.orderBy(triggerList, ['lastchangeUnix', 'priority', 'triggerid'], ['desc', 'desc', 'desc']);
             }
             return triggerList;
           }
