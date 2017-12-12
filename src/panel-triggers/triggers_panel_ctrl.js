@@ -17,12 +17,12 @@ export const DEFAULT_TARGET = {
 };
 
 export const DEFAULT_SEVERITY = [
-  { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true },
-  { priority: 1, severity: 'Information',     color: '#82B5D8', show: true },
-  { priority: 2, severity: 'Warning',         color: '#E5AC0E', show: true },
-  { priority: 3, severity: 'Average',         color: '#C15C17', show: true },
-  { priority: 4, severity: 'High',            color: '#BF1B00', show: true },
-  { priority: 5, severity: 'Disaster',        color: '#890F02', show: true }
+  { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true, blink: false },
+  { priority: 1, severity: 'Information',     color: '#82B5D8', show: true, blink: false },
+  { priority: 2, severity: 'Warning',         color: '#E5AC0E', show: true, blink: false },
+  { priority: 3, severity: 'Average',         color: '#C15C17', show: true, blink: false },
+  { priority: 4, severity: 'High',            color: '#BF1B00', show: true, blink: true },
+  { priority: 5, severity: 'Disaster',        color: '#890F02', show: true, blink: true },
 ];
 
 const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
@@ -79,7 +79,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.datasources = {};
 
     this.panel = migratePanelSchema(this.panel);
-    _.defaults(this.panel, _.cloneDeep(PANEL_DEFAULTS));
+    _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
     this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
     if (this.panel.datasources.length === 0) {
@@ -392,6 +392,25 @@ export class TriggerPanelCtrl extends PanelCtrl {
     } else {
       return "";
     }
+  }
+
+  getAlertStateIcon(trigger) {
+    const triggerValue = Number(trigger.value);
+    let iconClass = '';
+    if (triggerValue || trigger.color) {
+      if (trigger.priority >= 3) {
+        iconClass = 'icon-gf-critical';
+      } else {
+        iconClass = 'icon-gf-warning';
+      }
+    } else {
+      iconClass = 'icon-gf-online';
+    }
+
+    if (this.panel.triggerSeverity[trigger.priority].blink) {
+      iconClass += ' zabbix-trigger--blinked';
+    }
+    return iconClass;
   }
 
   link(scope, elem, attrs, ctrl) {

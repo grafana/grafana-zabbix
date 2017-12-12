@@ -19,6 +19,31 @@
       font-weight: bold; }
       .triggers-panel-container .trigger-info-block .zabbix-trigger-source .gicon-datasources {
         opacity: 0.4; }
+  .triggers-panel-container .card-item-wrapper {
+    padding-left: 4px; }
+
+.zabbix-trigger-card {
+  position: relative; }
+  .zabbix-trigger-card--alerting {
+    border-bottom-color: #161719;
+    box-shadow: 0 0 10px rgba(255, 65, 54, 0.1);
+    animation: zabbix-triggers-panel 1.6s cubic-bezier(1, 0.1, 0.73, 1) 0s infinite alternate; }
+  .zabbix-trigger-card--alerting::after {
+    position: relative; }
+
+.zabbix-trigger--blinked {
+  opacity: 0.5;
+  animation: zabbix-triggers-icon 1.1s cubic-bezier(0.46, 0.03, 0.52, 0.96) 0s infinite alternate; }
+
+@keyframes zabbix-triggers-panel {
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px 0px #ff4136;
+    border-bottom-color: rgba(255, 65, 54, 0.25); } }
+
+@keyframes zabbix-triggers-icon {
+  100% {
+    opacity: 1; } }
 
 .triggers-panel-footer {
   text-align: center;

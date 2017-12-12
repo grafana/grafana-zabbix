@@ -119,7 +119,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
       _export('DEFAULT_TARGET', DEFAULT_TARGET);
 
-      _export('DEFAULT_SEVERITY', DEFAULT_SEVERITY = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true }, { priority: 3, severity: 'Average', color: '#C15C17', show: true }, { priority: 4, severity: 'High', color: '#BF1B00', show: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true }]);
+      _export('DEFAULT_SEVERITY', DEFAULT_SEVERITY = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true, blink: false }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true, blink: false }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true, blink: false }, { priority: 3, severity: 'Average', color: '#C15C17', show: true, blink: false }, { priority: 4, severity: 'High', color: '#BF1B00', show: true, blink: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true, blink: true }]);
 
       _export('DEFAULT_SEVERITY', DEFAULT_SEVERITY);
 
@@ -183,7 +183,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           _this.datasources = {};
 
           _this.panel = migratePanelSchema(_this.panel);
-          _.defaults(_this.panel, _.cloneDeep(PANEL_DEFAULTS));
+          _.defaultsDeep(_this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
           _this.available_datasources = _.map(_this.getZabbixDataSources(), 'name');
           if (_this.panel.datasources.length === 0) {
@@ -527,6 +527,26 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             } else {
               return "";
             }
+          }
+        }, {
+          key: 'getAlertStateIcon',
+          value: function getAlertStateIcon(trigger) {
+            var triggerValue = Number(trigger.value);
+            var iconClass = '';
+            if (triggerValue || trigger.color) {
+              if (trigger.priority >= 3) {
+                iconClass = 'icon-gf-critical';
+              } else {
+                iconClass = 'icon-gf-warning';
+              }
+            } else {
+              iconClass = 'icon-gf-online';
+            }
+
+            if (this.panel.triggerSeverity[trigger.priority].blink) {
+              iconClass += ' zabbix-trigger--blinked';
+            }
+            return iconClass;
           }
         }, {
           key: 'link',

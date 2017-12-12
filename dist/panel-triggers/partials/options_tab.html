@@ -123,7 +123,7 @@
         <label class="gf-form-label width-3">{{ trigger.priority }}</label>
         <label class="gf-form-label triggers-severity-config"
           ng-style="{color: trigger.color}">
-          <i class="icon-gf icon-gf-critical"></i>
+          <i class="icon-gf" ng-class="ctrl.getAlertStateIcon(trigger)"></i>
         </label>
         <input type="text"
           class="gf-form-input width-12"
@@ -141,6 +141,12 @@
         checked="trigger.show"
         on-change="ctrl.refresh()">
       </gf-form-switch>
+      <gf-form-switch class="gf-form"
+        label-class="width-0"
+        label="Blink"
+        checked="trigger.blink"
+        on-change="ctrl.refresh()">
+      </gf-form-switch>
     </div>
 
     <div class="gf-form-inline">
@@ -148,7 +154,7 @@
         <label class="gf-form-label width-3">&nbsp;</label>
         <label class="gf-form-label triggers-severity-config"
           ng-style="{color: editor.panel.ackEventColor}">
-          <i class="icon-gf icon-gf-critical"></i>
+          <i class="icon-gf icon-gf-online"></i>
         </label>
         <label class="gf-form-label width-12">
           Acknowledged color
@@ -169,7 +175,7 @@
         <label class="gf-form-label width-3">&nbsp;</label>
         <label class="gf-form-label triggers-severity-config"
           ng-style="{color: editor.panel.okEventColor}">
-          <i class="icon-gf icon-gf-critical"></i>
+          <i class="icon-gf icon-gf-online"></i>
         </label>
         <label class="gf-form-label width-12">
           OK event color

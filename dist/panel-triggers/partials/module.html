@@ -3,11 +3,11 @@
     <section class="card-section card-list-layout-list">
       <ol class="card-list">
         <li class="card-item-wrapper" ng-repeat="trigger in ctrl.currentTriggersPage">
-          <div class="alert-list card-item card-item--alert">
+          <div class="alert-list card-item zabbix-trigger-card">
             <div class="alert-list-body">
-              <div class="alert-list-icon alert-list-item-state"
+              <div class="alert-list-icon alert-list-item-state alert-list-icon--alerting"
                 ng-style="{color: trigger.color}">
-                <i class="icon-gf" ng-class="trigger.value === '1' ? 'icon-gf-critical' : 'icon-gf-online'"></i>
+                <i class="icon-gf" ng-class="ctrl.getAlertStateIcon(trigger)"></i>
               </div>
               <div class="alert-list-main">
                 <p class="alert-list-title">

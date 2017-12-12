@@ -31,6 +31,57 @@
       }
     }
   }
+
+  .card-item-wrapper {
+    padding-left: 4px;
+  }
+}
+
+.zabbix-trigger-card {
+  position: relative;
+  &--alerting {
+    // box-shadow: 0 0 10px rgba($red, 0.5);
+    // position: relative;
+    border-bottom-color: rgba(#161719, 1);
+    box-shadow: 0 0 10px rgba($red, 0.1);
+    animation: zabbix-triggers-panel 1.6s cubic-bezier(1, .1, .73, 1) 0s infinite alternate;
+  }
+  &--alerting::after {
+    position: relative;
+  }
+  // &--alerting::after {
+  //   content: '';
+  //   position: absolute;
+  //   top: 0;
+  //   z-index: -1;
+  //   width: 100%;
+  //   height: 100%;
+  //   box-shadow: 0 0 10px rgba($red, 1);
+  //   opacity: 0;
+  //   animation: alerting-panel 1.6s cubic-bezier(1, .1, .73, 1) 0s infinite alternate;
+  // }
+}
+
+.zabbix-trigger {
+  &--blinked {
+    opacity: 0.5;
+    animation: zabbix-triggers-icon 1.1s cubic-bezier(0.46, 0.03, 0.52, 0.96) 0s infinite alternate;
+  }
+}
+
+
+@keyframes zabbix-triggers-panel {
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px 0px rgba($red, 1);
+    border-bottom-color: rgba($red, 0.25);
+  }
+}
+
+@keyframes zabbix-triggers-icon {
+  100% {
+    opacity: 1;
+  }
 }
 
 .triggers-panel-footer {
