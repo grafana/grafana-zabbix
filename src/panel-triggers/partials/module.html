@@ -7,7 +7,7 @@
             <div class="alert-list-body">
               <div class="alert-list-icon alert-list-item-state alert-list-icon--alerting"
                 ng-style="{color: trigger.color}">
-                <i class="icon-gf" ng-class="ctrl.getAlertStateIcon(trigger)"></i>
+                <i class="icon-gf" ng-class="ctrl.getAlertIconClass(trigger)"></i>
               </div>
               <div class="alert-list-main">
                 <p class="alert-list-title">
@@ -18,10 +18,10 @@
                 </p>
 
                 <p class="alert-list-text">
-                  <span ng-if="ctrl.panel.statusField" class="alert-list-state" ng-class="ctrl.getStatusClass(trigger)">
+                  <span ng-if="ctrl.panel.statusField" class="alert-list-state" ng-class="ctrl.getAlertStateClass(trigger)">
                     {{ctrl.triggerStatusMap[trigger.value]}}
                   </span>
-                  <span ng-if="ctrl.panel.severityField" class="alert-list-state" ng-class="ctrl.getStatusClass(trigger)"
+                  <span ng-if="ctrl.panel.severityField" class="alert-list-state" ng-class="ctrl.getAlertStateClass(trigger)"
                     ng-style="{color: trigger.color}">
                     {{trigger.severity}}
                   </span>

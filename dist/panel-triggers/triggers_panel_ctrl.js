@@ -119,7 +119,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
       _export('DEFAULT_TARGET', DEFAULT_TARGET);
 
-      _export('DEFAULT_SEVERITY', DEFAULT_SEVERITY = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true, blink: false }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true, blink: false }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true, blink: false }, { priority: 3, severity: 'Average', color: '#C15C17', show: true, blink: false }, { priority: 4, severity: 'High', color: '#BF1B00', show: true, blink: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true, blink: true }]);
+      _export('DEFAULT_SEVERITY', DEFAULT_SEVERITY = [{ priority: 0, severity: 'Not classified', color: '#B7DBAB', show: true }, { priority: 1, severity: 'Information', color: '#82B5D8', show: true }, { priority: 2, severity: 'Warning', color: '#E5AC0E', show: true }, { priority: 3, severity: 'Average', color: '#C15C17', show: true }, { priority: 4, severity: 'High', color: '#BF1B00', show: true }, { priority: 5, severity: 'Disaster', color: '#890F02', show: true }]);
 
       _export('DEFAULT_SEVERITY', DEFAULT_SEVERITY);
 
@@ -144,6 +144,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         // View options
         fontSize: '100%',
         pageSize: 10,
+        highlightNewEvents: true,
+        highlightNewerThan: '1h',
         customLastChangeFormat: false,
         lastChangeFormat: "",
         // Triggers severity and colors
@@ -530,8 +532,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             }
           }
         }, {
-          key: 'getAlertStateIcon',
-          value: function getAlertStateIcon(trigger) {
+          key: 'getAlertIconClass',
+          value: function getAlertIconClass(trigger) {
             var triggerValue = Number(trigger.value);
             var iconClass = '';
             if (triggerValue || trigger.color) {
@@ -544,14 +546,14 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               iconClass = 'icon-gf-online';
             }
 
-            if (this.panel.triggerSeverity[trigger.priority].blink) {
+            if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
               iconClass += ' zabbix-trigger--blinked';
             }
             return iconClass;
           }
         }, {
-          key: 'getStatusClass',
-          value: function getStatusClass(trigger) {
+          key: 'getAlertStateClass',
+          value: function getAlertStateClass(trigger) {
             var statusClass = '';
 
             if (trigger.value === '1') {
@@ -560,12 +562,18 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               statusClass = 'alert-state-ok';
             }
 
-            var durationSec = (Date.now() - trigger.lastchangeUnix * 1000) / 1000;
-            if (durationSec < 3000) {
+            if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
               statusClass += ' zabbix-trigger--blinked';
             }
 
             return statusClass;
+          }
+        }, {
+          key: 'isNewTrigger',
+          value: function isNewTrigger(trigger) {
+            var highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan);
+            var durationSec = Date.now() - trigger.lastchangeUnix * 1000;
+            return durationSec < highlightIntervalMs;
           }
         }, {
           key: 'link',

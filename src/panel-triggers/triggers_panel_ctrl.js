@@ -17,12 +17,12 @@ export const DEFAULT_TARGET = {
 };
 
 export const DEFAULT_SEVERITY = [
-  { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true, blink: false },
-  { priority: 1, severity: 'Information',     color: '#82B5D8', show: true, blink: false },
-  { priority: 2, severity: 'Warning',         color: '#E5AC0E', show: true, blink: false },
-  { priority: 3, severity: 'Average',         color: '#C15C17', show: true, blink: false },
-  { priority: 4, severity: 'High',            color: '#BF1B00', show: true, blink: true },
-  { priority: 5, severity: 'Disaster',        color: '#890F02', show: true, blink: true },
+  { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true},
+  { priority: 1, severity: 'Information',     color: '#82B5D8', show: true},
+  { priority: 2, severity: 'Warning',         color: '#E5AC0E', show: true},
+  { priority: 3, severity: 'Average',         color: '#C15C17', show: true},
+  { priority: 4, severity: 'High',            color: '#BF1B00', show: true},
+  { priority: 5, severity: 'Disaster',        color: '#890F02', show: true},
 ];
 
 const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
@@ -46,6 +46,8 @@ export const PANEL_DEFAULTS = {
   // View options
   fontSize: '100%',
   pageSize: 10,
+  highlightNewEvents: true,
+  highlightNewerThan: '1h',
   customLastChangeFormat: false,
   lastChangeFormat: "",
   // Triggers severity and colors
@@ -395,7 +397,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     }
   }
 
-  getAlertStateIcon(trigger) {
+  getAlertIconClass(trigger) {
     const triggerValue = Number(trigger.value);
     let iconClass = '';
     if (triggerValue || trigger.color) {
@@ -408,13 +410,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
       iconClass = 'icon-gf-online';
     }
 
-    if (this.panel.triggerSeverity[trigger.priority].blink) {
+    if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
       iconClass += ' zabbix-trigger--blinked';
     }
     return iconClass;
   }
 
-  getStatusClass(trigger) {
+  getAlertStateClass(trigger) {
     let statusClass = '';
 
     if (trigger.value === '1') {
@@ -423,12 +425,17 @@ export class TriggerPanelCtrl extends PanelCtrl {
       statusClass = 'alert-state-ok';
     }
 
-    let durationSec = (Date.now() - trigger.lastchangeUnix * 1000) / 1000;
-    if (durationSec < 3000) {
+    if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
       statusClass += ' zabbix-trigger--blinked';
     }
 
     return statusClass;
+  }
+
+  isNewTrigger(trigger) {
+    const highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan);
+    const durationSec = (Date.now() - trigger.lastchangeUnix * 1000);
+    return durationSec < highlightIntervalMs;
   }
 
   link(scope, elem, attrs, ctrl) {

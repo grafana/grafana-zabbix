@@ -65,7 +65,7 @@
 .zabbix-trigger {
   &--blinked {
     opacity: 0.5;
-    animation: zabbix-triggers-icon 1.1s cubic-bezier(0.46, 0.03, 0.52, 0.96) 0s infinite alternate;
+    animation: zabbix-triggers-icon 0.8s cubic-bezier(0.46, 0.03, 0.52, 0.96) 0s infinite alternate;
   }
 }
 
