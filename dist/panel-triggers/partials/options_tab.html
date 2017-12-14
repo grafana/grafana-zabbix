@@ -74,10 +74,9 @@
     <div class="gf-form">
       <label class="gf-form-label width-8">Limit triggers</label>
       <input class="gf-form-input width-5"
-        type="number"
+        type="number" placeholder="100"
         ng-model="ctrl.panel.limit"
-        ng-model-onblur
-        ng-change="ctrl.refresh()">
+        ng-model-onblur ng-change="ctrl.refresh()">
     </div>
   </div>
 
@@ -95,10 +94,9 @@
     <div class="gf-form">
       <label class="gf-form-label width-10">Page size</label>
       <input class="gf-form-input width-8"
-        type="number"
+        type="number" placeholder="10"
         ng-model="ctrl.panel.pageSize"
-        ng-model-onblur
-        ng-change="ctrl.render()">
+        ng-model-onblur ng-change="ctrl.render()">
     </div>
     <gf-form-switch class="gf-form"
       label-class="width-10"
@@ -108,9 +106,8 @@
     </gf-form-switch>
     <div class="gf-form">
       <label class="gf-form-label width-10">Newer than</label>
-      <input class="gf-form-input width-8"
+      <input class="gf-form-input width-8" placeholder="1h"
         ng-model="ctrl.panel.highlightNewerThan"
-        placeholder="1h"
         ng-model-onblur ng-change="ctrl.render()">
     </div>
     <gf-form-switch class="gf-form"

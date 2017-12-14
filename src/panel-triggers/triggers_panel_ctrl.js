@@ -179,7 +179,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     triggers = this.sortTriggers(triggers);
 
     // Limit triggers number
-    triggers = triggers.slice(0, this.panel.limit);
+    triggers = triggers.slice(0, this.panel.limit || PANEL_DEFAULTS.limit);
 
     this.triggerList = triggers;
     this.getCurrentTriggersPage();
@@ -405,7 +405,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getCurrentTriggersPage() {
-    let pageSize = this.panel.pageSize || 10;
+    let pageSize = this.panel.pageSize || PANEL_DEFAULTS.pageSize;
     let startPos = this.pageIndex * pageSize;
     let endPos = Math.min(startPos + pageSize, this.triggerList.length);
     this.currentTriggersPage = this.triggerList.slice(startPos, endPos);
@@ -459,8 +459,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   isNewTrigger(trigger) {
     try {
-      const highlightNewerThanDefault = '1h';
-      const highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || highlightNewerThanDefault);
+      const highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || PANEL_DEFAULTS.highlightNewerThan);
       const durationSec = (Date.now() - trigger.lastchangeUnix * 1000);
       return durationSec < highlightIntervalMs;
     } catch (e) {

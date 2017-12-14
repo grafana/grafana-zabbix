@@ -297,7 +297,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             triggers = this.sortTriggers(triggers);
 
             // Limit triggers number
-            triggers = triggers.slice(0, this.panel.limit);
+            triggers = triggers.slice(0, this.panel.limit || PANEL_DEFAULTS.limit);
 
             this.triggerList = triggers;
             this.getCurrentTriggersPage();
@@ -545,7 +545,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'getCurrentTriggersPage',
           value: function getCurrentTriggersPage() {
-            var pageSize = this.panel.pageSize || 10;
+            var pageSize = this.panel.pageSize || PANEL_DEFAULTS.pageSize;
             var startPos = this.pageIndex * pageSize;
             var endPos = Math.min(startPos + pageSize, this.triggerList.length);
             this.currentTriggersPage = this.triggerList.slice(startPos, endPos);
@@ -603,8 +603,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           key: 'isNewTrigger',
           value: function isNewTrigger(trigger) {
             try {
-              var highlightNewerThanDefault = '1h';
-              var highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || highlightNewerThanDefault);
+              var highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || PANEL_DEFAULTS.highlightNewerThan);
               var durationSec = Date.now() - trigger.lastchangeUnix * 1000;
               return durationSec < highlightIntervalMs;
             } catch (e) {
