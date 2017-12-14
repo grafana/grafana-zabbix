@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['./datasource', './query.controller', './config.controller'], function (_export, _context) {
+System.register(['app/plugins/sdk', './datasource', './query.controller', './config.controller'], function (_export, _context) {
   "use strict";
 
-  var ZabbixAPIDatasource, ZabbixQueryController, ZabbixDSConfigController, ZabbixQueryOptionsController, ZabbixAnnotationsQueryController;
+  var loadPluginCss, ZabbixAPIDatasource, ZabbixQueryController, ZabbixDSConfigController, ZabbixQueryOptionsController, ZabbixAnnotationsQueryController;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -12,7 +12,9 @@ System.register(['./datasource', './query.controller', './config.controller'], f
   }
 
   return {
-    setters: [function (_datasource) {
+    setters: [function (_appPluginsSdk) {
+      loadPluginCss = _appPluginsSdk.loadPluginCss;
+    }, function (_datasource) {
       ZabbixAPIDatasource = _datasource.ZabbixAPIDatasource;
     }, function (_queryController) {
       ZabbixQueryController = _queryController.ZabbixQueryController;
@@ -20,6 +22,12 @@ System.register(['./datasource', './query.controller', './config.controller'], f
       ZabbixDSConfigController = _configController.ZabbixDSConfigController;
     }],
     execute: function () {
+
+      loadPluginCss({
+        dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
+        light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
+      });
+
       _export('QueryOptionsCtrl', ZabbixQueryOptionsController = function ZabbixQueryOptionsController() {
         _classCallCheck(this, ZabbixQueryOptionsController);
       });

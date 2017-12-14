@@ -11,11 +11,6 @@
  * Licensed under the Apache License, Version 2.0
  */
 
-import _ from 'lodash';
-import './datasource-selector.directive';
-
-import '../datasource-zabbix/css/query-editor.css!';
-
 class TriggerPanelOptionsCtrl {
 
   /** @ngInject */

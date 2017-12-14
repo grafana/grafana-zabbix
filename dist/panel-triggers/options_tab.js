@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', './datasource-selector.directive', '../datasource-zabbix/css/query-editor.css!'], function (_export, _context) {
+System.register([], function (_export, _context) {
   "use strict";
 
-  var _, TriggerPanelOptionsCtrl;
+  var TriggerPanelOptionsCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -23,9 +23,7 @@ System.register(['lodash', './datasource-selector.directive', '../datasource-zab
   _export('triggerPanelOptionsTab', triggerPanelOptionsTab);
 
   return {
-    setters: [function (_lodash) {
-      _ = _lodash.default;
-    }, function (_datasourceSelectorDirective) {}, function (_datasourceZabbixCssQueryEditorCss) {}],
+    setters: [],
     execute: function () {
       TriggerPanelOptionsCtrl =
 

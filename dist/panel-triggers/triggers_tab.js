@@ -1,6 +1,6 @@
 'use strict';
 
-System.register(['lodash', '../datasource-zabbix/utils', './datasource-selector.directive', '../datasource-zabbix/css/query-editor.css!', './triggers_panel_ctrl'], function (_export, _context) {
+System.register(['lodash', '../datasource-zabbix/utils', './triggers_panel_ctrl'], function (_export, _context) {
   "use strict";
 
   var _, utils, DEFAULT_TARGET, _createClass, TriggersTabCtrl;
@@ -27,7 +27,7 @@ System.register(['lodash', '../datasource-zabbix/utils', './datasource-selector.
       _ = _lodash.default;
     }, function (_datasourceZabbixUtils) {
       utils = _datasourceZabbixUtils;
-    }, function (_datasourceSelectorDirective) {}, function (_datasourceZabbixCssQueryEditorCss) {}, function (_triggers_panel_ctrl) {
+    }, function (_triggers_panel_ctrl) {
       DEFAULT_TARGET = _triggers_panel_ctrl.DEFAULT_TARGET;
     }],
     execute: function () {

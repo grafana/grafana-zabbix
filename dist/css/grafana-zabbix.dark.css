@@ -26,7 +26,7 @@
   position: relative; }
   .zabbix-trigger-card--alerting {
     border-bottom-color: #161719;
-    box-shadow: 0 0 10px rgba(204, 57, 0, 0.1);
+    box-shadow: 0 0 10px rgba(212, 74, 58, 0.1);
     animation: zabbix-triggers-panel 1.6s cubic-bezier(1, 0.1, 0.73, 1) 0s infinite alternate; }
   .zabbix-trigger-card--alerting::after {
     position: relative; }
@@ -38,8 +38,8 @@
 @keyframes zabbix-triggers-panel {
   100% {
     opacity: 1;
-    box-shadow: 0 0 10px 0px #cc3900;
-    border-bottom-color: rgba(204, 57, 0, 0.25); } }
+    box-shadow: 0 0 10px 0px #d44a3a;
+    border-bottom-color: rgba(212, 74, 58, 0.25); } }
 
 @keyframes zabbix-triggers-icon {
   100% {
@@ -66,7 +66,7 @@
       background-color: #333; }
     .triggers-panel-footer ul > li > a.active {
       font-weight: bold;
-      color: #33B5E5; }
+      color: #33b5e5; }
 
 .ack-tooltip .drop-content {
   max-width: 70rem !important;
@@ -96,5 +96,11 @@
 
 .triggers-severity-config .icon-gf {
   font-size: 200%; }
+
+.zbx-regex {
+  color: #d69e2e; }
+
+.zbx-variable {
+  color: #32d1df; }
 
 /*# sourceMappingURL=grafana-zabbix.dark.css.map */

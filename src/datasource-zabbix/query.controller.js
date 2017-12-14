@@ -8,8 +8,6 @@ import * as migrations from './migrations';
 import './add-metric-function.directive';
 import './metric-function-editor.directive';
 
-import './css/query-editor.css!';
-
 export class ZabbixQueryController extends QueryCtrl {
 
   // ZabbixQueryCtrl constructor

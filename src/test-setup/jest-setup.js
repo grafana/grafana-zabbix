@@ -41,10 +41,6 @@ jest.mock('app/core/table_model', () => {
   return {};
 }, {virtual: true});
 
-jest.mock('./css/query-editor.css!', () => {
-  return "";
-}, {virtual: true});
-
 jest.mock('jquery', () => 'module not found', {virtual: true});
 
 // Required for loading angularjs
