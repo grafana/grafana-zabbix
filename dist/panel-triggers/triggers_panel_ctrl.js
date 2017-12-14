@@ -135,6 +135,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         statusField: true,
         severityField: true,
         descriptionField: true,
+        descriptionAtNewLine: false,
         // Options
         hostsInMaintenance: true,
         showTriggers: 'all triggers',
@@ -461,9 +462,14 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             var triggerObj = trigger;
 
             // Set host that the trigger belongs
-            if (trigger.hosts.length) {
+            if (trigger.hosts && trigger.hosts.length) {
               triggerObj.host = trigger.hosts[0].name;
               triggerObj.hostTechName = trigger.hosts[0].host;
+            }
+
+            // Handle multi-line description
+            if (trigger.comments) {
+              trigger.comments = trigger.comments.replace('\n', '<br>');
             }
 
             // Format last change and age

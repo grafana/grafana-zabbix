@@ -77,6 +77,19 @@ describe('TriggerPanelCtrl', () => {
       });
     });
   });
+
+  describe('When formatting triggers', () => {
+    beforeEach(() => {
+      ctx.panelCtrl = createPanelCtrl();
+    });
+
+    it('should handle new lines in trigger description', () => {
+      ctx.panelCtrl.setTriggerSeverity = jest.fn((trigger) => trigger);
+      let trigger = {comments: "this is\ndescription"};
+      const formattedTrigger = ctx.panelCtrl.formatTrigger(trigger);
+      expect(formattedTrigger.comments).toBe("this is<br>description");
+    });
+  });
 });
 
 const defaultTrigger = {

@@ -7,12 +7,14 @@
     color: #8e8e8e;
     margin-left: 1rem;
     font-weight: bold; }
-  .triggers-panel-container .alert-list-info.alert-list-info-left {
+  .triggers-panel-container .alert-list-info.zbx-description {
     color: #b3b3b3; }
+  .triggers-panel-container .alert-list-footer {
+    justify-content: flex-start; }
   .triggers-panel-container .trigger-info-block {
-    display: inline; }
+    display: inline-flex; }
     .triggers-panel-container .trigger-info-block i, .triggers-panel-container .trigger-info-block a {
-      margin-left: 0.4rem;
+      margin-left: 0.6rem;
       color: #8e8e8e; }
     .triggers-panel-container .trigger-info-block .zabbix-trigger-source {
       margin-right: 1.5rem;

@@ -31,6 +31,12 @@
       checked="ctrl.panel.descriptionField"
       on-change="ctrl.render()">
     </gf-form-switch>
+    <gf-form-switch class="gf-form" ng-if="ctrl.panel.descriptionField"
+      label-class="width-9"
+      label="At the new line"
+      checked="ctrl.panel.descriptionAtNewLine"
+      on-change="ctrl.render()">
+    </gf-form-switch>
   </div>
 
   <div class="section gf-form-group">

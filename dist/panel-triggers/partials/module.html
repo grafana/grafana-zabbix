@@ -28,8 +28,14 @@
                   </span>
                   {{trigger.age && "for " + trigger.age}}
 
-                  <span class="alert-list-info alert-list-info-left" ng-if="ctrl.panel.descriptionField">
-                    {{trigger.comments}}
+                  <span class="alert-list-info alert-list-info-left zbx-description"
+                    ng-if="ctrl.panel.descriptionField && !ctrl.panel.descriptionAtNewLine"
+                    ng-bind-html="trigger.comments">
+                  </span>
+                </p>
+                <p class="alert-list-text"
+                  ng-if="trigger.comments && ctrl.panel.descriptionField && ctrl.panel.descriptionAtNewLine">
+                  <span class="alert-list-info zbx-description" ng-bind-html="trigger.comments">
                   </span>
                 </p>
               </div>
@@ -43,7 +49,7 @@
                 <span class="alert-list-text">{{trigger.lastchange || "last change unknown"}}</span>
               </div>
 
-              <div class="trigger-info-block">
+              <div class="trigger-info-block zbx-status-icons">
                 <a ng-if="trigger.url" href="{{trigger.url}}" target="_blank">
                   <i class="fa fa-external-link"></i>
                 </a>

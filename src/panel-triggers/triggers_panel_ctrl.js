@@ -37,6 +37,7 @@ export const PANEL_DEFAULTS = {
   statusField: true,
   severityField: true,
   descriptionField: true,
+  descriptionAtNewLine: false,
   // Options
   hostsInMaintenance: true,
   showTriggers: 'all triggers',
@@ -326,9 +327,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
     let triggerObj = trigger;
 
     // Set host that the trigger belongs
-    if (trigger.hosts.length) {
+    if (trigger.hosts && trigger.hosts.length) {
       triggerObj.host = trigger.hosts[0].name;
       triggerObj.hostTechName = trigger.hosts[0].host;
+    }
+
+    // Handle multi-line description
+    if (trigger.comments) {
+      trigger.comments = trigger.comments.replace('\n', '<br>');
     }
 
     // Format last change and age

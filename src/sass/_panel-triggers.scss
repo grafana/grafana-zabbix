@@ -11,15 +11,23 @@
     font-weight: bold;
   }
 
-  .alert-list-info.alert-list-info-left {
+  .alert-list-info.zbx-description {
     color: $gray-3;
   }
 
+  .alert-list-footer {
+    justify-content: flex-start;
+  }
+
   .trigger-info-block {
-    display: inline;
+    display: inline-flex;
+
+    // &.zbx-status-icons {
+    //   margin-bottom: 4px;
+    // }
 
     i, a {
-      margin-left: 0.4rem;
+      margin-left: 0.6rem;
       color: $gray-2;
     }
 
