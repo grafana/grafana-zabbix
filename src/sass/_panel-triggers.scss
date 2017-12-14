@@ -15,6 +15,16 @@
     color: $gray-3;
   }
 
+  .zbx-trigger-tags {
+    margin-left: 0.6rem;
+
+    .zbx-tag {
+      color: $zbx-tag-color;
+      // opacity: 0.9;
+      padding: 0px 6px;
+    }
+  }
+
   .alert-list-footer {
     justify-content: flex-start;
   }

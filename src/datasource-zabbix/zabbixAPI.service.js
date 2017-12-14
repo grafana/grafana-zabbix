@@ -361,7 +361,8 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         selectGroups: ['name'],
         selectHosts: ['name', 'host', 'maintenance_status'],
         selectItems: ['name', 'key_', 'lastvalue'],
-        selectLastEvent: 'extend'
+        selectLastEvent: 'extend',
+        selectTags: 'extend'
       };
 
       if (showTriggers) {

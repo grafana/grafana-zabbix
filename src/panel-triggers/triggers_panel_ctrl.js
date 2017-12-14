@@ -34,6 +34,7 @@ export const PANEL_DEFAULTS = {
   // Fields
   hostField: true,
   hostTechNameField: false,
+  showTags: true,
   statusField: true,
   severityField: true,
   descriptionField: true,
@@ -332,6 +333,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
       triggerObj.hostTechName = trigger.hosts[0].host;
     }
 
+    // Set tags if present
+    if (trigger.tags && trigger.tags.length === 0) {
+      trigger.tags = null;
+    }
+
     // Handle multi-line description
     if (trigger.comments) {
       trigger.comments = trigger.comments.replace('\n', '<br>');
@@ -537,11 +543,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
         triggerCardElem.find('.alert-list-icon').css({'font-size': fontSize + '%'});
         triggerCardElem.find('.alert-list-title').css({'font-size': fontSize + '%'});
         triggerCardElem.find('.alert-list-text').css({'font-size': fontSize * 0.8 + '%'});
+        triggerCardElem.find('.zbx-tag').css({'font-size': fontSize * 0.6 + '%'});
+        triggerCardElem.find('.zbx-tag').css({'line-height': fontSize / 100 * 16 + 'px'});
       } else {
         // remove css
         triggerCardElem.find('.alert-list-icon').css({'font-size': ''});
         triggerCardElem.find('.alert-list-title').css({'font-size': ''});
         triggerCardElem.find('.alert-list-text').css({'font-size': ''});
+        triggerCardElem.find('.zbx-tag').css({'font-size': ''});
+        triggerCardElem.find('.zbx-tag').css({'line-height': ''});
       }
     }
 

@@ -337,7 +337,8 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
             selectGroups: ['name'],
             selectHosts: ['name', 'host', 'maintenance_status'],
             selectItems: ['name', 'key_', 'lastvalue'],
-            selectLastEvent: 'extend'
+            selectLastEvent: 'extend',
+            selectTags: 'extend'
           };
 
           if (showTriggers) {

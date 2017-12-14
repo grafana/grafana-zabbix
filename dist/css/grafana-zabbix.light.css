@@ -9,6 +9,11 @@
     font-weight: bold; }
   .triggers-panel-container .alert-list-info.zbx-description {
     color: #acb6bf; }
+  .triggers-panel-container .zbx-trigger-tags {
+    margin-left: 0.6rem; }
+    .triggers-panel-container .zbx-trigger-tags .zbx-tag {
+      color: #e9edf2;
+      padding: 0px 6px; }
   .triggers-panel-container .alert-list-footer {
     justify-content: flex-start; }
   .triggers-panel-container .trigger-info-block {
