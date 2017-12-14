@@ -40,19 +40,6 @@ class TriggerPanelOptionsCtrl {
       { text: 'Problems', value: 1 }
     ];
   }
-
-  refreshTriggerSeverity() {
-    _.each(this.triggerList, function(trigger) {
-      trigger.color = this.panel.triggerSeverity[trigger.priority].color;
-      trigger.severity = this.panel.triggerSeverity[trigger.priority].severity;
-    });
-    this.panelCtrl.refresh();
-  }
-
-  changeTriggerSeverityColor(trigger, color) {
-    this.panel.triggerSeverity[trigger.priority].color = color;
-    this.refreshTriggerSeverity();
-  }
 }
 
 export function triggerPanelOptionsTab() {
