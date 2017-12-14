@@ -602,9 +602,14 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'isNewTrigger',
           value: function isNewTrigger(trigger) {
-            var highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan);
-            var durationSec = Date.now() - trigger.lastchangeUnix * 1000;
-            return durationSec < highlightIntervalMs;
+            try {
+              var highlightNewerThanDefault = '1h';
+              var highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || highlightNewerThanDefault);
+              var durationSec = Date.now() - trigger.lastchangeUnix * 1000;
+              return durationSec < highlightIntervalMs;
+            } catch (e) {
+              return false;
+            }
           }
         }, {
           key: 'link',

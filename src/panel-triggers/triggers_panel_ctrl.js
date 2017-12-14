@@ -458,9 +458,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   isNewTrigger(trigger) {
-    const highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan);
-    const durationSec = (Date.now() - trigger.lastchangeUnix * 1000);
-    return durationSec < highlightIntervalMs;
+    try {
+      const highlightNewerThanDefault = '1h';
+      const highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || highlightNewerThanDefault);
+      const durationSec = (Date.now() - trigger.lastchangeUnix * 1000);
+      return durationSec < highlightIntervalMs;
+    } catch (e) {
+      return false;
+    }
   }
 
   link(scope, elem, attrs, ctrl) {

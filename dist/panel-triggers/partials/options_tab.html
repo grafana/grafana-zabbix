@@ -110,8 +110,8 @@
       <label class="gf-form-label width-10">Newer than</label>
       <input class="gf-form-input width-8"
         ng-model="ctrl.panel.highlightNewerThan"
-        ng-model-onblur
-        ng-change="ctrl.render()">
+        placeholder="1h"
+        ng-model-onblur ng-change="ctrl.render()">
     </div>
     <gf-form-switch class="gf-form"
       label-class="width-16"
