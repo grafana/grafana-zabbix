@@ -38,7 +38,7 @@ export const PANEL_DEFAULTS = {
   severityField: true,
   descriptionField: true,
   // Options
-  hideHostsInMaintenance: false,
+  hostsInMaintenance: true,
   showTriggers: 'all triggers',
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
   showEvents: { text: 'Problems', value: '1' },
@@ -171,16 +171,16 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   render(zabbixTriggers) {
-    let triggers = zabbixTriggers || this.triggerList;
+    let triggers = _.cloneDeep(zabbixTriggers || this.triggerListUnfiltered);
+    this.triggerListUnfiltered = _.cloneDeep(triggers);
 
-    if (zabbixTriggers) {
-      triggers = _.map(triggers, this.formatTrigger.bind(this));
-    } else {
-      triggers = _.map(triggers, this.updateTriggerFormat.bind(this));
-    }
+    triggers = _.map(triggers, this.formatTrigger.bind(this));
+    triggers = this.filterTriggersPost(triggers);
     triggers = this.sortTriggers(triggers);
+
     // Limit triggers number
     triggers = triggers.slice(0, this.panel.limit);
+
     this.triggerList = triggers;
     this.getCurrentTriggersPage();
 
@@ -196,7 +196,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
         var zabbix = datasource.zabbix;
         var showEvents = this.panel.showEvents.value;
         var triggerFilter = this.panel.targets[ds];
-        var hideHostsInMaintenance = this.panel.hideHostsInMaintenance;
 
         // Replace template variables
         var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
@@ -204,15 +203,16 @@ export class TriggerPanelCtrl extends PanelCtrl {
         var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
         let triggersOptions = {
-          showTriggers: showEvents,
-          hideHostsInMaintenance: hideHostsInMaintenance
+          showTriggers: showEvents
         };
 
         return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
       }).then((triggers) => {
         return this.getAcknowledges(triggers, ds);
       }).then((triggers) => {
-        return this.filterTriggers(triggers, ds);
+        return this.setMaintenanceStatus(triggers);
+      }).then((triggers) => {
+        return this.filterTriggersPre(triggers, ds);
       }).then((triggers) => {
         return this.addTriggerDataSource(triggers, ds);
       });
@@ -259,13 +259,19 @@ export class TriggerPanelCtrl extends PanelCtrl {
     });
   }
 
-  filterTriggers(triggerList, ds) {
+  filterTriggersPre(triggerList, ds) {
     // Filter triggers by description
     var triggerFilter = this.panel.targets[ds].trigger.filter;
     triggerFilter = this.datasources[ds].replaceTemplateVars(triggerFilter);
     if (triggerFilter) {
       triggerList = filterTriggers(triggerList, triggerFilter);
     }
+
+    return triggerList;
+  }
+
+  filterTriggersPost(triggers) {
+    let triggerList = _.cloneDeep(triggers);
 
     // Filter acknowledged triggers
     if (this.panel.showTriggers === 'unacknowledged') {
@@ -278,12 +284,25 @@ export class TriggerPanelCtrl extends PanelCtrl {
       triggerList = triggerList;
     }
 
+    // Filter by maintenance status
+    if (!this.panel.hostsInMaintenance) {
+      triggerList = _.filter(triggerList, (trigger) => trigger.maintenance === false);
+    }
+
     // Filter triggers by severity
     triggerList = _.filter(triggerList, trigger => {
       return this.panel.triggerSeverity[trigger.priority].show;
     });
 
     return triggerList;
+  }
+
+  setMaintenanceStatus(triggers) {
+    _.each(triggers, (trigger) => {
+      let maintenance_status = _.some(trigger.hosts, (host) => host.maintenance_status === '1');
+      trigger.maintenance = maintenance_status;
+    });
+    return triggers;
   }
 
   addTriggerDataSource(triggers, ds) {

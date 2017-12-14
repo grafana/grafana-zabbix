@@ -35,7 +35,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
     if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
   }
 
-  function _filterTriggers(triggers, triggerFilter) {
+  function filterTriggers(triggers, triggerFilter) {
     if (utils.isRegex(triggerFilter)) {
       return _.filter(triggers, function (trigger) {
         return utils.buildRegex(triggerFilter).test(trigger.description);
@@ -136,7 +136,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         severityField: true,
         descriptionField: true,
         // Options
-        hideHostsInMaintenance: false,
+        hostsInMaintenance: true,
         showTriggers: 'all triggers',
         sortTriggersBy: { text: 'last change', value: 'lastchange' },
         showEvents: { text: 'Problems', value: '1' },
@@ -289,16 +289,16 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           value: function render(zabbixTriggers) {
             var _this4 = this;
 
-            var triggers = zabbixTriggers || this.triggerList;
+            var triggers = _.cloneDeep(zabbixTriggers || this.triggerListUnfiltered);
+            this.triggerListUnfiltered = _.cloneDeep(triggers);
 
-            if (zabbixTriggers) {
-              triggers = _.map(triggers, this.formatTrigger.bind(this));
-            } else {
-              triggers = _.map(triggers, this.updateTriggerFormat.bind(this));
-            }
+            triggers = _.map(triggers, this.formatTrigger.bind(this));
+            triggers = this.filterTriggersPost(triggers);
             triggers = this.sortTriggers(triggers);
+
             // Limit triggers number
             triggers = triggers.slice(0, this.panel.limit);
+
             this.triggerList = triggers;
             this.getCurrentTriggersPage();
 
@@ -316,7 +316,6 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                 var zabbix = datasource.zabbix;
                 var showEvents = _this5.panel.showEvents.value;
                 var triggerFilter = _this5.panel.targets[ds];
-                var hideHostsInMaintenance = _this5.panel.hideHostsInMaintenance;
 
                 // Replace template variables
                 var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
@@ -324,15 +323,16 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                 var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
                 var triggersOptions = {
-                  showTriggers: showEvents,
-                  hideHostsInMaintenance: hideHostsInMaintenance
+                  showTriggers: showEvents
                 };
 
                 return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
               }).then(function (triggers) {
                 return _this5.getAcknowledges(triggers, ds);
               }).then(function (triggers) {
-                return _this5.filterTriggers(triggers, ds);
+                return _this5.setMaintenanceStatus(triggers);
+              }).then(function (triggers) {
+                return _this5.filterTriggersPre(triggers, ds);
               }).then(function (triggers) {
                 return _this5.addTriggerDataSource(triggers, ds);
               });
@@ -382,16 +382,23 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             });
           }
         }, {
-          key: 'filterTriggers',
-          value: function filterTriggers(triggerList, ds) {
-            var _this7 = this;
-
+          key: 'filterTriggersPre',
+          value: function filterTriggersPre(triggerList, ds) {
             // Filter triggers by description
             var triggerFilter = this.panel.targets[ds].trigger.filter;
             triggerFilter = this.datasources[ds].replaceTemplateVars(triggerFilter);
             if (triggerFilter) {
-              triggerList = _filterTriggers(triggerList, triggerFilter);
+              triggerList = filterTriggers(triggerList, triggerFilter);
             }
+
+            return triggerList;
+          }
+        }, {
+          key: 'filterTriggersPost',
+          value: function filterTriggersPost(triggers) {
+            var _this7 = this;
+
+            var triggerList = _.cloneDeep(triggers);
 
             // Filter acknowledged triggers
             if (this.panel.showTriggers === 'unacknowledged') {
@@ -404,12 +411,30 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               triggerList = triggerList;
             }
 
+            // Filter by maintenance status
+            if (!this.panel.hostsInMaintenance) {
+              triggerList = _.filter(triggerList, function (trigger) {
+                return trigger.maintenance === false;
+              });
+            }
+
             // Filter triggers by severity
             triggerList = _.filter(triggerList, function (trigger) {
               return _this7.panel.triggerSeverity[trigger.priority].show;
             });
 
             return triggerList;
+          }
+        }, {
+          key: 'setMaintenanceStatus',
+          value: function setMaintenanceStatus(triggers) {
+            _.each(triggers, function (trigger) {
+              var maintenance_status = _.some(trigger.hosts, function (host) {
+                return host.maintenance_status === '1';
+              });
+              trigger.maintenance = maintenance_status;
+            });
+            return triggers;
           }
         }, {
           key: 'addTriggerDataSource',

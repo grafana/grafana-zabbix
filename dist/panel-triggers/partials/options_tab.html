@@ -37,9 +37,9 @@
     <h5 class="section-heading">Options</h5>
     <gf-form-switch class="gf-form"
       label-class="width-15"
-      label="Hide hosts in maintenance"
-      checked="ctrl.panel.hideHostsInMaintenance"
-      on-change="ctrl.refresh()">
+      label="Show hosts in maintenance"
+      checked="ctrl.panel.hostsInMaintenance"
+      on-change="ctrl.render()">
     </gf-form-switch>
     <div class="gf-form">
       <label class="gf-form-label width-8">Acknowledged</label>

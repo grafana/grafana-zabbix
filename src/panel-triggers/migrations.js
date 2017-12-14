@@ -25,6 +25,7 @@ export function migratePanelSchema(panel) {
     delete panel.ageField;
     delete panel.infoField;
     delete panel.scroll;
+    delete panel.hideHostsInMaintenance;
   }
 
   return panel;

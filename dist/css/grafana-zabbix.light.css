@@ -35,6 +35,9 @@
   opacity: 0.5;
   animation: zabbix-triggers-icon 0.8s cubic-bezier(0.46, 0.03, 0.52, 0.96) 0s infinite alternate; }
 
+.zbx-maintenance-icon {
+  color: #ff7941; }
+
 @keyframes zabbix-triggers-panel {
   100% {
     opacity: 1;

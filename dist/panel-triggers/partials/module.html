@@ -13,6 +13,7 @@
                 <p class="alert-list-title">
                   {{trigger.description}}
                   <span class="zabbix-hostname" ng-if="ctrl.panel.hostField || ctrl.panel.hostTechNameField">
+                    <i ng-if="trigger.maintenance" class="fa fa-wrench zbx-maintenance-icon"></i>
                     {{ ctrl.formatHostName(trigger) }}
                   </span>
                 </p>
