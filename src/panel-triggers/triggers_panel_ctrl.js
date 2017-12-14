@@ -344,6 +344,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   setTriggerLastChange(trigger) {
+    if (!trigger.lastchangeUnix) {
+      trigger.lastchange = "";
+      trigger.age = "";
+      return trigger;
+    }
+
     let timestamp = moment.unix(trigger.lastchangeUnix);
     if (this.panel.customLastChangeFormat) {
       // User defined format

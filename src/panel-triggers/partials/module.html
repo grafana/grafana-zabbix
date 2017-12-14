@@ -25,7 +25,7 @@
                     ng-style="{color: trigger.color}">
                     {{trigger.severity}}
                   </span>
-                  for {{trigger.age}}
+                  {{trigger.age && "for " + trigger.age}}
 
                   <span class="alert-list-info alert-list-info-left" ng-if="ctrl.panel.descriptionField">
                     {{trigger.comments}}
@@ -39,7 +39,7 @@
                   <i class="gicon gicon-datasources"></i>
                   {{trigger.datasource}}
                 </span>
-                <span class="alert-list-text">{{trigger.lastchange}}</span>
+                <span class="alert-list-text">{{trigger.lastchange || "last change unknown"}}</span>
               </div>
 
               <div class="trigger-info-block">

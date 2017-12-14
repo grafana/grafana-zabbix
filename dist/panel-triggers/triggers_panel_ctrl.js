@@ -476,6 +476,12 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'setTriggerLastChange',
           value: function setTriggerLastChange(trigger) {
+            if (!trigger.lastchangeUnix) {
+              trigger.lastchange = "";
+              trigger.age = "";
+              return trigger;
+            }
+
             var timestamp = moment.unix(trigger.lastchangeUnix);
             if (this.panel.customLastChangeFormat) {
               // User defined format
