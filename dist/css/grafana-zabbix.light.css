@@ -24,14 +24,9 @@
   .triggers-panel-container .card-item-wrapper {
     padding-left: 4px; }
 
-.zabbix-trigger-card {
-  position: relative; }
-  .zabbix-trigger-card--alerting {
-    border-bottom-color: #161719;
-    box-shadow: 0 0 10px rgba(212, 73, 57, 0.1);
-    animation: zabbix-triggers-panel 1.6s cubic-bezier(1, 0.1, 0.73, 1) 0s infinite alternate; }
-  .zabbix-trigger-card--alerting::after {
-    position: relative; }
+.zbx-trigger-card {
+  position: relative;
+  padding: 0.5rem 1rem; }
 
 .zabbix-trigger--blinked {
   opacity: 0.5;

@@ -45,18 +45,18 @@
   }
 }
 
-.zabbix-trigger-card {
+.zbx-trigger-card {
   position: relative;
-  &--alerting {
-    // box-shadow: 0 0 10px rgba($red, 0.5);
-    // position: relative;
-    border-bottom-color: rgba(#161719, 1);
-    box-shadow: 0 0 10px rgba($red, 0.1);
-    animation: zabbix-triggers-panel 1.6s cubic-bezier(1, .1, .73, 1) 0s infinite alternate;
-  }
-  &--alerting::after {
-    position: relative;
-  }
+  padding: 0.5rem 1rem;
+
+  // &--alerting {
+  //   border-bottom-color: rgba(#161719, 1);
+  //   box-shadow: 0 0 10px rgba($red, 0.1);
+  //   animation: zabbix-triggers-panel 1.6s cubic-bezier(1, .1, .73, 1) 0s infinite alternate;
+  // }
+  // &--alerting::after {
+  //   position: relative;
+  // }
   // &--alerting::after {
   //   content: '';
   //   position: absolute;
