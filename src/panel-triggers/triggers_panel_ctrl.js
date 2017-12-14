@@ -501,7 +501,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       if (fontSize && fontSize !== 100) {
         triggerCardElem.find('.alert-list-icon').css({'font-size': fontSize + '%'});
         triggerCardElem.find('.alert-list-title').css({'font-size': fontSize + '%'});
-        triggerCardElem.find('.alert-list-text').css({'font-size': fontSize * 0.7 + '%'});
+        triggerCardElem.find('.alert-list-text').css({'font-size': fontSize * 0.8 + '%'});
       } else {
         // remove css
         triggerCardElem.find('.alert-list-icon').css({'font-size': ''});
