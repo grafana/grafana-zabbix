@@ -57,22 +57,75 @@ describe('TriggerPanelCtrl', () => {
         'zabbix_default': DEFAULT_TARGET,
         'zabbix': DEFAULT_TARGET
       };
+
+      const getTriggersResp = [
+        [
+          createTrigger({triggerid: "1", lastchange: "1510000010", priority: 5, lastEvent: {eventid: "11"}}),
+          createTrigger({triggerid: "2", lastchange: "1510000040", priority: 3, lastEvent: {eventid: "12"}}),
+        ],
+        [
+          createTrigger({triggerid: "3", lastchange: "1510000020", priority: 4, lastEvent: {eventid: "13"}}),
+          createTrigger({triggerid: "4", lastchange: "1510000030", priority: 2, lastEvent: {eventid: "14"}}),
+        ]
+      ];
+
+      // Simulate 2 data sources
       zabbixDSMock.zabbix.getTriggers = jest.fn()
-        .mockReturnValueOnce([
-          generateTrigger(1, 1), generateTrigger(2, 11)
-        ])
-        .mockReturnValueOnce([
-          generateTrigger(3, 2), generateTrigger(4, 3)
-        ]);
+        .mockReturnValueOnce(getTriggersResp[0])
+        .mockReturnValueOnce(getTriggersResp[1]);
+      zabbixDSMock.zabbix.getAcknowledges = jest.fn()
+        .mockReturnValue(Promise.resolve([defaultEvent]));
+
+      ctx.panelCtrl = createPanelCtrl();
+
+      ctx.panelCtrl.datasources['zabbix_default'] = zabbixDSMock;
+      ctx.panelCtrl.datasources['zabbix'] = zabbixDSMock;
+
     });
 
-    it('should sort triggers', (done) => {
-      let panelCtrl = createPanelCtrl();
-      panelCtrl.onRefresh().then(() => {
-        let trigger_ids = _.map(panelCtrl.triggerList, 'triggerid');
+    it('should format triggers', (done) => {
+      ctx.panelCtrl.onRefresh().then(() => {
+        let formattedTrigger = _.find(ctx.panelCtrl.triggerList, {triggerid: "1"});
+        expect(formattedTrigger.host).toBe('backend01');
+        expect(formattedTrigger.hostTechName).toBe('backend01_tech');
+        expect(formattedTrigger.datasource).toBe('zabbix_default');
+        expect(formattedTrigger.severity).toBe('Disaster');
+        expect(formattedTrigger.age).toBeTruthy();
+        expect(formattedTrigger.lastchange).toBeTruthy();
+        done();
+      });
+    });
+
+    it('should sort triggers by time by default', (done) => {
+      ctx.panelCtrl.onRefresh().then(() => {
+        let trigger_ids = _.map(ctx.panelCtrl.triggerList, 'triggerid');
         expect(trigger_ids).toEqual([
           '2', '4', '3', '1'
         ]);
+        done();
+      });
+    });
+
+    it('should sort triggers by severity', (done) => {
+      ctx.panelCtrl.panel.sortTriggersBy = { text: 'severity', value: 'priority' };
+      ctx.panelCtrl.onRefresh().then(() => {
+        let trigger_ids = _.map(ctx.panelCtrl.triggerList, 'triggerid');
+        expect(trigger_ids).toEqual([
+          '1', '3', '2', '4'
+        ]);
+        done();
+      });
+    });
+
+    it('should add acknowledges to trigger', (done) => {
+      ctx.panelCtrl.onRefresh().then(() => {
+        let trigger = getTriggerById(1, ctx);
+        expect(trigger.acknowledges).toHaveLength(1);
+        expect(trigger.acknowledges[0].message).toBe("event ack");
+
+        expect(getTriggerById(2, ctx).acknowledges).toBe(undefined);
+        expect(getTriggerById(3, ctx).acknowledges).toBe(undefined);
+        expect(getTriggerById(4, ctx).acknowledges).toBe(undefined);
         done();
       });
     });
@@ -93,21 +146,74 @@ describe('TriggerPanelCtrl', () => {
 });
 
 const defaultTrigger = {
-  triggerid: "1",
-  priority: 3,
-  lastchange: "1",
-  hosts: [],
-  lastEvent: []
+  "triggerid": "13565",
+  "value": "1",
+  "groups": [{"groupid": "1", "name": "Backend"}] ,
+  "hosts": [{"host": "backend01_tech", "hostid": "10001","maintenance_status": "0", "name": "backend01"}] ,
+  "lastEvent": {
+    "eventid": "11",
+    "clock": "1507229064",
+    "ns": "556202037",
+    "acknowledged": "1",
+    "value": "1",
+    "object": "0",
+    "source": "0",
+    "objectid": "13565",
+  },
+  "tags": [] ,
+  "lastchange": "1440259530",
+  "priority": "2",
+  "description": "Lack of free swap space on server",
+  "comments": "It probably means that the systems requires\nmore physical memory.",
+  "url": "https://host.local/path",
+  "templateid": "0", "expression": "{13174}<50", "manual_close": "0", "correlation_mode": "0",
+  "correlation_tag": "", "recovery_mode": "0", "recovery_expression": "", "state": "0", "status": "0",
+  "flags": "0", "type": "0", "items": [] , "error": ""
+};
+
+const defaultEvent = {
+  "eventid": "11",
+  "acknowledges": [
+    {
+      "acknowledgeid": "185",
+      "action": "0",
+      "alias": "api",
+      "clock": "1512382246",
+      "eventid": "11",
+      "message": "event ack",
+      "name": "api",
+      "surname": "user",
+      "userid": "3"
+    }
+  ],
+  "clock": "1507229064",
+  "ns": "556202037",
+  "acknowledged": "1",
+  "value": "1",
+  "object": "0",
+  "source": "0",
+  "objectid": "1",
 };
 
 function generateTrigger(id, timestamp, severity) {
   let trigger = _.cloneDeep(defaultTrigger);
   trigger.triggerid = id.toString();
   if (severity) {
-    trigger.priority = severity;
+    trigger.priority = severity.toString();
   }
   if (timestamp) {
     trigger.lastchange = timestamp;
   }
   return trigger;
+}
+
+function createTrigger(props) {
+  let trigger = _.cloneDeep(defaultTrigger);
+  trigger = _.merge(trigger, props);
+  trigger.lastEvent.objectid = trigger.triggerid;
+  return trigger;
+}
+
+function getTriggerById(id, ctx) {
+  return _.find(ctx.panelCtrl.triggerList, {triggerid: id.toString()});
 }

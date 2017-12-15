@@ -8,7 +8,7 @@
     "jest": "jest --notify --watch",
     "build": "grunt && jest",
     "watch": "grunt watch",
-    "codecov": "grunt && jest --coverage && codecov",
+    "codecov": "jest --coverage && codecov",
     "ci-test": "grunt && jest --coverage && codecov",
     "benchmark": "grunt bench"
   },
