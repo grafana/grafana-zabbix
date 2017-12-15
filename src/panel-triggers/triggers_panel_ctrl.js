@@ -428,7 +428,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     if (this.panel.hostField && this.panel.hostTechNameField) {
       return `${trigger.host} (${trigger.hostTechName})`;
     } else if (this.panel.hostField || this.panel.hostTechNameField) {
-      return trigger.host || trigger.hostTechName;
+      return this.panel.hostField ? trigger.host : trigger.hostTechName;
     } else {
       return "";
     }

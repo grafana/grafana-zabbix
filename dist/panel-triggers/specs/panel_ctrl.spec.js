@@ -30,6 +30,30 @@ describe('TriggerPanelCtrl', () => {
       get: () => Promise.resolve(zabbixDSMock)
     };
     createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
+
+    const getTriggersResp = [
+      [
+        createTrigger({
+          triggerid: "1", lastchange: "1510000010", priority: 5, lastEvent: {eventid: "11"}, hosts: [{maintenance_status: '1'}]
+        }),
+        createTrigger({
+          triggerid: "2", lastchange: "1510000040", priority: 3, lastEvent: {eventid: "12"}
+        }),
+      ],
+      [
+        createTrigger({triggerid: "3", lastchange: "1510000020", priority: 4, lastEvent: {eventid: "13"}}),
+        createTrigger({triggerid: "4", lastchange: "1510000030", priority: 2, lastEvent: {eventid: "14"}}),
+      ]
+    ];
+
+    // Simulate 2 data sources
+    zabbixDSMock.zabbix.getTriggers = jest.fn()
+      .mockReturnValueOnce(getTriggersResp[0])
+      .mockReturnValueOnce(getTriggersResp[1]);
+    zabbixDSMock.zabbix.getAcknowledges = jest.fn()
+      .mockReturnValue(Promise.resolve([defaultEvent]));
+
+    ctx.panelCtrl = createPanelCtrl();
   });
 
   describe('When adding new panel', () => {
@@ -57,30 +81,7 @@ describe('TriggerPanelCtrl', () => {
         'zabbix_default': DEFAULT_TARGET,
         'zabbix': DEFAULT_TARGET
       };
-
-      const getTriggersResp = [
-        [
-          createTrigger({triggerid: "1", lastchange: "1510000010", priority: 5, lastEvent: {eventid: "11"}}),
-          createTrigger({triggerid: "2", lastchange: "1510000040", priority: 3, lastEvent: {eventid: "12"}}),
-        ],
-        [
-          createTrigger({triggerid: "3", lastchange: "1510000020", priority: 4, lastEvent: {eventid: "13"}}),
-          createTrigger({triggerid: "4", lastchange: "1510000030", priority: 2, lastEvent: {eventid: "14"}}),
-        ]
-      ];
-
-      // Simulate 2 data sources
-      zabbixDSMock.zabbix.getTriggers = jest.fn()
-        .mockReturnValueOnce(getTriggersResp[0])
-        .mockReturnValueOnce(getTriggersResp[1]);
-      zabbixDSMock.zabbix.getAcknowledges = jest.fn()
-        .mockReturnValue(Promise.resolve([defaultEvent]));
-
       ctx.panelCtrl = createPanelCtrl();
-
-      ctx.panelCtrl.datasources['zabbix_default'] = zabbixDSMock;
-      ctx.panelCtrl.datasources['zabbix'] = zabbixDSMock;
-
     });
 
     it('should format triggers', (done) => {
@@ -90,6 +91,7 @@ describe('TriggerPanelCtrl', () => {
         expect(formattedTrigger.hostTechName).toBe('backend01_tech');
         expect(formattedTrigger.datasource).toBe('zabbix_default');
         expect(formattedTrigger.severity).toBe('Disaster');
+        expect(formattedTrigger.maintenance).toBe(true);
         expect(formattedTrigger.age).toBeTruthy();
         expect(formattedTrigger.lastchange).toBeTruthy();
         done();
@@ -141,6 +143,48 @@ describe('TriggerPanelCtrl', () => {
       let trigger = {comments: "this is\ndescription"};
       const formattedTrigger = ctx.panelCtrl.formatTrigger(trigger);
       expect(formattedTrigger.comments).toBe("this is<br>description");
+    });
+
+    it('should format host name to display (default)', (done) => {
+      ctx.panelCtrl.onRefresh().then(() => {
+        let trigger = getTriggerById(1, ctx);
+        let hostname = ctx.panelCtrl.formatHostName(trigger);
+        expect(hostname).toBe('backend01');
+        done();
+      });
+    });
+
+    it('should format host name to display (tech name)', (done) => {
+      ctx.panelCtrl.panel.hostField = false;
+      ctx.panelCtrl.panel.hostTechNameField = true;
+      ctx.panelCtrl.onRefresh().then(() => {
+        let trigger = getTriggerById(1, ctx);
+        let hostname = ctx.panelCtrl.formatHostName(trigger);
+        expect(hostname).toBe('backend01_tech');
+        done();
+      });
+    });
+
+    it('should format host name to display (both tech and visible)', (done) => {
+      ctx.panelCtrl.panel.hostField = true;
+      ctx.panelCtrl.panel.hostTechNameField = true;
+      ctx.panelCtrl.onRefresh().then(() => {
+        let trigger = getTriggerById(1, ctx);
+        let hostname = ctx.panelCtrl.formatHostName(trigger);
+        expect(hostname).toBe('backend01 (backend01_tech)');
+        done();
+      });
+    });
+
+    it('should hide hostname if both visible and tech name checkboxes unset', (done) => {
+      ctx.panelCtrl.panel.hostField = false;
+      ctx.panelCtrl.panel.hostTechNameField = false;
+      ctx.panelCtrl.onRefresh().then(() => {
+        let trigger = getTriggerById(1, ctx);
+        let hostname = ctx.panelCtrl.formatHostName(trigger);
+        expect(hostname).toBe("");
+        done();
+      });
     });
   });
 });

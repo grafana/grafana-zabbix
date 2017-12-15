@@ -569,7 +569,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             if (this.panel.hostField && this.panel.hostTechNameField) {
               return trigger.host + ' (' + trigger.hostTechName + ')';
             } else if (this.panel.hostField || this.panel.hostTechNameField) {
-              return trigger.host || trigger.hostTechName;
+              return this.panel.hostField ? trigger.host : trigger.hostTechName;
             } else {
               return "";
             }
