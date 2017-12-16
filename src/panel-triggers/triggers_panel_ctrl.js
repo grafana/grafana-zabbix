@@ -18,12 +18,12 @@ export const DEFAULT_TARGET = {
 };
 
 export const DEFAULT_SEVERITY = [
-  { priority: 0, severity: 'Not classified',  color: '#B7DBAB', show: true},
-  { priority: 1, severity: 'Information',     color: '#82B5D8', show: true},
-  { priority: 2, severity: 'Warning',         color: '#E5AC0E', show: true},
-  { priority: 3, severity: 'Average',         color: '#C15C17', show: true},
-  { priority: 4, severity: 'High',            color: '#BF1B00', show: true},
-  { priority: 5, severity: 'Disaster',        color: '#890F02', show: true},
+  { priority: 0, severity: 'Not classified',  color: 'rgb(108, 108, 108)', show: true},
+  { priority: 1, severity: 'Information',     color: 'rgb(120, 158, 183)', show: true},
+  { priority: 2, severity: 'Warning',         color: 'rgb(175, 180, 36)', show: true},
+  { priority: 3, severity: 'Average',         color: 'rgb(255, 137, 30)', show: true},
+  { priority: 4, severity: 'High',            color: 'rgb(255, 101, 72)', show: true},
+  { priority: 5, severity: 'Disaster',        color: 'rgb(215, 0, 0)', show: true},
 ];
 
 const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
@@ -55,8 +55,8 @@ export const PANEL_DEFAULTS = {
   lastChangeFormat: "",
   // Triggers severity and colors
   triggerSeverity: DEFAULT_SEVERITY,
-  okEventColor: 'rgba(0, 245, 153, 0.45)',
-  ackEventColor: 'rgba(0, 0, 0, 0)'
+  okEventColor: 'rgb(56, 189, 113)',
+  ackEventColor: 'rgb(56, 219, 156)'
 };
 
 const triggerStatusMap = {
