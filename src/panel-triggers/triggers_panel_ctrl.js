@@ -408,6 +408,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   parseTags(tagStr) {
+    if (!tagStr) {
+      return [];
+    }
+
     let tags = _.map(tagStr.split(','), (tag) => tag.trim());
     tags = _.map(tags, (tag) => {
       const tagParts = tag.split(':');
@@ -418,6 +422,17 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   tagsToString(tags) {
     return _.map(tags, (tag) => `${tag.tag}:${tag.value}`).join(', ');
+  }
+
+  addTagFilter(tag, ds) {
+    let tagFilter = this.panel.targets[ds].tags.filter;
+    let targetTags = this.parseTags(tagFilter);
+    let newTag = {tag: tag.tag, value: tag.value};
+    targetTags.push(newTag);
+    targetTags = _.uniqWith(targetTags, _.isEqual);
+    let newFilter = this.tagsToString(targetTags);
+    this.panel.targets[ds].tags.filter = newFilter;
+    this.refresh();
   }
 
   switchComment(trigger) {

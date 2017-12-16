@@ -548,6 +548,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'parseTags',
           value: function parseTags(tagStr) {
+            if (!tagStr) {
+              return [];
+            }
+
             var tags = _.map(tagStr.split(','), function (tag) {
               return tag.trim();
             });
@@ -563,6 +567,18 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             return _.map(tags, function (tag) {
               return tag.tag + ':' + tag.value;
             }).join(', ');
+          }
+        }, {
+          key: 'addTagFilter',
+          value: function addTagFilter(tag, ds) {
+            var tagFilter = this.panel.targets[ds].tags.filter;
+            var targetTags = this.parseTags(tagFilter);
+            var newTag = { tag: tag.tag, value: tag.value };
+            targetTags.push(newTag);
+            targetTags = _.uniqWith(targetTags, _.isEqual);
+            var newFilter = this.tagsToString(targetTags);
+            this.panel.targets[ds].tags.filter = newFilter;
+            this.refresh();
           }
         }, {
           key: 'switchComment',

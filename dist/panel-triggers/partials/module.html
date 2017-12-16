@@ -18,7 +18,8 @@
                   </span>
 
                   <span class="zbx-trigger-tags" ng-if="ctrl.panel.showTags && trigger.tags">
-                    <span ng-repeat="tag in trigger.tags" tag-color-from-name="tag.tag+tag.value" class="label label-tag zbx-tag">
+                    <span ng-repeat="tag in trigger.tags" ng-click="ctrl.addTagFilter(tag, trigger.datasource)"
+                      tag-color-from-name="tag.tag+tag.value" class="label label-tag zbx-tag">
                       {{tag.tag}}: {{tag.value}}
                     </span>
                   </span>
