@@ -5,7 +5,7 @@ import * as utils from '../datasource-zabbix/utils';
 import {PanelCtrl} from 'app/plugins/sdk';
 import {triggerPanelOptionsTab} from './options_tab';
 import {triggerPanelTriggersTab} from './triggers_tab';
-import {migratePanelSchema} from './migrations';
+import {migratePanelSchema, CURRENT_SCHEMA_VERSION} from './migrations';
 
 const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
 
@@ -13,7 +13,8 @@ export const DEFAULT_TARGET = {
   group: {filter: ""},
   host: {filter: ""},
   application: {filter: ""},
-  trigger: {filter: ""}
+  trigger: {filter: ""},
+  tags: {filter: ""},
 };
 
 export const DEFAULT_SEVERITY = [
@@ -28,7 +29,7 @@ export const DEFAULT_SEVERITY = [
 const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
 export const PANEL_DEFAULTS = {
-  schemaVersion: 3,
+  schemaVersion: CURRENT_SCHEMA_VERSION,
   datasources: [],
   targets: {},
   // Fields
@@ -263,10 +264,24 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   filterTriggersPre(triggerList, ds) {
     // Filter triggers by description
-    var triggerFilter = this.panel.targets[ds].trigger.filter;
+    let triggerFilter = this.panel.targets[ds].trigger.filter;
     triggerFilter = this.datasources[ds].replaceTemplateVars(triggerFilter);
     if (triggerFilter) {
       triggerList = filterTriggers(triggerList, triggerFilter);
+    }
+
+    // Filter by tags
+    const target = this.panel.targets[ds];
+    if (target.tags.filter) {
+      let tagsFilter = this.datasources[ds].replaceTemplateVars(target.tags.filter);
+      // replaceTemplateVars() builds regex-like string, so we should trim it.
+      tagsFilter = tagsFilter.replace('/^', '').replace('$/', '');
+      const tags = this.parseTags(tagsFilter);
+      triggerList = _.filter(triggerList, trigger => {
+        return _.every(tags, (tag) => {
+          return _.find(trigger.tags, {tag: tag.tag, value: tag.value});
+        });
+      });
     }
 
     return triggerList;
@@ -390,6 +405,19 @@ export class TriggerPanelCtrl extends PanelCtrl {
     }
     trigger.age = timestamp.fromNow(true);
     return trigger;
+  }
+
+  parseTags(tagStr) {
+    let tags = _.map(tagStr.split(','), (tag) => tag.trim());
+    tags = _.map(tags, (tag) => {
+      const tagParts = tag.split(':');
+      return {tag: tagParts[0].trim(), value: tagParts[1].trim()};
+    });
+    return tags;
+  }
+
+  tagsToString(tags) {
+    return _.map(tags, (tag) => `${tag.tag}:${tag.value}`).join(', ');
   }
 
   switchComment(trigger) {

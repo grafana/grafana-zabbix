@@ -44,7 +44,7 @@ describe('Triggers Panel schema migration', () => {
     let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
 
     let expected = {
-      schemaVersion: 3,
+      schemaVersion: 4,
       datasources: ['zabbix'],
       targets: {
         'zabbix': DEFAULT_TARGET
@@ -80,7 +80,7 @@ describe('Triggers Panel schema migration', () => {
     let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
 
     let expected = {
-      schemaVersion: 3,
+      schemaVersion: 4,
       datasources: ['zabbix_default'],
       targets: {
         'zabbix_default': DEFAULT_TARGET

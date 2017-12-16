@@ -1,9 +1,10 @@
-"use strict";
+'use strict';
 
-System.register([], function (_export, _context) {
+System.register(['lodash', './triggers_panel_ctrl'], function (_export, _context) {
   "use strict";
 
-  var CURRENT_SCHEMA_VERSION;
+  var _, DEFAULT_TARGET, CURRENT_SCHEMA_VERSION;
+
   function migratePanelSchema(panel) {
     if (isEmptyPanel(panel)) {
       return panel;
@@ -31,10 +32,18 @@ System.register([], function (_export, _context) {
       delete panel.hideHostsInMaintenance;
     }
 
+    if (schemaVersion < 4) {
+      if (panel.targets && !_.isEmpty(panel.targets)) {
+        _.each(panel.targets, function (target) {
+          _.defaultsDeep(target, DEFAULT_TARGET);
+        });
+      }
+    }
+
     return panel;
   }
 
-  _export("migratePanelSchema", migratePanelSchema);
+  _export('migratePanelSchema', migratePanelSchema);
 
   function getSchemaVersion(panel) {
     return panel.schemaVersion || 1;
@@ -44,9 +53,15 @@ System.register([], function (_export, _context) {
     return !panel.datasource && !panel.datasources && !panel.triggers && !panel.targets;
   }
   return {
-    setters: [],
+    setters: [function (_lodash) {
+      _ = _lodash.default;
+    }, function (_triggers_panel_ctrl) {
+      DEFAULT_TARGET = _triggers_panel_ctrl.DEFAULT_TARGET;
+    }],
     execute: function () {
-      CURRENT_SCHEMA_VERSION = 3;
+      _export('CURRENT_SCHEMA_VERSION', CURRENT_SCHEMA_VERSION = 4);
+
+      _export('CURRENT_SCHEMA_VERSION', CURRENT_SCHEMA_VERSION);
     }
   };
 });

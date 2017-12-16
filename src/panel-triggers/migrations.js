@@ -1,5 +1,8 @@
+import _ from 'lodash';
+import {DEFAULT_TARGET} from './triggers_panel_ctrl';
+
 // Actual schema version
-const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 export function migratePanelSchema(panel) {
   if (isEmptyPanel(panel)) {
@@ -26,6 +29,14 @@ export function migratePanelSchema(panel) {
     delete panel.infoField;
     delete panel.scroll;
     delete panel.hideHostsInMaintenance;
+  }
+
+  if (schemaVersion < 4) {
+    if (panel.targets && !_.isEmpty(panel.targets)) {
+      _.each(panel.targets, (target) => {
+        _.defaultsDeep(target, DEFAULT_TARGET);
+      });
+    }
   }
 
   return panel;

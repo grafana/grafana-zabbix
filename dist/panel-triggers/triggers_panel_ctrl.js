@@ -3,7 +3,7 @@
 System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'app/plugins/sdk', './options_tab', './triggers_tab', './migrations'], function (_export, _context) {
   "use strict";
 
-  var _, $, moment, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, _createClass, _get, ZABBIX_DS_ID, DEFAULT_TARGET, DEFAULT_SEVERITY, DEFAULT_TIME_FORMAT, PANEL_DEFAULTS, triggerStatusMap, TriggerPanelCtrl;
+  var _, $, moment, utils, PanelCtrl, triggerPanelOptionsTab, triggerPanelTriggersTab, migratePanelSchema, CURRENT_SCHEMA_VERSION, _createClass, _get, ZABBIX_DS_ID, DEFAULT_TARGET, DEFAULT_SEVERITY, DEFAULT_TIME_FORMAT, PANEL_DEFAULTS, triggerStatusMap, TriggerPanelCtrl;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -63,6 +63,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
       triggerPanelTriggersTab = _triggers_tab.triggerPanelTriggersTab;
     }, function (_migrations) {
       migratePanelSchema = _migrations.migratePanelSchema;
+      CURRENT_SCHEMA_VERSION = _migrations.CURRENT_SCHEMA_VERSION;
     }],
     execute: function () {
       _createClass = function () {
@@ -114,7 +115,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         group: { filter: "" },
         host: { filter: "" },
         application: { filter: "" },
-        trigger: { filter: "" }
+        trigger: { filter: "" },
+        tags: { filter: "" }
       });
 
       _export('DEFAULT_TARGET', DEFAULT_TARGET);
@@ -126,7 +128,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
       DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
       _export('PANEL_DEFAULTS', PANEL_DEFAULTS = {
-        schemaVersion: 3,
+        schemaVersion: CURRENT_SCHEMA_VERSION,
         datasources: [],
         targets: {},
         // Fields
@@ -393,6 +395,20 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               triggerList = filterTriggers(triggerList, triggerFilter);
             }
 
+            // Filter by tags
+            var target = this.panel.targets[ds];
+            if (target.tags.filter) {
+              var tagsFilter = this.datasources[ds].replaceTemplateVars(target.tags.filter);
+              // replaceTemplateVars() builds regex-like string, so we should trim it.
+              tagsFilter = tagsFilter.replace('/^', '').replace('$/', '');
+              var tags = this.parseTags(tagsFilter);
+              triggerList = _.filter(triggerList, function (trigger) {
+                return _.every(tags, function (tag) {
+                  return _.find(trigger.tags, { tag: tag.tag, value: tag.value });
+                });
+              });
+            }
+
             return triggerList;
           }
         }, {
@@ -528,6 +544,25 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             }
             trigger.age = timestamp.fromNow(true);
             return trigger;
+          }
+        }, {
+          key: 'parseTags',
+          value: function parseTags(tagStr) {
+            var tags = _.map(tagStr.split(','), function (tag) {
+              return tag.trim();
+            });
+            tags = _.map(tags, function (tag) {
+              var tagParts = tag.split(':');
+              return { tag: tagParts[0].trim(), value: tagParts[1].trim() };
+            });
+            return tags;
+          }
+        }, {
+          key: 'tagsToString',
+          value: function tagsToString(tags) {
+            return _.map(tags, function (tag) {
+              return tag.tag + ':' + tag.value;
+            }).join(', ');
           }
         }, {
           key: 'switchComment',
