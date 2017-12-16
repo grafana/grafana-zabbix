@@ -16,6 +16,9 @@
                     <i ng-if="trigger.maintenance" class="fa fa-wrench zbx-maintenance-icon"></i>
                     {{ ctrl.formatHostName(trigger) }}
                   </span>
+                  <span class="zabbix-hostname" ng-if="ctrl.panel.hostGroups">
+                    {{ ctrl.formatHostGroups(trigger) }}
+                  </span>
 
                   <span class="zbx-trigger-tags" ng-if="ctrl.panel.showTags && trigger.tags">
                     <span ng-repeat="tag in trigger.tags" ng-click="ctrl.addTagFilter(tag, trigger.datasource)"

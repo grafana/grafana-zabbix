@@ -134,6 +134,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         // Fields
         hostField: true,
         hostTechNameField: false,
+        hostGroups: false,
         showTags: true,
         statusField: true,
         severityField: true,
@@ -617,13 +618,25 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'formatHostName',
           value: function formatHostName(trigger) {
+            var host = "";
             if (this.panel.hostField && this.panel.hostTechNameField) {
-              return trigger.host + ' (' + trigger.hostTechName + ')';
+              host = trigger.host + ' (' + trigger.hostTechName + ')';
             } else if (this.panel.hostField || this.panel.hostTechNameField) {
-              return this.panel.hostField ? trigger.host : trigger.hostTechName;
-            } else {
-              return "";
+              host = this.panel.hostField ? trigger.host : trigger.hostTechName;
             }
+
+            return host;
+          }
+        }, {
+          key: 'formatHostGroups',
+          value: function formatHostGroups(trigger) {
+            var groupNames = "";
+            if (this.panel.hostGroups) {
+              var groups = _.map(trigger.groups, 'name').join(', ');
+              groupNames += '[ ' + groups + ' ]';
+            }
+
+            return groupNames;
           }
         }, {
           key: 'getAlertIconClass',

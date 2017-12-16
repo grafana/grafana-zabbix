@@ -35,6 +35,7 @@ export const PANEL_DEFAULTS = {
   // Fields
   hostField: true,
   hostTechNameField: false,
+  hostGroups: false,
   showTags: true,
   statusField: true,
   severityField: true,
@@ -468,13 +469,24 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   formatHostName(trigger) {
+    let host = "";
     if (this.panel.hostField && this.panel.hostTechNameField) {
-      return `${trigger.host} (${trigger.hostTechName})`;
+      host = `${trigger.host} (${trigger.hostTechName})`;
     } else if (this.panel.hostField || this.panel.hostTechNameField) {
-      return this.panel.hostField ? trigger.host : trigger.hostTechName;
-    } else {
-      return "";
+      host = this.panel.hostField ? trigger.host : trigger.hostTechName;
     }
+
+    return host;
+  }
+
+  formatHostGroups(trigger) {
+    let groupNames = "";
+    if (this.panel.hostGroups) {
+      let groups = _.map(trigger.groups, 'name').join(', ');
+      groupNames += `[ ${groups} ]`;
+    }
+
+    return groupNames;
   }
 
   getAlertIconClass(trigger) {
