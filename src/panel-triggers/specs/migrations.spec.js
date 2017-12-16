@@ -104,8 +104,8 @@ describe('Triggers Panel schema migration', () => {
       customLastChangeFormat: false,
       lastChangeFormat: "",
       triggerSeverity: DEFAULT_SEVERITY,
-      okEventColor: 'rgba(0, 245, 153, 0.45)',
-      ackEventColor: 'rgba(0, 0, 0, 0)'
+      okEventColor: 'rgb(56, 189, 113)',
+      ackEventColor: 'rgb(56, 219, 156)'
     };
 
     expect(updatedPanelCtrl.panel).toEqual(expected);
