@@ -79,9 +79,11 @@ function groupByWrapper(interval, groupFunc, datapoints) {
 
 function aggregateByWrapper(interval, aggregateFunc, datapoints) {
   // Flatten all points in frame and then just use groupBy()
-  var flattenedPoints = _.flatten(datapoints, true);
-  var groupByCallback = aggregationFunctions[aggregateFunc];
-  return groupBy(flattenedPoints, interval, groupByCallback);
+  const flattenedPoints = _.flatten(datapoints, true);
+  // groupBy_perf works with sorted series only
+  const sortedPoints = ts.sortByTime(flattenedPoints);
+  let groupByCallback = aggregationFunctions[aggregateFunc];
+  return groupBy(sortedPoints, interval, groupByCallback);
 }
 
 function aggregateWrapper(groupByCallback, interval, datapoints) {

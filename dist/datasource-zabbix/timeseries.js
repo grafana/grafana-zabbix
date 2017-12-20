@@ -480,7 +480,8 @@ System.register(['lodash', './utils'], function (_export, _context) {
         MIN: MIN,
         MAX: MAX,
         MEDIAN: MEDIAN,
-        PERCENTIL: PERCENTIL
+        PERCENTIL: PERCENTIL,
+        sortByTime: sortByTime
       };
 
       _export('default', exportedFunctions);
