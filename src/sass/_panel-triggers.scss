@@ -20,7 +20,6 @@
 
     .zbx-tag {
       color: $zbx-tag-color;
-      // opacity: 0.9;
       padding: 0px 6px;
       cursor: pointer;
     }
@@ -32,10 +31,6 @@
 
   .trigger-info-block {
     display: inline-flex;
-
-    // &.zbx-status-icons {
-    //   margin-bottom: 4px;
-    // }
 
     i, a {
       margin-left: 0.6rem;
@@ -59,26 +54,6 @@
 .zbx-trigger-card {
   position: relative;
   padding: 0.5rem 1rem;
-
-  // &--alerting {
-  //   border-bottom-color: rgba(#161719, 1);
-  //   box-shadow: 0 0 10px rgba($red, 0.1);
-  //   animation: zabbix-triggers-panel 1.6s cubic-bezier(1, .1, .73, 1) 0s infinite alternate;
-  // }
-  // &--alerting::after {
-  //   position: relative;
-  // }
-  // &--alerting::after {
-  //   content: '';
-  //   position: absolute;
-  //   top: 0;
-  //   z-index: -1;
-  //   width: 100%;
-  //   height: 100%;
-  //   box-shadow: 0 0 10px rgba($red, 1);
-  //   opacity: 0;
-  //   animation: alerting-panel 1.6s cubic-bezier(1, .1, .73, 1) 0s infinite alternate;
-  // }
 }
 
 .zabbix-trigger {
