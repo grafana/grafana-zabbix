@@ -6,15 +6,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.8.0] - 2017-12-20
 ### Added
 - Multiple data sources support for triggers panel, [#431](https://github.com/alexanderzobnin/grafana-zabbix/issues/431)
-- Text color selector for triggers panel, [#361](https://github.com/alexanderzobnin/grafana-zabbix/issues/361)
 
 ### Changed
+- Triggers Panel fully redesigned, closed a bunch of issues: #431, #488, #299, #485, #412, #157, #483, #487, #248
 - Tests migrated to [Jest](http://facebook.github.io/jest/)
 
 ### Fixed
 - Triggers panel refreshing issues
+- aggregateBy() function bug, [#498](https://github.com/alexanderzobnin/grafana-zabbix/issues/498)
 
 ## [3.7.0] - 2017-10-24
 ### Added
