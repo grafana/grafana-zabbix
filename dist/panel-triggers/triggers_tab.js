@@ -125,7 +125,7 @@ System.register(['lodash', '../datasource-zabbix/utils', './triggers_panel_ctrl'
 
             _.each(this.panel.datasources, function (ds) {
               if (!_this2.panel.targets[ds]) {
-                _this2.panel.targets[ds] = DEFAULT_TARGET;
+                _this2.panel.targets[ds] = _.cloneDeep(DEFAULT_TARGET);
               }
             });
             this.parseTarget();

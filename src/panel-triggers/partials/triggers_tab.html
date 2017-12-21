@@ -6,7 +6,7 @@
       </div>
       <div class="gf-form">
         <datasource-selector
-          datasources="editor.panel.datasources"
+          datasources="ctrl.panel.datasources"
           options="editor.panelCtrl.available_datasources"
           on-change="editor.datasourcesChanged()">
         </datasource-selector>
@@ -15,36 +15,36 @@
   </div>
 </div>
 
-<div class="editor-row" ng-repeat="ds in editor.panel.datasources">
+<div class="editor-row" ng-repeat="ds in ctrl.panel.datasources">
   <div class="section gf-form-group">
     <h5 class="section-heading">{{ ds }}</h5>
     <div class="gf-form-inline">
       <div class="gf-form max-width-20">
         <label class="gf-form-label query-keyword width-7">Group</label>
         <input type="text"
-          ng-model="editor.panel.targets[ds].group.filter"
+          ng-model="ctrl.panel.targets[ds].group.filter"
           bs-typeahead="editor.getGroupNames[ds]"
           ng-blur="editor.parseTarget()"
           data-min-length=0
           data-items=100
           class="gf-form-input"
           ng-class="{
-            'zbx-variable': editor.isVariable(editor.panel.targets[ds].group.filter),
-            'zbx-regex': editor.isRegex(editor.panel.targets[ds].group.filter)
+            'zbx-variable': editor.isVariable(ctrl.panel.targets[ds].group.filter),
+            'zbx-regex': editor.isRegex(ctrl.panel.targets[ds].group.filter)
           }">
       </div>
       <div class="gf-form">
         <label class="gf-form-label query-keyword width-7">Host</label>
         <input type="text"
-          ng-model="editor.panel.targets[ds].host.filter"
+          ng-model="ctrl.panel.targets[ds].host.filter"
           bs-typeahead="editor.getHostNames[ds]"
           ng-blur="editor.parseTarget()"
           data-min-length=0
           data-items=100
           class="gf-form-input"
           ng-class="{
-            'zbx-variable': editor.isVariable(editor.panel.targets[ds].host.filter),
-            'zbx-regex': editor.isRegex(editor.panel.targets[ds].host.filter)
+            'zbx-variable': editor.isVariable(ctrl.panel.targets[ds].host.filter),
+            'zbx-regex': editor.isRegex(ctrl.panel.targets[ds].host.filter)
           }">
       </div>
     </div>
@@ -53,35 +53,35 @@
       <div class="gf-form max-width-20">
         <label class="gf-form-label query-keyword width-7">Application</label>
         <input type="text"
-          ng-model="editor.panel.targets[ds].application.filter"
+          ng-model="ctrl.panel.targets[ds].application.filter"
           bs-typeahead="editor.getApplicationNames[ds]"
           ng-blur="editor.parseTarget()"
           data-min-length=0
           data-items=100
           class="gf-form-input"
           ng-class="{
-            'zbx-variable': editor.isVariable(editor.panel.targets[ds].application.filter),
-            'zbx-regex': editor.isRegex(editor.panel.targets[ds].application.filter)
+            'zbx-variable': editor.isVariable(ctrl.panel.targets[ds].application.filter),
+            'zbx-regex': editor.isRegex(ctrl.panel.targets[ds].application.filter)
           }">
       </div>
       <div class="gf-form">
         <label class="gf-form-label query-keyword width-7">Trigger</label>
         <input type="text"
-          ng-model="editor.panel.targets[ds].trigger.filter"
+          ng-model="ctrl.panel.targets[ds].trigger.filter"
           ng-blur="editor.parseTarget()"
           placeholder="trigger name"
           class="gf-form-input"
-          ng-style="editor.panel.targets[ds].trigger.style"
+          ng-style="ctrl.panel.targets[ds].trigger.style"
           ng-class="{
-            'zbx-variable': editor.isVariable(editor.panel.targets[ds].trigger.filter),
-            'zbx-regex': editor.isRegex(editor.panel.targets[ds].trigger.filter)
+            'zbx-variable': editor.isVariable(ctrl.panel.targets[ds].trigger.filter),
+            'zbx-regex': editor.isRegex(ctrl.panel.targets[ds].trigger.filter)
           }"
           empty-to-null>
       </div>
       <div class="gf-form">
         <label class="gf-form-label query-keyword width-7">Tags</label>
         <input type="text" class="gf-form-input"
-          ng-model="editor.panel.targets[ds].tags.filter"
+          ng-model="ctrl.panel.targets[ds].tags.filter"
           ng-blur="editor.parseTarget()"
           placeholder="tag1:value1, tag2:value2">
       </div>

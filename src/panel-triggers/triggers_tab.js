@@ -72,7 +72,7 @@ class TriggersTabCtrl {
   datasourcesChanged() {
     _.each(this.panel.datasources, (ds) => {
       if (!this.panel.targets[ds]) {
-        this.panel.targets[ds] = DEFAULT_TARGET;
+        this.panel.targets[ds] = _.cloneDeep(DEFAULT_TARGET);
       }
     });
     this.parseTarget();
