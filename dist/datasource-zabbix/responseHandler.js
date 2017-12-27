@@ -72,7 +72,28 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
 
     var convertTextCallback = _.partial(convertText, target);
     return convertHistory(history, items, addHostName, convertTextCallback);
-  }function convertText(target, point) {
+  }function handleHistoryAsTable(history, items) {
+    var table = new TableModel();
+    table.addColumn({ text: 'Host' });
+    table.addColumn({ text: 'Item' });
+    table.addColumn({ text: 'Key' });
+    table.addColumn({ text: 'Last value' });
+
+    var grouped_history = _.groupBy(history, 'itemid');
+    _.each(items, function (item) {
+      var itemHistory = grouped_history[item.itemid] || [];
+      var lastPoint = _.last(itemHistory);
+      var lastValue = lastPoint ? lastPoint.value : null;
+      var host = _.first(item.hosts);
+      host = host ? host.name : "";
+
+      table.rows.push([host, item.name, item.key_, lastValue]);
+    });
+
+    return table;
+  }
+
+  function convertText(target, point) {
     var value = point.value;
 
     // Regex-based extractor
@@ -81,9 +102,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
     }
 
     return [value, point.clock * 1000 + Math.round(point.ns / 1000000)];
-  }
-
-  function extractText(str, pattern, useCaptureGroups) {
+  }function extractText(str, pattern, useCaptureGroups) {
     var extractPattern = new RegExp(pattern);
     var extractedValue = extractPattern.exec(str);
     if (extractedValue) {
@@ -94,7 +113,9 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       }
     }
     return extractedValue;
-  }function handleSLAResponse(itservice, slaProperty, slaObject) {
+  }
+
+  function handleSLAResponse(itservice, slaProperty, slaObject) {
     var targetSLA = slaObject[itservice.serviceid].sla[0];
     if (slaProperty.property === 'status') {
       var targetStatus = parseInt(slaObject[itservice.serviceid].status);
@@ -108,9 +129,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
         datapoints: [[targetSLA[slaProperty.property], targetSLA.from * 1000], [targetSLA[slaProperty.property], targetSLA.to * 1000]]
       };
     }
-  }
-
-  function handleTriggersResponse(triggers, timeRange) {
+  }function handleTriggersResponse(triggers, timeRange) {
     if (_.isNumber(triggers)) {
       return {
         target: "triggers count",
@@ -134,7 +153,9 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       });
       return table;
     }
-  }function getTriggerStats(triggers) {
+  }
+
+  function getTriggerStats(triggers) {
     var groups = _.uniq(_.flattenDeep(_.map(triggers, function (trigger) {
       return _.map(trigger.groups, 'name');
     })));
@@ -149,12 +170,12 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       });
     });
     return stats;
-  }
-
-  function convertHistoryPoint(point) {
+  }function convertHistoryPoint(point) {
     // Value must be a number for properly work
     return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
-  }function convertTrendPoint(valueType, point) {
+  }
+
+  function convertTrendPoint(valueType, point) {
     var value;
     switch (valueType) {
       case "min":
@@ -177,9 +198,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
     }
 
     return [Number(value), point.clock * 1000];
-  }
-
-  return {
+  }return {
     setters: [function (_lodash) {
       _ = _lodash.default;
     }, function (_appCoreTable_model) {
@@ -193,6 +212,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
         convertHistory: convertHistory,
         handleTrends: handleTrends,
         handleText: handleText,
+        handleHistoryAsTable: handleHistoryAsTable,
         handleSLAResponse: handleSLAResponse,
         handleTriggersResponse: handleTriggersResponse
       });

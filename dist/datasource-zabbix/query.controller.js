@@ -97,6 +97,8 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
 
           _this.ackFilters = [{ text: 'all triggers', value: 2 }, { text: 'unacknowledged', value: 0 }, { text: 'acknowledged', value: 1 }];
 
+          _this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
+
           _this.triggerSeverity = c.TRIGGER_SEVERITY;
 
           // Map functions for bs-typeahead

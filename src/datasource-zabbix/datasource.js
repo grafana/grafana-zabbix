@@ -290,7 +290,11 @@ class ZabbixAPIDatasource {
         if (items.length) {
           return this.zabbix.getHistory(items, timeFrom, timeTo)
           .then(history => {
-            return responseHandler.handleText(history, items, target);
+            if (target.resultFormat === 'table') {
+              return responseHandler.handleHistoryAsTable(history, items);
+            } else {
+              return responseHandler.handleText(history, items, target);
+            }
           });
         } else {
           return Promise.resolve([]);

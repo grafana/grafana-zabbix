@@ -502,7 +502,11 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             return this.zabbix.getItemsFromTarget(target, options).then(function (items) {
               if (items.length) {
                 return _this4.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
-                  return responseHandler.handleText(history, items, target);
+                  if (target.resultFormat === 'table') {
+                    return responseHandler.handleHistoryAsTable(history, items);
+                  } else {
+                    return responseHandler.handleText(history, items, target);
+                  }
                 });
               } else {
                 return Promise.resolve([]);
