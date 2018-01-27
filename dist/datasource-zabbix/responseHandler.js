@@ -72,7 +72,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
 
     var convertTextCallback = _.partial(convertText, target);
     return convertHistory(history, items, addHostName, convertTextCallback);
-  }function handleHistoryAsTable(history, items) {
+  }function handleHistoryAsTable(history, items, target) {
     var table = new TableModel();
     table.addColumn({ text: 'Host' });
     table.addColumn({ text: 'Item' });
@@ -84,6 +84,12 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       var itemHistory = grouped_history[item.itemid] || [];
       var lastPoint = _.last(itemHistory);
       var lastValue = lastPoint ? lastPoint.value : null;
+
+      // Regex-based extractor
+      if (target.textFilter) {
+        lastValue = extractText(lastValue, target.textFilter, target.useCaptureGroups);
+      }
+
       var host = _.first(item.hosts);
       host = host ? host.name : "";
 

@@ -291,7 +291,7 @@ class ZabbixAPIDatasource {
           return this.zabbix.getHistory(items, timeFrom, timeTo)
           .then(history => {
             if (target.resultFormat === 'table') {
-              return responseHandler.handleHistoryAsTable(history, items);
+              return responseHandler.handleHistoryAsTable(history, items, target);
             } else {
               return responseHandler.handleText(history, items, target);
             }

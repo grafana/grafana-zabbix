@@ -123,6 +123,8 @@ describe('ZabbixDatasource', () => {
             host: {filter: "Zabbix server"},
             application: {filter: ""},
             item: {filter: "System information"},
+            textFilter: "",
+            useCaptureGroups: true,
             mode: 2,
             resultFormat: "table"
           }
@@ -145,13 +147,11 @@ describe('ZabbixDatasource', () => {
       });
     });
 
-    it('should extract value if regex is specified', (done) => {
+    it('should extract value if regex with capture group is used', (done) => {
       ctx.options.targets[0].textFilter = "Linux (.*)";
       ctx.ds.query(ctx.options).then(result => {
         let tableData = result.data[0];
-        expect(tableData.rows).toEqual([
-          ['Zabbix server', 'System information', 'system.uname', 'last']
-        ]);
+        expect(tableData.rows[0][3]).toEqual('last');
         done();
       });
     });

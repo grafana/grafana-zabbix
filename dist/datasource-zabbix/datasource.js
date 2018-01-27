@@ -503,7 +503,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               if (items.length) {
                 return _this4.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
                   if (target.resultFormat === 'table') {
-                    return responseHandler.handleHistoryAsTable(history, items);
+                    return responseHandler.handleHistoryAsTable(history, items, target);
                   } else {
                     return responseHandler.handleText(history, items, target);
                   }
