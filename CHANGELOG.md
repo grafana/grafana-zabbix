@@ -6,7 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
-
+### Added
+- Table format support for text data, [#492](https://github.com/alexanderzobnin/grafana-zabbix/issues/492)
 
 ## [3.8.1] - 2017-12-21
 ### Fixed
