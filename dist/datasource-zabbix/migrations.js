@@ -32,6 +32,7 @@ System.register([], function (_export, _context) {
   _export("migrateFrom2To3version", migrateFrom2To3version);
 
   function migrate(target) {
+    target.resultFormat = target.resultFormat || 'time_series';
     if (isGrafana2target(target)) {
       return migrateFrom2To3version(target);
     } else {

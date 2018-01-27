@@ -49,6 +49,8 @@ export class ZabbixQueryController extends QueryCtrl {
       {text: 'acknowledged', value: 1},
     ];
 
+    this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
+
     this.triggerSeverity = c.TRIGGER_SEVERITY;
 
     // Map functions for bs-typeahead

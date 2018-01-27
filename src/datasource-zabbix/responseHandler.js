@@ -54,6 +54,35 @@ function handleText(history, items, target, addHostName = true) {
   return convertHistory(history, items, addHostName, convertTextCallback);
 }
 
+function handleHistoryAsTable(history, items, target) {
+  let table = new TableModel();
+  table.addColumn({text: 'Host'});
+  table.addColumn({text: 'Item'});
+  table.addColumn({text: 'Key'});
+  table.addColumn({text: 'Last value'});
+
+  let grouped_history = _.groupBy(history, 'itemid');
+  _.each(items, (item) => {
+    let itemHistory = grouped_history[item.itemid] || [];
+    let lastPoint = _.last(itemHistory);
+    let lastValue = lastPoint ? lastPoint.value : null;
+
+    // Regex-based extractor
+    if (target.textFilter) {
+      lastValue = extractText(lastValue, target.textFilter, target.useCaptureGroups);
+    }
+
+    let host = _.first(item.hosts);
+    host = host ? host.name : "";
+
+    table.rows.push([
+      host, item.name, item.key_, lastValue
+    ]);
+  });
+
+  return table;
+}
+
 function convertText(target, point) {
   let value = point.value;
 
@@ -182,6 +211,7 @@ export default {
   convertHistory: convertHistory,
   handleTrends: handleTrends,
   handleText: handleText,
+  handleHistoryAsTable: handleHistoryAsTable,
   handleSLAResponse: handleSLAResponse,
   handleTriggersResponse: handleTriggersResponse
 };

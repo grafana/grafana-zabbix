@@ -38,7 +38,21 @@ jest.mock('app/core/utils/datemath', () => {
 }, {virtual: true});
 
 jest.mock('app/core/table_model', () => {
-  return {};
+  return class TableModel {
+    constructor() {
+      this.columns = [];
+      this.columnMap = {};
+      this.rows = [];
+      this.type = 'table';
+    }
+
+    addColumn(col) {
+      if (!this.columnMap[col.text]) {
+        this.columns.push(col);
+        this.columnMap[col.text] = col;
+      }
+    }
+  };
 }, {virtual: true});
 
 jest.mock('jquery', () => 'module not found', {virtual: true});

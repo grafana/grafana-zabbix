@@ -26,6 +26,7 @@ export function migrateFrom2To3version(target) {
 }
 
 export function migrate(target) {
+  target.resultFormat = target.resultFormat || 'time_series';
   if (isGrafana2target(target)) {
     return migrateFrom2To3version(target);
   } else {
