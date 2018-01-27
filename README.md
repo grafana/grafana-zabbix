@@ -56,6 +56,6 @@ First, [configure](http://docs.grafana-zabbix.org/installation/configuration/) Z
 - Need additional support? Contact me for details [alexanderzobnin@gmail.com](mailto:alexanderzobnin@gmail.com)
 
 ---
-:copyright: 2015-2017 Alexander Zobnin alexanderzobnin@gmail.com
+:copyright: 2015-2018 Alexander Zobnin alexanderzobnin@gmail.com
 
 Licensed under the Apache 2.0 License
