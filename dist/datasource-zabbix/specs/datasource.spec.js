@@ -9,7 +9,6 @@ describe('ZabbixDatasource', () => {
   beforeEach(() => {
     ctx.instanceSettings = {
       jsonData: {
-        alerting: true,
         username: 'zabbix',
         password: 'zabbix',
         trends: true,
@@ -50,14 +49,13 @@ describe('ZabbixDatasource', () => {
       range: {from: 'now-7d', to: 'now'}
     };
 
-    it('should return an empty array when no targets are set', (done) => {
+    it('should return an empty array when no targets are set', () => {
       let options = {
         targets: [],
         range: {from: 'now-6h', to: 'now'}
       };
-      ctx.ds.query(options).then(result => {
+      return ctx.ds.query(options).then(result => {
         expect(result.data.length).toBe(0);
-        done();
       });
     });
 
@@ -299,6 +297,7 @@ describe('ZabbixDatasource', () => {
 
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
+      ctx.ds.alertingEnabled = true;
 
       let targetItems = [{
         "itemid": "1",
