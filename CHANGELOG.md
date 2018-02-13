@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Table format support for text data, [#492](https://github.com/alexanderzobnin/grafana-zabbix/issues/492)
+
+## [3.8.1] - 2017-12-21
+### Fixed
+- Triggers panel multiple targets bug (typing in one target affects other)
+- Triggers panel event source icon
+
+
+## [3.8.0] - 2017-12-20
+### Added
+- Multiple data sources support for triggers panel, [#431](https://github.com/alexanderzobnin/grafana-zabbix/issues/431)
+
+### Changed
+- Triggers Panel fully redesigned, closed a bunch of issues: #431, #488, #299, #485, #412, #157, #483, #487, #248
+- Tests migrated to [Jest](http://facebook.github.io/jest/)
+
+### Fixed
+- Triggers panel refreshing issues
+- aggregateBy() function bug, [#498](https://github.com/alexanderzobnin/grafana-zabbix/issues/498)
+
 
 ## [3.7.0] - 2017-10-24
 ### Added

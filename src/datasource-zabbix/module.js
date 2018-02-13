@@ -1,6 +1,12 @@
+import {loadPluginCss} from 'app/plugins/sdk';
 import {ZabbixAPIDatasource} from './datasource';
 import {ZabbixQueryController} from './query.controller';
 import {ZabbixDSConfigController} from './config.controller';
+
+loadPluginCss({
+  dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
+  light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
+});
 
 class ZabbixQueryOptionsController {}
 ZabbixQueryOptionsController.templateUrl = 'datasource-zabbix/partials/query.options.html';

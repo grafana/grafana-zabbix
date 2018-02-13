@@ -488,7 +488,8 @@ const exportedFunctions = {
   MIN,
   MAX,
   MEDIAN,
-  PERCENTIL
+  PERCENTIL,
+  sortByTime
 };
 
 export default exportedFunctions;

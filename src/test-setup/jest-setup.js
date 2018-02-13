@@ -2,6 +2,8 @@
 /* globals global: false */
 
 import {JSDOM} from 'jsdom';
+import System from 'systemjs';
+import {PanelCtrl} from './panelStub';
 
 // Mock Grafana modules that are not available outside of the core project
 // Required for loading module.js
@@ -17,9 +19,12 @@ jest.mock('angular', () => {
   };
 }, {virtual: true});
 
+let mockPanelCtrl = PanelCtrl;
 jest.mock('app/plugins/sdk', () => {
   return {
-    QueryCtrl: null
+    QueryCtrl: null,
+    loadPluginCss: () => {},
+    PanelCtrl: mockPanelCtrl
   };
 }, {virtual: true});
 
@@ -33,11 +38,21 @@ jest.mock('app/core/utils/datemath', () => {
 }, {virtual: true});
 
 jest.mock('app/core/table_model', () => {
-  return {};
-}, {virtual: true});
+  return class TableModel {
+    constructor() {
+      this.columns = [];
+      this.columnMap = {};
+      this.rows = [];
+      this.type = 'table';
+    }
 
-jest.mock('./css/query-editor.css!', () => {
-  return "";
+    addColumn(col) {
+      if (!this.columnMap[col.text]) {
+        this.columns.push(col);
+        this.columnMap[col.text] = col;
+      }
+    }
+  };
 }, {virtual: true});
 
 jest.mock('jquery', () => 'module not found', {virtual: true});
@@ -48,3 +63,4 @@ let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
 global.window = dom.window;
 global.document = global.window.document;
 global.Node = window.Node;
+global.System = System;

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import Q from "q";
+import Q, { Promise } from "q";
 import {Datasource} from "../module";
 import {zabbixTemplateFormat} from "../datasource";
 
@@ -22,7 +22,10 @@ describe('ZabbixDatasource', () => {
     ctx.templateSrv = {};
     ctx.alertSrv = {};
     ctx.dashboardSrv = {};
-    ctx.zabbixAlertingSrv = {};
+    ctx.zabbixAlertingSrv = {
+      setPanelAlertState: jest.fn(),
+      removeZabbixThreshold: jest.fn(),
+    };
     ctx.zabbix = () => {};
 
     ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.dashboardSrv, ctx.zabbixAlertingSrv, ctx.zabbix);
@@ -89,6 +92,67 @@ describe('ZabbixDatasource', () => {
       done();
     });
 
+  });
+
+  describe('When querying text data', () => {
+    beforeEach(() => {
+      ctx.ds.replaceTemplateVars = (str) => str;
+      ctx.ds.alertQuery = () => Q.when([]);
+      ctx.ds.zabbix.getHistory = jest.fn().mockReturnValue(Promise.resolve([
+        {clock: "1500010200", itemid:"10100", ns:"900111000", value:"Linux first"},
+        {clock: "1500010300", itemid:"10100", ns:"900111000", value:"Linux 2nd"},
+        {clock: "1500010400", itemid:"10100", ns:"900111000", value:"Linux last"}
+      ]));
+
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve([
+        {
+          hosts: [{hostid: "10001", name: "Zabbix server"}],
+          itemid: "10100",
+          name: "System information",
+          key_: "system.uname",
+        }
+      ]));
+
+      ctx.options = {
+        range: {from: 'now-1h', to: 'now'},
+        targets: [
+          {
+            group: {filter: ""},
+            host: {filter: "Zabbix server"},
+            application: {filter: ""},
+            item: {filter: "System information"},
+            textFilter: "",
+            useCaptureGroups: true,
+            mode: 2,
+            resultFormat: "table"
+          }
+        ],
+      };
+    });
+
+    it('should return data in table format', (done) => {
+      ctx.ds.query(ctx.options).then(result => {
+        expect(result.data.length).toBe(1);
+
+        let tableData = result.data[0];
+        expect(tableData.columns).toEqual([
+          {text: 'Host'}, {text: 'Item'}, {text: 'Key'}, {text: 'Last value'}
+        ]);
+        expect(tableData.rows).toEqual([
+          ['Zabbix server', 'System information', 'system.uname', 'Linux last']
+        ]);
+        done();
+      });
+    });
+
+    it('should extract value if regex with capture group is used', (done) => {
+      ctx.options.targets[0].textFilter = "Linux (.*)";
+      ctx.ds.query(ctx.options).then(result => {
+        let tableData = result.data[0];
+        expect(tableData.rows[0][3]).toEqual('last');
+        done();
+      });
+    });
   });
 
   describe('When replacing template variables', () => {

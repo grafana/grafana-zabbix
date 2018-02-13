@@ -145,7 +145,7 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
         key: 'getItems',
         value: function getItems(hostids, appids, itemtype) {
           var params = {
-            output: ['name', 'key_', 'value_type', 'hostid', 'status', 'state', 'description'],
+            output: ['name', 'key_', 'value_type', 'hostid', 'status', 'state'],
             sortfield: 'name',
             webitems: true,
             filter: {},
@@ -315,7 +315,7 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
         key: 'getTriggers',
         value: function getTriggers(groupids, hostids, applicationids, options) {
           var showTriggers = options.showTriggers,
-              hideHostsInMaintenance = options.hideHostsInMaintenance,
+              maintenance = options.maintenance,
               timeFrom = options.timeFrom,
               timeTo = options.timeTo;
 
@@ -335,17 +335,18 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
               value: 1
             },
             selectGroups: ['name'],
-            selectHosts: ['name', 'host'],
+            selectHosts: ['name', 'host', 'maintenance_status'],
             selectItems: ['name', 'key_', 'lastvalue'],
-            selectLastEvent: 'extend'
+            selectLastEvent: 'extend',
+            selectTags: 'extend'
           };
 
           if (showTriggers) {
             params.filter.value = showTriggers;
           }
 
-          if (hideHostsInMaintenance) {
-            params.maintenance = false;
+          if (maintenance) {
+            params.maintenance = true;
           }
 
           if (timeFrom || timeTo) {

@@ -5,9 +5,10 @@
   "description": "Zabbix plugin for Grafana",
   "scripts": {
     "test": "jest",
+    "jest": "jest --notify --watch",
     "build": "grunt && jest",
     "watch": "grunt watch",
-    "codecov": "grunt && jest --coverage && codecov",
+    "codecov": "jest --coverage && codecov",
     "ci-test": "grunt && jest --coverage && codecov",
     "benchmark": "grunt bench"
   },
@@ -50,7 +51,8 @@
     "tether-drop": "^1.4.2"
   },
   "dependencies": {
-    "lodash": "~4.0.0"
+    "lodash": "~4.0.0",
+    "systemjs": "^0.20.19"
   },
   "homepage": "http://grafana-zabbix.org"
 }

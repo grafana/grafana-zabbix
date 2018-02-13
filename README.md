@@ -1,7 +1,7 @@
 # Zabbix plugin for Grafana
 
 [![GitHub version](https://badge.fury.io/gh/alexanderzobnin%2Fgrafana-zabbix.svg)](https://github.com/alexanderzobnin/grafana-zabbix/releases)
-[![CircleCI](https://circleci.com/gh/alexanderzobnin/grafana-zabbix.svg?style=svg)](https://circleci.com/gh/alexanderzobnin/grafana-zabbix)
+[![CircleCI](https://circleci.com/gh/alexanderzobnin/grafana-zabbix.svg?style=shield)](https://circleci.com/gh/alexanderzobnin/grafana-zabbix)
 [![codecov](https://codecov.io/gh/alexanderzobnin/grafana-zabbix/branch/master/graph/badge.svg)](https://codecov.io/gh/alexanderzobnin/grafana-zabbix)
 [![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/CHANGELOG.md)
 [![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](http://docs.grafana-zabbix.org)
@@ -56,6 +56,6 @@ First, [configure](http://docs.grafana-zabbix.org/installation/configuration/) Z
 - Need additional support? Contact me for details [alexanderzobnin@gmail.com](mailto:alexanderzobnin@gmail.com)
 
 ---
-:copyright: 2015-2017 Alexander Zobnin alexanderzobnin@gmail.com
+:copyright: 2015-2018 Alexander Zobnin alexanderzobnin@gmail.com
 
 Licensed under the Apache 2.0 License

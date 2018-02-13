@@ -121,7 +121,11 @@ System.register(['angular', 'jquery'], function (_export, _context) {
 
               function closeDrop() {
                 setTimeout(function () {
-                  drop.destroy();
+                  try {
+                    drop.destroy();
+                  } catch (err) {
+                    console.log('drop.destroy() error: ', err.message);
+                  }
                 });
               }
             });
