@@ -97,6 +97,12 @@ export class ZabbixQueryController extends QueryCtrl {
         },
         'options': {
           'showDisabledItems': false
+        },
+        'table': {
+          'host': true,
+          'item': true,
+          'key': true,
+          'skipEmptyValues': false
         }
       };
       _.defaults(target, targetDefaults);

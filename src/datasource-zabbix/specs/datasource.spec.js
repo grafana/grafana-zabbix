@@ -126,7 +126,13 @@ describe('ZabbixDatasource', () => {
             textFilter: "",
             useCaptureGroups: true,
             mode: 2,
-            resultFormat: "table"
+            resultFormat: "table",
+            table: {
+              host: true,
+              item: true,
+              key: true,
+              skipEmptyValues: false
+            }
           }
         ],
       };
@@ -153,6 +159,38 @@ describe('ZabbixDatasource', () => {
         let tableData = result.data[0];
         expect(tableData.rows[0][3]).toEqual('last');
         done();
+      });
+    });
+
+    it('should return table only with `Last value` column when other columns are not selected', () => {
+      ctx.options.targets[0].table = {
+        host: false,
+        item: false,
+        key: false,
+        skipEmptyValues: false
+      };
+      return ctx.ds.query(ctx.options).then(result => {
+        let tableData = result.data[0];
+        expect(tableData.columns.length).toBe(1);
+        expect(tableData.columns[0].text).toEqual('Last value');
+        expect(tableData.rows[0].length).toBe(1);
+        expect(tableData.rows[0][0]).toEqual('Linux last');
+      });
+    });
+
+    it('should skip item when last value is empty', () => {
+      ctx.options.targets[0].skipEmptyValues = true;
+      ctx.ds.zabbix.getHistory = jest.fn().mockReturnValue(Promise.resolve([
+          {clock: "1500010200", itemid:"10100", ns:"900111000", value:"Linux first"},
+          {clock: "1500010300", itemid:"10100", ns:"900111000", value:"Linux 2nd"},
+          {clock: "1500010400", itemid:"10100", ns:"900111000", value:"Linux last"},
+          {clock: "1500010200", itemid:"90109", ns:"900111000", value:"Non empty value"},
+          {clock: "1500010500", itemid:"90109", ns:"900111000", value:""}
+      ]));
+      return ctx.ds.query(ctx.options).then(result => {
+        let tableData = result.data[0];
+        expect(tableData.rows.length).toBe(1);
+        expect(tableData.rows[0][3]).toEqual('Linux last');
       });
     });
   });

@@ -74,9 +74,15 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
     return convertHistory(history, items, addHostName, convertTextCallback);
   }function handleHistoryAsTable(history, items, target) {
     var table = new TableModel();
-    table.addColumn({ text: 'Host' });
-    table.addColumn({ text: 'Item' });
-    table.addColumn({ text: 'Key' });
+    if (target.table.host) {
+      table.addColumn({ text: 'Host' });
+    }
+    if (target.table.item) {
+      table.addColumn({ text: 'Item' });
+    }
+    if (target.table.key) {
+      table.addColumn({ text: 'Key' });
+    }
     table.addColumn({ text: 'Last value' });
 
     var grouped_history = _.groupBy(history, 'itemid');
@@ -84,6 +90,10 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       var itemHistory = grouped_history[item.itemid] || [];
       var lastPoint = _.last(itemHistory);
       var lastValue = lastPoint ? lastPoint.value : null;
+
+      if (target.table.skipEmptyValues && (!lastValue || lastValue === '')) {
+        return;
+      }
 
       // Regex-based extractor
       if (target.textFilter) {
@@ -93,7 +103,19 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       var host = _.first(item.hosts);
       host = host ? host.name : "";
 
-      table.rows.push([host, item.name, item.key_, lastValue]);
+      var row = [];
+      if (target.table.host) {
+        row.push(host);
+      }
+      if (target.table.item) {
+        row.push(item.name);
+      }
+      if (target.table.key) {
+        row.push(item.key_);
+      }
+      row.push(lastValue);
+
+      table.rows.push(row);
     });
 
     return table;

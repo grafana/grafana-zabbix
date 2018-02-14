@@ -147,6 +147,12 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
               },
               'options': {
                 'showDisabledItems': false
+              },
+              'table': {
+                'host': true,
+                'item': true,
+                'key': true,
+                'skipEmptyValues': false
               }
             };
             _.defaults(target, targetDefaults);
