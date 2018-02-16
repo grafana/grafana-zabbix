@@ -56,15 +56,9 @@ function handleText(history, items, target, addHostName = true) {
 
 function handleHistoryAsTable(history, items, target) {
   let table = new TableModel();
-  if(target.table.host) {
-    table.addColumn({text: 'Host'});
-  }
-  if(target.table.item) {
-    table.addColumn({text: 'Item'});
-  }
-  if(target.table.key) {
-    table.addColumn({text: 'Key'});
-  }
+  table.addColumn({text: 'Host'});
+  table.addColumn({text: 'Item'});
+  table.addColumn({text: 'Key'});
   table.addColumn({text: 'Last value'});
 
   let grouped_history = _.groupBy(history, 'itemid');
@@ -85,19 +79,9 @@ function handleHistoryAsTable(history, items, target) {
     let host = _.first(item.hosts);
     host = host ? host.name : "";
 
-    let row = [];
-    if(target.table.host) {
-      row.push(host);
-    }
-    if(target.table.item) {
-      row.push(item.name);
-    }
-    if(target.table.key) {
-      row.push(item.key_);
-    }
-    row.push(lastValue);
-
-    table.rows.push(row);
+    table.rows.push([
+      host, item.name, item.key_, lastValue
+    ]);
   });
 
   return table;

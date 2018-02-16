@@ -128,9 +128,6 @@ describe('ZabbixDatasource', () => {
             mode: 2,
             resultFormat: "table",
             table: {
-              host: true,
-              item: true,
-              key: true,
               skipEmptyValues: false
             }
           }
@@ -159,22 +156,6 @@ describe('ZabbixDatasource', () => {
         let tableData = result.data[0];
         expect(tableData.rows[0][3]).toEqual('last');
         done();
-      });
-    });
-
-    it('should return table only with `Last value` column when other columns are not selected', () => {
-      ctx.options.targets[0].table = {
-        host: false,
-        item: false,
-        key: false,
-        skipEmptyValues: false
-      };
-      return ctx.ds.query(ctx.options).then(result => {
-        let tableData = result.data[0];
-        expect(tableData.columns.length).toBe(1);
-        expect(tableData.columns[0].text).toEqual('Last value');
-        expect(tableData.rows[0].length).toBe(1);
-        expect(tableData.rows[0][0]).toEqual('Linux last');
       });
     });
 

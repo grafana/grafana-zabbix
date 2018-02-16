@@ -149,9 +149,6 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
                 'showDisabledItems': false
               },
               'table': {
-                'host': true,
-                'item': true,
-                'key': true,
                 'skipEmptyValues': false
               }
             };
