@@ -17,12 +17,6 @@
         <select class="gf-form-input gf-size-auto" ng-model="ctrl.target.resultFormat" ng-options="f.value as f.text for f in ctrl.resultFormats" ng-change="ctrl.refresh()"></select>
       </div>
     </div>
-    <div class="gf-form" ng-show="ctrl.target.mode === editorMode.TEXT && ctrl.target.resultFormat === 'table'">
-      <label class="gf-form-label query-keyword width-8">Options</label>
-      </gf-form-switch>
-      <gf-form-switch class="gf-form" label="Skip empty values" checked="ctrl.target.table.skipEmptyValues" on-change="ctrl.onTargetBlur()">
-      </gf-form-switch>
-    </div>
     <div class="gf-form gf-form--grow">
       <div class="gf-form-label gf-form-label--grow"></div>
     </div>
@@ -169,9 +163,16 @@
   <!-- Query options -->
   <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
     <div class="gf-form offset-width-7" ng-hide="ctrl.target.mode == editorMode.TRIGGERS">
-      <gf-form-switch class="gf-form"
+      <gf-form-switch class="gf-form" label-class="width-10"
         label="Show disabled items"
         checked="ctrl.target.options.showDisabledItems"
+        on-change="ctrl.onQueryOptionChange()">
+      </gf-form-switch>
+    </div>
+    <div class="gf-form offset-width-7" ng-show="ctrl.target.mode === editorMode.TEXT && ctrl.target.resultFormat === 'table'">
+      <gf-form-switch class="gf-form" label-class="width-10"
+        label="Skip empty values"
+        checked="ctrl.target.options.skipEmptyValues"
         on-change="ctrl.onQueryOptionChange()">
       </gf-form-switch>
     </div>

@@ -67,7 +67,7 @@ function handleHistoryAsTable(history, items, target) {
     let lastPoint = _.last(itemHistory);
     let lastValue = lastPoint ? lastPoint.value : null;
 
-    if(target.table.skipEmptyValues && (!lastValue || lastValue === '')) {
+    if(target.options.skipEmptyValues && (!lastValue || lastValue === '')) {
       return;
     }
 

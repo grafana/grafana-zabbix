@@ -127,7 +127,7 @@ describe('ZabbixDatasource', () => {
             useCaptureGroups: true,
             mode: 2,
             resultFormat: "table",
-            table: {
+            options: {
               skipEmptyValues: false
             }
           }
@@ -160,7 +160,18 @@ describe('ZabbixDatasource', () => {
     });
 
     it('should skip item when last value is empty', () => {
-      ctx.options.targets[0].skipEmptyValues = true;
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve([
+        {
+          hosts: [{hostid: "10001", name: "Zabbix server"}],
+          itemid: "10100", name: "System information", key_: "system.uname"
+        },
+        {
+          hosts: [{hostid: "10002", name: "Server02"}],
+          itemid: "90109", name: "System information", key_: "system.uname"
+        }
+      ]));
+
+      ctx.options.targets[0].options.skipEmptyValues = true;
       ctx.ds.zabbix.getHistory = jest.fn().mockReturnValue(Promise.resolve([
           {clock: "1500010200", itemid:"10100", ns:"900111000", value:"Linux first"},
           {clock: "1500010300", itemid:"10100", ns:"900111000", value:"Linux 2nd"},

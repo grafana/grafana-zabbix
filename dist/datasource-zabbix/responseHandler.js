@@ -85,7 +85,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       var lastPoint = _.last(itemHistory);
       var lastValue = lastPoint ? lastPoint.value : null;
 
-      if (target.table.skipEmptyValues && (!lastValue || lastValue === '')) {
+      if (target.options.skipEmptyValues && (!lastValue || lastValue === '')) {
         return;
       }
 

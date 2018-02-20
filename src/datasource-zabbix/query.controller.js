@@ -96,7 +96,8 @@ export class ZabbixQueryController extends QueryCtrl {
           'acknowledged': 2
         },
         'options': {
-          'showDisabledItems': false
+          'showDisabledItems': false,
+          'skipEmptyValues': false
         },
         'table': {
           'skipEmptyValues': false
@@ -301,7 +302,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
   renderQueryOptionsText() {
     var optionsMap = {
-      showDisabledItems: "Show disabled items"
+      showDisabledItems: "Show disabled items",
+      skipEmptyValues: "Skip empty values"
     };
     var options = [];
     _.forOwn(this.target.options, (value, key) => {
