@@ -146,7 +146,11 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
                 'acknowledged': 2
               },
               'options': {
-                'showDisabledItems': false
+                'showDisabledItems': false,
+                'skipEmptyValues': false
+              },
+              'table': {
+                'skipEmptyValues': false
               }
             };
             _.defaults(target, targetDefaults);
@@ -367,7 +371,8 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
           key: 'renderQueryOptionsText',
           value: function renderQueryOptionsText() {
             var optionsMap = {
-              showDisabledItems: "Show disabled items"
+              showDisabledItems: "Show disabled items",
+              skipEmptyValues: "Skip empty values"
             };
             var options = [];
             _.forOwn(this.target.options, function (value, key) {

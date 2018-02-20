@@ -85,6 +85,10 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       var lastPoint = _.last(itemHistory);
       var lastValue = lastPoint ? lastPoint.value : null;
 
+      if (target.options.skipEmptyValues && (!lastValue || lastValue === '')) {
+        return;
+      }
+
       // Regex-based extractor
       if (target.textFilter) {
         lastValue = extractText(lastValue, target.textFilter, target.useCaptureGroups);

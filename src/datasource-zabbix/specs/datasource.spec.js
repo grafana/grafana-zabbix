@@ -126,7 +126,10 @@ describe('ZabbixDatasource', () => {
             textFilter: "",
             useCaptureGroups: true,
             mode: 2,
-            resultFormat: "table"
+            resultFormat: "table",
+            options: {
+              skipEmptyValues: false
+            }
           }
         ],
       };
@@ -153,6 +156,33 @@ describe('ZabbixDatasource', () => {
         let tableData = result.data[0];
         expect(tableData.rows[0][3]).toEqual('last');
         done();
+      });
+    });
+
+    it('should skip item when last value is empty', () => {
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve([
+        {
+          hosts: [{hostid: "10001", name: "Zabbix server"}],
+          itemid: "10100", name: "System information", key_: "system.uname"
+        },
+        {
+          hosts: [{hostid: "10002", name: "Server02"}],
+          itemid: "90109", name: "System information", key_: "system.uname"
+        }
+      ]));
+
+      ctx.options.targets[0].options.skipEmptyValues = true;
+      ctx.ds.zabbix.getHistory = jest.fn().mockReturnValue(Promise.resolve([
+          {clock: "1500010200", itemid:"10100", ns:"900111000", value:"Linux first"},
+          {clock: "1500010300", itemid:"10100", ns:"900111000", value:"Linux 2nd"},
+          {clock: "1500010400", itemid:"10100", ns:"900111000", value:"Linux last"},
+          {clock: "1500010200", itemid:"90109", ns:"900111000", value:"Non empty value"},
+          {clock: "1500010500", itemid:"90109", ns:"900111000", value:""}
+      ]));
+      return ctx.ds.query(ctx.options).then(result => {
+        let tableData = result.data[0];
+        expect(tableData.rows.length).toBe(1);
+        expect(tableData.rows[0][3]).toEqual('Linux last');
       });
     });
   });

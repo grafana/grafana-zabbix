@@ -67,6 +67,10 @@ function handleHistoryAsTable(history, items, target) {
     let lastPoint = _.last(itemHistory);
     let lastValue = lastPoint ? lastPoint.value : null;
 
+    if(target.options.skipEmptyValues && (!lastValue || lastValue === '')) {
+      return;
+    }
+
     // Regex-based extractor
     if (target.textFilter) {
       lastValue = extractText(lastValue, target.textFilter, target.useCaptureGroups);

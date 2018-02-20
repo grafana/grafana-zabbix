@@ -163,9 +163,16 @@
   <!-- Query options -->
   <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
     <div class="gf-form offset-width-7" ng-hide="ctrl.target.mode == editorMode.TRIGGERS">
-      <gf-form-switch class="gf-form"
+      <gf-form-switch class="gf-form" label-class="width-10"
         label="Show disabled items"
         checked="ctrl.target.options.showDisabledItems"
+        on-change="ctrl.onQueryOptionChange()">
+      </gf-form-switch>
+    </div>
+    <div class="gf-form offset-width-7" ng-show="ctrl.target.mode === editorMode.TEXT && ctrl.target.resultFormat === 'table'">
+      <gf-form-switch class="gf-form" label-class="width-10"
+        label="Skip empty values"
+        checked="ctrl.target.options.skipEmptyValues"
         on-change="ctrl.onQueryOptionChange()">
       </gf-form-switch>
     </div>
