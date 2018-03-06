@@ -593,18 +593,18 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     function setFontSize() {
       const fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1));
-      let triggerCardElem = elem.find('.card-item-wrapper');
+      let triggerCardElem = elem.find('.alert-rule-item');
       if (fontSize && fontSize !== 100) {
-        triggerCardElem.find('.alert-list-icon').css({'font-size': fontSize + '%'});
-        triggerCardElem.find('.alert-list-title').css({'font-size': fontSize + '%'});
-        triggerCardElem.find('.alert-list-text').css({'font-size': fontSize * 0.8 + '%'});
+        triggerCardElem.find('.alert-rule-item__icon').css({'font-size': fontSize + '%'});
+        triggerCardElem.find('.alert-rule-item__name').css({'font-size': fontSize + '%'});
+        triggerCardElem.find('.alert-rule-item__text').css({'font-size': fontSize * 0.8 + '%'});
         triggerCardElem.find('.zbx-tag').css({'font-size': fontSize * 0.6 + '%'});
         triggerCardElem.find('.zbx-tag').css({'line-height': fontSize / 100 * 16 + 'px'});
       } else {
         // remove css
-        triggerCardElem.find('.alert-list-icon').css({'font-size': ''});
-        triggerCardElem.find('.alert-list-title').css({'font-size': ''});
-        triggerCardElem.find('.alert-list-text').css({'font-size': ''});
+        triggerCardElem.find('.alert-rule-item__icon').css({'font-size': ''});
+        triggerCardElem.find('.alert-rule-item__name').css({'font-size': ''});
+        triggerCardElem.find('.alert-rule-item__text').css({'font-size': ''});
         triggerCardElem.find('.zbx-tag').css({'font-size': ''});
         triggerCardElem.find('.zbx-tag').css({'line-height': ''});
       }
