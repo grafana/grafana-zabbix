@@ -11,7 +11,7 @@
     font-weight: bold;
   }
 
-  .alert-list-info.zbx-description {
+  .alert-rule-item__info.zbx-description {
     color: $gray-3;
   }
 
@@ -25,7 +25,7 @@
     }
   }
 
-  .alert-list-footer {
+  .alert-rule-item__footer {
     justify-content: flex-start;
   }
 
@@ -46,7 +46,7 @@
     }
   }
 
-  .card-item-wrapper {
+  .alert-rule-item {
     padding-left: 4px;
   }
 }
