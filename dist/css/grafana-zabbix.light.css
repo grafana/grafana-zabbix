@@ -3,30 +3,40 @@
 
 .triggers-panel-container {
   position: relative; }
+  .triggers-panel-container .zabbix-trigger-name {
+    font-weight: bold; }
   .triggers-panel-container .zabbix-hostname {
     color: #767980;
     margin-left: 1rem;
-    font-weight: bold; }
-  .triggers-panel-container .alert-list-info.zbx-description {
-    color: #acb6bf; }
+    font-weight: 500; }
+  .triggers-panel-container .zbx-description {
+    color: #acb6bf;
+    font-weight: normal;
+    margin-left: 0.6rem; }
+    .triggers-panel-container .zbx-description--newline {
+      margin-left: 0rem; }
   .triggers-panel-container .zbx-trigger-tags {
     margin-left: 0.6rem; }
     .triggers-panel-container .zbx-trigger-tags .zbx-tag {
       color: #e9edf2;
-      padding: 0px 6px;
+      font-weight: 500;
+      font-size: 12px;
+      margin-right: 4px;
+      padding: 1px 6px;
       cursor: pointer; }
   .triggers-panel-container .alert-list-footer {
     justify-content: flex-start; }
   .triggers-panel-container .trigger-info-block {
-    display: inline-flex; }
+    display: flex; }
     .triggers-panel-container .trigger-info-block i, .triggers-panel-container .trigger-info-block a {
-      margin-left: 0.6rem;
+      margin-right: 0.3rem;
       color: #767980; }
-    .triggers-panel-container .trigger-info-block .zabbix-trigger-source {
-      margin-right: 1.5rem;
-      font-weight: bold; }
-      .triggers-panel-container .trigger-info-block .zabbix-trigger-source .gicon-datasources {
-        opacity: 0.4; }
+  .triggers-panel-container .zabbix-trigger-source {
+    margin-right: 1.5rem;
+    margin-left: 1rem;
+    font-weight: 500; }
+    .triggers-panel-container .zabbix-trigger-source .gicon-datasources {
+      opacity: 0.4; }
   .triggers-panel-container .card-item-wrapper {
     padding-left: 4px; }
 
