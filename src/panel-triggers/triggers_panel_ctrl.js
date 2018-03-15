@@ -524,6 +524,16 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return statusClass;
   }
 
+  getBackground(trigger) {
+    // console.log(trigger.color, this.contextSrv.user.lightTheme);
+    const mainColor = trigger.color;
+    const secondColor = this.contextSrv.user.lightTheme ? '#dde4ed' : '#262628';
+    if (this.contextSrv.user.lightTheme) {
+      return `linear-gradient(135deg, ${secondColor}, ${mainColor})`;
+    }
+    return `linear-gradient(135deg, ${mainColor}, ${secondColor})`;
+  }
+
   isNewTrigger(trigger) {
     try {
       const highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || PANEL_DEFAULTS.highlightNewerThan);

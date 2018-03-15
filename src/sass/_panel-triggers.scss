@@ -81,6 +81,31 @@
   color: $orange;
 }
 
+.zbx-trigger-highlighted {
+  color: $zbx-text-highlighted;
+
+  // .alert-rule-item__icon,
+  .alert-rule-item__body,
+  .alert-rule-item__header,
+  .alert-rule-item__time,
+  .zabbix-hostname, .zbx-description {
+    color: $zbx-text-highlighted;
+  }
+
+  .alert-rule-item__text {
+    .zbx-trigger-state,
+    .zbx-trigger-severity {
+      color: $zbx-text-highlighted;
+    }
+  }
+
+  .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons {
+    a {
+      color: $zbx-text-highlighted;
+    }
+  }
+}
+
 
 @keyframes zabbix-triggers-panel {
   100% {

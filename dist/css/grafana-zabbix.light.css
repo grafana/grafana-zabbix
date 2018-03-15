@@ -51,6 +51,19 @@
 .zbx-maintenance-icon {
   color: #ff7941; }
 
+.zbx-trigger-highlighted {
+  color: #000; }
+  .zbx-trigger-highlighted .alert-rule-item__body,
+  .zbx-trigger-highlighted .alert-rule-item__header,
+  .zbx-trigger-highlighted .alert-rule-item__time,
+  .zbx-trigger-highlighted .zabbix-hostname, .zbx-trigger-highlighted .zbx-description {
+    color: #000; }
+  .zbx-trigger-highlighted .alert-rule-item__text .zbx-trigger-state,
+  .zbx-trigger-highlighted .alert-rule-item__text .zbx-trigger-severity {
+    color: #000; }
+  .zbx-trigger-highlighted .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons a {
+    color: #000; }
+
 @keyframes zabbix-triggers-panel {
   100% {
     opacity: 1;

@@ -676,6 +676,17 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             return statusClass;
           }
         }, {
+          key: 'getBackground',
+          value: function getBackground(trigger) {
+            // console.log(trigger.color, this.contextSrv.user.lightTheme);
+            var mainColor = trigger.color;
+            var secondColor = this.contextSrv.user.lightTheme ? '#dde4ed' : '#262628';
+            if (this.contextSrv.user.lightTheme) {
+              return 'linear-gradient(135deg, ' + secondColor + ', ' + mainColor + ')';
+            }
+            return 'linear-gradient(135deg, ' + mainColor + ', ' + secondColor + ')';
+          }
+        }, {
           key: 'isNewTrigger',
           value: function isNewTrigger(trigger) {
             try {
