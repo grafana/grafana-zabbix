@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Table format support for text data, [#492](https://github.com/alexanderzobnin/grafana-zabbix/issues/492)
 
+### Fixed
+- Triggers panel has broken styles in Grafana 5.0 [#522](https://github.com/alexanderzobnin/grafana-zabbix/issues/522)
+
 ## [3.8.1] - 2017-12-21
 ### Fixed
 - Triggers panel multiple targets bug (typing in one target affects other)
