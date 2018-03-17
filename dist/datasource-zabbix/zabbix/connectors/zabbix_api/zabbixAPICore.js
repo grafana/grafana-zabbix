@@ -1,9 +1,9 @@
-'use strict';
+"use strict";
 
-System.register(['angular'], function (_export, _context) {
+System.register([], function (_export, _context) {
   "use strict";
 
-  var angular, _createClass, ZabbixAPICoreService, ZabbixAPIError;
+  var _createClass, ZabbixAPICoreService, ZabbixAPIError;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -12,9 +12,7 @@ System.register(['angular'], function (_export, _context) {
   }
 
   return {
-    setters: [function (_angular) {
-      angular = _angular.default;
-    }],
+    setters: [],
     execute: function () {
       _createClass = function () {
         function defineProperties(target, props) {
@@ -34,7 +32,7 @@ System.register(['angular'], function (_export, _context) {
         };
       }();
 
-      ZabbixAPICoreService = function () {
+      _export("ZabbixAPICoreService", ZabbixAPICoreService = function () {
 
         /** @ngInject */
         function ZabbixAPICoreService(backendSrv) {
@@ -50,7 +48,7 @@ System.register(['angular'], function (_export, _context) {
 
 
         _createClass(ZabbixAPICoreService, [{
-          key: 'request',
+          key: "request",
           value: function request(api_url, method, params, options, auth) {
             var requestData = {
               jsonrpc: '2.0',
@@ -87,7 +85,7 @@ System.register(['angular'], function (_export, _context) {
             return this.datasourceRequest(requestOptions);
           }
         }, {
-          key: 'datasourceRequest',
+          key: "datasourceRequest",
           value: function datasourceRequest(requestOptions) {
             return this.backendSrv.datasourceRequest(requestOptions).then(function (response) {
               if (!response.data) {
@@ -103,7 +101,7 @@ System.register(['angular'], function (_export, _context) {
             });
           }
         }, {
-          key: 'login',
+          key: "login",
           value: function login(api_url, username, password, options) {
             var params = {
               user: username,
@@ -112,16 +110,18 @@ System.register(['angular'], function (_export, _context) {
             return this.request(api_url, 'user.login', params, options, null);
           }
         }, {
-          key: 'getVersion',
+          key: "getVersion",
           value: function getVersion(api_url, options) {
             return this.request(api_url, 'apiinfo.version', [], options);
           }
         }]);
 
         return ZabbixAPICoreService;
-      }();
+      }());
 
-      _export('ZabbixAPIError', ZabbixAPIError = function () {
+      _export("ZabbixAPICoreService", ZabbixAPICoreService);
+
+      _export("ZabbixAPIError", ZabbixAPIError = function () {
         function ZabbixAPIError(error) {
           _classCallCheck(this, ZabbixAPIError);
 
@@ -132,7 +132,7 @@ System.register(['angular'], function (_export, _context) {
         }
 
         _createClass(ZabbixAPIError, [{
-          key: 'toString',
+          key: "toString",
           value: function toString() {
             return this.name + " " + this.data;
           }
@@ -141,10 +141,8 @@ System.register(['angular'], function (_export, _context) {
         return ZabbixAPIError;
       }());
 
-      _export('ZabbixAPIError', ZabbixAPIError);
-
-      angular.module('grafana.services').service('zabbixAPICoreService', ZabbixAPICoreService);
+      _export("ZabbixAPIError", ZabbixAPIError);
     }
   };
 });
-//# sourceMappingURL=zabbixAPICore.service.js.map
+//# sourceMappingURL=zabbixAPICore.js.map

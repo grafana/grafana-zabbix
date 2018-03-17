@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './constants', './dataProcessor', './responseHandler', './zabbix.js', './zabbixAlerting.service.js', './zabbixAPICore.service.js'], function (_export, _context) {
+System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './constants', './dataProcessor', './responseHandler', './zabbixAlerting.service.js', './zabbix/zabbix', './zabbix/connectors/zabbix_api/zabbixAPICore'], function (_export, _context) {
   "use strict";
 
-  var _, dateMath, utils, migrations, metricFunctions, c, dataProcessor, responseHandler, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
+  var _, dateMath, utils, migrations, metricFunctions, c, dataProcessor, responseHandler, Zabbix, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -140,8 +140,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
       dataProcessor = _dataProcessor.default;
     }, function (_responseHandler) {
       responseHandler = _responseHandler.default;
-    }, function (_zabbixJs) {}, function (_zabbixAlertingServiceJs) {}, function (_zabbixAPICoreServiceJs) {
-      ZabbixAPIError = _zabbixAPICoreServiceJs.ZabbixAPIError;
+    }, function (_zabbixAlertingServiceJs) {}, function (_zabbixZabbix) {
+      Zabbix = _zabbixZabbix.Zabbix;
+    }, function (_zabbixConnectorsZabbix_apiZabbixAPICore) {
+      ZabbixAPIError = _zabbixConnectorsZabbix_apiZabbixAPICore.ZabbixAPIError;
     }],
     execute: function () {
       _slicedToArray = function () {
@@ -203,7 +205,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
       _export('ZabbixAPIDatasource', ZabbixAPIDatasource = function () {
 
         /** @ngInject */
-        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
+        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
           _classCallCheck(this, ZabbixAPIDatasource);
 
           this.templateSrv = templateSrv;
@@ -255,7 +257,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             sqlDatasourceId: this.sqlDatasourceId
           };
 
-          this.zabbix = new Zabbix(this.url, zabbixOptions);
+          this.zabbix = new Zabbix(this.url, zabbixOptions, backendSrv, datasourceSrv);
         }
 
         ////////////////////////

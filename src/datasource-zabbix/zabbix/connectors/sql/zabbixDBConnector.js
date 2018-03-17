@@ -1,4 +1,3 @@
-import angular from 'angular';
 import _ from 'lodash';
 
 const DEFAULT_QUERY_LIMIT = 10000;
@@ -29,137 +28,129 @@ const consolidateByTrendColumns = {
   'max': 'value_max'
 };
 
-/** @ngInject */
-function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
+export class ZabbixDBConnector {
 
-  class ZabbixDBConnector {
+  constructor(sqlDataSourceId, options, backendSrv, datasourceSrv) {
+    this.backendSrv = backendSrv;
+    this.datasourceSrv = datasourceSrv;
 
-    constructor(sqlDataSourceId, options = {}) {
-      let {limit} = options;
+    let limit = options.limit;
+    this.sqlDataSourceId = sqlDataSourceId;
+    this.limit = limit || DEFAULT_QUERY_LIMIT;
 
-      this.sqlDataSourceId = sqlDataSourceId;
-      this.limit = limit || DEFAULT_QUERY_LIMIT;
+    this.loadSQLDataSource(sqlDataSourceId);
+  }
 
-      this.loadSQLDataSource(sqlDataSourceId);
-    }
-
-    /**
-     * Try to load DS with given id to check it's exist.
-     * @param {*} datasourceId ID of SQL data source
-     */
-    loadSQLDataSource(datasourceId) {
-      let ds = _.find(datasourceSrv.getAll(), {'id': datasourceId});
-      if (ds) {
-        return datasourceSrv.loadDatasource(ds.name)
-        .then(ds => {
-          this.sqlDataSourceType = ds.meta.id;
-          return ds;
-        });
-      } else {
-        return Promise.reject(`SQL Data Source with ID ${datasourceId} not found`);
-      }
-    }
-
-    /**
-     * Try to invoke test query for one of Zabbix database tables.
-     */
-    testSQLDataSource() {
-      let testQuery = TEST_MYSQL_QUERY;
-      if (this.sqlDataSourceType === 'postgres') {
-        testQuery = TEST_POSTGRES_QUERY;
-      }
-      return this.invokeSQLQuery(testQuery);
-    }
-
-    getHistory(items, timeFrom, timeTill, options) {
-      let {intervalMs, consolidateBy} = options;
-      let intervalSec = Math.ceil(intervalMs / 1000);
-
-      consolidateBy = consolidateBy || 'avg';
-      let aggFunction = consolidateByFunc[consolidateBy];
-
-      // Group items by value type and perform request for each value type
-      let grouped_items = _.groupBy(items, 'value_type');
-      let promises = _.map(grouped_items, (items, value_type) => {
-        let itemids = _.map(items, 'itemid').join(', ');
-        let table = HISTORY_TO_TABLE_MAP[value_type];
-
-        let dialect = this.sqlDataSourceType;
-        let query = buildSQLHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, dialect);
-
-        query = compactSQLQuery(query);
-        return this.invokeSQLQuery(query);
+  /**
+   * Try to load DS with given id to check it's exist.
+   * @param {*} datasourceId ID of SQL data source
+   */
+  loadSQLDataSource(datasourceId) {
+    let ds = _.find(this.datasourceSrv.getAll(), {'id': datasourceId});
+    if (ds) {
+      return this.datasourceSrv.loadDatasource(ds.name)
+      .then(ds => {
+        this.sqlDataSourceType = ds.meta.id;
+        return ds;
       });
-
-      return Promise.all(promises).then(results => {
-        return _.flatten(results);
-      });
-    }
-
-    getTrends(items, timeFrom, timeTill, options) {
-      let {intervalMs, consolidateBy} = options;
-      let intervalSec = Math.ceil(intervalMs / 1000);
-
-      consolidateBy = consolidateBy || 'avg';
-      let aggFunction = consolidateByFunc[consolidateBy];
-
-      // Group items by value type and perform request for each value type
-      let grouped_items = _.groupBy(items, 'value_type');
-      let promises = _.map(grouped_items, (items, value_type) => {
-        let itemids = _.map(items, 'itemid').join(', ');
-        let table = TREND_TO_TABLE_MAP[value_type];
-        let valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
-        valueColumn = consolidateByTrendColumns[valueColumn];
-
-        let dialect = this.sqlDataSourceType;
-        let query = buildSQLTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn, dialect);
-
-        query = compactSQLQuery(query);
-        return this.invokeSQLQuery(query);
-      });
-
-      return Promise.all(promises).then(results => {
-        return _.flatten(results);
-      });
-    }
-
-    handleGrafanaTSResponse(history, items, addHostName = true) {
-      return convertGrafanaTSResponse(history, items, addHostName);
-    }
-
-    invokeSQLQuery(query) {
-      let queryDef = {
-        refId: 'A',
-        format: 'time_series',
-        datasourceId: this.sqlDataSourceId,
-        rawSql: query,
-        maxDataPoints: this.limit
-      };
-
-      return backendSrv.datasourceRequest({
-        url: '/api/tsdb/query',
-        method: 'POST',
-        data: {
-          queries: [queryDef],
-        }
-      })
-      .then(response => {
-        let results = response.data.results;
-        if (results['A']) {
-          return results['A'].series;
-        } else {
-          return null;
-        }
-      });
+    } else {
+      return Promise.reject(`SQL Data Source with ID ${datasourceId} not found`);
     }
   }
 
-  return ZabbixDBConnector;
-}
+  /**
+   * Try to invoke test query for one of Zabbix database tables.
+   */
+  testSQLDataSource() {
+    let testQuery = TEST_MYSQL_QUERY;
+    if (this.sqlDataSourceType === 'postgres') {
+      testQuery = TEST_POSTGRES_QUERY;
+    }
+    return this.invokeSQLQuery(testQuery);
+  }
 
-angular
-  .module('grafana.services')
-  .factory('ZabbixDBConnector', ZabbixDBConnectorFactory);
+  getHistory(items, timeFrom, timeTill, options) {
+    let {intervalMs, consolidateBy} = options;
+    let intervalSec = Math.ceil(intervalMs / 1000);
+
+    consolidateBy = consolidateBy || 'avg';
+    let aggFunction = consolidateByFunc[consolidateBy];
+
+    // Group items by value type and perform request for each value type
+    let grouped_items = _.groupBy(items, 'value_type');
+    let promises = _.map(grouped_items, (items, value_type) => {
+      let itemids = _.map(items, 'itemid').join(', ');
+      let table = HISTORY_TO_TABLE_MAP[value_type];
+
+      let dialect = this.sqlDataSourceType;
+      let query = buildSQLHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, dialect);
+
+      query = compactSQLQuery(query);
+      return this.invokeSQLQuery(query);
+    });
+
+    return Promise.all(promises).then(results => {
+      return _.flatten(results);
+    });
+  }
+
+  getTrends(items, timeFrom, timeTill, options) {
+    let {intervalMs, consolidateBy} = options;
+    let intervalSec = Math.ceil(intervalMs / 1000);
+
+    consolidateBy = consolidateBy || 'avg';
+    let aggFunction = consolidateByFunc[consolidateBy];
+
+    // Group items by value type and perform request for each value type
+    let grouped_items = _.groupBy(items, 'value_type');
+    let promises = _.map(grouped_items, (items, value_type) => {
+      let itemids = _.map(items, 'itemid').join(', ');
+      let table = TREND_TO_TABLE_MAP[value_type];
+      let valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
+      valueColumn = consolidateByTrendColumns[valueColumn];
+
+      let dialect = this.sqlDataSourceType;
+      let query = buildSQLTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn, dialect);
+
+      query = compactSQLQuery(query);
+      return this.invokeSQLQuery(query);
+    });
+
+    return Promise.all(promises).then(results => {
+      return _.flatten(results);
+    });
+  }
+
+  handleGrafanaTSResponse(history, items, addHostName = true) {
+    return convertGrafanaTSResponse(history, items, addHostName);
+  }
+
+  invokeSQLQuery(query) {
+    let queryDef = {
+      refId: 'A',
+      format: 'time_series',
+      datasourceId: this.sqlDataSourceId,
+      rawSql: query,
+      maxDataPoints: this.limit
+    };
+
+    return this.backendSrv.datasourceRequest({
+      url: '/api/tsdb/query',
+      method: 'POST',
+      data: {
+        queries: [queryDef],
+      }
+    })
+    .then(response => {
+      let results = response.data.results;
+      if (results['A']) {
+        return results['A'].series;
+      } else {
+        return null;
+      }
+    });
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 

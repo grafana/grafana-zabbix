@@ -6,14 +6,14 @@ import * as metricFunctions from './metricFunctions';
 import * as c from './constants';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
-import './zabbix.js';
 import './zabbixAlerting.service.js';
-import {ZabbixAPIError} from './zabbixAPICore.service.js';
+import { Zabbix } from './zabbix/zabbix';
+import {ZabbixAPIError} from './zabbix/connectors/zabbix_api/zabbixAPICore';
 
 class ZabbixAPIDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
+  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
     this.templateSrv = templateSrv;
     this.alertSrv = alertSrv;
     this.dashboardSrv = dashboardSrv;
@@ -63,7 +63,7 @@ class ZabbixAPIDatasource {
       sqlDatasourceId: this.sqlDatasourceId
     };
 
-    this.zabbix = new Zabbix(this.url, zabbixOptions);
+    this.zabbix = new Zabbix(this.url, zabbixOptions, backendSrv, datasourceSrv);
   }
 
   ////////////////////////

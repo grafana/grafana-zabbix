@@ -1,164 +1,14 @@
 'use strict';
 
-System.register(['angular', 'lodash'], function (_export, _context) {
+System.register(['lodash'], function (_export, _context) {
   "use strict";
 
-  var angular, _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, TREND_TO_TABLE_MAP, consolidateByFunc, consolidateByTrendColumns, TEST_MYSQL_QUERY, itemid_format, TEST_POSTGRES_QUERY;
+  var _, _createClass, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, TREND_TO_TABLE_MAP, consolidateByFunc, consolidateByTrendColumns, ZabbixDBConnector, TEST_MYSQL_QUERY, itemid_format, TEST_POSTGRES_QUERY;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
       throw new TypeError("Cannot call a class as a function");
     }
-  }
-
-  /** @ngInject */
-  function ZabbixDBConnectorFactory(datasourceSrv, backendSrv) {
-    var ZabbixDBConnector = function () {
-      function ZabbixDBConnector(sqlDataSourceId) {
-        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-        _classCallCheck(this, ZabbixDBConnector);
-
-        var limit = options.limit;
-
-
-        this.sqlDataSourceId = sqlDataSourceId;
-        this.limit = limit || DEFAULT_QUERY_LIMIT;
-
-        this.loadSQLDataSource(sqlDataSourceId);
-      }
-
-      /**
-       * Try to load DS with given id to check it's exist.
-       * @param {*} datasourceId ID of SQL data source
-       */
-
-
-      _createClass(ZabbixDBConnector, [{
-        key: 'loadSQLDataSource',
-        value: function loadSQLDataSource(datasourceId) {
-          var _this = this;
-
-          var ds = _.find(datasourceSrv.getAll(), { 'id': datasourceId });
-          if (ds) {
-            return datasourceSrv.loadDatasource(ds.name).then(function (ds) {
-              _this.sqlDataSourceType = ds.meta.id;
-              return ds;
-            });
-          } else {
-            return Promise.reject('SQL Data Source with ID ' + datasourceId + ' not found');
-          }
-        }
-      }, {
-        key: 'testSQLDataSource',
-        value: function testSQLDataSource() {
-          var testQuery = TEST_MYSQL_QUERY;
-          if (this.sqlDataSourceType === 'postgres') {
-            testQuery = TEST_POSTGRES_QUERY;
-          }
-          return this.invokeSQLQuery(testQuery);
-        }
-      }, {
-        key: 'getHistory',
-        value: function getHistory(items, timeFrom, timeTill, options) {
-          var _this2 = this;
-
-          var intervalMs = options.intervalMs,
-              consolidateBy = options.consolidateBy;
-
-          var intervalSec = Math.ceil(intervalMs / 1000);
-
-          consolidateBy = consolidateBy || 'avg';
-          var aggFunction = consolidateByFunc[consolidateBy];
-
-          // Group items by value type and perform request for each value type
-          var grouped_items = _.groupBy(items, 'value_type');
-          var promises = _.map(grouped_items, function (items, value_type) {
-            var itemids = _.map(items, 'itemid').join(', ');
-            var table = HISTORY_TO_TABLE_MAP[value_type];
-
-            var dialect = _this2.sqlDataSourceType;
-            var query = buildSQLHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, dialect);
-
-            query = compactSQLQuery(query);
-            return _this2.invokeSQLQuery(query);
-          });
-
-          return Promise.all(promises).then(function (results) {
-            return _.flatten(results);
-          });
-        }
-      }, {
-        key: 'getTrends',
-        value: function getTrends(items, timeFrom, timeTill, options) {
-          var _this3 = this;
-
-          var intervalMs = options.intervalMs,
-              consolidateBy = options.consolidateBy;
-
-          var intervalSec = Math.ceil(intervalMs / 1000);
-
-          consolidateBy = consolidateBy || 'avg';
-          var aggFunction = consolidateByFunc[consolidateBy];
-
-          // Group items by value type and perform request for each value type
-          var grouped_items = _.groupBy(items, 'value_type');
-          var promises = _.map(grouped_items, function (items, value_type) {
-            var itemids = _.map(items, 'itemid').join(', ');
-            var table = TREND_TO_TABLE_MAP[value_type];
-            var valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
-            valueColumn = consolidateByTrendColumns[valueColumn];
-
-            var dialect = _this3.sqlDataSourceType;
-            var query = buildSQLTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn, dialect);
-
-            query = compactSQLQuery(query);
-            return _this3.invokeSQLQuery(query);
-          });
-
-          return Promise.all(promises).then(function (results) {
-            return _.flatten(results);
-          });
-        }
-      }, {
-        key: 'handleGrafanaTSResponse',
-        value: function handleGrafanaTSResponse(history, items) {
-          var addHostName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-
-          return convertGrafanaTSResponse(history, items, addHostName);
-        }
-      }, {
-        key: 'invokeSQLQuery',
-        value: function invokeSQLQuery(query) {
-          var queryDef = {
-            refId: 'A',
-            format: 'time_series',
-            datasourceId: this.sqlDataSourceId,
-            rawSql: query,
-            maxDataPoints: this.limit
-          };
-
-          return backendSrv.datasourceRequest({
-            url: '/api/tsdb/query',
-            method: 'POST',
-            data: {
-              queries: [queryDef]
-            }
-          }).then(function (response) {
-            var results = response.data.results;
-            if (results['A']) {
-              return results['A'].series;
-            } else {
-              return null;
-            }
-          });
-        }
-      }]);
-
-      return ZabbixDBConnector;
-    }();
-
-    return ZabbixDBConnector;
   }
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -239,9 +89,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
   }
 
   return {
-    setters: [function (_angular) {
-      angular = _angular.default;
-    }, function (_lodash) {
+    setters: [function (_lodash) {
       _ = _lodash.default;
     }],
     execute: function () {
@@ -287,7 +135,154 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         'min': 'value_min',
         'max': 'value_max'
       };
-      angular.module('grafana.services').factory('ZabbixDBConnector', ZabbixDBConnectorFactory);TEST_MYSQL_QUERY = 'SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1';
+
+      _export('ZabbixDBConnector', ZabbixDBConnector = function () {
+        function ZabbixDBConnector(sqlDataSourceId, options, backendSrv, datasourceSrv) {
+          _classCallCheck(this, ZabbixDBConnector);
+
+          this.backendSrv = backendSrv;
+          this.datasourceSrv = datasourceSrv;
+
+          var limit = options.limit;
+          this.sqlDataSourceId = sqlDataSourceId;
+          this.limit = limit || DEFAULT_QUERY_LIMIT;
+
+          this.loadSQLDataSource(sqlDataSourceId);
+        }
+
+        /**
+         * Try to load DS with given id to check it's exist.
+         * @param {*} datasourceId ID of SQL data source
+         */
+
+
+        _createClass(ZabbixDBConnector, [{
+          key: 'loadSQLDataSource',
+          value: function loadSQLDataSource(datasourceId) {
+            var _this = this;
+
+            var ds = _.find(this.datasourceSrv.getAll(), { 'id': datasourceId });
+            if (ds) {
+              return this.datasourceSrv.loadDatasource(ds.name).then(function (ds) {
+                _this.sqlDataSourceType = ds.meta.id;
+                return ds;
+              });
+            } else {
+              return Promise.reject('SQL Data Source with ID ' + datasourceId + ' not found');
+            }
+          }
+        }, {
+          key: 'testSQLDataSource',
+          value: function testSQLDataSource() {
+            var testQuery = TEST_MYSQL_QUERY;
+            if (this.sqlDataSourceType === 'postgres') {
+              testQuery = TEST_POSTGRES_QUERY;
+            }
+            return this.invokeSQLQuery(testQuery);
+          }
+        }, {
+          key: 'getHistory',
+          value: function getHistory(items, timeFrom, timeTill, options) {
+            var _this2 = this;
+
+            var intervalMs = options.intervalMs,
+                consolidateBy = options.consolidateBy;
+
+            var intervalSec = Math.ceil(intervalMs / 1000);
+
+            consolidateBy = consolidateBy || 'avg';
+            var aggFunction = consolidateByFunc[consolidateBy];
+
+            // Group items by value type and perform request for each value type
+            var grouped_items = _.groupBy(items, 'value_type');
+            var promises = _.map(grouped_items, function (items, value_type) {
+              var itemids = _.map(items, 'itemid').join(', ');
+              var table = HISTORY_TO_TABLE_MAP[value_type];
+
+              var dialect = _this2.sqlDataSourceType;
+              var query = buildSQLHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, dialect);
+
+              query = compactSQLQuery(query);
+              return _this2.invokeSQLQuery(query);
+            });
+
+            return Promise.all(promises).then(function (results) {
+              return _.flatten(results);
+            });
+          }
+        }, {
+          key: 'getTrends',
+          value: function getTrends(items, timeFrom, timeTill, options) {
+            var _this3 = this;
+
+            var intervalMs = options.intervalMs,
+                consolidateBy = options.consolidateBy;
+
+            var intervalSec = Math.ceil(intervalMs / 1000);
+
+            consolidateBy = consolidateBy || 'avg';
+            var aggFunction = consolidateByFunc[consolidateBy];
+
+            // Group items by value type and perform request for each value type
+            var grouped_items = _.groupBy(items, 'value_type');
+            var promises = _.map(grouped_items, function (items, value_type) {
+              var itemids = _.map(items, 'itemid').join(', ');
+              var table = TREND_TO_TABLE_MAP[value_type];
+              var valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
+              valueColumn = consolidateByTrendColumns[valueColumn];
+
+              var dialect = _this3.sqlDataSourceType;
+              var query = buildSQLTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn, dialect);
+
+              query = compactSQLQuery(query);
+              return _this3.invokeSQLQuery(query);
+            });
+
+            return Promise.all(promises).then(function (results) {
+              return _.flatten(results);
+            });
+          }
+        }, {
+          key: 'handleGrafanaTSResponse',
+          value: function handleGrafanaTSResponse(history, items) {
+            var addHostName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+            return convertGrafanaTSResponse(history, items, addHostName);
+          }
+        }, {
+          key: 'invokeSQLQuery',
+          value: function invokeSQLQuery(query) {
+            var queryDef = {
+              refId: 'A',
+              format: 'time_series',
+              datasourceId: this.sqlDataSourceId,
+              rawSql: query,
+              maxDataPoints: this.limit
+            };
+
+            return this.backendSrv.datasourceRequest({
+              url: '/api/tsdb/query',
+              method: 'POST',
+              data: {
+                queries: [queryDef]
+              }
+            }).then(function (response) {
+              var results = response.data.results;
+              if (results['A']) {
+                return results['A'].series;
+              } else {
+                return null;
+              }
+            });
+          }
+        }]);
+
+        return ZabbixDBConnector;
+      }());
+
+      _export('ZabbixDBConnector', ZabbixDBConnector);
+
+      TEST_MYSQL_QUERY = 'SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1';
       itemid_format = 'FM99999999999999999999';
       TEST_POSTGRES_QUERY = '\n  SELECT to_char(itemid, \'' + itemid_format + '\') AS metric, clock AS time, value_avg AS value\n  FROM trends_uint LIMIT 1\n';
     }

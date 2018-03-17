@@ -85,7 +85,7 @@ module.exports = function(grunt) {
           cwd: 'src',
           expand: true,
           src: [
-            'datasource-zabbix/*.js',
+            'datasource-zabbix/**/*.js',
             'panel-triggers/*.js',
             'components/*.js',
             'vendor/*.js',
