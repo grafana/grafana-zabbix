@@ -3,7 +3,7 @@
 System.register(['lodash', '../../../utils', './zabbixAPICore'], function (_export, _context) {
   "use strict";
 
-  var _, utils, ZabbixAPICoreService, _slicedToArray, _createClass, ZabbixAPIConnector;
+  var _, utils, ZabbixAPICore, _slicedToArray, _createClass, ZabbixAPIConnector;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -34,7 +34,7 @@ System.register(['lodash', '../../../utils', './zabbixAPICore'], function (_expo
     }, function (_utils) {
       utils = _utils;
     }, function (_zabbixAPICore) {
-      ZabbixAPICoreService = _zabbixAPICore.ZabbixAPICoreService;
+      ZabbixAPICore = _zabbixAPICore.ZabbixAPICore;
     }],
     execute: function () {
       _slicedToArray = function () {
@@ -113,7 +113,7 @@ System.register(['lodash', '../../../utils', './zabbixAPICore'], function (_expo
           this.loginErrorCount = 0;
           this.maxLoginAttempts = 3;
 
-          this.zabbixAPICore = new ZabbixAPICoreService(backendSrv);
+          this.zabbixAPICore = new ZabbixAPICore(backendSrv);
 
           this.getTrend = this.getTrend_ZBXNEXT1193;
           //getTrend = getTrend_30;

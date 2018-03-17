@@ -2,7 +2,7 @@
  * General Zabbix API methods
  */
 
-export class ZabbixAPICoreService {
+export class ZabbixAPICore {
 
   /** @ngInject */
   constructor(backendSrv) {

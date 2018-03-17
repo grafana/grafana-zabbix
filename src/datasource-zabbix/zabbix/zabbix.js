@@ -1,52 +1,74 @@
-// import angular from 'angular';
 import _ from 'lodash';
 import * as utils from '../utils';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixDBConnector } from './connectors/sql/zabbixDBConnector';
-import { ZabbixCachingProxy } from './proxy/zabbixCachingProxy';
+import { CachingProxy } from './proxy/cachingProxy';
+
+const REQUESTS_TO_PROXYFY = [
+  'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
+  'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getVersion'
+];
+
+const REQUESTS_TO_CACHE = [
+  'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs', 'getITService'
+];
+
+const REQUESTS_TO_BIND = [
+  'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
+  'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'login'
+];
 
 export class Zabbix {
 
   /** @ngInject */
-  constructor(url, options, backendSrv, datasourceSrv) {
+  constructor(options, backendSrv, datasourceSrv) {
     let {
-      username, password, basicAuth, withCredentials, cacheTTL,
-      enableDirectDBConnection, sqlDatasourceId
+      url,
+      username,
+      password,
+      basicAuth,
+      withCredentials,
+      cacheTTL,
+      enableDirectDBConnection,
+      sqlDatasourceId
     } = options;
-
-    // Initialize Zabbix API
-    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials, backendSrv);
-
-    if (enableDirectDBConnection) {
-      this.dbConnector = new ZabbixDBConnector(sqlDatasourceId, {}, backendSrv, datasourceSrv);
-    }
 
     // Initialize caching proxy for requests
     let cacheOptions = {
       enabled: true,
       ttl: cacheTTL
     };
-    this.cachingProxy = new ZabbixCachingProxy(this.zabbixAPI, this.dbConnector, cacheOptions);
+    this.cachingProxy = new CachingProxy(cacheOptions);
 
-    // Proxy methods
-    this.getHistory = this.cachingProxy.getHistory.bind(this.cachingProxy);
-    this.getMacros = this.cachingProxy.getMacros.bind(this.cachingProxy);
-    this.getItemsByIDs = this.cachingProxy.getItemsByIDs.bind(this.cachingProxy);
+    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials, backendSrv);
 
     if (enableDirectDBConnection) {
-      this.getHistoryDB = this.cachingProxy.getHistoryDB.bind(this.cachingProxy);
-      this.getTrendsDB = this.cachingProxy.getTrendsDB.bind(this.cachingProxy);
+      this.dbConnector = new ZabbixDBConnector(sqlDatasourceId, {}, backendSrv, datasourceSrv);
+      this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
+      this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
     }
 
-    this.getTrend = this.zabbixAPI.getTrend.bind(this.zabbixAPI);
-    this.getEvents = this.zabbixAPI.getEvents.bind(this.zabbixAPI);
-    this.getAlerts = this.zabbixAPI.getAlerts.bind(this.zabbixAPI);
-    this.getHostAlerts = this.zabbixAPI.getHostAlerts.bind(this.zabbixAPI);
-    this.getAcknowledges = this.zabbixAPI.getAcknowledges.bind(this.zabbixAPI);
-    this.getITService = this.zabbixAPI.getITService.bind(this.zabbixAPI);
-    this.getSLA = this.zabbixAPI.getSLA.bind(this.zabbixAPI);
-    this.getVersion = this.zabbixAPI.getVersion.bind(this.zabbixAPI);
-    this.login = this.zabbixAPI.login.bind(this.zabbixAPI);
+    this.proxyfyRequests();
+    this.cacheRequests();
+    this.bindRequests();
+  }
+
+  proxyfyRequests() {
+    for (let request of REQUESTS_TO_PROXYFY) {
+      this.zabbixAPI[request] = this.cachingProxy.proxyfy(this.zabbixAPI[request], request, this.zabbixAPI);
+    }
+  }
+
+  cacheRequests() {
+    for (let request of REQUESTS_TO_CACHE) {
+      this.zabbixAPI[request] = this.cachingProxy.cacheRequest(this.zabbixAPI[request], request, this.zabbixAPI);
+    }
+  }
+
+  bindRequests() {
+    for (let request of REQUESTS_TO_BIND) {
+      this[request] = this.zabbixAPI[request].bind(this.zabbixAPI);
+    }
   }
 
   getItemsFromTarget(target, options) {
@@ -71,7 +93,7 @@ export class Zabbix {
   }
 
   getAllGroups() {
-    return this.cachingProxy.getGroups();
+    return this.zabbixAPI.getGroups();
   }
 
   getGroups(groupFilter) {
@@ -86,7 +108,7 @@ export class Zabbix {
     return this.getGroups(groupFilter)
     .then(groups => {
       let groupids = _.map(groups, 'groupid');
-      return this.cachingProxy.getHosts(groupids);
+      return this.zabbixAPI.getHosts(groupids);
     });
   }
 
@@ -102,7 +124,7 @@ export class Zabbix {
     return this.getHosts(groupFilter, hostFilter)
     .then(hosts => {
       let hostids = _.map(hosts, 'hostid');
-      return this.cachingProxy.getApps(hostids);
+      return this.zabbixAPI.getApps(hostids);
     });
   }
 
@@ -111,7 +133,7 @@ export class Zabbix {
     .then(hosts => {
       let hostids = _.map(hosts, 'hostid');
       if (appFilter) {
-        return this.cachingProxy.getApps(hostids)
+        return this.zabbixAPI.getApps(hostids)
         .then(apps => filterByQuery(apps, appFilter));
       } else {
         return {
@@ -126,10 +148,10 @@ export class Zabbix {
     return this.getApps(groupFilter, hostFilter, appFilter)
     .then(apps => {
       if (apps.appFilterEmpty) {
-        return this.cachingProxy.getItems(apps.hostids, undefined, options.itemtype);
+        return this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
       } else {
         let appids = _.map(apps, 'applicationid');
-        return this.cachingProxy.getItems(undefined, appids, options.itemtype);
+        return this.zabbixAPI.getItems(undefined, appids, options.itemtype);
       }
     })
     .then(items => {
@@ -161,7 +183,7 @@ export class Zabbix {
   }
 
   getITServices(itServiceFilter) {
-    return this.cachingProxy.getITServices()
+    return this.zabbixAPI.getITService()
     .then(itServices => findByFilter(itServices, itServiceFilter));
   }
 
@@ -198,10 +220,6 @@ export class Zabbix {
     });
   }
 }
-
-// angular
-//   .module('grafana.services')
-//   .factory('Zabbix', ZabbixFactory);
 
 ///////////////////////////////////////////////////////////////////////////////
 

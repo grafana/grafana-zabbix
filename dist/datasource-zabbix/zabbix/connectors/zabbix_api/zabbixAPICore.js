@@ -3,7 +3,7 @@
 System.register([], function (_export, _context) {
   "use strict";
 
-  var _createClass, ZabbixAPICoreService, ZabbixAPIError;
+  var _createClass, ZabbixAPICore, ZabbixAPIError;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -32,11 +32,11 @@ System.register([], function (_export, _context) {
         };
       }();
 
-      _export("ZabbixAPICoreService", ZabbixAPICoreService = function () {
+      _export("ZabbixAPICore", ZabbixAPICore = function () {
 
         /** @ngInject */
-        function ZabbixAPICoreService(backendSrv) {
-          _classCallCheck(this, ZabbixAPICoreService);
+        function ZabbixAPICore(backendSrv) {
+          _classCallCheck(this, ZabbixAPICore);
 
           this.backendSrv = backendSrv;
         }
@@ -47,7 +47,7 @@ System.register([], function (_export, _context) {
          */
 
 
-        _createClass(ZabbixAPICoreService, [{
+        _createClass(ZabbixAPICore, [{
           key: "request",
           value: function request(api_url, method, params, options, auth) {
             var requestData = {
@@ -116,10 +116,10 @@ System.register([], function (_export, _context) {
           }
         }]);
 
-        return ZabbixAPICoreService;
+        return ZabbixAPICore;
       }());
 
-      _export("ZabbixAPICoreService", ZabbixAPICoreService);
+      _export("ZabbixAPICore", ZabbixAPICore);
 
       _export("ZabbixAPIError", ZabbixAPIError = function () {
         function ZabbixAPIError(error) {

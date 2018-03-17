@@ -24,7 +24,7 @@ System.register(['lodash'], function (_export, _context) {
         var host = _.find(hosts, { 'hostid': item.hostid });
         alias = host.name + ": " + alias;
       }
-      // zabbixCachingProxy deduplicates requests and returns one time series for equal queries.
+      // CachingProxy deduplicates requests and returns one time series for equal queries.
       // Clone is needed to prevent changing of series object shared between all targets.
       var datapoints = _.cloneDeep(series.points);
       return {

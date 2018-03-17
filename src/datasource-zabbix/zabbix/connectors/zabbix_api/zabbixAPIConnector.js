@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import * as utils from '../../../utils';
-import { ZabbixAPICoreService } from './zabbixAPICore';
+import { ZabbixAPICore } from './zabbixAPICore';
 
 /**
  * Zabbix API Wrapper.
@@ -25,7 +25,7 @@ export class ZabbixAPIConnector {
     this.loginErrorCount = 0;
     this.maxLoginAttempts = 3;
 
-    this.zabbixAPICore = new ZabbixAPICoreService(backendSrv);
+    this.zabbixAPICore = new ZabbixAPICore(backendSrv);
 
     this.getTrend = this.getTrend_ZBXNEXT1193;
     //getTrend = getTrend_30;

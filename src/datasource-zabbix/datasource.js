@@ -54,6 +54,7 @@ class ZabbixAPIDatasource {
     this.sqlDatasourceId = dbConnectionOptions.datasourceId;
 
     let zabbixOptions = {
+      url: this.url,
       username: this.username,
       password: this.password,
       basicAuth: this.basicAuth,
@@ -63,7 +64,7 @@ class ZabbixAPIDatasource {
       sqlDatasourceId: this.sqlDatasourceId
     };
 
-    this.zabbix = new Zabbix(this.url, zabbixOptions, backendSrv, datasourceSrv);
+    this.zabbix = new Zabbix(zabbixOptions, backendSrv, datasourceSrv);
   }
 
   ////////////////////////
