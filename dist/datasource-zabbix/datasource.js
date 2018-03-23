@@ -220,7 +220,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           this.basicAuth = instanceSettings.basicAuth;
           this.withCredentials = instanceSettings.withCredentials;
 
-          var jsonData = instanceSettings.jsonData;
+          var jsonData = instanceSettings.jsonData || {};
 
           // Zabbix API credentials
           this.username = jsonData.username;
@@ -239,6 +239,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           this.alertingEnabled = jsonData.alerting;
           this.addThresholds = jsonData.addThresholds;
           this.alertingMinSeverity = jsonData.alertingMinSeverity || c.SEV_WARNING;
+
+          // Other options
+          this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
 
           // Direct DB Connection options
           var dbConnectionOptions = jsonData.dbConnection || {};

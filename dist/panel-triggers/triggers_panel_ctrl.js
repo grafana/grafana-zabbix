@@ -603,6 +603,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             var grafana_user = this.contextSrv.user.name;
             var ack_message = grafana_user + ' (Grafana): ' + message;
             return this.datasourceSrv.get(trigger.datasource).then(function (datasource) {
+              var userIsEditor = _this8.contextSrv.isEditor || _this8.contextSrv.isGrafanaAdmin;
+              if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
+                return Promise.reject({ message: 'You have no permissions to acknowledge events.' });
+              }
               if (eventid) {
                 return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
               } else {

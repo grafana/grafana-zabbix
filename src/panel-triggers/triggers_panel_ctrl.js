@@ -453,6 +453,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
     let ack_message = grafana_user + ' (Grafana): ' + message;
     return this.datasourceSrv.get(trigger.datasource)
     .then(datasource => {
+      const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
+      if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
+        return Promise.reject({message: 'You have no permissions to acknowledge events.'});
+      }
       if (eventid) {
         return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
       } else {
