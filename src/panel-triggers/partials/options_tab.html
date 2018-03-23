@@ -163,7 +163,7 @@
         <label class="gf-form-label width-3">{{ trigger.priority }}</label>
         <label class="gf-form-label triggers-severity-config"
           ng-style="{color: trigger.color}">
-          <i class="icon-gf" ng-class="ctrl.getAlertIconClass(trigger)"></i>
+          <i class="icon-gf" ng-class="ctrl.getAlertIconClassBySeverity(trigger)"></i>
         </label>
         <input type="text"
           class="gf-form-input width-12"

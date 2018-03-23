@@ -490,9 +490,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getAlertIconClass(trigger) {
-    const triggerValue = Number(trigger.value);
     let iconClass = '';
-    if (triggerValue || trigger.color) {
+    if (trigger.value === '1') {
       if (trigger.priority >= 3) {
         iconClass = 'icon-gf-critical';
       } else {
@@ -504,6 +503,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
       iconClass += ' zabbix-trigger--blinked';
+    }
+    return iconClass;
+  }
+
+  getAlertIconClassBySeverity(triggerSeverity) {
+    let iconClass = 'icon-gf-warning';
+    if (triggerSeverity.priority >= 3) {
+      iconClass = 'icon-gf-critical';
     }
     return iconClass;
   }

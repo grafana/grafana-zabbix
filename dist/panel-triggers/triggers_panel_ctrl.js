@@ -641,9 +641,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'getAlertIconClass',
           value: function getAlertIconClass(trigger) {
-            var triggerValue = Number(trigger.value);
             var iconClass = '';
-            if (triggerValue || trigger.color) {
+            if (trigger.value === '1') {
               if (trigger.priority >= 3) {
                 iconClass = 'icon-gf-critical';
               } else {
@@ -655,6 +654,15 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
             if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
               iconClass += ' zabbix-trigger--blinked';
+            }
+            return iconClass;
+          }
+        }, {
+          key: 'getAlertIconClassBySeverity',
+          value: function getAlertIconClassBySeverity(triggerSeverity) {
+            var iconClass = 'icon-gf-warning';
+            if (triggerSeverity.priority >= 3) {
+              iconClass = 'icon-gf-critical';
             }
             return iconClass;
           }
