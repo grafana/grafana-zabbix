@@ -3,10 +3,12 @@
     <section class="card-section card-list-layout-list">
       <ol class="alert-rule-list">
         <!-- Trigger list item -->
-        <li class="alert-rule-item zbx-trigger-card" ng-repeat="trigger in ctrl.currentTriggersPage">
+        <li class="alert-rule-item zbx-trigger-card" ng-repeat="trigger in ctrl.currentTriggersPage"
+          ng-class="{'zbx-trigger-highlighted': ctrl.panel.highlightBackground}"
+          ng-style="ctrl.panel.highlightBackground && {background: ctrl.getBackground(trigger)}">
 
           <!-- Heart icon -->
-          <div class="alert-rule-item__icon" ng-style="{color: trigger.color}">
+          <div class="alert-rule-item__icon" ng-style="!ctrl.panel.highlightBackground && {color: trigger.color}">
             <i class="icon-gf" ng-class="ctrl.getAlertIconClass(trigger)"></i>
           </div>
 
@@ -32,11 +34,13 @@
               </p>
 
               <div class="alert-rule-item__text">
-                <span ng-if="ctrl.panel.statusField" ng-class="ctrl.getAlertStateClass(trigger)">
+                <span ng-if="ctrl.panel.statusField" class="zbx-trigger-state"
+                  ng-class="ctrl.getAlertStateClass(trigger)">
                   {{ctrl.triggerStatusMap[trigger.value]}}
                 </span>
-                <span ng-if="ctrl.panel.severityField" ng-class="ctrl.getAlertStateClass(trigger)"
-                  ng-style="{color: trigger.color}">
+                <span ng-if="ctrl.panel.severityField" class="zbx-trigger-severity"
+                  ng-class="ctrl.getAlertStateClass(trigger)"
+                  ng-style="!ctrl.panel.highlightBackground && {color: trigger.color}">
                   {{trigger.severity}}
                 </span>
                 <span class="alert-rule-item__time">
