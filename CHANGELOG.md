@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+## [3.9.0] - 2018-03-23
 ### Added
 - Table format support for text data [#492](https://github.com/alexanderzobnin/grafana-zabbix/issues/492)
 - Option to enable triggers background highlighting [#532](https://github.com/alexanderzobnin/grafana-zabbix/issues/532)
