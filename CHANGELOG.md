@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
-- Table format support for text data, [#492](https://github.com/alexanderzobnin/grafana-zabbix/issues/492)
+- Table format support for text data [#492](https://github.com/alexanderzobnin/grafana-zabbix/issues/492)
+- Option to enable triggers background highlighting [#532](https://github.com/alexanderzobnin/grafana-zabbix/issues/532)
+- Option to disable acknowledges for read-only users [#481](https://github.com/alexanderzobnin/grafana-zabbix/issues/481)
 
 ### Fixed
 - Triggers panel has broken styles in Grafana 5.0 [#522](https://github.com/alexanderzobnin/grafana-zabbix/issues/522)
+- Undefined username in acknowledges [#393](https://github.com/alexanderzobnin/grafana-zabbix/issues/393)
 
 ## [3.8.1] - 2017-12-21
 ### Fixed
