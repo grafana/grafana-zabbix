@@ -50,7 +50,8 @@ export const PANEL_DEFAULTS = {
   // View options
   fontSize: '100%',
   pageSize: 10,
-  highlightNewEvents: true,
+  highlightBackground: false,
+  highlightNewEvents: false,
   highlightNewerThan: '1h',
   customLastChangeFormat: false,
   lastChangeFormat: "",

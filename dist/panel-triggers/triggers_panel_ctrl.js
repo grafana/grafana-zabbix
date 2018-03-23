@@ -149,7 +149,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         // View options
         fontSize: '100%',
         pageSize: 10,
-        highlightNewEvents: true,
+        highlightBackground: false,
+        highlightNewEvents: false,
         highlightNewerThan: '1h',
         customLastChangeFormat: false,
         lastChangeFormat: "",
