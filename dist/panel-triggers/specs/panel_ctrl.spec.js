@@ -187,6 +187,26 @@ describe('TriggerPanelCtrl', () => {
       });
     });
   });
+
+  describe('When formatting acknowledges', () => {
+    beforeEach(() => {
+      ctx.panelCtrl = createPanelCtrl();
+    });
+
+    it('should build proper user name', () => {
+      const ack = {
+        alias: 'alias',  name: 'name', surname: 'surname'
+      };
+
+      const formatted = ctx.panelCtrl.formatAcknowledge(ack);
+      expect(formatted.user).toBe('alias (name surname)');
+    });
+
+    it('should return empty name if it is not defined', () => {
+      const formatted = ctx.panelCtrl.formatAcknowledge({});
+      expect(formatted.user).toBe('');
+    });
+  });
 });
 
 const defaultTrigger = {

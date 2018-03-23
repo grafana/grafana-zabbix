@@ -367,16 +367,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                 });
 
                 if (event) {
-                  trigger.acknowledges = _.map(event.acknowledges, function (ack) {
-                    var timestamp = moment.unix(ack.clock);
-                    if (_this6.panel.customLastChangeFormat) {
-                      ack.time = timestamp.format(_this6.panel.lastChangeFormat);
-                    } else {
-                      ack.time = timestamp.format(_this6.defaultTimeFormat);
-                    }
-                    ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-                    return ack;
-                  });
+                  trigger.acknowledges = _.map(event.acknowledges, _this6.formatAcknowledge.bind(_this6));
                 }
 
                 if (!trigger.lastEvent.eventid) {
@@ -386,6 +377,22 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
               return triggerList;
             });
+          }
+        }, {
+          key: 'formatAcknowledge',
+          value: function formatAcknowledge(ack) {
+            var timestamp = moment.unix(ack.clock);
+            if (this.panel.customLastChangeFormat) {
+              ack.time = timestamp.format(this.panel.lastChangeFormat);
+            } else {
+              ack.time = timestamp.format(this.defaultTimeFormat);
+            }
+            ack.user = ack.alias || '';
+            if (ack.name || ack.surname) {
+              var fullName = (ack.name || '') + ' ' + (ack.surname || '');
+              ack.user += ' (' + fullName + ')';
+            }
+            return ack;
           }
         }, {
           key: 'filterTriggersPre',

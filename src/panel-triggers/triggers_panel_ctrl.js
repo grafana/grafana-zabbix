@@ -243,16 +243,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         });
 
         if (event) {
-          trigger.acknowledges = _.map(event.acknowledges, ack => {
-            let timestamp = moment.unix(ack.clock);
-            if (this.panel.customLastChangeFormat) {
-              ack.time = timestamp.format(this.panel.lastChangeFormat);
-            } else {
-              ack.time = timestamp.format(this.defaultTimeFormat);
-            }
-            ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-            return ack;
-          });
+          trigger.acknowledges = _.map(event.acknowledges, this.formatAcknowledge.bind(this));
         }
 
         if (!trigger.lastEvent.eventid) {
@@ -262,6 +253,21 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
       return triggerList;
     });
+  }
+
+  formatAcknowledge(ack) {
+    let timestamp = moment.unix(ack.clock);
+    if (this.panel.customLastChangeFormat) {
+      ack.time = timestamp.format(this.panel.lastChangeFormat);
+    } else {
+      ack.time = timestamp.format(this.defaultTimeFormat);
+    }
+    ack.user = ack.alias || '';
+    if (ack.name || ack.surname) {
+      const fullName = `${ack.name || ''} ${ack.surname || ''}`;
+      ack.user += ` (${fullName})`;
+    }
+    return ack;
   }
 
   filterTriggersPre(triggerList, ds) {
