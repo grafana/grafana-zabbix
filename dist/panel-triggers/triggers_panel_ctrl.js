@@ -686,7 +686,6 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'getBackground',
           value: function getBackground(trigger) {
-            // console.log(trigger.color, this.contextSrv.user.lightTheme);
             var mainColor = trigger.color;
             var secondColor = this.contextSrv.user.lightTheme ? '#dde4ed' : '#262628';
             if (this.contextSrv.user.lightTheme) {

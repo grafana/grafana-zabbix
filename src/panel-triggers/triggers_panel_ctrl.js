@@ -532,7 +532,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getBackground(trigger) {
-    // console.log(trigger.color, this.contextSrv.user.lightTheme);
     const mainColor = trigger.color;
     const secondColor = this.contextSrv.user.lightTheme ? '#dde4ed' : '#262628';
     if (this.contextSrv.user.lightTheme) {

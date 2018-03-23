@@ -61,12 +61,6 @@
   .zbx-trigger-highlighted .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons a {
     color: #000; }
 
-@keyframes zabbix-triggers-panel {
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 10px 0px #d44939;
-    border-bottom-color: rgba(212, 73, 57, 0.25); } }
-
 @keyframes zabbix-triggers-icon {
   100% {
     opacity: 1; } }
