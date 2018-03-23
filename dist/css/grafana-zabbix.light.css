@@ -58,7 +58,7 @@
   .zbx-trigger-highlighted .alert-rule-item__text .zbx-trigger-state,
   .zbx-trigger-highlighted .alert-rule-item__text .zbx-trigger-severity {
     color: #000; }
-  .zbx-trigger-highlighted .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons a {
+  .zbx-trigger-highlighted .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons a, .zbx-trigger-highlighted .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons i {
     color: #000; }
 
 @keyframes zabbix-triggers-icon {
