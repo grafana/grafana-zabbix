@@ -26,8 +26,8 @@
       {"name": "Metric Editor", "path": "img/screenshot-metric_editor.png"},
       {"name": "Triggers", "path": "img/screenshot-triggers.png"}
     ],
-    "version": "3.8.1",
-    "updated": "2017-12-21"
+    "version": "3.9.0",
+    "updated": "2018-03-23"
   },
 
   "includes": [
@@ -49,7 +49,7 @@
   ],
 
   "dependencies": {
-    "grafanaVersion": "3.x 4.x",
+    "grafanaVersion": "5.x",
     "plugins": []
   }
 }
