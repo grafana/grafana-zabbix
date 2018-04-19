@@ -125,6 +125,13 @@ System.register(['lodash', 'jquery'], function (_export, _context) {
         defaultParams: [0.2]
       });
 
+      addFuncDef({
+        name: 'transformNull',
+        category: 'Transform',
+        params: [{ name: 'number', type: 'float' }],
+        defaultParams: [0]
+      });
+
       // Aggregate
 
       addFuncDef({
@@ -191,6 +198,20 @@ System.register(['lodash', 'jquery'], function (_export, _context) {
       });
 
       // Filter
+
+      addFuncDef({
+        name: 'removeAboveValue',
+        category: 'Filter',
+        params: [{ name: 'number', type: 'float' }],
+        defaultParams: [0]
+      });
+
+      addFuncDef({
+        name: 'removeBelowValue',
+        category: 'Filter',
+        params: [{ name: 'number', type: 'float' }],
+        defaultParams: [0]
+      });
 
       addFuncDef({
         name: 'top',

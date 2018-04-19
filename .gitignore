@@ -3,6 +3,8 @@
 
 .idea/
 .vscode
+grafana-zabbix.iml
+package-lock.json
 
 *.bat
 

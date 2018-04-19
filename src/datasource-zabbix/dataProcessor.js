@@ -36,6 +36,33 @@ function limit(order, n, orderByFunc, timeseries) {
   }
 }
 
+function removeAboveValue(n, datapoints) {
+  return _.map(datapoints, point => {
+    return [
+      (point[0] > n) ? null : point[0],
+      point[1]
+    ];
+  });
+}
+
+function removeBelowValue(n, datapoints) {
+  return _.map(datapoints, point => {
+    return [
+      (point[0] < n) ? null : point[0],
+      point[1]
+    ];
+  });
+}
+
+function transformNull(n, datapoints) {
+  return _.map(datapoints, point => {
+    return [
+      (point[0] !== null) ? point[0] : n,
+      point[1]
+    ];
+  });
+}
+
 function sortSeries(direction, timeseries) {
   return _.orderBy(timeseries, [function (ts) {
     return ts.target.toLowerCase();
@@ -121,6 +148,7 @@ let metricFunctions = {
   rate: rate,
   movingAverage: simpleMovingAverage,
   exponentialMovingAverage: expMovingAverage,
+  transformNull: transformNull,
   aggregateBy: aggregateByWrapper,
   // Predefined aggs
   percentil: percentil,
@@ -131,6 +159,8 @@ let metricFunctions = {
   sum: _.partial(aggregateWrapper, SUM),
   count: _.partial(aggregateWrapper, COUNT),
   sumSeries: sumSeries,
+  removeAboveValue: removeAboveValue,
+  removeBelowValue: removeBelowValue,
   top: _.partial(limit, 'top'),
   bottom: _.partial(limit, 'bottom'),
   sortSeries: sortSeries,

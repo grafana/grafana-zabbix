@@ -22,7 +22,7 @@
     "url": "https://github.com/alexanderzobnin/grafana-zabbix/issues"
   },
   "devDependencies": {
-    "babel": "~6.5.1",
+    "babel": "^6.23.0",
     "babel-jest": "^21.2.0",
     "babel-plugin-transform-es2015-for-of": "^6.6.0",
     "babel-plugin-transform-es2015-modules-systemjs": "^6.5.0",
@@ -46,12 +46,16 @@
     "jsdom": "~11.3.0",
     "jshint-stylish": "^2.1.0",
     "load-grunt-tasks": "~3.2.0",
-    "moment": "~2.21.0",
+    "moment": "^2.22.1",
     "q": "~1.4.1",
     "tether-drop": "^1.4.2"
   },
   "dependencies": {
+    "loadash": "^1.0.0",
     "lodash": "~4.0.0",
+    "node-gyp": "^3.6.2",
+    "node-sass": "^3.13.1",
+    "python2": "0.0.1",
     "systemjs": "^0.20.19"
   },
   "homepage": "http://grafana-zabbix.org"
