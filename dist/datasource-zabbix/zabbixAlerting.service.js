@@ -91,13 +91,9 @@ System.register(['lodash', 'jquery', 'angular'], function (_export, _context) {
         }, {
           key: 'getPanelModels',
           value: function getPanelModels() {
-            return _.flatten(_.map(this.dashboardSrv.dash.rows, function (row) {
-              if (row.collapse) {
-                return [];
-              } else {
-                return row.panels;
-              }
-            }));
+            return _.filter(this.dashboardSrv.dash.panels, function (panel) {
+              return panel.type !== 'row';
+            });
           }
         }, {
           key: 'getPanelModel',
