@@ -216,13 +216,13 @@ System.register(['angular', 'lodash'], function (_export, _context) {
 
   function buildMysqlHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
     var time_expression = 'clock DIV ' + intervalSec + ' * ' + intervalSec;
-    var query = '\n    SELECT itemid AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(value) AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY ' + time_expression + ', metric\n    ORDER BY time_sec ASC\n  ';
+    var query = '\n    SELECT CAST(itemid AS CHAR) AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(value) AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY ' + time_expression + ', metric\n    ORDER BY time_sec ASC\n  ';
     return query;
   }
 
   function buildMysqlTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
     var time_expression = 'clock DIV ' + intervalSec + ' * ' + intervalSec;
-    var query = '\n    SELECT itemid AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(' + valueColumn + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY ' + time_expression + ', metric\n    ORDER BY time_sec ASC\n  ';
+    var query = '\n    SELECT CAST(itemid AS CHAR) AS metric, ' + time_expression + ' AS time_sec, ' + aggFunction + '(' + valueColumn + ') AS value\n    FROM ' + table + '\n    WHERE itemid IN (' + itemids + ')\n      AND clock > ' + timeFrom + ' AND clock < ' + timeTill + '\n    GROUP BY ' + time_expression + ', metric\n    ORDER BY time_sec ASC\n  ';
     return query;
   }
 
@@ -287,7 +287,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
         'min': 'value_min',
         'max': 'value_max'
       };
-      angular.module('grafana.services').factory('ZabbixDBConnector', ZabbixDBConnectorFactory);TEST_MYSQL_QUERY = 'SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1';
+      angular.module('grafana.services').factory('ZabbixDBConnector', ZabbixDBConnectorFactory);TEST_MYSQL_QUERY = 'SELECT CAST(itemid AS CHAR) AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1';
       itemid_format = 'FM99999999999999999999';
       TEST_POSTGRES_QUERY = '\n  SELECT to_char(itemid, \'' + itemid_format + '\') AS metric, clock AS time, value_avg AS value\n  FROM trends_uint LIMIT 1\n';
     }

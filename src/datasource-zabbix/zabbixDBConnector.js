@@ -212,7 +212,7 @@ function buildSQLTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, ag
 function buildMysqlHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
   let time_expression = `clock DIV ${intervalSec} * ${intervalSec}`;
   let query = `
-    SELECT itemid AS metric, ${time_expression} AS time_sec, ${aggFunction}(value) AS value
+    SELECT CAST(itemid AS CHAR) AS metric, ${time_expression} AS time_sec, ${aggFunction}(value) AS value
     FROM ${table}
     WHERE itemid IN (${itemids})
       AND clock > ${timeFrom} AND clock < ${timeTill}
@@ -225,7 +225,7 @@ function buildMysqlHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec,
 function buildMysqlTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
   let time_expression = `clock DIV ${intervalSec} * ${intervalSec}`;
   let query = `
-    SELECT itemid AS metric, ${time_expression} AS time_sec, ${aggFunction}(${valueColumn}) AS value
+    SELECT CAST(itemid AS CHAR) AS metric, ${time_expression} AS time_sec, ${aggFunction}(${valueColumn}) AS value
     FROM ${table}
     WHERE itemid IN (${itemids})
       AND clock > ${timeFrom} AND clock < ${timeTill}
@@ -235,7 +235,7 @@ function buildMysqlTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, 
   return query;
 }
 
-const TEST_MYSQL_QUERY = `SELECT itemid AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1`;
+const TEST_MYSQL_QUERY = `SELECT CAST(itemid AS CHAR) AS metric, clock AS time_sec, value_avg AS value FROM trends_uint LIMIT 1`;
 
 ////////////////
 // PostgreSQL //
