@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Fixed
 - Datasource fails when "Direct DB connection" enabled [#564](https://github.com/alexanderzobnin/grafana-zabbix/issues/564)
+- Alerting and health icons on panels [#556](https://github.com/alexanderzobnin/grafana-zabbix/issues/556)
 
 ## [3.9.0] - 2018-03-23
 ### Added
