@@ -417,9 +417,6 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               return _this3.applyDataProcessingFunctions(timeseries, target);
             }).then(function (timeseries) {
               return downsampleSeries(timeseries, options);
-            }).catch(function (error) {
-              console.log(error);
-              return [];
             });
           }
         }, {

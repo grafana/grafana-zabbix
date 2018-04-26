@@ -208,11 +208,7 @@ class ZabbixAPIDatasource {
 
     return getHistoryPromise
     .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
-    .then(timeseries => downsampleSeries(timeseries, options))
-    .catch(error => {
-      console.log(error);
-      return [];
-    });
+    .then(timeseries => downsampleSeries(timeseries, options));
   }
 
   getTrendValueType(target) {
