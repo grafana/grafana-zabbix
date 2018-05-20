@@ -1,4 +1,4 @@
-<datasource-http-settings current="ctrl.current">
+<datasource-http-settings current="ctrl.current" suggest-url="http://localhost/zabbix/api_jsonrpc.php">
 </datasource-http-settings>
 
 <div class="gf-form-group">
@@ -31,6 +31,7 @@
     label="Trends"
     checked="ctrl.current.jsonData.trends"
     switch-class="max-width-5">
+    
   </gf-form-switch>
   <div class="gf-form-inline">
     <div class="gf-form" ng-if="ctrl.current.jsonData.trends">
