@@ -94,8 +94,6 @@ System.register(['lodash', '../../../utils', './zabbixAPICore'], function (_expo
       }();
 
       _export('ZabbixAPIConnector', ZabbixAPIConnector = function () {
-
-        /** @ngInject */
         function ZabbixAPIConnector(api_url, username, password, basicAuth, withCredentials, backendSrv) {
           _classCallCheck(this, ZabbixAPIConnector);
 

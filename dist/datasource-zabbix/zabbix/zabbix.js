@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', '../utils', './connectors/zabbix_api/zabbixAPIConnector', './connectors/sql/zabbixDBConnector', './proxy/cachingProxy'], function (_export, _context) {
+System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbix_api/zabbixAPIConnector', './connectors/sql/sqlConnector', './proxy/cachingProxy'], function (_export, _context) {
   "use strict";
 
-  var _, utils, ZabbixAPIConnector, ZabbixDBConnector, CachingProxy, _slicedToArray, _createClass, REQUESTS_TO_PROXYFY, REQUESTS_TO_CACHE, REQUESTS_TO_BIND, Zabbix;
+  var _, utils, responseHandler, ZabbixAPIConnector, SQLConnector, CachingProxy, _slicedToArray, _createClass, REQUESTS_TO_PROXYFY, REQUESTS_TO_CACHE, REQUESTS_TO_BIND, Zabbix;
 
   function _toConsumableArray(arr) {
     if (Array.isArray(arr)) {
@@ -91,10 +91,12 @@ System.register(['lodash', '../utils', './connectors/zabbix_api/zabbixAPIConnect
       _ = _lodash.default;
     }, function (_utils) {
       utils = _utils;
+    }, function (_responseHandler) {
+      responseHandler = _responseHandler.default;
     }, function (_connectorsZabbix_apiZabbixAPIConnector) {
       ZabbixAPIConnector = _connectorsZabbix_apiZabbixAPIConnector.ZabbixAPIConnector;
-    }, function (_connectorsSqlZabbixDBConnector) {
-      ZabbixDBConnector = _connectorsSqlZabbixDBConnector.ZabbixDBConnector;
+    }, function (_connectorsSqlSqlConnector) {
+      SQLConnector = _connectorsSqlSqlConnector.SQLConnector;
     }, function (_proxyCachingProxy) {
       CachingProxy = _proxyCachingProxy.CachingProxy;
     }],
@@ -157,22 +159,23 @@ System.register(['lodash', '../utils', './connectors/zabbix_api/zabbixAPIConnect
 
       REQUESTS_TO_PROXYFY = ['getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getVersion'];
       REQUESTS_TO_CACHE = ['getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs', 'getITService'];
-      REQUESTS_TO_BIND = ['getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'login'];
+      REQUESTS_TO_BIND = ['getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getVersion', 'login'];
 
       _export('Zabbix', Zabbix = function () {
-
-        /** @ngInject */
-        function Zabbix(url, options, backendSrv, datasourceSrv) {
+        function Zabbix(options, backendSrv, datasourceSrv) {
           _classCallCheck(this, Zabbix);
 
-          var username = options.username,
+          var url = options.url,
+              username = options.username,
               password = options.password,
               basicAuth = options.basicAuth,
               withCredentials = options.withCredentials,
               cacheTTL = options.cacheTTL,
               enableDirectDBConnection = options.enableDirectDBConnection,
-              sqlDatasourceId = options.sqlDatasourceId;
+              datasourceId = options.datasourceId;
 
+
+          this.enableDirectDBConnection = enableDirectDBConnection;
 
           // Initialize caching proxy for requests
           var cacheOptions = {
@@ -184,7 +187,8 @@ System.register(['lodash', '../utils', './connectors/zabbix_api/zabbixAPIConnect
           this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials, backendSrv);
 
           if (enableDirectDBConnection) {
-            this.dbConnector = new ZabbixDBConnector(sqlDatasourceId, {}, backendSrv, datasourceSrv);
+            var dbConnectorOptions = { datasourceId: datasourceId };
+            this.dbConnector = new SQLConnector(dbConnectorOptions, backendSrv, datasourceSrv);
             this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
             this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
           }
@@ -440,6 +444,79 @@ System.register(['lodash', '../utils', './connectors/zabbix_api/zabbixAPIConnect
               return query;
             }).then(function (query) {
               return _this5.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options);
+            });
+          }
+        }, {
+          key: 'getHistoryTS',
+          value: function getHistoryTS(items, timeRange, options) {
+            var _this6 = this;
+
+            var _timeRange = _slicedToArray(timeRange, 2),
+                timeFrom = _timeRange[0],
+                timeTo = _timeRange[1];
+
+            if (this.enableDirectDBConnection) {
+              return this.getHistoryDB(items, timeFrom, timeTo, options).then(function (history) {
+                return _this6.dbConnector.handleGrafanaTSResponse(history, items);
+              });
+            } else {
+              return this.zabbixAPI.getHistory(items, timeFrom, timeTo).then(function (history) {
+                return responseHandler.handleHistory(history, items);
+              });
+            }
+          }
+        }, {
+          key: 'getTrends',
+          value: function getTrends(items, timeRange, options) {
+            var _this7 = this;
+
+            var _timeRange2 = _slicedToArray(timeRange, 2),
+                timeFrom = _timeRange2[0],
+                timeTo = _timeRange2[1];
+
+            if (this.enableDirectDBConnection) {
+              return this.getTrendsDB(items, timeFrom, timeTo, options).then(function (history) {
+                return _this7.dbConnector.handleGrafanaTSResponse(history, items);
+              });
+            } else {
+              var valueType = options.consolidateBy || options.valueType;
+              return this.zabbixAPI.getTrend(items, timeFrom, timeTo).then(function (history) {
+                return responseHandler.handleTrends(history, items, valueType);
+              }).then(responseHandler.sortTimeseries); // Sort trend data, issue #202
+            }
+          }
+        }, {
+          key: 'getHistoryText',
+          value: function getHistoryText(items, timeRange, target) {
+            var _timeRange3 = _slicedToArray(timeRange, 2),
+                timeFrom = _timeRange3[0],
+                timeTo = _timeRange3[1];
+
+            if (items.length) {
+              return this.zabbixAPI.getHistory(items, timeFrom, timeTo).then(function (history) {
+                if (target.resultFormat === 'table') {
+                  return responseHandler.handleHistoryAsTable(history, items, target);
+                } else {
+                  return responseHandler.handleText(history, items, target);
+                }
+              });
+            } else {
+              return Promise.resolve([]);
+            }
+          }
+        }, {
+          key: 'getSLA',
+          value: function getSLA(itservices, timeRange, target, options) {
+            var itServices = itservices;
+            if (options.isOldVersion) {
+              itServices = _.filter(itServices, { 'serviceid': target.itservice.serviceid });
+            }
+            var itServiceIds = _.map(itServices, 'serviceid');
+            return this.zabbixAPI.getSLA(itServiceIds, timeRange).then(function (slaResponse) {
+              return _.map(itServiceIds, function (serviceid) {
+                var itservice = _.find(itServices, { 'serviceid': serviceid });
+                return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
+              });
             });
           }
         }]);

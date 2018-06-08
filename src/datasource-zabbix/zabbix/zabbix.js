@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as utils from '../utils';
 import responseHandler from '../responseHandler';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
-import { ZabbixDBConnector } from './connectors/sql/zabbixDBConnector';
+import { SQLConnector } from './connectors/sql/sqlConnector';
 import { CachingProxy } from './proxy/cachingProxy';
 
 const REQUESTS_TO_PROXYFY = [
@@ -20,8 +20,6 @@ const REQUESTS_TO_BIND = [
 ];
 
 export class Zabbix {
-
-  /** @ngInject */
   constructor(options, backendSrv, datasourceSrv) {
     let {
       url,
@@ -31,7 +29,7 @@ export class Zabbix {
       withCredentials,
       cacheTTL,
       enableDirectDBConnection,
-      sqlDatasourceId
+      datasourceId
     } = options;
 
     this.enableDirectDBConnection = enableDirectDBConnection;
@@ -46,7 +44,8 @@ export class Zabbix {
     this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials, backendSrv);
 
     if (enableDirectDBConnection) {
-      this.dbConnector = new ZabbixDBConnector(sqlDatasourceId, {}, backendSrv, datasourceSrv);
+      let dbConnectorOptions = { datasourceId };
+      this.dbConnector = new SQLConnector(dbConnectorOptions, backendSrv, datasourceSrv);
       this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
       this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
     }

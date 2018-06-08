@@ -54,7 +54,7 @@ class ZabbixAPIDatasource {
     // Direct DB Connection options
     let dbConnectionOptions = jsonData.dbConnection || {};
     this.enableDirectDBConnection = dbConnectionOptions.enable;
-    this.sqlDatasourceId = dbConnectionOptions.datasourceId;
+    this.datasourceId = dbConnectionOptions.datasourceId;
 
     let zabbixOptions = {
       url: this.url,
@@ -64,7 +64,7 @@ class ZabbixAPIDatasource {
       withCredentials: this.withCredentials,
       cacheTTL: this.cacheTTL,
       enableDirectDBConnection: this.enableDirectDBConnection,
-      sqlDatasourceId: this.sqlDatasourceId
+      datasourceId: this.datasourceId
     };
 
     this.zabbix = new Zabbix(zabbixOptions, backendSrv, datasourceSrv);
@@ -350,7 +350,7 @@ class ZabbixAPIDatasource {
     })
     .then(() => {
       if (this.enableDirectDBConnection) {
-        return this.zabbix.dbConnector.testSQLDataSource();
+        return this.zabbix.dbConnector.testDataSource();
       } else {
         return Promise.resolve();
       }

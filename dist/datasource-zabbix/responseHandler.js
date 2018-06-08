@@ -56,23 +56,33 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
     });
   }
 
-  function handleHistory(history, items) {
+  function sortTimeseries(timeseries) {
+    // Sort trend data, issue #202
+    _.forEach(timeseries, function (series) {
+      series.datapoints = _.sortBy(series.datapoints, function (point) {
+        return point[c.DATAPOINT_TS];
+      });
+    });
+    return timeseries;
+  }function handleHistory(history, items) {
     var addHostName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
     return convertHistory(history, items, addHostName, convertHistoryPoint);
-  }function handleTrends(history, items, valueType) {
+  }
+
+  function handleTrends(history, items, valueType) {
     var addHostName = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
 
     var convertPointCallback = _.partial(convertTrendPoint, valueType);
     return convertHistory(history, items, addHostName, convertPointCallback);
-  }
-
-  function handleText(history, items, target) {
+  }function handleText(history, items, target) {
     var addHostName = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
 
     var convertTextCallback = _.partial(convertText, target);
     return convertHistory(history, items, addHostName, convertTextCallback);
-  }function handleHistoryAsTable(history, items, target) {
+  }
+
+  function handleHistoryAsTable(history, items, target) {
     var table = new TableModel();
     table.addColumn({ text: 'Host' });
     table.addColumn({ text: 'Item' });
@@ -101,9 +111,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
     });
 
     return table;
-  }
-
-  function convertText(target, point) {
+  }function convertText(target, point) {
     var value = point.value;
 
     // Regex-based extractor
@@ -112,7 +120,9 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
     }
 
     return [value, point.clock * 1000 + Math.round(point.ns / 1000000)];
-  }function extractText(str, pattern, useCaptureGroups) {
+  }
+
+  function extractText(str, pattern, useCaptureGroups) {
     var extractPattern = new RegExp(pattern);
     var extractedValue = extractPattern.exec(str);
     if (extractedValue) {
@@ -123,9 +133,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       }
     }
     return extractedValue;
-  }
-
-  function handleSLAResponse(itservice, slaProperty, slaObject) {
+  }function handleSLAResponse(itservice, slaProperty, slaObject) {
     var targetSLA = slaObject[itservice.serviceid].sla[0];
     if (slaProperty.property === 'status') {
       var targetStatus = parseInt(slaObject[itservice.serviceid].status);
@@ -139,7 +147,9 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
         datapoints: [[targetSLA[slaProperty.property], targetSLA.from * 1000], [targetSLA[slaProperty.property], targetSLA.to * 1000]]
       };
     }
-  }function handleTriggersResponse(triggers, timeRange) {
+  }
+
+  function handleTriggersResponse(triggers, timeRange) {
     if (_.isNumber(triggers)) {
       return {
         target: "triggers count",
@@ -163,9 +173,7 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       });
       return table;
     }
-  }
-
-  function getTriggerStats(triggers) {
+  }function getTriggerStats(triggers) {
     var groups = _.uniq(_.flattenDeep(_.map(triggers, function (trigger) {
       return _.map(trigger.groups, 'name');
     })));
@@ -180,12 +188,12 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
       });
     });
     return stats;
-  }function convertHistoryPoint(point) {
-    // Value must be a number for properly work
-    return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
   }
 
-  function convertTrendPoint(valueType, point) {
+  function convertHistoryPoint(point) {
+    // Value must be a number for properly work
+    return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
+  }function convertTrendPoint(valueType, point) {
     var value;
     switch (valueType) {
       case "min":
@@ -208,7 +216,9 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
     }
 
     return [Number(value), point.clock * 1000];
-  }return {
+  }
+
+  return {
     setters: [function (_lodash) {
       _ = _lodash.default;
     }, function (_appCoreTable_model) {
@@ -224,7 +234,8 @@ System.register(['lodash', 'app/core/table_model', './constants'], function (_ex
         handleText: handleText,
         handleHistoryAsTable: handleHistoryAsTable,
         handleSLAResponse: handleSLAResponse,
-        handleTriggersResponse: handleTriggersResponse
+        handleTriggersResponse: handleTriggersResponse,
+        sortTimeseries: sortTimeseries
       });
 
       // Fix for backward compatibility with lodash 2.4
