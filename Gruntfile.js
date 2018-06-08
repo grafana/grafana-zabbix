@@ -172,9 +172,7 @@ module.exports = function(grunt) {
   grunt.registerTask('watchTask', [
     'clean:dist',
     'sass',
-    'copy:vendor_to_dist',
-    'copy:src_to_dist',
-    'copy:pluginDef',
+    'copy',
     'babel:dist',
     'jshint',
     'jscs'
