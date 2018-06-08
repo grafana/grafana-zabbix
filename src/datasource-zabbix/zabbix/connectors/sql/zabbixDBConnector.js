@@ -95,7 +95,7 @@ export class ZabbixDBConnector {
   }
 
   getTrends(items, timeFrom, timeTill, options) {
-    let {intervalMs, consolidateBy} = options;
+    let { intervalMs, consolidateBy } = options;
     let intervalSec = Math.ceil(intervalMs / 1000);
 
     consolidateBy = consolidateBy || 'avg';

@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import * as utils from '../utils';
+import responseHandler from '../responseHandler';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixDBConnector } from './connectors/sql/zabbixDBConnector';
 import { CachingProxy } from './proxy/cachingProxy';
@@ -15,7 +16,7 @@ const REQUESTS_TO_CACHE = [
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'login'
+  'getAcknowledges', 'getITService', 'getVersion', 'login'
 ];
 
 export class Zabbix {
@@ -32,6 +33,8 @@ export class Zabbix {
       enableDirectDBConnection,
       sqlDatasourceId
     } = options;
+
+    this.enableDirectDBConnection = enableDirectDBConnection;
 
     // Initialize caching proxy for requests
     let cacheOptions = {
@@ -217,6 +220,61 @@ export class Zabbix {
       return query;
     }).then(query => {
       return this.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options);
+    });
+  }
+
+  getHistoryTS(items, timeRange, options) {
+    let [timeFrom, timeTo] = timeRange;
+    if (this.enableDirectDBConnection) {
+      return this.getHistoryDB(items, timeFrom, timeTo, options)
+      .then(history => this.dbConnector.handleGrafanaTSResponse(history, items));
+    } else {
+      return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
+      .then(history => responseHandler.handleHistory(history, items));
+    }
+  }
+
+  getTrends(items, timeRange, options) {
+    let [timeFrom, timeTo] = timeRange;
+    if (this.enableDirectDBConnection) {
+      return this.getTrendsDB(items, timeFrom, timeTo, options)
+      .then(history => this.dbConnector.handleGrafanaTSResponse(history, items));
+    } else {
+      let valueType = options.consolidateBy || options.valueType;
+      return this.zabbixAPI.getTrend(items, timeFrom, timeTo)
+      .then(history => responseHandler.handleTrends(history, items, valueType))
+      .then(responseHandler.sortTimeseries); // Sort trend data, issue #202
+    }
+  }
+
+  getHistoryText(items, timeRange, target) {
+    let [timeFrom, timeTo] = timeRange;
+    if (items.length) {
+      return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
+      .then(history => {
+        if (target.resultFormat === 'table') {
+          return responseHandler.handleHistoryAsTable(history, items, target);
+        } else {
+          return responseHandler.handleText(history, items, target);
+        }
+      });
+    } else {
+      return Promise.resolve([]);
+    }
+  }
+
+  getSLA(itservices, timeRange, target, options) {
+    let itServices = itservices;
+    if (options.isOldVersion) {
+      itServices = _.filter(itServices, {'serviceid': target.itservice.serviceid});
+    }
+    let itServiceIds = _.map(itServices, 'serviceid');
+    return this.zabbixAPI.getSLA(itServiceIds, timeRange)
+    .then(slaResponse => {
+      return _.map(itServiceIds, serviceid => {
+        let itservice = _.find(itServices, {'serviceid': serviceid});
+        return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
+      });
     });
   }
 }

@@ -8,8 +8,6 @@ import { ZabbixAPICore } from './zabbixAPICore';
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-
-  /** @ngInject */
   constructor(api_url, username, password, basicAuth, withCredentials, backendSrv) {
     this.url              = api_url;
     this.username         = username;

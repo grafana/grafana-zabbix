@@ -176,35 +176,14 @@ class ZabbixAPIDatasource {
    * Query history for numeric items
    */
   queryNumericDataForItems(items, target, timeRange, useTrends, options) {
-    let [timeFrom, timeTo] = timeRange;
     let getHistoryPromise;
-    options.consolidateBy = getConsolidateBy(target);
+    options.valueType = this.getTrendValueType(target);
+    options.consolidateBy = getConsolidateBy(target) || options.valueType;
 
     if (useTrends) {
-      if (this.enableDirectDBConnection) {
-        getHistoryPromise = this.zabbix.getTrendsDB(items, timeFrom, timeTo, options)
-        .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
-      } else {
-        let valueType = this.getTrendValueType(target);
-        getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo)
-        .then(history => responseHandler.handleTrends(history, items, valueType))
-        .then(timeseries => {
-          // Sort trend data, issue #202
-          _.forEach(timeseries, series => {
-            series.datapoints = _.sortBy(series.datapoints, point => point[c.DATAPOINT_TS]);
-          });
-          return timeseries;
-        });
-      }
+      getHistoryPromise = this.zabbix.getTrends(items, timeRange, options);
     } else {
-      // Use history
-      if (this.enableDirectDBConnection) {
-        getHistoryPromise = this.zabbix.getHistoryDB(items, timeFrom, timeTo, options)
-        .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
-      } else {
-        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
-        .then(history => responseHandler.handleHistory(history, items));
-      }
+      getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options);
     }
 
     return getHistoryPromise
@@ -281,25 +260,13 @@ class ZabbixAPIDatasource {
    * Query target data for Text mode
    */
   queryTextData(target, timeRange) {
-    let [timeFrom, timeTo] = timeRange;
     let options = {
       itemtype: 'text'
     };
     return this.zabbix.getItemsFromTarget(target, options)
-      .then(items => {
-        if (items.length) {
-          return this.zabbix.getHistory(items, timeFrom, timeTo)
-          .then(history => {
-            if (target.resultFormat === 'table') {
-              return responseHandler.handleHistoryAsTable(history, items, target);
-            } else {
-              return responseHandler.handleText(history, items, target);
-            }
-          });
-        } else {
-          return Promise.resolve([]);
-        }
-      });
+    .then(items => {
+      return this.zabbix.getHistoryText(items, timeRange, target);
+    });
   }
 
   /**
@@ -329,12 +296,10 @@ class ZabbixAPIDatasource {
       return [];
     }
 
-    let itServiceIds = [];
-    let itServices = [];
     let itServiceFilter;
-    let isOldVersion = target.itservice && !target.itServiceFilter;
+    options.isOldVersion = target.itservice && !target.itServiceFilter;
 
-    if (isOldVersion) {
+    if (options.isOldVersion) {
       // Backward compatibility
       itServiceFilter = '/.*/';
     } else {
@@ -343,22 +308,7 @@ class ZabbixAPIDatasource {
 
     return this.zabbix.getITServices(itServiceFilter)
     .then(itservices => {
-      itServices = itservices;
-      if (isOldVersion) {
-        itServices = _.filter(itServices, {'serviceid': target.itservice.serviceid});
-      }
-
-      itServiceIds = _.map(itServices, 'serviceid');
-      return itServiceIds;
-    })
-    .then(serviceids => {
-      return this.zabbix.getSLA(serviceids, timeRange);
-    })
-    .then(slaResponse => {
-      return _.map(itServiceIds, serviceid => {
-        let itservice = _.find(itServices, {'serviceid': serviceid});
-        return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
-      });
+      return this.zabbix.getSLA(itservices, timeRange, target, options);
     });
   }
 
@@ -659,7 +609,7 @@ function bindFunctionDefs(functionDefs, category) {
 }
 
 function getConsolidateBy(target) {
-  let consolidateBy = 'avg';
+  let consolidateBy;
   let funcDef = _.find(target.functions, func => {
     return func.def.name === 'consolidateBy';
   });
