@@ -118,6 +118,12 @@
     </div>
     <gf-form-switch class="gf-form"
       label-class="width-10"
+      label="Highlight background"
+      checked="ctrl.panel.highlightBackground"
+      on-change="ctrl.render()">
+    </gf-form-switch>
+    <gf-form-switch class="gf-form"
+      label-class="width-10"
       label="Highlight new events"
       checked="ctrl.panel.highlightNewEvents"
       on-change="ctrl.render()">
@@ -157,7 +163,7 @@
         <label class="gf-form-label width-3">{{ trigger.priority }}</label>
         <label class="gf-form-label triggers-severity-config"
           ng-style="{color: trigger.color}">
-          <i class="icon-gf" ng-class="ctrl.getAlertIconClass(trigger)"></i>
+          <i class="icon-gf" ng-class="ctrl.getAlertIconClassBySeverity(trigger)"></i>
         </label>
         <input type="text"
           class="gf-form-input width-12"

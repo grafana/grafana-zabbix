@@ -28,7 +28,7 @@ class ZabbixAPIDatasource {
     this.basicAuth        = instanceSettings.basicAuth;
     this.withCredentials  = instanceSettings.withCredentials;
 
-    const jsonData = instanceSettings.jsonData;
+    const jsonData = instanceSettings.jsonData || {};
 
     // Zabbix API credentials
     this.username         = jsonData.username;
@@ -47,6 +47,9 @@ class ZabbixAPIDatasource {
     this.alertingEnabled =     jsonData.alerting;
     this.addThresholds =       jsonData.addThresholds;
     this.alertingMinSeverity = jsonData.alertingMinSeverity || c.SEV_WARNING;
+
+    // Other options
+    this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
 
     // Direct DB Connection options
     let dbConnectionOptions = jsonData.dbConnection || {};
@@ -206,11 +209,7 @@ class ZabbixAPIDatasource {
 
     return getHistoryPromise
     .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
-    .then(timeseries => downsampleSeries(timeseries, options))
-    .catch(error => {
-      console.log(error);
-      return [];
-    });
+    .then(timeseries => downsampleSeries(timeseries, options));
   }
 
   getTrendValueType(target) {

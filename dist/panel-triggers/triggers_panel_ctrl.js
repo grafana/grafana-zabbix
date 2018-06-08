@@ -149,7 +149,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         // View options
         fontSize: '100%',
         pageSize: 10,
-        highlightNewEvents: true,
+        highlightBackground: false,
+        highlightNewEvents: false,
         highlightNewerThan: '1h',
         customLastChangeFormat: false,
         lastChangeFormat: "",
@@ -366,16 +367,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                 });
 
                 if (event) {
-                  trigger.acknowledges = _.map(event.acknowledges, function (ack) {
-                    var timestamp = moment.unix(ack.clock);
-                    if (_this6.panel.customLastChangeFormat) {
-                      ack.time = timestamp.format(_this6.panel.lastChangeFormat);
-                    } else {
-                      ack.time = timestamp.format(_this6.defaultTimeFormat);
-                    }
-                    ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-                    return ack;
-                  });
+                  trigger.acknowledges = _.map(event.acknowledges, _this6.formatAcknowledge.bind(_this6));
                 }
 
                 if (!trigger.lastEvent.eventid) {
@@ -385,6 +377,22 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
               return triggerList;
             });
+          }
+        }, {
+          key: 'formatAcknowledge',
+          value: function formatAcknowledge(ack) {
+            var timestamp = moment.unix(ack.clock);
+            if (this.panel.customLastChangeFormat) {
+              ack.time = timestamp.format(this.panel.lastChangeFormat);
+            } else {
+              ack.time = timestamp.format(this.defaultTimeFormat);
+            }
+            ack.user = ack.alias || '';
+            if (ack.name || ack.surname) {
+              var fullName = (ack.name || '') + ' ' + (ack.surname || '');
+              ack.user += ' (' + fullName + ')';
+            }
+            return ack;
           }
         }, {
           key: 'filterTriggersPre',
@@ -595,6 +603,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             var grafana_user = this.contextSrv.user.name;
             var ack_message = grafana_user + ' (Grafana): ' + message;
             return this.datasourceSrv.get(trigger.datasource).then(function (datasource) {
+              var userIsEditor = _this8.contextSrv.isEditor || _this8.contextSrv.isGrafanaAdmin;
+              if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
+                return Promise.reject({ message: 'You have no permissions to acknowledge events.' });
+              }
               if (eventid) {
                 return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
               } else {
@@ -641,9 +653,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         }, {
           key: 'getAlertIconClass',
           value: function getAlertIconClass(trigger) {
-            var triggerValue = Number(trigger.value);
             var iconClass = '';
-            if (triggerValue || trigger.color) {
+            if (trigger.value === '1') {
               if (trigger.priority >= 3) {
                 iconClass = 'icon-gf-critical';
               } else {
@@ -655,6 +666,15 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
 
             if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
               iconClass += ' zabbix-trigger--blinked';
+            }
+            return iconClass;
+          }
+        }, {
+          key: 'getAlertIconClassBySeverity',
+          value: function getAlertIconClassBySeverity(triggerSeverity) {
+            var iconClass = 'icon-gf-warning';
+            if (triggerSeverity.priority >= 3) {
+              iconClass = 'icon-gf-critical';
             }
             return iconClass;
           }
@@ -674,6 +694,16 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
             }
 
             return statusClass;
+          }
+        }, {
+          key: 'getBackground',
+          value: function getBackground(trigger) {
+            var mainColor = trigger.color;
+            var secondColor = this.contextSrv.user.lightTheme ? '#dde4ed' : '#262628';
+            if (this.contextSrv.user.lightTheme) {
+              return 'linear-gradient(135deg, ' + secondColor + ', ' + mainColor + ')';
+            }
+            return 'linear-gradient(135deg, ' + mainColor + ', ' + secondColor + ')';
           }
         }, {
           key: 'isNewTrigger',

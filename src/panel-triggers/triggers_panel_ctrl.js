@@ -50,7 +50,8 @@ export const PANEL_DEFAULTS = {
   // View options
   fontSize: '100%',
   pageSize: 10,
-  highlightNewEvents: true,
+  highlightBackground: false,
+  highlightNewEvents: false,
   highlightNewerThan: '1h',
   customLastChangeFormat: false,
   lastChangeFormat: "",
@@ -242,16 +243,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         });
 
         if (event) {
-          trigger.acknowledges = _.map(event.acknowledges, ack => {
-            let timestamp = moment.unix(ack.clock);
-            if (this.panel.customLastChangeFormat) {
-              ack.time = timestamp.format(this.panel.lastChangeFormat);
-            } else {
-              ack.time = timestamp.format(this.defaultTimeFormat);
-            }
-            ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-            return ack;
-          });
+          trigger.acknowledges = _.map(event.acknowledges, this.formatAcknowledge.bind(this));
         }
 
         if (!trigger.lastEvent.eventid) {
@@ -261,6 +253,21 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
       return triggerList;
     });
+  }
+
+  formatAcknowledge(ack) {
+    let timestamp = moment.unix(ack.clock);
+    if (this.panel.customLastChangeFormat) {
+      ack.time = timestamp.format(this.panel.lastChangeFormat);
+    } else {
+      ack.time = timestamp.format(this.defaultTimeFormat);
+    }
+    ack.user = ack.alias || '';
+    if (ack.name || ack.surname) {
+      const fullName = `${ack.name || ''} ${ack.surname || ''}`;
+      ack.user += ` (${fullName})`;
+    }
+    return ack;
   }
 
   filterTriggersPre(triggerList, ds) {
@@ -446,6 +453,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
     let ack_message = grafana_user + ' (Grafana): ' + message;
     return this.datasourceSrv.get(trigger.datasource)
     .then(datasource => {
+      const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
+      if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
+        return Promise.reject({message: 'You have no permissions to acknowledge events.'});
+      }
       if (eventid) {
         return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
       } else {
@@ -490,9 +501,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getAlertIconClass(trigger) {
-    const triggerValue = Number(trigger.value);
     let iconClass = '';
-    if (triggerValue || trigger.color) {
+    if (trigger.value === '1') {
       if (trigger.priority >= 3) {
         iconClass = 'icon-gf-critical';
       } else {
@@ -504,6 +514,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
       iconClass += ' zabbix-trigger--blinked';
+    }
+    return iconClass;
+  }
+
+  getAlertIconClassBySeverity(triggerSeverity) {
+    let iconClass = 'icon-gf-warning';
+    if (triggerSeverity.priority >= 3) {
+      iconClass = 'icon-gf-critical';
     }
     return iconClass;
   }
@@ -522,6 +540,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
     }
 
     return statusClass;
+  }
+
+  getBackground(trigger) {
+    const mainColor = trigger.color;
+    const secondColor = this.contextSrv.user.lightTheme ? '#dde4ed' : '#262628';
+    if (this.contextSrv.user.lightTheme) {
+      return `linear-gradient(135deg, ${secondColor}, ${mainColor})`;
+    }
+    return `linear-gradient(135deg, ${mainColor}, ${secondColor})`;
   }
 
   isNewTrigger(trigger) {

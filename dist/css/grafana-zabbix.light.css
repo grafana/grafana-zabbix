@@ -24,8 +24,6 @@
       margin-right: 4px;
       padding: 1px 6px;
       cursor: pointer; }
-  .triggers-panel-container .alert-list-footer {
-    justify-content: flex-start; }
   .triggers-panel-container .trigger-info-block {
     display: flex; }
     .triggers-panel-container .trigger-info-block i, .triggers-panel-container .trigger-info-block a {
@@ -37,8 +35,6 @@
     font-weight: 500; }
     .triggers-panel-container .zabbix-trigger-source .gicon-datasources {
       opacity: 0.4; }
-  .triggers-panel-container .card-item-wrapper {
-    padding-left: 4px; }
 
 .zbx-trigger-card {
   position: relative;
@@ -51,11 +47,19 @@
 .zbx-maintenance-icon {
   color: #ff7941; }
 
-@keyframes zabbix-triggers-panel {
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 10px 0px #d44939;
-    border-bottom-color: rgba(212, 73, 57, 0.25); } }
+.zbx-trigger-highlighted {
+  color: #000; }
+  .zbx-trigger-highlighted .alert-rule-item__body,
+  .zbx-trigger-highlighted .alert-rule-item__header,
+  .zbx-trigger-highlighted .alert-rule-item__time,
+  .zbx-trigger-highlighted .zabbix-hostname,
+  .zbx-trigger-highlighted .zbx-description {
+    color: #000; }
+  .zbx-trigger-highlighted .alert-rule-item__text .zbx-trigger-state,
+  .zbx-trigger-highlighted .alert-rule-item__text .zbx-trigger-severity {
+    color: #000; }
+  .zbx-trigger-highlighted .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons a, .zbx-trigger-highlighted .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons i {
+    color: #000; }
 
 @keyframes zabbix-triggers-icon {
   100% {
@@ -107,8 +111,9 @@
     margin-left: 1rem; }
 
 .triggers-severity-config.gf-form-label {
-  padding-top: 4px;
-  padding-bottom: 4px; }
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-radius: 0px; }
 
 .triggers-severity-config .icon-gf {
   font-size: 200%; }

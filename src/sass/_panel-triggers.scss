@@ -38,10 +38,6 @@
     }
   }
 
-  .alert-list-footer {
-    justify-content: flex-start;
-  }
-
   .trigger-info-block {
     display: flex;
 
@@ -58,10 +54,6 @@
     .gicon-datasources {
       opacity: 0.4;
     }
-  }
-
-  .card-item-wrapper {
-    padding-left: 4px;
   }
 }
 
@@ -81,12 +73,28 @@
   color: $orange;
 }
 
+.zbx-trigger-highlighted {
+  color: $zbx-text-highlighted;
 
-@keyframes zabbix-triggers-panel {
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 10px 0px rgba($red, 1);
-    border-bottom-color: rgba($red, 0.25);
+  .alert-rule-item__body,
+  .alert-rule-item__header,
+  .alert-rule-item__time,
+  .zabbix-hostname,
+  .zbx-description {
+    color: $zbx-text-highlighted;
+  }
+
+  .alert-rule-item__text {
+    .zbx-trigger-state,
+    .zbx-trigger-severity {
+      color: $zbx-text-highlighted;
+    }
+  }
+
+  .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons {
+    a, i {
+      color: $zbx-text-highlighted;
+    }
   }
 }
 
@@ -164,8 +172,9 @@
 
 .triggers-severity-config {
   &.gf-form-label {
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-radius: 0px;
   }
 
   .icon-gf {
