@@ -237,10 +237,12 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
      * @param  {Array}  items       Array of Zabbix item objects
      * @param  {Number} timeFrom   Time in seconds
      * @param  {Number} timeTill   Time in seconds
+     * @param  {Number} options[optional] Opções extras
      * @return {Array}  Array of Zabbix history objects
      */
-    getHistory(items, timeFrom, timeTill) {
+    getHistory(items, timeFrom, timeTill, options) {
 
+      options = options || {};
       // Group items by value type and perform request for each value type
       let grouped_items = _.groupBy(items, 'value_type');
       let promises = _.map(grouped_items, (items, value_type) => {
@@ -253,6 +255,12 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
           sortorder: 'ASC',
           time_from: timeFrom
         };
+        if (typeof options.limit !== "undefined") {
+          params.limit = options.limit;
+        }
+        if (typeof options.order !== "undefined") {
+          params.sortorder = options.order;
+        }
 
         // Relative queries (e.g. last hour) don't include an end time
         if (timeTill) {

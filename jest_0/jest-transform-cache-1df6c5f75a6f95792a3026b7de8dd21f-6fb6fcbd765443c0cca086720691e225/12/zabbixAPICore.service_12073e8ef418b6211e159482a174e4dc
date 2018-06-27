@@ -1,0 +1,109 @@
+333b0a3fe17fd862b5e227c0591d9901
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.ZabbixAPIError = undefined;var _createClass = function () {function defineProperties(target, props) {for (var i = 0; i < props.length; i++) {var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ("value" in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);}}return function (Constructor, protoProps, staticProps) {if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;};}(); /**
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     * General Zabbix API methods
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     */
+
+var _angular = require('angular');var _angular2 = _interopRequireDefault(_angular);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}function _classCallCheck(instance, Constructor) {if (!(instance instanceof Constructor)) {throw new TypeError("Cannot call a class as a function");}}var
+
+ZabbixAPICoreService = function () {
+
+  /** @ngInject */
+  function ZabbixAPICoreService(backendSrv) {_classCallCheck(this, ZabbixAPICoreService);
+    this.backendSrv = backendSrv;
+  }
+
+  /**
+     * Request data from Zabbix API
+     * @return {object}  response.result
+     */_createClass(ZabbixAPICoreService, [{ key: 'request', value: function request(
+    api_url, method, params, options, auth) {
+      var requestData = {
+        jsonrpc: '2.0',
+        method: method,
+        params: params,
+        id: 1 };
+
+
+      if (auth === "") {
+        // Reject immediately if not authenticated
+        return Promise.reject(new ZabbixAPIError({ data: "Not authorised." }));
+      } else if (auth) {
+        // Set auth parameter only if it needed
+        requestData.auth = auth;
+      }
+
+      var requestOptions = {
+        method: 'POST',
+        url: api_url,
+        data: requestData,
+        headers: {
+          'Content-Type': 'application/json' } };
+
+
+
+      // Set request options for basic auth
+      if (options.basicAuth || options.withCredentials) {
+        requestOptions.withCredentials = true;
+      }
+      if (options.basicAuth) {
+        requestOptions.headers.Authorization = options.basicAuth;
+      }
+
+      return this.datasourceRequest(requestOptions);
+    } }, { key: 'datasourceRequest', value: function datasourceRequest(
+
+    requestOptions) {
+      return this.backendSrv.datasourceRequest(requestOptions).
+      then(function (response) {
+        if (!response.data) {
+          return Promise.reject(new ZabbixAPIError({ data: "General Error, no data" }));
+        } else if (response.data.error) {
+
+          // Handle Zabbix API errors
+          return Promise.reject(new ZabbixAPIError(response.data.error));
+        }
+
+        // Success
+        return response.data.result;
+      });
+    }
+
+    /**
+       * Get authentication token.
+       * @return {string}  auth token
+       */ }, { key: 'login', value: function login(
+    api_url, username, password, options) {
+      var params = {
+        user: username,
+        password: password };
+
+      return this.request(api_url, 'user.login', params, options, null);
+    }
+
+    /**
+       * Get Zabbix API version
+       * Matches the version of Zabbix starting from Zabbix 2.0.4
+       */ }, { key: 'getVersion', value: function getVersion(
+    api_url, options) {
+      return this.request(api_url, 'apiinfo.version', [], options);
+    } }]);return ZabbixAPICoreService;}();
+
+
+// Define zabbix API exception type
+var ZabbixAPIError = exports.ZabbixAPIError = function () {
+  function ZabbixAPIError(error) {_classCallCheck(this, ZabbixAPIError);
+    this.code = error.code || null;
+    this.name = error.message || "";
+    this.data = error.data || "";
+    this.message = "Zabbix API Error: " + this.name + " " + this.data;
+  }_createClass(ZabbixAPIError, [{ key: 'toString', value: function toString()
+
+    {
+      return this.name + " " + this.data;
+    } }]);return ZabbixAPIError;}();
+
+
+_angular2.default.
+module('grafana.services').
+service('zabbixAPICoreService', ZabbixAPICoreService);
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInphYmJpeEFQSUNvcmUuc2VydmljZS5qcyJdLCJuYW1lcyI6WyJaYWJiaXhBUElDb3JlU2VydmljZSIsImJhY2tlbmRTcnYiLCJhcGlfdXJsIiwibWV0aG9kIiwicGFyYW1zIiwib3B0aW9ucyIsImF1dGgiLCJyZXF1ZXN0RGF0YSIsImpzb25ycGMiLCJpZCIsIlByb21pc2UiLCJyZWplY3QiLCJaYWJiaXhBUElFcnJvciIsImRhdGEiLCJyZXF1ZXN0T3B0aW9ucyIsInVybCIsImhlYWRlcnMiLCJiYXNpY0F1dGgiLCJ3aXRoQ3JlZGVudGlhbHMiLCJBdXRob3JpemF0aW9uIiwiZGF0YXNvdXJjZVJlcXVlc3QiLCJ0aGVuIiwicmVzcG9uc2UiLCJlcnJvciIsInJlc3VsdCIsInVzZXJuYW1lIiwicGFzc3dvcmQiLCJ1c2VyIiwicmVxdWVzdCIsImNvZGUiLCJuYW1lIiwibWVzc2FnZSIsImFuZ3VsYXIiLCJtb2R1bGUiLCJzZXJ2aWNlIl0sIm1hcHBpbmdzIjoib3BCQUFBOzs7O0FBSUEsa0M7O0FBRU1BLG9COztBQUVKO0FBQ0EsZ0NBQVlDLFVBQVosRUFBd0I7QUFDdEIsU0FBS0EsVUFBTCxHQUFrQkEsVUFBbEI7QUFDRDs7QUFFRDs7OztBQUlRQyxXLEVBQVNDLE0sRUFBUUMsTSxFQUFRQyxPLEVBQVNDLEksRUFBTTtBQUM5QyxVQUFJQyxjQUFjO0FBQ2hCQyxpQkFBUyxLQURPO0FBRWhCTCxnQkFBUUEsTUFGUTtBQUdoQkMsZ0JBQVFBLE1BSFE7QUFJaEJLLFlBQUksQ0FKWSxFQUFsQjs7O0FBT0EsVUFBSUgsU0FBUyxFQUFiLEVBQWlCO0FBQ2Y7QUFDQSxlQUFPSSxRQUFRQyxNQUFSLENBQWUsSUFBSUMsY0FBSixDQUFtQixFQUFDQyxNQUFNLGlCQUFQLEVBQW5CLENBQWYsQ0FBUDtBQUNELE9BSEQsTUFHTyxJQUFJUCxJQUFKLEVBQVU7QUFDZjtBQUNBQyxvQkFBWUQsSUFBWixHQUFtQkEsSUFBbkI7QUFDRDs7QUFFRCxVQUFJUSxpQkFBaUI7QUFDbkJYLGdCQUFRLE1BRFc7QUFFbkJZLGFBQUtiLE9BRmM7QUFHbkJXLGNBQU1OLFdBSGE7QUFJbkJTLGlCQUFTO0FBQ1AsMEJBQWdCLGtCQURULEVBSlUsRUFBckI7Ozs7QUFTQTtBQUNBLFVBQUlYLFFBQVFZLFNBQVIsSUFBcUJaLFFBQVFhLGVBQWpDLEVBQWtEO0FBQ2hESix1QkFBZUksZUFBZixHQUFpQyxJQUFqQztBQUNEO0FBQ0QsVUFBSWIsUUFBUVksU0FBWixFQUF1QjtBQUNyQkgsdUJBQWVFLE9BQWYsQ0FBdUJHLGFBQXZCLEdBQXVDZCxRQUFRWSxTQUEvQztBQUNEOztBQUVELGFBQU8sS0FBS0csaUJBQUwsQ0FBdUJOLGNBQXZCLENBQVA7QUFDRCxLOztBQUVpQkEsa0IsRUFBZ0I7QUFDaEMsYUFBTyxLQUFLYixVQUFMLENBQWdCbUIsaUJBQWhCLENBQWtDTixjQUFsQztBQUNOTyxVQURNLENBQ0QsVUFBQ0MsUUFBRCxFQUFjO0FBQ2xCLFlBQUksQ0FBQ0EsU0FBU1QsSUFBZCxFQUFvQjtBQUNsQixpQkFBT0gsUUFBUUMsTUFBUixDQUFlLElBQUlDLGNBQUosQ0FBbUIsRUFBQ0MsTUFBTSx3QkFBUCxFQUFuQixDQUFmLENBQVA7QUFDRCxTQUZELE1BRU8sSUFBSVMsU0FBU1QsSUFBVCxDQUFjVSxLQUFsQixFQUF5Qjs7QUFFOUI7QUFDQSxpQkFBT2IsUUFBUUMsTUFBUixDQUFlLElBQUlDLGNBQUosQ0FBbUJVLFNBQVNULElBQVQsQ0FBY1UsS0FBakMsQ0FBZixDQUFQO0FBQ0Q7O0FBRUQ7QUFDQSxlQUFPRCxTQUFTVCxJQUFULENBQWNXLE1BQXJCO0FBQ0QsT0FaTSxDQUFQO0FBYUQ7O0FBRUQ7Ozs7QUFJTXRCLFcsRUFBU3VCLFEsRUFBVUMsUSxFQUFVckIsTyxFQUFTO0FBQzFDLFVBQUlELFNBQVM7QUFDWHVCLGNBQU1GLFFBREs7QUFFWEMsa0JBQVVBLFFBRkMsRUFBYjs7QUFJQSxhQUFPLEtBQUtFLE9BQUwsQ0FBYTFCLE9BQWIsRUFBc0IsWUFBdEIsRUFBb0NFLE1BQXBDLEVBQTRDQyxPQUE1QyxFQUFxRCxJQUFyRCxDQUFQO0FBQ0Q7O0FBRUQ7Ozs7QUFJV0gsVyxFQUFTRyxPLEVBQVM7QUFDM0IsYUFBTyxLQUFLdUIsT0FBTCxDQUFhMUIsT0FBYixFQUFzQixpQkFBdEIsRUFBeUMsRUFBekMsRUFBNkNHLE9BQTdDLENBQVA7QUFDRCxLOzs7QUFHSDtJQUNhTyxjLFdBQUFBLGM7QUFDWCwwQkFBWVcsS0FBWixFQUFtQjtBQUNqQixTQUFLTSxJQUFMLEdBQVlOLE1BQU1NLElBQU4sSUFBYyxJQUExQjtBQUNBLFNBQUtDLElBQUwsR0FBWVAsTUFBTVEsT0FBTixJQUFpQixFQUE3QjtBQUNBLFNBQUtsQixJQUFMLEdBQVlVLE1BQU1WLElBQU4sSUFBYyxFQUExQjtBQUNBLFNBQUtrQixPQUFMLEdBQWUsdUJBQXVCLEtBQUtELElBQTVCLEdBQW1DLEdBQW5DLEdBQXlDLEtBQUtqQixJQUE3RDtBQUNELEc7O0FBRVU7QUFDVCxhQUFPLEtBQUtpQixJQUFMLEdBQVksR0FBWixHQUFrQixLQUFLakIsSUFBOUI7QUFDRCxLOzs7QUFHSG1CO0FBQ0dDLE1BREgsQ0FDVSxrQkFEVjtBQUVHQyxPQUZILENBRVcsc0JBRlgsRUFFbUNsQyxvQkFGbkMiLCJmaWxlIjoiemFiYml4QVBJQ29yZS5zZXJ2aWNlLmpzIiwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBHZW5lcmFsIFphYmJpeCBBUEkgbWV0aG9kc1xuICovXG5cbmltcG9ydCBhbmd1bGFyIGZyb20gJ2FuZ3VsYXInO1xuXG5jbGFzcyBaYWJiaXhBUElDb3JlU2VydmljZSB7XG5cbiAgLyoqIEBuZ0luamVjdCAqL1xuICBjb25zdHJ1Y3RvcihiYWNrZW5kU3J2KSB7XG4gICAgdGhpcy5iYWNrZW5kU3J2ID0gYmFja2VuZFNydjtcbiAgfVxuXG4gIC8qKlxuICAgKiBSZXF1ZXN0IGRhdGEgZnJvbSBaYWJiaXggQVBJXG4gICAqIEByZXR1cm4ge29iamVjdH0gIHJlc3BvbnNlLnJlc3VsdFxuICAgKi9cbiAgcmVxdWVzdChhcGlfdXJsLCBtZXRob2QsIHBhcmFtcywgb3B0aW9ucywgYXV0aCkge1xuICAgIGxldCByZXF1ZXN0RGF0YSA9IHtcbiAgICAgIGpzb25ycGM6ICcyLjAnLFxuICAgICAgbWV0aG9kOiBtZXRob2QsXG4gICAgICBwYXJhbXM6IHBhcmFtcyxcbiAgICAgIGlkOiAxXG4gICAgfTtcblxuICAgIGlmIChhdXRoID09PSBcIlwiKSB7XG4gICAgICAvLyBSZWplY3QgaW1tZWRpYXRlbHkgaWYgbm90IGF1dGhlbnRpY2F0ZWRcbiAgICAgIHJldHVybiBQcm9taXNlLnJlamVjdChuZXcgWmFiYml4QVBJRXJyb3Ioe2RhdGE6IFwiTm90IGF1dGhvcmlzZWQuXCJ9KSk7XG4gICAgfSBlbHNlIGlmIChhdXRoKSB7XG4gICAgICAvLyBTZXQgYXV0aCBwYXJhbWV0ZXIgb25seSBpZiBpdCBuZWVkZWRcbiAgICAgIHJlcXVlc3REYXRhLmF1dGggPSBhdXRoO1xuICAgIH1cblxuICAgIGxldCByZXF1ZXN0T3B0aW9ucyA9IHtcbiAgICAgIG1ldGhvZDogJ1BPU1QnLFxuICAgICAgdXJsOiBhcGlfdXJsLFxuICAgICAgZGF0YTogcmVxdWVzdERhdGEsXG4gICAgICBoZWFkZXJzOiB7XG4gICAgICAgICdDb250ZW50LVR5cGUnOiAnYXBwbGljYXRpb24vanNvbidcbiAgICAgIH1cbiAgICB9O1xuXG4gICAgLy8gU2V0IHJlcXVlc3Qgb3B0aW9ucyBmb3IgYmFzaWMgYXV0aFxuICAgIGlmIChvcHRpb25zLmJhc2ljQXV0aCB8fCBvcHRpb25zLndpdGhDcmVkZW50aWFscykge1xuICAgICAgcmVxdWVzdE9wdGlvbnMud2l0aENyZWRlbnRpYWxzID0gdHJ1ZTtcbiAgICB9XG4gICAgaWYgKG9wdGlvbnMuYmFzaWNBdXRoKSB7XG4gICAgICByZXF1ZXN0T3B0aW9ucy5oZWFkZXJzLkF1dGhvcml6YXRpb24gPSBvcHRpb25zLmJhc2ljQXV0aDtcbiAgICB9XG5cbiAgICByZXR1cm4gdGhpcy5kYXRhc291cmNlUmVxdWVzdChyZXF1ZXN0T3B0aW9ucyk7XG4gIH1cblxuICBkYXRhc291cmNlUmVxdWVzdChyZXF1ZXN0T3B0aW9ucykge1xuICAgIHJldHVybiB0aGlzLmJhY2tlbmRTcnYuZGF0YXNvdXJjZVJlcXVlc3QocmVxdWVzdE9wdGlvbnMpXG4gICAgLnRoZW4oKHJlc3BvbnNlKSA9PiB7XG4gICAgICBpZiAoIXJlc3BvbnNlLmRhdGEpIHtcbiAgICAgICAgcmV0dXJuIFByb21pc2UucmVqZWN0KG5ldyBaYWJiaXhBUElFcnJvcih7ZGF0YTogXCJHZW5lcmFsIEVycm9yLCBubyBkYXRhXCJ9KSk7XG4gICAgICB9IGVsc2UgaWYgKHJlc3BvbnNlLmRhdGEuZXJyb3IpIHtcblxuICAgICAgICAvLyBIYW5kbGUgWmFiYml4IEFQSSBlcnJvcnNcbiAgICAgICAgcmV0dXJuIFByb21pc2UucmVqZWN0KG5ldyBaYWJiaXhBUElFcnJvcihyZXNwb25zZS5kYXRhLmVycm9yKSk7XG4gICAgICB9XG5cbiAgICAgIC8vIFN1Y2Nlc3NcbiAgICAgIHJldHVybiByZXNwb25zZS5kYXRhLnJlc3VsdDtcbiAgICB9KTtcbiAgfVxuXG4gIC8qKlxuICAgKiBHZXQgYXV0aGVudGljYXRpb24gdG9rZW4uXG4gICAqIEByZXR1cm4ge3N0cmluZ30gIGF1dGggdG9rZW5cbiAgICovXG4gIGxvZ2luKGFwaV91cmwsIHVzZXJuYW1lLCBwYXNzd29yZCwgb3B0aW9ucykge1xuICAgIGxldCBwYXJhbXMgPSB7XG4gICAgICB1c2VyOiB1c2VybmFtZSxcbiAgICAgIHBhc3N3b3JkOiBwYXNzd29yZFxuICAgIH07XG4gICAgcmV0dXJuIHRoaXMucmVxdWVzdChhcGlfdXJsLCAndXNlci5sb2dpbicsIHBhcmFtcywgb3B0aW9ucywgbnVsbCk7XG4gIH1cblxuICAvKipcbiAgICogR2V0IFphYmJpeCBBUEkgdmVyc2lvblxuICAgKiBNYXRjaGVzIHRoZSB2ZXJzaW9uIG9mIFphYmJpeCBzdGFydGluZyBmcm9tIFphYmJpeCAyLjAuNFxuICAgKi9cbiAgZ2V0VmVyc2lvbihhcGlfdXJsLCBvcHRpb25zKSB7XG4gICAgcmV0dXJuIHRoaXMucmVxdWVzdChhcGlfdXJsLCAnYXBpaW5mby52ZXJzaW9uJywgW10sIG9wdGlvbnMpO1xuICB9XG59XG5cbi8vIERlZmluZSB6YWJiaXggQVBJIGV4Y2VwdGlvbiB0eXBlXG5leHBvcnQgY2xhc3MgWmFiYml4QVBJRXJyb3Ige1xuICBjb25zdHJ1Y3RvcihlcnJvcikge1xuICAgIHRoaXMuY29kZSA9IGVycm9yLmNvZGUgfHwgbnVsbDtcbiAgICB0aGlzLm5hbWUgPSBlcnJvci5tZXNzYWdlIHx8IFwiXCI7XG4gICAgdGhpcy5kYXRhID0gZXJyb3IuZGF0YSB8fCBcIlwiO1xuICAgIHRoaXMubWVzc2FnZSA9IFwiWmFiYml4IEFQSSBFcnJvcjogXCIgKyB0aGlzLm5hbWUgKyBcIiBcIiArIHRoaXMuZGF0YTtcbiAgfVxuXG4gIHRvU3RyaW5nKCkge1xuICAgIHJldHVybiB0aGlzLm5hbWUgKyBcIiBcIiArIHRoaXMuZGF0YTtcbiAgfVxufVxuXG5hbmd1bGFyXG4gIC5tb2R1bGUoJ2dyYWZhbmEuc2VydmljZXMnKVxuICAuc2VydmljZSgnemFiYml4QVBJQ29yZVNlcnZpY2UnLCBaYWJiaXhBUElDb3JlU2VydmljZSk7XG4iXX0=

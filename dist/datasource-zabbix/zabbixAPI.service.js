@@ -213,9 +213,10 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
         }
       }, {
         key: 'getHistory',
-        value: function getHistory(items, timeFrom, timeTill) {
+        value: function getHistory(items, timeFrom, timeTill, options) {
           var _this3 = this;
 
+          options = options || {};
           // Group items by value type and perform request for each value type
           var grouped_items = _.groupBy(items, 'value_type');
           var promises = _.map(grouped_items, function (items, value_type) {
@@ -228,6 +229,12 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
               sortorder: 'ASC',
               time_from: timeFrom
             };
+            if (typeof options.limit !== "undefined") {
+              params.limit = options.limit;
+            }
+            if (typeof options.order !== "undefined") {
+              params.sortorder = options.order;
+            }
 
             // Relative queries (e.g. last hour) don't include an end time
             if (timeTill) {

@@ -407,7 +407,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
                   return _this3.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
                 });
               } else {
-                getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
+                getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo, target.options).then(function (history) {
                   return responseHandler.handleHistory(history, items);
                 });
               }

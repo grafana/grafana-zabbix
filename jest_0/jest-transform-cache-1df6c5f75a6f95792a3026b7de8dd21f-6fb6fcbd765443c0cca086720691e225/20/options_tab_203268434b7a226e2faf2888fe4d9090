@@ -1,0 +1,53 @@
+f1b783fb13643e766796a7e6f427e217
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+triggerPanelOptionsTab = triggerPanelOptionsTab;function _classCallCheck(instance, Constructor) {if (!(instance instanceof Constructor)) {throw new TypeError("Cannot call a class as a function");}} /**
+                                                                                                                                                                                                       * Grafana-Zabbix
+                                                                                                                                                                                                       * Zabbix plugin for Grafana.
+                                                                                                                                                                                                       * http://github.com/alexanderzobnin/grafana-zabbix
+                                                                                                                                                                                                       *
+                                                                                                                                                                                                       * Trigger panel.
+                                                                                                                                                                                                       * This feature sponsored by CORE IT
+                                                                                                                                                                                                       * http://www.coreit.fr
+                                                                                                                                                                                                       *
+                                                                                                                                                                                                       * Copyright 2015 Alexander Zobnin alexanderzobnin@gmail.com
+                                                                                                                                                                                                       * Licensed under the Apache License, Version 2.0
+                                                                                                                                                                                                       */var TriggerPanelOptionsCtrl = /** @ngInject */function TriggerPanelOptionsCtrl($scope) {_classCallCheck(this, TriggerPanelOptionsCtrl);$scope.editor = this;this.panelCtrl = $scope.ctrl;this.panel = this.panelCtrl.panel;this.fontSizes = ['80%', '90%', '100%', '110%', '120%', '130%', '150%', '160%', '180%', '200%', '220%', '250%'];this.ackFilters = ['all triggers', 'unacknowledged', 'acknowledged'];this.sortByFields = [{ text: 'last change', value: 'lastchange' }, { text: 'severity', value: 'priority' }];this.showEventsFields = [{ text: 'All', value: [0, 1] }, { text: 'OK', value: [0] }, { text: 'Problems', value: 1 }];};function triggerPanelOptionsTab() {return { restrict: 'E', scope: true, templateUrl: 'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/partials/options_tab.html', controller: TriggerPanelOptionsCtrl };}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm9wdGlvbnNfdGFiLmpzIl0sIm5hbWVzIjpbInRyaWdnZXJQYW5lbE9wdGlvbnNUYWIiLCJUcmlnZ2VyUGFuZWxPcHRpb25zQ3RybCIsIiRzY29wZSIsImVkaXRvciIsInBhbmVsQ3RybCIsImN0cmwiLCJwYW5lbCIsImZvbnRTaXplcyIsImFja0ZpbHRlcnMiLCJzb3J0QnlGaWVsZHMiLCJ0ZXh0IiwidmFsdWUiLCJzaG93RXZlbnRzRmllbGRzIiwicmVzdHJpY3QiLCJzY29wZSIsInRlbXBsYXRlVXJsIiwiY29udHJvbGxlciJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBdUNnQkEsc0IsR0FBQUEsc0IsdUpBdkNoQjs7Ozs7Ozs7Ozs7Nk1BYU1DLHVCLEdBRUosZ0JBQ0EsaUNBQVlDLE1BQVosRUFBb0IsZ0RBQ2xCQSxPQUFPQyxNQUFQLEdBQWdCLElBQWhCLENBQ0EsS0FBS0MsU0FBTCxHQUFpQkYsT0FBT0csSUFBeEIsQ0FDQSxLQUFLQyxLQUFMLEdBQWEsS0FBS0YsU0FBTCxDQUFlRSxLQUE1QixDQUVBLEtBQUtDLFNBQUwsR0FBaUIsQ0FBQyxLQUFELEVBQVEsS0FBUixFQUFlLE1BQWYsRUFBdUIsTUFBdkIsRUFBK0IsTUFBL0IsRUFBdUMsTUFBdkMsRUFBK0MsTUFBL0MsRUFBdUQsTUFBdkQsRUFBK0QsTUFBL0QsRUFBdUUsTUFBdkUsRUFBK0UsTUFBL0UsRUFBdUYsTUFBdkYsQ0FBakIsQ0FDQSxLQUFLQyxVQUFMLEdBQWtCLENBQ2hCLGNBRGdCLEVBRWhCLGdCQUZnQixFQUdoQixjQUhnQixDQUFsQixDQUtBLEtBQUtDLFlBQUwsR0FBb0IsQ0FDbEIsRUFBRUMsTUFBTSxhQUFSLEVBQXdCQyxPQUFPLFlBQS9CLEVBRGtCLEVBRWxCLEVBQUVELE1BQU0sVUFBUixFQUF3QkMsT0FBTyxVQUEvQixFQUZrQixDQUFwQixDQUlBLEtBQUtDLGdCQUFMLEdBQXdCLENBQ3RCLEVBQUVGLE1BQU0sS0FBUixFQUFtQkMsT0FBTyxDQUFDLENBQUQsRUFBRyxDQUFILENBQTFCLEVBRHNCLEVBRXRCLEVBQUVELE1BQU0sSUFBUixFQUFtQkMsT0FBTyxDQUFDLENBQUQsQ0FBMUIsRUFGc0IsRUFHdEIsRUFBRUQsTUFBTSxVQUFSLEVBQW9CQyxPQUFPLENBQTNCLEVBSHNCLENBQXhCLENBS0QsQyxDQUdJLFNBQVNYLHNCQUFULEdBQWtDLENBQ3ZDLE9BQU8sRUFDTGEsVUFBVSxHQURMLEVBRUxDLE9BQU8sSUFGRixFQUdMQyxhQUFhLG9GQUhSLEVBSUxDLFlBQVlmLHVCQUpQLEVBQVAsQ0FNRCIsImZpbGUiOiJvcHRpb25zX3RhYi5qcyIsInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogR3JhZmFuYS1aYWJiaXhcbiAqIFphYmJpeCBwbHVnaW4gZm9yIEdyYWZhbmEuXG4gKiBodHRwOi8vZ2l0aHViLmNvbS9hbGV4YW5kZXJ6b2JuaW4vZ3JhZmFuYS16YWJiaXhcbiAqXG4gKiBUcmlnZ2VyIHBhbmVsLlxuICogVGhpcyBmZWF0dXJlIHNwb25zb3JlZCBieSBDT1JFIElUXG4gKiBodHRwOi8vd3d3LmNvcmVpdC5mclxuICpcbiAqIENvcHlyaWdodCAyMDE1IEFsZXhhbmRlciBab2JuaW4gYWxleGFuZGVyem9ibmluQGdtYWlsLmNvbVxuICogTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMFxuICovXG5cbmNsYXNzIFRyaWdnZXJQYW5lbE9wdGlvbnNDdHJsIHtcblxuICAvKiogQG5nSW5qZWN0ICovXG4gIGNvbnN0cnVjdG9yKCRzY29wZSkge1xuICAgICRzY29wZS5lZGl0b3IgPSB0aGlzO1xuICAgIHRoaXMucGFuZWxDdHJsID0gJHNjb3BlLmN0cmw7XG4gICAgdGhpcy5wYW5lbCA9IHRoaXMucGFuZWxDdHJsLnBhbmVsO1xuXG4gICAgdGhpcy5mb250U2l6ZXMgPSBbJzgwJScsICc5MCUnLCAnMTAwJScsICcxMTAlJywgJzEyMCUnLCAnMTMwJScsICcxNTAlJywgJzE2MCUnLCAnMTgwJScsICcyMDAlJywgJzIyMCUnLCAnMjUwJSddO1xuICAgIHRoaXMuYWNrRmlsdGVycyA9IFtcbiAgICAgICdhbGwgdHJpZ2dlcnMnLFxuICAgICAgJ3VuYWNrbm93bGVkZ2VkJyxcbiAgICAgICdhY2tub3dsZWRnZWQnXG4gICAgXTtcbiAgICB0aGlzLnNvcnRCeUZpZWxkcyA9IFtcbiAgICAgIHsgdGV4dDogJ2xhc3QgY2hhbmdlJywgIHZhbHVlOiAnbGFzdGNoYW5nZScgfSxcbiAgICAgIHsgdGV4dDogJ3NldmVyaXR5JywgICAgIHZhbHVlOiAncHJpb3JpdHknIH1cbiAgICBdO1xuICAgIHRoaXMuc2hvd0V2ZW50c0ZpZWxkcyA9IFtcbiAgICAgIHsgdGV4dDogJ0FsbCcsICAgICB2YWx1ZTogWzAsMV0gfSxcbiAgICAgIHsgdGV4dDogJ09LJywgICAgICB2YWx1ZTogWzBdIH0sXG4gICAgICB7IHRleHQ6ICdQcm9ibGVtcycsIHZhbHVlOiAxIH1cbiAgICBdO1xuICB9XG59XG5cbmV4cG9ydCBmdW5jdGlvbiB0cmlnZ2VyUGFuZWxPcHRpb25zVGFiKCkge1xuICByZXR1cm4ge1xuICAgIHJlc3RyaWN0OiAnRScsXG4gICAgc2NvcGU6IHRydWUsXG4gICAgdGVtcGxhdGVVcmw6ICdwdWJsaWMvcGx1Z2lucy9hbGV4YW5kZXJ6b2JuaW4temFiYml4LWFwcC9wYW5lbC10cmlnZ2Vycy9wYXJ0aWFscy9vcHRpb25zX3RhYi5odG1sJyxcbiAgICBjb250cm9sbGVyOiBUcmlnZ2VyUGFuZWxPcHRpb25zQ3RybCxcbiAgfTtcbn1cbiJdfQ==

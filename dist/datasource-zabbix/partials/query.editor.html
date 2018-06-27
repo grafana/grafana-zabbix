@@ -92,6 +92,7 @@
   </div>
 
   <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.TEXT || ctrl.target.mode == editorMode.TRIGGERS">
+
     <!-- Select Application -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Application</label>
@@ -154,7 +155,7 @@
         <a ng-click="ctrl.toggleQueryOptions()" ng-hide="ctrl.target.mode == editorMode.TRIGGERS">
           <i class="fa fa-caret-down" ng-show="ctrl.showQueryOptions"></i>
           <i class="fa fa-caret-right" ng-hide="ctrl.showQueryOptions"></i>
-          {{ctrl.queryOptionsText}}
+          Options
         </a>
       </label>
     </div>
@@ -162,6 +163,7 @@
 
   <!-- Query options -->
   <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
+
     <div class="gf-form offset-width-7" ng-hide="ctrl.target.mode == editorMode.TRIGGERS">
       <gf-form-switch class="gf-form" label-class="width-10"
         label="Show disabled items"
@@ -175,6 +177,26 @@
         checked="ctrl.target.options.skipEmptyValues"
         on-change="ctrl.onQueryOptionChange()">
       </gf-form-switch>
+    </div>
+
+    <!-- Limit Item -->
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword width-8">Limit</label>
+      <input type="text"
+        ng-model="ctrl.target.options.limit"
+        ng-blur="ctrl.onTargetBlur()"
+        class="gf-form-input">
+    </div>
+
+    <!-- Order Item -->
+    <div class="gf-form">
+      <label class="gf-form-label query-keyword width-8">Order</label>
+      <select class="gf-form-input"
+        ng-change="ctrl.onTargetBlur()"
+        ng-model="ctrl.target.options.order">
+        <option selected="selected" value="ASC">Ascendente</option>
+        <option value="DESC">Descendente</option>
+      </select>
     </div>
   </div>
 

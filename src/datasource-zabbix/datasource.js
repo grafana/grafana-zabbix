@@ -201,7 +201,7 @@ class ZabbixAPIDatasource {
         getHistoryPromise = this.zabbix.getHistoryDB(items, timeFrom, timeTo, options)
         .then(history => this.zabbix.dbConnector.handleGrafanaTSResponse(history, items));
       } else {
-        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo)
+        getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo, target.options)
         .then(history => responseHandler.handleHistory(history, items));
       }
     }

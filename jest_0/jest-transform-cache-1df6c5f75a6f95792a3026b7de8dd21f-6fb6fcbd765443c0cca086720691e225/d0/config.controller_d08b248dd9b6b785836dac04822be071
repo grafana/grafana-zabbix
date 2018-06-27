@@ -1,0 +1,30 @@
+79988ee111964fcf30e7f5fae3c824c6
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.ZabbixDSConfigController = undefined;var _createClass = function () {function defineProperties(target, props) {for (var i = 0; i < props.length; i++) {var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ("value" in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);}}return function (Constructor, protoProps, staticProps) {if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;};}();var _lodash = require('lodash');var _lodash2 = _interopRequireDefault(_lodash);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}function _classCallCheck(instance, Constructor) {if (!(instance instanceof Constructor)) {throw new TypeError("Cannot call a class as a function");}}
+
+var SUPPORTED_SQL_DS = ['mysql', 'postgres'];
+
+var defaultConfig = {
+  dbConnection: {
+    enable: false } };var
+
+
+
+ZabbixDSConfigController = exports.ZabbixDSConfigController = function () {
+  /** @ngInject */
+  function ZabbixDSConfigController($scope, $injector, datasourceSrv) {_classCallCheck(this, ZabbixDSConfigController);
+    this.datasourceSrv = datasourceSrv;
+
+    _lodash2.default.defaults(this.current.jsonData, defaultConfig);
+    this.sqlDataSources = this.getSupportedSQLDataSources();
+  }_createClass(ZabbixDSConfigController, [{ key: 'getSupportedSQLDataSources', value: function getSupportedSQLDataSources()
+
+    {
+      var datasources = this.datasourceSrv.getAll();
+      return _lodash2.default.filter(datasources, function (ds) {
+        return _lodash2.default.includes(SUPPORTED_SQL_DS, ds.type);
+      });
+    } }]);return ZabbixDSConfigController;}();
+
+
+ZabbixDSConfigController.templateUrl = 'datasource-zabbix/partials/config.html';
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImNvbmZpZy5jb250cm9sbGVyLmpzIl0sIm5hbWVzIjpbIlNVUFBPUlRFRF9TUUxfRFMiLCJkZWZhdWx0Q29uZmlnIiwiZGJDb25uZWN0aW9uIiwiZW5hYmxlIiwiWmFiYml4RFNDb25maWdDb250cm9sbGVyIiwiJHNjb3BlIiwiJGluamVjdG9yIiwiZGF0YXNvdXJjZVNydiIsIl8iLCJkZWZhdWx0cyIsImN1cnJlbnQiLCJqc29uRGF0YSIsInNxbERhdGFTb3VyY2VzIiwiZ2V0U3VwcG9ydGVkU1FMRGF0YVNvdXJjZXMiLCJkYXRhc291cmNlcyIsImdldEFsbCIsImZpbHRlciIsImluY2x1ZGVzIiwiZHMiLCJ0eXBlIiwidGVtcGxhdGVVcmwiXSwibWFwcGluZ3MiOiI2cEJBQUEsZ0M7O0FBRUEsSUFBTUEsbUJBQW1CLENBQUMsT0FBRCxFQUFVLFVBQVYsQ0FBekI7O0FBRUEsSUFBTUMsZ0JBQWdCO0FBQ3BCQyxnQkFBYztBQUNaQyxZQUFRLEtBREksRUFETSxFQUF0QixDOzs7O0FBTWFDLHdCLFdBQUFBLHdCO0FBQ1g7QUFDQSxvQ0FBWUMsTUFBWixFQUFvQkMsU0FBcEIsRUFBK0JDLGFBQS9CLEVBQThDO0FBQzVDLFNBQUtBLGFBQUwsR0FBcUJBLGFBQXJCOztBQUVBQyxxQkFBRUMsUUFBRixDQUFXLEtBQUtDLE9BQUwsQ0FBYUMsUUFBeEIsRUFBa0NWLGFBQWxDO0FBQ0EsU0FBS1csY0FBTCxHQUFzQixLQUFLQywwQkFBTCxFQUF0QjtBQUNELEc7O0FBRTRCO0FBQzNCLFVBQUlDLGNBQWMsS0FBS1AsYUFBTCxDQUFtQlEsTUFBbkIsRUFBbEI7QUFDQSxhQUFPUCxpQkFBRVEsTUFBRixDQUFTRixXQUFULEVBQXNCLGNBQU07QUFDakMsZUFBT04saUJBQUVTLFFBQUYsQ0FBV2pCLGdCQUFYLEVBQTZCa0IsR0FBR0MsSUFBaEMsQ0FBUDtBQUNELE9BRk0sQ0FBUDtBQUdELEs7OztBQUdIZix5QkFBeUJnQixXQUF6QixHQUF1Qyx3Q0FBdkMiLCJmaWxlIjoiY29uZmlnLmNvbnRyb2xsZXIuanMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgXyBmcm9tICdsb2Rhc2gnO1xuXG5jb25zdCBTVVBQT1JURURfU1FMX0RTID0gWydteXNxbCcsICdwb3N0Z3JlcyddO1xuXG5jb25zdCBkZWZhdWx0Q29uZmlnID0ge1xuICBkYkNvbm5lY3Rpb246IHtcbiAgICBlbmFibGU6IGZhbHNlLFxuICB9XG59O1xuXG5leHBvcnQgY2xhc3MgWmFiYml4RFNDb25maWdDb250cm9sbGVyIHtcbiAgLyoqIEBuZ0luamVjdCAqL1xuICBjb25zdHJ1Y3Rvcigkc2NvcGUsICRpbmplY3RvciwgZGF0YXNvdXJjZVNydikge1xuICAgIHRoaXMuZGF0YXNvdXJjZVNydiA9IGRhdGFzb3VyY2VTcnY7XG5cbiAgICBfLmRlZmF1bHRzKHRoaXMuY3VycmVudC5qc29uRGF0YSwgZGVmYXVsdENvbmZpZyk7XG4gICAgdGhpcy5zcWxEYXRhU291cmNlcyA9IHRoaXMuZ2V0U3VwcG9ydGVkU1FMRGF0YVNvdXJjZXMoKTtcbiAgfVxuXG4gIGdldFN1cHBvcnRlZFNRTERhdGFTb3VyY2VzKCkge1xuICAgIGxldCBkYXRhc291cmNlcyA9IHRoaXMuZGF0YXNvdXJjZVNydi5nZXRBbGwoKTtcbiAgICByZXR1cm4gXy5maWx0ZXIoZGF0YXNvdXJjZXMsIGRzID0+IHtcbiAgICAgIHJldHVybiBfLmluY2x1ZGVzKFNVUFBPUlRFRF9TUUxfRFMsIGRzLnR5cGUpO1xuICAgIH0pO1xuICB9XG59XG5cblphYmJpeERTQ29uZmlnQ29udHJvbGxlci50ZW1wbGF0ZVVybCA9ICdkYXRhc291cmNlLXphYmJpeC9wYXJ0aWFscy9jb25maWcuaHRtbCc7XG4iXX0=
