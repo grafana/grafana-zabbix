@@ -18,12 +18,12 @@ export const DEFAULT_TARGET = {
 };
 
 export const DEFAULT_SEVERITY = [
-  { priority: 0, severity: 'Not classified',  color: 'rgb(108, 108, 108)', show: true},
-  { priority: 1, severity: 'Information',     color: 'rgb(120, 158, 183)', show: true},
-  { priority: 2, severity: 'Warning',         color: 'rgb(175, 180, 36)', show: true},
-  { priority: 3, severity: 'Average',         color: 'rgb(255, 137, 30)', show: true},
-  { priority: 4, severity: 'High',            color: 'rgb(255, 101, 72)', show: true},
-  { priority: 5, severity: 'Disaster',        color: 'rgb(215, 0, 0)', show: true},
+  {priority: 0, severity: 'Not classified', color: 'rgb(108, 108, 108)', show: true},
+  {priority: 1, severity: 'Information', color: 'rgb(120, 158, 183)', show: true},
+  {priority: 2, severity: 'Warning', color: 'rgb(175, 180, 36)', show: true},
+  {priority: 3, severity: 'Average', color: 'rgb(255, 137, 30)', show: true},
+  {priority: 4, severity: 'High', color: 'rgb(255, 101, 72)', show: true},
+  {priority: 5, severity: 'Disaster', color: 'rgb(215, 0, 0)', show: true},
 ];
 
 const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
@@ -44,8 +44,8 @@ export const PANEL_DEFAULTS = {
   // Options
   hostsInMaintenance: true,
   showTriggers: 'all triggers',
-  sortTriggersBy: { text: 'last change', value: 'lastchange' },
-  showEvents: { text: 'Problems', value: '1' },
+  sortTriggersBy: {text: 'last change', value: 'lastchange'},
+  showEvents: {text: 'Problems', value: '1'},
   limit: 100,
   // View options
   fontSize: '100%',
@@ -106,10 +106,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
     let promises = _.map(this.panel.datasources, (ds) => {
       // Load datasource
       return this.datasourceSrv.get(ds)
-      .then(datasource => {
-        this.datasources[ds] = datasource;
-        return datasource;
-      });
+          .then(datasource => {
+            this.datasources[ds] = datasource;
+            return datasource;
+          });
     });
     return Promise.all(promises);
   }
@@ -135,7 +135,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   onRefresh() {
     // ignore fetching data if another panel is in fullscreen
-    if (this.otherPanelInFullscreenMode()) { return; }
+    if (this.otherPanelInFullscreenMode()) {
+      return;
+    }
 
     // clear loading/error state
     delete this.error;
@@ -144,35 +146,35 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.pageIndex = 0;
 
     return this.getTriggers()
-    .then(zabbixTriggers => {
-      // Notify panel that request is finished
-      this.loading = false;
-      this.setTimeQueryEnd();
+        .then(zabbixTriggers => {
+          // Notify panel that request is finished
+          this.loading = false;
+          this.setTimeQueryEnd();
 
-      this.render(zabbixTriggers);
-    })
-    .catch(err => {
-      // if cancelled  keep loading set to true
-      if (err.cancelled) {
-        console.log('Panel request cancelled', err);
-        return;
-      }
+          this.render(zabbixTriggers);
+        })
+        .catch(err => {
+          // if cancelled  keep loading set to true
+          if (err.cancelled) {
+            console.log('Panel request cancelled', err);
+            return;
+          }
 
-      this.loading = false;
-      this.error = err.message || "Request Error";
+          this.loading = false;
+          this.error = err.message || "Request Error";
 
-      if (err.data) {
-        if (err.data.message) {
-          this.error = err.data.message;
-        }
-        if (err.data.error) {
-          this.error = err.data.error;
-        }
-      }
+          if (err.data) {
+            if (err.data.message) {
+              this.error = err.data.message;
+            }
+            if (err.data.error) {
+              this.error = err.data.error;
+            }
+          }
 
-      this.events.emit('data-error', err);
-      console.log('Panel data error:', err);
-    });
+          this.events.emit('data-error', err);
+          console.log('Panel data error:', err);
+        });
   }
 
   render(zabbixTriggers) {
@@ -197,34 +199,34 @@ export class TriggerPanelCtrl extends PanelCtrl {
   getTriggers() {
     let promises = _.map(this.panel.datasources, (ds) => {
       return this.datasourceSrv.get(ds)
-      .then(datasource => {
-        var zabbix = datasource.zabbix;
-        var showEvents = this.panel.showEvents.value;
-        var triggerFilter = this.panel.targets[ds];
+          .then(datasource => {
+            var zabbix = datasource.zabbix;
+            var showEvents = this.panel.showEvents.value;
+            var triggerFilter = this.panel.targets[ds];
 
-        // Replace template variables
-        var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
-        var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
-        var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
+            // Replace template variables
+            var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
+            var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
+            var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
-        let triggersOptions = {
-          showTriggers: showEvents
-        };
+            let triggersOptions = {
+              showTriggers: showEvents
+            };
 
-        return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
-      }).then((triggers) => {
-        return this.getAcknowledges(triggers, ds);
-      }).then((triggers) => {
-        return this.setMaintenanceStatus(triggers);
-      }).then((triggers) => {
-        return this.filterTriggersPre(triggers, ds);
-      }).then((triggers) => {
-        return this.addTriggerDataSource(triggers, ds);
-      });
+            return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
+          }).then((triggers) => {
+            return this.getAcknowledges(triggers, ds);
+          }).then((triggers) => {
+            return this.setMaintenanceStatus(triggers);
+          }).then((triggers) => {
+            return this.filterTriggersPre(triggers, ds);
+          }).then((triggers) => {
+            return this.addTriggerDataSource(triggers, ds, this.datasources[ds].url);
+          });
     });
 
     return Promise.all(promises)
-    .then(results => _.flatten(results));
+        .then(results => _.flatten(results));
   }
 
   getAcknowledges(triggerList, ds) {
@@ -234,25 +236,25 @@ export class TriggerPanelCtrl extends PanelCtrl {
     });
 
     return this.datasources[ds].zabbix.getAcknowledges(eventids)
-    .then(events => {
+        .then(events => {
 
-      // Map events to triggers
-      _.each(triggerList, trigger => {
-        var event = _.find(events, event => {
-          return event.eventid === trigger.lastEvent.eventid;
+          // Map events to triggers
+          _.each(triggerList, trigger => {
+            var event = _.find(events, event => {
+              return event.eventid === trigger.lastEvent.eventid;
+            });
+
+            if (event) {
+              trigger.acknowledges = _.map(event.acknowledges, this.formatAcknowledge.bind(this));
+            }
+
+            if (!trigger.lastEvent.eventid) {
+              trigger.lastEvent = null;
+            }
+          });
+
+          return triggerList;
         });
-
-        if (event) {
-          trigger.acknowledges = _.map(event.acknowledges, this.formatAcknowledge.bind(this));
-        }
-
-        if (!trigger.lastEvent.eventid) {
-          trigger.lastEvent = null;
-        }
-      });
-
-      return triggerList;
-    });
   }
 
   formatAcknowledge(ack) {
@@ -330,9 +332,18 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return triggers;
   }
 
-  addTriggerDataSource(triggers, ds) {
+  addTriggerDataSource(triggers, ds, ds_url) {
     _.each(triggers, (trigger) => {
       trigger.datasource = ds;
+      if (trigger.hosts) {
+        let hostids_url = 'filter_set=1';
+        let uniqueHosts = trigger.hosts.map(item => item.hostid)
+            .filter((value, index, self) => self.indexOf(value) === index);
+        uniqueHosts.forEach(function (item) {
+          hostids_url += '&hostids[]=' + item;
+        });
+        trigger.datasource_url = ds_url.replace('api_jsonrpc.php', 'latest.php?' + hostids_url);
+      }
     });
     return triggers;
   }
@@ -452,23 +463,23 @@ export class TriggerPanelCtrl extends PanelCtrl {
     let grafana_user = this.contextSrv.user.name;
     let ack_message = grafana_user + ' (Grafana): ' + message;
     return this.datasourceSrv.get(trigger.datasource)
-    .then(datasource => {
-      const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
-      if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
-        return Promise.reject({message: 'You have no permissions to acknowledge events.'});
-      }
-      if (eventid) {
-        return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
-      } else {
-        return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
-      }
-    })
-    .then(this.onRefresh.bind(this))
-    .catch((err) => {
-      this.error = err.message || "Acknowledge Error";
-      this.events.emit('data-error', err);
-      console.log('Panel data error:', err);
-    });
+        .then(datasource => {
+          const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
+          if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
+            return Promise.reject({message: 'You have no permissions to acknowledge events.'});
+          }
+          if (eventid) {
+            return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
+          } else {
+            return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
+          }
+        })
+        .then(this.onRefresh.bind(this))
+        .catch((err) => {
+          this.error = err.message || "Acknowledge Error";
+          this.events.emit('data-error', err);
+          console.log('Panel data error:', err);
+        });
   }
 
   getCurrentTriggersPage() {
@@ -583,7 +594,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     function switchPage(e) {
       let el = $(e.currentTarget);
-      ctrl.pageIndex = (parseInt(el.text(), 10)-1);
+      ctrl.pageIndex = (parseInt(el.text(), 10) - 1);
 
       let pageSize = panel.pageSize || 10;
       let startPos = ctrl.pageIndex * pageSize;
@@ -611,7 +622,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
       for (let i = startPage; i < endPage; i++) {
         let activeClass = i === ctrl.pageIndex ? 'active' : '';
-        let pageLinkElem = $('<li><a class="triggers-panel-page-link pointer ' + activeClass + '">' + (i+1) + '</a></li>');
+        let pageLinkElem = $('<li><a class="triggers-panel-page-link pointer ' + activeClass + '">' + (i + 1) + '</a></li>');
         paginationList.append(pageLinkElem);
       }
 
@@ -652,7 +663,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       ctrl.renderingCompleted();
     }
 
-    let unbindDestroy = scope.$on('$destroy', function() {
+    let unbindDestroy = scope.$on('$destroy', function () {
       elem.off('click', '.triggers-panel-page-link');
       unbindDestroy();
     });
@@ -663,11 +674,11 @@ TriggerPanelCtrl.templateUrl = 'public/plugins/alexanderzobnin-zabbix-app/panel-
 
 function filterTriggers(triggers, triggerFilter) {
   if (utils.isRegex(triggerFilter)) {
-    return _.filter(triggers, function(trigger) {
+    return _.filter(triggers, function (trigger) {
       return utils.buildRegex(triggerFilter).test(trigger.description);
     });
   } else {
-    return _.filter(triggers, function(trigger) {
+    return _.filter(triggers, function (trigger) {
       return trigger.description === triggerFilter;
     });
   }
