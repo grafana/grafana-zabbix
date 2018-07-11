@@ -221,7 +221,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
           }).then((triggers) => {
             return this.filterTriggersPre(triggers, ds);
           }).then((triggers) => {
-            return this.addTriggerDataSource(triggers, ds, this.datasources[ds].url);
+            let ds_url = this.datasources[ds].url || 'http://localhost/zabbix/api_jsonrpc.php';
+            return this.addTriggerDataSource(triggers, ds, ds_url);
           });
     });
 

@@ -340,7 +340,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               }).then(function (triggers) {
                 return _this5.filterTriggersPre(triggers, ds);
               }).then(function (triggers) {
-                return _this5.addTriggerDataSource(triggers, ds, _this5.datasources[ds].url);
+                var ds_url = _this5.datasources[ds].url || 'http://localhost/zabbix/api_jsonrpc.php';
+                return _this5.addTriggerDataSource(triggers, ds, ds_url);
               });
             });
 
