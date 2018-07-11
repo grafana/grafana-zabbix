@@ -16,7 +16,7 @@
             <div class="alert-rule-item__header">
 
               <p class="alert-rule-item__name">
-                <span class="zabbix-trigger-name">{{trigger.description}}</span>
+                <span class="zabbix-trigger-name"><a href="{{trigger.datasource_url}}" target="_blank" title="Open in Zabbix">{{trigger.description}}</a></span>
                 <span class="zabbix-hostname" ng-if="ctrl.panel.hostField || ctrl.panel.hostTechNameField">
                   <i ng-if="trigger.maintenance" class="fa fa-wrench zbx-maintenance-icon"></i>
                   {{ ctrl.formatHostName(trigger) }}

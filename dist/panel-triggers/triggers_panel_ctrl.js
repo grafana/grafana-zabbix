@@ -340,7 +340,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               }).then(function (triggers) {
                 return _this5.filterTriggersPre(triggers, ds);
               }).then(function (triggers) {
-                return _this5.addTriggerDataSource(triggers, ds);
+                return _this5.addTriggerDataSource(triggers, ds, _this5.datasources[ds].url);
               });
             });
 
@@ -465,9 +465,21 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           }
         }, {
           key: 'addTriggerDataSource',
-          value: function addTriggerDataSource(triggers, ds) {
+          value: function addTriggerDataSource(triggers, ds, ds_url) {
             _.each(triggers, function (trigger) {
               trigger.datasource = ds;
+              if (trigger.hosts) {
+                var hostids_url = 'filter_set=1';
+                var uniqueHosts = trigger.hosts.map(function (item) {
+                  return item.hostid;
+                }).filter(function (value, index, self) {
+                  return self.indexOf(value) === index;
+                });
+                uniqueHosts.forEach(function (item) {
+                  hostids_url += '&hostids[]=' + item;
+                });
+                trigger.datasource_url = ds_url.replace('api_jsonrpc.php', 'latest.php?' + hostids_url);
+              }
             });
             return triggers;
           }
