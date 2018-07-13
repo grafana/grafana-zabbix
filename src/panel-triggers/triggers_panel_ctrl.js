@@ -69,12 +69,13 @@ const triggerStatusMap = {
 export class TriggerPanelCtrl extends PanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
+  constructor($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv, backendSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.contextSrv = contextSrv;
     this.dashboardSrv = dashboardSrv;
+    this.backendSrv = backendSrv;
     this.scope = $scope;
     this.$timeout = $timeout;
 
@@ -213,6 +214,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
               showTriggers: showEvents
             };
 
+            this.backendSrv.get('/api/datasources/').then(result => {
+              var ds = _.find(result, {'name': ds});
+              if (ds){this.dsurl = ds.url;}
+              else {this.dsurl = 'http://localhost/zabbix/api_jsonrpc.php';}
+            });
+
             return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
           }).then((triggers) => {
             return this.getAcknowledges(triggers, ds);
@@ -221,8 +228,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
           }).then((triggers) => {
             return this.filterTriggersPre(triggers, ds);
           }).then((triggers) => {
-            let ds_url = this.datasources[ds].url || 'http://localhost/zabbix/api_jsonrpc.php';
-            return this.addTriggerDataSource(triggers, ds, ds_url);
+            return this.addTriggerDataSource(triggers, ds, this.dsurl);
           });
     });
 
@@ -333,17 +339,17 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return triggers;
   }
 
-  addTriggerDataSource(triggers, ds, ds_url) {
+  addTriggerDataSource(triggers, ds, dsurl) {
     _.each(triggers, (trigger) => {
       trigger.datasource = ds;
       if (trigger.hosts) {
-        let hostids_url = 'filter_set=1';
+        let hostidsUrl = 'filter_set=1';
         let uniqueHosts = trigger.hosts.map(item => item.hostid)
             .filter((value, index, self) => self.indexOf(value) === index);
         uniqueHosts.forEach(function (item) {
-          hostids_url += '&hostids[]=' + item;
+          hostidsUrl += '&hostids[]=' + item;
         });
-        trigger.datasource_url = ds_url.replace('api_jsonrpc.php', 'latest.php?' + hostids_url);
+        trigger.datasource_url = dsurl.replace('api_jsonrpc.php', 'latest.php?' + hostidsUrl);
       }
     });
     return triggers;

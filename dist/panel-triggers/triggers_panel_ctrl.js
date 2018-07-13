@@ -171,7 +171,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
         _inherits(TriggerPanelCtrl, _PanelCtrl);
 
         /** @ngInject */
-        function TriggerPanelCtrl($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
+        function TriggerPanelCtrl($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv, backendSrv) {
           _classCallCheck(this, TriggerPanelCtrl);
 
           var _this = _possibleConstructorReturn(this, (TriggerPanelCtrl.__proto__ || Object.getPrototypeOf(TriggerPanelCtrl)).call(this, $scope, $injector));
@@ -180,6 +180,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           _this.templateSrv = templateSrv;
           _this.contextSrv = contextSrv;
           _this.dashboardSrv = dashboardSrv;
+          _this.backendSrv = backendSrv;
           _this.scope = $scope;
           _this.$timeout = $timeout;
 
@@ -332,6 +333,15 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                   showTriggers: showEvents
                 };
 
+                _this5.backendSrv.get('/api/datasources/').then(function (result) {
+                  var ds = _.find(result, { 'name': ds });
+                  if (ds) {
+                    _this5.dsurl = ds.url;
+                  } else {
+                    _this5.dsurl = 'http://localhost/zabbix/api_jsonrpc.php';
+                  }
+                });
+
                 return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
               }).then(function (triggers) {
                 return _this5.getAcknowledges(triggers, ds);
@@ -340,8 +350,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               }).then(function (triggers) {
                 return _this5.filterTriggersPre(triggers, ds);
               }).then(function (triggers) {
-                var ds_url = _this5.datasources[ds].url || 'http://localhost/zabbix/api_jsonrpc.php';
-                return _this5.addTriggerDataSource(triggers, ds, ds_url);
+                return _this5.addTriggerDataSource(triggers, ds, _this5.dsurl);
               });
             });
 
@@ -466,20 +475,20 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           }
         }, {
           key: 'addTriggerDataSource',
-          value: function addTriggerDataSource(triggers, ds, ds_url) {
+          value: function addTriggerDataSource(triggers, ds, dsurl) {
             _.each(triggers, function (trigger) {
               trigger.datasource = ds;
               if (trigger.hosts) {
-                var hostids_url = 'filter_set=1';
+                var hostidsUrl = 'filter_set=1';
                 var uniqueHosts = trigger.hosts.map(function (item) {
                   return item.hostid;
                 }).filter(function (value, index, self) {
                   return self.indexOf(value) === index;
                 });
                 uniqueHosts.forEach(function (item) {
-                  hostids_url += '&hostids[]=' + item;
+                  hostidsUrl += '&hostids[]=' + item;
                 });
-                trigger.datasource_url = ds_url.replace('api_jsonrpc.php', 'latest.php?' + hostids_url);
+                trigger.datasource_url = dsurl.replace('api_jsonrpc.php', 'latest.php?' + hostidsUrl);
               }
             });
             return triggers;
