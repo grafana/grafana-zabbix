@@ -318,6 +318,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           value: function getTriggers() {
             var _this5 = this;
 
+            var datasources;
             var promises = _.map(this.panel.datasources, function (ds) {
               return _this5.datasourceSrv.get(ds).then(function (datasource) {
                 var zabbix = datasource.zabbix;
@@ -334,12 +335,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                 };
 
                 _this5.backendSrv.get('/api/datasources/').then(function (result) {
-                  var ds = _.find(result, { 'name': ds });
-                  if (ds) {
-                    _this5.dsurl = ds.url;
-                  } else {
-                    _this5.dsurl = 'http://localhost/zabbix/api_jsonrpc.php';
-                  }
+                  datasources = result;
                 });
 
                 return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
@@ -350,7 +346,14 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               }).then(function (triggers) {
                 return _this5.filterTriggersPre(triggers, ds);
               }).then(function (triggers) {
-                return _this5.addTriggerDataSource(triggers, ds, _this5.dsurl);
+                var dsurl;
+                var currentDS = _.find(datasources, { 'name': ds });
+                if (currentDS) {
+                  dsurl = currentDS.url;
+                } else {
+                  dsurl = 'http://localhost/zabbix/api_jsonrpc.php';
+                }
+                return _this5.addTriggerDataSource(triggers, ds, dsurl);
               });
             });
 

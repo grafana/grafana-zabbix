@@ -198,6 +198,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getTriggers() {
+    var datasources;
     let promises = _.map(this.panel.datasources, (ds) => {
       return this.datasourceSrv.get(ds)
           .then(datasource => {
@@ -214,10 +215,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
               showTriggers: showEvents
             };
 
-            this.backendSrv.get('/api/datasources/').then(result => {
-              var ds = _.find(result, {'name': ds});
-              if (ds){this.dsurl = ds.url;}
-              else {this.dsurl = 'http://localhost/zabbix/api_jsonrpc.php';}
+            this.backendSrv.get('/api/datasources/').then(function (result) {
+              datasources = result;
             });
 
             return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
@@ -228,7 +227,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
           }).then((triggers) => {
             return this.filterTriggersPre(triggers, ds);
           }).then((triggers) => {
-            return this.addTriggerDataSource(triggers, ds, this.dsurl);
+            var dsurl;
+            var currentDS = _.find(datasources, {'name': ds});
+            if (currentDS) {
+              dsurl = currentDS.url;
+            } else {
+              dsurl = 'http://localhost/zabbix/api_jsonrpc.php';
+            }
+            return this.addTriggerDataSource(triggers, ds, dsurl);
           });
     });
 
