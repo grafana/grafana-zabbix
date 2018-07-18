@@ -5,7 +5,7 @@ import {PANEL_DEFAULTS, DEFAULT_TARGET} from '../triggers_panel_ctrl';
 
 describe('TriggerPanelCtrl', () => {
   let ctx = {};
-  let datasourceSrvMock, zabbixDSMock, backendSrvMock;
+  let datasourceSrvMock, zabbixDSMock;
   let timeoutMock = () => {};
   let createPanelCtrl;
 
@@ -29,10 +29,7 @@ describe('TriggerPanelCtrl', () => {
       },
       get: () => Promise.resolve(zabbixDSMock)
     };
-    backendSrvMock = {
-      get: () => Promise.resolve(zabbixDSMock)
-    };
-    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {}, backendSrvMock);
+    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
 
     const getTriggersResp = [
       [

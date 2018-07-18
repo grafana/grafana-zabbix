@@ -86,5 +86,16 @@
           placeholder="tag1:value1, tag2:value2">
       </div>
     </div>
+    <div class="gf-form-inline">
+      <div class="gf-form max-width-20">
+        <label class="gf-form-label query-keyword width-7">Zabbix URL</label>
+        <input type="text"
+          ng-model="ctrl.panel.targets[ds].zabbixurl.filter"
+          ng-blur="editor.parseTarget()"
+          placeholder="http://zabbix_url/zabbix/"
+          class="gf-form-input"
+          empty-to-null>
+      </div>
+    </div>
   </div>
 </div>

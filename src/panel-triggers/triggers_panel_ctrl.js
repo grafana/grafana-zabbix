@@ -198,7 +198,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getTriggers() {
-    var datasources;
     let promises = _.map(this.panel.datasources, (ds) => {
       return this.datasourceSrv.get(ds)
           .then(datasource => {
@@ -215,10 +214,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
               showTriggers: showEvents
             };
 
-            this.backendSrv.get('/api/datasources/').then(function (result) {
-              datasources = result;
-            });
-
             return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
           }).then((triggers) => {
             return this.getAcknowledges(triggers, ds);
@@ -227,14 +222,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
           }).then((triggers) => {
             return this.filterTriggersPre(triggers, ds);
           }).then((triggers) => {
-            var dsurl;
-            var currentDS = _.find(datasources, {'name': ds});
-            if (currentDS) {
-              dsurl = currentDS.url;
-            } else {
-              dsurl = 'http://localhost/zabbix/api_jsonrpc.php';
-            }
-            return this.addTriggerDataSource(triggers, ds, dsurl);
+            return this.addTriggerDataSource(triggers, ds);
           });
     });
 
@@ -345,17 +333,27 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return triggers;
   }
 
-  addTriggerDataSource(triggers, ds, dsurl) {
+  addTriggerDataSource(triggers, ds) {
+    var dsurl = this.panel.targets[ds].zabbixurl;
+
     _.each(triggers, (trigger) => {
       trigger.datasource = ds;
-      if (trigger.hosts) {
-        let hostidsUrl = 'filter_set=1';
-        let uniqueHosts = trigger.hosts.map(item => item.hostid)
-            .filter((value, index, self) => self.indexOf(value) === index);
-        uniqueHosts.forEach(function (item) {
-          hostidsUrl += '&hostids[]=' + item;
-        });
-        trigger.datasource_url = dsurl.replace('api_jsonrpc.php', 'latest.php?' + hostidsUrl);
+      if (dsurl) {
+        var baseUrl = dsurl.filter;
+        if (trigger.hosts) {
+          let hostidsUrl = 'filter_set=1';
+          let uniqueHosts = trigger.hosts.map(item => item.hostid)
+              .filter((value, index, self) => self.indexOf(value) === index);
+          uniqueHosts.forEach(function (item) {
+            hostidsUrl += '&hostids[]=' + item;
+          });
+          trigger.datasource_url = baseUrl + 'latest.php?' + hostidsUrl;
+        }
+        else {
+          trigger.datasource_url = baseUrl;
+        }
+      } else {
+        trigger.datasource_url = null;
       }
     });
     return triggers;

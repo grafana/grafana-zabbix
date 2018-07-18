@@ -318,7 +318,6 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           value: function getTriggers() {
             var _this5 = this;
 
-            var datasources;
             var promises = _.map(this.panel.datasources, function (ds) {
               return _this5.datasourceSrv.get(ds).then(function (datasource) {
                 var zabbix = datasource.zabbix;
@@ -334,10 +333,6 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                   showTriggers: showEvents
                 };
 
-                _this5.backendSrv.get('/api/datasources/').then(function (result) {
-                  datasources = result;
-                });
-
                 return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
               }).then(function (triggers) {
                 return _this5.getAcknowledges(triggers, ds);
@@ -346,14 +341,7 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
               }).then(function (triggers) {
                 return _this5.filterTriggersPre(triggers, ds);
               }).then(function (triggers) {
-                var dsurl;
-                var currentDS = _.find(datasources, { 'name': ds });
-                if (currentDS) {
-                  dsurl = currentDS.url;
-                } else {
-                  dsurl = 'http://localhost/zabbix/api_jsonrpc.php';
-                }
-                return _this5.addTriggerDataSource(triggers, ds, dsurl);
+                return _this5.addTriggerDataSource(triggers, ds);
               });
             });
 
@@ -478,20 +466,29 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           }
         }, {
           key: 'addTriggerDataSource',
-          value: function addTriggerDataSource(triggers, ds, dsurl) {
+          value: function addTriggerDataSource(triggers, ds) {
+            var dsurl = this.panel.targets[ds].zabbixurl;
+
             _.each(triggers, function (trigger) {
               trigger.datasource = ds;
-              if (trigger.hosts) {
-                var hostidsUrl = 'filter_set=1';
-                var uniqueHosts = trigger.hosts.map(function (item) {
-                  return item.hostid;
-                }).filter(function (value, index, self) {
-                  return self.indexOf(value) === index;
-                });
-                uniqueHosts.forEach(function (item) {
-                  hostidsUrl += '&hostids[]=' + item;
-                });
-                trigger.datasource_url = dsurl.replace('api_jsonrpc.php', 'latest.php?' + hostidsUrl);
+              if (dsurl) {
+                var baseUrl = dsurl.filter;
+                if (trigger.hosts) {
+                  var hostidsUrl = 'filter_set=1';
+                  var uniqueHosts = trigger.hosts.map(function (item) {
+                    return item.hostid;
+                  }).filter(function (value, index, self) {
+                    return self.indexOf(value) === index;
+                  });
+                  uniqueHosts.forEach(function (item) {
+                    hostidsUrl += '&hostids[]=' + item;
+                  });
+                  trigger.datasource_url = baseUrl + 'latest.php?' + hostidsUrl;
+                } else {
+                  trigger.datasource_url = baseUrl;
+                }
+              } else {
+                trigger.datasource_url = null;
               }
             });
             return triggers;
