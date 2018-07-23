@@ -244,9 +244,8 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
 
           // Direct DB Connection options
-          var dbConnectionOptions = jsonData.dbConnection || {};
-          this.enableDirectDBConnection = dbConnectionOptions.enable;
-          this.sqlDatasourceId = dbConnectionOptions.datasourceId;
+          this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
+          this.sqlDatasourceId = jsonData.dbConnectionDatasourceId;
 
           var zabbixOptions = {
             username: this.username,

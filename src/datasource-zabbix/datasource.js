@@ -52,9 +52,8 @@ class ZabbixAPIDatasource {
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
 
     // Direct DB Connection options
-    let dbConnectionOptions = jsonData.dbConnection || {};
-    this.enableDirectDBConnection = dbConnectionOptions.enable;
-    this.sqlDatasourceId = dbConnectionOptions.datasourceId;
+    this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
+    this.sqlDatasourceId = jsonData.dbConnectionDatasourceId;
 
     let zabbixOptions = {
       username: this.username,
