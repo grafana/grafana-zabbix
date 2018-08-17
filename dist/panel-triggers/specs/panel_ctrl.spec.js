@@ -15,7 +15,11 @@ describe('TriggerPanelCtrl', () => {
       replaceTemplateVars: () => {},
       zabbix: {
         getTriggers: jest.fn().mockReturnValue([generateTrigger("1"), generateTrigger("1")]),
-        getAcknowledges: jest.fn().mockReturnValue(Promise.resolve([]))
+        getAcknowledges: jest.fn().mockReturnValue(Promise.resolve([])),
+        getMacros: jest.fn().mockReturnValue(Promise.resolve([])),
+        zabbixAPI: {
+          getHosts: jest.fn().mockReturnValue(Promise.resolve([]))
+        }
       }
     };
 
@@ -52,6 +56,10 @@ describe('TriggerPanelCtrl', () => {
       .mockReturnValueOnce(getTriggersResp[1]);
     zabbixDSMock.zabbix.getAcknowledges = jest.fn()
       .mockReturnValue(Promise.resolve([defaultEvent]));
+    zabbixDSMock.zabbix.getMacros = jest.fn()
+      .mockReturnValue(Promise.resolve([defaultMacro]));
+    zabbixDSMock.zabbix.zabbixAPI.getHosts = jest.fn()
+      .mockReturnValue(Promise.resolve([defaultHost]));
 
     ctx.panelCtrl = createPanelCtrl();
   });
@@ -257,6 +265,22 @@ const defaultEvent = {
   "object": "0",
   "source": "0",
   "objectid": "1",
+};
+
+const defaultMacro = {
+  'hostid': '10001',
+  'macro': '{$URL}',
+  'value': 'http://test.ru'
+};
+
+const defaultHost = {
+  'hostid': '10001',
+  'host': 'test_host',
+  'parentTemplates': [
+    {
+      'templateid': '10002'
+    }
+    ]
 };
 
 function generateTrigger(id, timestamp, severity) {

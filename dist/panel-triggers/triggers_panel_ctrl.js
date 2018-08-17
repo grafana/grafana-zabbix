@@ -317,6 +317,10 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           value: function getTriggers() {
             var _this5 = this;
 
+            var allHosts = [];
+            var filteredMacros = [];
+            var macroHostIds = [];
+            var curDS = null;
             var promises = _.map(this.panel.datasources, function (ds) {
               return _this5.datasourceSrv.get(ds).then(function (datasource) {
                 var zabbix = datasource.zabbix;
@@ -332,7 +336,34 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                   showTriggers: showEvents
                 };
 
+                curDS = datasource;
+                datasource.zabbix.zabbixAPI.getHosts().then(function (hosts) {
+                  allHosts = hosts;
+                  _.each(hosts, function (host) {
+                    if (host.parentTemplates[0]) {
+                      macroHostIds.push(host.parentTemplates[0].templateid);
+                    }
+                  });
+                  return macroHostIds;
+                }).then(function (macroHostIds) {
+                  curDS.zabbix.getMacros(macroHostIds).then(function (macros) {
+                    filteredMacros = filteredMacros.concat(macros);
+                    return macros;
+                  });
+                });
+
                 return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
+              }).then(function (triggers) {
+                var hostids = _.map(triggers, function (trigger) {
+                  if (trigger.hosts) {
+                    return trigger.hosts[0].hostid;
+                  }
+                });
+                var hostidsMacros = curDS.zabbix.getMacros(hostids).then(function (macros) {
+                  filteredMacros = filteredMacros.concat(macros);
+                  return triggers;
+                });
+                return hostidsMacros;
               }).then(function (triggers) {
                 return _this5.getAcknowledges(triggers, ds);
               }).then(function (triggers) {
@@ -341,6 +372,8 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
                 return _this5.filterTriggersPre(triggers, ds);
               }).then(function (triggers) {
                 return _this5.addTriggerDataSource(triggers, ds);
+              }).then(function (triggers) {
+                return _this5.addTriggerMacro(triggers, filteredMacros, allHosts);
               });
             });
 
@@ -468,6 +501,28 @@ System.register(['lodash', 'jquery', 'moment', '../datasource-zabbix/utils', 'ap
           value: function addTriggerDataSource(triggers, ds) {
             _.each(triggers, function (trigger) {
               trigger.datasource = ds;
+            });
+            return triggers;
+          }
+        }, {
+          key: 'addTriggerMacro',
+          value: function addTriggerMacro(triggers, filteredMacros, allHosts) {
+            _.each(triggers, function (trigger) {
+              if (trigger.url && _.includes(trigger.url, "{$")) {
+                var url_macro = trigger.url.match(/{\$\w+}/)[0];
+                var macro = _.find(filteredMacros, { macro: url_macro, hostid: trigger.hosts[0].hostid.toString() });
+                if (macro) {
+                  trigger.url = _.replace(trigger.url, url_macro, macro.value);
+                } else {
+                  var hostTemplate = _.find(allHosts, { hostid: trigger.hosts[0].hostid.toString() });
+                  if (hostTemplate) {
+                    var hostMacro = _.find(filteredMacros, { macro: url_macro, hostid: hostTemplate.parentTemplates[0].templateid.toString() });
+                    if (hostMacro) {
+                      trigger.url = _.replace(trigger.url, url_macro, hostMacro.value);
+                    }
+                  }
+                }
+              }
             });
             return triggers;
           }

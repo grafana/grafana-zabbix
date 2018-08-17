@@ -123,7 +123,8 @@ System.register(['angular', 'lodash', './utils', './zabbixAPICore.service'], fun
         value: function getHosts(groupids) {
           var params = {
             output: ['name', 'host'],
-            sortfield: 'name'
+            sortfield: 'name',
+            selectParentTemplates: ["templateid"]
           };
           if (groupids) {
             params.groupids = groupids;

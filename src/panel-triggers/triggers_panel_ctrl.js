@@ -195,6 +195,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getTriggers() {
+    let allHosts = [];
+    let filteredMacros = [];
+    let macroHostIds = [];
+    let curDS = null;
     let promises = _.map(this.panel.datasources, (ds) => {
       return this.datasourceSrv.get(ds)
       .then(datasource => {
@@ -211,7 +215,34 @@ export class TriggerPanelCtrl extends PanelCtrl {
           showTriggers: showEvents
         };
 
+        curDS = datasource;
+        datasource.zabbix.zabbixAPI.getHosts().then(hosts => {
+          allHosts = hosts;
+          _.each(hosts, function (host) {
+            if (host.parentTemplates[0]){
+              macroHostIds.push(host.parentTemplates[0].templateid);
+            }
+          });
+          return macroHostIds;
+        }).then(macroHostIds => {
+          curDS.zabbix.getMacros(macroHostIds).then(macros => {
+            filteredMacros = filteredMacros.concat(macros);
+            return macros;
+          });
+        });
+
         return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
+      }).then(triggers => {
+        let hostids = _.map(triggers, function (trigger) {
+          if (trigger.hosts){
+            return trigger.hosts[0].hostid;
+          }
+        });
+        let hostidsMacros = curDS.zabbix.getMacros(hostids).then(macros => {
+          filteredMacros = filteredMacros.concat(macros);
+          return triggers;
+        });
+        return hostidsMacros;
       }).then((triggers) => {
         return this.getAcknowledges(triggers, ds);
       }).then((triggers) => {
@@ -220,6 +251,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
         return this.filterTriggersPre(triggers, ds);
       }).then((triggers) => {
         return this.addTriggerDataSource(triggers, ds);
+      }).then(triggers => {
+        return this.addTriggerMacro(triggers, filteredMacros, allHosts);
       });
     });
 
@@ -333,6 +366,28 @@ export class TriggerPanelCtrl extends PanelCtrl {
   addTriggerDataSource(triggers, ds) {
     _.each(triggers, (trigger) => {
       trigger.datasource = ds;
+    });
+    return triggers;
+  }
+
+  addTriggerMacro(triggers, filteredMacros, allHosts) {
+    _.each(triggers, function (trigger) {
+      if (trigger.url && _.includes(trigger.url, "{$")){
+        let url_macro = trigger.url.match(/{\$\w+}/)[0];
+        let macro = _.find(filteredMacros, {macro: url_macro, hostid: trigger.hosts[0].hostid.toString()});
+        if (macro){
+          trigger.url = _.replace(trigger.url, url_macro, macro.value);
+        }
+        else {
+          let hostTemplate = _.find(allHosts, {hostid: trigger.hosts[0].hostid.toString()});
+          if(hostTemplate) {
+            let hostMacro = _.find(filteredMacros, {macro: url_macro, hostid: hostTemplate.parentTemplates[0].templateid.toString()});
+            if(hostMacro){
+              trigger.url = _.replace(trigger.url, url_macro, hostMacro.value);
+            }
+          }
+        }
+      }
     });
     return triggers;
   }

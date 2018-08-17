@@ -14,10 +14,10 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
   class ZabbixAPI {
 
     constructor(api_url, username, password, basicAuth, withCredentials) {
-      this.url              = api_url;
-      this.username         = username;
-      this.password         = password;
-      this.auth             = "";
+      this.url = api_url;
+      this.username = username;
+      this.password = password;
+      this.auth = "";
 
       this.requestOptions = {
         basicAuth: basicAuth,
@@ -41,23 +41,23 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
 
     request(method, params) {
       return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
-      .catch(error => {
-        if (isNotAuthorized(error.data)) {
-          // Handle auth errors
-          this.loginErrorCount++;
-          if (this.loginErrorCount > this.maxLoginAttempts) {
-            this.loginErrorCount = 0;
-            return null;
+        .catch(error => {
+          if (isNotAuthorized(error.data)) {
+            // Handle auth errors
+            this.loginErrorCount++;
+            if (this.loginErrorCount > this.maxLoginAttempts) {
+              this.loginErrorCount = 0;
+              return null;
+            } else {
+              return this.loginOnce()
+                .then(() => this.request(method, params));
+            }
           } else {
-            return this.loginOnce()
-            .then(() => this.request(method, params));
+            // Handle API errors
+            let message = error.data ? error.data : error.statusText;
+            this.alertAPIError(message);
           }
-        } else {
-          // Handle API errors
-          let message = error.data ? error.data : error.statusText;
-          this.alertAPIError(message);
-        }
-      });
+        });
     }
 
     alertAPIError(message, timeout = 5000) {
@@ -128,7 +128,10 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
     getHosts(groupids) {
       var params = {
         output: ['name', 'host'],
-        sortfield: 'name'
+        sortfield: 'name',
+        selectParentTemplates: [
+          "templateid"
+        ],
       };
       if (groupids) {
         params.groupids = groupids;
@@ -183,7 +186,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       }
 
       return this.request('item.get', params)
-      .then(utils.expandItems);
+        .then(utils.expandItems);
     }
 
     getItemsByIDs(itemids) {
@@ -201,7 +204,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       };
 
       return this.request('item.get', params)
-      .then(utils.expandItems);
+        .then(utils.expandItems);
     }
 
     getMacros(hostids) {
@@ -228,7 +231,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         itemids: itemid
       };
       return this.request('item.get', params)
-      .then(items => items.length ? items[0].lastvalue : null);
+        .then(items => items.length ? items[0].lastvalue : null);
     }
 
     /**
@@ -406,9 +409,9 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       };
 
       return this.request('event.get', params)
-      .then(events => {
-        return _.filter(events, (event) => event.acknowledges.length);
-      });
+        .then(events => {
+          return _.filter(events, (event) => event.acknowledges.length);
+        });
     }
 
     getAlerts(itemids, timeFrom, timeTo) {
@@ -441,7 +444,7 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
         output: 'extend',
         hostids: hostids,
         min_severity: minSeverity,
-        filter: { value: 1 },
+        filter: {value: 1},
         expandDescription: true,
         expandData: true,
         expandComment: true,
@@ -466,15 +469,15 @@ function ZabbixAPIServiceFactory(alertSrv, zabbixAPICoreService) {
       }
 
       return this.request('trigger.get', params)
-      .then((triggers) => {
-        if (!count || acknowledged === 0 || acknowledged === 1) {
-          triggers = filterTriggersByAcknowledge(triggers, acknowledged);
-          if (count) {
-            triggers = triggers.length;
+        .then((triggers) => {
+          if (!count || acknowledged === 0 || acknowledged === 1) {
+            triggers = filterTriggersByAcknowledge(triggers, acknowledged);
+            if (count) {
+              triggers = triggers.length;
+            }
           }
-        }
-        return triggers;
-      });
+          return triggers;
+        });
     }
   }
 
