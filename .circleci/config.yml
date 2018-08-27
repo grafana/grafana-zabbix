@@ -15,27 +15,18 @@ jobs:
       # In many cases you can simplify this from what is generated here.
       # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
       - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
-      # This is based on your 1.0 configuration file or project settings
-    #   - run:
-    #       working_directory: ~/alexanderzobnin/grafana-zabbix
-    #       command: nvm install 6.11.4 && nvm alias default 6.11.4
-      # Dependencies
-      #   This would typically go in either a build or a build-and-test job when using workflows
-      # Restore the dependency cache
       - restore_cache:
           keys:
-            - v1-dep-{{ .Branch }}-
-      # The following line was run implicitly in your 1.0 builds based on what CircleCI inferred about the structure of your project. In 2.0 you need to be explicit about which commands should be run. In some cases you can discard inferred commands if they are not relevant to your project.
-      # - run: if [ -z "${NODE_ENV:-}" ]; then export NODE_ENV=test; fi
-      # - run: export PATH="~/alexanderzobnin/grafana-zabbix/node_modules/.bin:$PATH"
-      - run: npm install
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: yarn install
+          command: 'yarn install --pure-lockfile --no-progress'
+          no_output_timeout: 15m
       - save_cache:
-          key: v1-dep-{{ .Branch }}-{{ epoch }}
+          key: dependency-cache-{{ checksum "yarn.lock" }}
           paths:
           - ./node_modules
       - run: npm run ci-test
-      # Teardown
-      #   If you break your build into multiple jobs with workflows, you will probably want to do the parts of this that are relevant in each
       # Save test results
       - store_test_results:
           path: /tmp/circleci-test-results
