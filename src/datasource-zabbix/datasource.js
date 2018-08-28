@@ -12,10 +12,8 @@ import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 export class ZabbixDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
+  constructor(instanceSettings, templateSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
     this.templateSrv = templateSrv;
-    this.alertSrv = alertSrv;
-    this.dashboardSrv = dashboardSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
 
     // Use custom format for template variables
