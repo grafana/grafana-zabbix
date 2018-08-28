@@ -50,8 +50,8 @@ export class ZabbixDatasource {
 
     // Direct DB Connection options
     let dbConnectionOptions = jsonData.dbConnection || {};
-    this.enableDirectDBConnection = dbConnectionOptions.enable;
-    this.datasourceId = dbConnectionOptions.datasourceId;
+    this.enableDirectDBConnection = dbConnectionOptions.enable || jsonData.dbConnectionEnable || false;
+    this.datasourceId = dbConnectionOptions.datasourceId || jsonData.dbConnectionDatasourceId;
 
     let zabbixOptions = {
       url: this.url,

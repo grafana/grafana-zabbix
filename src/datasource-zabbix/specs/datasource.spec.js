@@ -14,9 +14,7 @@ describe('ZabbixDatasource', () => {
         trends: true,
         trendsFrom: '14d',
         trendsRange: '7d',
-        dbConnection: {
-          enabled: false
-        }
+        dbConnectionEnable: false
       }
     };
     ctx.templateSrv = {};
