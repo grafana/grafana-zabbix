@@ -41,3 +41,25 @@ function convertToRegex(str) {
     return '/.*/';
   }
 }
+
+export const DS_CONFIG_SCHEMA = 2;
+export function migrateDSConfig(jsonData) {
+  if (!jsonData) {
+    jsonData = {};
+  }
+  const oldVersion = jsonData.schema || 1;
+  jsonData.schema = DS_CONFIG_SCHEMA;
+
+  if (oldVersion === DS_CONFIG_SCHEMA) {
+    return jsonData;
+  }
+
+  if (oldVersion < 2) {
+    const dbConnectionOptions = jsonData.dbConnection || {};
+    jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
+    jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId || null;
+    delete jsonData.dbConnection;
+  }
+
+  return jsonData;
+}
