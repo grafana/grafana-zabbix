@@ -4,6 +4,7 @@ import responseHandler from '../responseHandler';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { CachingProxy } from './proxy/cachingProxy';
+import { ZabbixNotImplemented } from './connectors/dbConnector';
 
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
@@ -71,6 +72,51 @@ export class Zabbix {
     for (let request of REQUESTS_TO_BIND) {
       this[request] = this.zabbixAPI[request].bind(this.zabbixAPI);
     }
+  }
+
+  /**
+   * Perform test query for Zabbix API and external history DB.
+   * @return {object} test result object:
+   * ```
+    {
+      zabbixVersion,
+      dbConnectorStatus: {
+        dsType,
+        dsName
+      }
+    }
+   ```
+   */
+  testDataSource() {
+    let zabbixVersion;
+    let dbConnectorStatus;
+    return this.getVersion()
+    .then(version => {
+      zabbixVersion = version;
+      return this.login();
+    })
+    .then(() => {
+      if (this.enableDirectDBConnection) {
+        return this.dbConnector.testDataSource();
+      } else {
+        return Promise.resolve();
+      }
+    })
+    .catch(error => {
+      if (error instanceof ZabbixNotImplemented) {
+        return Promise.resolve();
+      }
+      return Promise.reject(error);
+    })
+    .then(testResult => {
+      if (testResult) {
+        dbConnectorStatus = {
+          dsType: this.dbConnector.datasourceTypeName,
+          dsName: this.dbConnector.datasourceName
+        };
+      }
+      return { zabbixVersion, dbConnectorStatus };
+    });
   }
 
   getItemsFromTarget(target, options) {

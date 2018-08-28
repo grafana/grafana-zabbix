@@ -335,28 +335,20 @@ export class ZabbixDatasource {
   }
 
   /**
-   * Test connection to Zabbix API
-   * @return {object} Connection status and Zabbix API version
+   * Test connection to Zabbix API and external history DB.
    */
   testDatasource() {
-    let zabbixVersion;
-    return this.zabbix.getVersion()
-    .then(version => {
-      zabbixVersion = version;
-      return this.zabbix.login();
-    })
-    .then(() => {
-      if (this.enableDirectDBConnection) {
-        return this.zabbix.dbConnector.testDataSource();
-      } else {
-        return Promise.resolve();
+    return this.zabbix.testDataSource()
+    .then(result => {
+      const { zabbixVersion, dbConnectorStatus } = result;
+      let message = `Zabbix API version: ${zabbixVersion}`;
+      if (dbConnectorStatus) {
+        message += `, DB connector type: ${dbConnectorStatus.dsType}`;
       }
-    })
-    .then(() => {
       return {
         status: "success",
         title: "Success",
-        message: "Zabbix API version: " + zabbixVersion
+        message: message
       };
     })
     .catch(error => {
@@ -372,7 +364,14 @@ export class ZabbixDatasource {
           title: "Connection failed",
           message: "Connection failed: " + error.data.message
         };
+      } else if (typeof(error) === 'string') {
+        return {
+          status: "error",
+          title: "Connection failed",
+          message: "Connection failed: " + error
+        };
       } else {
+        console.log(error);
         return {
           status: "error",
           title: "Connection failed",
