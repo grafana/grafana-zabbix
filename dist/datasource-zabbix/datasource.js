@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './constants', './dataProcessor', './responseHandler', './zabbix.js', './zabbixAlerting.service.js', './zabbixAPICore.service.js'], function (_export, _context) {
+System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations', './metricFunctions', './constants', './dataProcessor', './responseHandler', './zabbixAlerting.service.js', './zabbix/zabbix', './zabbix/connectors/zabbix_api/zabbixAPICore'], function (_export, _context) {
   "use strict";
 
-  var _, dateMath, utils, migrations, metricFunctions, c, dataProcessor, responseHandler, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
+  var _, dateMath, utils, migrations, metricFunctions, c, dataProcessor, responseHandler, Zabbix, ZabbixAPIError, _slicedToArray, _createClass, ZabbixAPIDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -24,7 +24,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
   }
 
   function getConsolidateBy(target) {
-    var consolidateBy = 'avg';
+    var consolidateBy = void 0;
     var funcDef = _.find(target.functions, function (func) {
       return func.def.name === 'consolidateBy';
     });
@@ -140,8 +140,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
       dataProcessor = _dataProcessor.default;
     }, function (_responseHandler) {
       responseHandler = _responseHandler.default;
-    }, function (_zabbixJs) {}, function (_zabbixAlertingServiceJs) {}, function (_zabbixAPICoreServiceJs) {
-      ZabbixAPIError = _zabbixAPICoreServiceJs.ZabbixAPIError;
+    }, function (_zabbixAlertingServiceJs) {}, function (_zabbixZabbix) {
+      Zabbix = _zabbixZabbix.Zabbix;
+    }, function (_zabbixConnectorsZabbix_apiZabbixAPICore) {
+      ZabbixAPIError = _zabbixConnectorsZabbix_apiZabbixAPICore.ZabbixAPIError;
     }],
     execute: function () {
       _slicedToArray = function () {
@@ -203,7 +205,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
       _export('ZabbixAPIDatasource', ZabbixAPIDatasource = function () {
 
         /** @ngInject */
-        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, zabbixAlertingSrv, Zabbix) {
+        function ZabbixAPIDatasource(instanceSettings, templateSrv, alertSrv, dashboardSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
           _classCallCheck(this, ZabbixAPIDatasource);
 
           this.templateSrv = templateSrv;
@@ -246,19 +248,20 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           // Direct DB Connection options
           var dbConnectionOptions = jsonData.dbConnection || {};
           this.enableDirectDBConnection = dbConnectionOptions.enable;
-          this.sqlDatasourceId = dbConnectionOptions.datasourceId;
+          this.datasourceId = dbConnectionOptions.datasourceId;
 
           var zabbixOptions = {
+            url: this.url,
             username: this.username,
             password: this.password,
             basicAuth: this.basicAuth,
             withCredentials: this.withCredentials,
             cacheTTL: this.cacheTTL,
             enableDirectDBConnection: this.enableDirectDBConnection,
-            sqlDatasourceId: this.sqlDatasourceId
+            datasourceId: this.datasourceId
           };
 
-          this.zabbix = new Zabbix(this.url, zabbixOptions);
+          this.zabbix = new Zabbix(zabbixOptions, backendSrv, datasourceSrv);
         }
 
         ////////////////////////
@@ -374,43 +377,14 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           value: function queryNumericDataForItems(items, target, timeRange, useTrends, options) {
             var _this3 = this;
 
-            var _timeRange = _slicedToArray(timeRange, 2),
-                timeFrom = _timeRange[0],
-                timeTo = _timeRange[1];
-
             var getHistoryPromise = void 0;
-            options.consolidateBy = getConsolidateBy(target);
+            options.valueType = this.getTrendValueType(target);
+            options.consolidateBy = getConsolidateBy(target) || options.valueType;
 
             if (useTrends) {
-              if (this.enableDirectDBConnection) {
-                getHistoryPromise = this.zabbix.getTrendsDB(items, timeFrom, timeTo, options).then(function (history) {
-                  return _this3.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
-                });
-              } else {
-                var valueType = this.getTrendValueType(target);
-                getHistoryPromise = this.zabbix.getTrend(items, timeFrom, timeTo).then(function (history) {
-                  return responseHandler.handleTrends(history, items, valueType);
-                }).then(function (timeseries) {
-                  // Sort trend data, issue #202
-                  _.forEach(timeseries, function (series) {
-                    series.datapoints = _.sortBy(series.datapoints, function (point) {
-                      return point[c.DATAPOINT_TS];
-                    });
-                  });
-                  return timeseries;
-                });
-              }
+              getHistoryPromise = this.zabbix.getTrends(items, timeRange, options);
             } else {
-              // Use history
-              if (this.enableDirectDBConnection) {
-                getHistoryPromise = this.zabbix.getHistoryDB(items, timeFrom, timeTo, options).then(function (history) {
-                  return _this3.zabbix.dbConnector.handleGrafanaTSResponse(history, items);
-                });
-              } else {
-                getHistoryPromise = this.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
-                  return responseHandler.handleHistory(history, items);
-                });
-              }
+              getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options);
             }
 
             return getHistoryPromise.then(function (timeseries) {
@@ -492,25 +466,11 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           value: function queryTextData(target, timeRange) {
             var _this4 = this;
 
-            var _timeRange2 = _slicedToArray(timeRange, 2),
-                timeFrom = _timeRange2[0],
-                timeTo = _timeRange2[1];
-
             var options = {
               itemtype: 'text'
             };
             return this.zabbix.getItemsFromTarget(target, options).then(function (items) {
-              if (items.length) {
-                return _this4.zabbix.getHistory(items, timeFrom, timeTo).then(function (history) {
-                  if (target.resultFormat === 'table') {
-                    return responseHandler.handleHistoryAsTable(history, items, target);
-                  } else {
-                    return responseHandler.handleText(history, items, target);
-                  }
-                });
-              } else {
-                return Promise.resolve([]);
-              }
+              return _this4.zabbix.getHistoryText(items, timeRange, target);
             });
           }
         }, {
@@ -542,12 +502,10 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               return [];
             }
 
-            var itServiceIds = [];
-            var itServices = [];
             var itServiceFilter = void 0;
-            var isOldVersion = target.itservice && !target.itServiceFilter;
+            options.isOldVersion = target.itservice && !target.itServiceFilter;
 
-            if (isOldVersion) {
+            if (options.isOldVersion) {
               // Backward compatibility
               itServiceFilter = '/.*/';
             } else {
@@ -555,20 +513,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             }
 
             return this.zabbix.getITServices(itServiceFilter).then(function (itservices) {
-              itServices = itservices;
-              if (isOldVersion) {
-                itServices = _.filter(itServices, { 'serviceid': target.itservice.serviceid });
-              }
-
-              itServiceIds = _.map(itServices, 'serviceid');
-              return itServiceIds;
-            }).then(function (serviceids) {
-              return _this6.zabbix.getSLA(serviceids, timeRange);
-            }).then(function (slaResponse) {
-              return _.map(itServiceIds, function (serviceid) {
-                var itservice = _.find(itServices, { 'serviceid': serviceid });
-                return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
-              });
+              return _this6.zabbix.getSLA(itservices, timeRange, target, options);
             });
           }
         }, {
@@ -576,9 +521,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
           value: function queryTriggersData(target, timeRange) {
             var _this7 = this;
 
-            var _timeRange3 = _slicedToArray(timeRange, 2),
-                timeFrom = _timeRange3[0],
-                timeTo = _timeRange3[1];
+            var _timeRange = _slicedToArray(timeRange, 2),
+                timeFrom = _timeRange[0],
+                timeTo = _timeRange[1];
 
             return this.zabbix.getHostsFromTarget(target).then(function (results) {
               var _results = _slicedToArray(results, 2),
@@ -614,7 +559,7 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
               return _this8.zabbix.login();
             }).then(function () {
               if (_this8.enableDirectDBConnection) {
-                return _this8.zabbix.dbConnector.testSQLDataSource();
+                return _this8.zabbix.dbConnector.testDataSource();
               } else {
                 return Promise.resolve();
               }
@@ -832,9 +777,9 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
         }, {
           key: 'isUseTrends',
           value: function isUseTrends(timeRange) {
-            var _timeRange4 = _slicedToArray(timeRange, 2),
-                timeFrom = _timeRange4[0],
-                timeTo = _timeRange4[1];
+            var _timeRange2 = _slicedToArray(timeRange, 2),
+                timeFrom = _timeRange2[0],
+                timeTo = _timeRange2[1];
 
             var useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
             var useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);

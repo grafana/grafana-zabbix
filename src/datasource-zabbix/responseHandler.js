@@ -40,6 +40,14 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
+function sortTimeseries(timeseries) {
+  // Sort trend data, issue #202
+  _.forEach(timeseries, series => {
+    series.datapoints = _.sortBy(series.datapoints, point => point[c.DATAPOINT_TS]);
+  });
+  return timeseries;
+}
+
 function handleHistory(history, items, addHostName = true) {
   return convertHistory(history, items, addHostName, convertHistoryPoint);
 }
@@ -211,13 +219,14 @@ function convertTrendPoint(valueType, point) {
 }
 
 export default {
-  handleHistory: handleHistory,
-  convertHistory: convertHistory,
-  handleTrends: handleTrends,
-  handleText: handleText,
-  handleHistoryAsTable: handleHistoryAsTable,
-  handleSLAResponse: handleSLAResponse,
-  handleTriggersResponse: handleTriggersResponse
+  handleHistory,
+  convertHistory,
+  handleTrends,
+  handleText,
+  handleHistoryAsTable,
+  handleSLAResponse,
+  handleTriggersResponse,
+  sortTimeseries
 };
 
 // Fix for backward compatibility with lodash 2.4

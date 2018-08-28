@@ -47,7 +47,6 @@
     "jshint-stylish": "^2.1.0",
     "load-grunt-tasks": "~3.2.0",
     "moment": "~2.21.0",
-    "q": "~1.4.1",
     "tether-drop": "^1.4.2"
   },
   "dependencies": {

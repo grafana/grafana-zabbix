@@ -85,7 +85,7 @@ module.exports = function(grunt) {
           cwd: 'src',
           expand: true,
           src: [
-            'datasource-zabbix/*.js',
+            'datasource-zabbix/**/*.js',
             'panel-triggers/*.js',
             'components/*.js',
             'vendor/*.js',
@@ -172,9 +172,7 @@ module.exports = function(grunt) {
   grunt.registerTask('watchTask', [
     'clean:dist',
     'sass',
-    'copy:vendor_to_dist',
-    'copy:src_to_dist',
-    'copy:pluginDef',
+    'copy',
     'babel:dist',
     'jshint',
     'jscs'

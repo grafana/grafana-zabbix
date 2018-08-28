@@ -3,10 +3,12 @@ import _ from 'lodash';
 import $ from 'jquery';
 import * as metricFunctions from './metricFunctions';
 
-/** @ngInject */
 angular
   .module('grafana.directives')
-  .directive('addMetricFunction', function($compile) {
+  .directive('addMetricFunction',
+
+  /** @ngInject */
+  function($compile) {
     var inputTemplate = '<input type="text"'+
                           ' class="gf-form-input"' +
                           ' spellcheck="false" style="display:none"></input>';

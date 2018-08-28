@@ -2,9 +2,7 @@
  * General Zabbix API methods
  */
 
-import angular from 'angular';
-
-class ZabbixAPICoreService {
+export class ZabbixAPICore {
 
   /** @ngInject */
   constructor(backendSrv) {
@@ -101,7 +99,3 @@ export class ZabbixAPIError {
     return this.name + " " + this.data;
   }
 }
-
-angular
-  .module('grafana.services')
-  .service('zabbixAPICoreService', ZabbixAPICoreService);

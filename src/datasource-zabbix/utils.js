@@ -227,6 +227,19 @@ export function callOnce(func, promiseKeeper) {
   };
 }
 
+/**
+ * Apply function one by one: `sequence([a(), b(), c()]) = c(b(a()))`
+ * @param {*} funcsArray functions to apply
+ */
+export function sequence(funcsArray) {
+  return function(result) {
+    for (var i = 0; i < funcsArray.length; i++) {
+      result = funcsArray[i].call(this, result);
+    }
+    return result;
+  };
+}
+
 // Fix for backward compatibility with lodash 2.4
 if (!_.includes) {
   _.includes = _.contains;
