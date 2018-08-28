@@ -50,7 +50,8 @@ export class ZabbixDatasource {
 
     // Direct DB Connection options
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
-    this.datasourceId = jsonData.dbConnectionDatasourceId;
+    this.dbConnectionDatasourceId = jsonData.dbConnectionDatasourceId;
+    this.dbConnectionDatasourceName = jsonData.dbConnectionDatasourceName;
 
     let zabbixOptions = {
       url: this.url,
@@ -60,7 +61,8 @@ export class ZabbixDatasource {
       withCredentials: this.withCredentials,
       cacheTTL: this.cacheTTL,
       enableDirectDBConnection: this.enableDirectDBConnection,
-      datasourceId: this.datasourceId
+      dbConnectionDatasourceId: this.dbConnectionDatasourceId,
+      dbConnectionDatasourceName: this.dbConnectionDatasourceName
     };
 
     this.zabbix = new Zabbix(zabbixOptions, backendSrv, datasourceSrv);

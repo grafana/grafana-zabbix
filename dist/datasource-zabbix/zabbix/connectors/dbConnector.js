@@ -51,16 +51,21 @@ System.register(['lodash'], function (_export, _context) {
           value: function loadDBDataSource() {
             var _this = this;
 
-            var ds = _.find(this.datasourceSrv.getAll(), { 'id': this.datasourceId });
-            if (ds) {
-              return this.datasourceSrv.loadDatasource(ds.name).then(function (ds) {
-                _this.datasourceName = ds.name;
+            if (!this.datasourceName && this.datasourceId !== undefined) {
+              var ds = _.find(this.datasourceSrv.getAll(), { 'id': this.datasourceId });
+              if (!ds) {
+                return Promise.reject('SQL Data Source with ID ' + this.datasourceId + ' not found');
+              }
+              this.datasourceName = ds.name;
+            }
+            if (this.datasourceName) {
+              return this.datasourceSrv.loadDatasource(this.datasourceName).then(function (ds) {
                 _this.datasourceTypeId = ds.meta.id;
                 _this.datasourceTypeName = ds.meta.name;
                 return ds;
               });
             } else {
-              return Promise.reject('SQL Data Source with ID ' + this.datasourceId + ' not found');
+              return Promise.reject('SQL Data Source name should be specified');
             }
           }
         }, {

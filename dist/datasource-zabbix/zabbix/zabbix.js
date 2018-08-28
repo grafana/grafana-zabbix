@@ -174,7 +174,8 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
               withCredentials = options.withCredentials,
               cacheTTL = options.cacheTTL,
               enableDirectDBConnection = options.enableDirectDBConnection,
-              datasourceId = options.datasourceId;
+              dbConnectionDatasourceId = options.dbConnectionDatasourceId,
+              dbConnectionDatasourceName = options.dbConnectionDatasourceName;
 
 
           this.enableDirectDBConnection = enableDirectDBConnection;
@@ -189,7 +190,10 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
           this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials, backendSrv);
 
           if (enableDirectDBConnection) {
-            var dbConnectorOptions = { datasourceId: datasourceId };
+            var dbConnectorOptions = {
+              datasourceId: dbConnectionDatasourceId,
+              datasourceName: dbConnectionDatasourceName
+            };
             this.dbConnector = new SQLConnector(dbConnectorOptions, backendSrv, datasourceSrv);
             this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
             this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);

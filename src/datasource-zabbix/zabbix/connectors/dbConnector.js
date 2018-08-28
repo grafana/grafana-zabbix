@@ -15,17 +15,22 @@ export default class DBConnector {
   }
 
   loadDBDataSource() {
-    let ds = _.find(this.datasourceSrv.getAll(), {'id': this.datasourceId});
-    if (ds) {
-      return this.datasourceSrv.loadDatasource(ds.name)
+    if (!this.datasourceName && this.datasourceId !== undefined) {
+      let ds = _.find(this.datasourceSrv.getAll(), {'id': this.datasourceId});
+      if (!ds) {
+        return Promise.reject(`SQL Data Source with ID ${this.datasourceId} not found`);
+      }
+      this.datasourceName = ds.name;
+    }
+    if (this.datasourceName) {
+      return this.datasourceSrv.loadDatasource(this.datasourceName)
       .then(ds => {
-        this.datasourceName = ds.name;
         this.datasourceTypeId = ds.meta.id;
         this.datasourceTypeName = ds.meta.name;
         return ds;
       });
     } else {
-      return Promise.reject(`SQL Data Source with ID ${this.datasourceId} not found`);
+      return Promise.reject(`SQL Data Source name should be specified`);
     }
   }
 

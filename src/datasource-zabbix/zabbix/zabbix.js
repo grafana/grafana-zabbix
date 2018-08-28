@@ -30,7 +30,8 @@ export class Zabbix {
       withCredentials,
       cacheTTL,
       enableDirectDBConnection,
-      datasourceId
+      dbConnectionDatasourceId,
+      dbConnectionDatasourceName,
     } = options;
 
     this.enableDirectDBConnection = enableDirectDBConnection;
@@ -45,7 +46,10 @@ export class Zabbix {
     this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials, backendSrv);
 
     if (enableDirectDBConnection) {
-      let dbConnectorOptions = { datasourceId };
+      let dbConnectorOptions = {
+        datasourceId: dbConnectionDatasourceId,
+        datasourceName: dbConnectionDatasourceName
+      };
       this.dbConnector = new SQLConnector(dbConnectorOptions, backendSrv, datasourceSrv);
       this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
       this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);

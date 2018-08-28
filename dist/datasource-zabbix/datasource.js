@@ -237,7 +237,8 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
 
           // Direct DB Connection options
           this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
-          this.datasourceId = jsonData.dbConnectionDatasourceId;
+          this.dbConnectionDatasourceId = jsonData.dbConnectionDatasourceId;
+          this.dbConnectionDatasourceName = jsonData.dbConnectionDatasourceName;
 
           var zabbixOptions = {
             url: this.url,
@@ -247,7 +248,8 @@ System.register(['lodash', 'app/core/utils/datemath', './utils', './migrations',
             withCredentials: this.withCredentials,
             cacheTTL: this.cacheTTL,
             enableDirectDBConnection: this.enableDirectDBConnection,
-            datasourceId: this.datasourceId
+            dbConnectionDatasourceId: this.dbConnectionDatasourceId,
+            dbConnectionDatasourceName: this.dbConnectionDatasourceName
           };
 
           this.zabbix = new Zabbix(zabbixOptions, backendSrv, datasourceSrv);
