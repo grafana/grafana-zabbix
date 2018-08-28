@@ -25,7 +25,7 @@ export class ZabbixDatasource {
     this.basicAuth        = instanceSettings.basicAuth;
     this.withCredentials  = instanceSettings.withCredentials;
 
-    const jsonData = instanceSettings.jsonData || {};
+    const jsonData = migrations.migrateDSConfig(instanceSettings.jsonData);
 
     // Zabbix API credentials
     this.username         = jsonData.username;
@@ -49,9 +49,8 @@ export class ZabbixDatasource {
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
 
     // Direct DB Connection options
-    let dbConnectionOptions = jsonData.dbConnection || {};
-    this.enableDirectDBConnection = dbConnectionOptions.enable || jsonData.dbConnectionEnable || false;
-    this.datasourceId = dbConnectionOptions.datasourceId || jsonData.dbConnectionDatasourceId;
+    this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
+    this.datasourceId = jsonData.dbConnectionDatasourceId;
 
     let zabbixOptions = {
       url: this.url,
