@@ -39,8 +39,10 @@ System.register(['angular', 'lodash', 'jquery', './metricFunctions'], function (
     }],
     execute: function () {
 
+      angular.module('grafana.directives').directive('addMetricFunction',
+
       /** @ngInject */
-      angular.module('grafana.directives').directive('addMetricFunction', function ($compile) {
+      function ($compile) {
         var inputTemplate = '<input type="text"' + ' class="gf-form-input"' + ' spellcheck="false" style="display:none"></input>';
 
         var buttonTemplate = '<a  class="gf-form-label tight-form-func dropdown-toggle query-part"' + ' tabindex="1" gf-dropdown="functionMenu" data-toggle="dropdown">' + '<i class="fa fa-plus"></i></a>';

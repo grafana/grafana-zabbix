@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['app/plugins/sdk', './datasource', './query.controller', './config.controller'], function (_export, _context) {
+System.register(['app/plugins/sdk', './datasource', './query.controller', './config.controller', './zabbixAlerting.service.js', './add-metric-function.directive', './metric-function-editor.directive'], function (_export, _context) {
   "use strict";
 
-  var loadPluginCss, ZabbixAPIDatasource, ZabbixQueryController, ZabbixDSConfigController, ZabbixQueryOptionsController, ZabbixAnnotationsQueryController;
+  var loadPluginCss, ZabbixDatasource, ZabbixQueryController, ZabbixDSConfigController, ZabbixQueryOptionsController, ZabbixAnnotationsQueryController;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -15,12 +15,12 @@ System.register(['app/plugins/sdk', './datasource', './query.controller', './con
     setters: [function (_appPluginsSdk) {
       loadPluginCss = _appPluginsSdk.loadPluginCss;
     }, function (_datasource) {
-      ZabbixAPIDatasource = _datasource.ZabbixAPIDatasource;
+      ZabbixDatasource = _datasource.ZabbixDatasource;
     }, function (_queryController) {
       ZabbixQueryController = _queryController.ZabbixQueryController;
     }, function (_configController) {
       ZabbixDSConfigController = _configController.ZabbixDSConfigController;
-    }],
+    }, function (_zabbixAlertingServiceJs) {}, function (_addMetricFunctionDirective) {}, function (_metricFunctionEditorDirective) {}],
     execute: function () {
 
       loadPluginCss({
@@ -40,7 +40,10 @@ System.register(['app/plugins/sdk', './datasource', './query.controller', './con
 
       ZabbixAnnotationsQueryController.templateUrl = 'datasource-zabbix/partials/annotations.editor.html';
 
-      _export('Datasource', ZabbixAPIDatasource);
+      ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';
+      ZabbixDSConfigController.templateUrl = 'datasource-zabbix/partials/config.html';
+
+      _export('Datasource', ZabbixDatasource);
 
       _export('ConfigCtrl', ZabbixDSConfigController);
 

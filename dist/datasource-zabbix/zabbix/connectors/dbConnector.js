@@ -3,7 +3,7 @@
 System.register(['lodash'], function (_export, _context) {
   "use strict";
 
-  var _, _createClass, NOT_IMPLEMENTED, DBConnector;
+  var _, _createClass, DBConnector, ZabbixNotImplemented;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -34,8 +34,6 @@ System.register(['lodash'], function (_export, _context) {
         };
       }();
 
-      NOT_IMPLEMENTED = 'Method should be implemented in subclass of DBConnector';
-
       DBConnector = function () {
         function DBConnector(options, backendSrv, datasourceSrv) {
           _classCallCheck(this, DBConnector);
@@ -44,7 +42,8 @@ System.register(['lodash'], function (_export, _context) {
           this.datasourceSrv = datasourceSrv;
           this.datasourceId = options.datasourceId;
           this.datasourceName = options.datasourceName;
-          this.datasourceType = null;
+          this.datasourceTypeId = null;
+          this.datasourceTypeName = null;
         }
 
         _createClass(DBConnector, [{
@@ -55,7 +54,9 @@ System.register(['lodash'], function (_export, _context) {
             var ds = _.find(this.datasourceSrv.getAll(), { 'id': this.datasourceId });
             if (ds) {
               return this.datasourceSrv.loadDatasource(ds.name).then(function (ds) {
-                _this.datasourceType = ds.meta.id;
+                _this.datasourceName = ds.name;
+                _this.datasourceTypeId = ds.meta.id;
+                _this.datasourceTypeName = ds.meta.name;
                 return ds;
               });
             } else {
@@ -65,17 +66,17 @@ System.register(['lodash'], function (_export, _context) {
         }, {
           key: 'testDataSource',
           value: function testDataSource() {
-            throw NOT_IMPLEMENTED;
+            throw new ZabbixNotImplemented('testDataSource()');
           }
         }, {
           key: 'getHistory',
           value: function getHistory() {
-            throw NOT_IMPLEMENTED;
+            throw new ZabbixNotImplemented('getHistory()');
           }
         }, {
           key: 'getTrends',
           value: function getTrends() {
-            throw NOT_IMPLEMENTED;
+            throw new ZabbixNotImplemented('getTrends()');
           }
         }]);
 
@@ -83,6 +84,27 @@ System.register(['lodash'], function (_export, _context) {
       }();
 
       _export('default', DBConnector);
+
+      _export('ZabbixNotImplemented', ZabbixNotImplemented = function () {
+        function ZabbixNotImplemented(methodName) {
+          _classCallCheck(this, ZabbixNotImplemented);
+
+          this.code = null;
+          this.name = 'ZabbixNotImplemented';
+          this.message = 'Zabbix DB Connector Error: method ' + (methodName || '') + ' should be implemented in subclass of DBConnector';
+        }
+
+        _createClass(ZabbixNotImplemented, [{
+          key: 'toString',
+          value: function toString() {
+            return this.message;
+          }
+        }]);
+
+        return ZabbixNotImplemented;
+      }());
+
+      _export('ZabbixNotImplemented', ZabbixNotImplemented);
     }
   };
 });

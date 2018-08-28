@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbix_api/zabbixAPIConnector', './connectors/sql/sqlConnector', './proxy/cachingProxy'], function (_export, _context) {
+System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbix_api/zabbixAPIConnector', './connectors/sql/sqlConnector', './proxy/cachingProxy', './connectors/dbConnector'], function (_export, _context) {
   "use strict";
 
-  var _, utils, responseHandler, ZabbixAPIConnector, SQLConnector, CachingProxy, _slicedToArray, _createClass, REQUESTS_TO_PROXYFY, REQUESTS_TO_CACHE, REQUESTS_TO_BIND, Zabbix;
+  var _, utils, responseHandler, ZabbixAPIConnector, SQLConnector, CachingProxy, ZabbixNotImplemented, _slicedToArray, _createClass, REQUESTS_TO_PROXYFY, REQUESTS_TO_CACHE, REQUESTS_TO_BIND, Zabbix;
 
   function _toConsumableArray(arr) {
     if (Array.isArray(arr)) {
@@ -99,6 +99,8 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
       SQLConnector = _connectorsSqlSqlConnector.SQLConnector;
     }, function (_proxyCachingProxy) {
       CachingProxy = _proxyCachingProxy.CachingProxy;
+    }, function (_connectorsDbConnector) {
+      ZabbixNotImplemented = _connectorsDbConnector.ZabbixNotImplemented;
     }],
     execute: function () {
       _slicedToArray = function () {
@@ -283,6 +285,37 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
             }
           }
         }, {
+          key: 'testDataSource',
+          value: function testDataSource() {
+            var _this = this;
+
+            var zabbixVersion = void 0;
+            var dbConnectorStatus = void 0;
+            return this.getVersion().then(function (version) {
+              zabbixVersion = version;
+              return _this.login();
+            }).then(function () {
+              if (_this.enableDirectDBConnection) {
+                return _this.dbConnector.testDataSource();
+              } else {
+                return Promise.resolve();
+              }
+            }).catch(function (error) {
+              if (error instanceof ZabbixNotImplemented) {
+                return Promise.resolve();
+              }
+              return Promise.reject(error);
+            }).then(function (testResult) {
+              if (testResult) {
+                dbConnectorStatus = {
+                  dsType: _this.dbConnector.datasourceTypeName,
+                  dsName: _this.dbConnector.datasourceName
+                };
+              }
+              return { zabbixVersion: zabbixVersion, dbConnectorStatus: dbConnectorStatus };
+            });
+          }
+        }, {
           key: 'getItemsFromTarget',
           value: function getItemsFromTarget(target, options) {
             var parts = ['group', 'host', 'application', 'item'];
@@ -324,11 +357,11 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
         }, {
           key: 'getAllHosts',
           value: function getAllHosts(groupFilter) {
-            var _this = this;
+            var _this2 = this;
 
             return this.getGroups(groupFilter).then(function (groups) {
               var groupids = _.map(groups, 'groupid');
-              return _this.zabbixAPI.getHosts(groupids);
+              return _this2.zabbixAPI.getHosts(groupids);
             });
           }
         }, {
@@ -341,22 +374,22 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
         }, {
           key: 'getAllApps',
           value: function getAllApps(groupFilter, hostFilter) {
-            var _this2 = this;
+            var _this3 = this;
 
             return this.getHosts(groupFilter, hostFilter).then(function (hosts) {
               var hostids = _.map(hosts, 'hostid');
-              return _this2.zabbixAPI.getApps(hostids);
+              return _this3.zabbixAPI.getApps(hostids);
             });
           }
         }, {
           key: 'getApps',
           value: function getApps(groupFilter, hostFilter, appFilter) {
-            var _this3 = this;
+            var _this4 = this;
 
             return this.getHosts(groupFilter, hostFilter).then(function (hosts) {
               var hostids = _.map(hosts, 'hostid');
               if (appFilter) {
-                return _this3.zabbixAPI.getApps(hostids).then(function (apps) {
+                return _this4.zabbixAPI.getApps(hostids).then(function (apps) {
                   return filterByQuery(apps, appFilter);
                 });
               } else {
@@ -370,16 +403,16 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
         }, {
           key: 'getAllItems',
           value: function getAllItems(groupFilter, hostFilter, appFilter) {
-            var _this4 = this;
+            var _this5 = this;
 
             var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
 
             return this.getApps(groupFilter, hostFilter, appFilter).then(function (apps) {
               if (apps.appFilterEmpty) {
-                return _this4.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
+                return _this5.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
               } else {
                 var appids = _.map(apps, 'applicationid');
-                return _this4.zabbixAPI.getItems(undefined, appids, options.itemtype);
+                return _this5.zabbixAPI.getItems(undefined, appids, options.itemtype);
               }
             }).then(function (items) {
               if (!options.showDisabledItems) {
@@ -421,7 +454,7 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
         }, {
           key: 'getTriggers',
           value: function getTriggers(groupFilter, hostFilter, appFilter, options) {
-            var _this5 = this;
+            var _this6 = this;
 
             var promises = [this.getGroups(groupFilter), this.getHosts(groupFilter, hostFilter), this.getApps(groupFilter, hostFilter, appFilter)];
 
@@ -443,13 +476,13 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
 
               return query;
             }).then(function (query) {
-              return _this5.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options);
+              return _this6.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options);
             });
           }
         }, {
           key: 'getHistoryTS',
           value: function getHistoryTS(items, timeRange, options) {
-            var _this6 = this;
+            var _this7 = this;
 
             var _timeRange = _slicedToArray(timeRange, 2),
                 timeFrom = _timeRange[0],
@@ -457,7 +490,7 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
 
             if (this.enableDirectDBConnection) {
               return this.getHistoryDB(items, timeFrom, timeTo, options).then(function (history) {
-                return _this6.dbConnector.handleGrafanaTSResponse(history, items);
+                return _this7.dbConnector.handleGrafanaTSResponse(history, items);
               });
             } else {
               return this.zabbixAPI.getHistory(items, timeFrom, timeTo).then(function (history) {
@@ -468,7 +501,7 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
         }, {
           key: 'getTrends',
           value: function getTrends(items, timeRange, options) {
-            var _this7 = this;
+            var _this8 = this;
 
             var _timeRange2 = _slicedToArray(timeRange, 2),
                 timeFrom = _timeRange2[0],
@@ -476,7 +509,7 @@ System.register(['lodash', '../utils', '../responseHandler', './connectors/zabbi
 
             if (this.enableDirectDBConnection) {
               return this.getTrendsDB(items, timeFrom, timeTo, options).then(function (history) {
-                return _this7.dbConnector.handleGrafanaTSResponse(history, items);
+                return _this8.dbConnector.handleGrafanaTSResponse(history, items);
               });
             } else {
               var valueType = options.consolidateBy || options.valueType;

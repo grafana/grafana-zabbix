@@ -3,6 +3,7 @@
 System.register([], function (_export, _context) {
   "use strict";
 
+  var DS_CONFIG_SCHEMA;
   /**
    * Query format migration.
    * This module can detect query format version and make migration.
@@ -48,9 +49,36 @@ System.register([], function (_export, _context) {
     } else {
       return '/.*/';
     }
-  }return {
+  }function migrateDSConfig(jsonData) {
+    if (!jsonData) {
+      jsonData = {};
+    }
+    var oldVersion = jsonData.schema || 1;
+    jsonData.schema = DS_CONFIG_SCHEMA;
+
+    if (oldVersion === DS_CONFIG_SCHEMA) {
+      return jsonData;
+    }
+
+    if (oldVersion < 2) {
+      var dbConnectionOptions = jsonData.dbConnection || {};
+      jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
+      jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId || null;
+      delete jsonData.dbConnection;
+    }
+
+    return jsonData;
+  }
+
+  _export("migrateDSConfig", migrateDSConfig);
+
+  return {
     setters: [],
-    execute: function () {}
+    execute: function () {
+      _export("DS_CONFIG_SCHEMA", DS_CONFIG_SCHEMA = 2);
+
+      _export("DS_CONFIG_SCHEMA", DS_CONFIG_SCHEMA);
+    }
   };
 });
 //# sourceMappingURL=migrations.js.map

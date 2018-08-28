@@ -1,16 +1,13 @@
 "use strict";
 
-System.register(["lodash", "q", "../module", "../datasource"], function (_export, _context) {
+System.register(["lodash", "../module", "../datasource"], function (_export, _context) {
   "use strict";
 
-  var _, Q, Promise, Datasource, zabbixTemplateFormat;
+  var _, Datasource, zabbixTemplateFormat;
 
   return {
     setters: [function (_lodash) {
       _ = _lodash.default;
-    }, function (_q) {
-      Q = _q.default;
-      Promise = _q.Promise;
     }, function (_module) {
       Datasource = _module.Datasource;
     }, function (_datasource) {
@@ -24,36 +21,32 @@ System.register(["lodash", "q", "../module", "../datasource"], function (_export
         beforeEach(function () {
           ctx.instanceSettings = {
             jsonData: {
-              alerting: true,
+              alerting: false,
               username: 'zabbix',
               password: 'zabbix',
               trends: true,
               trendsFrom: '14d',
               trendsRange: '7d',
-              dbConnection: {
-                enabled: false
-              }
+              dbConnectionEnable: false
             }
           };
           ctx.templateSrv = {};
-          ctx.alertSrv = {};
-          ctx.dashboardSrv = {};
+          ctx.backendSrv = {
+            datasourceRequest: jest.fn()
+          };
+          ctx.datasourceSrv = {};
           ctx.zabbixAlertingSrv = {
             setPanelAlertState: jest.fn(),
             removeZabbixThreshold: jest.fn()
           };
-          ctx.zabbix = function () {};
 
-          ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.dashboardSrv, ctx.zabbixAlertingSrv, ctx.zabbix);
+          ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.backendSrv, ctx.datasourceSrv, ctx.zabbixAlertingSrv);
         });
 
         describe('When querying data', function () {
           beforeEach(function () {
             ctx.ds.replaceTemplateVars = function (str) {
               return str;
-            };
-            ctx.ds.alertQuery = function () {
-              return Q.when([]);
             };
           });
 
@@ -117,10 +110,7 @@ System.register(["lodash", "q", "../module", "../datasource"], function (_export
             ctx.ds.replaceTemplateVars = function (str) {
               return str;
             };
-            ctx.ds.alertQuery = function () {
-              return Q.when([]);
-            };
-            ctx.ds.zabbix.getHistory = jest.fn().mockReturnValue(Promise.resolve([{ clock: "1500010200", itemid: "10100", ns: "900111000", value: "Linux first" }, { clock: "1500010300", itemid: "10100", ns: "900111000", value: "Linux 2nd" }, { clock: "1500010400", itemid: "10100", ns: "900111000", value: "Linux last" }]));
+            ctx.ds.zabbix.zabbixAPI.getHistory = jest.fn().mockReturnValue(Promise.resolve([{ clock: "1500010200", itemid: "10100", ns: "900111000", value: "Linux first" }, { clock: "1500010300", itemid: "10100", ns: "900111000", value: "Linux 2nd" }, { clock: "1500010400", itemid: "10100", ns: "900111000", value: "Linux last" }]));
 
             ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve([{
               hosts: [{ hostid: "10001", name: "Zabbix server" }],
@@ -244,10 +234,10 @@ System.register(["lodash", "q", "../module", "../datasource"], function (_export
               return str;
             };
             ctx.ds.zabbix = {
-              getGroups: jest.fn().mockReturnValue(Q.when([])),
-              getHosts: jest.fn().mockReturnValue(Q.when([])),
-              getApps: jest.fn().mockReturnValue(Q.when([])),
-              getItems: jest.fn().mockReturnValue(Q.when([]))
+              getGroups: jest.fn().mockReturnValue(Promise.resolve([])),
+              getHosts: jest.fn().mockReturnValue(Promise.resolve([])),
+              getApps: jest.fn().mockReturnValue(Promise.resolve([])),
+              getItems: jest.fn().mockReturnValue(Promise.resolve([]))
             };
           });
 
@@ -411,9 +401,7 @@ System.register(["lodash", "q", "../module", "../datasource"], function (_export
               "hosts": [{ "hostid": "10631", "name": "Test host" }],
               "item": "Test item"
             }];
-            ctx.ds.zabbix.getItemsFromTarget = function () {
-              return Promise.resolve(targetItems);
-            };
+            ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve(targetItems));
 
             options = {
               "panelId": 10,
@@ -434,9 +422,7 @@ System.register(["lodash", "q", "../module", "../datasource"], function (_export
               "expression": "{15915}<100"
             }];
 
-            ctx.ds.zabbix.getAlerts = function () {
-              return Promise.resolve(itemTriggers);
-            };
+            ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
 
             return ctx.ds.alertQuery(options).then(function (resp) {
               expect(resp.thresholds).toHaveLength(1);
@@ -453,9 +439,7 @@ System.register(["lodash", "q", "../module", "../datasource"], function (_export
               "expression": "{15915}<=100"
             }];
 
-            ctx.ds.zabbix.getAlerts = function () {
-              return Promise.resolve(itemTriggers);
-            };
+            ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
 
             return ctx.ds.alertQuery(options).then(function (resp) {
               expect(resp.thresholds.length).toBe(1);
@@ -472,9 +456,7 @@ System.register(["lodash", "q", "../module", "../datasource"], function (_export
               "expression": "{15915}>=30"
             }];
 
-            ctx.ds.zabbix.getAlerts = function () {
-              return Promise.resolve(itemTriggers);
-            };
+            ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
 
             return ctx.ds.alertQuery(options).then(function (resp) {
               expect(resp.thresholds.length).toBe(1);
@@ -491,9 +473,7 @@ System.register(["lodash", "q", "../module", "../datasource"], function (_export
               "expression": "{15915}=50"
             }];
 
-            ctx.ds.zabbix.getAlerts = function () {
-              return Promise.resolve(itemTriggers);
-            };
+            ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
 
             return ctx.ds.alertQuery(options).then(function (resp) {
               expect(resp.thresholds.length).toBe(1);

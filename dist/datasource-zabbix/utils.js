@@ -250,9 +250,25 @@ System.register(['lodash', 'moment'], function (_export, _context) {
     };
   }
 
-  // Fix for backward compatibility with lodash 2.4
+  /**
+   * Apply function one by one: `sequence([a(), b(), c()]) = c(b(a()))`
+   * @param {*} funcsArray functions to apply
+   */
 
   _export('callOnce', callOnce);
+
+  function sequence(funcsArray) {
+    return function (result) {
+      for (var i = 0; i < funcsArray.length; i++) {
+        result = funcsArray[i].call(this, result);
+      }
+      return result;
+    };
+  }
+
+  // Fix for backward compatibility with lodash 2.4
+
+  _export('sequence', sequence);
 
   return {
     setters: [function (_lodash) {

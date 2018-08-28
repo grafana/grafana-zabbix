@@ -167,7 +167,7 @@ System.register(['lodash', './mysql', './postgres', '../dbConnector'], function 
         _createClass(SQLConnector, [{
           key: 'loadSQLDialect',
           value: function loadSQLDialect() {
-            if (this.datasourceType === supportedDatabases.postgres) {
+            if (this.datasourceTypeId === supportedDatabases.postgres) {
               this.sqlDialect = postgres;
             } else {
               this.sqlDialect = mysql;

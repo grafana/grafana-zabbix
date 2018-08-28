@@ -1,6 +1,6 @@
 'use strict';
 
-System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metricFunctions', './migrations', './add-metric-function.directive', './metric-function-editor.directive'], function (_export, _context) {
+System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metricFunctions', './migrations'], function (_export, _context) {
   "use strict";
 
   var QueryCtrl, _, c, utils, metricFunctions, migrations, _createClass, ZabbixQueryController;
@@ -48,7 +48,7 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
       metricFunctions = _metricFunctions;
     }, function (_migrations) {
       migrations = _migrations;
-    }, function (_addMetricFunctionDirective) {}, function (_metricFunctionEditorDirective) {}],
+    }],
     execute: function () {
       _createClass = function () {
         function defineProperties(target, props) {
@@ -401,9 +401,6 @@ System.register(['app/plugins/sdk', 'lodash', './constants', './utils', './metri
       }(QueryCtrl));
 
       _export('ZabbixQueryController', ZabbixQueryController);
-
-      // Set templateUrl as static property
-      ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';
     }
   };
 });

@@ -3,7 +3,7 @@
 System.register(['angular', 'lodash', 'jquery'], function (_export, _context) {
   "use strict";
 
-  var angular, _, $;
+  var angular, _, $, DOCS_FUNC_REF_URL;
 
   return {
     setters: [function (_angular) {
@@ -14,9 +14,13 @@ System.register(['angular', 'lodash', 'jquery'], function (_export, _context) {
       $ = _jquery.default;
     }],
     execute: function () {
+      DOCS_FUNC_REF_URL = 'http://docs.grafana-zabbix.org/reference/functions/';
+
+
+      angular.module('grafana.directives').directive('metricFunctionEditor',
 
       /** @ngInject */
-      angular.module('grafana.directives').directive('metricFunctionEditor', function ($compile, templateSrv) {
+      function ($compile, templateSrv) {
 
         var funcSpanTemplate = '<a ng-click="">{{func.def.name}}</a><span>(</span>';
         var paramTemplate = '<input type="text" style="display:none"' + ' class="input-mini tight-form-func-param"></input>';
@@ -225,7 +229,7 @@ System.register(['angular', 'lodash', 'jquery'], function (_export, _context) {
                 }
 
                 if ($target.hasClass('fa-question-circle')) {
-                  var docSite = "http://docs.grafana-zabbix.org/reference/functions/";
+                  var docSite = DOCS_FUNC_REF_URL;
                   window.open(docSite + '#' + funcDef.name.toLowerCase(), '_blank');
                   return;
                 }
