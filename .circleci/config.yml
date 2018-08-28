@@ -1,9 +1,37 @@
+aliases:
+  # Workflow filters
+  - &filter-not-release-or-master
+    tags:
+      ignore: /^v[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)$/
+    branches:
+      ignore: master
+  - &filter-only-master
+    branches:
+      only: master
+
 version: 2
 jobs:
   build:
     working_directory: ~/alexanderzobnin/grafana-zabbix
-    # parallelism: 1
-    # shell: /bin/bash --login
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: yarn install
+          command: 'yarn install --pure-lockfile --no-progress'
+          no_output_timeout: 15m
+      - save_cache:
+          key: dependency-cache-{{ checksum "yarn.lock" }}
+          paths:
+          - ./node_modules
+      - run: npm run build
+
+  test:
+    working_directory: ~/alexanderzobnin/grafana-zabbix
     environment:
       CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
       CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
@@ -27,11 +55,25 @@ jobs:
           paths:
           - ./node_modules
       - run: npm run ci-test
-      # Save test results
       - store_test_results:
           path: /tmp/circleci-test-results
-      # Save artifacts
       - store_artifacts:
           path: /tmp/circleci-artifacts
       - store_artifacts:
           path: /tmp/circleci-test-results
+
+workflows:
+  version: 2
+  build-master:
+    jobs:
+      - build:
+          filters: *filter-only-master
+      - test:
+          filters: *filter-only-master
+
+  build-branches-and-prs:
+    jobs:
+      - build:
+          filters: *filter-not-release-or-master
+      - test:
+          filters: *filter-not-release-or-master
