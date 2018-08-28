@@ -6,10 +6,10 @@
   "scripts": {
     "test": "jest",
     "jest": "jest --notify --watch",
-    "build": "grunt && jest",
+    "build": "grunt",
     "watch": "grunt watch",
     "codecov": "jest --coverage && codecov",
-    "ci-test": "grunt && jest --coverage && codecov",
+    "ci-test": "jest --coverage && codecov",
     "benchmark": "grunt bench"
   },
   "repository": {

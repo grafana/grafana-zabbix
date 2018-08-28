@@ -1,0 +1,79 @@
+aliases:
+  # Workflow filters
+  - &filter-not-release-or-master
+    tags:
+      ignore: /^v[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)$/
+    branches:
+      ignore: master
+  - &filter-only-master
+    branches:
+      only: master
+
+version: 2
+jobs:
+  build:
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: yarn install
+          command: 'yarn install --pure-lockfile --no-progress'
+          no_output_timeout: 15m
+      - save_cache:
+          key: dependency-cache-{{ checksum "yarn.lock" }}
+          paths:
+          - ./node_modules
+      - run: npm run build
+
+  test:
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    environment:
+      CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
+      CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      # Prepare for artifact and test results collection equivalent to how it was done on 1.0.
+      # In many cases you can simplify this from what is generated here.
+      # 'See docs on artifact collection here https://circleci.com/docs/2.0/artifacts/'
+      - run: mkdir -p $CIRCLE_ARTIFACTS $CIRCLE_TEST_REPORTS
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: yarn install
+          command: 'yarn install --pure-lockfile --no-progress'
+          no_output_timeout: 15m
+      - save_cache:
+          key: dependency-cache-{{ checksum "yarn.lock" }}
+          paths:
+          - ./node_modules
+      - run: npm run ci-test
+      - store_test_results:
+          path: /tmp/circleci-test-results
+      - store_artifacts:
+          path: /tmp/circleci-artifacts
+      - store_artifacts:
+          path: /tmp/circleci-test-results
+
+workflows:
+  version: 2
+  build-master:
+    jobs:
+      - build:
+          filters: *filter-only-master
+      - test:
+          filters: *filter-only-master
+
+  build-branches-and-prs:
+    jobs:
+      - build:
+          filters: *filter-not-release-or-master
+      - test:
+          filters: *filter-not-release-or-master
