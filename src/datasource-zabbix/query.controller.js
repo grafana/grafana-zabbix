@@ -1,12 +1,9 @@
-import {QueryCtrl} from 'app/plugins/sdk';
+import { QueryCtrl } from 'app/plugins/sdk';
 import _ from 'lodash';
 import * as c from './constants';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
-
-import './add-metric-function.directive';
-import './metric-function-editor.directive';
 
 export class ZabbixQueryController extends QueryCtrl {
 
@@ -333,6 +330,3 @@ export class ZabbixQueryController extends QueryCtrl {
     this.targetChanged();
   }
 }
-
-// Set templateUrl as static property
-ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';

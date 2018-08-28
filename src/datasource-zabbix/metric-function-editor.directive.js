@@ -2,10 +2,14 @@ import angular from 'angular';
 import _ from 'lodash';
 import $ from 'jquery';
 
-/** @ngInject */
+const DOCS_FUNC_REF_URL = 'http://docs.grafana-zabbix.org/reference/functions/';
+
 angular
   .module('grafana.directives')
-  .directive('metricFunctionEditor', function($compile, templateSrv) {
+  .directive('metricFunctionEditor',
+
+  /** @ngInject */
+  function($compile, templateSrv) {
 
     var funcSpanTemplate = '<a ng-click="">{{func.def.name}}</a><span>(</span>';
     var paramTemplate = '<input type="text" style="display:none"' +
@@ -221,7 +225,7 @@ angular
             }
 
             if ($target.hasClass('fa-question-circle')) {
-              var docSite = "http://docs.grafana-zabbix.org/reference/functions/";
+              var docSite = DOCS_FUNC_REF_URL;
               window.open(docSite + '#' + funcDef.name.toLowerCase(),'_blank');
               return;
             }

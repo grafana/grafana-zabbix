@@ -9,6 +9,7 @@ const defaultConfig = {
 };
 
 export class ZabbixDSConfigController {
+
   /** @ngInject */
   constructor($scope, $injector, datasourceSrv) {
     this.datasourceSrv = datasourceSrv;
@@ -24,5 +25,3 @@ export class ZabbixDSConfigController {
     });
   }
 }
-
-ZabbixDSConfigController.templateUrl = 'datasource-zabbix/partials/config.html';

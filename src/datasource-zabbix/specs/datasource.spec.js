@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import Q, { Promise } from "q";
-import {Datasource} from "../module";
-import {zabbixTemplateFormat} from "../datasource";
+import { Datasource } from "../module";
+import { zabbixTemplateFormat } from "../datasource";
 
 describe('ZabbixDatasource', () => {
   let ctx = {};

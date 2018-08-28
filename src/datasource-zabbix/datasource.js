@@ -6,11 +6,10 @@ import * as metricFunctions from './metricFunctions';
 import * as c from './constants';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
-import './zabbixAlerting.service.js';
 import { Zabbix } from './zabbix/zabbix';
-import {ZabbixAPIError} from './zabbix/connectors/zabbix_api/zabbixAPICore';
+import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 
-class ZabbixAPIDatasource {
+export class ZabbixDatasource {
 
   /** @ngInject */
   constructor(instanceSettings, templateSrv, alertSrv, dashboardSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
@@ -96,7 +95,7 @@ class ZabbixAPIDatasource {
 
     // Create request for each target
     let promises = _.map(options.targets, t => {
-      // Don't request undefined and hidden targets
+      // Don't request for hidden targets
       if (t.hide) {
         return [];
       }
@@ -111,7 +110,7 @@ class ZabbixAPIDatasource {
       // Apply Time-related functions (timeShift(), etc)
       let timeFunctions = bindFunctionDefs(target.functions, 'Time');
       if (timeFunctions.length) {
-        const [time_from, time_to] = sequence(timeFunctions)([timeFrom, timeTo]);
+        const [time_from, time_to] = utils.sequence(timeFunctions)([timeFrom, timeTo]);
         timeFrom = time_from;
         timeTo = time_to;
       }
@@ -124,8 +123,8 @@ class ZabbixAPIDatasource {
         // Migrate old targets
         target = migrations.migrate(target);
 
-        // Don't request undefined and hidden targets
-        if (target.hide || !target.group || !target.host || !target.item) {
+        // Don't request undefined targets
+        if (!target.group || !target.host || !target.item) {
           return [];
         }
 
@@ -167,9 +166,7 @@ class ZabbixAPIDatasource {
       itemtype: 'num'
     };
     return this.zabbix.getItemsFromTarget(target, getItemOptions)
-    .then(items => {
-      return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
-    });
+    .then(items => this.queryNumericDataForItems(items, target, timeRange, useTrends, options));
   }
 
   /**
@@ -208,19 +205,19 @@ class ZabbixAPIDatasource {
 
     // Apply transformation functions
     timeseries_data = _.cloneDeep(_.map(timeseries_data, timeseries => {
-      timeseries.datapoints = sequence(transformFunctions)(timeseries.datapoints);
+      timeseries.datapoints = utils.sequence(transformFunctions)(timeseries.datapoints);
       return timeseries;
     }));
 
     // Apply filter functions
     if (filterFunctions.length) {
-      timeseries_data = sequence(filterFunctions)(timeseries_data);
+      timeseries_data = utils.sequence(filterFunctions)(timeseries_data);
     }
 
     // Apply aggregations
     if (aggregationFunctions.length) {
       let dp = _.map(timeseries_data, 'datapoints');
-      dp = sequence(aggregationFunctions)(dp);
+      dp = utils.sequence(aggregationFunctions)(dp);
 
       let aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
       let lastAgg = _.findLast(target.functions, func => {
@@ -234,7 +231,7 @@ class ZabbixAPIDatasource {
     }
 
     // Apply alias functions
-    _.forEach(timeseries_data, sequence(aliasFunctions));
+    _.forEach(timeseries_data, utils.sequence(aliasFunctions));
 
     // Apply Time-related functions (timeShift(), etc)
     // Find timeShift() function and get specified trend value
@@ -648,7 +645,7 @@ function formatMetric(metricObj) {
  * template variables, for example
  * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
  */
-function zabbixTemplateFormat(value) {
+export function zabbixTemplateFormat(value) {
   if (typeof value === 'string') {
     return utils.escapeRegex(value);
   }
@@ -680,17 +677,6 @@ function replaceTemplateVars(templateSrv, target, scopedVars) {
   return replacedTarget;
 }
 
-// Apply function one by one:
-// sequence([a(), b(), c()]) = c(b(a()));
-function sequence(funcsArray) {
-  return function(result) {
-    for (var i = 0; i < funcsArray.length; i++) {
-      result = funcsArray[i].call(this, result);
-    }
-    return result;
-  };
-}
-
 function filterEnabledTargets(targets) {
   return _.filter(targets, target => {
     return !(target.hide || !target.group || !target.host || !target.item);
@@ -708,8 +694,6 @@ function getTriggerThreshold(expression) {
     return null;
   }
 }
-
-export {ZabbixAPIDatasource, zabbixTemplateFormat};
 
 // Fix for backward compatibility with lodash 2.4
 if (!_.includes) {_.includes = _.contains;}

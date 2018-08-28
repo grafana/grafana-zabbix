@@ -2,6 +2,10 @@ import _ from 'lodash';
 
 const NOT_IMPLEMENTED = 'Method should be implemented in subclass of DBConnector';
 
+/**
+ * Base class for external history database connectors. Subclasses should implement `getHistory()`, `getTrends()` and
+ * `testDataSource()` methods, which describe how to fetch data from source other than Zabbix API.
+ */
 export default class DBConnector {
   constructor(options, backendSrv, datasourceSrv) {
     this.backendSrv = backendSrv;
@@ -24,14 +28,23 @@ export default class DBConnector {
     }
   }
 
+  /**
+   * Send test request to datasource in order to ensure it's working.
+   */
   testDataSource() {
     throw NOT_IMPLEMENTED;
   }
 
+  /**
+   * Get history data from external sources.
+   */
   getHistory() {
     throw NOT_IMPLEMENTED;
   }
 
+  /**
+   * Get trends data from external sources.
+   */
   getTrends() {
     throw NOT_IMPLEMENTED;
   }
