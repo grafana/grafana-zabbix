@@ -147,7 +147,7 @@ export class SQLConnector extends DBConnector {
 function convertGrafanaTSResponse(time_series, items, addHostName) {
   //uniqBy is needed to deduplicate
   var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
-  let grafanaSeries = _.map(time_series, series => {
+  let grafanaSeries = _.map(_.compact(time_series), series => {
     let itemid = series.name;
     var item = _.find(items, {'itemid': itemid});
     var alias = item.name;
