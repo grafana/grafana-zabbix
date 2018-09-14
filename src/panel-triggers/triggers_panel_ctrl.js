@@ -130,7 +130,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   setTimeQueryEnd() {
-    this.timing.queryEnd = new Date().getTime();
+    this.timing.queryEnd = (new Date()).getTime();
   }
 
   onRefresh() {
@@ -144,23 +144,24 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.pageIndex = 0;
 
     return this.getTriggers()
-    .then(zabbixTriggers => {
+    .then(triggers => this.renderTriggers(triggers))
+    .then(() => {
       // Notify panel that request is finished
       this.loading = false;
       this.setTimeQueryEnd();
-
-      this.render(zabbixTriggers);
+      this.$timeout(() => {
+        this.renderingCompleted();
+      });
     })
     .catch(err => {
-      // if cancelled  keep loading set to true
+      this.loading = false;
+
       if (err.cancelled) {
         console.log('Panel request cancelled', err);
         return;
       }
 
-      this.loading = false;
       this.error = err.message || "Request Error";
-
       if (err.data) {
         if (err.data.message) {
           this.error = err.data.message;
@@ -175,7 +176,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     });
   }
 
-  render(zabbixTriggers) {
+  renderTriggers(zabbixTriggers) {
     let triggers = _.cloneDeep(zabbixTriggers || this.triggerListUnfiltered);
     this.triggerListUnfiltered = _.cloneDeep(triggers);
 
@@ -189,8 +190,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.triggerList = triggers;
     this.getCurrentTriggersPage();
 
-    this.$timeout(() => {
-      super.render(this.triggerList);
+    return this.$timeout(() => {
+      return super.render(this.triggerList);
     });
   }
 
@@ -649,7 +650,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
       rootElem.css({'max-height': getContentHeight()});
       rootElem.css({'height': getContentHeight()});
       setFontSize();
-      ctrl.renderingCompleted();
     }
 
     let unbindDestroy = scope.$on('$destroy', function() {

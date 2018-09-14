@@ -55,6 +55,10 @@
       opacity: 0.4;
     }
   }
+
+  .alert-rule-item__icon .icon-gf {
+    right: 0.4rem;
+  }
 }
 
 .zbx-trigger-card {
@@ -179,5 +183,19 @@
 
   .icon-gf {
     font-size: 200%;
+  }
+}
+
+// fix for phantomjs (it has troubles with flex blocks rendering)
+.body--phantomjs {
+  .triggers-panel-container {
+    .alert-rule-list {
+      display: block;
+    }
+
+    .alert-rule-item__body,
+    .alert-rule-item__icon {
+      display: block;
+    }
   }
 }
