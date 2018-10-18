@@ -47,9 +47,7 @@ export class ZabbixAPIConnector {
           .then(() => this.request(method, params));
         }
       } else {
-        // Handle API errors
-        let message = error.data ? error.data : error.statusText;
-        return Promise.reject(message);
+        return Promise.reject(error);
       }
     });
   }
