@@ -92,7 +92,8 @@ export class ZabbixAPIConnector {
   acknowledgeEvent(eventid, message) {
     var params = {
       eventids: eventid,
-      message: message
+      message: message,
+      action: 6
     };
 
     return this.request('event.acknowledge', params);
