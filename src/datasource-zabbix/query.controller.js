@@ -1,4 +1,4 @@
-import { QueryCtrl } from 'app/plugins/sdk';
+import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import _ from 'lodash';
 import * as c from './constants';
 import * as utils from './utils';

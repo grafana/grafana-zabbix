@@ -1,9 +1,8 @@
 // JSHint options
 /* globals global: false */
 
-import {JSDOM} from 'jsdom';
-import System from 'systemjs';
-import {PanelCtrl} from './panelStub';
+import { JSDOM } from 'jsdom';
+import { PanelCtrl } from './panelStub';
 
 // Mock Grafana modules that are not available outside of the core project
 // Required for loading module.js
@@ -20,7 +19,7 @@ jest.mock('angular', () => {
 }, {virtual: true});
 
 let mockPanelCtrl = PanelCtrl;
-jest.mock('app/plugins/sdk', () => {
+jest.mock('grafana/app/plugins/sdk', () => {
   return {
     QueryCtrl: null,
     loadPluginCss: () => {},
@@ -28,7 +27,7 @@ jest.mock('app/plugins/sdk', () => {
   };
 }, {virtual: true});
 
-jest.mock('app/core/utils/datemath', () => {
+jest.mock('grafana/app/core/utils/datemath', () => {
   const datemath = require('./modules/datemath');
   return {
     parse: datemath.parse,
@@ -37,7 +36,7 @@ jest.mock('app/core/utils/datemath', () => {
   };
 }, {virtual: true});
 
-jest.mock('app/core/table_model', () => {
+jest.mock('grafana/app/core/table_model', () => {
   return class TableModel {
     constructor() {
       this.columns = [];
@@ -63,4 +62,3 @@ let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
 global.window = dom.window;
 global.document = global.window.document;
 global.Node = window.Node;
-global.System = System;

@@ -12,7 +12,7 @@
  */
 
 import {TriggerPanelCtrl} from './triggers_panel_ctrl';
-import {loadPluginCss} from 'app/plugins/sdk';
+import {loadPluginCss} from 'grafana/app/plugins/sdk';
 import './datasource-selector.directive';
 import './ack-tooltip.directive';
 

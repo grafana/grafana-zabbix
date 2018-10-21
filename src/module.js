@@ -1,5 +1,8 @@
+import './sass/grafana-zabbix.dark.scss';
+import './sass/grafana-zabbix.light.scss';
+
 import {ZabbixAppConfigCtrl} from './components/config';
-import {loadPluginCss} from 'app/plugins/sdk';
+import {loadPluginCss} from 'grafana/app/plugins/sdk';
 
 loadPluginCss({
   dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
