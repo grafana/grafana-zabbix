@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import * as utils from '../../../utils';
 import { ZabbixAPICore } from './zabbixAPICore';
+import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE } from '../../../constants';
 
 /**
  * Zabbix API Wrapper.
@@ -8,11 +9,12 @@ import { ZabbixAPICore } from './zabbixAPICore';
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-  constructor(api_url, username, password, basicAuth, withCredentials, backendSrv) {
+  constructor(api_url, username, password, version, basicAuth, withCredentials, backendSrv) {
     this.url              = api_url;
     this.username         = username;
     this.password         = password;
-    this.auth             = "";
+    this.auth             = '';
+    this.version          = version;
 
     this.requestOptions = {
       basicAuth: basicAuth,
@@ -47,9 +49,7 @@ export class ZabbixAPIConnector {
           .then(() => this.request(method, params));
         }
       } else {
-        // Handle API errors
-        let message = error.data ? error.data : error.statusText;
-        return Promise.reject(message);
+        return Promise.reject(error);
       }
     });
   }
@@ -92,9 +92,11 @@ export class ZabbixAPIConnector {
   ////////////////////////////////
 
   acknowledgeEvent(eventid, message) {
-    var params = {
+    const action = this.version >= 4 ? ZBX_ACK_ACTION_ACK + ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
+    const params = {
       eventids: eventid,
-      message: message
+      message: message,
+      action: action
     };
 
     return this.request('event.acknowledge', params);

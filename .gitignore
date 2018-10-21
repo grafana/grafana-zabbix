@@ -29,6 +29,7 @@ awsconfig
 /public_gen
 /tmp
 vendor/phantomjs/phantomjs
+yarn-error.log
 
 # Built plugin
 dist/

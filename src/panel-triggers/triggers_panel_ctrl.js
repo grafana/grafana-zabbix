@@ -102,6 +102,23 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.events.on('refresh', this.onRefresh.bind(this));
   }
 
+  setPanelError(err, defaultError) {
+    const defaultErrorMessage = defaultError || "Request Error";
+    this.inspector = { error: err };
+    this.error = err.message || defaultErrorMessage;
+    if (err.data) {
+      if (err.data.message) {
+        this.error = err.data.message;
+      }
+      if (err.data.error) {
+        this.error = err.data.error;
+      }
+    }
+
+    this.events.emit('data-error', err);
+    console.log('Panel data error:', err);
+  }
+
   initDatasources() {
     let promises = _.map(this.panel.datasources, (ds) => {
       // Load datasource
@@ -161,18 +178,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         return;
       }
 
-      this.error = err.message || "Request Error";
-      if (err.data) {
-        if (err.data.message) {
-          this.error = err.data.message;
-        }
-        if (err.data.error) {
-          this.error = err.data.error;
-        }
-      }
-
-      this.events.emit('data-error', err);
-      console.log('Panel data error:', err);
+      this.setPanelError(err);
     });
   }
 
@@ -459,16 +465,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
         return Promise.reject({message: 'You have no permissions to acknowledge events.'});
       }
       if (eventid) {
-        return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
+        return datasource.zabbix.acknowledgeEvent(eventid, ack_message);
       } else {
         return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
       }
     })
     .then(this.onRefresh.bind(this))
     .catch((err) => {
-      this.error = err.message || "Acknowledge Error";
-      this.events.emit('data-error', err);
-      console.log('Panel data error:', err);
+      this.setPanelError(err);
     });
   }
 

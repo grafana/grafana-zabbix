@@ -17,7 +17,7 @@ const REQUESTS_TO_CACHE = [
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'getVersion', 'login'
+  'getAcknowledges', 'getITService', 'getVersion', 'login', 'acknowledgeEvent'
 ];
 
 export class Zabbix {
@@ -28,6 +28,7 @@ export class Zabbix {
       password,
       basicAuth,
       withCredentials,
+      zabbixVersion,
       cacheTTL,
       enableDirectDBConnection,
       dbConnectionDatasourceId,
@@ -43,7 +44,7 @@ export class Zabbix {
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials, backendSrv);
+    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, zabbixVersion, basicAuth, withCredentials, backendSrv);
 
     if (enableDirectDBConnection) {
       let dbConnectorOptions = {
