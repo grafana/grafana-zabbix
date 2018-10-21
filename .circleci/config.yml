@@ -8,6 +8,9 @@ aliases:
   - &filter-only-master
     branches:
       only: master
+  - &filter-docs
+    branches:
+      only: docs
 
 version: 2
 jobs:
@@ -81,6 +84,18 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
+  build-docs:
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      - checkout
+      - run: git lfs fetch --all
+      - run: pip install --upgrade pip
+      - run: pip install mkdocs
+      - run: cd docs && mkdocs build --clean
+
+
 workflows:
   version: 2
   build-master:
@@ -100,3 +115,8 @@ workflows:
           filters: *filter-not-release-or-master
       - test:
           filters: *filter-not-release-or-master
+
+  build-docs:
+    jobs:
+      - build-docs:
+          filters: *filter-docs
