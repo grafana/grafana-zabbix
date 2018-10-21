@@ -7,7 +7,7 @@ aliases:
       ignore:
         - master
         - docs
-        - 'gh-pages'
+        - gh-pages
   - &filter-only-master
     branches:
       only: master
