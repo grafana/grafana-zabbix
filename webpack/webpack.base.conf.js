@@ -63,9 +63,7 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           query: {
-            presets: [
-              require.resolve('babel-preset-env')
-            ]
+            presets: ['babel-preset-env']
           }
         }
       },
