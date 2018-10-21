@@ -30,6 +30,25 @@ jobs:
           - ./node_modules
       - run: npm run build
 
+  lint:
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: yarn install
+          command: 'yarn install --pure-lockfile --no-progress'
+          no_output_timeout: 15m
+      - save_cache:
+          key: dependency-cache-{{ checksum "yarn.lock" }}
+          paths:
+          - ./node_modules
+      - run: npm run lint
+
   test:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     environment:
@@ -68,12 +87,16 @@ workflows:
     jobs:
       - build:
           filters: *filter-only-master
+      - lint:
+          filters: *filter-only-master
       - test:
           filters: *filter-only-master
 
   build-branches-and-prs:
     jobs:
       - build:
+          filters: *filter-not-release-or-master
+      - lint:
           filters: *filter-not-release-or-master
       - test:
           filters: *filter-not-release-or-master
