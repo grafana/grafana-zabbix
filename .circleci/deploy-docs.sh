@@ -21,7 +21,7 @@ mv ../gh-pages/docs/site/* ./
 # ls -lha .
 # git status
 git add --force .
-git commit -m "build docs from commit $CIRCLE_SHA1 (branch $CIRCLE_BRANCH)"
+git commit -m "build docs from commit ${CIRCLE_SHA1:0:7} (branch $CIRCLE_BRANCH)"
 git log -n 3
 
 git push origin $GH_PAGES_BRANCH
