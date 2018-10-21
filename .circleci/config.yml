@@ -101,6 +101,19 @@ jobs:
       - checkout
       - run: git lfs fetch --all
       - run: cd docs && mkdocs build --clean
+      - persist_to_workspace:
+          root: .
+          paths:
+            - docs/site
+
+  deploy-docs:
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    docker:
+      - image: circleci/node:8
+    steps:
+      - attach_workspace:
+          at: .
+      - run: ls -lh docs/site
 
 
 workflows:
@@ -126,4 +139,8 @@ workflows:
   build-docs:
     jobs:
       - build-docs:
+          filters: *filter-docs
+      - deploy-docs:
+          requires:
+            - build-docs
           filters: *filter-docs
