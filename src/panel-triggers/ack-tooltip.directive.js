@@ -2,21 +2,11 @@ import $ from 'jquery';
 import angular from 'angular';
 import Drop from 'tether-drop';
 
-// System.config({
-//   paths: {
-//     tether: System.getConfig().baseURL + "plugins/alexanderzobnin-zabbix-app/vendor/npm/tether.min.js"
-//   }
-// });
-
-// let Drop;
-// System.amdRequire(["plugins/alexanderzobnin-zabbix-app/vendor/npm/drop.min.js"], (drop) => {
-//   Drop = drop;
-// });
-
-/** @ngInject */
 angular
   .module('grafana.directives')
-  .directive('ackTooltip', function($sanitize, $compile) {
+  .directive('ackTooltip',
+  /** @ngInject */
+  function($sanitize, $compile) {
     let buttonTemplate = '<a bs-tooltip="\'Acknowledges ({{trigger.acknowledges.length}})\'"' +
                           '<i ng-class="' +
                             "{'fa fa-comments': trigger.acknowledges.length, " +
