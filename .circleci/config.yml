@@ -7,6 +7,7 @@ aliases:
       ignore:
         - master
         - docs
+        - 'gh-pages'
   - &filter-only-master
     branches:
       only: master
@@ -87,7 +88,7 @@ jobs:
           path: /tmp/circleci-test-results
 
   build-docs:
-    working_directory: ~/alexanderzobnin/grafana-zabbix
+    working_directory: ~/grafana-zabbix
     docker:
       - image: circleci/python:2.7
     steps:
@@ -101,7 +102,27 @@ jobs:
       - checkout
       - run: git lfs fetch --all
       - run: cd docs && mkdocs build --clean
+      - persist_to_workspace:
+          root: .
+          paths:
+            - docs/site
 
+  deploy-docs:
+    working_directory: ~/grafana-zabbix
+    docker:
+      - image: circleci/node:8
+    environment:
+      GH_PAGES_BRANCH: gh-pages
+      CI_GIT_USER: CircleCI
+      CI_GIT_EMAIL: ci@grafana.com
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
+      - checkout
+      - attach_workspace:
+          at: ../gh-pages
+      - run: ./.circleci/deploy-docs.sh
 
 workflows:
   version: 2
@@ -126,4 +147,8 @@ workflows:
   build-docs:
     jobs:
       - build-docs:
+          filters: *filter-docs
+      - deploy-docs:
+          requires:
+            - build-docs
           filters: *filter-docs
