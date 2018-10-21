@@ -95,7 +95,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Template query format. New format is `{group}{host}{app}{item}`. It allows to use names with dot. Updated 
-  [templating docs](http://docs.grafana-zabbix.org/guides/templating/#query-format), 
+  [templating docs](https://alexanderzobnin.github.io/grafana-zabbix/guides/templating/#query-format), 
   [#254](https://github.com/alexanderzobnin/grafana-zabbix/issues/254)
 - Update included dashboards. Add templated zabbix datasource and use it for all metrics.
 - Improved performance of groupBy() functions (at 6-10x faster than old).

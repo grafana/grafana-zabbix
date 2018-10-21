@@ -1,10 +1,8 @@
 site_name: Grafana-Zabbix Documentation
-#site_url: http://docs.grafana-zabbix.org/
-#site_url: /
 site_description: Documentation for Grafana-Zabbix, Zabbix monitoring system plugin bundle for Grafana
 repo_url: https://github.com/alexanderzobnin/grafana-zabbix/
 edit_uri: blob/master/docs/sources/
-copyright: Copyright &copy; 2015-2017, Alexander Zobnin
+copyright: Copyright &copy; 2015-2018, Alexander Zobnin
 
 docs_dir: sources
 theme: readthedocs
