@@ -2,7 +2,7 @@ import _ from 'lodash';
 import $ from 'jquery';
 import moment from 'moment';
 import * as utils from '../datasource-zabbix/utils';
-import {PanelCtrl} from 'app/plugins/sdk';
+import {PanelCtrl} from 'grafana/app/plugins/sdk';
 import {triggerPanelOptionsTab} from './options_tab';
 import {triggerPanelTriggersTab} from './triggers_tab';
 import {migratePanelSchema, CURRENT_SCHEMA_VERSION} from './migrations';

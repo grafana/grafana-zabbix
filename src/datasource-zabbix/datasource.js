@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import * as dateMath from 'app/core/utils/datemath';
+import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';

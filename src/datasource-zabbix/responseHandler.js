@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import TableModel from 'app/core/table_model';
+import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
 
 /**
