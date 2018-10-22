@@ -16,7 +16,7 @@ theme:
 extra_css:
   - css/custom.css
 
-pages:
+nav:
   - Project:
       - 'About Grafana-Zabbix': 'index.md'
       - 'Feature Highlights': 'features.md'
