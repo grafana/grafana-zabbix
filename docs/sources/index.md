@@ -19,7 +19,7 @@ a number of ways to get help:
 
 - [Troubleshooting guide](/configuration/troubleshooting/)
 - Search closed and open [issues on GitHub](https://github.com/grafana/grafana/issues)
-- [Gitter room](https://gitter.im/alexanderzobnin/grafana-zabbix)
+- [Grafana Community](https://community.grafana.com)
 - [Twitter](https://twitter.com/AlexanderZobnin)
 
 Or you can send me [email](mailto:alexanderzobnin@gmail.com).
