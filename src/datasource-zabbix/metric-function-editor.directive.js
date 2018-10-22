@@ -2,7 +2,7 @@ import angular from 'angular';
 import _ from 'lodash';
 import $ from 'jquery';
 
-const DOCS_FUNC_REF_URL = 'http://docs.grafana-zabbix.org/reference/functions/';
+const DOCS_FUNC_REF_URL = 'https://alexanderzobnin.github.io/grafana-zabbix/reference/functions/';
 
 angular
   .module('grafana.directives')

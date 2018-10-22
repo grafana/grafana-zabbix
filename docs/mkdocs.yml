@@ -1,35 +1,40 @@
 site_name: Grafana-Zabbix Documentation
-#site_url: http://docs.grafana-zabbix.org/
-#site_url: /
 site_description: Documentation for Grafana-Zabbix, Zabbix monitoring system plugin bundle for Grafana
+site_url: https://alexanderzobnin.github.io/grafana-zabbix
 repo_url: https://github.com/alexanderzobnin/grafana-zabbix/
-edit_uri: blob/master/docs/sources/
-copyright: Copyright &copy; 2015-2017, Alexander Zobnin
+edit_uri: edit/docs/docs/sources/
+copyright: Copyright &copy; 2015-2018, Alexander Zobnin
 
 docs_dir: sources
-theme: readthedocs
+
+theme:
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - yaml
+    - sql
 extra_css:
-    - css/custom.css
+  - css/custom.css
 
 pages:
-- Project:
-    - 'About Grafana-Zabbix': 'index.md'
-    - 'Feature Highlights': 'features.md'
-- Installation:
-    - 'Installation': 'installation/index.md'
-    - 'Configuration': 'installation/configuration.md'
-    - 'SQL Data Source Configuration': 'installation/configuration-sql.md'
-    - 'Provisioning': 'installation/provisioning.md'
-    - 'Upgrade': 'installation/upgrade.md'
-    - 'Troubleshooting': 'installation/troubleshooting.md'
-- User Guides:
-    - 'Getting Started': 'guides/gettingstarted.md'
-    - 'Templating': 'guides/templating.md'
-- Reference:
-    - 'Zabbix Datasource': 'reference/datasource-zabbix.md'
-    - 'Triggers Panel': 'reference/panel-triggers.md'
-    - 'Functions': 'reference/functions.md'
-    - 'Alerting': 'reference/alerting.md'
-    - 'Direct DB Connection': 'reference/direct-db-connection.md'
-# - Tutorials:
-#     - 'Building Host Dashboard': 'tutorials/host_dashboard.md'
+  - Project:
+      - 'About Grafana-Zabbix': 'index.md'
+      - 'Feature Highlights': 'features.md'
+  - Installation:
+      - 'Installation': 'installation/index.md'
+      - 'Configuration': 'installation/configuration.md'
+      - 'SQL Data Source Configuration': 'installation/configuration-sql.md'
+      - 'Provisioning': 'installation/provisioning.md'
+      - 'Upgrade': 'installation/upgrade.md'
+      - 'Troubleshooting': 'installation/troubleshooting.md'
+  - User Guides:
+      - 'Getting Started': 'guides/gettingstarted.md'
+      - 'Templating': 'guides/templating.md'
+  - Reference:
+      - 'Zabbix Datasource': 'reference/datasource-zabbix.md'
+      - 'Triggers Panel': 'reference/panel-triggers.md'
+      - 'Functions': 'reference/functions.md'
+      - 'Alerting': 'reference/alerting.md'
+      - 'Direct DB Connection': 'reference/direct-db-connection.md'
+  # - Tutorials:
+  #     - 'Building Host Dashboard': 'tutorials/host_dashboard.md'
