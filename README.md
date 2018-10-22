@@ -38,7 +38,7 @@ Or see more installation options in [docs](https://alexanderzobnin.github.io/gra
 
 ## Getting started
 
-First, [configure](https://alexanderzobnin.github.io/grafana-zabbix/installation/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://alexanderzobnin.github.io/grafana-zabbix/guides/gettingstarted/).
+First, [configure](https://alexanderzobnin.github.io/grafana-zabbix/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://alexanderzobnin.github.io/grafana-zabbix/guides/gettingstarted/).
 
 ## Documentation
 

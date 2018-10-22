@@ -22,11 +22,13 @@ nav:
       - 'Feature Highlights': 'features.md'
   - Installation:
       - 'Installation': 'installation/index.md'
-      - 'Configuration': 'installation/configuration.md'
-      - 'SQL Data Source Configuration': 'installation/configuration-sql.md'
-      - 'Provisioning': 'installation/provisioning.md'
+      - 'Building from sources': 'installation/run_from_master.md'
       - 'Upgrade': 'installation/upgrade.md'
-      - 'Troubleshooting': 'installation/troubleshooting.md'
+  - Configuration:
+      - 'Configuration': 'configuration/index.md'
+      - 'SQL Data Source Configuration': 'configuration/sql_datasource.md'
+      - 'Provisioning': 'configuration/provisioning.md'
+      - 'Troubleshooting': 'configuration/troubleshooting.md'
   - User Guides:
       - 'Getting Started': 'guides/gettingstarted.md'
       - 'Templating': 'guides/templating.md'
