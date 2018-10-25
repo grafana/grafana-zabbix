@@ -33,7 +33,8 @@ const consolidateByFunc = {
 const consolidateByTrendColumns = {
   'avg': 'value_avg',
   'min': 'value_min',
-  'max': 'value_max'
+  'max': 'value_max',
+  'sum': 'num*value_avg' // sum of sums inside the one-hour trend period
 };
 
 export class SQLConnector extends DBConnector {
@@ -98,7 +99,7 @@ export class SQLConnector extends DBConnector {
     let promises = _.map(grouped_items, (items, value_type) => {
       let itemids = _.map(items, 'itemid').join(', ');
       let table = TREND_TO_TABLE_MAP[value_type];
-      let valueColumn = _.includes(['avg', 'min', 'max'], consolidateBy) ? consolidateBy : 'avg';
+      let valueColumn = _.includes(['avg', 'min', 'max', 'sum'], consolidateBy) ? consolidateBy : 'avg';
       valueColumn = consolidateByTrendColumns[valueColumn];
       let query = this.sqlDialect.trendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn);
 
