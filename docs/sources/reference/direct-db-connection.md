@@ -4,7 +4,7 @@ Since version 4.3 Grafana can use MySQL as a native data source. The Grafana-Zab
 
 One of the most resource intensive queries for Zabbix API is the history query. For long time intervals `history.get`
 returns a huge amount of data. In order to display it, the plugin should adjust time series resolution
-by using [consolidateBy](/reference/functions/#consolidateby). Ultimately, Grafana displays this reduced
+by using [consolidateBy](../functions/#consolidateby). Ultimately, Grafana displays this reduced
 time series, but that data should be loaded and processed on the client side first. Direct DB Connection solves these two problems by moving consolidation to the server side. Thus, the client gets a 'ready-to-use' dataset which is much smaller. This allows the data to load faster and the client doesn't spend time processing the data.
 
 Also, many users see better performance from direct database queries versus API calls. This could be the result of several reasons,

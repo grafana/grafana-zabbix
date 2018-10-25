@@ -28,4 +28,4 @@ Read more about installing plugins in [Grafana docs](http://docs.grafana.org/plu
 
 ## Building from sources
 
-If you want to build a package yourself, or contribute - read [building instructions](/installation/run_from_master).
+If you want to build a package yourself, or contribute - read [building instructions](./run_from_master).
