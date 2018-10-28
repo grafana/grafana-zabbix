@@ -40,7 +40,7 @@ module.exports = {
   plugins: [
     new webpack.optimize.OccurrenceOrderPlugin(),
     new CopyWebpackPlugin([
-      { from: 'plugin.json' },
+      { from: '**/plugin.json' },
       { from: '**/*.html' },
       { from: 'dashboards/*' },
       { from: '../README.md' },
