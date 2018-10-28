@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { migrateDSConfig } from './migrations';
 
-const SUPPORTED_SQL_DS = ['mysql', 'postgres'];
+const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
 const zabbixVersions = [
   { name: '2.x', value: 2 },
   { name: '3.x', value: 3 },
