@@ -113,7 +113,6 @@ export class SQLConnector extends DBConnector {
   }
 }
 
-
 function compactSQLQuery(query) {
   return query.replace(/\s+/g, ' ');
 }
