@@ -50,7 +50,7 @@ export class InfluxDBConnector extends DBConnector {
     const where_clause = this.buildWhereClause(itemids);
     const query = `SELECT ${AGG}("value") FROM "${table}"
       WHERE ${where_clause} AND "time" >= ${timeFrom}s AND "time" <= ${timeTill}s
-      GROUP BY time(${intervalSec}s), "itemid" fill(linear)`;
+      GROUP BY time(${intervalSec}s), "itemid" fill(none)`;
     return compactQuery(query);
   }
 
