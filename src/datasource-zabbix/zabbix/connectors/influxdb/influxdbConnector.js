@@ -1,10 +1,9 @@
 import _ from 'lodash';
-import { DBConnector, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, consolidateByFunc } from '../dbConnector';
+import { DBConnector, HISTORY_TO_TABLE_MAP, consolidateByFunc } from '../dbConnector';
 
 export class InfluxDBConnector extends DBConnector {
   constructor(options, datasourceSrv) {
     super(options, datasourceSrv);
-    this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     super.loadDBDataSource().then(ds => {
       this.influxDS = ds;
       return ds;
