@@ -30,5 +30,15 @@ describe('timeseries processing functions', () => {
       expect(result).toEqual(expected);
       done();
     });
+
+    it('should properly shift metric', (done) => {
+      let points = [[1, 1], [-4, 2], [2, 3]];
+
+      let expected = [[101, 1], [96, 2], [102, 3]];
+
+      let result = ts.shift(points, 100);
+      expect(result).toEqual(expected);
+      done();
+    });
   });
 });
