@@ -74,6 +74,12 @@ function handleInfluxHistoryResponse(results) {
   const seriesList = [];
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
+
+    if (result.error) {
+      const error = `InfluxDB error: ${result.error}`;
+      return Promise.reject(new Error(error));
+    }
+
     if (!result || !result.series) {
       continue;
     }
