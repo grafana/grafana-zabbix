@@ -54,6 +54,10 @@ export default class DBConnector {
   getTrends() {
     throw new ZabbixNotImplemented('getTrends()');
   }
+
+  handleGrafanaTSResponse(history, items, addHostName = true) {
+    return convertGrafanaTSResponse(history, items, addHostName);
+  }
 }
 
 // Define Zabbix DB Connector exception type for non-implemented methods
@@ -67,4 +71,38 @@ export class ZabbixNotImplemented {
   toString() {
     return this.message;
   }
+}
+
+/**
+ * Converts time series returned by the data source into format that Grafana expects
+ * time_series is Array of series:
+ * ```
+ * [{
+ *     name: string,
+ *     points: Array<[value: number, timestamp: number]>
+ * }]
+ * ```
+ */
+function convertGrafanaTSResponse(time_series, items, addHostName) {
+  //uniqBy is needed to deduplicate
+  var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
+  let grafanaSeries = _.map(_.compact(time_series), series => {
+    let itemid = series.name;
+    var item = _.find(items, {'itemid': itemid});
+    var alias = item.name;
+    //only when actual multi hosts selected
+    if (_.keys(hosts).length > 1 && addHostName) {
+      var host = _.find(hosts, {'hostid': item.hostid});
+      alias = host.name + ": " + alias;
+    }
+    // CachingProxy deduplicates requests and returns one time series for equal queries.
+    // Clone is needed to prevent changing of series object shared between all targets.
+    let datapoints = _.cloneDeep(series.points);
+    return {
+      target: alias,
+      datapoints: datapoints
+    };
+  });
+
+  return _.sortBy(grafanaSeries, 'target');
 }

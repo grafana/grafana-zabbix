@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import DBConnector from '../dbConnector';
-// import InfluxSeries from 'grafana/app/plugins/datasource/influxdb/influx_series';
 
 const DEFAULT_QUERY_LIMIT = 10000;
 const HISTORY_TO_TABLE_MAP = {
@@ -36,8 +35,7 @@ export class InfluxDBConnector extends DBConnector {
     super(options, backendSrv, datasourceSrv);
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     super.loadDBDataSource().then(ds => {
-      console.log(ds);
-      this.ds = ds;
+      this.influxDS = ds;
       return ds;
     });
   }
@@ -46,7 +44,7 @@ export class InfluxDBConnector extends DBConnector {
    * Try to invoke test query for one of Zabbix database tables.
    */
   testDataSource() {
-    return this.ds.testDatasource();
+    return this.influxDS.testDatasource();
   }
 
   getHistory(items, timeFrom, timeTill, options) {
@@ -62,7 +60,6 @@ export class InfluxDBConnector extends DBConnector {
       const itemids = _.map(items, 'itemid');
       const table = HISTORY_TO_TABLE_MAP[value_type];
       const query = this.buildHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction);
-      console.log(query);
       return this.invokeInfluxDBQuery(query);
     });
 
@@ -88,7 +85,6 @@ export class InfluxDBConnector extends DBConnector {
       let valueColumn = _.includes(['avg', 'min', 'max', 'sum'], consolidateBy) ? consolidateBy : 'avg';
       valueColumn = consolidateByTrendColumns[valueColumn];
       const query = this.buildTrendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn);
-      console.log(query);
       return this.invokeInfluxDBQuery(query);
     });
 
@@ -122,14 +118,9 @@ export class InfluxDBConnector extends DBConnector {
     return `(${itemidsWhere})`;
   }
 
-  handleGrafanaTSResponse(history, items, addHostName = true) {
-    return convertGrafanaTSResponse(history, items, addHostName);
-  }
-
   invokeInfluxDBQuery(query) {
-    return this.ds._seriesQuery(query).then(data => {
-      return data && data.results ? data.results : [];
-    });
+    return this.influxDS._seriesQuery(query)
+    .then(data => data && data.results ? data.results : []);
   }
 }
 
@@ -166,30 +157,6 @@ function handleInfluxHistoryResponse(results) {
   }
 
   return seriesList;
-}
-
-function convertGrafanaTSResponse(time_series, items, addHostName) {
-  //uniqBy is needed to deduplicate
-  var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
-  let grafanaSeries = _.map(_.compact(time_series), series => {
-    let itemid = series.name;
-    var item = _.find(items, {'itemid': itemid});
-    var alias = item.name;
-    //only when actual multi hosts selected
-    if (_.keys(hosts).length > 1 && addHostName) {
-      var host = _.find(hosts, {'hostid': item.hostid});
-      alias = host.name + ": " + alias;
-    }
-    // CachingProxy deduplicates requests and returns one time series for equal queries.
-    // Clone is needed to prevent changing of series object shared between all targets.
-    let datapoints = _.cloneDeep(series.points);
-    return {
-      target: alias,
-      datapoints: datapoints
-    };
-  });
-
-  return _.sortBy(grafanaSeries, 'target');
 }
 
 function compactQuery(query) {

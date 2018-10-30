@@ -112,10 +112,6 @@ export class SQLConnector extends DBConnector {
     });
   }
 
-  handleGrafanaTSResponse(history, items, addHostName = true) {
-    return convertGrafanaTSResponse(history, items, addHostName);
-  }
-
   invokeSQLQuery(query) {
     let queryDef = {
       refId: 'A',
@@ -143,31 +139,6 @@ export class SQLConnector extends DBConnector {
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-function convertGrafanaTSResponse(time_series, items, addHostName) {
-  //uniqBy is needed to deduplicate
-  var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
-  let grafanaSeries = _.map(_.compact(time_series), series => {
-    let itemid = series.name;
-    var item = _.find(items, {'itemid': itemid});
-    var alias = item.name;
-    //only when actual multi hosts selected
-    if (_.keys(hosts).length > 1 && addHostName) {
-      var host = _.find(hosts, {'hostid': item.hostid});
-      alias = host.name + ": " + alias;
-    }
-    // CachingProxy deduplicates requests and returns one time series for equal queries.
-    // Clone is needed to prevent changing of series object shared between all targets.
-    let datapoints = _.cloneDeep(series.points);
-    return {
-      target: alias,
-      datapoints: datapoints
-    };
-  });
-
-  return _.sortBy(grafanaSeries, 'target');
-}
 
 function compactSQLQuery(query) {
   return query.replace(/\s+/g, ' ');
