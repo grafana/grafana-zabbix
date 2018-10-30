@@ -9,15 +9,17 @@ const supportedDatabases = {
 };
 
 export class SQLConnector extends DBConnector {
-  constructor(options, datasourceSrv, backendSrv) {
+  constructor(options, datasourceSrv) {
     super(options, datasourceSrv);
-    this.backendSrv = backendSrv;
 
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     this.sqlDialect = null;
 
     super.loadDBDataSource()
-    .then(() => this.loadSQLDialect());
+    .then(ds => {
+      this.backendSrv = ds.backendSrv;
+      this.loadSQLDialect();
+    });
   }
 
   loadSQLDialect() {

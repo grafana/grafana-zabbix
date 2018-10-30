@@ -42,24 +42,31 @@ export class DBConnector {
     this.datasourceTypeName = null;
   }
 
-  loadDBDataSource() {
-    if (!this.datasourceName && this.datasourceId !== undefined) {
-      let ds = _.find(this.datasourceSrv.getAll(), {'id': this.datasourceId});
+  static loadDatasource(dsId, dsName, datasourceSrv) {
+    if (!dsName && dsId !== undefined) {
+      let ds = _.find(datasourceSrv.getAll(), {'id': dsId});
       if (!ds) {
-        return Promise.reject(`SQL Data Source with ID ${this.datasourceId} not found`);
+        return Promise.reject(`Data Source with ID ${dsId} not found`);
       }
-      this.datasourceName = ds.name;
+      dsName = ds.name;
     }
-    if (this.datasourceName) {
-      return this.datasourceSrv.loadDatasource(this.datasourceName)
-      .then(ds => {
-        this.datasourceTypeId = ds.meta.id;
-        this.datasourceTypeName = ds.meta.name;
-        return ds;
-      });
+    if (dsName) {
+      return datasourceSrv.loadDatasource(dsName);
     } else {
-      return Promise.reject(`SQL Data Source name should be specified`);
+      return Promise.reject(`Data Source name should be specified`);
     }
+  }
+
+  loadDBDataSource() {
+    return DBConnector.loadDatasource(this.datasourceId, this.datasourceName, this.datasourceSrv)
+    .then(ds => {
+      this.datasourceTypeId = ds.meta.id;
+      this.datasourceTypeName = ds.meta.name;
+      if (!this.datasourceName) {
+        this.datasourceName = ds.name;
+      }
+      return ds;
+    });
   }
 
   /**

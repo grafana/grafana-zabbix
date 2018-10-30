@@ -1,12 +1,12 @@
 import _ from 'lodash';
 import * as utils from '../utils';
 import responseHandler from '../responseHandler';
+import { CachingProxy } from './proxy/cachingProxy';
+import { ZabbixNotImplemented } from './connectors/dbConnector';
 import { DBConnector } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
-import { CachingProxy } from './proxy/cachingProxy';
-import { ZabbixNotImplemented } from './connectors/dbConnector';
 
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
@@ -55,22 +55,25 @@ export class Zabbix {
     this.bindRequests();
 
     if (enableDirectDBConnection) {
-      let dbConnectorOptions = {
-        datasourceId: dbConnectionDatasourceId,
-        datasourceName: dbConnectionDatasourceName
-      };
-      this.dbConnector = new DBConnector(dbConnectorOptions, datasourceSrv);
-      this.dbConnector.loadDBDataSource().then(ds => {
-        if (ds.type === 'influxdb') {
-          this.dbConnector = new InfluxDBConnector(dbConnectorOptions, datasourceSrv);
-        } else {
-          this.dbConnector = new SQLConnector(dbConnectorOptions, datasourceSrv, backendSrv);
-        }
-      }).then(() => {
+      this.initDBConnector(dbConnectionDatasourceId, dbConnectionDatasourceName, datasourceSrv)
+      .then(() => {
         this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
         this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
       });
     }
+  }
+
+  initDBConnector(datasourceId, datasourceName, datasourceSrv) {
+    return DBConnector.loadDatasource(datasourceId, datasourceName, datasourceSrv)
+    .then(ds => {
+      const options = { datasourceId, datasourceName };
+      if (ds.type === 'influxdb') {
+        this.dbConnector = new InfluxDBConnector(options, datasourceSrv);
+      } else {
+        this.dbConnector = new SQLConnector(options, datasourceSrv);
+      }
+      return this.dbConnector;
+    });
   }
 
   proxyfyRequests() {
