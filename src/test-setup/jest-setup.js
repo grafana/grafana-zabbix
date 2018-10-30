@@ -54,6 +54,12 @@ jest.mock('grafana/app/core/table_model', () => {
   };
 }, {virtual: true});
 
+jest.mock('grafana/app/core/config', () => {
+  return {
+    buildInfo: { env: 'development' }
+  };
+}, {virtual: true});
+
 jest.mock('jquery', () => 'module not found', {virtual: true});
 
 // Required for loading angularjs
