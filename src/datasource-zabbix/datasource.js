@@ -69,7 +69,7 @@ export class ZabbixDatasource {
       dbConnectionDatasourceName: this.dbConnectionDatasourceName
     };
 
-    this.zabbix = new Zabbix(zabbixOptions, backendSrv, datasourceSrv);
+    this.zabbix = new Zabbix(zabbixOptions, datasourceSrv, backendSrv);
   }
 
   ////////////////////////

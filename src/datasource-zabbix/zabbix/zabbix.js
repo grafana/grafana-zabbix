@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import * as utils from '../utils';
 import responseHandler from '../responseHandler';
-import DBConnector from './connectors/dbConnector';
+import { DBConnector } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
@@ -25,7 +25,7 @@ const REQUESTS_TO_BIND = [
 ];
 
 export class Zabbix {
-  constructor(options, backendSrv, datasourceSrv) {
+  constructor(options, datasourceSrv, backendSrv) {
     let {
       url,
       username,
@@ -59,12 +59,12 @@ export class Zabbix {
         datasourceId: dbConnectionDatasourceId,
         datasourceName: dbConnectionDatasourceName
       };
-      this.dbConnector = new DBConnector(dbConnectorOptions, backendSrv, datasourceSrv);
+      this.dbConnector = new DBConnector(dbConnectorOptions, datasourceSrv);
       this.dbConnector.loadDBDataSource().then(ds => {
         if (ds.type === 'influxdb') {
-          this.dbConnector = new InfluxDBConnector(dbConnectorOptions, backendSrv, datasourceSrv);
+          this.dbConnector = new InfluxDBConnector(dbConnectorOptions, datasourceSrv);
         } else {
-          this.dbConnector = new SQLConnector(dbConnectorOptions, backendSrv, datasourceSrv);
+          this.dbConnector = new SQLConnector(dbConnectorOptions, datasourceSrv, backendSrv);
         }
       }).then(() => {
         this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);

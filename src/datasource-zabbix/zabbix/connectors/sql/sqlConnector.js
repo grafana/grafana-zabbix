@@ -1,45 +1,17 @@
 import _ from 'lodash';
 import mysql from './mysql';
 import postgres from './postgres';
-import DBConnector from '../dbConnector';
+import dbConnector, { DBConnector, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, TREND_TO_TABLE_MAP } from '../dbConnector';
 
 const supportedDatabases = {
   mysql: 'mysql',
   postgres: 'postgres'
 };
 
-const DEFAULT_QUERY_LIMIT = 10000;
-const HISTORY_TO_TABLE_MAP = {
-  '0': 'history',
-  '1': 'history_str',
-  '2': 'history_log',
-  '3': 'history_uint',
-  '4': 'history_text'
-};
-
-const TREND_TO_TABLE_MAP = {
-  '0': 'trends',
-  '3': 'trends_uint'
-};
-
-const consolidateByFunc = {
-  'avg': 'AVG',
-  'min': 'MIN',
-  'max': 'MAX',
-  'sum': 'SUM',
-  'count': 'COUNT'
-};
-
-const consolidateByTrendColumns = {
-  'avg': 'value_avg',
-  'min': 'value_min',
-  'max': 'value_max',
-  'sum': 'num*value_avg' // sum of sums inside the one-hour trend period
-};
-
 export class SQLConnector extends DBConnector {
-  constructor(options, backendSrv, datasourceSrv) {
-    super(options, backendSrv, datasourceSrv);
+  constructor(options, datasourceSrv, backendSrv) {
+    super(options, datasourceSrv);
+    this.backendSrv = backendSrv;
 
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     this.sqlDialect = null;
@@ -69,7 +41,7 @@ export class SQLConnector extends DBConnector {
     let intervalSec = Math.ceil(intervalMs / 1000);
 
     consolidateBy = consolidateBy || 'avg';
-    let aggFunction = consolidateByFunc[consolidateBy];
+    let aggFunction = dbConnector.consolidateByFunc[consolidateBy];
 
     // Group items by value type and perform request for each value type
     let grouped_items = _.groupBy(items, 'value_type');
@@ -92,7 +64,7 @@ export class SQLConnector extends DBConnector {
     let intervalSec = Math.ceil(intervalMs / 1000);
 
     consolidateBy = consolidateBy || 'avg';
-    let aggFunction = consolidateByFunc[consolidateBy];
+    let aggFunction = dbConnector.consolidateByFunc[consolidateBy];
 
     // Group items by value type and perform request for each value type
     let grouped_items = _.groupBy(items, 'value_type');
@@ -100,7 +72,7 @@ export class SQLConnector extends DBConnector {
       let itemids = _.map(items, 'itemid').join(', ');
       let table = TREND_TO_TABLE_MAP[value_type];
       let valueColumn = _.includes(['avg', 'min', 'max', 'sum'], consolidateBy) ? consolidateBy : 'avg';
-      valueColumn = consolidateByTrendColumns[valueColumn];
+      valueColumn = dbConnector.consolidateByTrendColumns[valueColumn];
       let query = this.sqlDialect.trendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn);
 
       query = compactSQLQuery(query);

@@ -1,12 +1,40 @@
 import _ from 'lodash';
 
+export const DEFAULT_QUERY_LIMIT = 10000;
+export const HISTORY_TO_TABLE_MAP = {
+  '0': 'history',
+  '1': 'history_str',
+  '2': 'history_log',
+  '3': 'history_uint',
+  '4': 'history_text'
+};
+
+export const TREND_TO_TABLE_MAP = {
+  '0': 'trends',
+  '3': 'trends_uint'
+};
+
+export const consolidateByFunc = {
+  'avg': 'AVG',
+  'min': 'MIN',
+  'max': 'MAX',
+  'sum': 'SUM',
+  'count': 'COUNT'
+};
+
+export const consolidateByTrendColumns = {
+  'avg': 'value_avg',
+  'min': 'value_min',
+  'max': 'value_max',
+  'sum': 'num*value_avg' // sum of sums inside the one-hour trend period
+};
+
 /**
  * Base class for external history database connectors. Subclasses should implement `getHistory()`, `getTrends()` and
  * `testDataSource()` methods, which describe how to fetch data from source other than Zabbix API.
  */
-export default class DBConnector {
-  constructor(options, backendSrv, datasourceSrv) {
-    this.backendSrv = backendSrv;
+export class DBConnector {
+  constructor(options, datasourceSrv) {
     this.datasourceSrv = datasourceSrv;
     this.datasourceId = options.datasourceId;
     this.datasourceName = options.datasourceName;
@@ -106,3 +134,14 @@ function convertGrafanaTSResponse(time_series, items, addHostName) {
 
   return _.sortBy(grafanaSeries, 'target');
 }
+
+const defaults = {
+  DBConnector,
+  DEFAULT_QUERY_LIMIT,
+  HISTORY_TO_TABLE_MAP,
+  TREND_TO_TABLE_MAP,
+  consolidateByFunc,
+  consolidateByTrendColumns
+};
+
+export default defaults;
