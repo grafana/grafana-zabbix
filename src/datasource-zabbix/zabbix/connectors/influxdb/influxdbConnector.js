@@ -23,7 +23,7 @@ export class InfluxDBConnector extends DBConnector {
     const intervalSec = Math.ceil(intervalMs / 1000);
 
     consolidateBy = consolidateBy || 'avg';
-    const aggFunction = consolidateByFunc[consolidateBy];
+    const aggFunction = consolidateByFunc[consolidateBy] || consolidateBy;
 
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
