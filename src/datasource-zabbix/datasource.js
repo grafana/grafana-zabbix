@@ -618,8 +618,8 @@ export class ZabbixDatasource {
     let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
     let useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
     let useTrends = this.trends && (
-      (timeFrom <= useTrendsFrom) ||
-      (timeTo - timeFrom >= useTrendsRange)
+      (timeFrom < useTrendsFrom) ||
+      (timeTo - timeFrom > useTrendsRange)
     );
     return useTrends;
   }
