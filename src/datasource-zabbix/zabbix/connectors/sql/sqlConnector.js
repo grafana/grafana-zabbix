@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { compactQuery } from '../../../utils';
 import mysql from './mysql';
 import postgres from './postgres';
 import dbConnector, { DBConnector, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, TREND_TO_TABLE_MAP } from '../dbConnector';
@@ -52,7 +53,7 @@ export class SQLConnector extends DBConnector {
       let table = HISTORY_TO_TABLE_MAP[value_type];
       let query = this.sqlDialect.historyQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction);
 
-      query = compactSQLQuery(query);
+      query = compactQuery(query);
       return this.invokeSQLQuery(query);
     });
 
@@ -77,7 +78,7 @@ export class SQLConnector extends DBConnector {
       valueColumn = dbConnector.consolidateByTrendColumns[valueColumn];
       let query = this.sqlDialect.trendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn);
 
-      query = compactSQLQuery(query);
+      query = compactQuery(query);
       return this.invokeSQLQuery(query);
     });
 
@@ -111,8 +112,4 @@ export class SQLConnector extends DBConnector {
       }
     });
   }
-}
-
-function compactSQLQuery(query) {
-  return query.replace(/\s+/g, ' ');
 }

@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { compactQuery } from '../../../utils';
 import { DBConnector, HISTORY_TO_TABLE_MAP, consolidateByFunc } from '../dbConnector';
 
 export class InfluxDBConnector extends DBConnector {
@@ -103,8 +104,4 @@ function handleInfluxHistoryResponse(results) {
   }
 
   return seriesList;
-}
-
-function compactQuery(query) {
-  return query.replace(/\s+/g, ' ');
 }

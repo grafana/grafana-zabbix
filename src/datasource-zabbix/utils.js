@@ -258,6 +258,13 @@ export function parseVersion(version) {
   return { major, minor, patch, meta };
 }
 
+/**
+ * Replaces any space-like symbols (tabs, new lines, spaces) by single whitespace.
+ */
+export function compactQuery(query) {
+  return query.replace(/\s+/g, ' ').trim();
+}
+
 // Fix for backward compatibility with lodash 2.4
 if (!_.includes) {
   _.includes = _.contains;
