@@ -5,6 +5,7 @@ import { DBConnector, HISTORY_TO_TABLE_MAP, consolidateByFunc } from '../dbConne
 export class InfluxDBConnector extends DBConnector {
   constructor(options, datasourceSrv) {
     super(options, datasourceSrv);
+    this.retentionPolicy = options.retentionPolicy;
     super.loadDBDataSource().then(ds => {
       this.influxDS = ds;
       return ds;
@@ -19,9 +20,10 @@ export class InfluxDBConnector extends DBConnector {
   }
 
   getHistory(items, timeFrom, timeTill, options) {
-    let {intervalMs, consolidateBy} = options;
+    let { intervalMs, consolidateBy, retentionPolicy } = options;
     const intervalSec = Math.ceil(intervalMs / 1000);
 
+    const range = { timeFrom, timeTill };
     consolidateBy = consolidateBy || 'avg';
     const aggFunction = consolidateByFunc[consolidateBy] || consolidateBy;
 
@@ -30,7 +32,7 @@ export class InfluxDBConnector extends DBConnector {
     const promises = _.map(grouped_items, (items, value_type) => {
       const itemids = _.map(items, 'itemid');
       const table = HISTORY_TO_TABLE_MAP[value_type];
-      const query = this.buildHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction);
+      const query = this.buildHistoryQuery(itemids, table, range, intervalSec, aggFunction, retentionPolicy);
       return this.invokeInfluxDBQuery(query);
     });
 
@@ -42,13 +44,16 @@ export class InfluxDBConnector extends DBConnector {
   }
 
   getTrends(items, timeFrom, timeTill, options) {
+    options.retentionPolicy = this.retentionPolicy;
     return this.getHistory(items, timeFrom, timeTill, options);
   }
 
-  buildHistoryQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
+  buildHistoryQuery(itemids, table, range, intervalSec, aggFunction, retentionPolicy) {
+    const { timeFrom, timeTill } = range;
+    const measurement = retentionPolicy ? `"${retentionPolicy}"."${table}"` : `"${table}"`;
     const AGG = aggFunction === 'AVG' ? 'MEAN' : aggFunction;
     const where_clause = this.buildWhereClause(itemids);
-    const query = `SELECT ${AGG}("value") FROM "${table}"
+    const query = `SELECT ${AGG}("value") FROM ${measurement}
       WHERE ${where_clause} AND "time" >= ${timeFrom}s AND "time" <= ${timeTill}s
       GROUP BY time(${intervalSec}s), "itemid" fill(none)`;
     return compactQuery(query);

@@ -31,6 +31,7 @@ export class ZabbixDSConfigController {
     this.dbDataSources = this.getSupportedDBDataSources();
     this.zabbixVersions = _.cloneDeep(zabbixVersions);
     this.autoDetectZabbixVersion();
+    console.log(this.dbDataSources);
   }
 
   getSupportedDBDataSources() {
@@ -38,6 +39,12 @@ export class ZabbixDSConfigController {
     return _.filter(datasources, ds => {
       return _.includes(SUPPORTED_SQL_DS, ds.type);
     });
+  }
+
+  getCurrentDatasourceType() {
+    const dsId = this.current.jsonData.dbConnectionDatasourceId;
+    const currentDs = _.find(this.dbDataSources, { 'id': dsId });
+    return currentDs ? currentDs.type : null;
   }
 
   autoDetectZabbixVersion() {
