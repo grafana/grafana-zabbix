@@ -61,11 +61,11 @@ amount of data transfered.
 Read [how to configure](./sql_datasource) SQL data source in Grafana.
 
 - **Enable**: enable Direct DB Connection.
-- **SQL Data Source**: Select SQL Data Source for Zabbix database.
+- **Data Source**: Select Data Source for Zabbix history database.
 
 #### Supported databases
 
-**MySQL** and **PostgreSQL** are supported by Grafana.
+**MySQL**, **PostgreSQL**, **InfluxDB** are supported as sources of historical data for the plugin.
 
 ### Alerting
 
