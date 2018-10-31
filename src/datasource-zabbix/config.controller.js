@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { migrateDSConfig } from './migrations';
 
 const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
+
 const zabbixVersions = [
   { name: '2.x', value: 2 },
   { name: '3.x', value: 3 },
@@ -27,12 +28,12 @@ export class ZabbixDSConfigController {
 
     this.current.jsonData = migrateDSConfig(this.current.jsonData);
     _.defaults(this.current.jsonData, defaultConfig);
-    this.sqlDataSources = this.getSupportedSQLDataSources();
+    this.dbDataSources = this.getSupportedDBDataSources();
     this.zabbixVersions = _.cloneDeep(zabbixVersions);
     this.autoDetectZabbixVersion();
   }
 
-  getSupportedSQLDataSources() {
+  getSupportedDBDataSources() {
     let datasources = this.datasourceSrv.getAll();
     return _.filter(datasources, ds => {
       return _.includes(SUPPORTED_SQL_DS, ds.type);
