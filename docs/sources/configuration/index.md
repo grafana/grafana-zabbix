@@ -62,6 +62,7 @@ Read [how to configure](./sql_datasource) SQL data source in Grafana.
 
 - **Enable**: enable Direct DB Connection.
 - **Data Source**: Select Data Source for Zabbix history database.
+- **Retention Policy** (InfluxDB only): Specify retention policy name for fetching long-term stored data. Grafana will fetch data from this retention policy if query time range suitable for trends query. Leave it blank if only default retention policy used.
 
 #### Supported databases
 
