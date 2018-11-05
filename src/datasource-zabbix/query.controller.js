@@ -8,6 +8,7 @@ import * as migrations from './migrations';
 export class ZabbixQueryController extends QueryCtrl {
 
   // ZabbixQueryCtrl constructor
+  /** @ngInject */
   constructor($scope, $injector, $rootScope, $sce, templateSrv) {
     super($scope, $injector);
     this.zabbix = this.datasource.zabbix;
