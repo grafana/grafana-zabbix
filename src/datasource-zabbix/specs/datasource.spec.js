@@ -1,7 +1,6 @@
 import _ from 'lodash';
-import Q, { Promise } from "q";
-import {Datasource} from "../module";
-import {zabbixTemplateFormat} from "../datasource";
+import { Datasource } from "../module";
+import { zabbixTemplateFormat } from "../datasource";
 
 describe('ZabbixDatasource', () => {
   let ctx = {};
@@ -9,32 +8,31 @@ describe('ZabbixDatasource', () => {
   beforeEach(() => {
     ctx.instanceSettings = {
       jsonData: {
+        alerting: false,
         username: 'zabbix',
         password: 'zabbix',
         trends: true,
         trendsFrom: '14d',
         trendsRange: '7d',
-        dbConnection: {
-          enabled: false
-        }
+        dbConnectionEnable: false
       }
     };
     ctx.templateSrv = {};
-    ctx.alertSrv = {};
-    ctx.dashboardSrv = {};
+    ctx.backendSrv = {
+      datasourceRequest: jest.fn()
+    };
+    ctx.datasourceSrv = {};
     ctx.zabbixAlertingSrv = {
       setPanelAlertState: jest.fn(),
       removeZabbixThreshold: jest.fn(),
     };
-    ctx.zabbix = () => {};
 
-    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.alertSrv, ctx.dashboardSrv, ctx.zabbixAlertingSrv, ctx.zabbix);
+    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.backendSrv, ctx.datasourceSrv, ctx.zabbixAlertingSrv);
   });
 
   describe('When querying data', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
-      ctx.ds.alertQuery = () => Q.when([]);
     });
 
     ctx.options = {
@@ -97,8 +95,7 @@ describe('ZabbixDatasource', () => {
   describe('When querying text data', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
-      ctx.ds.alertQuery = () => Q.when([]);
-      ctx.ds.zabbix.getHistory = jest.fn().mockReturnValue(Promise.resolve([
+      ctx.ds.zabbix.zabbixAPI.getHistory = jest.fn().mockReturnValue(Promise.resolve([
         {clock: "1500010200", itemid:"10100", ns:"900111000", value:"Linux first"},
         {clock: "1500010300", itemid:"10100", ns:"900111000", value:"Linux 2nd"},
         {clock: "1500010400", itemid:"10100", ns:"900111000", value:"Linux last"}
@@ -124,7 +121,10 @@ describe('ZabbixDatasource', () => {
             textFilter: "",
             useCaptureGroups: true,
             mode: 2,
-            resultFormat: "table"
+            resultFormat: "table",
+            options: {
+              skipEmptyValues: false
+            }
           }
         ],
       };
@@ -151,6 +151,33 @@ describe('ZabbixDatasource', () => {
         let tableData = result.data[0];
         expect(tableData.rows[0][3]).toEqual('last');
         done();
+      });
+    });
+
+    it('should skip item when last value is empty', () => {
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve([
+        {
+          hosts: [{hostid: "10001", name: "Zabbix server"}],
+          itemid: "10100", name: "System information", key_: "system.uname"
+        },
+        {
+          hosts: [{hostid: "10002", name: "Server02"}],
+          itemid: "90109", name: "System information", key_: "system.uname"
+        }
+      ]));
+
+      ctx.options.targets[0].options.skipEmptyValues = true;
+      ctx.ds.zabbix.getHistory = jest.fn().mockReturnValue(Promise.resolve([
+          {clock: "1500010200", itemid:"10100", ns:"900111000", value:"Linux first"},
+          {clock: "1500010300", itemid:"10100", ns:"900111000", value:"Linux 2nd"},
+          {clock: "1500010400", itemid:"10100", ns:"900111000", value:"Linux last"},
+          {clock: "1500010200", itemid:"90109", ns:"900111000", value:"Non empty value"},
+          {clock: "1500010500", itemid:"90109", ns:"900111000", value:""}
+      ]));
+      return ctx.ds.query(ctx.options).then(result => {
+        let tableData = result.data[0];
+        expect(tableData.rows.length).toBe(1);
+        expect(tableData.rows[0][3]).toEqual('Linux last');
       });
     });
   });
@@ -211,10 +238,10 @@ describe('ZabbixDatasource', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
       ctx.ds.zabbix = {
-        getGroups: jest.fn().mockReturnValue(Q.when([])),
-        getHosts: jest.fn().mockReturnValue(Q.when([])),
-        getApps: jest.fn().mockReturnValue(Q.when([])),
-        getItems: jest.fn().mockReturnValue(Q.when([]))
+        getGroups: jest.fn().mockReturnValue(Promise.resolve([])),
+        getHosts: jest.fn().mockReturnValue(Promise.resolve([])),
+        getApps: jest.fn().mockReturnValue(Promise.resolve([])),
+        getItems: jest.fn().mockReturnValue(Promise.resolve([]))
       };
     });
 
@@ -310,7 +337,7 @@ describe('ZabbixDatasource', () => {
         "hosts": [{"hostid": "10631", "name": "Test host"}],
         "item": "Test item"
       }];
-      ctx.ds.zabbix.getItemsFromTarget = () => Promise.resolve(targetItems);
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve(targetItems));
 
       options = {
         "panelId": 10,
@@ -331,7 +358,7 @@ describe('ZabbixDatasource', () => {
         "expression": "{15915}<100",
       }];
 
-      ctx.ds.zabbix.getAlerts = () => Promise.resolve(itemTriggers);
+      ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
 
       return ctx.ds.alertQuery(options)
         .then(resp => {
@@ -349,7 +376,7 @@ describe('ZabbixDatasource', () => {
         "expression": "{15915}<=100",
       }];
 
-      ctx.ds.zabbix.getAlerts = () => Promise.resolve(itemTriggers);
+      ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
 
       return ctx.ds.alertQuery(options)
         .then(resp => {
@@ -367,7 +394,7 @@ describe('ZabbixDatasource', () => {
         "expression": "{15915}>=30",
       }];
 
-      ctx.ds.zabbix.getAlerts = () => Promise.resolve(itemTriggers);
+      ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
 
       return ctx.ds.alertQuery(options)
         .then(resp => {
@@ -385,7 +412,7 @@ describe('ZabbixDatasource', () => {
         "expression": "{15915}=50",
       }];
 
-      ctx.ds.zabbix.getAlerts = () => Promise.resolve(itemTriggers);
+      ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
 
       return ctx.ds.alertQuery(options)
         .then(resp => {

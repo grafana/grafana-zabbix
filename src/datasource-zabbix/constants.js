@@ -1,3 +1,7 @@
+// Data point
+export const DATAPOINT_VALUE = 0;
+export const DATAPOINT_TS = 1;
+
 // Editor modes
 export const MODE_METRICS = 0;
 export const MODE_ITSERVICE = 1;
@@ -17,9 +21,10 @@ export const SHOW_ALL_TRIGGERS = [0, 1];
 export const SHOW_ALL_EVENTS = [0, 1];
 export const SHOW_OK_EVENTS = 1;
 
-// Data point
-export const DATAPOINT_VALUE = 0;
-export const DATAPOINT_TS = 1;
+// Acknowledge
+export const ZBX_ACK_ACTION_NONE = 0;
+export const ZBX_ACK_ACTION_ACK = 2;
+export const ZBX_ACK_ACTION_ADD_MESSAGE = 4;
 
 export const TRIGGER_SEVERITY = [
   {val: 0, text: 'Not classified'},

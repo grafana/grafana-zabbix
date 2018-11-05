@@ -1,12 +1,9 @@
-import {QueryCtrl} from 'app/plugins/sdk';
+import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import _ from 'lodash';
 import * as c from './constants';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
-
-import './add-metric-function.directive';
-import './metric-function-editor.directive';
 
 export class ZabbixQueryController extends QueryCtrl {
 
@@ -96,7 +93,11 @@ export class ZabbixQueryController extends QueryCtrl {
           'acknowledged': 2
         },
         'options': {
-          'showDisabledItems': false
+          'showDisabledItems': false,
+          'skipEmptyValues': false
+        },
+        'table': {
+          'skipEmptyValues': false
         }
       };
       _.defaults(target, targetDefaults);
@@ -298,7 +299,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
   renderQueryOptionsText() {
     var optionsMap = {
-      showDisabledItems: "Show disabled items"
+      showDisabledItems: "Show disabled items",
+      skipEmptyValues: "Skip empty values"
     };
     var options = [];
     _.forOwn(this.target.options, (value, key) => {
@@ -328,6 +330,3 @@ export class ZabbixQueryController extends QueryCtrl {
     this.targetChanged();
   }
 }
-
-// Set templateUrl as static property
-ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';

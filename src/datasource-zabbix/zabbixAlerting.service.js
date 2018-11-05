@@ -49,13 +49,7 @@ class ZabbixAlertingService {
   }
 
   getPanelModels() {
-    return _.flatten(_.map(this.dashboardSrv.dash.rows, row => {
-      if (row.collapse) {
-        return [];
-      } else {
-        return row.panels;
-      }
-    }));
+    return _.filter(this.dashboardSrv.dash.panels, panel => panel.type !== 'row');
   }
 
   getPanelModel(panelId) {

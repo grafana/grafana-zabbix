@@ -5,14 +5,24 @@
 .triggers-panel-container {
   position: relative;
 
-  .zabbix-hostname {
-    color: $gray-2;
-    margin-left: 1rem;
+  .zabbix-trigger-name {
     font-weight: bold;
   }
 
-  .alert-list-info.zbx-description {
+  .zabbix-hostname {
+    color: $gray-2;
+    margin-left: 1rem;
+    font-weight: 500;
+  }
+
+  .zbx-description {
     color: $gray-3;
+    font-weight: normal;
+    margin-left: 0.6rem;
+
+    &--newline {
+      margin-left: 0rem;
+    }
   }
 
   .zbx-trigger-tags {
@@ -20,34 +30,34 @@
 
     .zbx-tag {
       color: $zbx-tag-color;
-      padding: 0px 6px;
+      font-weight: 500;
+      font-size: 12px;
+      margin-right: 4px;
+      padding: 1px 6px;
       cursor: pointer;
     }
   }
 
-  .alert-list-footer {
-    justify-content: flex-start;
-  }
-
   .trigger-info-block {
-    display: inline-flex;
+    display: flex;
 
     i, a {
-      margin-left: 0.6rem;
+      margin-right: 0.3rem;
       color: $gray-2;
-    }
-
-    .zabbix-trigger-source {
-      margin-right: 1.5rem;
-      font-weight: bold;
-      .gicon-datasources {
-        opacity: 0.4;
-      }
     }
   }
 
-  .card-item-wrapper {
-    padding-left: 4px;
+  .zabbix-trigger-source {
+    margin-right: 1.5rem;
+    margin-left: 1rem;
+    font-weight: 500;
+    .gicon-datasources {
+      opacity: 0.4;
+    }
+  }
+
+  .alert-rule-item__icon .icon-gf {
+    right: 0.4rem;
   }
 }
 
@@ -67,12 +77,28 @@
   color: $orange;
 }
 
+.zbx-trigger-highlighted {
+  color: $zbx-text-highlighted;
 
-@keyframes zabbix-triggers-panel {
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 10px 0px rgba($red, 1);
-    border-bottom-color: rgba($red, 0.25);
+  .alert-rule-item__body,
+  .alert-rule-item__header,
+  .alert-rule-item__time,
+  .zabbix-hostname,
+  .zbx-description {
+    color: $zbx-text-highlighted;
+  }
+
+  .alert-rule-item__text {
+    .zbx-trigger-state,
+    .zbx-trigger-severity {
+      color: $zbx-text-highlighted;
+    }
+  }
+
+  .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons {
+    a, i {
+      color: $zbx-text-highlighted;
+    }
   }
 }
 
@@ -150,11 +176,26 @@
 
 .triggers-severity-config {
   &.gf-form-label {
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-radius: 0px;
   }
 
   .icon-gf {
     font-size: 200%;
+  }
+}
+
+// fix for phantomjs (it has troubles with flex blocks rendering)
+.body--phantomjs {
+  .triggers-panel-container {
+    .alert-rule-list {
+      display: block;
+    }
+
+    .alert-rule-item__body,
+    .alert-rule-item__icon {
+      display: block;
+    }
   }
 }

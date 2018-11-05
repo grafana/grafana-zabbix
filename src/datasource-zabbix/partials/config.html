@@ -1,4 +1,4 @@
-<datasource-http-settings current="ctrl.current">
+<datasource-http-settings current="ctrl.current" suggest-url="http://localhost/zabbix/api_jsonrpc.php">
 </datasource-http-settings>
 
 <div class="gf-form-group">
@@ -67,11 +67,20 @@
         Zabbix data source caches metric names in memory. Specify how often data will be updated.
       </info-popover>
     </span>
-    <input class="gf-form-input max-width-5"
+    <input class="gf-form-input max-width-7"
       type="text"
       ng-model='ctrl.current.jsonData.cacheTTL'
       placeholder="1h">
     </input>
+  </div>
+
+  <div class="gf-form max-width-20">
+    <span class="gf-form-label width-12">Zabbix version</span>
+    <div class="gf-form-select-wrapper max-width-7">
+      <select class="gf-form-input" ng-model="ctrl.current.jsonData.zabbixVersion"
+        ng-options="s.value as s.name for s in ctrl.zabbixVersions">
+      </select>
+    </div>
   </div>
 </div>
 
@@ -79,9 +88,9 @@
   <h3 class="page-heading">Direct DB Connection</h3>
   <gf-form-switch class="gf-form" label-class="width-12"
     label="Enable"
-    checked="ctrl.current.jsonData.dbConnection.enable">
+    checked="ctrl.current.jsonData.dbConnectionEnable">
   </gf-form-switch>
-  <div ng-if="ctrl.current.jsonData.dbConnection.enable">
+  <div ng-if="ctrl.current.jsonData.dbConnectionEnable">
     <div class="gf-form max-width-20">
     <span class="gf-form-label width-12">
       SQL Data Source
@@ -94,7 +103,7 @@
       </info-popover>
     </span>
     <div class="gf-form-select-wrapper max-width-16">
-      <select class="gf-form-input" ng-model="ctrl.current.jsonData.dbConnection.datasourceId"
+      <select class="gf-form-input" ng-model="ctrl.current.jsonData.dbConnectionDatasourceId"
         ng-options="ds.id as ds.name for ds in ctrl.sqlDataSources">
       </select>
     </div>
@@ -125,4 +134,12 @@
       </div>
     </div>
   </div>
+</div>
+
+<div class="gf-form-group">
+  <h3 class="page-heading">Other</h3>
+  <gf-form-switch class="gf-form" label-class="width-20"
+    label="Disable acknowledges for read-only users"
+    checked="ctrl.current.jsonData.disableReadOnlyUsersAck">
+  </gf-form-switch>
 </div>

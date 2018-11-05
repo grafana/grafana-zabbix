@@ -1,12 +1,9 @@
-import {loadPluginCss} from 'app/plugins/sdk';
-import {ZabbixAPIDatasource} from './datasource';
-import {ZabbixQueryController} from './query.controller';
-import {ZabbixDSConfigController} from './config.controller';
-
-loadPluginCss({
-  dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
-  light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
-});
+import { ZabbixDatasource } from './datasource';
+import { ZabbixQueryController } from './query.controller';
+import { ZabbixDSConfigController } from './config.controller';
+import './zabbixAlerting.service.js';
+import './add-metric-function.directive';
+import './metric-function-editor.directive';
 
 class ZabbixQueryOptionsController {}
 ZabbixQueryOptionsController.templateUrl = 'datasource-zabbix/partials/query.options.html';
@@ -14,8 +11,11 @@ ZabbixQueryOptionsController.templateUrl = 'datasource-zabbix/partials/query.opt
 class ZabbixAnnotationsQueryController {}
 ZabbixAnnotationsQueryController.templateUrl = 'datasource-zabbix/partials/annotations.editor.html';
 
+ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';
+ZabbixDSConfigController.templateUrl = 'datasource-zabbix/partials/config.html';
+
 export {
-  ZabbixAPIDatasource as Datasource,
+  ZabbixDatasource as Datasource,
   ZabbixDSConfigController as ConfigCtrl,
   ZabbixQueryController as QueryCtrl,
   ZabbixQueryOptionsController as QueryOptionsCtrl,

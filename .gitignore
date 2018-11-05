@@ -19,19 +19,19 @@ docs/site/
 dist/test/
 dist/test-setup/
 
-vendor/npm
+vendor
+src/vendor
 src/vendor/npm
 node_modules
-npm-debug.log
 coverage/
-.aws-config.json
-awsconfig
-/emails/dist
-/public_gen
 /tmp
-vendor/phantomjs/phantomjs
 
-# dist/
+# Tools logs
+npm-debug.log
+yarn-error.log
+
+# Built plugin
+dist/
 
 # locally required config files
 public/css/*.min.css

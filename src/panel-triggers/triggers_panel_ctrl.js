@@ -2,7 +2,7 @@ import _ from 'lodash';
 import $ from 'jquery';
 import moment from 'moment';
 import * as utils from '../datasource-zabbix/utils';
-import {PanelCtrl} from 'app/plugins/sdk';
+import {PanelCtrl} from 'grafana/app/plugins/sdk';
 import {triggerPanelOptionsTab} from './options_tab';
 import {triggerPanelTriggersTab} from './triggers_tab';
 import {migratePanelSchema, CURRENT_SCHEMA_VERSION} from './migrations';
@@ -50,7 +50,8 @@ export const PANEL_DEFAULTS = {
   // View options
   fontSize: '100%',
   pageSize: 10,
-  highlightNewEvents: true,
+  highlightBackground: false,
+  highlightNewEvents: false,
   highlightNewerThan: '1h',
   customLastChangeFormat: false,
   lastChangeFormat: "",
@@ -101,6 +102,23 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.events.on('refresh', this.onRefresh.bind(this));
   }
 
+  setPanelError(err, defaultError) {
+    const defaultErrorMessage = defaultError || "Request Error";
+    this.inspector = { error: err };
+    this.error = err.message || defaultErrorMessage;
+    if (err.data) {
+      if (err.data.message) {
+        this.error = err.data.message;
+      }
+      if (err.data.error) {
+        this.error = err.data.error;
+      }
+    }
+
+    this.events.emit('data-error', err);
+    console.log('Panel data error:', err);
+  }
+
   initDatasources() {
     let promises = _.map(this.panel.datasources, (ds) => {
       // Load datasource
@@ -129,7 +147,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   setTimeQueryEnd() {
-    this.timing.queryEnd = new Date().getTime();
+    this.timing.queryEnd = (new Date()).getTime();
   }
 
   onRefresh() {
@@ -143,38 +161,28 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.pageIndex = 0;
 
     return this.getTriggers()
-    .then(zabbixTriggers => {
+    .then(triggers => this.renderTriggers(triggers))
+    .then(() => {
       // Notify panel that request is finished
       this.loading = false;
       this.setTimeQueryEnd();
-
-      this.render(zabbixTriggers);
+      this.$timeout(() => {
+        this.renderingCompleted();
+      });
     })
     .catch(err => {
-      // if cancelled  keep loading set to true
+      this.loading = false;
+
       if (err.cancelled) {
         console.log('Panel request cancelled', err);
         return;
       }
 
-      this.loading = false;
-      this.error = err.message || "Request Error";
-
-      if (err.data) {
-        if (err.data.message) {
-          this.error = err.data.message;
-        }
-        if (err.data.error) {
-          this.error = err.data.error;
-        }
-      }
-
-      this.events.emit('data-error', err);
-      console.log('Panel data error:', err);
+      this.setPanelError(err);
     });
   }
 
-  render(zabbixTriggers) {
+  renderTriggers(zabbixTriggers) {
     let triggers = _.cloneDeep(zabbixTriggers || this.triggerListUnfiltered);
     this.triggerListUnfiltered = _.cloneDeep(triggers);
 
@@ -188,8 +196,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.triggerList = triggers;
     this.getCurrentTriggersPage();
 
-    this.$timeout(() => {
-      super.render(this.triggerList);
+    return this.$timeout(() => {
+      return super.render(this.triggerList);
     });
   }
 
@@ -242,16 +250,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         });
 
         if (event) {
-          trigger.acknowledges = _.map(event.acknowledges, ack => {
-            let timestamp = moment.unix(ack.clock);
-            if (this.panel.customLastChangeFormat) {
-              ack.time = timestamp.format(this.panel.lastChangeFormat);
-            } else {
-              ack.time = timestamp.format(this.defaultTimeFormat);
-            }
-            ack.user = ack.alias + ' (' + ack.name + ' ' + ack.surname + ')';
-            return ack;
-          });
+          trigger.acknowledges = _.map(event.acknowledges, this.formatAcknowledge.bind(this));
         }
 
         if (!trigger.lastEvent.eventid) {
@@ -261,6 +260,21 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
       return triggerList;
     });
+  }
+
+  formatAcknowledge(ack) {
+    let timestamp = moment.unix(ack.clock);
+    if (this.panel.customLastChangeFormat) {
+      ack.time = timestamp.format(this.panel.lastChangeFormat);
+    } else {
+      ack.time = timestamp.format(this.defaultTimeFormat);
+    }
+    ack.user = ack.alias || '';
+    if (ack.name || ack.surname) {
+      const fullName = `${ack.name || ''} ${ack.surname || ''}`;
+      ack.user += ` (${fullName})`;
+    }
+    return ack;
   }
 
   filterTriggersPre(triggerList, ds) {
@@ -446,17 +460,19 @@ export class TriggerPanelCtrl extends PanelCtrl {
     let ack_message = grafana_user + ' (Grafana): ' + message;
     return this.datasourceSrv.get(trigger.datasource)
     .then(datasource => {
+      const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
+      if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
+        return Promise.reject({message: 'You have no permissions to acknowledge events.'});
+      }
       if (eventid) {
-        return datasource.zabbix.zabbixAPI.acknowledgeEvent(eventid, ack_message);
+        return datasource.zabbix.acknowledgeEvent(eventid, ack_message);
       } else {
         return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
       }
     })
     .then(this.onRefresh.bind(this))
     .catch((err) => {
-      this.error = err.message || "Acknowledge Error";
-      this.events.emit('data-error', err);
-      console.log('Panel data error:', err);
+      this.setPanelError(err);
     });
   }
 
@@ -490,9 +506,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getAlertIconClass(trigger) {
-    const triggerValue = Number(trigger.value);
     let iconClass = '';
-    if (triggerValue || trigger.color) {
+    if (trigger.value === '1') {
       if (trigger.priority >= 3) {
         iconClass = 'icon-gf-critical';
       } else {
@@ -504,6 +519,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
       iconClass += ' zabbix-trigger--blinked';
+    }
+    return iconClass;
+  }
+
+  getAlertIconClassBySeverity(triggerSeverity) {
+    let iconClass = 'icon-gf-warning';
+    if (triggerSeverity.priority >= 3) {
+      iconClass = 'icon-gf-critical';
     }
     return iconClass;
   }
@@ -522,6 +545,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
     }
 
     return statusClass;
+  }
+
+  getBackground(trigger) {
+    const mainColor = trigger.color;
+    const secondColor = this.contextSrv.user.lightTheme ? '#dde4ed' : '#262628';
+    if (this.contextSrv.user.lightTheme) {
+      return `linear-gradient(135deg, ${secondColor}, ${mainColor})`;
+    }
+    return `linear-gradient(135deg, ${mainColor}, ${secondColor})`;
   }
 
   isNewTrigger(trigger) {
@@ -593,18 +625,23 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     function setFontSize() {
       const fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1));
-      let triggerCardElem = elem.find('.card-item-wrapper');
+      let triggerCardElem = elem.find('.alert-rule-item');
       if (fontSize && fontSize !== 100) {
-        triggerCardElem.find('.alert-list-icon').css({'font-size': fontSize + '%'});
-        triggerCardElem.find('.alert-list-title').css({'font-size': fontSize + '%'});
-        triggerCardElem.find('.alert-list-text').css({'font-size': fontSize * 0.8 + '%'});
+        triggerCardElem.find('.alert-rule-item__icon').css({
+          'font-size': fontSize + '%',
+          'margin': fontSize / 100 * 6 + 'px'
+        });
+        triggerCardElem.find('.alert-rule-item__name').css({'font-size': fontSize + '%'});
+        triggerCardElem.find('.alert-rule-item__text').css({'font-size': fontSize * 0.8 + '%'});
+        triggerCardElem.find('.zbx-trigger-lastchange').css({'font-size': fontSize * 0.8 + '%'});
         triggerCardElem.find('.zbx-tag').css({'font-size': fontSize * 0.6 + '%'});
         triggerCardElem.find('.zbx-tag').css({'line-height': fontSize / 100 * 16 + 'px'});
       } else {
         // remove css
-        triggerCardElem.find('.alert-list-icon').css({'font-size': ''});
-        triggerCardElem.find('.alert-list-title').css({'font-size': ''});
-        triggerCardElem.find('.alert-list-text').css({'font-size': ''});
+        triggerCardElem.find('.alert-rule-item__icon').css({'font-size': '', 'margin-right': ''});
+        triggerCardElem.find('.alert-rule-item__name').css({'font-size': ''});
+        triggerCardElem.find('.alert-rule-item__text').css({'font-size': ''});
+        triggerCardElem.find('.zbx-trigger-lastchange').css({'font-size': ''});
         triggerCardElem.find('.zbx-tag').css({'font-size': ''});
         triggerCardElem.find('.zbx-tag').css({'line-height': ''});
       }
@@ -617,7 +654,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
       rootElem.css({'max-height': getContentHeight()});
       rootElem.css({'height': getContentHeight()});
       setFontSize();
-      ctrl.renderingCompleted();
     }
 
     let unbindDestroy = scope.$on('$destroy', function() {

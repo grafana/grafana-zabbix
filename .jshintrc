@@ -42,6 +42,7 @@
     "sinon": true,
     "module": true,
     "beforeEach": true,
-    "inject": true
+    "inject": true,
+    "__dirname": true
   }
 }
