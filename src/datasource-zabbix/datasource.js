@@ -14,9 +14,10 @@ const DEFAULT_ZABBIX_VERSION = 3;
 export class ZabbixDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
+  constructor(instanceSettings, templateSrv, backendSrv, datasourceSrv, zabbixAlertingSrv, dashboardSrv) {
     this.templateSrv = templateSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
+    this.dashboardSrv = dashboardSrv;
 
     // Use custom format for template variables
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
