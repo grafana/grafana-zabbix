@@ -147,7 +147,8 @@ export class ZabbixAPIConnector {
         'value_type',
         'hostid',
         'status',
-        'state'
+        'state',
+        'description'
       ],
       sortfield: 'name',
       webitems: true,
