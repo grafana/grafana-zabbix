@@ -243,7 +243,7 @@ export class Zabbix {
   /**
    * Build query - convert target filters to array of Zabbix items
    */
-  getTriggers(groupFilter, hostFilter, appFilter, options) {
+  getTriggers(groupFilter, hostFilter, appFilter, options, proxyFilter) {
     let promises = [
       this.getGroups(groupFilter),
       this.getHosts(groupFilter, hostFilter),
@@ -252,9 +252,7 @@ export class Zabbix {
 
     return Promise.all(promises)
     .then(results => {
-      let filteredGroups = results[0];
-      let filteredHosts = results[1];
-      let filteredApps = results[2];
+      let [filteredGroups, filteredHosts, filteredApps] = results;
       let query = {};
 
       if (appFilter) {
@@ -268,8 +266,36 @@ export class Zabbix {
       }
 
       return query;
-    }).then(query => {
-      return this.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options);
+    })
+    .then(query => this.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options))
+    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter));
+  }
+
+  filterTriggersByProxy(triggers, proxyFilter) {
+    return this.getFilteredProxies(proxyFilter)
+    .then(proxies => {
+      if (proxyFilter && proxyFilter !== '/.*/' && triggers) {
+        const proxy_ids = proxies.map(proxy => proxy.proxyid);
+        triggers = triggers.filter(trigger => {
+          let filtered = false;
+          for(let i = 0; i < trigger.hosts.length; i++) {
+            const host = trigger.hosts[i];
+            if (proxy_ids.includes(host.proxy_hostid)) {
+              filtered = true;
+            }
+          }
+          return filtered;
+        });
+      }
+      return triggers;
+    });
+  }
+
+  getFilteredProxies(proxyFilter) {
+    return this.zabbixAPI.getProxies()
+    .then(proxies => {
+      proxies.forEach(proxy => proxy.name = proxy.host);
+      return findByFilter(proxies, proxyFilter);
     });
   }
 

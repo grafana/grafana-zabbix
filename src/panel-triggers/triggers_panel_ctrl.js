@@ -15,6 +15,7 @@ export const DEFAULT_TARGET = {
   application: {filter: ""},
   trigger: {filter: ""},
   tags: {filter: ""},
+  proxy: {filter: ""},
 };
 
 export const DEFAULT_SEVERITY = [
@@ -204,7 +205,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   getTriggers() {
     let promises = _.map(this.panel.datasources, (ds) => {
-      let proxies = [];
+      let proxies;
       return this.datasourceSrv.get(ds)
       .then(datasource => {
         const zabbix = datasource.zabbix;
@@ -217,27 +218,24 @@ export class TriggerPanelCtrl extends PanelCtrl {
         const groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
         const hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
         const appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
+        const proxyFilter = datasource.replaceTemplateVars(triggerFilter.proxy.filter);
 
         let triggersOptions = {
           showTriggers: showEvents
         };
 
         return Promise.all([
-          zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions),
+          zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions, proxyFilter),
           getProxiesPromise
         ]);
       }).then(([triggers, sourceProxies]) => {
         proxies = _.keyBy(sourceProxies, 'proxyid');
         return this.getAcknowledges(triggers, ds);
-      }).then((triggers) => {
-        return this.setMaintenanceStatus(triggers);
-      }).then((triggers) => {
-        return this.filterTriggersPre(triggers, ds);
-      }).then((triggers) => {
-        return this.addTriggerDataSource(triggers, ds);
-      }).then((triggers) => {
-        return this.addTriggerHostProxy(triggers, proxies);
-      });
+      })
+      .then(triggers => this.setMaintenanceStatus(triggers))
+      .then(triggers => this.filterTriggersPre(triggers, ds))
+      .then(triggers => this.addTriggerDataSource(triggers, ds))
+      .then(triggers => this.addTriggerHostProxy(triggers, proxies));
     });
 
     return Promise.all(promises)
