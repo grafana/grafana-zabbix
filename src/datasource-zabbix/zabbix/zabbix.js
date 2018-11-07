@@ -8,16 +8,16 @@ import { ZabbixNotImplemented } from './connectors/dbConnector';
 
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
-  'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getVersion'
+  'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'getProxies'
 ];
 
 const REQUESTS_TO_CACHE = [
-  'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs', 'getITService'
+  'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs', 'getITService', 'getProxies'
 ];
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'getVersion', 'login', 'acknowledgeEvent'
+  'getAcknowledges', 'getITService', 'getVersion', 'login', 'acknowledgeEvent', 'getProxies'
 ];
 
 export class Zabbix {

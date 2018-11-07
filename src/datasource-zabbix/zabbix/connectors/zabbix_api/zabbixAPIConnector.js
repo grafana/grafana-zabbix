@@ -346,7 +346,7 @@ export class ZabbixAPIConnector {
         value: 1
       },
       selectGroups: ['name'],
-      selectHosts: ['name', 'host', 'maintenance_status'],
+      selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
       selectItems: ['name', 'key_', 'lastvalue'],
       selectLastEvent: 'extend',
       selectTags: 'extend'
@@ -462,6 +462,14 @@ export class ZabbixAPIConnector {
       }
       return triggers;
     });
+  }
+
+  getProxies() {
+    var params = {
+      output: ['proxyid', 'host'],
+    };
+
+    return this.request('proxy.get', params);
   }
 }
 
