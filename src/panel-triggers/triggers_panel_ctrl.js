@@ -36,6 +36,7 @@ export const PANEL_DEFAULTS = {
   hostField: true,
   hostTechNameField: false,
   hostGroups: false,
+  hostProxy: false,
   showTags: true,
   statusField: true,
   severityField: true,
@@ -514,7 +515,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     } else if (this.panel.hostField || this.panel.hostTechNameField) {
       host = this.panel.hostField ? trigger.host : trigger.hostTechName;
     }
-    if (trigger.proxy) {
+    if (this.panel.hostProxy && trigger.proxy) {
       host = `${trigger.proxy}: ${host}`;
     }
 
