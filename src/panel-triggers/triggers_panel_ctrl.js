@@ -203,6 +203,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   getTriggers() {
     let promises = _.map(this.panel.datasources, (ds) => {
+      let proxies = [];
       return this.datasourceSrv.get(ds)
       .then(datasource => {
         var zabbix = datasource.zabbix;
@@ -218,8 +219,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
           showTriggers: showEvents
         };
 
-        return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
-      }).then((triggers) => {
+        return Promise.all([
+          zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions),
+          zabbix.getProxies()
+        ]);
+      }).then(([triggers, sourceProxies]) => {
+        proxies = _.keyBy(sourceProxies, 'proxyid');
         return this.getAcknowledges(triggers, ds);
       }).then((triggers) => {
         return this.setMaintenanceStatus(triggers);
@@ -227,6 +232,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
         return this.filterTriggersPre(triggers, ds);
       }).then((triggers) => {
         return this.addTriggerDataSource(triggers, ds);
+      }).then((triggers) => {
+        return this.addTriggerHostProxy(triggers, proxies);
       });
     });
 
@@ -344,6 +351,19 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return triggers;
   }
 
+  addTriggerHostProxy(triggers, proxies) {
+    triggers.forEach(trigger => {
+      if (trigger.hosts && trigger.hosts.length) {
+        let host = trigger.hosts[0];
+        if (host.proxy_hostid !== '0') {
+          const hostProxy = proxies[host.proxy_hostid];
+          host.proxy = hostProxy ? hostProxy.host : '';
+        }
+      }
+    });
+    return triggers;
+  }
+
   sortTriggers(triggerList) {
     if (this.panel.sortTriggersBy.value === 'priority') {
       triggerList = _.orderBy(triggerList, ['priority', 'lastchangeUnix', 'triggerid'], ['desc', 'desc', 'desc']);
@@ -355,12 +375,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   formatTrigger(zabbixTrigger) {
     let trigger = _.cloneDeep(zabbixTrigger);
-    let triggerObj = trigger;
 
-    // Set host that the trigger belongs
+    // Set host and proxy that the trigger belongs
     if (trigger.hosts && trigger.hosts.length) {
-      triggerObj.host = trigger.hosts[0].name;
-      triggerObj.hostTechName = trigger.hosts[0].host;
+      const host = trigger.hosts[0];
+      trigger.host = host.name;
+      trigger.hostTechName = host.host;
+      if (host.proxy) {
+        trigger.proxy = host.proxy;
+      }
     }
 
     // Set tags if present
@@ -375,9 +398,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     // Format last change and age
     trigger.lastchangeUnix = Number(trigger.lastchange);
-    triggerObj = this.setTriggerLastChange(triggerObj);
-    triggerObj = this.setTriggerSeverity(triggerObj);
-    return triggerObj;
+    trigger = this.setTriggerLastChange(trigger);
+    trigger = this.setTriggerSeverity(trigger);
+    return trigger;
   }
 
   updateTriggerFormat(trigger) {
@@ -490,6 +513,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
       host = `${trigger.host} (${trigger.hostTechName})`;
     } else if (this.panel.hostField || this.panel.hostTechNameField) {
       host = this.panel.hostField ? trigger.host : trigger.hostTechName;
+    }
+    if (trigger.proxy) {
+      host = `${trigger.proxy}: ${host}`;
     }
 
     return host;
