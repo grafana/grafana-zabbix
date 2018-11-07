@@ -207,14 +207,16 @@ export class TriggerPanelCtrl extends PanelCtrl {
       let proxies = [];
       return this.datasourceSrv.get(ds)
       .then(datasource => {
-        var zabbix = datasource.zabbix;
-        var showEvents = this.panel.showEvents.value;
-        var triggerFilter = this.panel.targets[ds];
+        const zabbix = datasource.zabbix;
+        const showEvents = this.panel.showEvents.value;
+        const triggerFilter = this.panel.targets[ds];
+        const showProxy = this.panel.hostProxy;
+        const getProxiesPromise = showProxy ? zabbix.getProxies() : () => [];
 
         // Replace template variables
-        var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
-        var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
-        var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
+        const groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
+        const hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
+        const appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
 
         let triggersOptions = {
           showTriggers: showEvents
@@ -222,7 +224,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
         return Promise.all([
           zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions),
-          zabbix.getProxies()
+          getProxiesPromise
         ]);
       }).then(([triggers, sourceProxies]) => {
         proxies = _.keyBy(sourceProxies, 'proxyid');
