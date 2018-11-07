@@ -51,7 +51,7 @@
         <label class="gf-form-label query-keyword width-7">Proxy</label>
         <input type="text"
           ng-model="ctrl.panel.targets[ds].proxy.filter"
-          bs-typeahead="editor.getHostNames[ds]"
+          bs-typeahead="editor.getProxyNames[ds]"
           ng-blur="editor.parseTarget()"
           data-min-length=0
           data-items=100
