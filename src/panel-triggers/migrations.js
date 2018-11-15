@@ -2,7 +2,7 @@ import _ from 'lodash';
 import {DEFAULT_TARGET} from './triggers_panel_ctrl';
 
 // Actual schema version
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export function migratePanelSchema(panel) {
   if (isEmptyPanel(panel)) {
@@ -31,7 +31,7 @@ export function migratePanelSchema(panel) {
     delete panel.hideHostsInMaintenance;
   }
 
-  if (schemaVersion < 4) {
+  if (schemaVersion < 5) {
     if (panel.targets && !_.isEmpty(panel.targets)) {
       _.each(panel.targets, (target) => {
         _.defaultsDeep(target, DEFAULT_TARGET);

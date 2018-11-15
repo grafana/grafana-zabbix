@@ -17,6 +17,7 @@ class TriggersTabCtrl {
       getGroupNames: {},
       getHostNames: {},
       getApplicationNames: {},
+      getProxyNames: {},
       oldTarget: _.cloneDeep(this.panel.targets)
     };
     _.defaultsDeep(this, scopeDefaults);
@@ -40,6 +41,7 @@ class TriggersTabCtrl {
     this.getGroupNames[ds] = _.bind(this.suggestGroups, this, datasource);
     this.getHostNames[ds] = _.bind(this.suggestHosts, this, datasource);
     this.getApplicationNames[ds] = _.bind(this.suggestApps, this, datasource);
+    this.getProxyNames[ds] = _.bind(this.suggestProxies, this, datasource);
   }
 
   suggestGroups(datasource, query, callback) {
@@ -69,6 +71,12 @@ class TriggersTabCtrl {
     .then(callback);
   }
 
+  suggestProxies(datasource, query, callback) {
+    return datasource.zabbix.getProxies()
+    .then(proxies => _.map(proxies, 'host'))
+    .then(callback);
+  }
+
   datasourcesChanged() {
     _.each(this.panel.datasources, (ds) => {
       if (!this.panel.targets[ds]) {
@@ -84,8 +92,8 @@ class TriggersTabCtrl {
       var newTarget = _.cloneDeep(this.panel.targets);
       if (!_.isEqual(this.oldTarget, newTarget)) {
         this.oldTarget = newTarget;
+        this.panelCtrl.refresh();
       }
-      this.panelCtrl.refresh();
     });
   }
 

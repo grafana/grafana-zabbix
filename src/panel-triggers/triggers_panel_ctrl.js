@@ -15,6 +15,7 @@ export const DEFAULT_TARGET = {
   application: {filter: ""},
   trigger: {filter: ""},
   tags: {filter: ""},
+  proxy: {filter: ""},
 };
 
 export const DEFAULT_SEVERITY = [
@@ -36,6 +37,7 @@ export const PANEL_DEFAULTS = {
   hostField: true,
   hostTechNameField: false,
   hostGroups: false,
+  hostProxy: false,
   showTags: true,
   statusField: true,
   severityField: true,
@@ -203,31 +205,37 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   getTriggers() {
     let promises = _.map(this.panel.datasources, (ds) => {
+      let proxies;
       return this.datasourceSrv.get(ds)
       .then(datasource => {
-        var zabbix = datasource.zabbix;
-        var showEvents = this.panel.showEvents.value;
-        var triggerFilter = this.panel.targets[ds];
+        const zabbix = datasource.zabbix;
+        const showEvents = this.panel.showEvents.value;
+        const triggerFilter = this.panel.targets[ds];
+        const showProxy = this.panel.hostProxy;
+        const getProxiesPromise = showProxy ? zabbix.getProxies() : () => [];
 
         // Replace template variables
-        var groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
-        var hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
-        var appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
+        const groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
+        const hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
+        const appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
+        const proxyFilter = datasource.replaceTemplateVars(triggerFilter.proxy.filter);
 
         let triggersOptions = {
           showTriggers: showEvents
         };
 
-        return zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions);
-      }).then((triggers) => {
+        return Promise.all([
+          zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions, proxyFilter),
+          getProxiesPromise
+        ]);
+      }).then(([triggers, sourceProxies]) => {
+        proxies = _.keyBy(sourceProxies, 'proxyid');
         return this.getAcknowledges(triggers, ds);
-      }).then((triggers) => {
-        return this.setMaintenanceStatus(triggers);
-      }).then((triggers) => {
-        return this.filterTriggersPre(triggers, ds);
-      }).then((triggers) => {
-        return this.addTriggerDataSource(triggers, ds);
-      });
+      })
+      .then(triggers => this.setMaintenanceStatus(triggers))
+      .then(triggers => this.filterTriggersPre(triggers, ds))
+      .then(triggers => this.addTriggerDataSource(triggers, ds))
+      .then(triggers => this.addTriggerHostProxy(triggers, proxies));
     });
 
     return Promise.all(promises)
@@ -344,6 +352,19 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return triggers;
   }
 
+  addTriggerHostProxy(triggers, proxies) {
+    triggers.forEach(trigger => {
+      if (trigger.hosts && trigger.hosts.length) {
+        let host = trigger.hosts[0];
+        if (host.proxy_hostid !== '0') {
+          const hostProxy = proxies[host.proxy_hostid];
+          host.proxy = hostProxy ? hostProxy.host : '';
+        }
+      }
+    });
+    return triggers;
+  }
+
   sortTriggers(triggerList) {
     if (this.panel.sortTriggersBy.value === 'priority') {
       triggerList = _.orderBy(triggerList, ['priority', 'lastchangeUnix', 'triggerid'], ['desc', 'desc', 'desc']);
@@ -355,12 +376,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   formatTrigger(zabbixTrigger) {
     let trigger = _.cloneDeep(zabbixTrigger);
-    let triggerObj = trigger;
 
-    // Set host that the trigger belongs
+    // Set host and proxy that the trigger belongs
     if (trigger.hosts && trigger.hosts.length) {
-      triggerObj.host = trigger.hosts[0].name;
-      triggerObj.hostTechName = trigger.hosts[0].host;
+      const host = trigger.hosts[0];
+      trigger.host = host.name;
+      trigger.hostTechName = host.host;
+      if (host.proxy) {
+        trigger.proxy = host.proxy;
+      }
     }
 
     // Set tags if present
@@ -375,9 +399,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     // Format last change and age
     trigger.lastchangeUnix = Number(trigger.lastchange);
-    triggerObj = this.setTriggerLastChange(triggerObj);
-    triggerObj = this.setTriggerSeverity(triggerObj);
-    return triggerObj;
+    trigger = this.setTriggerLastChange(trigger);
+    trigger = this.setTriggerSeverity(trigger);
+    return trigger;
   }
 
   updateTriggerFormat(trigger) {
@@ -490,6 +514,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
       host = `${trigger.host} (${trigger.hostTechName})`;
     } else if (this.panel.hostField || this.panel.hostTechNameField) {
       host = this.panel.hostField ? trigger.host : trigger.hostTechName;
+    }
+    if (this.panel.hostProxy && trigger.proxy) {
+      host = `${trigger.proxy}: ${host}`;
     }
 
     return host;

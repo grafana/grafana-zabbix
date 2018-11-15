@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import mocks from '../../test-setup/mocks';
 import { Datasource } from "../module";
 import { zabbixTemplateFormat } from "../datasource";
 
@@ -17,15 +18,11 @@ describe('ZabbixDatasource', () => {
         dbConnectionEnable: false
       }
     };
-    ctx.templateSrv = {};
-    ctx.backendSrv = {
-      datasourceRequest: jest.fn()
-    };
-    ctx.datasourceSrv = {};
-    ctx.zabbixAlertingSrv = {
-      setPanelAlertState: jest.fn(),
-      removeZabbixThreshold: jest.fn(),
-    };
+
+    ctx.templateSrv = mocks.templateSrvMock;
+    ctx.backendSrv = mocks.backendSrvMock;
+    ctx.datasourceSrv = mocks.datasourceSrvMock;
+    ctx.zabbixAlertingSrv = mocks.zabbixAlertingSrvMock;
 
     ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.backendSrv, ctx.datasourceSrv, ctx.zabbixAlertingSrv);
   });
