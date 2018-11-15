@@ -13,6 +13,11 @@
       "type": "dashboard",
       "name": "Zabbix Template Linux Server",
       "path": "../dashboards/template_linux_server.json"
+    },
+    {
+      "type": "dashboard",
+      "name": "Zabbix Server Dashboard",
+      "path": "../dashboards/zabbix_server_dashboard.json"
     }
   ],
 
