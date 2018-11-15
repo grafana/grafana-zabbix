@@ -92,8 +92,8 @@ class TriggersTabCtrl {
       var newTarget = _.cloneDeep(this.panel.targets);
       if (!_.isEqual(this.oldTarget, newTarget)) {
         this.oldTarget = newTarget;
+        this.panelCtrl.refresh();
       }
-      this.panelCtrl.refresh();
     });
   }
 
