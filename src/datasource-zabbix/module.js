@@ -1,3 +1,4 @@
+import { loadPluginCss } from 'grafana/app/plugins/sdk';
 import { ZabbixDatasource } from './datasource';
 import { ZabbixQueryController } from './query.controller';
 import { ZabbixDSConfigController } from './config.controller';
@@ -13,6 +14,11 @@ ZabbixAnnotationsQueryController.templateUrl = 'datasource-zabbix/partials/annot
 
 ZabbixQueryController.templateUrl = 'datasource-zabbix/partials/query.editor.html';
 ZabbixDSConfigController.templateUrl = 'datasource-zabbix/partials/config.html';
+
+loadPluginCss({
+  dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',
+  light: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.light.css'
+});
 
 export {
   ZabbixDatasource as Datasource,
