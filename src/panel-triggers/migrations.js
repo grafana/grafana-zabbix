@@ -6,6 +6,7 @@ export const CURRENT_SCHEMA_VERSION = 5;
 
 export function migratePanelSchema(panel) {
   if (isEmptyPanel(panel)) {
+    delete panel.targets;
     return panel;
   }
 
@@ -47,5 +48,9 @@ function getSchemaVersion(panel) {
 }
 
 function isEmptyPanel(panel) {
-  return !panel.datasource && !panel.datasources && !panel.triggers && !panel.targets;
+  return !panel.datasource && !panel.datasources && !panel.triggers && isEmptyTargets(panel.targets);
+}
+
+function isEmptyTargets(targets) {
+  return !targets || (_.isArray(targets) && (targets.length === 0 || targets.length === 1 && _.isEmpty(targets[0])));
 }

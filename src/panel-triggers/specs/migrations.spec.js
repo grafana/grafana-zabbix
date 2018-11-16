@@ -74,4 +74,20 @@ describe('Triggers Panel schema migration', () => {
     }, PANEL_DEFAULTS);
     expect(updatedPanelCtrl.panel).toEqual(expected);
   });
+
+  it('should set default targets for new panel with empty targets', () => {
+    ctx.scope.panel = {
+      targets: [{}]
+    };
+    let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
+
+    let expected = _.defaultsDeep({
+      datasources: ['zabbix_default'],
+      targets: {
+        'zabbix_default': DEFAULT_TARGET
+      },
+    }, PANEL_DEFAULTS);
+
+    expect(updatedPanelCtrl.panel).toEqual(expected);
+  });
 });
