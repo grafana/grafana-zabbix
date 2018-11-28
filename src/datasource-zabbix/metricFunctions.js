@@ -45,6 +45,15 @@ addFuncDef({
 });
 
 addFuncDef({
+  name: 'offset',
+  category: 'Transform',
+  params: [
+    { name: 'delta', type: 'float', options: [-100, 100]}
+  ],
+  defaultParams: [100],
+});
+
+addFuncDef({
   name: 'delta',
   category: 'Transform',
   params: [],
