@@ -45,10 +45,10 @@ addFuncDef({
 });
 
 addFuncDef({
-  name: 'shift',
+  name: 'offset',
   category: 'Transform',
   params: [
-    { name: 'factor', type: 'float', options: [-100, 100]}
+    { name: 'delta', type: 'float', options: [-100, 100]}
   ],
   defaultParams: [100],
 });

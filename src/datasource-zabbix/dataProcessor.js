@@ -9,7 +9,7 @@ let sumSeries = ts.sumSeries;
 let delta = ts.delta;
 let rate = ts.rate;
 let scale = (factor, datapoints) => ts.scale_perf(datapoints, factor);
-let shift = (factor, datapoints) => ts.shift(datapoints, factor);
+let offset = (factor, datapoints) => ts.offset(datapoints, delta);
 let simpleMovingAverage = (n, datapoints) => ts.simpleMovingAverage(datapoints, n);
 let expMovingAverage = (a, datapoints) => ts.expMovingAverage(datapoints, a);
 
@@ -118,7 +118,7 @@ function unShiftTimeSeries(interval, datapoints) {
 let metricFunctions = {
   groupBy: groupByWrapper,
   scale: scale,
-  shift: shift,
+  offset: offset,
   delta: delta,
   rate: rate,
   movingAverage: simpleMovingAverage,

@@ -191,10 +191,10 @@ function scale_perf(datapoints, factor) {
   return datapoints;
 }
 
-function shift(datapoints, factor) {
+function offset(datapoints, delta) {
   for (let i = 0; i < datapoints.length; i++) {
     datapoints[i] = [
-      datapoints[i][POINT_VALUE] + factor,
+      datapoints[i][POINT_VALUE] + delta,
       datapoints[i][POINT_TIMESTAMP]
     ];
   }
@@ -488,7 +488,7 @@ const exportedFunctions = {
   groupBy_perf,
   sumSeries,
   scale,
-  shift,
+  offset,
   scale_perf,
   delta,
   rate,
