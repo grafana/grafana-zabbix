@@ -13,7 +13,7 @@ $gray-4:           #D8D9DA;
 $gray-5:           #ECECEC;
 $gray-6:           #f4f5f8;
 $gray-7:           #fbfbfb;
-$gray-blue:				 #292a2d;
+$gray-blue:        #292a2d;
 
 $white:            #fff;
 
@@ -33,8 +33,10 @@ $regex:            #d69e2e;
 $body-bg:               rgb(20,20,20);
 $body-color:            $gray-4;
 $text-color:            $gray-4;
+$text-color-muted:      $gray-2;
 $tight-form-func-bg:    #333;
 $grafanaListAccent:     lighten($dark-2, 2%);
 
 $zbx-tag-color: $gray-5;
 $zbx-text-highlighted: $white;
+$problems-border-color: $dark-1;

@@ -1,3 +1,5 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
 import _ from 'lodash';
 import $ from 'jquery';
 import moment from 'moment';
@@ -6,6 +8,7 @@ import {PanelCtrl} from 'grafana/app/plugins/sdk';
 import {triggerPanelOptionsTab} from './options_tab';
 import {triggerPanelTriggersTab} from './triggers_tab';
 import {migratePanelSchema, CURRENT_SCHEMA_VERSION} from './migrations';
+import { ProblemList } from './components/Problems';
 
 const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
 
@@ -680,7 +683,23 @@ export class TriggerPanelCtrl extends PanelCtrl {
       appendPaginationControls(footerElem);
       rootElem.css({'max-height': getContentHeight()});
       rootElem.css({'height': getContentHeight()});
+      renderProblems();
       setFontSize();
+    }
+
+    function renderProblems() {
+      console.debug('rendering ProblemsList React component');
+      // console.log(ctrl);
+      let panelOptions = {};
+      for (let prop in PANEL_DEFAULTS) {
+        panelOptions[prop] = ctrl.panel[prop];
+      }
+      const problemsListProps = {
+        problems: ctrl.triggerList,
+        panelOptions,
+      };
+      const problemsReactElem = React.createElement(ProblemList, problemsListProps);
+      ReactDOM.render(problemsReactElem, elem.find('.panel-content')[0]);
     }
 
     let unbindDestroy = scope.$on('$destroy', function() {

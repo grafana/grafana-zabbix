@@ -53,7 +53,7 @@ module.exports = {
     ExtractTextPluginDark,
   ],
   resolve: {
-    extensions: [".js", ".html", ".scss"]
+    extensions: [".js", ".ts", ".tsx", ".html", ".scss"]
   },
   module: {
     rules: [
@@ -66,6 +66,13 @@ module.exports = {
             presets: ['babel-preset-env']
           }
         }
+      },
+      {
+        test: /\.tsx?$/,
+        exclude: /node_modules|external/,
+        loaders: [
+          "ts-loader"
+        ],
       },
       {
         test: /\.html$/,
