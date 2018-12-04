@@ -167,6 +167,7 @@
       .problem-details-row {
         display: flex;
         margin-bottom: 0.6rem;
+        min-height: 3rem;
 
         .problem-value-container {
           flex: 1 0 auto;
@@ -176,7 +177,7 @@
       .problem-details {
         position: relative;
         flex: 10 0 auto;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 1rem 0.5rem 1.2rem;
         display: flex;
         flex-direction: column;
       }
@@ -193,7 +194,7 @@
 
       .problem-tags {
         padding-top: 0.6rem;
-        padding-bottom: 0.6rem;
+        padding-bottom: 0.8rem;
         margin-top: auto;
       }
 
@@ -243,11 +244,17 @@
 
       .problem-details-middle {
         flex: 1 0 auto;
-        padding: 0.5rem 1rem;
+        padding: 0.6rem 1rem;
         // border: 1px solid $dark-4;
         border-width: 0 1px;
         border-style: solid;
         border-color: $dark-4;
+        overflow: auto;
+      }
+
+      .problem-ack-container {
+        padding: 0.8rem 0;
+        border-top: 2px solid $dark-4;
         overflow: auto;
       }
 

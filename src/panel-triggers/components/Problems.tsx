@@ -12,6 +12,13 @@ export interface ProblemListProps {
 }
 
 export class ProblemList extends PureComponent<ProblemListProps, any> {
+  rootWidth: number;
+  rootRef: any;
+
+  setRootRef = ref => {
+    this.rootRef = ref;
+  }
+
   buildColumns() {
     const result = [];
     const options = this.props.panelOptions;
@@ -41,17 +48,18 @@ export class ProblemList extends PureComponent<ProblemListProps, any> {
   }
 
   render() {
-    console.log(this.props.problems, this.props.panelOptions);
+    // console.log(this.props.problems, this.props.panelOptions);
     const columns = this.buildColumns();
-    // const data = this.props.problems.map(p => [p.host, p.description]);
+    this.rootWidth = this.rootRef && this.rootRef.clientWidth;
+
     return (
-      <div className="panel-problems">
+      <div className="panel-problems" ref={this.setRootRef}>
         <ReactTable
           data={this.props.problems}
           columns={columns}
           defaultPageSize={10}
           loading={this.props.loading}
-          SubComponent={props => <ProblemDetails {...props} />}
+          SubComponent={props => <ProblemDetails rootWidth={this.rootWidth} {...props} />}
         />
       </div>
     );
@@ -244,7 +252,7 @@ function ProblemStatusBar(props: ProblemStatusBarProps) {
       <ProblemStatusBarItem icon="tag" fired={closeByTag} tooltip={`OK event closes problems matched to tag: ${problem.correlation_tag}`} />
       <ProblemStatusBarItem icon="question-circle" fired={stateUnknown} tooltip="Current trigger state is unknown" />
       <ProblemStatusBarItem icon="warning" fired={error} tooltip={problem.error} />
-      <ProblemStatusBarItem icon="window-close-o" fired={manualClose} tooltip="Manual close event" />
+      <ProblemStatusBarItem icon="window-close-o" fired={manualClose} tooltip="Manual close problem" />
     </div>
   );
 }
@@ -289,11 +297,10 @@ class ProblemDetails extends PureComponent<any, any> {
 
   render() {
     const problem = this.props.original as Trigger;
+    const rootWidth = this.props.rootWidth;
     const displayClass = this.state.show ? 'show' : '';
-    let groups = "";
-    if (problem && problem.groups) {
-      groups = problem.groups.map(g => g.name).join(', ');
-    }
+    const wideLayout = rootWidth > 1000;
+
     return (
       <div className={`problem-details-container ${displayClass}`}>
         <div className="problem-details">
@@ -317,8 +324,14 @@ class ProblemDetails extends PureComponent<any, any> {
           <div className="problem-tags">
             {problem.tags && problem.tags.map(tag => <EventTag key={tag.tag + tag.value} tag={tag} />)}
           </div>
+          {problem.acknowledges && !wideLayout &&
+            <div className="problem-ack-container">
+              <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
+              <AcknowledgesList acknowledges={problem.acknowledges} />
+            </div>
+          }
         </div>
-        {problem.acknowledges &&
+        {problem.acknowledges && wideLayout &&
           <div className="problem-details-middle">
             <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
             <AcknowledgesList acknowledges={problem.acknowledges} />
