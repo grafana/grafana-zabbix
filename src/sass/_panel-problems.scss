@@ -145,6 +145,10 @@
       }
       .label-tag, .zbx-tag {
         margin-right: 0.6rem;
+
+        &.highlighted {
+          box-shadow: 0 0 10px $orange;
+        }
       }
     }
 
@@ -176,7 +180,7 @@
 
       .problem-details {
         position: relative;
-        flex: 10 0 auto;
+        flex: 10 1 auto;
         padding: 0.5rem 1rem 0.5rem 1.2rem;
         display: flex;
         flex-direction: column;
@@ -279,7 +283,7 @@
 
 
       .problem-details-right {
-        // flex: 1 0 auto;
+        flex: 0 0 auto;
         padding: 0.5rem 2rem;
         // background: $dark-4;
         color: $text-color-muted;

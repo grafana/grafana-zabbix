@@ -322,7 +322,9 @@ class ProblemDetails extends PureComponent<any, any> {
             </div>
           }
           <div className="problem-tags">
-            {problem.tags && problem.tags.map(tag => <EventTag key={tag.tag + tag.value} tag={tag} />)}
+            {problem.tags && problem.tags.map(tag =>
+              <EventTag key={tag.tag + tag.value} tag={tag} highlight={tag.tag === problem.correlation_tag} />)
+            }
           </div>
           {problem.acknowledges && !wideLayout &&
             <div className="problem-ack-container">

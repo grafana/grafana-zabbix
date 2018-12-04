@@ -86,17 +86,18 @@ function djb2(str) {
 
 interface EventTagProps {
   tag: ZBXTag;
+  highlight?: boolean;
 }
 
 function EventTag(props: EventTagProps) {
-  const { tag } = props;
+  const { tag, highlight } = props;
   const tagColor = getTagColorsFromName(tag.tag);
   const style: React.CSSProperties = {
     background: tagColor.color,
     borderColor: tagColor.borderColor,
   };
   return (
-    <span className="label label-tag zbx-tag" style={style}>
+    <span className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`} style={style}>
       {tag.tag}: {tag.value}
     </span>
   );
