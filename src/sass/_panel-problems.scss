@@ -217,6 +217,11 @@
         flex-direction: row;
         // max-width: 13rem;
 
+        &.compact .problem-statusbar-item {
+          width: 2.5rem;
+          padding: 0.4rem 0.4rem 0.4rem 0.8rem;
+        }
+
         .problem-statusbar-item {
           width: 3rem;
           height: 2rem;
@@ -242,6 +247,26 @@
               text-shadow: 0px 0px 10px rgba($orange, 0.5);
               // animation: fade-in 1s ease-out;
             }
+          }
+        }
+      }
+
+      .problem-actions {
+        margin-left: 1.6rem;
+      }
+
+      .problem-action-button {
+        &.btn {
+          width: 3rem;
+          height: 2rem;
+
+          background-image: none;
+          background-color: $action-button-color;
+          border: 1px solid darken($action-button-color, 6%);
+          border-radius: 1px;
+
+          &:hover {
+            background-color: darken($action-button-color, 4%);
           }
         }
       }
@@ -287,6 +312,10 @@
         padding: 0.5rem 2rem;
         // background: $dark-4;
         color: $text-color-muted;
+
+        &.compact {
+          padding: 0.5rem 1rem;
+        }
 
         .problem-details-right-item {
           margin-bottom: 0.2rem;

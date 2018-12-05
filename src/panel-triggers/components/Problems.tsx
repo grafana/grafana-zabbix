@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react';
 import ReactTable from 'react-table';
 import EventTag from './EventTag';
 import Tooltip from './Tooltip';
+import { Modal, AckProblemData } from './Modal';
 import { ProblemsPanelOptions, Trigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup } from '../types';
 import * as utils from '../../datasource-zabbix/utils';
 
@@ -200,17 +201,15 @@ interface ProblemGroupsProps {
   className?: string;
 }
 
-function ProblemGroups(props: ProblemGroupsProps) {
-  let groups = "";
-  if (props.groups && props.groups.length) {
-    groups = props.groups.map(g => g.name).join(', ');
+class ProblemGroups extends PureComponent<ProblemGroupsProps> {
+  render() {
+    return this.props.groups.map(g => (
+      <div className={this.props.className || ''} key={g.groupid}>
+        <FAIcon icon="folder" />
+        <span>{g.name}</span>
+      </div>
+    ));
   }
-  return (
-    <div className={props.className}>
-      <FAIcon icon="folder" />
-      <span>{groups}</span>
-    </div>
-  );
 }
 
 interface ProblemHostsProps {
@@ -218,25 +217,24 @@ interface ProblemHostsProps {
   className?: string;
 }
 
-function ProblemHosts(props: ProblemHostsProps) {
-  let hosts = "";
-  if (props.hosts && props.hosts.length) {
-    hosts = props.hosts.map(g => g.name).join(', ');
+class ProblemHosts extends PureComponent<ProblemHostsProps> {
+  render() {
+    return this.props.hosts.map(h => (
+      <div className={this.props.className || ''} key={h.hostid}>
+        <FAIcon icon="server" />
+        <span>{h.name}</span>
+      </div>
+    ));
   }
-  return (
-    <div className={props.className}>
-      <FAIcon icon="server" />
-      <span>{hosts}</span>
-    </div>
-  );
 }
 
 interface ProblemStatusBarProps {
   problem: Trigger;
+  className?: string;
 }
 
 function ProblemStatusBar(props: ProblemStatusBarProps) {
-  const { problem } = props;
+  const { problem, className } = props;
   const multiEvent = problem.type === '1';
   const link = problem.url && problem.url !== '';
   const maintenance = problem.maintenance;
@@ -244,8 +242,9 @@ function ProblemStatusBar(props: ProblemStatusBarProps) {
   const error = problem.error && problem.error !== '';
   const stateUnknown = problem.state === '1';
   const closeByTag = problem.correlation_mode === '1';
+
   return (
-    <div className="problem-statusbar">
+    <div className={`problem-statusbar ${className || ''}`}>
       <ProblemStatusBarItem icon="wrench" fired={maintenance} tooltip="Host maintenance" />
       <ProblemStatusBarItem icon="globe" fired={link} link={link && problem.url} tooltip="External link" />
       <ProblemStatusBarItem icon="bullhorn" fired={multiEvent} tooltip="Trigger generates multiple problem events" />
@@ -281,11 +280,47 @@ function ProblemStatusBarItem(props: ProblemStatusBarItemProps) {
   return link ? <a href={link} target="_blank">{item}</a> : item;
 }
 
-class ProblemDetails extends PureComponent<any, any> {
+interface ProblemActionButtonProps {
+  icon: string;
+  tooltip?: string;
+  className?: string;
+  onClick?: (event?) => void;
+}
+
+class ProblemActionButton extends PureComponent<ProblemActionButtonProps> {
+  handleClick = (event) => {
+    this.props.onClick(event);
+  }
+
+  render() {
+    const { icon, tooltip, className } = this.props;
+    let button = (
+      <button className={`btn problem-action-button ${className || ''}`} onClick={this.handleClick}>
+        <FAIcon icon={icon} />
+      </button>
+    );
+    if (tooltip) {
+      button = (
+        <Tooltip placement="bottom" content={tooltip}>
+          {button}
+        </Tooltip>
+      );
+    }
+    return button;
+  }
+}
+
+interface ProblemDetailsState {
+  show: boolean;
+  showAckDialog: boolean;
+}
+
+class ProblemDetails extends PureComponent<any, ProblemDetailsState> {
   constructor(props) {
     super(props);
     this.state = {
-      show: false
+      show: false,
+      showAckDialog: false,
     };
   }
 
@@ -295,11 +330,25 @@ class ProblemDetails extends PureComponent<any, any> {
     });
   }
 
+  ackProblem = (data: AckProblemData) => {
+    const problem = this.props.original as Trigger;
+    console.log(problem.lastEvent && problem.lastEvent.eventid, data);
+  }
+
+  showAckDialog = () => {
+    this.setState({ showAckDialog: true });
+  }
+
+  closeAckDialog = () => {
+    this.setState({ showAckDialog: false });
+  }
+
   render() {
     const problem = this.props.original as Trigger;
     const rootWidth = this.props.rootWidth;
     const displayClass = this.state.show ? 'show' : '';
     const wideLayout = rootWidth > 1000;
+    const compactStatusBar = rootWidth < 800;
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
@@ -313,7 +362,13 @@ class ProblemDetails extends PureComponent<any, any> {
               </div>
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
-            <ProblemStatusBar problem={problem} />
+            <ProblemStatusBar problem={problem} className={compactStatusBar && 'compact'} />
+            <div className="problem-actions">
+              <ProblemActionButton className="navbar-button navbar-button--settings"
+                icon="reply-all"
+                tooltip="Acknowledge problem"
+                onClick={this.showAckDialog} />
+            </div>
           </div>
           {problem.comments &&
             <div className="problem-description">
@@ -353,6 +408,10 @@ class ProblemDetails extends PureComponent<any, any> {
           {problem.groups && <ProblemGroups groups={problem.groups} className="problem-details-right-item" />}
           {problem.hosts && <ProblemHosts hosts={problem.hosts} className="problem-details-right-item" />}
         </div>
+        <Modal withBackdrop={true}
+          isOpen={this.state.showAckDialog}
+          onSubmit={this.ackProblem}
+          onClose={this.closeAckDialog} />
       </div>
     );
   }
