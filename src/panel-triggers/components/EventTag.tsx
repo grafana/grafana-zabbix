@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PureComponent } from 'react';
 import { ZBXTag } from '../types';
 
 const TAG_COLORS = [
@@ -87,20 +87,31 @@ function djb2(str) {
 interface EventTagProps {
   tag: ZBXTag;
   highlight?: boolean;
+  onClick?: (tag: ZBXTag) => void;
 }
 
-function EventTag(props: EventTagProps) {
-  const { tag, highlight } = props;
-  const tagColor = getTagColorsFromName(tag.tag);
-  const style: React.CSSProperties = {
-    background: tagColor.color,
-    borderColor: tagColor.borderColor,
-  };
-  return (
-    <span className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`} style={style}>
-      {tag.tag}: {tag.value}
-    </span>
-  );
+class EventTag extends PureComponent<EventTagProps> {
+  handleClick = () => {
+    if (this.props.onClick) {
+      this.props.onClick(this.props.tag);
+    }
+  }
+
+  render() {
+    const { tag, highlight } = this.props;
+    const tagColor = getTagColorsFromName(tag.tag);
+    const style: React.CSSProperties = {
+      background: tagColor.color,
+      borderColor: tagColor.borderColor,
+    };
+    return (
+      <span className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
+        style={style}
+        onClick={this.handleClick}>
+        {tag.tag}: {tag.value}
+      </span>
+    );
+  }
 }
 
 export default EventTag;
