@@ -82,7 +82,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
   }
 
   render() {
-    console.log(this.props.problems);
+    // console.log(this.props.problems);
     const columns = this.buildColumns();
     this.rootWidth = this.rootRef && this.rootRef.clientWidth;
 
@@ -280,6 +280,8 @@ function ProblemStatusBar(props: ProblemStatusBarProps) {
   const error = problem.error && problem.error !== '';
   const stateUnknown = problem.state === '1';
   const closeByTag = problem.correlation_mode === '1';
+  const actions = problem.alerts && problem.alerts.length !== 0;
+  const actionMessage = problem.alerts ? problem.alerts[0].message : '';
 
   return (
     <div className={`problem-statusbar ${className || ''}`}>
@@ -287,6 +289,7 @@ function ProblemStatusBar(props: ProblemStatusBarProps) {
       <ProblemStatusBarItem icon="globe" fired={link} link={link && problem.url} tooltip="External link" />
       <ProblemStatusBarItem icon="bullhorn" fired={multiEvent} tooltip="Trigger generates multiple problem events" />
       <ProblemStatusBarItem icon="tag" fired={closeByTag} tooltip={`OK event closes problems matched to tag: ${problem.correlation_tag}`} />
+      <ProblemStatusBarItem icon="circle-o-notch" fired={actions} tooltip={actionMessage} />
       <ProblemStatusBarItem icon="question-circle" fired={stateUnknown} tooltip="Current trigger state is unknown" />
       <ProblemStatusBarItem icon="warning" fired={error} tooltip={problem.error} />
       <ProblemStatusBarItem icon="window-close-o" fired={manualClose} tooltip="Manual close problem" />

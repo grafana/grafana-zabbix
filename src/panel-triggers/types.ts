@@ -70,6 +70,7 @@ export type TriggerColor = string;
 
 export interface Trigger {
   acknowledges?: ZBXAcknowledge[];
+  alerts?: ZBXAlert[];
   age?: string;
   color?: TriggerColor;
   comments?: string;
@@ -150,4 +151,10 @@ export interface ZBXAcknowledge {
   alias: string;
   name: string;
   surname: string;
+}
+
+export interface ZBXAlert {
+  clock: string;
+  message: string;
+  error: string;
 }
