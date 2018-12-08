@@ -82,7 +82,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
   }
 
   render() {
-    // console.log(this.props.problems, this.props.panelOptions);
+    console.log(this.props.problems);
     const columns = this.buildColumns();
     this.rootWidth = this.rootRef && this.rootRef.clientWidth;
 

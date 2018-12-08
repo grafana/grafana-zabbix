@@ -398,6 +398,16 @@ export class ZabbixAPIConnector {
     });
   }
 
+  getEventAlerts(eventids) {
+    const params = {
+      eventids: eventids,
+      output: 'extend',
+      selectUsers: true,
+    };
+
+    return this.request('alert.get', params);
+  }
+
   getAlerts(itemids, timeFrom, timeTo) {
     var params = {
       output: 'extend',

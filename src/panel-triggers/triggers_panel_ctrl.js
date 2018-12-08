@@ -233,7 +233,19 @@ export class TriggerPanelCtrl extends PanelCtrl {
         ]);
       }).then(([triggers, sourceProxies]) => {
         proxies = _.keyBy(sourceProxies, 'proxyid');
-        return this.getAcknowledges(triggers, ds);
+        const eventids = _.compact(triggers.map(trigger => {
+          return trigger.lastEvent.eventid;
+        }));
+        return Promise.all([
+          this.datasources[ds].zabbix.getAcknowledges(eventids),
+          this.datasources[ds].zabbix.getEventAlerts(eventids),
+          Promise.resolve(triggers)
+        ]);
+      })
+      .then(([events, alerts, triggers]) => {
+        this.addAcknowledges(events, triggers);
+        this.addEventAlerts(alerts, triggers);
+        return triggers;
       })
       .then(triggers => this.setMaintenanceStatus(triggers))
       .then(triggers => this.filterTriggersPre(triggers, ds))
@@ -245,32 +257,23 @@ export class TriggerPanelCtrl extends PanelCtrl {
     .then(results => _.flatten(results));
   }
 
-  getAcknowledges(triggerList, ds) {
-    // Request acknowledges for trigger
-    var eventids = _.map(triggerList, trigger => {
-      return trigger.lastEvent.eventid;
-    });
-
-    return this.datasources[ds].zabbix.getAcknowledges(eventids)
-    .then(events => {
-
-      // Map events to triggers
-      _.each(triggerList, trigger => {
-        var event = _.find(events, event => {
-          return event.eventid === trigger.lastEvent.eventid;
-        });
-
-        if (event) {
-          trigger.acknowledges = _.map(event.acknowledges, this.formatAcknowledge.bind(this));
-        }
-
-        if (!trigger.lastEvent.eventid) {
-          trigger.lastEvent = null;
-        }
+  addAcknowledges(events, triggers) {
+    // Map events to triggers
+    _.each(triggers, trigger => {
+      var event = _.find(events, event => {
+        return event.eventid === trigger.lastEvent.eventid;
       });
 
-      return triggerList;
+      if (event) {
+        trigger.acknowledges = _.map(event.acknowledges, this.formatAcknowledge.bind(this));
+      }
+
+      if (!trigger.lastEvent.eventid) {
+        trigger.lastEvent = null;
+      }
     });
+
+    return triggers;
   }
 
   formatAcknowledge(ack) {
@@ -286,6 +289,18 @@ export class TriggerPanelCtrl extends PanelCtrl {
       ack.user += ` (${fullName})`;
     }
     return ack;
+  }
+
+  addEventAlerts(alerts, triggers) {
+    alerts.forEach(alert => {
+      const trigger = _.find(triggers, t => {
+        return t.lastEvent && alert.eventid === t.lastEvent.eventid;
+      });
+      if (trigger) {
+        trigger.alerts = trigger.alerts ? trigger.alerts.concat(alert) : [alert];
+      }
+    });
+    return triggers;
   }
 
   filterTriggersPre(triggerList, ds) {
