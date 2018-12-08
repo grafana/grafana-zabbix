@@ -12,9 +12,22 @@ export interface ProblemListProps {
   loading?: boolean;
 }
 
-export class ProblemList extends PureComponent<ProblemListProps, any> {
+interface ProblemListState {
+  expanded: any;
+  page: number;
+}
+
+export class ProblemList extends PureComponent<ProblemListProps, ProblemListState> {
   rootWidth: number;
   rootRef: any;
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      expanded: {},
+      page: 0,
+    };
+  }
 
   setRootRef = ref => {
     this.rootRef = ref;
@@ -48,6 +61,18 @@ export class ProblemList extends PureComponent<ProblemListProps, any> {
     return result;
   }
 
+  getExpandedPage = (page: number) => {
+    return this.state.expanded[page] || {};
+  }
+
+  handleExpandedChange = expanded => {
+    const nextExpanded = {...this.state.expanded};
+    nextExpanded[this.state.page] = expanded;
+    this.setState({
+      expanded: nextExpanded
+    });
+  }
+
   render() {
     // console.log(this.props.problems, this.props.panelOptions);
     const columns = this.buildColumns();
@@ -61,6 +86,9 @@ export class ProblemList extends PureComponent<ProblemListProps, any> {
           defaultPageSize={10}
           loading={this.props.loading}
           SubComponent={props => <ProblemDetails rootWidth={this.rootWidth} {...props} />}
+          expanded={this.getExpandedPage(this.state.page)}
+          onExpandedChange={this.handleExpandedChange}
+          onPageChange={page => this.setState({ page })}
         />
       </div>
     );
