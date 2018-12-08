@@ -45,11 +45,19 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
       { Header: 'Host (Technical Name)', accessor: 'hostTechName', show: options.hostTechNameField },
       { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
       { Header: 'Proxy', accessor: 'proxy', show: options.hostProxy },
-      { Header: 'Severity', accessor: 'severity', show: options.severityField, className: 'problem-severity', width: 120, Cell: SeverityCell },
+      { Header: 'Severity', show: options.severityField, className: 'problem-severity', width: 120,
+        accessor: problem => problem.priority,
+        id: 'severity',
+        Cell: SeverityCell,
+      },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell},
       { Header: 'Tags', accessor: 'tags', show: options.showTags, className: 'problem-tags', Cell: TagCell },
-      { Header: 'Time', accessor: 'lastchange', className: 'last-change', width: timeColWidth },
+      { Header: 'Time', className: 'last-change', width: timeColWidth,
+        accessor: 'lastchangeUnix',
+        id: 'lastchange',
+        Cell: row => row.original.lastchange,
+      },
       { Header: 'Details', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
     ];
     for (const column of columns) {
@@ -101,10 +109,9 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
 // }
 
 function SeverityCell(props) {
-  // console.log(props);
   return (
     <div className='severity-cell' style={{ background: props.original.color }}>
-      {props.value}
+      {props.original.severity}
     </div>
   );
 }
