@@ -383,7 +383,7 @@ class ProblemDetails extends PureComponent<any, ProblemDetailsState> {
     const rootWidth = this.props.rootWidth;
     const displayClass = this.state.show ? 'show' : '';
     const wideLayout = rootWidth > 1000;
-    const compactStatusBar = rootWidth < 800;
+    const compactStatusBar = rootWidth < 800 || problem.acknowledges && wideLayout && rootWidth < 1200;
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
