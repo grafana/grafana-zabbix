@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import _ from 'lodash';
 import $ from 'jquery';
 import moment from 'moment';
+import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from '../datasource-zabbix/utils';
 import {PanelCtrl} from 'grafana/app/plugins/sdk';
 import {triggerPanelOptionsTab} from './options_tab';
@@ -74,12 +75,13 @@ const triggerStatusMap = {
 export class TriggerPanelCtrl extends PanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv) {
+  constructor($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv, timeSrv) {
     super($scope, $injector);
     this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.contextSrv = contextSrv;
     this.dashboardSrv = dashboardSrv;
+    this.timeSrv = timeSrv;
     this.scope = $scope;
     this.$timeout = $timeout;
 
@@ -90,6 +92,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.triggerList = [];
     this.currentTriggersPage = [];
     this.datasources = {};
+    this.range = {};
 
     this.panel = migratePanelSchema(this.panel);
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
@@ -158,6 +161,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
   onRefresh() {
     // ignore fetching data if another panel is in fullscreen
     if (this.otherPanelInFullscreenMode()) { return; }
+
+    this.range = this.timeSrv.timeRange();
 
     // clear loading/error state
     delete this.error;
@@ -518,6 +523,16 @@ export class TriggerPanelCtrl extends PanelCtrl {
     });
   }
 
+  getProblemEvents(trigger) {
+    const triggerids = [trigger.triggerid];
+    const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
+    const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
+    return this.datasourceSrv.get(trigger.datasource)
+    .then(datasource => {
+      return datasource.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1]);
+    });
+  }
+
   getCurrentTriggersPage() {
     let pageSize = this.panel.pageSize || PANEL_DEFAULTS.pageSize;
     let startPos = this.pageIndex * pageSize;
@@ -705,6 +720,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
     function renderProblems() {
       console.debug('rendering ProblemsList React component');
       // console.log(ctrl);
+      const timeFrom = Math.ceil(dateMath.parse(ctrl.range.from) / 1000);
+      const timeTo = Math.ceil(dateMath.parse(ctrl.range.to) / 1000);
+
       let panelOptions = {};
       for (let prop in PANEL_DEFAULTS) {
         panelOptions[prop] = ctrl.panel[prop];
@@ -712,6 +730,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
       const problemsListProps = {
         problems: ctrl.triggerList,
         panelOptions,
+        timeRange: { timeFrom, timeTo },
+        getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
       };
       const problemsReactElem = React.createElement(ProblemList, problemsListProps);
       ReactDOM.render(problemsReactElem, elem.find('.panel-content')[0]);

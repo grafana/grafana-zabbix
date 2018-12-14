@@ -1,15 +1,18 @@
 import React, { PureComponent } from 'react';
 import ReactTable from 'react-table';
+import * as utils from '../../datasource-zabbix/utils';
+import { ProblemsPanelOptions, Trigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange } from '../types';
+import { Modal, AckProblemData } from './Modal';
 import EventTag from './EventTag';
 import Tooltip from './Tooltip';
-import { Modal, AckProblemData } from './Modal';
-import { ProblemsPanelOptions, Trigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup } from '../types';
-import * as utils from '../../datasource-zabbix/utils';
+import ProblemTimeline from './ProblemTimeline';
 
 export interface ProblemListProps {
   problems: Trigger[];
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
+  timeRange?: GFTimeRange;
+  getProblemEvents: (ids: string[]) => ZBXEvent[];
 }
 
 interface ProblemListState {
@@ -93,7 +96,13 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
           columns={columns}
           defaultPageSize={10}
           loading={this.props.loading}
-          SubComponent={props => <ProblemDetails rootWidth={this.rootWidth} {...props} />}
+          SubComponent={props =>
+            <ProblemDetails {...props}
+              rootWidth={this.rootWidth}
+              timeRange={this.props.timeRange}
+              getProblemEvents={this.props.getProblemEvents}
+            />
+          }
           expanded={this.getExpandedPage(this.state.page)}
           onExpandedChange={this.handleExpandedChange}
           onPageChange={page => this.setState({ page })}
@@ -352,6 +361,7 @@ class ProblemActionButton extends PureComponent<ProblemActionButtonProps> {
 }
 
 interface ProblemDetailsState {
+  events: ZBXEvent[];
   show: boolean;
   showAckDialog: boolean;
 }
@@ -360,12 +370,19 @@ class ProblemDetails extends PureComponent<any, ProblemDetailsState> {
   constructor(props) {
     super(props);
     this.state = {
+      events: [],
       show: false,
       showAckDialog: false,
     };
   }
 
   componentDidMount() {
+    const problem = this.props.original;
+    this.props.getProblemEvents(problem)
+    .then(events => {
+      console.log(events, this.props.timeRange);
+      this.setState({ events });
+    });
     requestAnimationFrame(() => {
       this.setState({ show: true });
     });
@@ -417,11 +434,14 @@ class ProblemDetails extends PureComponent<any, ProblemDetailsState> {
               <span>{problem.comments}</span>
             </div>
           }
-          <div className="problem-tags">
-            {problem.tags && problem.tags.map(tag =>
-              <EventTag key={tag.tag + tag.value} tag={tag} highlight={tag.tag === problem.correlation_tag} />)
-            }
-          </div>
+          {problem.tags && problem.tags.length &&
+            <div className="problem-tags">
+              {problem.tags && problem.tags.map(tag =>
+                <EventTag key={tag.tag + tag.value} tag={tag} highlight={tag.tag === problem.correlation_tag} />)
+              }
+            </div>
+          }
+          <ProblemTimeline events={this.state.events} timeRange={this.props.timeRange} />
           {problem.acknowledges && !wideLayout &&
             <div className="problem-ack-container">
               <h6><FAIcon icon="reply-all" /> Acknowledges</h6>

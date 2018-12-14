@@ -132,6 +132,8 @@ export interface ZBXEvent {
   object?: string;
   objectid?: string;
   acknowledged?: string;
+  hosts?: ZBXHost[];
+  acknowledges?: ZBXAcknowledge[];
 }
 
 export interface ZBXTag {
@@ -157,4 +159,9 @@ export interface ZBXAlert {
   clock: string;
   message: string;
   error: string;
+}
+
+export interface GFTimeRange {
+  timeFrom: number;
+  timeTo: number;
 }
