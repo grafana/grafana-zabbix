@@ -42,6 +42,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     if (!this.rootRef) {
       return <div className="event-timeline" ref={this.setRootRef} />;
     }
+
     const { events, timeRange } = this.props;
     const { timeFrom, timeTo } = timeRange;
     const range = timeTo - timeFrom;
@@ -52,13 +53,14 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       const firstTs = events.length ? Number(events[0].clock) : timeTo;
       const duration = (firstTs - timeFrom) / range;
       const firstEventColor = events[0].value !== '1' ? this.props.problemColor : this.props.okColor;
-      const firstEventStyle: React.CSSProperties = {
+      const firstEventAttributes = {
         width: duration * width,
-        left: 0,
-        background: firstEventColor,
+        x: 0,
+        y: 0,
+        fill: firstEventColor,
       };
       firstItem = (
-        <div key='0' className="problem-event-interval" style={firstEventStyle}></div>
+        <rect key='0' className="problem-event-interval" {...firstEventAttributes}></rect>
       );
     }
 
@@ -68,14 +70,15 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       const duration = (nextTs - ts) / range;
       const posLeft = (ts - timeFrom) / range * width;
       const eventColor = event.value === '1' ? this.props.problemColor : this.props.okColor;
-      const styles: React.CSSProperties = {
+      const attributes = {
         width: duration * width,
-        left: posLeft,
-        background: eventColor,
+        x: posLeft,
+        y: 0,
+        fill: eventColor,
       };
 
       return (
-        <div key={event.eventid} className="problem-event-interval" style={styles}></div>
+        <rect key={event.eventid} className="problem-event-interval" {...attributes} />
       );
     });
 
@@ -83,23 +86,97 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       const ts = Number(event.clock);
       const posLeft = (ts - timeFrom) / range * width - EVENT_ITEM_SIZE / 2;
       const eventColor = event.value === '1' ? this.props.problemColor : this.props.okColor;
-      const styles: React.CSSProperties = {
-        transform: `translate(${posLeft}px, -2px)`,
-        // background: eventColor,
-        borderColor: eventColor,
-      };
 
       return (
-        <div key={event.eventid} className="problem-event-item" style={styles}></div>
+        <TimelinePoint
+          key={event.eventid}
+          className="problem-event-item"
+          x={posLeft}
+          r={10}
+          color={eventColor}
+        />
       );
     });
 
     return (
       <div className="event-timeline" ref={this.setRootRef}>
-        {firstItem}
-        {eventsIntervalItems}
-        {eventsItems}
+        <svg className="event-timeline-canvas" viewBox={`0 0 ${width} 40`}>
+          <defs>
+            <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+              <feOffset dx="1" dy="1" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="glowShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="timelinePointBlur" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blurOut" />
+            </filter>
+          </defs>
+          <g className="event-timeline-group">
+            <g className="event-timeline-regions">
+              {firstItem}
+              {eventsIntervalItems}
+            </g>
+            <g className="timeline-points" transform={`translate(0, 6)`}>
+              {eventsItems}
+            </g>
+          </g>
+        </svg>
       </div>
+    );
+  }
+}
+
+function TimelineRegion(props) {
+  return (
+    <rect></rect>
+  );
+}
+
+interface TimelinePointProps {
+  x: number;
+  r: number;
+  color: string;
+  className?: string;
+}
+
+class TimelinePoint extends PureComponent<TimelinePointProps, any> {
+  constructor(props) {
+    super(props);
+    this.state = { r: this.props.r };
+  }
+
+  handleMouseOver = () => {
+    this.setState({ r: this.props.r * 1.2 });
+  }
+
+  handleMouseLeave = () => {
+    this.setState({ r: this.props.r });
+  }
+
+  render() {
+    const { x, color, className } = this.props;
+    const r = this.state.r;
+    const cx = x + this.props.r;
+    const rInner = Math.floor(r * 0.6);
+    return (
+      <g className={className}
+        transform={`translate(${cx}, 0)`}
+        filter="url(#dropShadow)"
+        onMouseOver={this.handleMouseOver}
+        onMouseLeave={this.handleMouseLeave}>
+        <circle cx={0} cy={0} r={r} fill={color} className="point-border" />
+        <circle cx={0} cy={0} r={rInner} fill="#000000" className="point-core" />
+      </g>
     );
   }
 }

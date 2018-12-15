@@ -343,32 +343,41 @@
         margin: 1.6rem 0;
         // margin-top: auto;
 
+        svg.event-timeline-canvas {
+          height: 40px;
+
+          g.event-timeline-group {
+            height: 40px;
+            transform: translate(0px, 14px);
+          }
+        }
+
         .problem-event-interval {
           height: 12px;
-          position: absolute;
+          // transition: all 0.2s ease-out;
           // opacity: 0.7;
 
           &:hover {
             // opacity: 1;
-            border: 1px solid $blue;
-            box-shadow: 0px 0px 5px rgba($blue, 0.5);
+            stroke: $zbx-text-highlighted;
+            filter: url(#glowShadow);
           }
         }
 
         .problem-event-item {
-          position: absolute;
-          width: 16px;
-          height: 16px;
-          // transform: translate(0px, -2px);
-          background: $problem-statusbar-background;
-          border: 4px solid $blue;
-          border-radius: 16px;
-          z-index: 10;
+          circle {
+            transition: all 0.2s ease-out;
+          }
 
           &:hover {
-            box-shadow: 0px 0px 6px 1px rgba($orange, 1);
-            background-color: $zbx-text-highlighted;
-            z-index: 11;
+            circle.point-border {
+              stroke: $zbx-text-highlighted;
+              stroke-width: 1;
+              filter: url(#glowShadow);
+            }
+            .point-core {
+              fill: $zbx-text-highlighted;
+            }
           }
         }
       }
