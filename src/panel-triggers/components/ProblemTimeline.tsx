@@ -43,7 +43,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       return <div className="event-timeline" ref={this.setRootRef} />;
     }
 
-    const { events, timeRange } = this.props;
+    const { events, timeRange, problemColor, okColor } = this.props;
     const { timeFrom, timeTo } = timeRange;
     const range = timeTo - timeFrom;
     const width = this.state.width;
@@ -100,6 +100,9 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
 
     return (
       <div className="event-timeline" ref={this.setRootRef}>
+        <div className="timeline-info-container">
+          <span>Info:</span>
+        </div>
         <svg className="event-timeline-canvas" viewBox={`0 0 ${width} 40`}>
           <defs>
             <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
@@ -127,7 +130,13 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
               {eventsIntervalItems}
             </g>
             <g className="timeline-points" transform={`translate(0, 6)`}>
-              {eventsItems}
+              <TimelinePoints
+                events={events}
+                timeRange={timeRange}
+                width={width}
+                okColor={okColor}
+                problemColor={problemColor}
+              />
             </g>
           </g>
         </svg>
@@ -142,30 +151,106 @@ function TimelineRegion(props) {
   );
 }
 
+interface TimelinePointsProps {
+  events: ZBXEvent[];
+  timeRange: GFTimeRange;
+  width: number;
+  okColor: string;
+  problemColor: string;
+}
+
+interface TimelinePointsState {
+  order: number[];
+}
+
+class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsState> {
+  constructor(props) {
+    super(props);
+    this.state = { order: [] };
+  }
+
+  bringToFront = index => {
+    const length = this.props.events.length;
+    const order = this.props.events.map((v, i) => i);
+    order.splice(index, 1);
+    order.push(index);
+    this.setState({ order });
+  }
+
+  highlightPoint = index => () => {
+    this.bringToFront(index);
+  }
+
+
+  unHighlightPoint = index => () => {
+    const order = this.props.events.map((v, i) => i);
+    this.setState({ order });
+  }
+
+  render() {
+    const { events, timeRange, width, okColor, problemColor } = this.props;
+    const { timeFrom, timeTo } = timeRange;
+    const range = timeTo - timeFrom;
+    const eventsItems = events.map((event, index) => {
+      const ts = Number(event.clock);
+      const posLeft = (ts - timeFrom) / range * width - EVENT_ITEM_SIZE / 2;
+      const eventColor = event.value === '1' ? problemColor : okColor;
+
+      return (
+        <TimelinePoint
+          key={event.eventid}
+          className="problem-event-item"
+          x={posLeft}
+          r={10}
+          color={eventColor}
+          onHighlightPoint={this.highlightPoint(index)}
+          onUnHighlightPoint={this.unHighlightPoint(index)}
+        />
+      );
+    });
+    if (this.state.order.length) {
+      return this.state.order.map(i => eventsItems[i]);
+    }
+    return eventsItems;
+  }
+}
+
 interface TimelinePointProps {
   x: number;
   r: number;
   color: string;
   className?: string;
+  onHighlightPoint?: () => void;
+  onUnHighlightPoint?: () => void;
 }
 
-class TimelinePoint extends PureComponent<TimelinePointProps, any> {
+interface TimelinePointState {
+  highlighted?: boolean;
+}
+
+class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState> {
   constructor(props) {
     super(props);
-    this.state = { r: this.props.r };
+    this.state = { highlighted: false };
   }
 
   handleMouseOver = () => {
-    this.setState({ r: this.props.r * 1.2 });
+    if (this.props.onHighlightPoint) {
+      this.props.onHighlightPoint();
+    }
+    this.setState({ highlighted: true });
   }
 
   handleMouseLeave = () => {
-    this.setState({ r: this.props.r });
+    if (this.props.onUnHighlightPoint) {
+      this.props.onUnHighlightPoint();
+    }
+    this.setState({ highlighted: false });
   }
 
   render() {
     const { x, color, className } = this.props;
-    const r = this.state.r;
+    const r = this.state.highlighted ? this.props.r * 1.2 : this.props.r;
     const cx = x + this.props.r;
     const rInner = Math.floor(r * 0.6);
     return (
