@@ -340,17 +340,27 @@
       .event-timeline {
         display: flex;
         position: relative;
-        margin: 1.6rem 0;
+        margin-bottom: 1.6rem;
+        padding-top: 0.4rem;
         // margin-top: auto;
 
         .timeline-info-container {
           position: absolute;
           top: 0;
           left: 0;
+          transition: all 0.2s ease-out;
+          // border: 1px solid $text-color-muted;
+          // border-radius: 2px;
+
+          .event-timestamp {
+            font-weight: 500;
+            color: $text-color-muted;
+          }
         }
 
         svg.event-timeline-canvas {
           height: 40px;
+          margin-top: 1.6rem;
 
           g.event-timeline-group {
             height: 40px;

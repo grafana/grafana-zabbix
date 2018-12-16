@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+import moment from 'moment';
 import { GFTimeRange, ZBXEvent } from 'panel-triggers/types';
 
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
@@ -14,6 +15,8 @@ export interface ProblemTimelineProps {
 
 interface ProblemTimelineState {
   width: number;
+  highlightedEvent?: ZBXEvent | null;
+  showEventInfo?: boolean;
 }
 
 export default class ProblemTimeline extends PureComponent<ProblemTimelineProps, ProblemTimelineState> {
@@ -36,6 +39,14 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     this.rootRef = ref;
     const width = this.rootRef && this.rootRef.clientWidth || 0;
     this.setState({ width });
+  }
+
+  showEventInfo = (event: ZBXEvent) => {
+    this.setState({ highlightedEvent: event, showEventInfo: true });
+  }
+
+  hideEventInfo = () => {
+    this.setState({ showEventInfo: false });
   }
 
   render() {
@@ -100,10 +111,11 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
 
     return (
       <div className="event-timeline" ref={this.setRootRef}>
-        <div className="timeline-info-container">
-          <span>Info:</span>
-        </div>
-        <svg className="event-timeline-canvas" viewBox={`0 0 ${width} 40`}>
+        <TimelineInfoContainer className="timeline-info-container"
+          event={this.state.highlightedEvent}
+          show={this.state.showEventInfo}
+        />
+        <svg className="event-timeline-canvas" viewBox={`0 0 ${width + 20} 40`}>
           <defs>
             <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
@@ -136,10 +148,42 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
                 width={width}
                 okColor={okColor}
                 problemColor={problemColor}
+                onPointHighlight={this.showEventInfo}
+                onPointUnHighlight={this.hideEventInfo}
               />
             </g>
           </g>
         </svg>
+      </div>
+    );
+  }
+}
+
+interface TimelineInfoContainerProps {
+  event?: ZBXEvent | null;
+  show?: boolean;
+  className?: string;
+}
+
+class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
+  render() {
+    const { show, className } = this.props;
+    const event = this.props.event;
+    let infoItems;
+    if (event) {
+      console.log(event);
+      const ts = moment(Number(event.clock) * 1000);
+      const tsFormatted = ts.format('HH:mm:ss');
+      infoItems = [
+        <span className="event-timestamp">{tsFormatted}</span>
+      ];
+    }
+    const containerStyle: React.CSSProperties = {
+      opacity: show ? 1 : 0,
+    };
+    return (
+      <div className={className} style={containerStyle}>
+        {infoItems}
       </div>
     );
   }
@@ -157,6 +201,8 @@ interface TimelinePointsProps {
   width: number;
   okColor: string;
   problemColor: string;
+  onPointHighlight?: (event: ZBXEvent) => void;
+  onPointUnHighlight?: () => void;
 }
 
 interface TimelinePointsState {
@@ -170,19 +216,26 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
   }
 
   bringToFront = index => {
-    const length = this.props.events.length;
-    const order = this.props.events.map((v, i) => i);
+    const { events } = this.props;
+    const length = events.length;
+    const order = events.map((v, i) => i);
     order.splice(index, 1);
     order.push(index);
     this.setState({ order });
   }
 
   highlightPoint = index => () => {
+    if (this.props.onPointHighlight) {
+      this.props.onPointHighlight(this.props.events[index]);
+    }
     this.bringToFront(index);
   }
 
 
   unHighlightPoint = index => () => {
+    if (this.props.onPointUnHighlight) {
+      this.props.onPointUnHighlight();
+    }
     const order = this.props.events.map((v, i) => i);
     this.setState({ order });
   }
@@ -203,8 +256,8 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
           x={posLeft}
           r={10}
           color={eventColor}
-          onHighlightPoint={this.highlightPoint(index)}
-          onUnHighlightPoint={this.unHighlightPoint(index)}
+          onPointHighlight={this.highlightPoint(index)}
+          onPointUnHighlight={this.unHighlightPoint(index)}
         />
       );
     });
@@ -220,8 +273,8 @@ interface TimelinePointProps {
   r: number;
   color: string;
   className?: string;
-  onHighlightPoint?: () => void;
-  onUnHighlightPoint?: () => void;
+  onPointHighlight?: () => void;
+  onPointUnHighlight?: () => void;
 }
 
 interface TimelinePointState {
@@ -235,15 +288,15 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
   }
 
   handleMouseOver = () => {
-    if (this.props.onHighlightPoint) {
-      this.props.onHighlightPoint();
+    if (this.props.onPointHighlight) {
+      this.props.onPointHighlight();
     }
     this.setState({ highlighted: true });
   }
 
   handleMouseLeave = () => {
-    if (this.props.onUnHighlightPoint) {
-      this.props.onUnHighlightPoint();
+    if (this.props.onPointUnHighlight) {
+      this.props.onPointUnHighlight();
     }
     this.setState({ highlighted: false });
   }
