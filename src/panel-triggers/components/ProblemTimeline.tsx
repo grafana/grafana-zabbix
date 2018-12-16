@@ -125,6 +125,17 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            <filter id="boxShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="1" />
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="0.7" />
+              </feComponentTransfer>
+              <feOffset dx="1" dy="1" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
             <filter id="glowShadow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
               <feMerge>
@@ -137,7 +148,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
             </filter>
           </defs>
           <g className="event-timeline-group">
-            <g className="event-timeline-regions">
+            <g className="event-timeline-regions" filter="url(#boxShadow)">
               {firstItem}
               {eventsIntervalItems}
             </g>
@@ -175,7 +186,7 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
       const ts = moment(Number(event.clock) * 1000);
       const tsFormatted = ts.format('HH:mm:ss');
       infoItems = [
-        <span className="event-timestamp">{tsFormatted}</span>
+        <span key="ts" className="event-timestamp">{tsFormatted}</span>
       ];
     }
     const containerStyle: React.CSSProperties = {
