@@ -377,14 +377,18 @@ class ProblemDetails extends PureComponent<any, ProblemDetailsState> {
   }
 
   componentDidMount() {
+    this.fetchProblemEvents();
+    requestAnimationFrame(() => {
+      this.setState({ show: true });
+    });
+  }
+
+  fetchProblemEvents() {
     const problem = this.props.original;
     this.props.getProblemEvents(problem)
     .then(events => {
       console.log(events, this.props.timeRange);
       this.setState({ events });
-    });
-    requestAnimationFrame(() => {
-      this.setState({ show: true });
     });
   }
 
@@ -434,14 +438,16 @@ class ProblemDetails extends PureComponent<any, ProblemDetailsState> {
               <span>{problem.comments}</span>
             </div>
           }
-          {problem.tags && problem.tags.length &&
+          {problem.tags && problem.tags.length > 0 &&
             <div className="problem-tags">
               {problem.tags && problem.tags.map(tag =>
                 <EventTag key={tag.tag + tag.value} tag={tag} highlight={tag.tag === problem.correlation_tag} />)
               }
             </div>
           }
-          <ProblemTimeline events={this.state.events} timeRange={this.props.timeRange} />
+          {this.state.events.length > 0 &&
+            <ProblemTimeline events={this.state.events} timeRange={this.props.timeRange} />
+          }
           {problem.acknowledges && !wideLayout &&
             <div className="problem-ack-container">
               <h6><FAIcon icon="reply-all" /> Acknowledges</h6>

@@ -340,8 +340,8 @@
       .event-timeline {
         display: flex;
         position: relative;
-        margin-bottom: 1.6rem;
-        padding-top: 0.4rem;
+        margin-bottom: 0.6rem;
+        padding-top: 1.6rem;
         // margin-top: auto;
 
         .timeline-info-container {
@@ -360,7 +360,6 @@
 
         svg.event-timeline-canvas {
           height: 40px;
-          margin-top: 1.6rem;
 
           g.event-timeline-group {
             height: 40px;

@@ -31,7 +31,9 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
   constructor(props) {
     super(props);
     this.state = {
-      width: 0
+      width: 0,
+      highlightedEvent: null,
+      showEventInfo: false,
     };
   }
 
@@ -115,7 +117,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
           event={this.state.highlightedEvent}
           show={this.state.showEventInfo}
         />
-        <svg className="event-timeline-canvas" viewBox={`0 0 ${width + 20} 40`}>
+        <svg className="event-timeline-canvas" viewBox={`0 0 ${width} 40`}>
           <defs>
             <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
