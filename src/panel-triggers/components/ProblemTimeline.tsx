@@ -20,7 +20,6 @@ interface ProblemTimelineState {
 }
 
 export default class ProblemTimeline extends PureComponent<ProblemTimelineProps, ProblemTimelineState> {
-  rootWidth: number;
   rootRef: any;
 
   static defaultProps = {
@@ -39,7 +38,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
 
   setRootRef = ref => {
     this.rootRef = ref;
-    const width = this.rootRef && this.rootRef.clientWidth || 0;
+    const width = ref && ref.clientWidth || 0;
     this.setState({ width });
   }
 
@@ -49,6 +48,13 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
 
   hideEventInfo = () => {
     this.setState({ showEventInfo: false });
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (this.rootRef && prevState.width !== this.rootRef.clientWidth) {
+      const width = this.rootRef.clientWidth;
+      this.setState({ width });
+    }
   }
 
   render() {
@@ -92,22 +98,6 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
 
       return (
         <rect key={event.eventid} className="problem-event-interval" {...attributes} />
-      );
-    });
-
-    const eventsItems = events.map(event => {
-      const ts = Number(event.clock);
-      const posLeft = (ts - timeFrom) / range * width - EVENT_ITEM_SIZE / 2;
-      const eventColor = event.value === '1' ? this.props.problemColor : this.props.okColor;
-
-      return (
-        <TimelinePoint
-          key={event.eventid}
-          className="problem-event-item"
-          x={posLeft}
-          r={10}
-          color={eventColor}
-        />
       );
     });
 
