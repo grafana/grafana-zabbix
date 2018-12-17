@@ -63,43 +63,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     }
 
     const { events, timeRange, problemColor, okColor } = this.props;
-    const { timeFrom, timeTo } = timeRange;
-    const range = timeTo - timeFrom;
     const width = this.state.width;
-
-    let firstItem;
-    if (events.length) {
-      const firstTs = events.length ? Number(events[0].clock) : timeTo;
-      const duration = (firstTs - timeFrom) / range;
-      const firstEventColor = events[0].value !== '1' ? this.props.problemColor : this.props.okColor;
-      const firstEventAttributes = {
-        width: duration * width,
-        x: 0,
-        y: 0,
-        fill: firstEventColor,
-      };
-      firstItem = (
-        <rect key='0' className="problem-event-interval" {...firstEventAttributes}></rect>
-      );
-    }
-
-    const eventsIntervalItems = events.map((event, index) => {
-      const ts = Number(event.clock);
-      const nextTs = index < events.length - 1 ? Number(events[index + 1].clock) : timeTo;
-      const duration = (nextTs - ts) / range;
-      const posLeft = (ts - timeFrom) / range * width;
-      const eventColor = event.value === '1' ? this.props.problemColor : this.props.okColor;
-      const attributes = {
-        width: duration * width,
-        x: posLeft,
-        y: 0,
-        fill: eventColor,
-      };
-
-      return (
-        <rect key={event.eventid} className="problem-event-interval" {...attributes} />
-      );
-    });
 
     return (
       <div className="event-timeline" ref={this.setRootRef}>
@@ -141,8 +105,13 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
           </defs>
           <g className="event-timeline-group">
             <g className="event-timeline-regions" filter="url(#boxShadow)">
-              {firstItem}
-              {eventsIntervalItems}
+              <TimelineRegions
+                events={events}
+                timeRange={timeRange}
+                width={width}
+                okColor={okColor}
+                problemColor={problemColor}
+              />
             </g>
             <g className="timeline-points" transform={`translate(0, 6)`}>
               <TimelinePoints
@@ -192,10 +161,61 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
   }
 }
 
-function TimelineRegion(props) {
-  return (
-    <rect></rect>
-  );
+interface TimelineRegionsProps {
+  events: ZBXEvent[];
+  timeRange: GFTimeRange;
+  width: number;
+  okColor: string;
+  problemColor: string;
+}
+
+class TimelineRegions extends PureComponent<TimelineRegionsProps> {
+  render() {
+    const { events, timeRange, width, okColor, problemColor } = this.props;
+    const { timeFrom, timeTo } = timeRange;
+    const range = timeTo - timeFrom;
+
+    let firstItem;
+    if (events.length) {
+      const firstTs = events.length ? Number(events[0].clock) : timeTo;
+      const duration = (firstTs - timeFrom) / range;
+      const firstEventColor = events[0].value !== '1' ? problemColor : okColor;
+      const firstEventAttributes = {
+        x: 0,
+        y: 0,
+        width: duration * width,
+        height: 12,
+        fill: firstEventColor,
+      };
+      firstItem = (
+        <rect key='0' className="problem-event-region" {...firstEventAttributes}></rect>
+      );
+    }
+
+    const eventsIntervalItems = events.map((event, index) => {
+      const ts = Number(event.clock);
+      const nextTs = index < events.length - 1 ? Number(events[index + 1].clock) : timeTo;
+      const duration = (nextTs - ts) / range;
+      const posLeft = (ts - timeFrom) / range * width;
+      const eventColor = event.value === '1' ? problemColor : okColor;
+      const attributes = {
+        x: posLeft,
+        y: 0,
+        width: duration * width,
+        height: 12,
+        fill: eventColor,
+      };
+
+      return (
+        <rect key={event.eventid} className="problem-event-region" {...attributes} />
+      );
+    });
+
+    return [
+      firstItem,
+      eventsIntervalItems
+    ];
+  }
 }
 
 interface TimelinePointsProps {

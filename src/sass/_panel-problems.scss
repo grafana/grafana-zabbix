@@ -358,16 +358,15 @@
         }
 
         svg.event-timeline-canvas {
-          height: 40px;
+          // height: 40px;
 
           g.event-timeline-group {
-            height: 40px;
+            // height: 40px;
             transform: translate(0px, 14px);
           }
         }
 
-        .problem-event-interval {
-          height: 12px;
+        .problem-event-region {
           // transition: all 0.2s ease-out;
           // opacity: 0.7;
 
