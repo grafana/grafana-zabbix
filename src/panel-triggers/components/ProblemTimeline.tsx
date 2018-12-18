@@ -257,28 +257,31 @@ interface TimelinePointsProps {
 
 interface TimelinePointsState {
   order: number[];
+  highlighted: number | null;
 }
 
 class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsState> {
   constructor(props) {
     super(props);
-    this.state = { order: [] };
+    this.state = { order: [], highlighted: null };
   }
 
-  bringToFront = index => {
+  bringToFront = (index: number, highlight = false ) => {
     const { events } = this.props;
     const length = events.length;
     const order = events.map((v, i) => i);
     order.splice(index, 1);
     order.push(index);
-    this.setState({ order });
+    const highlighted = highlight ? index : null;
+    this.setState({ order, highlighted });
   }
 
   highlightPoint = index => () => {
     if (this.props.onPointHighlight) {
       this.props.onPointHighlight(this.props.events[index]);
     }
-    this.bringToFront(index);
+    this.bringToFront(index, true);
+    // this.setState({ highlighted: this.props.events.length - 1 });
   }
 
 
@@ -287,7 +290,7 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
       this.props.onPointUnHighlight();
     }
     const order = this.props.events.map((v, i) => i);
-    this.setState({ order });
+    this.setState({ order, highlighted: null });
   }
 
   render() {
@@ -299,6 +302,7 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
       const ts = Number(event.clock);
       const posLeft = Math.round((ts - timeFrom) / range * width - pointR);
       const eventColor = event.value === '1' ? problemColor : okColor;
+      const highlighted = this.state.highlighted === index;
 
       return (
         <TimelinePoint
@@ -307,6 +311,7 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
           x={posLeft}
           r={pointR}
           color={eventColor}
+          highlighted={highlighted}
           onPointHighlight={this.highlightPoint(index)}
           onPointUnHighlight={this.unHighlightPoint(index)}
         />
@@ -323,6 +328,7 @@ interface TimelinePointProps {
   x: number;
   r: number;
   color: string;
+  highlighted?: boolean;
   className?: string;
   onPointHighlight?: () => void;
   onPointUnHighlight?: () => void;
@@ -338,18 +344,23 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
     this.state = { highlighted: false };
   }
 
+  componentDidUpdate(prevProps: TimelinePointProps) {
+    // Update component after reordering to make animation working
+    if (prevProps.highlighted !== this.props.highlighted) {
+      this.setState({ highlighted: this.props.highlighted });
+    }
+  }
+
   handleMouseOver = () => {
     if (this.props.onPointHighlight) {
       this.props.onPointHighlight();
     }
-    this.setState({ highlighted: true });
   }
 
   handleMouseLeave = () => {
     if (this.props.onPointUnHighlight) {
       this.props.onPointUnHighlight();
     }
-    this.setState({ highlighted: false });
   }
 
   render() {
