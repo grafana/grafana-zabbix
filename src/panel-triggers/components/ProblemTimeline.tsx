@@ -6,7 +6,7 @@ const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
 const EVENT_POINT_SIZE = 20;
 const INNER_POINT_SIZE = 0.6;
-const HIGHLIGHTED_POINT_SIZE = 1.2;
+const HIGHLIGHTED_POINT_SIZE = 1.1;
 const EVENT_REGION_HEIGHT = Math.round(EVENT_POINT_SIZE * 0.6);
 
 export interface ProblemTimelineProps {
@@ -74,7 +74,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     const boxHeight = eventPointSize * 2;
     const width = boxWidth - eventPointSize;
     const padding = Math.round(eventPointSize / 2);
-    const pointsYpos = Math.round(eventRegionHeight / 2);
+    const pointsYpos = eventRegionHeight / 2;
     const timelineYpos = Math.round(boxHeight / 2);
 
     return (
