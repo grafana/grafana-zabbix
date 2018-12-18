@@ -302,7 +302,11 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
       const ts = Number(event.clock);
       const posLeft = Math.round((ts - timeFrom) / range * width - pointR);
       const eventColor = event.value === '1' ? problemColor : okColor;
-      const highlighted = this.state.highlighted === index;
+      const highlighted = this.state.highlighted === index || (
+        this.state.highlighted !== null && index === this.state.highlighted + 1 && event.value !== '1'
+      ) || (
+        this.state.highlighted !== null && index === this.state.highlighted - 1 && event.value === '1'
+      );
 
       return (
         <TimelinePoint
@@ -364,10 +368,11 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
   }
 
   render() {
-    const { x, color, className } = this.props;
+    const { x, color } = this.props;
     const r = this.state.highlighted ? Math.round(this.props.r * HIGHLIGHTED_POINT_SIZE) : this.props.r;
     const cx = x + this.props.r;
     const rInner = Math.round(r * INNER_POINT_SIZE);
+    const className = `${this.props.className || ''} ${this.state.highlighted ? 'highlighted' : ''}`;
     return (
       <g className={className}
         transform={`translate(${cx}, 0)`}

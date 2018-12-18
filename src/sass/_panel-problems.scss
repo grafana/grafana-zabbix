@@ -382,7 +382,8 @@
             transition: all 0.2s ease-out;
           }
 
-          &:hover {
+          &:hover,
+          &.highlighted {
             circle.point-border {
               stroke: $zbx-text-highlighted;
               stroke-width: 1;
