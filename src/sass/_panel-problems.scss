@@ -165,7 +165,7 @@
       transition: all 0.3s ease-out;
 
       &.show {
-        max-height: 16rem;
+        max-height: 20rem;
         opacity: 1;
       }
 
@@ -370,7 +370,8 @@
           // transition: all 0.2s ease-out;
           // opacity: 0.7;
 
-          &:hover {
+          &:hover,
+          &.highlighted {
             // opacity: 1;
             stroke: $zbx-text-highlighted;
             filter: url(#glowShadow);
