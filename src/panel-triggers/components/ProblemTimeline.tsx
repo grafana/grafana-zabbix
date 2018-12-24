@@ -24,6 +24,11 @@ interface ProblemTimelineState {
   highlightedEvent?: ZBXEvent | null;
   highlightedRegion?: number | null;
   showEventInfo?: boolean;
+  eventInfo?: EventInfo;
+}
+
+interface EventInfo {
+  duration?: number;
 }
 
 export default class ProblemTimeline extends PureComponent<ProblemTimelineProps, ProblemTimelineState> {
@@ -60,12 +65,20 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     this.setState({ width });
   }
 
-  handlePointHighlight = (event: ZBXEvent, index?: number) => {
+  handlePointHighlight = (index: number, secondIndex?: number) => {
+    const event: ZBXEvent = this.sortedEvents[index];
     const regionToHighlight = this.getRegionToHighlight(index);
+    let duration: number;
+    if (secondIndex !== undefined) {
+      duration = this.getEventDuration(index, secondIndex);
+    }
     this.setState({
       highlightedEvent: event,
       showEventInfo: true,
-      highlightedRegion: regionToHighlight
+      highlightedRegion: regionToHighlight,
+      eventInfo: {
+        duration
+      }
     });
     // this.showEventInfo(event);
   }
@@ -86,6 +99,10 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     const event = this.sortedEvents[index];
     const regionToHighlight = event.value === '1' ? index + 1 : index;
     return regionToHighlight;
+  }
+
+  getEventDuration(firstIndex: number, secondIndex: number): number {
+    return Math.abs(Number(this.sortedEvents[firstIndex].clock) - Number(this.sortedEvents[secondIndex].clock)) * 1000;
   }
 
   sortEvents() {
@@ -112,6 +129,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       <div className="event-timeline" ref={this.setRootRef}>
         <TimelineInfoContainer className="timeline-info-container"
           event={this.state.highlightedEvent}
+          eventInfo={this.state.eventInfo}
           show={this.state.showEventInfo}
           left={padding}
       />
@@ -180,6 +198,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
 
 interface TimelineInfoContainerProps {
   event?: ZBXEvent | null;
+  eventInfo?: EventInfo | null;
   show?: boolean;
   left?: number;
   className?: string;
@@ -193,9 +212,8 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
   };
 
   render() {
-    const { show, className, left } = this.props;
-    const event = this.props.event;
-    let infoItems;
+    const { event, eventInfo, show, className, left } = this.props;
+    let infoItems, durationItem;
     if (event) {
       console.log(event);
       const ts = moment(Number(event.clock) * 1000);
@@ -204,13 +222,23 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
         <span key="ts" className="event-timestamp">{tsFormatted}</span>
       ];
     }
+    if (eventInfo && eventInfo.duration) {
+      const duration = eventInfo.duration;
+      const durationFormatted = moment.utc(duration).format('HH:mm:ss');
+      durationItem = <span key="duration" className="event-timestamp">duration: {durationFormatted}</span>;
+    }
     const containerStyle: React.CSSProperties = {
       opacity: show ? 1 : 0,
       left,
     };
     return (
       <div className={className} style={containerStyle}>
-        {infoItems}
+        <div>
+          {infoItems}
+        </div>
+        <div>
+          {durationItem}
+        </div>
       </div>
     );
   }
@@ -235,7 +263,6 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
     const { events, timeRange, width, height, okColor, problemColor, highlightedRegion } = this.props;
     const { timeFrom, timeTo } = timeRange;
     const range = timeTo - timeFrom;
-    console.log(highlightedRegion);
 
     let firstItem: React.ReactNode;
     if (events.length) {
@@ -294,7 +321,7 @@ interface TimelinePointsProps {
   okColor: string;
   problemColor: string;
   highlightRegion?: boolean;
-  onPointHighlight?: (event: ZBXEvent, index?: number) => void;
+  onPointHighlight?: (index: number, secondIndex?: number) => void;
   onPointUnHighlight?: () => void;
 }
 
@@ -326,9 +353,10 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
     if (this.props.onPointHighlight) {
       if (this.props.highlightRegion) {
         pointsToHighlight = this.getRegionEvents(index);
-        this.props.onPointHighlight(this.props.events[index], index);
+        const secondIndex = pointsToHighlight.length === 2 ? pointsToHighlight[1] : undefined;
+        this.props.onPointHighlight(index, secondIndex);
       } else {
-        this.props.onPointHighlight(this.props.events[index]);
+        this.props.onPointHighlight(index);
       }
     }
     this.bringToFront(pointsToHighlight, true);
