@@ -84,7 +84,10 @@
     }
 
     .problem-severity {
-      padding: 0px;
+
+      &.rt-td {
+        padding: 0px;
+      }
 
       .severity-cell {
         width: 100%;
@@ -190,7 +193,7 @@
       .description-label {
         font-weight: 500;
         font-style: italic;
-        color: $text-color-muted;
+        color: $text-muted;
       }
 
       .problem-age {
@@ -204,7 +207,7 @@
       }
 
       .problem-item-name {
-        color: $text-color-muted;
+        color: $text-muted;
       }
 
       .problem-item-value {
@@ -300,7 +303,7 @@
 
         .problem-ack-time,
         .problem-ack-user {
-          color: $text-color-muted;
+          color: $text-muted;
         }
         // span {
         //   padding-right: 0.6rem;
@@ -312,7 +315,7 @@
         flex: 0 0 auto;
         padding: 0.5rem 2rem;
         // background: $dark-4;
-        color: $text-color-muted;
+        color: $text-muted;
 
         &.compact {
           padding: 0.5rem 1rem;
@@ -348,13 +351,13 @@
           top: 0;
           left: 0;
           transition: all 0.2s ease-out;
-          // border: 1px solid $text-color-muted;
+          // border: 1px solid $text-muted;
           // border-radius: 2px;
           display: block;
 
           .event-timestamp {
             font-weight: 500;
-            color: $text-color-muted;
+            color: $text-muted;
           }
         }
 

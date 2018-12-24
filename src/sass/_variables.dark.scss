@@ -1,41 +1,4 @@
-// Grays
-// -------------------------
-$black:            #000;
-$dark-1:           #141414;
-$dark-2:           #1f1f20;
-$dark-3:           #262628;
-$dark-4:           #333333;
-$dark-5:           #444444;
-$gray-1:           #555555;
-$gray-2:           #8e8e8e;
-$gray-3:           #b3b3b3;
-$gray-4:           #D8D9DA;
-$gray-5:           #ECECEC;
-$gray-6:           #f4f5f8;
-$gray-7:           #fbfbfb;
-$gray-blue:        #292a2d;
-
-$white:            #fff;
-
-// Accent colors
-// -------------------------
-$blue:             #33b5e5;
-$bluedark:         #005f81;
-$green:            #299c46;
-$red:              #d44a3a;
-$yellow:           #ecbb13;
-$pink:             #ff4444;
-$purple:           #9933cc;
-$orange:           #eb7b18;
-$variable:         #32d1df;
-$regex:            #d69e2e;
-
-$body-bg:               rgb(20,20,20);
-$body-color:            $gray-4;
-$text-color:            $gray-4;
-$text-color-muted:      $gray-2;
-$tight-form-func-bg:    #333;
-$grafanaListAccent:     lighten($dark-2, 2%);
+$regex: #d69e2e;
 
 $zbx-tag-color: $gray-5;
 $zbx-text-highlighted: $white;
