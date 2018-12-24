@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 interface ModalProps {
   isOpen?: boolean;
   withBackdrop?: boolean;
-  onSubmit: (data?: AckProblemData) => void;
+  onSubmit: (data?: AckProblemData) => Promise<any> | any;
   onClose?: () => void;
 }
 
@@ -42,6 +42,8 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
     console.log('submit', this.state.value);
     this.props.onSubmit({
       message: this.state.value
+    }).then(() => {
+      this.dismiss();
     });
   }
 

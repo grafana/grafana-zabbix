@@ -732,6 +732,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
         panelOptions,
         timeRange: { timeFrom, timeTo },
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
+        onProblemAck: (trigger, data) => {
+          const message = data.message;
+          return ctrl.acknowledgeTrigger(trigger, message);
+        }
       };
       const problemsReactElem = React.createElement(ProblemList, problemsListProps);
       ReactDOM.render(problemsReactElem, elem.find('.panel-content')[0]);

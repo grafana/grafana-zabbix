@@ -11,6 +11,7 @@ interface ProblemDetailsProps extends RTRow<Trigger> {
   rootWidth: number;
   timeRange: GFTimeRange;
   getProblemEvents: (problem: Trigger) => Promise<ZBXEvent[]>;
+  onProblemAck: (problem: Trigger, data: AckProblemData) => Promise<any> | any;
 }
 
 interface ProblemDetailsState {
@@ -47,7 +48,13 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
 
   ackProblem = (data: AckProblemData) => {
     const problem = this.props.original as Trigger;
-    console.log(problem.lastEvent && problem.lastEvent.eventid, data);
+    console.log('acknowledge: ', problem.lastEvent && problem.lastEvent.eventid, data);
+    return this.props.onProblemAck(problem, data).then(result => {
+      this.closeAckDialog();
+    }).catch(err => {
+      console.log(err);
+      this.closeAckDialog();
+    });
   }
 
   showAckDialog = () => {

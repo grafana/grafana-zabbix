@@ -4,6 +4,7 @@ import * as utils from '../../datasource-zabbix/utils';
 import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell } from '../types';
 import EventTag from './EventTag';
 import ProblemDetails from './ProblemDetails';
+import { AckProblemData } from './Modal';
 
 export interface ProblemListProps {
   problems: Trigger[];
@@ -11,6 +12,7 @@ export interface ProblemListProps {
   loading?: boolean;
   timeRange?: GFTimeRange;
   getProblemEvents: (ids: string[]) => ZBXEvent[];
+  onProblemAck: (problem: Trigger, data: AckProblemData) => void;
 }
 
 interface ProblemListState {
@@ -32,6 +34,10 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
 
   setRootRef = ref => {
     this.rootRef = ref;
+  }
+
+  handleProblemAck = (problem: Trigger, data: AckProblemData) => {
+    return this.props.onProblemAck(problem, data);
   }
 
   buildColumns() {
@@ -99,6 +105,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
               rootWidth={this.rootWidth}
               timeRange={this.props.timeRange}
               getProblemEvents={this.props.getProblemEvents}
+              onProblemAck={this.handleProblemAck}
             />
           }
           expanded={this.getExpandedPage(this.state.page)}
