@@ -3,7 +3,7 @@ import * as utils from '../../datasource-zabbix/utils';
 import { Trigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow } from '../types';
 import { Modal, AckProblemData } from './Modal';
 import EventTag from './EventTag';
-import Tooltip from './Tooltip';
+import Tooltip from './Tooltip/Tooltip';
 import ProblemTimeline from './ProblemTimeline';
 import FAIcon from './FAIcon';
 
