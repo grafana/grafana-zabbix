@@ -5,7 +5,7 @@ import { GFTimeRange, ZBXEvent } from 'panel-triggers/types';
 
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
-const EVENT_POINT_SIZE = 20;
+const EVENT_POINT_SIZE = 16;
 const INNER_POINT_SIZE = 0.6;
 const HIGHLIGHTED_POINT_SIZE = 1.1;
 const EVENT_REGION_HEIGHT = Math.round(EVENT_POINT_SIZE * 0.6);
@@ -118,7 +118,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
 
     const { timeRange, eventPointSize, eventRegionHeight, problemColor, okColor } = this.props;
     const events = this.sortEvents();
-    const boxWidth = this.state.width;
+    const boxWidth = this.state.width + eventPointSize;
     const boxHeight = eventPointSize * 2;
     const width = boxWidth - eventPointSize;
     const padding = Math.round(eventPointSize / 2);
@@ -126,7 +126,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     const timelineYpos = Math.round(boxHeight / 2);
 
     return (
-      <div className="event-timeline" ref={this.setRootRef}>
+      <div className="event-timeline" ref={this.setRootRef} style={{ transform: `translate(${-padding}px, 0)`}}>
         <TimelineInfoContainer className="timeline-info-container"
           event={this.state.highlightedEvent}
           eventInfo={this.state.eventInfo}

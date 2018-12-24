@@ -18,7 +18,7 @@
     .rt-tr-group {
       flex: 0 0 auto;
       border-bottom: solid 1px $problems-border-color;
-      border-left: solid 2px rgba(0, 0, 0, 0);
+      border-left: solid 2px transparent;
 
       &:last-child {
         border-bottom: solid 1px $problems-border-color;
@@ -26,6 +26,19 @@
 
       &:hover {
         border-left: solid 2px rgba($blue, 0.5);
+
+        .rt-tr.-even {
+          margin-left: 0;
+          background: $problems-table-row-hovered;
+
+          .rt-td:first-child {
+            margin-left: 0;
+          }
+        }
+
+        .problem-details-container {
+          border-left-color: rgba($blue, 0.5);
+        }
       }
 
       .rt-tr {
@@ -34,14 +47,16 @@
         }
 
         &:hover {
-          background: lighten($problems-table-stripe, 2%);
+          background: $problems-table-row-hovered;
           box-shadow: 0px 0px 5px rgba($blue, 0.5);
           z-index: 1;
         }
         &.-even {
-          background: lighten($problems-table-stripe, 1%);
-          &:hover {
-            background: lighten($problems-table-stripe, 4%);
+          background: $problems-table-stripe;
+
+          margin-left: -2px;
+          .rt-td:first-child {
+            margin-left: 2px;
           }
         }
       }
@@ -93,6 +108,8 @@
         width: 100%;
         height: 100%;
         padding: 0.45em 0 0.45em 1.1em;
+        color: $white;
+        font-weight: 500;
       }
     }
 
@@ -124,7 +141,7 @@
       }
       &.custom-expander:hover {
         // background-position: right top;
-        background-color: lighten($problems-table-stripe, 8%);
+        background-color: $problem-expander-highlighted;
         i {
           color: $blue;
         }
@@ -160,12 +177,17 @@
       display: flex;
       background-color: $problem-details-background;
       border: 1px solid $problems-border-color;
+      border-left: 2px solid $problem-details-background;
+      margin-left: -2px;
       border-bottom-width: 0px;
 
       max-height: 0;
       opacity: 0;
       overflow: hidden;
-      transition: all 0.3s ease-out;
+      // transition: all 0.3s ease-out;
+      transition-duration: 0.3s;
+      transition-timing-function: ease-out;
+      transition-property: opacity, max-height;
 
       &.show {
         max-height: 20rem;
@@ -245,10 +267,10 @@
             }
           }
           &.fired {
-            box-shadow: 0px 0px 10px rgba($orange, 0.1);
+            box-shadow: 0px 0px 10px rgba($problem-statusbar-fired, 0.1);
             .fa-icon-container {
-              color: $orange;
-              text-shadow: 0px 0px 10px rgba($orange, 0.5);
+              color: $problem-statusbar-fired;
+              text-shadow: 0px 0px 10px rgba($problem-statusbar-fired, 0.5);
               // animation: fade-in 1s ease-out;
             }
           }
@@ -269,6 +291,10 @@
           border: 1px solid darken($action-button-color, 6%);
           border-radius: 1px;
 
+          span {
+            color: $action-button-text-color;
+          }
+
           &:hover {
             background-color: darken($action-button-color, 4%);
           }
@@ -286,8 +312,8 @@
       }
 
       .problem-ack-container {
-        padding: 0.8rem 0;
-        border-top: 2px solid $dark-4;
+        padding: 1.2rem 0;
+        // border-top: 2px solid $dark-4;
         overflow: auto;
       }
 
@@ -343,7 +369,7 @@
       .event-timeline {
         position: relative;
         margin-bottom: 0.6rem;
-        padding-top: 1.6rem;
+        padding-top: 2rem;
         // margin-top: auto;
 
         .timeline-info-container {
@@ -377,7 +403,7 @@
           &:hover,
           &.highlighted {
             // opacity: 1;
-            stroke: $zbx-text-highlighted;
+            stroke: $problem-event-highlighted;
             filter: url(#glowShadow);
           }
         }
@@ -390,12 +416,12 @@
           &:hover,
           &.highlighted {
             circle.point-border {
-              stroke: $zbx-text-highlighted;
+              stroke: $problem-event-highlighted;
               stroke-width: 1;
               filter: url(#glowShadow);
             }
             .point-core {
-              fill: $zbx-text-highlighted;
+              fill: $problem-event-highlighted;
             }
           }
         }
