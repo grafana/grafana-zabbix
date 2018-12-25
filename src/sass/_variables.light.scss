@@ -8,8 +8,12 @@ $problems-border-color: $dark-1;
 $problems-table-stripe: $gray-6;
 $problems-table-row-hovered: $gray-4;
 $problem-details-background: $gray-6;
+
 $problem-statusbar-background: $gray-4;
 $problem-statusbar-muted: $gray-5;
 $problem-statusbar-fired: #ca4c17;
+$problem-statusbar-glow: inset 0px 0px 10px rgba($problem-statusbar-fired, 0.5);
+
 $problem-event-highlighted: $white;
 $problem-expander-highlighted: darken($problems-table-stripe, 20%);
+$problem-container-shadow: rgba($gray-2, 0.5)

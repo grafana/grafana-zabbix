@@ -27,6 +27,12 @@
       &:hover {
         border-left: solid 2px rgba($blue, 0.5);
 
+        .rt-tr {
+          background: $problems-table-row-hovered;
+          box-shadow: 0px 0px 5px rgba($blue, 0.5);
+          z-index: 1;
+        }
+
         .rt-tr.-even {
           margin-left: 0;
           background: $problems-table-row-hovered;
@@ -38,6 +44,7 @@
 
         .problem-details-container {
           border-left-color: rgba($blue, 0.5);
+          box-shadow: 0px 0px 5px rgba($blue, 0.5);
         }
       }
 
@@ -46,11 +53,11 @@
           border: 0;
         }
 
-        &:hover {
-          background: $problems-table-row-hovered;
-          box-shadow: 0px 0px 5px rgba($blue, 0.5);
-          z-index: 1;
-        }
+        // &:hover {
+        //   background: $problems-table-row-hovered;
+        //   box-shadow: 0px 0px 5px rgba($blue, 0.5);
+        //   z-index: 1;
+        // }
         &.-even {
           background: $problems-table-stripe;
 
@@ -228,13 +235,21 @@
         margin-top: auto;
       }
 
-      .problem-item-name {
-        color: $text-muted;
+      .problem-item {
+        // border-bottom: solid 2px transparent;
+        // &:hover {
+        //   border-bottom: solid 2px $blue;
+        // }
+
+        .problem-item-name {
+          color: $text-muted;
+        }
+
+        .problem-item-value {
+          font-weight: 500;
+        }
       }
 
-      .problem-item-value {
-        font-weight: 500;
-      }
 
       .problem-statusbar {
         // margin-top: auto;
@@ -267,7 +282,7 @@
             }
           }
           &.fired {
-            box-shadow: 0px 0px 10px rgba($problem-statusbar-fired, 0.1);
+            box-shadow: $problem-statusbar-glow;
             .fa-icon-container {
               color: $problem-statusbar-fired;
               text-shadow: 0px 0px 10px rgba($problem-statusbar-fired, 0.5);
@@ -304,17 +319,17 @@
       .problem-details-middle {
         flex: 1 0 auto;
         padding: 0.6rem 1rem;
-        // border: 1px solid $dark-4;
-        border-width: 0 1px;
-        border-style: solid;
-        border-color: $dark-4;
         overflow: auto;
+        box-shadow: 1px 0 10px $problem-container-shadow;
       }
 
       .problem-ack-container {
-        padding: 1.2rem 0;
+        margin-top: 0.6rem;
+        margin-left: -0.6rem;
+        padding: 1.2rem 0.6rem;
         // border-top: 2px solid $dark-4;
         overflow: auto;
+        box-shadow: -2px 2px 10px $problem-container-shadow
       }
 
       .problem-ack-list {
@@ -349,6 +364,17 @@
 
         .problem-details-right-item {
           margin-bottom: 0.2rem;
+          // border-bottom: solid 2px transparent;
+
+          &:hover {
+            // box-shadow: 1px 0 10px $problem-container-shadow;
+            // border-bottom: solid 2px $blue;
+            color: $text-color-emphasis;
+
+            .fa-icon-container {
+              color: $text-color-emphasis;
+            }
+          }
         }
       }
 
