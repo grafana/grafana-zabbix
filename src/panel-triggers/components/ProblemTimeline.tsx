@@ -135,35 +135,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       />
         <svg className="event-timeline-canvas" viewBox={`0 0 ${boxWidth} ${boxHeight}`}>
           <defs>
-            <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
-              <feOffset dx="1" dy="1" />
-              <feMerge>
-                <feMergeNode />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="boxShadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="1" />
-              <feComponentTransfer>
-                <feFuncA type="linear" slope="0.7" />
-              </feComponentTransfer>
-              <feOffset dx="1" dy="1" />
-              <feMerge>
-                <feMergeNode />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="glowShadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
-              <feMerge>
-                <feMergeNode />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="timelinePointBlur" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blurOut" />
-            </filter>
+            <TimelineSVGFilters />
           </defs>
           <g className="event-timeline-group" transform={`translate(${padding}, ${timelineYpos})`}>
             <g className="event-timeline-regions" filter="url(#boxShadow)">
@@ -194,6 +166,42 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       </div>
     );
   }
+}
+
+function TimelineSVGFilters() {
+  return (
+    <React.Fragment>
+      <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+        <feOffset dx="1" dy="1" />
+        <feMerge>
+          <feMergeNode />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <filter id="boxShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="1" />
+        <feComponentTransfer>
+          <feFuncA type="linear" slope="0.7" />
+        </feComponentTransfer>
+        <feOffset dx="1" dy="1" />
+        <feMerge>
+          <feMergeNode />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <filter id="glowShadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+        <feMerge>
+          <feMergeNode />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+      <filter id="timelinePointBlur" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blurOut" />
+      </filter>
+    </React.Fragment>
+  );
 }
 
 interface TimelineInfoContainerProps {
