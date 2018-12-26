@@ -318,9 +318,14 @@
 
       .problem-details-middle {
         flex: 1 0 auto;
-        padding: 0.6rem 1rem;
+        // padding: 0.6rem 1rem;
         overflow: auto;
-        box-shadow: 1px 0 10px $problem-container-shadow;
+        // box-shadow: 1px 0 10px $problem-container-shadow;
+
+        .problem-ack-container {
+          margin: 0.5rem 0.4rem;
+          padding: 0.6rem 0.6rem;
+        }
       }
 
       .problem-ack-container {

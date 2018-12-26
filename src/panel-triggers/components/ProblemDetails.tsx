@@ -69,8 +69,8 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     const problem = this.props.original as Trigger;
     const rootWidth = this.props.rootWidth;
     const displayClass = this.state.show ? 'show' : '';
-    const wideLayout = rootWidth > 1000;
-    const compactStatusBar = rootWidth < 800 || problem.acknowledges && wideLayout && rootWidth < 1200;
+    const wideLayout = rootWidth > 1200;
+    const compactStatusBar = rootWidth < 800 || problem.acknowledges && wideLayout && rootWidth < 1400;
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
@@ -116,8 +116,10 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
         </div>
         {problem.acknowledges && wideLayout &&
           <div className="problem-details-middle">
-            <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
-            <AcknowledgesList acknowledges={problem.acknowledges} />
+            <div className="problem-ack-container">
+              <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
+              <AcknowledgesList acknowledges={problem.acknowledges} />
+            </div>
           </div>
         }
         <div className="problem-details-right">
