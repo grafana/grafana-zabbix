@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import _ from 'lodash';
 import moment from 'moment';
-import { GFTimeRange, ZBXEvent } from 'panel-triggers/types';
+import { GFTimeRange, ZBXEvent, ZBXAcknowledge } from 'panel-triggers/types';
 
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
@@ -28,7 +28,9 @@ interface ProblemTimelineState {
 }
 
 interface EventInfo {
+  timestamp?: number;
   duration?: number;
+  message?: string;
 }
 
 export default class ProblemTimeline extends PureComponent<ProblemTimelineProps, ProblemTimelineState> {
@@ -49,6 +51,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       highlightedEvent: null,
       highlightedRegion: null,
       showEventInfo: false,
+      eventInfo: {}
     };
   }
 
@@ -87,6 +90,20 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     this.setState({ showEventInfo: false, highlightedRegion: null });
   }
 
+  handleAckHighlight = (ack: ZBXAcknowledge, index: number) => {
+    this.setState({
+      showEventInfo: true,
+      eventInfo: {
+        timestamp: Number(ack.clock),
+        message: ack.message,
+      }
+    });
+  }
+
+  handleAckUnHighlight = () => {
+    this.setState({ showEventInfo: false });
+  }
+
   showEventInfo = (event: ZBXEvent) => {
     this.setState({ highlightedEvent: event, showEventInfo: true });
   }
@@ -111,6 +128,18 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     return events;
   }
 
+  getEventAcks(events: ZBXEvent[]): ZBXAcknowledge[] {
+    const acks: ZBXAcknowledge[] = [];
+    for (const event of events) {
+      if (event.acknowledges) {
+        for (const ack of event.acknowledges) {
+          acks.push(ack);
+        }
+      }
+    }
+    return _.sortBy(acks, ack => Number(ack.clock));
+  }
+
   render() {
     if (!this.rootRef) {
       return <div className="event-timeline" ref={this.setRootRef} />;
@@ -118,6 +147,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
 
     const { timeRange, eventPointSize, eventRegionHeight } = this.props;
     const events = this.sortEvents();
+    const acknowledges = this.getEventAcks(events);
     const boxWidth = this.state.width + eventPointSize;
     const boxHeight = Math.round(eventPointSize * 2.5);
     const width = boxWidth - eventPointSize;
@@ -145,6 +175,16 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
                 width={width}
                 height={eventRegionHeight}
                 highlightedRegion={this.state.highlightedRegion}
+              />
+            </g>
+            <g className="timeline-acknowledges" transform={`translate(0, ${pointsYpos})`}>
+              <TimelineAcks
+                acknowledges={acknowledges}
+                timeRange={timeRange}
+                width={width}
+                size={eventPointSize}
+                onHighlight={this.handleAckHighlight}
+                onUnHighlight={this.handleAckUnHighlight}
               />
             </g>
             <g className="timeline-points" transform={`translate(0, ${pointsYpos})`}>
@@ -239,6 +279,17 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
         </span>
       );
     }
+    if (eventInfo && eventInfo.timestamp) {
+      const ts = moment(eventInfo.timestamp * 1000);
+      const tsFormatted = ts.format('HH:mm:ss');
+      infoItems = [
+        <span key="ts" className="event-timestamp">
+          <span className="event-timestamp-label">Time:&nbsp;</span>
+          <span className="event-timestamp-value">{tsFormatted}</span>
+        </span>
+      ];
+    }
+
     const containerStyle: React.CSSProperties = { left };
     if (!show) {
       containerStyle.opacity = 0;
@@ -252,6 +303,14 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
         <div>
           {durationItem}
         </div>
+        {eventInfo && eventInfo.message &&
+          <div>
+            <span key="duration" className="event-timestamp">
+              <span className="event-timestamp-label">Message:&nbsp;</span>
+              <span className="event-timestamp-value">{eventInfo.message}</span>
+            </span>
+          </div>
+        }
       </div>
     );
   }
@@ -490,6 +549,134 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
         filter="url(#dropShadow)"
         onMouseOver={this.handleMouseOver}
         onMouseLeave={this.handleMouseLeave}>
+        <circle cx={0} cy={0} r={r} className="point-border" />
+        <circle cx={0} cy={0} r={rInner} className="point-core" />
+      </g>
+    );
+  }
+}
+
+interface TimelineAcksProps {
+  acknowledges: ZBXAcknowledge[];
+  timeRange: GFTimeRange;
+  width: number;
+  size: number;
+  onHighlight?: (ack: ZBXAcknowledge, index: number) => void;
+  onUnHighlight?: () => void;
+}
+
+interface TimelineAcksState {
+  order: number[];
+  highlighted: number;
+}
+
+class TimelineAcks extends PureComponent<TimelineAcksProps, TimelineAcksState> {
+  constructor(props) {
+    super(props);
+    this.state = { order: [], highlighted: null };
+  }
+
+  handleHighlight = (index: number) => () => {
+    if (this.props.onHighlight) {
+      const ack = this.props.acknowledges[index];
+      this.props.onHighlight(ack, index);
+    }
+    this.bringToFront(index, true);
+  }
+
+  handleUnHighlight = () => {
+    if (this.props.onUnHighlight) {
+      this.props.onUnHighlight();
+    }
+    const order = this.props.acknowledges.map((v, i) => i);
+    this.setState({ order, highlighted: null });
+  }
+
+  bringToFront = (index: number, highlight = false) => {
+    const { acknowledges } = this.props;
+    let order = acknowledges.map((v, i) => i);
+    order = moveToEnd(order, [index]);
+    const highlighted = highlight ? index : null;
+    this.setState({ order, highlighted });
+  }
+
+  render() {
+    const { acknowledges, timeRange, width, size } = this.props;
+    const { timeFrom, timeTo } = timeRange;
+    const range = timeTo - timeFrom;
+    const pointR = size / 2;
+    const eventsItems = acknowledges.map((ack, i) => {
+      const ts = Number(ack.clock);
+      const posLeft = Math.round((ts - timeFrom) / range * width - pointR);
+      const highlighted = this.state.highlighted === i;
+
+      return (
+        <TimelineAck
+          key={ack.eventid}
+          x={posLeft}
+          r={pointR}
+          highlighted={highlighted}
+          onHighlight={this.handleHighlight(i)}
+          onUnHighlight={this.handleUnHighlight}
+        />
+      );
+    });
+    if (this.state.order.length) {
+      return this.state.order.map(i => eventsItems[i]);
+    }
+    return eventsItems;
+  }
+}
+
+interface TimelineAckProps {
+  x: number;
+  r: number;
+  highlighted?: boolean;
+  onHighlight?: () => void;
+  onUnHighlight?: () => void;
+}
+
+interface TimelineAckState {
+  highlighted?: boolean;
+}
+
+class TimelineAck extends PureComponent<TimelineAckProps, TimelineAckState> {
+  constructor(props) {
+    super(props);
+    this.state = { highlighted: false };
+  }
+
+  componentDidUpdate(prevProps: TimelineAckProps) {
+    // Update component after reordering to make animation working
+    if (prevProps.highlighted !== this.props.highlighted) {
+      this.setState({ highlighted: this.props.highlighted });
+    }
+  }
+
+  handleHighlight = () => {
+    if (this.props.onHighlight) {
+      this.props.onHighlight();
+    }
+  }
+
+  handleUnHighlight = () => {
+    if (this.props.onUnHighlight) {
+      this.props.onUnHighlight();
+    }
+  }
+
+  render() {
+    const { x } = this.props;
+    const r = this.state.highlighted ? Math.round(this.props.r * HIGHLIGHTED_POINT_SIZE) : this.props.r;
+    const cx = x + this.props.r;
+    const rInner = Math.round(r * INNER_POINT_SIZE);
+    const className = `problem-event-ack ${this.state.highlighted ? 'highlighted' : ''}`;
+    return (
+      <g className={className}
+        transform={`translate(${cx}, 0)`}
+        filter="url(#dropShadow)"
+        onMouseOver={this.handleHighlight}
+        onMouseLeave={this.handleUnHighlight}>
         <circle cx={0} cy={0} r={r} className="point-border" />
         <circle cx={0} cy={0} r={rInner} className="point-core" />
       </g>

@@ -399,7 +399,7 @@
 
       .event-timeline {
         position: relative;
-        margin: 0.6rem 0;
+        margin: 0.2rem 0;
         padding-top: 2.6rem;
         // margin-top: auto;
 
@@ -456,6 +456,32 @@
             &--problem .point-border {
               fill: $problem-event-problem-color;
             }
+          }
+
+          .point-core {
+            fill: $problem-event-core;
+          }
+
+          &:hover,
+          &.highlighted {
+            circle.point-border {
+              stroke: $problem-event-highlighted;
+              stroke-width: 1;
+              filter: url(#glowShadow);
+            }
+            .point-core {
+              fill: $problem-event-core-highlighted;
+            }
+          }
+        }
+
+        .problem-event-ack {
+          circle {
+            transition: all 0.2s ease-out;
+          }
+
+          .point-border {
+            fill: $blue;
           }
 
           .point-core {
