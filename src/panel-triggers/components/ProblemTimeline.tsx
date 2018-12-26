@@ -116,14 +116,14 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       return <div className="event-timeline" ref={this.setRootRef} />;
     }
 
-    const { timeRange, eventPointSize, eventRegionHeight, problemColor, okColor } = this.props;
+    const { timeRange, eventPointSize, eventRegionHeight } = this.props;
     const events = this.sortEvents();
     const boxWidth = this.state.width + eventPointSize;
-    const boxHeight = eventPointSize * 2;
+    const boxHeight = Math.round(eventPointSize * 2.5);
     const width = boxWidth - eventPointSize;
     const padding = Math.round(eventPointSize / 2);
     const pointsYpos = eventRegionHeight / 2;
-    const timelineYpos = Math.round(boxHeight / 2);
+    const timelineYpos = Math.round(boxHeight / 2 - eventPointSize / 2);
 
     return (
       <div className="event-timeline" ref={this.setRootRef} style={{ transform: `translate(${-padding}px, 0)`}}>
@@ -144,8 +144,6 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
                 timeRange={timeRange}
                 width={width}
                 height={eventRegionHeight}
-                okColor={okColor}
-                problemColor={problemColor}
                 highlightedRegion={this.state.highlightedRegion}
               />
             </g>
@@ -155,8 +153,6 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
                 timeRange={timeRange}
                 width={width}
                 pointSize={eventPointSize}
-                okColor={okColor}
-                problemColor={problemColor}
                 onPointHighlight={this.handlePointHighlight}
                 onPointUnHighlight={this.handlePointUnHighlight}
               />
@@ -227,18 +223,27 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
       const ts = moment(Number(event.clock) * 1000);
       const tsFormatted = ts.format('HH:mm:ss');
       infoItems = [
-        <span key="ts" className="event-timestamp">{tsFormatted}</span>
+        <span key="ts" className="event-timestamp">
+          <span className="event-timestamp-label">Time:&nbsp;</span>
+          <span className="event-timestamp-value">{tsFormatted}</span>
+        </span>
       ];
     }
     if (eventInfo && eventInfo.duration) {
       const duration = eventInfo.duration;
       const durationFormatted = moment.utc(duration).format('HH:mm:ss');
-      durationItem = <span key="duration" className="event-timestamp">duration: {durationFormatted}</span>;
+      durationItem = (
+        <span key="duration" className="event-timestamp">
+          <span className="event-timestamp-label">Duration:&nbsp;</span>
+          <span className="event-timestamp-value">{durationFormatted}</span>
+        </span>
+      );
     }
-    const containerStyle: React.CSSProperties = {
-      opacity: show ? 1 : 0,
-      left,
-    };
+    const containerStyle: React.CSSProperties = { left };
+    if (!show) {
+      containerStyle.opacity = 0;
+    }
+
     return (
       <div className={className} style={containerStyle}>
         <div>
@@ -257,8 +262,8 @@ interface TimelineRegionsProps {
   timeRange: GFTimeRange;
   width: number;
   height: number;
-  okColor: string;
-  problemColor: string;
+  okColor?: string;
+  problemColor?: string;
   highlightedRegion?: number | null;
 }
 
@@ -268,7 +273,7 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
   };
 
   render() {
-    const { events, timeRange, width, height, okColor, problemColor, highlightedRegion } = this.props;
+    const { events, timeRange, width, height, highlightedRegion } = this.props;
     const { timeFrom, timeTo } = timeRange;
     const range = timeTo - timeFrom;
 
@@ -277,15 +282,14 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
       const firstTs = events.length ? Number(events[0].clock) : timeTo;
       const duration = (firstTs - timeFrom) / range;
       const regionWidth = Math.round(duration * width);
-      const firstEventColor = events[0].value !== '1' ? problemColor : okColor;
       const highlighted = highlightedRegion === 0;
-      const className = `problem-event-region ${highlighted ? 'highlighted' : ''}`;
+      const valueClass = `problem-event--${events[0].value !== '1' ? 'problem' : 'ok'}`;
+      const className = `problem-event-region ${valueClass} ${highlighted ? 'highlighted' : ''}`;
       const firstEventAttributes = {
         x: 0,
         y: 0,
         width: regionWidth,
         height: height,
-        fill: firstEventColor,
       };
       firstItem = (
         <rect key='0' className={className} {...firstEventAttributes}></rect>
@@ -298,15 +302,14 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
       const duration = (nextTs - ts) / range;
       const regionWidth = Math.round(duration * width);
       const posLeft = Math.round((ts - timeFrom) / range * width);
-      const eventColor = event.value === '1' ? problemColor : okColor;
       const highlighted = highlightedRegion && highlightedRegion - 1 === index;
-      const className = `problem-event-region ${highlighted ? 'highlighted' : ''}`;
+      const valueClass = `problem-event--${event.value === '1' ? 'problem' : 'ok'}`;
+      const className = `problem-event-region ${valueClass} ${highlighted ? 'highlighted' : ''}`;
       const attributes = {
         x: posLeft,
         y: 0,
         width: regionWidth,
         height: height,
-        fill: eventColor,
       };
 
       return (
@@ -326,8 +329,8 @@ interface TimelinePointsProps {
   timeRange: GFTimeRange;
   width: number;
   pointSize: number;
-  okColor: string;
-  problemColor: string;
+  okColor?: string;
+  problemColor?: string;
   highlightRegion?: boolean;
   onPointHighlight?: (index: number, secondIndex?: number) => void;
   onPointUnHighlight?: () => void;
@@ -407,23 +410,22 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
   }
 
   render() {
-    const { events, timeRange, width, pointSize, okColor, problemColor } = this.props;
+    const { events, timeRange, width, pointSize } = this.props;
     const { timeFrom, timeTo } = timeRange;
     const range = timeTo - timeFrom;
     const pointR = pointSize / 2;
     const eventsItems = events.map((event, i) => {
       const ts = Number(event.clock);
       const posLeft = Math.round((ts - timeFrom) / range * width - pointR);
-      const eventColor = event.value === '1' ? problemColor : okColor;
+      const className = `problem-event-item problem-event--${event.value === '1' ? 'problem' : 'ok'}`;
       const highlighted = this.state.highlighted.indexOf(i) !== -1;
 
       return (
         <TimelinePoint
           key={event.eventid}
-          className="problem-event-item"
+          className={className}
           x={posLeft}
           r={pointR}
-          color={eventColor}
           highlighted={highlighted}
           onPointHighlight={this.highlightPoint(i)}
           onPointUnHighlight={this.unHighlightPoint(i)}
@@ -440,7 +442,7 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
 interface TimelinePointProps {
   x: number;
   r: number;
-  color: string;
+  color?: string;
   highlighted?: boolean;
   className?: string;
   onPointHighlight?: () => void;
@@ -477,7 +479,7 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
   }
 
   render() {
-    const { x, color } = this.props;
+    const { x } = this.props;
     const r = this.state.highlighted ? Math.round(this.props.r * HIGHLIGHTED_POINT_SIZE) : this.props.r;
     const cx = x + this.props.r;
     const rInner = Math.round(r * INNER_POINT_SIZE);
@@ -488,8 +490,8 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
         filter="url(#dropShadow)"
         onMouseOver={this.handleMouseOver}
         onMouseLeave={this.handleMouseLeave}>
-        <circle cx={0} cy={0} r={r} fill={color} className="point-border" />
-        <circle cx={0} cy={0} r={rInner} fill="#000000" className="point-core" />
+        <circle cx={0} cy={0} r={r} className="point-border" />
+        <circle cx={0} cy={0} r={rInner} className="point-core" />
       </g>
     );
   }

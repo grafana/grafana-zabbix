@@ -394,8 +394,8 @@
 
       .event-timeline {
         position: relative;
-        margin-bottom: 0.6rem;
-        padding-top: 2rem;
+        margin: 0.6rem 0;
+        padding-top: 2.6rem;
         // margin-top: auto;
 
         .timeline-info-container {
@@ -403,28 +403,33 @@
           top: 0;
           left: 0;
           transition: all 0.2s ease-out;
-          // border: 1px solid $text-muted;
-          // border-radius: 2px;
-          display: block;
+          // opacity: 0.8;
 
           .event-timestamp {
             font-weight: 500;
-            color: $text-muted;
+
+            .event-timestamp-label {
+              color: $text-muted;
+            }
+
+            .event-timestamp-value {
+              float: right;
+            }
           }
         }
-
-        // svg.event-timeline-canvas {
-        //   // height: 40px;
-
-        //   g.event-timeline-group {
-        //     // height: 40px;
-        //     // transform: translate(0px, 14px);
-        //   }
-        // }
 
         .problem-event-region {
           // transition: all 0.2s ease-out;
           // opacity: 0.7;
+
+          &.problem-event {
+            &--ok {
+              fill: $problem-event-ok-color;
+            }
+            &--problem {
+              fill: $problem-event-problem-color;
+            }
+          }
 
           &:hover,
           &.highlighted {
@@ -439,6 +444,19 @@
             transition: all 0.2s ease-out;
           }
 
+          &.problem-event {
+            &--ok .point-border {
+              fill: $problem-event-ok-color;
+            }
+            &--problem .point-border {
+              fill: $problem-event-problem-color;
+            }
+          }
+
+          .point-core {
+            fill: $problem-event-core;
+          }
+
           &:hover,
           &.highlighted {
             circle.point-border {
@@ -447,7 +465,7 @@
               filter: url(#glowShadow);
             }
             .point-core {
-              fill: $problem-event-highlighted;
+              fill: $problem-event-core-highlighted;
             }
           }
         }

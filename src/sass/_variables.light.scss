@@ -2,6 +2,7 @@ $regex: #d69e2e;
 
 $zbx-tag-color: $gray-6;
 $zbx-text-highlighted: $black;
+$zbx-text-color-disabled: $gray-3;
 $action-button-color: #497dc0;
 $action-button-text-color: $gray-6;
 $problems-border-color: $dark-1;
@@ -15,5 +16,10 @@ $problem-statusbar-fired: #ca4c17;
 $problem-statusbar-glow: inset 0px 0px 10px rgba($problem-statusbar-fired, 0.5);
 
 $problem-event-highlighted: $white;
+$problem-event-core-highlighted: $white;
+$problem-event-core: $gray-6;
+$problem-event-ok-color: #2baf63;
+$problem-event-problem-color: #d70000;
+
 $problem-expander-highlighted: darken($problems-table-stripe, 20%);
 $problem-container-shadow: rgba($gray-2, 0.5)
