@@ -113,8 +113,6 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
                 }
               </label>
             </div>
-            <div className="gf-form">
-            </div>
 
             <div className="gf-form-button-row text-center">
               <button className="btn btn-success" onClick={this.submit}>Acknowledge</button>
