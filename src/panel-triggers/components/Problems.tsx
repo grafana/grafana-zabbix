@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import ReactTable from 'react-table';
 import classNames from 'classnames';
+import _ from 'lodash';
 import * as utils from '../../datasource-zabbix/utils';
 import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag } from '../types';
 import EventTag from './EventTag';
@@ -12,10 +13,12 @@ export interface ProblemListProps {
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
   timeRange?: GFTimeRange;
+  pageSize?: number;
   fontSize?: number;
   getProblemEvents: (ids: string[]) => ZBXEvent[];
   onProblemAck?: (problem: Trigger, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string) => void;
+  onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
 }
 
 interface ProblemListState {
@@ -41,6 +44,12 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
 
   handleProblemAck = (problem: Trigger, data: AckProblemData) => {
     return this.props.onProblemAck(problem, data);
+  }
+
+  handlePageSizeChange = (pageSize, pageIndex) => {
+    if (this.props.onPageSizeChange) {
+      this.props.onPageSizeChange(pageSize, pageIndex);
+    }
   }
 
   buildColumns() {
@@ -101,8 +110,13 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
     // console.log(this.props.problems);
     const columns = this.buildColumns();
     this.rootWidth = this.rootRef && this.rootRef.clientWidth;
-    const { fontSize } = this.props;
+    const { pageSize, fontSize } = this.props;
     const panelClass = classNames('panel-problems', { [`font-size--${fontSize}`]: fontSize });
+    let pageSizeOptions = [5, 10, 20, 25, 50, 100];
+    if (pageSize) {
+      pageSizeOptions.push(pageSize);
+      pageSizeOptions = _.sortBy(pageSizeOptions);
+    }
 
     return (
       <div className={panelClass} ref={this.setRootRef}>
@@ -110,6 +124,8 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
           data={this.props.problems}
           columns={columns}
           defaultPageSize={10}
+          pageSize={pageSize}
+          pageSizeOptions={pageSizeOptions}
           minRows={0}
           loading={this.props.loading}
           noDataText="No problems found"
@@ -125,6 +141,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
           expanded={this.getExpandedPage(this.state.page)}
           onExpandedChange={this.handleExpandedChange}
           onPageChange={page => this.setState({ page })}
+          onPageSizeChange={this.handlePageSizeChange}
         />
       </div>
     );

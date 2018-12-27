@@ -543,6 +543,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return this.currentTriggersPage;
   }
 
+  handlePageSizeChange(pageSize, pageIndex) {
+    this.panel.pageSize = pageSize;
+    this.pageIndex = pageIndex;
+    this.scope.$apply(() => {
+      this.render();
+    });
+  }
+
   formatHostName(trigger) {
     let host = "";
     if (this.panel.hostField && this.panel.hostTechNameField) {
@@ -727,6 +735,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
       const fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1));
       const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
 
+      const pageSize = panel.pageSize || 10;
+
       let panelOptions = {};
       for (let prop in PANEL_DEFAULTS) {
         panelOptions[prop] = ctrl.panel[prop];
@@ -736,8 +746,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
         panelOptions,
         timeRange: { timeFrom, timeTo },
         loading: ctrl.loading,
+        pageSize: pageSize,
         fontSize: fontSizeProp,
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
+        onPageSizeChange: ctrl.handlePageSizeChange.bind(ctrl),
         onProblemAck: (trigger, data) => {
           const message = data.message;
           return ctrl.acknowledgeTrigger(trigger, message);
