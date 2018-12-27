@@ -171,11 +171,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.pageIndex = 0;
 
     return this.getTriggers()
-    .then(triggers => this.renderTriggers(triggers))
-    .then(() => {
+    .then(triggers => {
       // Notify panel that request is finished
       this.loading = false;
       this.setTimeQueryEnd();
+      return this.renderTriggers(triggers)
+    })
+    .then(() => {
       this.$timeout(() => {
         this.renderingCompleted();
       });
@@ -719,7 +721,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     function renderProblems() {
       console.debug('rendering ProblemsList React component');
-      // console.log(ctrl);
       const timeFrom = Math.ceil(dateMath.parse(ctrl.range.from) / 1000);
       const timeTo = Math.ceil(dateMath.parse(ctrl.range.to) / 1000);
 
@@ -731,6 +732,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         problems: ctrl.triggerList,
         panelOptions,
         timeRange: { timeFrom, timeTo },
+        loading: ctrl.loading,
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
         onProblemAck: (trigger, data) => {
           const message = data.message;
