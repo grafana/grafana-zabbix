@@ -1,5 +1,9 @@
 import React, { PureComponent } from 'react';
 import ReactDOM from 'react-dom';
+import classNames from 'classnames';
+
+const KEYBOARD_ENTER_KEY = 13;
+const KEYBOARD_ESCAPE_KEY = 27;
 
 interface ModalProps {
   isOpen?: boolean;
@@ -10,6 +14,8 @@ interface ModalProps {
 
 interface ModalState {
   value: string;
+  error: boolean;
+  message: string;
 }
 
 export interface AckProblemData {
@@ -23,23 +29,43 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
 
   constructor(props) {
     super(props);
-    this.state = { value: '' };
+    this.state = {
+      value: '',
+      error: false,
+      message: '',
+    };
 
     this.modalContainer = document.body;
   }
 
   handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ value: event.target.value });
+    this.setState({ value: event.target.value, error: false });
+  }
+
+  handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.which === KEYBOARD_ENTER_KEY || event.key === 'Enter') {
+      this.submit();
+    } else if (event.which === KEYBOARD_ESCAPE_KEY || event.key === 'Escape') {
+      this.dismiss();
+    }
+  }
+
+  handleBackdropClick = () => {
+    this.dismiss();
   }
 
   dismiss = () => {
-    console.log('dismiss');
-    this.setState({ value: '' });
+    this.setState({ value: '', error: false, message: '' });
     this.props.onClose();
   }
 
   submit = () => {
-    console.log('submit', this.state.value);
+    if (!this.state.value) {
+      return this.setState({
+        error: true,
+        message: 'Enter message text'
+      });
+    }
     this.props.onSubmit({
       message: this.state.value
     }).then(() => {
@@ -52,8 +78,10 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
       return null;
     }
 
+    const inputClass = classNames('gf-form-input', { 'zbx-ack-error': this.state.error });
+
     const modalNode = (
-      <div className="modal modal--narrow" key="modal">
+      <div className="modal modal--narrow zbx-ack-modal" key="modal">
         <div className="modal-body">
           <div className="modal-header">
             <h2 className="modal-header-title">
@@ -66,10 +94,9 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
             </a>
           </div>
           <div className="modal-content">
-            {/* Message */}
             <div className="gf-form">
               <label className="gf-form-hint">
-                <input className="gf-form-input"
+                <input className={inputClass}
                   type="text"
                   name="message"
                   placeholder="Message"
@@ -77,9 +104,16 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
                   autoComplete="off"
                   autoFocus={true}
                   value={this.state.value}
-                  onChange={this.handleChange}>
+                  onChange={this.handleChange}
+                  onKeyUp={this.handleKeyUp}>
                 </input>
+                <small className="gf-form-hint-text muted">Press Enter to submit</small>
+                {this.state.error &&
+                  <small className="gf-form-hint-text muted ack-error-message">{this.state.message}</small>
+                }
               </label>
+            </div>
+            <div className="gf-form">
             </div>
 
             <div className="gf-form-button-row text-center">
@@ -93,7 +127,7 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
 
     const modalNodeWithBackdrop = [
       modalNode,
-      <div className="modal-backdrop in" key="modal-backdrop"></div>
+      <div className="modal-backdrop in" key="modal-backdrop" onClick={this.handleBackdropClick}></div>
     ];
 
     const modal = this.props.withBackdrop ? modalNodeWithBackdrop : modalNode;

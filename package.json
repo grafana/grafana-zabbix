@@ -40,6 +40,7 @@
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
     "benchmark": "^2.1.4",
+    "classnames": "^2.2.6",
     "clean-webpack-plugin": "^0.1.19",
     "codecov": "^3.1.0",
     "copy-webpack-plugin": "^4.5.4",
