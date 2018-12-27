@@ -106,7 +106,9 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
           data={this.props.problems}
           columns={columns}
           defaultPageSize={10}
+          minRows={0}
           loading={this.props.loading}
+          noDataText="No problems found"
           SubComponent={props =>
             <ProblemDetails {...props}
               rootWidth={this.rootWidth}
