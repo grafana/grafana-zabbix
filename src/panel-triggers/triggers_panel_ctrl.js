@@ -213,6 +213,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getTriggers() {
+    const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
+    const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
+
     let promises = _.map(this.panel.datasources, (ds) => {
       let proxies;
       return this.datasourceSrv.get(ds)
@@ -232,6 +235,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
         let triggersOptions = {
           showTriggers: showEvents
         };
+
+        if (showEvents !== 1) {
+          triggersOptions.timeFrom = timeFrom;
+          triggersOptions.timeTo = timeTo;
+        }
 
         return Promise.all([
           zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions, proxyFilter),
