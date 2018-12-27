@@ -24,6 +24,7 @@
     "url": "https://github.com/alexanderzobnin/grafana-zabbix/issues"
   },
   "devDependencies": {
+    "@types/classnames": "^2.2.6",
     "@types/grafana": "github:CorpGlory/types-grafana",
     "@types/jest": "^23.1.1",
     "@types/jquery": "^3.3.0",

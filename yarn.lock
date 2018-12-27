@@ -115,6 +115,11 @@
     lodash "^4.17.5"
     to-fast-properties "^2.0.0"
 
+"@types/classnames@^2.2.6":
+  version "2.2.6"
+  resolved "https://registry.yarnpkg.com/@types/classnames/-/classnames-2.2.6.tgz#dbe8a666156d556ed018e15a4c65f08937c3f628"
+  integrity sha512-XHcYvVdbtAxVstjKxuULYqYaWIzHR15yr1pZj4fnGChuBVJlIAp9StJna0ZJNSgxPh4Nac2FL4JM3M11Tm6fqQ==
+
 "@types/grafana@github:CorpGlory/types-grafana":
   version "4.6.3"
   resolved "https://codeload.github.com/CorpGlory/types-grafana/tar.gz/2ce6e54491a247b9dbfe6b809e43daf2002e8260"
