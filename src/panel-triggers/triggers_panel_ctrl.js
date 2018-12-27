@@ -735,6 +735,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
         onProblemAck: (trigger, data) => {
           const message = data.message;
           return ctrl.acknowledgeTrigger(trigger, message);
+        },
+        onTagClick: (tag, datasource) => {
+          ctrl.addTagFilter(tag, datasource);
         }
       };
       const problemsReactElem = React.createElement(ProblemList, problemsListProps);

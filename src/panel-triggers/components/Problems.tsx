@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import ReactTable from 'react-table';
 import * as utils from '../../datasource-zabbix/utils';
-import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell } from '../types';
+import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag } from '../types';
 import EventTag from './EventTag';
 import ProblemDetails from './ProblemDetails';
 import { AckProblemData } from './Modal';
@@ -12,7 +12,8 @@ export interface ProblemListProps {
   loading?: boolean;
   timeRange?: GFTimeRange;
   getProblemEvents: (ids: string[]) => ZBXEvent[];
-  onProblemAck: (problem: Trigger, data: AckProblemData) => void;
+  onProblemAck?: (problem: Trigger, data: AckProblemData) => void;
+  onTagClick?: (tag: ZBXTag, datasource: string) => void;
 }
 
 interface ProblemListState {
@@ -88,6 +89,12 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
     });
   }
 
+  handleTagClick = (tag: ZBXTag, datasource: string) => {
+    if (this.props.onTagClick) {
+      this.props.onTagClick(tag, datasource);
+    }
+  }
+
   render() {
     // console.log(this.props.problems);
     const columns = this.buildColumns();
@@ -106,6 +113,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
               timeRange={this.props.timeRange}
               getProblemEvents={this.props.getProblemEvents}
               onProblemAck={this.handleProblemAck}
+              onTagClick={this.handleTagClick}
             />
           }
           expanded={this.getExpandedPage(this.state.page)}

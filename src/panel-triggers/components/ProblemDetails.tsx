@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import * as utils from '../../datasource-zabbix/utils';
-import { Trigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow } from '../types';
+import { Trigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag } from '../types';
 import { Modal, AckProblemData } from './Modal';
 import EventTag from './EventTag';
 import Tooltip from './Tooltip/Tooltip';
@@ -11,7 +11,8 @@ interface ProblemDetailsProps extends RTRow<Trigger> {
   rootWidth: number;
   timeRange: GFTimeRange;
   getProblemEvents: (problem: Trigger) => Promise<ZBXEvent[]>;
-  onProblemAck: (problem: Trigger, data: AckProblemData) => Promise<any> | any;
+  onProblemAck?: (problem: Trigger, data: AckProblemData) => Promise<any> | any;
+  onTagClick?: (tag: ZBXTag, datasource: string) => void;
 }
 
 interface ProblemDetailsState {
@@ -35,6 +36,12 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     requestAnimationFrame(() => {
       this.setState({ show: true });
     });
+  }
+
+  handleTagClick = (tag: ZBXTag) => {
+    if (this.props.onTagClick) {
+      this.props.onTagClick(tag, this.props.original.datasource);
+    }
   }
 
   fetchProblemEvents() {
@@ -100,7 +107,12 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
           {problem.tags && problem.tags.length > 0 &&
             <div className="problem-tags">
               {problem.tags && problem.tags.map(tag =>
-                <EventTag key={tag.tag + tag.value} tag={tag} highlight={tag.tag === problem.correlation_tag} />)
+                <EventTag
+                  key={tag.tag + tag.value}
+                  tag={tag}
+                  highlight={tag.tag === problem.correlation_tag}
+                  onClick={this.handleTagClick}
+                />)
               }
             </div>
           }
