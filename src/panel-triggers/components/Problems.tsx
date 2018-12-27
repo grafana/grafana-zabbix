@@ -104,7 +104,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
         id: 'lastchange',
         Cell: row => row.original.lastchange,
       },
-      { Header: 'Details', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
+      { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
     ];
     for (const column of columns) {
       if (column.show || column.show === undefined) {

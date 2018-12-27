@@ -7,14 +7,14 @@ $zbx-text-color-disabled: $gray-1;
 $action-button-color: $blue-dark;
 $action-button-text-color: $gray-4;
 
-$problems-border-color: $dark-1;
+$problems-border-color: #1b1b1b;
 $problems-table-stripe: $dark-3;
 $problems-table-row-hovered: darken($problems-table-stripe, 2%);
 $problems-table-row-hovered-shadow-color: rgba($blue, 0.5);
 $problems-table-row-hovered-shadow: 0px 0px 8px $problems-table-row-hovered-shadow-color;
 $problem-details-background: $dark-3;
 
-$problem-expander-highlighted-background: #676767;
+$problem-expander-highlighted-background: #393939;
 $problem-expander-highlighted-color: $blue;
 $problem-expander-expanded-color: $blue;
 

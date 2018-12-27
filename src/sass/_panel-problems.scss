@@ -17,11 +17,11 @@
 
     .rt-tr-group {
       flex: 0 0 auto;
-      border-bottom: solid 1px $problems-border-color;
+      border-bottom: solid 2px $problems-border-color;
       border-left: solid 2px transparent;
 
       &:last-child {
-        border-bottom: solid 1px $problems-border-color;
+        border-bottom: solid 2px $problems-border-color;
       }
 
       &:hover {
@@ -131,7 +131,7 @@
     .rt-tr .rt-td {
       &.custom-expander {
         text-align: center;
-        padding-left: 0rem;
+        padding: 0.6em 0 0 0;
         i {
           color: #676767;
           font-size: 1.2rem;
