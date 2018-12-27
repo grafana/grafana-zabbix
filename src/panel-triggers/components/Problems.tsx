@@ -1,5 +1,6 @@
 import React, { PureComponent } from 'react';
 import ReactTable from 'react-table';
+import classNames from 'classnames';
 import * as utils from '../../datasource-zabbix/utils';
 import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag } from '../types';
 import EventTag from './EventTag';
@@ -11,6 +12,7 @@ export interface ProblemListProps {
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
   timeRange?: GFTimeRange;
+  fontSize?: number;
   getProblemEvents: (ids: string[]) => ZBXEvent[];
   onProblemAck?: (problem: Trigger, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string) => void;
@@ -99,9 +101,11 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
     // console.log(this.props.problems);
     const columns = this.buildColumns();
     this.rootWidth = this.rootRef && this.rootRef.clientWidth;
+    const { fontSize } = this.props;
+    const panelClass = classNames('panel-problems', { [`font-size--${fontSize}`]: fontSize });
 
     return (
-      <div className="panel-problems" ref={this.setRootRef}>
+      <div className={panelClass} ref={this.setRootRef}>
         <ReactTable
           data={this.props.problems}
           columns={columns}

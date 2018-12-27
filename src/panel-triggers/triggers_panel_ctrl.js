@@ -724,6 +724,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
       const timeFrom = Math.ceil(dateMath.parse(ctrl.range.from) / 1000);
       const timeTo = Math.ceil(dateMath.parse(ctrl.range.to) / 1000);
 
+      const fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1));
+      const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
+
       let panelOptions = {};
       for (let prop in PANEL_DEFAULTS) {
         panelOptions[prop] = ctrl.panel[prop];
@@ -733,6 +736,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         panelOptions,
         timeRange: { timeFrom, timeTo },
         loading: ctrl.loading,
+        fontSize: fontSizeProp,
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
         onProblemAck: (trigger, data) => {
           const message = data.message;
