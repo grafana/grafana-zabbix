@@ -590,6 +590,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
 
       const pageSize = panel.pageSize || 10;
+      const loading = ctrl.loading && (!ctrl.triggerList || !ctrl.triggerList.length)
 
       let panelOptions = {};
       for (let prop in PANEL_DEFAULTS) {
@@ -599,8 +600,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
         problems: ctrl.triggerList,
         panelOptions,
         timeRange: { timeFrom, timeTo },
-        loading: ctrl.loading,
-        pageSize: pageSize,
+        loading,
+        pageSize,
         fontSize: fontSizeProp,
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
         onPageSizeChange: ctrl.handlePageSizeChange.bind(ctrl),
