@@ -25,11 +25,11 @@
       }
 
       &:hover {
-        border-left: solid 2px rgba($blue, 0.5);
+        border-left: solid 2px $problems-table-row-hovered-shadow-color;
 
         .rt-tr {
           background: $problems-table-row-hovered;
-          box-shadow: 0px 0px 5px rgba($blue, 0.5);
+          box-shadow: $problems-table-row-hovered-shadow;
           z-index: 1;
         }
 
@@ -138,7 +138,7 @@
         }
         & .expanded {
           i {
-            color: $blue;
+            color: $problem-expander-expanded-color;
           }
         }
         // background: linear-gradient(to bottom, $dark-5 50%, $dark-2 50%);
@@ -148,9 +148,9 @@
       }
       &.custom-expander:hover {
         // background-position: right top;
-        background-color: $problem-expander-highlighted;
+        background-color: $problem-expander-highlighted-background;
         i {
-          color: $blue;
+          color: $problem-expander-highlighted-color;
         }
       }
       &.last-change {

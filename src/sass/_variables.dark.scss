@@ -3,12 +3,20 @@ $regex: #d69e2e;
 $zbx-tag-color: $gray-5;
 $zbx-text-highlighted: $white;
 $zbx-text-color-disabled: $gray-1;
+
 $action-button-color: $blue-dark;
 $action-button-text-color: $gray-4;
+
 $problems-border-color: $dark-1;
 $problems-table-stripe: $dark-3;
 $problems-table-row-hovered: darken($problems-table-stripe, 2%);
+$problems-table-row-hovered-shadow-color: rgba($blue, 0.5);
+$problems-table-row-hovered-shadow: 0px 0px 8px $problems-table-row-hovered-shadow-color;
 $problem-details-background: $dark-3;
+
+$problem-expander-highlighted-background: #676767;
+$problem-expander-highlighted-color: $blue;
+$problem-expander-expanded-color: $blue;
 
 $problem-statusbar-background: $dark-2;
 $problem-statusbar-muted: $dark-3;
@@ -21,5 +29,4 @@ $problem-event-core: #000000;
 $problem-event-ok-color: #38bd71;
 $problem-event-problem-color: #d70000;
 
-$problem-expander-highlighted: lighten($problems-table-stripe, 8%);
 $problem-container-shadow: rgba($gray-2, 0.2)
