@@ -90,7 +90,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.defaultTimeFormat = DEFAULT_TIME_FORMAT;
     this.pageIndex = 0;
     this.triggerList = [];
-    this.currentTriggersPage = [];
     this.datasources = {};
     this.range = {};
 
@@ -206,7 +205,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
     triggers = triggers.slice(0, this.panel.limit || PANEL_DEFAULTS.limit);
 
     this.triggerList = triggers;
-    this.getCurrentTriggersPage();
 
     return this.$timeout(() => {
       return super.render(this.triggerList);
@@ -499,32 +497,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.refresh();
   }
 
-  switchComment(trigger) {
-    trigger.showComment = !trigger.showComment;
-  }
-
-  acknowledgeTrigger(trigger, message) {
-    let eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
-    let grafana_user = this.contextSrv.user.name;
-    let ack_message = grafana_user + ' (Grafana): ' + message;
-    return this.datasourceSrv.get(trigger.datasource)
-    .then(datasource => {
-      const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
-      if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
-        return Promise.reject({message: 'You have no permissions to acknowledge events.'});
-      }
-      if (eventid) {
-        return datasource.zabbix.acknowledgeEvent(eventid, ack_message);
-      } else {
-        return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
-      }
-    })
-    .then(this.onRefresh.bind(this))
-    .catch((err) => {
-      this.setPanelError(err);
-    });
-  }
-
   getProblemEvents(trigger) {
     const triggerids = [trigger.triggerid];
     const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
@@ -532,22 +504,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return this.datasourceSrv.get(trigger.datasource)
     .then(datasource => {
       return datasource.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1]);
-    });
-  }
-
-  getCurrentTriggersPage() {
-    let pageSize = this.panel.pageSize || PANEL_DEFAULTS.pageSize;
-    let startPos = this.pageIndex * pageSize;
-    let endPos = Math.min(startPos + pageSize, this.triggerList.length);
-    this.currentTriggersPage = this.triggerList.slice(startPos, endPos);
-    return this.currentTriggersPage;
-  }
-
-  handlePageSizeChange(pageSize, pageIndex) {
-    this.panel.pageSize = pageSize;
-    this.pageIndex = pageIndex;
-    this.scope.$apply(() => {
-      this.render();
     });
   }
 
@@ -575,57 +531,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return groupNames;
   }
 
-  getAlertIconClass(trigger) {
-    let iconClass = '';
-    if (trigger.value === '1') {
-      if (trigger.priority >= 3) {
-        iconClass = 'icon-gf-critical';
-      } else {
-        iconClass = 'icon-gf-warning';
-      }
-    } else {
-      iconClass = 'icon-gf-online';
-    }
-
-    if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
-      iconClass += ' zabbix-trigger--blinked';
-    }
-    return iconClass;
-  }
-
-  getAlertIconClassBySeverity(triggerSeverity) {
-    let iconClass = 'icon-gf-warning';
-    if (triggerSeverity.priority >= 3) {
-      iconClass = 'icon-gf-critical';
-    }
-    return iconClass;
-  }
-
-  getAlertStateClass(trigger) {
-    let statusClass = '';
-
-    if (trigger.value === '1') {
-      statusClass = 'alert-state-critical';
-    } else {
-      statusClass = 'alert-state-ok';
-    }
-
-    if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
-      statusClass += ' zabbix-trigger--blinked';
-    }
-
-    return statusClass;
-  }
-
-  getBackground(trigger) {
-    const mainColor = trigger.color;
-    const secondColor = this.contextSrv.user.lightTheme ? '#dde4ed' : '#262628';
-    if (this.contextSrv.user.lightTheme) {
-      return `linear-gradient(135deg, ${secondColor}, ${mainColor})`;
-    }
-    return `linear-gradient(135deg, ${mainColor}, ${secondColor})`;
-  }
-
   isNewTrigger(trigger) {
     try {
       const highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || PANEL_DEFAULTS.highlightNewerThan);
@@ -636,98 +541,47 @@ export class TriggerPanelCtrl extends PanelCtrl {
     }
   }
 
+  acknowledgeTrigger(trigger, message) {
+    let eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
+    let grafana_user = this.contextSrv.user.name;
+    let ack_message = grafana_user + ' (Grafana): ' + message;
+    return this.datasourceSrv.get(trigger.datasource)
+    .then(datasource => {
+      const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
+      if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
+        return Promise.reject({message: 'You have no permissions to acknowledge events.'});
+      }
+      if (eventid) {
+        return datasource.zabbix.acknowledgeEvent(eventid, ack_message);
+      } else {
+        return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
+      }
+    })
+    .then(this.onRefresh.bind(this))
+    .catch((err) => {
+      this.setPanelError(err);
+    });
+  }
+
+  handlePageSizeChange(pageSize, pageIndex) {
+    this.panel.pageSize = pageSize;
+    this.pageIndex = pageIndex;
+    this.scope.$apply(() => {
+      this.render();
+    });
+  }
+
   link(scope, elem, attrs, ctrl) {
     let panel = ctrl.panel;
-    let pageCount = 0;
     let triggerList = ctrl.triggerList;
 
-    scope.$watchGroup(['ctrl.currentTriggersPage', 'ctrl.triggerList'], renderPanel);
-    elem.on('click', '.triggers-panel-page-link', switchPage);
+    scope.$watchGroup(['ctrl.triggerList'], renderPanel);
     ctrl.events.on('render', (renderData) => {
       triggerList = renderData || triggerList;
       renderPanel();
     });
 
-    function getContentHeight() {
-      let panelHeight = ctrl.height;
-      if (pageCount > 1) {
-        panelHeight -= 36;
-      }
-      return panelHeight + 'px';
-    }
-
-    function switchPage(e) {
-      let el = $(e.currentTarget);
-      ctrl.pageIndex = (parseInt(el.text(), 10)-1);
-
-      let pageSize = panel.pageSize || 10;
-      let startPos = ctrl.pageIndex * pageSize;
-      let endPos = Math.min(startPos + pageSize, triggerList.length);
-      ctrl.currentTriggersPage = triggerList.slice(startPos, endPos);
-
-      scope.$apply(() => {
-        renderPanel();
-      });
-    }
-
-    function appendPaginationControls(footerElem) {
-      footerElem.empty();
-
-      let pageSize = panel.pageSize || 5;
-      pageCount = Math.ceil(triggerList.length / pageSize);
-      if (pageCount === 1) {
-        return;
-      }
-
-      let startPage = Math.max(ctrl.pageIndex - 3, 0);
-      let endPage = Math.min(pageCount, startPage + 9);
-
-      let paginationList = $('<ul></ul>');
-
-      for (let i = startPage; i < endPage; i++) {
-        let activeClass = i === ctrl.pageIndex ? 'active' : '';
-        let pageLinkElem = $('<li><a class="triggers-panel-page-link pointer ' + activeClass + '">' + (i+1) + '</a></li>');
-        paginationList.append(pageLinkElem);
-      }
-
-      footerElem.append(paginationList);
-    }
-
-    function setFontSize() {
-      const fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1));
-      let triggerCardElem = elem.find('.alert-rule-item');
-      if (fontSize && fontSize !== 100) {
-        triggerCardElem.find('.alert-rule-item__icon').css({
-          'font-size': fontSize + '%',
-          'margin': fontSize / 100 * 6 + 'px'
-        });
-        triggerCardElem.find('.alert-rule-item__name').css({'font-size': fontSize + '%'});
-        triggerCardElem.find('.alert-rule-item__text').css({'font-size': fontSize * 0.8 + '%'});
-        triggerCardElem.find('.zbx-trigger-lastchange').css({'font-size': fontSize * 0.8 + '%'});
-        triggerCardElem.find('.zbx-tag').css({'font-size': fontSize * 0.6 + '%'});
-        triggerCardElem.find('.zbx-tag').css({'line-height': fontSize / 100 * 16 + 'px'});
-      } else {
-        // remove css
-        triggerCardElem.find('.alert-rule-item__icon').css({'font-size': '', 'margin-right': ''});
-        triggerCardElem.find('.alert-rule-item__name').css({'font-size': ''});
-        triggerCardElem.find('.alert-rule-item__text').css({'font-size': ''});
-        triggerCardElem.find('.zbx-trigger-lastchange').css({'font-size': ''});
-        triggerCardElem.find('.zbx-tag').css({'font-size': ''});
-        triggerCardElem.find('.zbx-tag').css({'line-height': ''});
-      }
-    }
-
     function renderPanel() {
-      let rootElem = elem.find('.triggers-panel-scroll');
-      let footerElem = elem.find('.triggers-panel-footer');
-      appendPaginationControls(footerElem);
-      rootElem.css({'max-height': getContentHeight()});
-      rootElem.css({'height': getContentHeight()});
-      renderProblems();
-      setFontSize();
-    }
-
-    function renderProblems() {
       console.debug('rendering ProblemsList React component');
       const timeFrom = Math.ceil(dateMath.parse(ctrl.range.from) / 1000);
       const timeTo = Math.ceil(dateMath.parse(ctrl.range.to) / 1000);
@@ -761,11 +615,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
       const problemsReactElem = React.createElement(ProblemList, problemsListProps);
       ReactDOM.render(problemsReactElem, elem.find('.panel-content')[0]);
     }
-
-    let unbindDestroy = scope.$on('$destroy', function() {
-      elem.off('click', '.triggers-panel-page-link');
-      unbindDestroy();
-    });
   }
 }
 
