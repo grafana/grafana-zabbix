@@ -71,7 +71,9 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
       },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell},
-      { Header: 'Tags', accessor: 'tags', show: options.showTags, className: 'problem-tags', Cell: TagCell },
+      { Header: 'Tags', accessor: 'tags', show: options.showTags, className: 'problem-tags',
+        Cell: props => <TagCell {...props} onTagClick={this.handleTagClick} />
+      },
       { Header: 'Time', className: 'last-change', width: timeColWidth,
         accessor: 'lastchangeUnix',
         id: 'lastchange',
@@ -192,11 +194,23 @@ function ProblemCell(props: RTCell<Trigger>) {
   );
 }
 
-function TagCell(props: RTCell<Trigger>) {
-  const tags = props.value || [];
-  return [
-    tags.map(tag => <EventTag key={tag.tag + tag.value} tag={tag} />)
-  ];
+interface TagCellProps extends RTCell<Trigger> {
+  onTagClick: (tag: ZBXTag, datasource: string) => void;
+}
+
+class TagCell extends PureComponent<TagCellProps> {
+  handleTagClick = (tag: ZBXTag) => {
+    if (this.props.onTagClick) {
+      this.props.onTagClick(tag, this.props.original.datasource);
+    }
+  }
+
+  render() {
+    const tags = this.props.value || [];
+    return [
+      tags.map(tag => <EventTag key={tag.tag + tag.value} tag={tag} onClick={this.handleTagClick} /> )
+    ];
+  }
 }
 
 function CustomExpander(props: RTCell<any>) {
