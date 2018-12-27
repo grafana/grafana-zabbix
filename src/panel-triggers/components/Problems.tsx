@@ -3,7 +3,7 @@ import ReactTable from 'react-table';
 import classNames from 'classnames';
 import _ from 'lodash';
 import * as utils from '../../datasource-zabbix/utils';
-import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity } from '../types';
+import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized } from '../types';
 import EventTag from './EventTag';
 import ProblemDetails from './ProblemDetails';
 import { AckProblemData } from './Modal';
@@ -19,6 +19,7 @@ export interface ProblemListProps {
   onProblemAck?: (problem: Trigger, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
+  onColumnResize?: (newResized: RTResized) => void;
 }
 
 interface ProblemListState {
@@ -50,6 +51,30 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
     if (this.props.onPageSizeChange) {
       this.props.onPageSizeChange(pageSize, pageIndex);
     }
+  }
+
+  handleResizedChange = (newResized, event) => {
+    if (this.props.onColumnResize) {
+      this.props.onColumnResize(newResized);
+    }
+  }
+
+  handleExpandedChange = expanded => {
+    const nextExpanded = { ...this.state.expanded };
+    nextExpanded[this.state.page] = expanded;
+    this.setState({
+      expanded: nextExpanded
+    });
+  }
+
+  handleTagClick = (tag: ZBXTag, datasource: string) => {
+    if (this.props.onTagClick) {
+      this.props.onTagClick(tag, datasource);
+    }
+  }
+
+  getExpandedPage = (page: number) => {
+    return this.state.expanded[page] || {};
   }
 
   buildColumns() {
@@ -90,28 +115,10 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
     return result;
   }
 
-  getExpandedPage = (page: number) => {
-    return this.state.expanded[page] || {};
-  }
-
-  handleExpandedChange = expanded => {
-    const nextExpanded = {...this.state.expanded};
-    nextExpanded[this.state.page] = expanded;
-    this.setState({
-      expanded: nextExpanded
-    });
-  }
-
-  handleTagClick = (tag: ZBXTag, datasource: string) => {
-    if (this.props.onTagClick) {
-      this.props.onTagClick(tag, datasource);
-    }
-  }
-
   render() {
     const columns = this.buildColumns();
     this.rootWidth = this.rootRef && this.rootRef.clientWidth;
-    const { pageSize, fontSize } = this.props;
+    const { pageSize, fontSize, panelOptions } = this.props;
     const panelClass = classNames('panel-problems', { [`font-size--${fontSize}`]: fontSize });
     let pageSizeOptions = [5, 10, 20, 25, 50, 100];
     if (pageSize) {
@@ -127,6 +134,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
           defaultPageSize={10}
           pageSize={pageSize}
           pageSizeOptions={pageSizeOptions}
+          resized={panelOptions.resizedColumns}
           minRows={0}
           loading={this.props.loading}
           noDataText="No problems found"
@@ -143,6 +151,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
           onExpandedChange={this.handleExpandedChange}
           onPageChange={page => this.setState({ page })}
           onPageSizeChange={this.handlePageSizeChange}
+          onResizedChange={this.handleResizedChange}
         />
       </div>
     );

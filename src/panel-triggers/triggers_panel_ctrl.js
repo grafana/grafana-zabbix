@@ -61,6 +61,7 @@ export const PANEL_DEFAULTS = {
   highlightNewerThan: '1h',
   customLastChangeFormat: false,
   lastChangeFormat: "",
+  resizedColumns: [],
   // Triggers severity and colors
   triggerSeverity: DEFAULT_SEVERITY,
   okEventColor: 'rgb(56, 189, 113)',
@@ -541,6 +542,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
     }
   }
 
+  resetResizedColumns() {
+    this.panel.resizedColumns = [];
+    this.render();
+  }
+
   acknowledgeTrigger(trigger, message) {
     let eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
     let grafana_user = this.contextSrv.user.name;
@@ -566,6 +572,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
   handlePageSizeChange(pageSize, pageIndex) {
     this.panel.pageSize = pageSize;
     this.pageIndex = pageIndex;
+    this.scope.$apply(() => {
+      this.render();
+    });
+  }
+
+  handleColumnResize(newResized) {
+    this.panel.resizedColumns = newResized;
     this.scope.$apply(() => {
       this.render();
     });
@@ -605,6 +618,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         fontSize: fontSizeProp,
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
         onPageSizeChange: ctrl.handlePageSizeChange.bind(ctrl),
+        onColumnResize: ctrl.handleColumnResize.bind(ctrl),
         onProblemAck: (trigger, data) => {
           const message = data.message;
           return ctrl.acknowledgeTrigger(trigger, message);

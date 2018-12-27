@@ -32,6 +32,7 @@ export interface ProblemsPanelOptions {
   highlightNewerThan?: string;
   customLastChangeFormat?: boolean;
   lastChangeFormat?: string;
+  resizedColumns?: RTResized;
   // Triggers severity and colors
   triggerSeverity?: TriggerSeverity[];
   okEventColor?: TriggerColor;
@@ -209,3 +210,10 @@ export interface RTCell<T> extends RTRow<T> {
   /** the resolved styles for this cell */
   styles: any;
 }
+
+export interface RTResize {
+  id: string;
+  value: number;
+}
+
+export type RTResized = RTResize[];
