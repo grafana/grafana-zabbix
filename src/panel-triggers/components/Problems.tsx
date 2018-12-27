@@ -3,7 +3,7 @@ import ReactTable from 'react-table';
 import classNames from 'classnames';
 import _ from 'lodash';
 import * as utils from '../../datasource-zabbix/utils';
-import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag } from '../types';
+import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity } from '../types';
 import EventTag from './EventTag';
 import ProblemDetails from './ProblemDetails';
 import { AckProblemData } from './Modal';
@@ -67,7 +67,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
       { Header: 'Severity', show: options.severityField, className: 'problem-severity', width: 120,
         accessor: problem => problem.priority,
         id: 'severity',
-        Cell: SeverityCell,
+        Cell: props => SeverityCell(props, options.triggerSeverity),
       },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell},
@@ -107,7 +107,6 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
   }
 
   render() {
-    // console.log(this.props.problems);
     const columns = this.buildColumns();
     this.rootWidth = this.rootRef && this.rootRef.clientWidth;
     const { pageSize, fontSize } = this.props;
@@ -148,10 +147,11 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
   }
 }
 
-function SeverityCell(props: RTCell<Trigger>) {
+function SeverityCell(props: RTCell<Trigger>, problemSeverityDesc: TriggerSeverity[]) {
+  const severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(props.original.priority));
   return (
-    <div className='severity-cell' style={{ background: props.original.color }}>
-      {props.original.severity}
+    <div className='severity-cell' style={{ background: severityDesc.color }}>
+      {severityDesc.severity}
     </div>
   );
 }
