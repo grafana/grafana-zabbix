@@ -38,6 +38,7 @@ export interface ProblemsPanelOptions {
   triggerSeverity?: TriggerSeverity[];
   okEventColor?: TriggerColor;
   ackEventColor?: TriggerColor;
+  markAckEvents?: boolean;
 }
 
 export interface ProblemsPanelTarget {

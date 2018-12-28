@@ -96,7 +96,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
         Header: 'Severity', show: options.severityField, className: 'problem-severity', width: 120,
         accessor: problem => problem.priority,
         id: 'severity',
-        Cell: props => SeverityCell(props, options.triggerSeverity),
+        Cell: props => SeverityCell(props, options.triggerSeverity, options.markAckEvents, options.ackEventColor),
       },
       {
         Header: '', id: 'statusIcon', show: options.statusIcon, className: 'problem-status-icon', width: 50,
@@ -169,10 +169,19 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
   }
 }
 
-function SeverityCell(props: RTCell<Trigger>, problemSeverityDesc: TriggerSeverity[]) {
+function SeverityCell(props: RTCell<Trigger>, problemSeverityDesc: TriggerSeverity[], markAckEvents?: boolean, ackEventColor?: string) {
+  const problem = props.original;
+  let color: string;
   const severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(props.original.priority));
+  color = severityDesc.color;
+
+  // Mark acknowledged triggers with different color
+  if (markAckEvents && problem.acknowledges && problem.acknowledges.length) {
+    color = ackEventColor;
+  }
+
   return (
-    <div className='severity-cell' style={{ background: severityDesc.color }}>
+    <div className='severity-cell' style={{ background: color }}>
       {severityDesc.severity}
     </div>
   );

@@ -66,7 +66,8 @@ export const PANEL_DEFAULTS = {
   // Triggers severity and colors
   triggerSeverity: DEFAULT_SEVERITY,
   okEventColor: 'rgb(56, 189, 113)',
-  ackEventColor: 'rgb(56, 219, 156)'
+  ackEventColor: 'rgb(56, 219, 156)',
+  markAckEvents: false,
 };
 
 const triggerStatusMap = {
