@@ -9,6 +9,7 @@ export interface ProblemsPanelOptions {
   hostProxy?: boolean;
   showTags?: boolean;
   statusField?: boolean;
+  statusIcon?: boolean;
   severityField?: boolean;
   descriptionField?: boolean;
   descriptionAtNewLine?: boolean;

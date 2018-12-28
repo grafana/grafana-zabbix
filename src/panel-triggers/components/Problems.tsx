@@ -7,6 +7,7 @@ import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, T
 import EventTag from './EventTag';
 import ProblemDetails from './ProblemDetails';
 import { AckProblemData } from './Modal';
+import GFHeartIcon from './GFHeartIcon';
 
 export interface ProblemListProps {
   problems: Trigger[];
@@ -84,22 +85,32 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
     const timeColWidth = problems && problems.length ? problems[0].lastchange.length * 9 : 160;
     const highlightNewerThan = options.highlightNewEvents && options.highlightNewerThan;
     const statusCell = props => StatusCell(props, options.okEventColor, DEFAULT_PROBLEM_COLOR, highlightNewerThan);
+    const statusIconCell = props => StatusIconCell(props, highlightNewerThan);
+
     const columns = [
       { Header: 'Host', accessor: 'host', show: options.hostField },
       { Header: 'Host (Technical Name)', accessor: 'hostTechName', show: options.hostTechNameField },
       { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
       { Header: 'Proxy', accessor: 'proxy', show: options.hostProxy },
-      { Header: 'Severity', show: options.severityField, className: 'problem-severity', width: 120,
+      {
+        Header: 'Severity', show: options.severityField, className: 'problem-severity', width: 120,
         accessor: problem => problem.priority,
         id: 'severity',
         Cell: props => SeverityCell(props, options.triggerSeverity),
       },
+      {
+        Header: '', id: 'statusIcon', show: options.statusIcon, className: 'problem-status-icon', width: 50,
+        accessor: 'value',
+        Cell: statusIconCell,
+      },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell},
-      { Header: 'Tags', accessor: 'tags', show: options.showTags, className: 'problem-tags',
+      {
+        Header: 'Tags', accessor: 'tags', show: options.showTags, className: 'problem-tags',
         Cell: props => <TagCell {...props} onTagClick={this.handleTagClick} />
       },
-      { Header: 'Time', className: 'last-change', width: timeColWidth,
+      {
+        Header: 'Time', className: 'last-change', width: timeColWidth,
         accessor: 'lastchangeUnix',
         id: 'lastchange',
         Cell: row => row.original.lastchange,
@@ -171,7 +182,6 @@ const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
 
 function StatusCell(props: RTCell<Trigger>, okColor = DEFAULT_OK_COLOR, problemColor = DEFAULT_PROBLEM_COLOR, highlightNewerThan?: string) {
-  // console.log(props);
   const status = props.value === '0' ? 'RESOLVED' : 'PROBLEM';
   const color = props.value === '0' ? okColor : problemColor;
   let newProblem = false;
@@ -181,6 +191,20 @@ function StatusCell(props: RTCell<Trigger>, okColor = DEFAULT_OK_COLOR, problemC
   return (
     <span className={newProblem ? 'problem-status--new' : ''} style={{ color }}>{status}</span>
   );
+}
+
+function StatusIconCell(props: RTCell<Trigger>, highlightNewerThan?: string) {
+  const status = props.value === '0' ? 'ok' : 'problem';
+  let newProblem = false;
+  if (highlightNewerThan) {
+    newProblem = isNewProblem(props.original, highlightNewerThan);
+  }
+  const className = classNames('zbx-problem-status-icon',
+    { 'problem-status--new': newProblem },
+    { 'zbx-problem': props.value === '1' },
+    { 'zbx-ok': props.value === '0' },
+  );
+  return <GFHeartIcon status={status} className={className} />;
 }
 
 function GroupCell(props: RTCell<Trigger>) {

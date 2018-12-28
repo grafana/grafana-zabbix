@@ -44,6 +44,7 @@ export const PANEL_DEFAULTS = {
   hostProxy: false,
   showTags: true,
   statusField: true,
+  statusIcon: false,
   severityField: true,
   descriptionField: true,
   descriptionAtNewLine: false,
@@ -548,6 +549,48 @@ export class TriggerPanelCtrl extends PanelCtrl {
     } catch (e) {
       return false;
     }
+  }
+
+  getAlertIconClass(trigger) {
+    let iconClass = '';
+    if (trigger.value === '1') {
+      if (trigger.priority >= 3) {
+        iconClass = 'icon-gf-critical';
+      } else {
+        iconClass = 'icon-gf-warning';
+      }
+    } else {
+      iconClass = 'icon-gf-online';
+    }
+
+    if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
+      iconClass += ' zabbix-trigger--blinked';
+    }
+    return iconClass;
+  }
+
+  getAlertIconClassBySeverity(triggerSeverity) {
+    let iconClass = 'icon-gf-warning';
+    if (triggerSeverity.priority >= 3) {
+      iconClass = 'icon-gf-critical';
+    }
+    return iconClass;
+  }
+
+  getAlertStateClass(trigger) {
+    let statusClass = '';
+
+    if (trigger.value === '1') {
+      statusClass = 'alert-state-critical';
+    } else {
+      statusClass = 'alert-state-ok';
+    }
+
+    if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
+      statusClass += ' zabbix-trigger--blinked';
+    }
+
+    return statusClass;
   }
 
   resetResizedColumns() {

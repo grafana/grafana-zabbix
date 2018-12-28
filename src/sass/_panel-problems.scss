@@ -66,6 +66,7 @@
       .rt-tr {
         .rt-td {
           border: 0;
+          transition: 0s;
         }
 
         // &:hover {
@@ -170,6 +171,26 @@
       }
       &.last-change {
         text-align: left;
+      }
+
+      &.problem-status-icon {
+        padding: 0;
+        margin-top: 0;
+        font-size: 1.5em;
+
+        i {
+          // margin: 0 1.2em;
+          width: 100%;
+          padding-left: 0.6em;
+          text-align: center;
+
+          &.zbx-problem {
+            color: $problem-icon-problem-color;
+          }
+          &.zbx-ok {
+            color: $problem-icon-ok-color;
+          }
+        }
       }
     }
 
