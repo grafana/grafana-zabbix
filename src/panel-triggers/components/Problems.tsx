@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react';
 import ReactTable from 'react-table';
 import classNames from 'classnames';
 import _ from 'lodash';
+import moment from 'moment';
 import * as utils from '../../datasource-zabbix/utils';
 import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized } from '../types';
 import EventTag from './EventTag';
@@ -81,8 +82,6 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
   buildColumns() {
     const result = [];
     const options = this.props.panelOptions;
-    const problems = this.props.problems;
-    const timeColWidth = problems && problems.length ? problems[0].lastchange.length * 9 : 160;
     const highlightNewerThan = options.highlightNewEvents && options.highlightNewerThan;
     const statusCell = props => StatusCell(props, options.okEventColor, DEFAULT_PROBLEM_COLOR, highlightNewerThan);
     const statusIconCell = props => StatusIconCell(props, highlightNewerThan);
@@ -110,10 +109,14 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
         Cell: props => <TagCell {...props} onTagClick={this.handleTagClick} />
       },
       {
-        Header: 'Time', className: 'last-change', width: timeColWidth,
-        accessor: 'lastchangeUnix',
+        Header: 'Age', className: 'problem-age', width: 100, show: options.ageField, accessor: 'lastchangeUnix',
+        id: 'age',
+        Cell: AgeCell,
+      },
+      {
+        Header: 'Time', className: 'last-change', width: 150, accessor: 'lastchangeUnix',
         id: 'lastchange',
-        Cell: row => row.original.lastchange,
+        Cell: props => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
       },
       { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
     ];
@@ -234,6 +237,22 @@ function ProblemCell(props: RTCell<Trigger>) {
       {/* {comments && <FAIcon icon="file-text-o" customClass="comments-icon" />} */}
     </div>
   );
+}
+
+function AgeCell(props: RTCell<Trigger>) {
+  const problem = props.original;
+  const timestamp = moment.unix(problem.lastchangeUnix);
+  const age = timestamp.fromNow(true);
+  return <span>{age}</span>;
+}
+
+function LastChangeCell(props: RTCell<Trigger>, customFormat?: string) {
+  const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
+  const problem = props.original;
+  const timestamp = moment.unix(problem.lastchangeUnix);
+  const format = customFormat || DEFAULT_TIME_FORMAT;
+  const lastchange = timestamp.format(format);
+  return <span>{lastchange}</span>;
 }
 
 interface TagCellProps extends RTCell<Trigger> {

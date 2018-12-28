@@ -11,6 +11,7 @@ export interface ProblemsPanelOptions {
   statusField?: boolean;
   statusIcon?: boolean;
   severityField?: boolean;
+  ageField?: boolean;
   descriptionField?: boolean;
   descriptionAtNewLine?: boolean;
   // Options

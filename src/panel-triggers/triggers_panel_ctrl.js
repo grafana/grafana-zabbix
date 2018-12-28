@@ -46,6 +46,7 @@ export const PANEL_DEFAULTS = {
   statusField: true,
   statusIcon: false,
   severityField: true,
+  ageField: false,
   descriptionField: true,
   descriptionAtNewLine: false,
   // Options
@@ -431,52 +432,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       trigger.comments = trigger.comments.replace('\n', '<br>');
     }
 
-    // Format last change and age
     trigger.lastchangeUnix = Number(trigger.lastchange);
-    trigger = this.setTriggerLastChange(trigger);
-    trigger = this.setTriggerSeverity(trigger);
-    return trigger;
-  }
-
-  updateTriggerFormat(trigger) {
-    trigger = this.setTriggerLastChange(trigger);
-    trigger = this.setTriggerSeverity(trigger);
-    return trigger;
-  }
-
-  setTriggerSeverity(trigger) {
-    if (trigger.value === '1') {
-      // Problem state
-      trigger.color = this.panel.triggerSeverity[trigger.priority].color;
-    } else {
-      // OK state
-      trigger.color = this.panel.okEventColor;
-    }
-    trigger.severity = this.panel.triggerSeverity[trigger.priority].severity;
-
-    // Mark acknowledged triggers with different color
-    if (this.panel.markAckEvents && trigger.acknowledges && trigger.acknowledges.length) {
-      trigger.color = this.panel.ackEventColor;
-    }
-
-    return trigger;
-  }
-
-  setTriggerLastChange(trigger) {
-    if (!trigger.lastchangeUnix) {
-      trigger.lastchange = "";
-      trigger.age = "";
-      return trigger;
-    }
-
-    let timestamp = moment.unix(trigger.lastchangeUnix);
-    if (this.panel.customLastChangeFormat) {
-      // User defined format
-      trigger.lastchange = timestamp.format(this.panel.lastChangeFormat);
-    } else {
-      trigger.lastchange = timestamp.format(this.defaultTimeFormat);
-    }
-    trigger.age = timestamp.fromNow(true);
     return trigger;
   }
 
