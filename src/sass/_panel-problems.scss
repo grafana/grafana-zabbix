@@ -235,6 +235,7 @@
       &.show {
         max-height: 20rem;
         opacity: 1;
+        box-shadow: inset -1px 2px 8px $problem-container-shadow;
       }
 
       .problem-details-row {
@@ -370,7 +371,7 @@
         padding: 1.2rem 0.6rem;
         // border-top: 2px solid $dark-4;
         overflow: auto;
-        box-shadow: -2px 2px 10px $problem-container-shadow
+        box-shadow: $porblem-ack-shadow;
       }
 
       .problem-ack-list {

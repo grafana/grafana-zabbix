@@ -32,4 +32,5 @@ $problem-event-problem-color: #d70000;
 $problem-icon-problem-color: rgb(163, 16, 0);
 $problem-icon-ok-color: #629e51;
 
-$problem-container-shadow: rgba($gray-2, 0.5)
+$problem-container-shadow: $gray-3;
+$porblem-ack-shadow: -2px 2px 10px 0px $problem-container-shadow;
