@@ -12,6 +12,7 @@ import {migratePanelSchema, CURRENT_SCHEMA_VERSION} from './migrations';
 import { ProblemList } from './components/Problems';
 
 const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
+const PROBLEM_EVENTS_LIMIT = 100;
 
 export const DEFAULT_TARGET = {
   group: {filter: ""},
@@ -470,7 +471,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
     return this.datasourceSrv.get(trigger.datasource)
     .then(datasource => {
-      return datasource.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1]);
+      return datasource.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
     });
   }
 

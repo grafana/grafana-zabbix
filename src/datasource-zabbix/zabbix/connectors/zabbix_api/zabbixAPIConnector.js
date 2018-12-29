@@ -368,7 +368,7 @@ export class ZabbixAPIConnector {
     return this.request('trigger.get', params);
   }
 
-  getEvents(objectids, timeFrom, timeTo, showEvents) {
+  getEvents(objectids, timeFrom, timeTo, showEvents, limit) {
     var params = {
       output: 'extend',
       time_from: timeFrom,
@@ -376,8 +376,14 @@ export class ZabbixAPIConnector {
       objectids: objectids,
       select_acknowledges: 'extend',
       selectHosts: 'extend',
-      value: showEvents
+      value: showEvents,
     };
+
+    if (limit) {
+      params.limit = limit;
+      params.sortfield = 'clock';
+      params.sortorder = 'DESC';
+    }
 
     return this.request('event.get', params);
   }
