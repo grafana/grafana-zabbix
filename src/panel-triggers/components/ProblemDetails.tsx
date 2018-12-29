@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+import moment from 'moment';
 import * as utils from '../../datasource-zabbix/utils';
 import { Trigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag } from '../types';
 import { Modal, AckProblemData } from './Modal';
@@ -78,6 +79,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     const displayClass = this.state.show ? 'show' : '';
     const wideLayout = rootWidth > 1200;
     const compactStatusBar = rootWidth < 800 || problem.acknowledges && wideLayout && rootWidth < 1400;
+    const age = moment.unix(problem.lastchangeUnix).fromNow(true);
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
@@ -86,7 +88,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
             <div className="problem-value-container">
               <div className="problem-age">
                 <FAIcon icon="clock-o" />
-                <span>{problem.age}</span>
+                <span>{age}</span>
               </div>
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
