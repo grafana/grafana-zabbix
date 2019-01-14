@@ -4,21 +4,22 @@ import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
 import * as utils from '../../datasource-zabbix/utils';
-import { ProblemsPanelOptions, Trigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized } from '../types';
+import { isNewProblem } from '../utils';
+import { ProblemsPanelOptions, ZBXTrigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized } from '../types';
 import EventTag from './EventTag';
 import ProblemDetails from './ProblemDetails';
 import { AckProblemData } from './Modal';
 import GFHeartIcon from './GFHeartIcon';
 
 export interface ProblemListProps {
-  problems: Trigger[];
+  problems: ZBXTrigger[];
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
   timeRange?: GFTimeRange;
   pageSize?: number;
   fontSize?: number;
   getProblemEvents: (ids: string[]) => ZBXEvent[];
-  onProblemAck?: (problem: Trigger, data: AckProblemData) => void;
+  onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
   onColumnResize?: (newResized: RTResized) => void;
@@ -45,7 +46,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
     this.rootRef = ref;
   }
 
-  handleProblemAck = (problem: Trigger, data: AckProblemData) => {
+  handleProblemAck = (problem: ZBXTrigger, data: AckProblemData) => {
     return this.props.onProblemAck(problem, data);
   }
 
@@ -172,7 +173,7 @@ export class ProblemList extends PureComponent<ProblemListProps, ProblemListStat
   }
 }
 
-function SeverityCell(props: RTCell<Trigger>, problemSeverityDesc: TriggerSeverity[], markAckEvents?: boolean, ackEventColor?: string) {
+function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSeverity[], markAckEvents?: boolean, ackEventColor?: string) {
   const problem = props.original;
   let color: string;
   const severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(props.original.priority));
@@ -193,7 +194,7 @@ function SeverityCell(props: RTCell<Trigger>, problemSeverityDesc: TriggerSeveri
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
 
-function StatusCell(props: RTCell<Trigger>, okColor = DEFAULT_OK_COLOR, problemColor = DEFAULT_PROBLEM_COLOR, highlightNewerThan?: string) {
+function StatusCell(props: RTCell<ZBXTrigger>, okColor = DEFAULT_OK_COLOR, problemColor = DEFAULT_PROBLEM_COLOR, highlightNewerThan?: string) {
   const status = props.value === '0' ? 'RESOLVED' : 'PROBLEM';
   const color = props.value === '0' ? okColor : problemColor;
   let newProblem = false;
@@ -205,7 +206,7 @@ function StatusCell(props: RTCell<Trigger>, okColor = DEFAULT_OK_COLOR, problemC
   );
 }
 
-function StatusIconCell(props: RTCell<Trigger>, highlightNewerThan?: string) {
+function StatusIconCell(props: RTCell<ZBXTrigger>, highlightNewerThan?: string) {
   const status = props.value === '0' ? 'ok' : 'problem';
   let newProblem = false;
   if (highlightNewerThan) {
@@ -219,7 +220,7 @@ function StatusIconCell(props: RTCell<Trigger>, highlightNewerThan?: string) {
   return <GFHeartIcon status={status} className={className} />;
 }
 
-function GroupCell(props: RTCell<Trigger>) {
+function GroupCell(props: RTCell<ZBXTrigger>) {
   let groups = "";
   if (props.value && props.value.length) {
     groups = props.value.map(g => g.name).join(', ');
@@ -229,7 +230,7 @@ function GroupCell(props: RTCell<Trigger>) {
   );
 }
 
-function ProblemCell(props: RTCell<Trigger>) {
+function ProblemCell(props: RTCell<ZBXTrigger>) {
   const comments = props.original.comments;
   return (
     <div>
@@ -239,14 +240,14 @@ function ProblemCell(props: RTCell<Trigger>) {
   );
 }
 
-function AgeCell(props: RTCell<Trigger>) {
+function AgeCell(props: RTCell<ZBXTrigger>) {
   const problem = props.original;
   const timestamp = moment.unix(problem.lastchangeUnix);
   const age = timestamp.fromNow(true);
   return <span>{age}</span>;
 }
 
-function LastChangeCell(props: RTCell<Trigger>, customFormat?: string) {
+function LastChangeCell(props: RTCell<ZBXTrigger>, customFormat?: string) {
   const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
   const problem = props.original;
   const timestamp = moment.unix(problem.lastchangeUnix);
@@ -255,7 +256,7 @@ function LastChangeCell(props: RTCell<Trigger>, customFormat?: string) {
   return <span>{lastchange}</span>;
 }
 
-interface TagCellProps extends RTCell<Trigger> {
+interface TagCellProps extends RTCell<ZBXTrigger> {
   onTagClick: (tag: ZBXTag, datasource: string) => void;
 }
 
@@ -280,14 +281,4 @@ function CustomExpander(props: RTCell<any>) {
       <i className="fa fa-info-circle"></i>
     </span>
   );
-}
-
-function isNewProblem(problem: Trigger, highlightNewerThan: string): boolean {
-  try {
-    const highlightIntervalMs = utils.parseInterval(highlightNewerThan);
-    const durationSec = (Date.now() - problem.lastchangeUnix * 1000);
-    return durationSec < highlightIntervalMs;
-  } catch (e) {
-    return false;
-  }
 }

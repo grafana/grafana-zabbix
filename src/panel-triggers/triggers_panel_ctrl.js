@@ -5,11 +5,12 @@ import $ from 'jquery';
 import moment from 'moment';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from '../datasource-zabbix/utils';
-import {PanelCtrl} from 'grafana/app/plugins/sdk';
-import {triggerPanelOptionsTab} from './options_tab';
-import {triggerPanelTriggersTab} from './triggers_tab';
-import {migratePanelSchema, CURRENT_SCHEMA_VERSION} from './migrations';
+import { PanelCtrl } from 'grafana/app/plugins/sdk';
+import { triggerPanelOptionsTab } from './options_tab';
+import { triggerPanelTriggersTab } from './triggers_tab';
+import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
 import { ProblemList } from './components/Problems';
+import AlertList from './components/AlertList/AlertList';
 
 const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
 const PROBLEM_EVENTS_LIMIT = 100;
@@ -636,7 +637,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
           ctrl.addTagFilter(tag, datasource);
         }
       };
-      const problemsReactElem = React.createElement(ProblemList, problemsListProps);
+      // const problemsReactElem = React.createElement(ProblemList, problemsListProps);
+      const problemsReactElem = React.createElement(AlertList, problemsListProps);
       ReactDOM.render(problemsReactElem, elem.find('.panel-content')[0]);
     }
   }

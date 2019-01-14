@@ -1,18 +1,18 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../datasource-zabbix/utils';
-import { Trigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag } from '../types';
+import { ZBXTrigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag } from '../types';
 import { Modal, AckProblemData } from './Modal';
 import EventTag from './EventTag';
 import Tooltip from './Tooltip/Tooltip';
 import ProblemTimeline from './ProblemTimeline';
 import FAIcon from './FAIcon';
 
-interface ProblemDetailsProps extends RTRow<Trigger> {
+interface ProblemDetailsProps extends RTRow<ZBXTrigger> {
   rootWidth: number;
   timeRange: GFTimeRange;
-  getProblemEvents: (problem: Trigger) => Promise<ZBXEvent[]>;
-  onProblemAck?: (problem: Trigger, data: AckProblemData) => Promise<any> | any;
+  getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
+  onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: string) => void;
 }
 
@@ -55,7 +55,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
   }
 
   ackProblem = (data: AckProblemData) => {
-    const problem = this.props.original as Trigger;
+    const problem = this.props.original as ZBXTrigger;
     console.log('acknowledge: ', problem.lastEvent && problem.lastEvent.eventid, data);
     return this.props.onProblemAck(problem, data).then(result => {
       this.closeAckDialog();
@@ -74,7 +74,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
   }
 
   render() {
-    const problem = this.props.original as Trigger;
+    const problem = this.props.original as ZBXTrigger;
     const rootWidth = this.props.rootWidth;
     const displayClass = this.state.show ? 'show' : '';
     const wideLayout = rootWidth > 1200;
@@ -246,7 +246,7 @@ class ProblemHosts extends PureComponent<ProblemHostsProps> {
 }
 
 interface ProblemStatusBarProps {
-  problem: Trigger;
+  problem: ZBXTrigger;
   className?: string;
 }
 

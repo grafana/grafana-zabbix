@@ -72,7 +72,7 @@ export interface TriggerSeverity {
 
 export type TriggerColor = string;
 
-export interface Trigger {
+export interface ZBXTrigger {
   acknowledges?: ZBXAcknowledge[];
   alerts?: ZBXAlert[];
   age?: string;
@@ -104,6 +104,7 @@ export interface Trigger {
   status?: string;
   tags?: ZBXTag[];
   templateid?: string;
+  triggerid?: string;
   /** Whether the trigger can generate multiple problem events. */
   type?: string;
   url?: string;

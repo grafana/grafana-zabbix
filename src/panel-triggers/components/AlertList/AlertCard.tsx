@@ -1,0 +1,339 @@
+import React, { PureComponent, CSSProperties } from 'react';
+import classNames from 'classnames';
+import _ from 'lodash';
+import moment from 'moment';
+import { isNewProblem, formatLastChange } from '../../utils';
+import { ProblemsPanelOptions, ZBXTrigger, ZBXTag } from '../../types';
+import { AckProblemData, Modal } from '.././Modal';
+import EventTag from '../EventTag';
+import Tooltip from '.././Tooltip/Tooltip';
+
+interface AlertCardProps {
+  problem: ZBXTrigger;
+  panelOptions: ProblemsPanelOptions;
+  onTagClick?: (tag: ZBXTag, datasource: string) => void;
+  onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
+}
+
+interface AlertCardState {
+  showAckDialog: boolean;
+}
+
+export default class AlertCard extends PureComponent<AlertCardProps, AlertCardState> {
+  constructor(props) {
+    super(props);
+    this.state = { showAckDialog: false };
+  }
+
+  handleTagClick = (tag: ZBXTag) => {
+    if (this.props.onTagClick) {
+      this.props.onTagClick(tag, this.props.problem.datasource);
+    }
+  }
+
+  ackProblem = (data: AckProblemData) => {
+    const problem = this.props.problem;
+    console.log('acknowledge: ', problem.lastEvent && problem.lastEvent.eventid, data);
+    return this.props.onProblemAck(problem, data).then(result => {
+      this.closeAckDialog();
+    }).catch(err => {
+      console.log(err);
+      this.closeAckDialog();
+    });
+  }
+
+  showAckDialog = () => {
+    this.setState({ showAckDialog: true });
+  }
+
+  closeAckDialog = () => {
+    this.setState({ showAckDialog: false });
+  }
+
+  render() {
+    const { problem, panelOptions } = this.props;
+    const cardClass = classNames('alert-rule-item', 'zbx-trigger-card', { 'zbx-trigger-highlighted': panelOptions.highlightBackground });
+    const severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.priority));
+    const lastchange = formatLastChange(problem.lastchangeUnix, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat);
+    const age = moment.unix(problem.lastchangeUnix).fromNow(true);
+
+    let newProblem = false;
+    if (panelOptions.highlightNewerThan) {
+      newProblem = isNewProblem(problem, panelOptions.highlightNewerThan);
+    }
+    const blink = panelOptions.highlightNewEvents && newProblem;
+
+    const cardStyle: CSSProperties = {};
+    if (panelOptions.highlightBackground) {
+      cardStyle.background = severityDesc.color;
+    }
+
+    return (
+      <li className={cardClass} style={cardStyle}>
+        <AlertIcon problem={problem} color={severityDesc.color} highlightBackground={panelOptions.highlightBackground} blink={blink} />
+
+        <div className="alert-rule-item__body">
+          <div className="alert-rule-item__header">
+            <p className="alert-rule-item__name">
+              <span className="zabbix-trigger-name">{problem.description}</span>
+              {(panelOptions.hostField || panelOptions.hostTechNameField) && (
+                <AlertHost problem={problem} panelOptions={panelOptions} />
+              )}
+              {panelOptions.hostGroups && <AlertGroup problem={problem} panelOptions={panelOptions} />}
+
+              {panelOptions.showTags && (
+                <span className="zbx-trigger-tags">
+                  {problem.tags && problem.tags.map(tag =>
+                    <EventTag
+                      key={tag.tag + tag.value}
+                      tag={tag}
+                      highlight={tag.tag === problem.correlation_tag}
+                      onClick={this.handleTagClick}
+                    />
+                  )}
+                </span>
+              )}
+            </p>
+
+            <div className="alert-rule-item__text">
+              {panelOptions.statusField && <AlertStatus problem={problem} blink={blink} />}
+              {panelOptions.severityField && (
+                <AlertSeverity severityDesc={severityDesc} blink={blink} highlightBackground={panelOptions.highlightBackground} />
+              )}
+              <span className="alert-rule-item__time">
+                {panelOptions.ageField && "for " + age}
+              </span>
+              {panelOptions.descriptionField && !panelOptions.descriptionAtNewLine && (
+                <span className="zbx-description" dangerouslySetInnerHTML={{ __html: problem.comments }} />
+              )}
+            </div>
+
+            {panelOptions.descriptionField && panelOptions.descriptionAtNewLine && (
+              <div className="alert-rule-item__text" >
+                <span
+                  className="alert-rule-item__info zbx-description zbx-description--newline"
+                  dangerouslySetInnerHTML={{ __html: problem.comments }}
+                />
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        {panelOptions.datasources.length > 1 && (
+          <div className="alert-rule-item__time zabbix-trigger-source">
+            <span>
+              <i className="fa fa-database"></i>
+              {problem.datasource}
+            </span>
+          </div>
+        )}
+
+        <div className="alert-rule-item__time zbx-trigger-lastchange">
+          <span>{lastchange || "last change unknown"}</span>
+          <div className="trigger-info-block zbx-status-icons">
+            {problem.url && <a href={problem.url} target="_blank"><i className="fa fa-external-link"></i></a>}
+            {problem.state === '1' && (
+              <Tooltip placement="bottom" content={problem.error}>
+                <span><i className="fa fa-question-circle"></i></span>
+              </Tooltip>
+            )}
+            {problem.lastEvent && (
+              <AlertAcknowledgesButton problem={problem} onClick={this.showAckDialog} />
+            )}
+          </div>
+        </div>
+        <Modal withBackdrop={true}
+          isOpen={this.state.showAckDialog}
+          onSubmit={this.ackProblem}
+          onClose={this.closeAckDialog} />
+      </li>
+    );
+  }
+}
+
+interface AlertIconProps {
+  problem: ZBXTrigger;
+  color: string;
+  blink?: boolean;
+  highlightBackground?: boolean;
+}
+
+function AlertIcon(props: AlertIconProps) {
+  const { problem, color, blink, highlightBackground } = props;
+  const priority = Number(problem.priority);
+  let iconClass = '';
+  if (problem.value === '1') {
+    if (priority >= 3) {
+      iconClass = 'icon-gf-critical';
+    } else {
+      iconClass = 'icon-gf-warning';
+    }
+  } else {
+    iconClass = 'icon-gf-online';
+  }
+
+  const className = classNames('icon-gf', iconClass, { 'zabbix-trigger--blinked': blink });
+  const style: CSSProperties = {};
+  if (!highlightBackground) {
+    style.color = color;
+  }
+
+  return (
+    <div className="alert-rule-item__icon" style={style}>
+      <i className={className}></i>
+    </div>
+  );
+}
+
+interface AlertHostProps {
+  problem: ZBXTrigger;
+  panelOptions: ProblemsPanelOptions;
+}
+
+function AlertHost(props: AlertHostProps) {
+  const problem = props.problem;
+  const panel = props.panelOptions;
+  let host = "";
+  if (panel.hostField && panel.hostTechNameField) {
+    host = `${problem.host} (${problem.hostTechName})`;
+  } else if (panel.hostField || panel.hostTechNameField) {
+    host = panel.hostField ? problem.host : problem.hostTechName;
+  }
+  if (panel.hostProxy && problem.proxy) {
+    host = `${problem.proxy}: ${host}`;
+  }
+
+  return (
+    <span className="zabbix-hostname">
+      {problem.maintenance && <i className="fa fa-wrench zbx-maintenance-icon"></i>}
+      {host}
+    </span>
+  );
+}
+
+interface AlertGroupProps {
+  problem: ZBXTrigger;
+  panelOptions: ProblemsPanelOptions;
+}
+
+function AlertGroup(props: AlertGroupProps) {
+  const problem = props.problem;
+  const panel = props.panelOptions;
+  let groupNames = "";
+  if (panel.hostGroups) {
+    const groups = _.map(problem.groups, 'name').join(', ');
+    groupNames += `[ ${groups} ]`;
+  }
+
+  return (
+    <span className="zabbix-hostname">{groupNames}</span>
+  );
+}
+
+const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
+const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
+
+function AlertStatus(props) {
+  const { problem, okColor, problemColor, blink } = props;
+  const status = problem.value === '0' ? 'RESOLVED' : 'PROBLEM';
+  const color = problem.value === '0' ? okColor || DEFAULT_OK_COLOR : problemColor || DEFAULT_PROBLEM_COLOR;
+  const className = classNames(
+    'zbx-trigger-state',
+    { 'alert-state-critical': problem.value === '1' },
+    { 'alert-state-ok': problem.value === '0' },
+    { 'zabbix-trigger--blinked': blink }
+  );
+  return (
+    <span className={className}>
+      {status}
+    </span>
+  );
+}
+
+function AlertSeverity(props) {
+  const { severityDesc, highlightBackground, blink } = props;
+  const className = classNames('zbx-trigger-severity', { 'zabbix-trigger--blinked': blink });
+  const style: CSSProperties = {};
+  if (!highlightBackground) {
+    style.color = severityDesc.color;
+  }
+  return (
+    <span className={className} style={style}>
+      {severityDesc.severity}
+    </span>
+  );
+}
+
+interface AlertAcknowledgesButtonProps {
+  problem: ZBXTrigger;
+  onClick: (event?) => void;
+}
+
+class AlertAcknowledgesButton extends PureComponent<AlertAcknowledgesButtonProps> {
+  handleClick = (event) => {
+    this.props.onClick(event);
+  }
+
+  renderTooltipContent = () => {
+    return <AlertAcknowledges problem={this.props.problem} onClick={this.handleClick} />;
+  }
+
+  render() {
+    const { problem } = this.props;
+    return (
+      problem.acknowledges && problem.acknowledges.length ?
+        <Tooltip placement="bottom" content={this.renderTooltipContent}>
+          <span><i className="fa fa-comments"></i></span>
+        </Tooltip> :
+        <Tooltip placement="bottom" content="Acknowledge problem">
+          <span role="button" onClick={this.handleClick}><i className="fa fa-comments-o"></i></span>
+        </Tooltip>
+    );
+  }
+}
+
+interface AlertAcknowledgesProps {
+  problem: ZBXTrigger;
+  onClick: (event?) => void;
+}
+
+class AlertAcknowledges extends PureComponent<AlertAcknowledgesProps> {
+  handleClick = (event) => {
+    this.props.onClick(event);
+  }
+
+  render() {
+    const { problem } = this.props;
+    const ackRows = problem.acknowledges && problem.acknowledges.map(ack => {
+      return (
+        <tr key={ack.acknowledgeid}>
+          <td>{ack.time}</td>
+          <td>{ack.user}</td>
+          <td>{ack.message}</td>
+        </tr>
+      );
+    });
+    return (
+      <div>
+        <div className="ack-add-button">
+          <button id="add-acknowledge-btn" className="btn btn-mini btn-inverse gf-form-button" onClick={this.handleClick}>
+            <i className="fa fa-plus"></i>
+          </button>
+        </div>
+        <table className="table">
+          <thead>
+            <tr>
+              <th className="ack-time">Time</th>
+              <th className="ack-user">User</th>
+              <th className="ack-comments">Comments</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ackRows}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+}
