@@ -66,7 +66,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
 
     const cardStyle: CSSProperties = {};
     if (panelOptions.highlightBackground) {
-      cardStyle.background = severityDesc.color;
+      cardStyle.backgroundColor = severityDesc.color;
     }
 
     return (

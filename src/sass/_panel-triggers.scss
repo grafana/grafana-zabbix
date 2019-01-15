@@ -119,6 +119,7 @@
 
 .zbx-trigger-highlighted {
   color: $zbx-text-highlighted;
+  background: linear-gradient(135deg, $zbx-card-background-start, $zbx-card-background-stop);
 
   .alert-rule-item__body,
   .alert-rule-item__header,
