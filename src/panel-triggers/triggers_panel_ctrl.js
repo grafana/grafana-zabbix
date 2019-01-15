@@ -645,6 +645,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
 }
 
 TriggerPanelCtrl.templateUrl = 'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/partials/module.html';
+// TriggerPanelCtrl.scrollable = true;
 
 function filterTriggers(triggers, triggerFilter) {
   if (utils.isRegex(triggerFilter)) {

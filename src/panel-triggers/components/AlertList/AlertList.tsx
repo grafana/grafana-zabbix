@@ -59,33 +59,32 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
     const { problems, panelOptions } = this.props;
     const currentProblems = this.getCurrentProblems(this.state.page);
 
-    return [
+    return (
       <div className="triggers-panel-container" key="alertListContainer">
-        <div className="triggers-panel-scroll">
-          <section className="card-section card-list-layout-list">
-            <ol className="alert-rule-list">
-              {currentProblems.map(problem =>
-                <AlertCard
-                  key={problem.triggerid}
-                  problem={problem}
-                  panelOptions={panelOptions}
-                  onTagClick={this.handleTagClick}
-                  onProblemAck={this.handleProblemAck}
-                />
-              )}
-            </ol>
-          </section>
+        <section className="card-section card-list-layout-list">
+          <ol className="alert-rule-list">
+            {currentProblems.map(problem =>
+              <AlertCard
+                key={problem.triggerid}
+                problem={problem}
+                panelOptions={panelOptions}
+                onTagClick={this.handleTagClick}
+                onProblemAck={this.handleProblemAck}
+              />
+            )}
+          </ol>
+        </section>
+
+        <div className="triggers-panel-footer" key="alertListFooter">
+          <PaginationControl
+            itemsLength={problems.length}
+            pageSize={this.props.pageSize}
+            pageIndex={this.state.page}
+            onPageChange={this.handlePageChange}
+          />
         </div>
-      </div>,
-      <div className="triggers-panel-footer" key="alertListFooter">
-        <PaginationControl
-          itemsLength={problems.length}
-          pageSize={this.props.pageSize}
-          pageIndex={this.state.page}
-          onPageChange={this.handlePageChange}
-        />
       </div>
-    ];
+    );
   }
 }
 

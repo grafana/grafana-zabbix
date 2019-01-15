@@ -4,6 +4,41 @@
 
 .triggers-panel-container {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .card-section {
+    padding: 2px;
+    margin-bottom: 0.4rem;
+    overflow: auto;
+
+    .alert-rule-list {
+      .alert-rule-item {
+        .alert-rule-item__text {
+          display: flex;
+          max-height: 1.6em;
+          overflow: hidden;
+          padding-right: 1em;
+
+          &.zbx-description--newline {
+            max-height: unset;
+          }
+
+          .zbx-description {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          span {
+            padding-right: 0.4em;
+          }
+
+        }
+      }
+    }
+  }
 
   .zabbix-trigger-name {
     font-weight: bold;
@@ -11,14 +46,18 @@
 
   .zabbix-hostname {
     color: $gray-2;
-    margin-left: 1rem;
+    margin-left: 1em;
     font-weight: 500;
+
+    i {
+      padding-right: 0.2em;
+    }
   }
 
   .zbx-description {
     color: $gray-3;
     font-weight: normal;
-    margin-left: 0.6rem;
+    margin-left: 0.6em;
 
     &--newline {
       margin-left: 0rem;
@@ -51,8 +90,9 @@
     margin-right: 1.5rem;
     margin-left: 1rem;
     font-weight: 500;
-    .gicon-datasources {
-      opacity: 0.4;
+
+    i {
+      padding-right: 0.4em;
     }
   }
 
@@ -109,10 +149,10 @@
 }
 
 .triggers-panel-footer {
+  margin-top: auto;
   text-align: center;
   font-size: 90%;
   line-height: 2px;
-  padding-top: 4px;
 
   ul {
     position: relative;
