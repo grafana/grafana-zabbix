@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+import classNames from 'classnames';
 import BodyPortal from './Portal';
 import { Manager, Popper as ReactPopper, Reference } from 'react-popper';
 import Transition from 'react-transition-group/Transition';
@@ -21,12 +22,14 @@ interface Props {
   placement?: any;
   content: string | ((props: any) => JSX.Element);
   refClassName?: string;
+  popperClassName?: string;
 }
 
 class Popper extends PureComponent<Props> {
   render() {
     const { children, renderContent, show, placement, refClassName } = this.props;
     const { content } = this.props;
+    const popperClassName = classNames('popper', this.props.popperClassName);
 
     return (
       <Manager>
@@ -51,7 +54,7 @@ class Popper extends PureComponent<Props> {
                         ...transitionStyles[transitionState],
                       }}
                       data-placement={placement}
-                      className="popper"
+                      className={popperClassName}
                     >
                       <div className="popper__background">
                         {renderContent(content)}

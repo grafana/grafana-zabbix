@@ -182,10 +182,8 @@
 }
 
 .ack-tooltip {
-  .drop-content {
-    // Rewrite tooltip width
-    max-width: 70rem !important;
-    min-width: 30rem !important;
+  &.popper {
+    max-width: 800px;
   }
 
   .ack-comments {
@@ -193,25 +191,13 @@
   }
 
   .ack-add-button {
-    padding-top: 1rem;
+    padding-top: 0.4rem;
+    text-align: left;
   }
 
   table td, th {
     padding-right: 1rem;
-  }
-
-  .ack-input-group {
-    padding-top: 1rem;
-
-    input {
-      border: 1px solid;
-      border-radius: 2px;
-      width: 50%;
-    }
-
-    button {
-      margin-left: 1rem;
-    }
+    text-align: left;
   }
 }
 

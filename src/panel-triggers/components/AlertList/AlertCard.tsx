@@ -284,7 +284,7 @@ class AlertAcknowledgesButton extends PureComponent<AlertAcknowledgesButtonProps
     const { problem } = this.props;
     return (
       problem.acknowledges && problem.acknowledges.length ?
-        <Tooltip placement="bottom" content={this.renderTooltipContent}>
+        <Tooltip placement="bottom" popperClassName="ack-tooltip" content={this.renderTooltipContent}>
           <span><i className="fa fa-comments"></i></span>
         </Tooltip> :
         <Tooltip placement="bottom" content="Acknowledge problem">
@@ -316,12 +316,7 @@ class AlertAcknowledges extends PureComponent<AlertAcknowledgesProps> {
       );
     });
     return (
-      <div>
-        <div className="ack-add-button">
-          <button id="add-acknowledge-btn" className="btn btn-mini btn-inverse gf-form-button" onClick={this.handleClick}>
-            <i className="fa fa-plus"></i>
-          </button>
-        </div>
+      <div className="ack-tooltip">
         <table className="table">
           <thead>
             <tr>
@@ -334,6 +329,11 @@ class AlertAcknowledges extends PureComponent<AlertAcknowledgesProps> {
             {ackRows}
           </tbody>
         </table>
+        <div className="ack-add-button">
+          <button id="add-acknowledge-btn" className="btn btn-mini btn-inverse gf-form-button" onClick={this.handleClick}>
+            <i className="fa fa-plus"></i>
+          </button>
+        </div>
       </div>
     );
   }
