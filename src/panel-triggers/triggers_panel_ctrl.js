@@ -9,7 +9,7 @@ import { PanelCtrl } from 'grafana/app/plugins/sdk';
 import { triggerPanelOptionsTab } from './options_tab';
 import { triggerPanelTriggersTab } from './triggers_tab';
 import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
-import { ProblemList } from './components/Problems';
+import ProblemList from './components/Problems';
 import AlertList from './components/AlertList/AlertList';
 
 const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
@@ -55,9 +55,10 @@ export const PANEL_DEFAULTS = {
   hostsInMaintenance: true,
   showTriggers: 'all triggers',
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
-  showEvents: { text: 'Problems', value: '1' },
+  showEvents: { text: 'Problems', value: 1 },
   limit: 100,
   // View options
+  layout: 'table',
   fontSize: '100%',
   pageSize: 10,
   highlightBackground: false,
@@ -637,8 +638,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
           ctrl.addTagFilter(tag, datasource);
         }
       };
-      // const problemsReactElem = React.createElement(ProblemList, problemsListProps);
-      const problemsReactElem = React.createElement(AlertList, problemsListProps);
+
+      let problemsReactElem;
+      if (panel.layout === 'list') {
+        problemsReactElem = React.createElement(AlertList, problemsListProps);
+      } else {
+        problemsReactElem = React.createElement(ProblemList, problemsListProps);
+      }
       ReactDOM.render(problemsReactElem, elem.find('.panel-content')[0]);
     }
   }

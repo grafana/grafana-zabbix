@@ -37,7 +37,8 @@
       checked="ctrl.panel.statusField"
       on-change="ctrl.render()">
     </gf-form-switch>
-    <gf-form-switch class="gf-form"
+    <gf-form-switch ng-if="ctrl.panel.layout === 'table'"
+      class="gf-form"
       label-class="width-9"
       label="Status Icon"
       checked="ctrl.panel.statusIcon"
@@ -55,13 +56,15 @@
       checked="ctrl.panel.ageField"
       on-change="ctrl.render()">
     </gf-form-switch>
-    <gf-form-switch class="gf-form"
+    <gf-form-switch ng-if="ctrl.panel.layout === 'list'"
+      class="gf-form"
       label-class="width-9"
       label="Description"
       checked="ctrl.panel.descriptionField"
       on-change="ctrl.render()">
     </gf-form-switch>
-    <gf-form-switch class="gf-form" ng-if="ctrl.panel.descriptionField"
+    <gf-form-switch ng-if="ctrl.panel.descriptionField && ctrl.panel.layout === 'list'"
+      class="gf-form"
       label-class="width-9"
       label="At the new line"
       checked="ctrl.panel.descriptionAtNewLine"
@@ -118,6 +121,15 @@
 
   <div class="section gf-form-group">
     <h5 class="section-heading">View options</h5>
+    <div class="gf-form">
+      <label class="gf-form-label width-10">Layout</label>
+      <div class="gf-form-select-wrapper max-width-8">
+        <select class="gf-form-input"
+          ng-model="ctrl.panel.layout"
+          ng-options="opt.value as opt.text for opt in editor.layouts"
+          ng-change="ctrl.render()"></select>
+      </div>
+    </div>
     <div class="gf-form">
       <label class="gf-form-label width-10">Font size</label>
       <div class="gf-form-select-wrapper max-width-8">

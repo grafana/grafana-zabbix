@@ -30,7 +30,7 @@ interface ProblemListState {
   page: number;
 }
 
-export class ProblemList extends PureComponent<ProblemListProps, ProblemListState> {
+export default class ProblemList extends PureComponent<ProblemListProps, ProblemListState> {
   rootWidth: number;
   rootRef: any;
 
