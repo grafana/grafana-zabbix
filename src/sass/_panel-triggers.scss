@@ -19,6 +19,7 @@
           display: flex;
           max-height: 1.6em;
           overflow: hidden;
+          align-items: center;
           padding-right: 1em;
 
           &.zbx-description--newline {
@@ -35,6 +36,56 @@
             padding-right: 0.4em;
           }
 
+        }
+      }
+
+      @for $i from 8 through 9 {
+        &.font-size--#{$i * 10} {
+          &,
+          .alert-rule-item__name {
+            font-size: 1% * $i * 10;
+          }
+
+          .alert-rule-item__icon {
+            width: unset;
+            font-size: 1% * $i * 10;
+          }
+
+          .alert-rule-item__time,
+          .alert-rule-item__text,
+          .zabbix-hostname {
+            font-size: 1% * $i * 10 * 0.8;
+          }
+
+          .zbx-trigger-tags .label-tag {
+            font-size: 1% * $i * 10 * 0.6;
+            padding: 0.3em 0.3em;
+          }
+        }
+      }
+
+      @for $i from 11 through 25 {
+        &.font-size--#{$i * 10} {
+          &,
+          .alert-rule-item__name {
+            font-size: 1% * $i * 10;
+          }
+
+          .alert-rule-item__icon {
+            width: unset;
+            font-size: 1% * $i * 10;
+          }
+
+          .alert-rule-item__time,
+          .alert-rule-item__text,
+          .zabbix-hostname {
+            font-size: 1% * $i * 10 * 0.8;
+          }
+
+          .zbx-trigger-tags .label-tag {
+            font-size: 1% * $i * 10 * 0.6;
+            padding: 0.3em 0.3em;
+          }
         }
       }
     }

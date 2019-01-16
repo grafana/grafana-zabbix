@@ -58,11 +58,14 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
   render() {
     const { problems, panelOptions } = this.props;
     const currentProblems = this.getCurrentProblems(this.state.page);
+    let fontSize = parseInt(panelOptions.fontSize.slice(0, panelOptions.fontSize.length - 1), 10);
+    fontSize = fontSize && fontSize !== 100 ? fontSize : null;
+    const alertListClass = classNames('alert-rule-list', { [`font-size--${fontSize}`]: fontSize });
 
     return (
       <div className="triggers-panel-container" key="alertListContainer">
         <section className="card-section card-list-layout-list">
-          <ol className="alert-rule-list">
+          <ol className={alertListClass}>
             {currentProblems.map(problem =>
               <AlertCard
                 key={problem.triggerid}
