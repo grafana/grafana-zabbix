@@ -99,12 +99,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.datasources = {};
     this.range = {};
 
-    // this.panel.schemaVersion = CURRENT_SCHEMA_VERSION;
     this.panel = migratePanelSchema(this.panel);
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
     this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
-    // console.log(this.available_datasources);
     if (this.panel.datasources.length === 0) {
       this.panel.datasources.push(this.available_datasources[0]);
     }
@@ -661,7 +659,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
 }
 
 TriggerPanelCtrl.templateUrl = 'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/partials/module.html';
-// TriggerPanelCtrl.scrollable = true;
 
 function filterTriggers(triggers, triggerFilter) {
   if (utils.isRegex(triggerFilter)) {
