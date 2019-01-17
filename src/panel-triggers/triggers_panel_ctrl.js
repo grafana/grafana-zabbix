@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
-import $ from 'jquery';
 import moment from 'moment';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from '../datasource-zabbix/utils';
@@ -193,7 +192,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       // Notify panel that request is finished
       this.loading = false;
       this.setTimeQueryEnd();
-      return this.renderTriggers(triggers)
+      return this.renderTriggers(triggers);
     })
     .then(() => {
       this.$timeout(() => {
@@ -626,7 +625,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
 
       const pageSize = panel.pageSize || 10;
-      const loading = ctrl.loading && (!ctrl.triggerList || !ctrl.triggerList.length)
+      const loading = ctrl.loading && (!ctrl.triggerList || !ctrl.triggerList.length);
 
       let panelOptions = {};
       for (let prop in PANEL_DEFAULTS) {

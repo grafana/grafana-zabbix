@@ -78,8 +78,8 @@ describe('TriggerPanelCtrl', () => {
     it('should rewrite default empty target', () => {
       ctx.scope.panel = {
         targets: [{
-            "target": "",
-            "refId": "A"
+          "target": "",
+          "refId": "A"
         }],
       };
       let panelCtrl = createPanelCtrl();

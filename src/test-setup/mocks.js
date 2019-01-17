@@ -13,7 +13,7 @@ export let datasourceSrvMock = {
 
 export let timeSrvMock = {
   timeRange: jest.fn().mockReturnValue({ from: '', to: '' })
-}
+};
 
 export let zabbixAlertingSrvMock = {
   setPanelAlertState: jest.fn(),
