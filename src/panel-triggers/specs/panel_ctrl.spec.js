@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import mocks from '../../test-setup/mocks';
 import {TriggerPanelCtrl} from '../triggers_panel_ctrl';
 import {PANEL_DEFAULTS, DEFAULT_TARGET} from '../triggers_panel_ctrl';
 // import { create } from 'domain';
@@ -15,7 +16,8 @@ describe('TriggerPanelCtrl', () => {
       replaceTemplateVars: () => {},
       zabbix: {
         getTriggers: jest.fn().mockReturnValue([generateTrigger("1"), generateTrigger("1")]),
-        getAcknowledges: jest.fn().mockReturnValue(Promise.resolve([]))
+        getAcknowledges: jest.fn().mockReturnValue(Promise.resolve([])),
+        getEventAlerts: jest.fn().mockResolvedValue([]),
       }
     };
 
@@ -29,7 +31,7 @@ describe('TriggerPanelCtrl', () => {
       },
       get: () => Promise.resolve(zabbixDSMock)
     };
-    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
+    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {}, mocks.timeSrvMock);
 
     const getTriggersResp = [
       [
@@ -72,6 +74,19 @@ describe('TriggerPanelCtrl', () => {
         'zabbix_default'
       ]);
     });
+
+    it('should rewrite default empty target', () => {
+      ctx.scope.panel = {
+        targets: [{
+            "target": "",
+            "refId": "A"
+        }],
+      };
+      let panelCtrl = createPanelCtrl();
+      expect(panelCtrl.available_datasources).toEqual([
+        'zabbix_default', 'zabbix'
+      ]);
+    });
   });
 
   describe('When refreshing panel', () => {
@@ -90,9 +105,7 @@ describe('TriggerPanelCtrl', () => {
         expect(formattedTrigger.host).toBe('backend01');
         expect(formattedTrigger.hostTechName).toBe('backend01_tech');
         expect(formattedTrigger.datasource).toBe('zabbix_default');
-        expect(formattedTrigger.severity).toBe('Disaster');
         expect(formattedTrigger.maintenance).toBe(true);
-        expect(formattedTrigger.age).toBeTruthy();
         expect(formattedTrigger.lastchange).toBeTruthy();
         done();
       });

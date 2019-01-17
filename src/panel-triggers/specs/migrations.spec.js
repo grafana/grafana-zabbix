@@ -1,10 +1,12 @@
 import _ from 'lodash';
+import mocks from '../../test-setup/mocks';
 import {TriggerPanelCtrl} from '../triggers_panel_ctrl';
 import {DEFAULT_TARGET, DEFAULT_SEVERITY, PANEL_DEFAULTS} from '../triggers_panel_ctrl';
 import {CURRENT_SCHEMA_VERSION} from '../migrations';
 
 describe('Triggers Panel schema migration', () => {
   let ctx = {};
+  let updatePanelCtrl;
   let datasourceSrvMock = {
     getMetricSources: () => {
       return [{ meta: {id: 'alexanderzobnin-zabbix-datasource'}, value: {}, name: 'zabbix_default' }];
@@ -40,10 +42,12 @@ describe('Triggers Panel schema migration', () => {
         }
       }
     };
+
+    updatePanelCtrl = (scope) => new TriggerPanelCtrl(scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {}, mocks.timeSrvMock);
   });
 
   it('should update old panel schema', () => {
-    let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
+    let updatedPanelCtrl = updatePanelCtrl(ctx.scope);
 
     let expected = _.defaultsDeep({
       schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -51,6 +55,7 @@ describe('Triggers Panel schema migration', () => {
       targets: {
         'zabbix': DEFAULT_TARGET
       },
+      ageField: true,
       statusField: false,
       severityField: false,
       limit: 10,
@@ -63,7 +68,7 @@ describe('Triggers Panel schema migration', () => {
 
   it('should create new panel with default schema', () => {
     ctx.scope.panel = {};
-    let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, {}, datasourceSrvMock, {}, {}, {});
+    let updatedPanelCtrl = updatePanelCtrl(ctx.scope);
 
     let expected = _.defaultsDeep({
       schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -79,7 +84,7 @@ describe('Triggers Panel schema migration', () => {
     ctx.scope.panel = {
       targets: [{}]
     };
-    let updatedPanelCtrl = new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {});
+    let updatedPanelCtrl = updatePanelCtrl(ctx.scope);
 
     let expected = _.defaultsDeep({
       datasources: ['zabbix_default'],

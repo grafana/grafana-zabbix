@@ -100,14 +100,17 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.datasources = {};
     this.range = {};
 
+    // this.panel.schemaVersion = CURRENT_SCHEMA_VERSION;
     this.panel = migratePanelSchema(this.panel);
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
     this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
+    // console.log(this.available_datasources);
     if (this.panel.datasources.length === 0) {
       this.panel.datasources.push(this.available_datasources[0]);
     }
-    if (_.isEmpty(this.panel.targets)) {
+    if (this.isEmptyTargets()) {
+      console.log("isEmptyTargets");
       this.panel.targets[this.panel.datasources[0]] = DEFAULT_TARGET;
     }
 
@@ -149,6 +152,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return _.filter(this.datasourceSrv.getMetricSources(), datasource => {
       return datasource.meta.id === ZABBIX_DS_ID && datasource.value;
     });
+  }
+
+  isEmptyTargets() {
+    const emptyTargets = _.isEmpty(this.panel.targets);
+    const emptyTarget = (this.panel.targets.length === 1 && (
+      _.isEmpty(this.panel.targets[0]) ||
+      this.panel.targets[0].target === ""
+    ));
+    return emptyTargets || emptyTarget;
   }
 
   onInitEditMode() {

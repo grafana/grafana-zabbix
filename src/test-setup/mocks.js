@@ -11,6 +11,10 @@ export let datasourceSrvMock = {
   getAll: jest.fn()
 };
 
+export let timeSrvMock = {
+  timeRange: jest.fn().mockReturnValue({ from: '', to: '' })
+}
+
 export let zabbixAlertingSrvMock = {
   setPanelAlertState: jest.fn(),
   removeZabbixThreshold: jest.fn(),
@@ -20,6 +24,7 @@ const defaultExports = {
   templateSrvMock,
   backendSrvMock,
   datasourceSrvMock,
+  timeSrvMock,
   zabbixAlertingSrvMock
 };
 

@@ -2,7 +2,7 @@ import _ from 'lodash';
 import {DEFAULT_TARGET} from './triggers_panel_ctrl';
 
 // Actual schema version
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 export function migratePanelSchema(panel) {
   if (isEmptyPanel(panel)) {
@@ -26,7 +26,6 @@ export function migratePanelSchema(panel) {
   if (schemaVersion < 3) {
     // delete old props
     delete panel.lastChangeField;
-    delete panel.ageField;
     delete panel.infoField;
     delete panel.scroll;
     delete panel.hideHostsInMaintenance;
@@ -37,6 +36,12 @@ export function migratePanelSchema(panel) {
       _.each(panel.targets, (target) => {
         _.defaultsDeep(target, DEFAULT_TARGET);
       });
+    }
+  }
+
+  if (schemaVersion < 6) {
+    if (panel.showEvents && panel.showEvents.value === '1') {
+      panel.showEvents.value = 1;
     }
   }
 
