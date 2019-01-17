@@ -109,7 +109,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
       this.panel.datasources.push(this.available_datasources[0]);
     }
     if (this.isEmptyTargets()) {
-      console.log("isEmptyTargets");
       this.panel.targets[this.panel.datasources[0]] = DEFAULT_TARGET;
     }
 

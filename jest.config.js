@@ -23,5 +23,10 @@ module.exports = {
     "^.+\\.(ts|tsx)$": "ts-jest"
   },
   "coverageDirectory": "<rootDir>/tmp/coverage/",
-  "collectCoverage": false
+  "collectCoverage": false,
+  "globals": {
+    "ts-jest": {
+      "tsConfig": "tsconfig.test.json"
+    }
+  }
 };
