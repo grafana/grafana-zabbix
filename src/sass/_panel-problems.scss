@@ -36,34 +36,34 @@
 
     .rt-tr-group {
       flex: 0 0 auto;
-      border-bottom: solid 2px $problems-border-color;
-      border-left: solid 2px transparent;
+      border-bottom: solid 1px $problems-border-color;
+      // border-left: solid 2px transparent;
 
       &:last-child {
-        border-bottom: solid 2px $problems-border-color;
+        border-bottom: solid 1px $problems-border-color;
       }
 
       &:hover {
-        border-left: solid 2px $problems-table-row-hovered-shadow-color;
+        // border-left: solid 2px $problems-table-row-hovered-shadow-color;
 
         .rt-tr {
           background: $problems-table-row-hovered;
-          box-shadow: $problems-table-row-hovered-shadow;
+          // box-shadow: $problems-table-row-hovered-shadow;
           z-index: 1;
         }
 
         .rt-tr.-even {
-          margin-left: 0;
+          // margin-left: 0;
           background: $problems-table-row-hovered;
 
           .rt-td:first-child {
-            margin-left: 0;
+            // margin-left: 0;
           }
         }
 
         .problem-details-container {
-          border-left-color: $problems-table-row-hovered-shadow-color;
-          box-shadow: 0px 0px 5px rgba($blue, 0.5);
+          // border-left-color: $problems-table-row-hovered-shadow-color;
+          // box-shadow: 0px 0px 5px rgba($blue, 0.5);
         }
       }
 
@@ -81,9 +81,9 @@
         &.-even {
           background: $problems-table-stripe;
 
-          margin-left: -2px;
+          // margin-left: -2px;
           .rt-td:first-child {
-            margin-left: 2px;
+            // margin-left: 2px;
           }
         }
       }
@@ -237,13 +237,14 @@
 
     .problem-details-container {
       display: flex;
+      padding-top: 4px;
       background-color: $problem-details-background;
-      border: 1px solid $problems-border-color;
-      border-left: 2px solid $problem-details-background;
-      margin-left: -2px;
+      // border: 1px solid $problems-border-color;
+      // border-left: 2px solid $problem-details-background;
+      // margin-left: -2px;
       border-bottom-width: 0px;
 
-      max-height: 0;
+      max-height: 0px;
       opacity: 0;
       overflow: hidden;
       // transition: all 0.3s ease-out;
@@ -254,7 +255,7 @@
       &.show {
         max-height: 20rem;
         opacity: 1;
-        box-shadow: inset -1px 2px 8px $problem-container-shadow;
+        box-shadow: inset -3px 3px 10px $problem-container-shadow;
       }
 
       .problem-details-row {

@@ -9,9 +9,9 @@ $zbx-card-background-stop: rgba(38, 38, 40, 0.8);
 $action-button-color: $blue-dark;
 $action-button-text-color: $gray-4;
 
-$problems-border-color: #1b1b1b;
+$problems-border-color: #353535;
 $problems-table-stripe: $dark-3;
-$problems-table-row-hovered: darken($problems-table-stripe, 2%);
+$problems-table-row-hovered: lighten($problems-table-stripe, 4%);
 $problems-table-row-hovered-shadow-color: rgba($blue, 0.5);
 $problems-table-row-hovered-shadow: 0px 0px 8px $problems-table-row-hovered-shadow-color;
 $problem-details-background: $dark-3;
