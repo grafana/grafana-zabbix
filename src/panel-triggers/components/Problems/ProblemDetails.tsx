@@ -1,12 +1,14 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
-import * as utils from '../../datasource-zabbix/utils';
-import { ZBXTrigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag } from '../types';
-import { Modal, AckProblemData } from './Modal';
-import EventTag from './EventTag';
-import Tooltip from './Tooltip/Tooltip';
+import * as utils from '../../../datasource-zabbix/utils';
+import { ZBXTrigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag } from '../../types';
+import { Modal, AckProblemData } from '../Modal';
+import EventTag from '../EventTag';
+import Tooltip from '../Tooltip/Tooltip';
+import ProblemStatusBar from './ProblemStatusBar';
+import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import FAIcon from './FAIcon';
+import FAIcon from '../FAIcon';
 
 interface ProblemDetailsProps extends RTRow<ZBXTrigger> {
   rootWidth: number;
@@ -192,27 +194,6 @@ class ProblemItems extends PureComponent<ProblemItemsProps> {
   }
 }
 
-interface AcknowledgesListProps {
-  acknowledges: ZBXAcknowledge[];
-}
-
-function AcknowledgesList(props: AcknowledgesListProps) {
-  const { acknowledges } = props;
-  return (
-    <div className="problem-ack-list">
-      <div className="problem-ack-col problem-ack-time">
-        {acknowledges.map(ack => <span key={ack.acknowledgeid} className="problem-ack-time">{ack.time}</span>)}
-      </div>
-      <div className="problem-ack-col problem-ack-user">
-        {acknowledges.map(ack => <span key={ack.acknowledgeid} className="problem-ack-user">{ack.user}</span>)}
-      </div>
-      <div className="problem-ack-col problem-ack-message">
-        {acknowledges.map(ack => <span key={ack.acknowledgeid} className="problem-ack-message">{ack.message}</span>)}
-      </div>
-    </div>
-  );
-}
-
 interface ProblemGroupsProps {
   groups: ZBXGroup[];
   className?: string;
@@ -243,61 +224,6 @@ class ProblemHosts extends PureComponent<ProblemHostsProps> {
       </div>
     ));
   }
-}
-
-interface ProblemStatusBarProps {
-  problem: ZBXTrigger;
-  className?: string;
-}
-
-function ProblemStatusBar(props: ProblemStatusBarProps) {
-  const { problem, className } = props;
-  const multiEvent = problem.type === '1';
-  const link = problem.url && problem.url !== '';
-  const maintenance = problem.maintenance;
-  const manualClose = problem.manual_close === '1';
-  const error = problem.error && problem.error !== '';
-  const stateUnknown = problem.state === '1';
-  const closeByTag = problem.correlation_mode === '1';
-  const actions = problem.alerts && problem.alerts.length !== 0;
-  const actionMessage = problem.alerts ? problem.alerts[0].message : '';
-
-  return (
-    <div className={`problem-statusbar ${className || ''}`}>
-      <ProblemStatusBarItem icon="wrench" fired={maintenance} tooltip="Host maintenance" />
-      <ProblemStatusBarItem icon="globe" fired={link} link={link && problem.url} tooltip="External link" />
-      <ProblemStatusBarItem icon="bullhorn" fired={multiEvent} tooltip="Trigger generates multiple problem events" />
-      <ProblemStatusBarItem icon="tag" fired={closeByTag} tooltip={`OK event closes problems matched to tag: ${problem.correlation_tag}`} />
-      <ProblemStatusBarItem icon="circle-o-notch" fired={actions} tooltip={actionMessage} />
-      <ProblemStatusBarItem icon="question-circle" fired={stateUnknown} tooltip="Current trigger state is unknown" />
-      <ProblemStatusBarItem icon="warning" fired={error} tooltip={problem.error} />
-      <ProblemStatusBarItem icon="window-close-o" fired={manualClose} tooltip="Manual close problem" />
-    </div>
-  );
-}
-
-interface ProblemStatusBarItemProps {
-  icon: string;
-  fired?: boolean;
-  link?: string;
-  tooltip?: string;
-}
-
-function ProblemStatusBarItem(props: ProblemStatusBarItemProps) {
-  const { fired, icon, link, tooltip } = props;
-  let item = (
-    <div className={`problem-statusbar-item ${fired ? 'fired' : 'muted'}`}>
-      <FAIcon icon={icon} />
-    </div>
-  );
-  if (tooltip && fired) {
-    item = (
-      <Tooltip placement="bottom" content={tooltip}>
-        {item}
-      </Tooltip>
-    );
-  }
-  return link ? <a href={link} target="_blank">{item}</a> : item;
 }
 
 interface ProblemActionButtonProps {

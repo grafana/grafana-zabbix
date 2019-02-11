@@ -3,13 +3,13 @@ import ReactTable from 'react-table';
 import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
-import * as utils from '../../datasource-zabbix/utils';
-import { isNewProblem } from '../utils';
-import { ProblemsPanelOptions, ZBXTrigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized } from '../types';
-import EventTag from './EventTag';
+import * as utils from '../../../datasource-zabbix/utils';
+import { isNewProblem } from '../../utils';
+import { ProblemsPanelOptions, ZBXTrigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized } from '../../types';
+import EventTag from '../EventTag';
 import ProblemDetails from './ProblemDetails';
-import { AckProblemData } from './Modal';
-import GFHeartIcon from './GFHeartIcon';
+import { AckProblemData } from '../Modal';
+import GFHeartIcon from '../GFHeartIcon';
 
 export interface ProblemListProps {
   problems: ZBXTrigger[];

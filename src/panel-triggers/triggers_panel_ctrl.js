@@ -8,7 +8,7 @@ import { PanelCtrl } from 'grafana/app/plugins/sdk';
 import { triggerPanelOptionsTab } from './options_tab';
 import { triggerPanelTriggersTab } from './triggers_tab';
 import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
-import ProblemList from './components/Problems';
+import ProblemList from './components/Problems/Problems';
 import AlertList from './components/AlertList/AlertList';
 
 const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
@@ -23,6 +23,8 @@ export const DEFAULT_TARGET = {
   proxy: {filter: ""},
 };
 
+export const getDefaultTarget = () => DEFAULT_TARGET;
+
 export const DEFAULT_SEVERITY = [
   { priority: 0, severity: 'Not classified',  color: 'rgb(108, 108, 108)', show: true},
   { priority: 1, severity: 'Information',     color: 'rgb(120, 158, 183)', show: true},
@@ -31,6 +33,8 @@ export const DEFAULT_SEVERITY = [
   { priority: 4, severity: 'High',            color: 'rgb(255, 101, 72)', show: true},
   { priority: 5, severity: 'Disaster',        color: 'rgb(215, 0, 0)', show: true},
 ];
+
+export const getDefaultSeverity = () => DEFAULT_SEVERITY;
 
 const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
@@ -67,7 +71,7 @@ export const PANEL_DEFAULTS = {
   lastChangeFormat: "",
   resizedColumns: [],
   // Triggers severity and colors
-  triggerSeverity: DEFAULT_SEVERITY,
+  triggerSeverity: getDefaultSeverity(),
   okEventColor: 'rgb(56, 189, 113)',
   ackEventColor: 'rgb(56, 219, 156)',
   markAckEvents: false,
@@ -107,7 +111,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       this.panel.datasources.push(this.available_datasources[0]);
     }
     if (this.isEmptyTargets()) {
-      this.panel.targets[this.panel.datasources[0]] = DEFAULT_TARGET;
+      this.panel.targets[this.panel.datasources[0]] = getDefaultTarget();
     }
 
     this.initDatasources();

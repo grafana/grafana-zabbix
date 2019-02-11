@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import {DEFAULT_TARGET} from './triggers_panel_ctrl';
+import { getDefaultTarget } from './triggers_panel_ctrl';
 
 // Actual schema version
 export const CURRENT_SCHEMA_VERSION = 6;
@@ -34,7 +34,7 @@ export function migratePanelSchema(panel) {
   if (schemaVersion < 5) {
     if (panel.targets && !_.isEmpty(panel.targets)) {
       _.each(panel.targets, (target) => {
-        _.defaultsDeep(target, DEFAULT_TARGET);
+        _.defaultsDeep(target, getDefaultTarget());
       });
     }
   }

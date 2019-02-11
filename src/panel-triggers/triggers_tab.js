@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import * as utils from '../datasource-zabbix/utils';
-import {DEFAULT_TARGET} from './triggers_panel_ctrl';
+import { getDefaultTarget } from './triggers_panel_ctrl';
 
 class TriggersTabCtrl {
 
@@ -80,7 +80,7 @@ class TriggersTabCtrl {
   datasourcesChanged() {
     _.each(this.panel.datasources, (ds) => {
       if (!this.panel.targets[ds]) {
-        this.panel.targets[ds] = _.cloneDeep(DEFAULT_TARGET);
+        this.panel.targets[ds] = getDefaultTarget();
       }
     });
     this.parseTarget();

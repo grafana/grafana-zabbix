@@ -90,7 +90,7 @@ interface EventTagProps {
   onClick?: (tag: ZBXTag) => void;
 }
 
-class EventTag extends PureComponent<EventTagProps> {
+export default class EventTag extends PureComponent<EventTagProps> {
   handleClick = () => {
     if (this.props.onClick) {
       this.props.onClick(this.props.tag);
@@ -113,5 +113,3 @@ class EventTag extends PureComponent<EventTagProps> {
     );
   }
 }
-
-export default EventTag;
