@@ -108,7 +108,8 @@
 
       .-pagination {
         margin-top: auto;
-        align-items: baseline;
+        align-items: center;
+        padding: 0px;
 
         .-previous {
           flex: 1;
@@ -118,7 +119,7 @@
         .-center {
           flex: 3;
           width: 32rem;
-          height: $footer-height;
+          // height: $footer-height;
 
           .-pageJump {
             margin: 0px 0.4rem;
