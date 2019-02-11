@@ -14,7 +14,6 @@
 import {TriggerPanelCtrl} from './triggers_panel_ctrl';
 import {loadPluginCss} from 'grafana/app/plugins/sdk';
 import './datasource-selector.directive';
-import './ack-tooltip.directive';
 
 loadPluginCss({
   dark: 'plugins/alexanderzobnin-zabbix-app/css/grafana-zabbix.dark.css',

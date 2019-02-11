@@ -7,6 +7,8 @@ import { ProblemsPanelOptions, ZBXTrigger, ZBXTag } from '../../types';
 import { AckProblemData, Modal } from '.././Modal';
 import EventTag from '../EventTag';
 import Tooltip from '.././Tooltip/Tooltip';
+import AlertAcknowledges from './AlertAcknowledges';
+import AlertIcon from './AlertIcon';
 
 interface AlertCardProps {
   problem: ZBXTrigger;
@@ -153,40 +155,6 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
   }
 }
 
-interface AlertIconProps {
-  problem: ZBXTrigger;
-  color: string;
-  blink?: boolean;
-  highlightBackground?: boolean;
-}
-
-function AlertIcon(props: AlertIconProps) {
-  const { problem, color, blink, highlightBackground } = props;
-  const priority = Number(problem.priority);
-  let iconClass = '';
-  if (problem.value === '1') {
-    if (priority >= 3) {
-      iconClass = 'icon-gf-critical';
-    } else {
-      iconClass = 'icon-gf-warning';
-    }
-  } else {
-    iconClass = 'icon-gf-online';
-  }
-
-  const className = classNames('icon-gf', iconClass, { 'zabbix-trigger--blinked': blink });
-  const style: CSSProperties = {};
-  if (!highlightBackground) {
-    style.color = color;
-  }
-
-  return (
-    <div className="alert-rule-item__icon" style={style}>
-      <i className={className}></i>
-    </div>
-  );
-}
-
 interface AlertHostProps {
   problem: ZBXTrigger;
   panelOptions: ProblemsPanelOptions;
@@ -290,51 +258,6 @@ class AlertAcknowledgesButton extends PureComponent<AlertAcknowledgesButtonProps
         <Tooltip placement="bottom" content="Acknowledge problem">
           <span role="button" onClick={this.handleClick}><i className="fa fa-comments-o"></i></span>
         </Tooltip>
-    );
-  }
-}
-
-interface AlertAcknowledgesProps {
-  problem: ZBXTrigger;
-  onClick: (event?) => void;
-}
-
-class AlertAcknowledges extends PureComponent<AlertAcknowledgesProps> {
-  handleClick = (event) => {
-    this.props.onClick(event);
-  }
-
-  render() {
-    const { problem } = this.props;
-    const ackRows = problem.acknowledges && problem.acknowledges.map(ack => {
-      return (
-        <tr key={ack.acknowledgeid}>
-          <td>{ack.time}</td>
-          <td>{ack.user}</td>
-          <td>{ack.message}</td>
-        </tr>
-      );
-    });
-    return (
-      <div className="ack-tooltip">
-        <table className="table">
-          <thead>
-            <tr>
-              <th className="ack-time">Time</th>
-              <th className="ack-user">User</th>
-              <th className="ack-comments">Comments</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ackRows}
-          </tbody>
-        </table>
-        <div className="ack-add-button">
-          <button id="add-acknowledge-btn" className="btn btn-mini btn-inverse gf-form-button" onClick={this.handleClick}>
-            <i className="fa fa-plus"></i>
-          </button>
-        </div>
-      </div>
     );
   }
 }
