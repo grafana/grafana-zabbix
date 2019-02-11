@@ -482,7 +482,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
   removeTagFilter(tag, ds) {
     let tagFilter = this.panel.targets[ds].tags.filter;
     let targetTags = this.parseTags(tagFilter);
-    console.log(targetTags);
     _.remove(targetTags, t => t.tag === tag.tag && t.value === tag.value);
     targetTags = _.uniqWith(targetTags, _.isEqual);
     let newFilter = this.tagsToString(targetTags);
@@ -629,7 +628,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
     });
 
     function renderPanel() {
-      console.debug('rendering ProblemsList React component');
       const timeFrom = Math.ceil(dateMath.parse(ctrl.range.from) / 1000);
       const timeTo = Math.ceil(dateMath.parse(ctrl.range.to) / 1000);
 
