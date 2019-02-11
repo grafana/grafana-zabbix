@@ -1,6 +1,6 @@
 {
   "type": "panel",
-  "name": "Zabbix Triggers",
+  "name": "Zabbix Problems",
   "id": "alexanderzobnin-zabbix-triggers-panel",
 
   "info": {
