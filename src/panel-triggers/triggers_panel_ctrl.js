@@ -269,12 +269,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
           return trigger.lastEvent.eventid;
         }));
         return Promise.all([
-          this.datasources[ds].zabbix.getAcknowledges(eventids),
+          this.datasources[ds].zabbix.getExtendedEventData(eventids),
           this.datasources[ds].zabbix.getEventAlerts(eventids),
           Promise.resolve(triggers)
         ]);
       })
       .then(([events, alerts, triggers]) => {
+        this.addEventTags(events, triggers);
         this.addAcknowledges(events, triggers);
         this.addEventAlerts(alerts, triggers);
         return triggers;
@@ -321,6 +322,18 @@ export class TriggerPanelCtrl extends PanelCtrl {
       ack.user += ` (${fullName})`;
     }
     return ack;
+  }
+
+  addEventTags(events, triggers) {
+    _.each(triggers, trigger => {
+      var event = _.find(events, event => {
+        return event.eventid === trigger.lastEvent.eventid;
+      });
+      if (event && event.tags && event.tags.length) {
+        trigger.tags = event.tags;
+      }
+    });
+    return triggers;
   }
 
   addEventAlerts(alerts, triggers) {

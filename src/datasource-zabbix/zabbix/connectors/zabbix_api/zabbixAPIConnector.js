@@ -404,6 +404,20 @@ export class ZabbixAPIConnector {
     });
   }
 
+  getExtendedEventData(eventids) {
+    var params = {
+      output: 'extend',
+      eventids: eventids,
+      preservekeys: true,
+      select_acknowledges: 'extend',
+      selectTags: 'extend',
+      sortfield: 'clock',
+      sortorder: 'DESC'
+    };
+
+    return this.request('event.get', params);
+  }
+
   getEventAlerts(eventids) {
     const params = {
       eventids: eventids,
