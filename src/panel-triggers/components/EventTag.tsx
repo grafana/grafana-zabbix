@@ -108,7 +108,10 @@ export default class EventTag extends PureComponent<EventTagProps> {
       <span className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
         style={style}
         onClick={this.handleClick}>
-        {tag.tag}: {tag.value}
+        {tag.value ?
+          `${tag.tag}: ${tag.value}` :
+          `${tag.tag}`
+        }
       </span>
     );
   }
