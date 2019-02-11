@@ -1,5 +1,6 @@
 import React, { PureComponent } from 'react';
 import { ZBXTag } from '../types';
+import Tooltip from './Tooltip/Tooltip';
 
 const TAG_COLORS = [
   '#E24D42',
@@ -87,13 +88,13 @@ function djb2(str) {
 interface EventTagProps {
   tag: ZBXTag;
   highlight?: boolean;
-  onClick?: (tag: ZBXTag) => void;
+  onClick?: (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 export default class EventTag extends PureComponent<EventTagProps> {
-  handleClick = () => {
+  handleClick = (event) => {
     if (this.props.onClick) {
-      this.props.onClick(this.props.tag);
+      this.props.onClick(this.props.tag, event.ctrlKey, event.shiftKey);
     }
   }
 
@@ -105,14 +106,16 @@ export default class EventTag extends PureComponent<EventTagProps> {
       borderColor: tagColor.borderColor,
     };
     return (
-      <span className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
-        style={style}
-        onClick={this.handleClick}>
-        {tag.value ?
-          `${tag.tag}: ${tag.value}` :
-          `${tag.tag}`
-        }
-      </span>
+      <Tooltip placement="bottom" content="Click to add tag filter or Ctrl/Shift+click to remove">
+        <span className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
+          style={style}
+          onClick={this.handleClick}>
+          {tag.value ?
+            `${tag.tag}: ${tag.value}` :
+            `${tag.tag}`
+          }
+        </span>
+      </Tooltip>
     );
   }
 }

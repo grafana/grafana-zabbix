@@ -479,6 +479,17 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.refresh();
   }
 
+  removeTagFilter(tag, ds) {
+    let tagFilter = this.panel.targets[ds].tags.filter;
+    let targetTags = this.parseTags(tagFilter);
+    console.log(targetTags);
+    _.remove(targetTags, t => t.tag === tag.tag && t.value === tag.value);
+    targetTags = _.uniqWith(targetTags, _.isEqual);
+    let newFilter = this.tagsToString(targetTags);
+    this.panel.targets[ds].tags.filter = newFilter;
+    this.refresh();
+  }
+
   getProblemEvents(trigger) {
     const triggerids = [trigger.triggerid];
     const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
@@ -646,8 +657,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
           const message = data.message;
           return ctrl.acknowledgeTrigger(trigger, message);
         },
-        onTagClick: (tag, datasource) => {
-          ctrl.addTagFilter(tag, datasource);
+        onTagClick: (tag, datasource, ctrlKey, shiftKey) => {
+          if (ctrlKey || shiftKey) {
+            ctrl.removeTagFilter(tag, datasource);
+          } else {
+            ctrl.addTagFilter(tag, datasource);
+          }
         }
       };
 

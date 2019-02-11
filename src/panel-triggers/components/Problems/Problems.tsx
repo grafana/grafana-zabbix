@@ -20,7 +20,7 @@ export interface ProblemListProps {
   fontSize?: number;
   getProblemEvents: (ids: string[]) => ZBXEvent[];
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => void;
-  onTagClick?: (tag: ZBXTag, datasource: string) => void;
+  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
   onColumnResize?: (newResized: RTResized) => void;
 }
@@ -70,9 +70,9 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     });
   }
 
-  handleTagClick = (tag: ZBXTag, datasource: string) => {
+  handleTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, datasource);
+      this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
   }
 

@@ -259,7 +259,6 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
     const { event, eventInfo, show, className, left } = this.props;
     let infoItems, durationItem;
     if (event) {
-      console.log(event);
       const ts = moment(Number(event.clock) * 1000);
       const tsFormatted = ts.format('HH:mm:ss');
       infoItems = [

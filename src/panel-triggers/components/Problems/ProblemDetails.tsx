@@ -15,7 +15,7 @@ interface ProblemDetailsProps extends RTRow<ZBXTrigger> {
   timeRange: GFTimeRange;
   getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
-  onTagClick?: (tag: ZBXTag, datasource: string) => void;
+  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 interface ProblemDetailsState {
@@ -41,9 +41,9 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     });
   }
 
-  handleTagClick = (tag: ZBXTag) => {
+  handleTagClick = (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, this.props.original.datasource);
+      this.props.onTagClick(tag, this.props.original.datasource, ctrlKey, shiftKey);
     }
   }
 
@@ -51,7 +51,6 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     const problem = this.props.original;
     this.props.getProblemEvents(problem)
     .then(events => {
-      console.log(events, this.props.timeRange);
       this.setState({ events });
     });
   }
