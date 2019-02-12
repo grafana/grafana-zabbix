@@ -108,6 +108,9 @@ export class ZabbixDatasource {
 
       // Prevent changes of original object
       let target = _.cloneDeep(t);
+
+      // Migrate old targets
+      target = migrations.migrate(target);
       this.replaceTargetVariables(target, options);
 
       // Apply Time-related functions (timeShift(), etc)
@@ -123,9 +126,6 @@ export class ZabbixDatasource {
 
       // Metrics or Text query mode
       if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
-        // Migrate old targets
-        target = migrations.migrate(target);
-
         // Don't request undefined targets
         if (!target.group || !target.host || !target.item) {
           return [];
@@ -534,6 +534,7 @@ export class ZabbixDatasource {
     let enabled_targets = filterEnabledTargets(options.targets);
     let getPanelItems = _.map(enabled_targets, t => {
       let target = _.cloneDeep(t);
+      target = migrations.migrate(target);
       this.replaceTargetVariables(target, options);
       return this.zabbix.getItemsFromTarget(target, {itemtype: 'num'});
     });

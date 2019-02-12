@@ -27,11 +27,18 @@ export function migrateFrom2To3version(target) {
 
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
+  target = fixTargetGroup(target);
   if (isGrafana2target(target)) {
     return migrateFrom2To3version(target);
-  } else {
-    return target;
   }
+  return target;
+}
+
+function fixTargetGroup(target) {
+  if (target.group && Array.isArray(target.group)) {
+    target.group = { 'filter': "" };
+  }
+  return target;
 }
 
 function convertToRegex(str) {
