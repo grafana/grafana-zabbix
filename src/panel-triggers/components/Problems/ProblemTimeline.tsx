@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import _ from 'lodash';
 import moment from 'moment';
-import { GFTimeRange, ZBXEvent, ZBXAcknowledge } from 'panel-triggers/types';
+import { GFTimeRange, ZBXEvent, ZBXAcknowledge } from '../../types';
 
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';

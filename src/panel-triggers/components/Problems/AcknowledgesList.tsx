@@ -1,5 +1,5 @@
 import React from 'react';
-import { ZBXAcknowledge } from 'panel-triggers/types';
+import { ZBXAcknowledge } from '../../types';
 
 interface AcknowledgesListProps {
   acknowledges: ZBXAcknowledge[];

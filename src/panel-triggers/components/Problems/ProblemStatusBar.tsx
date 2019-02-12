@@ -1,7 +1,7 @@
 import React from 'react';
 import FAIcon from '../FAIcon';
 import Tooltip from '../Tooltip/Tooltip';
-import { ZBXTrigger } from 'panel-triggers/types';
+import { ZBXTrigger } from '../../types';
 
 export interface ProblemStatusBarProps {
   problem: ZBXTrigger;

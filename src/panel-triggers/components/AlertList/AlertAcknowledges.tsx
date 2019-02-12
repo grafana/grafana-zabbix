@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { ZBXTrigger } from 'panel-triggers/types';
+import { ZBXTrigger } from '../../types';
 
 interface AlertAcknowledgesProps {
   problem: ZBXTrigger;

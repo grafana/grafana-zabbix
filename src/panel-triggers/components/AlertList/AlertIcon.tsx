@@ -1,6 +1,6 @@
 import React, { CSSProperties } from 'react';
 import classNames from 'classnames';
-import { ZBXTrigger } from 'panel-triggers/types';
+import { ZBXTrigger } from '../../types';
 
 interface AlertIconProps {
   problem: ZBXTrigger;
