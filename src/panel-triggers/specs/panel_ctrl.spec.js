@@ -16,7 +16,7 @@ describe('TriggerPanelCtrl', () => {
       replaceTemplateVars: () => {},
       zabbix: {
         getTriggers: jest.fn().mockReturnValue([generateTrigger("1"), generateTrigger("1")]),
-        getAcknowledges: jest.fn().mockReturnValue(Promise.resolve([])),
+        getExtendedEventData: jest.fn().mockResolvedValue([]),
         getEventAlerts: jest.fn().mockResolvedValue([]),
       }
     };
@@ -52,7 +52,7 @@ describe('TriggerPanelCtrl', () => {
     zabbixDSMock.zabbix.getTriggers = jest.fn()
       .mockReturnValueOnce(getTriggersResp[0])
       .mockReturnValueOnce(getTriggersResp[1]);
-    zabbixDSMock.zabbix.getAcknowledges = jest.fn()
+    zabbixDSMock.zabbix.getExtendedEventData = jest.fn()
       .mockReturnValue(Promise.resolve([defaultEvent]));
 
     ctx.panelCtrl = createPanelCtrl();
