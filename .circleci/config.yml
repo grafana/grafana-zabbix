@@ -97,7 +97,7 @@ jobs:
           command: 'curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash'
       - run: sudo apt-get install git-lfs
       - run: git lfs install
-      - run: pip install --upgrade pip
+      - run: sudo pip install --upgrade pip
       - run: sudo pip install mkdocs
       - checkout
       - run: git lfs fetch --all
