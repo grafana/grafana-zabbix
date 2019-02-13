@@ -86,6 +86,24 @@ addFuncDef({
 });
 
 addFuncDef({
+  name: 'removeAboveValue',
+  category: 'Transform',
+  params: [
+    {name: 'number', type: 'float'},
+  ],
+  defaultParams: [0],
+});
+
+addFuncDef({
+  name: 'removeBelowValue',
+  category: 'Transform',
+  params: [
+    {name: 'number', type: 'float'},
+  ],
+  defaultParams: [0],
+});
+
+addFuncDef({
   name: 'transformNull',
   category: 'Transform',
   params: [
@@ -178,24 +196,6 @@ addFuncDef({
 });
 
 // Filter
-
-addFuncDef({
-  name: 'removeAboveValue',
-  category: 'Filter',
-  params: [
-    {name: 'number', type: 'float'},
-  ],
-  defaultParams: [0],
-});
-
-addFuncDef({
-  name: 'removeBelowValue',
-  category: 'Filter',
-  params: [
-    {name: 'number', type: 'float'},
-  ],
-  defaultParams: [0],
-});
 
 addFuncDef({
   name: 'top',
