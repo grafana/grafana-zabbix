@@ -153,7 +153,8 @@
       checked="ctrl.panel.problemTimeline"
       on-change="ctrl.render()">
     </gf-form-switch>
-    <gf-form-switch class="gf-form"
+    <gf-form-switch ng-if="ctrl.panel.layout !== 'table'"
+      class="gf-form"
       label-class="width-10"
       label="Highlight background"
       checked="ctrl.panel.highlightBackground"
@@ -191,7 +192,7 @@
         ng-model="ctrl.panel.lastChangeFormat"
         ng-change="ctrl.render()">
     </div>
-    <div class="gf-form">
+    <div class="gf-form" ng-if="ctrl.panel.layout === 'table'">
       <div class="gf-form-button">
         <button class="btn btn-inverse width-16 panel-options-button" ng-click="ctrl.resetResizedColumns()">
           Reset resized columns
