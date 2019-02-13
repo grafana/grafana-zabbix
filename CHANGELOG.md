@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Table-like layout for Problems (former Triggers) panel, [#673](https://github.com/alexanderzobnin/grafana-zabbix/issues/673)
+- Problems panel: able to show last problems from dashboard time range, [#550](https://github.com/alexanderzobnin/grafana-zabbix/issues/550)
+- Problems panel: filter problems by event tags, [#487](https://github.com/alexanderzobnin/grafana-zabbix/issues/487)
+- Problems panel: option for displaying groups and proxy, [#418](https://github.com/alexanderzobnin/grafana-zabbix/issues/418)
+- Support datasource provisioning with direct DB connection enabled, [#614](https://github.com/alexanderzobnin/grafana-zabbix/issues/614)
+- Functions: `offset` function, [#387](https://github.com/alexanderzobnin/grafana-zabbix/issues/387), thanks to [@drakosha](https://github.com/drakosha)
+- Functions: `removeAboveValue`, `removeBelowValue`, `transformNull` functions, [#562](https://github.com/alexanderzobnin/grafana-zabbix/issues/562), thanks to [@gelonsoft](https://github.com/gelonsoft)
+
+### Fixed
+- _t.replace is not a function_ error when adding new metric, [#661](https://github.com/alexanderzobnin/grafana-zabbix/issues/661)
+- Problems panel: error when acknowledging problems in Zabbix 4.0, [#629](https://github.com/alexanderzobnin/grafana-zabbix/issues/629)
+- Problems panel: direct link rendered image, [#605](https://github.com/alexanderzobnin/grafana-zabbix/issues/605)
+- Direct DB Connection: _Cannot read property 'name' of null_ error when no series returned, [#571](https://github.com/alexanderzobnin/grafana-zabbix/issues/571)
+- Direct DB Connection: `consolidateBy(sum)` does not work correctly, [#603](https://github.com/alexanderzobnin/grafana-zabbix/issues/603)
+- Direct DB Connection: `consolidateBy()` affects other metrics in a panel, [#602](https://github.com/alexanderzobnin/grafana-zabbix/issues/602)
+
+### Changed
+- Disable auto-creation of Zabbix/Linux Server dashboards (still can be imported from datasource config page), [#422](https://github.com/alexanderzobnin/grafana-zabbix/issues/422)
+- Use Webpack for building plugin, [#632](https://github.com/alexanderzobnin/grafana-zabbix/issues/632)
+
+
 ## [3.9.1] - 2018-05-02
 ### Fixed
 - Datasource fails when "Direct DB connection" enabled [#564](https://github.com/alexanderzobnin/grafana-zabbix/issues/564)
@@ -46,8 +68,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - PostgreSQL support for Direct DB Connection.
 - _Triggers_ query mode which allows to count active alerts by group, host and application, [#141](https://github.com/alexanderzobnin/grafana-zabbix/issues/141)
-- `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447), thanks for [@mdorenkamp](https://github.com/mdorenkamp)
-- `percentil()` function, thanks for [@pedrohrf](https://github.com/pedrohrf)
+- `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447), thanks to [@mdorenkamp](https://github.com/mdorenkamp)
+- `percentil()` function, thanks to [@pedrohrf](https://github.com/pedrohrf)
 - _Zabbix System Status_ example dashboard.
 
 ### Changed
@@ -59,7 +81,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - "data points outside time range" error when there is no datapoints and aggregation function is used
 - Missed Max data points option in Grafana 4.5+
 - Missed query editor help in Grafana 4.5+
-- Alert threshold detection with `<=` `>=` `=` operators, thanks for [@akotynski](https://github.com/akotynski).
+- Alert threshold detection with `<=` `>=` `=` operators, thanks to [@akotynski](https://github.com/akotynski).
 
 ## [3.6.1] - 2017-07-26
 ### Fixed
