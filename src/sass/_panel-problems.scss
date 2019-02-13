@@ -44,26 +44,14 @@
       }
 
       &:hover {
-        // border-left: solid 2px $problems-table-row-hovered-shadow-color;
 
         .rt-tr {
           background: $problems-table-row-hovered;
-          // box-shadow: $problems-table-row-hovered-shadow;
           z-index: 1;
         }
 
         .rt-tr.-even {
-          // margin-left: 0;
           background: $problems-table-row-hovered;
-
-          .rt-td:first-child {
-            // margin-left: 0;
-          }
-        }
-
-        .problem-details-container {
-          // border-left-color: $problems-table-row-hovered-shadow-color;
-          // box-shadow: 0px 0px 5px rgba($blue, 0.5);
         }
       }
 
@@ -73,18 +61,8 @@
           transition: 0s;
         }
 
-        // &:hover {
-        //   background: $problems-table-row-hovered;
-        //   box-shadow: 0px 0px 5px rgba($blue, 0.5);
-        //   z-index: 1;
-        // }
         &.-even {
           background: $problems-table-stripe;
-
-          // margin-left: -2px;
-          .rt-td:first-child {
-            // margin-left: 2px;
-          }
         }
       }
     }
@@ -119,7 +97,6 @@
         .-center {
           flex: 3;
           width: 32rem;
-          // height: $footer-height;
 
           .-pageJump {
             margin: 0px 0.4rem;
@@ -160,10 +137,6 @@
       animation: blink-opacity 2s ease-in-out infinite;
     }
 
-    // .problem-description {
-    //   font-weight: 500;
-    // }
-
     .rt-tr .rt-td {
       &.custom-expander {
         text-align: center;
@@ -177,18 +150,15 @@
             color: $problem-expander-expanded-color;
           }
         }
-        // background: linear-gradient(to bottom, $dark-5 50%, $dark-2 50%);
-        // background-size: 100% 200%;
-        // background-position: right bottom;
-        // transition: all .3s ease-out;
       }
+
       &.custom-expander:hover {
-        // background-position: right top;
         background-color: $problem-expander-highlighted-background;
         i {
           color: $problem-expander-highlighted-color;
         }
       }
+
       &.last-change {
         text-align: left;
       }
@@ -199,7 +169,6 @@
         font-size: 1.5em;
 
         i {
-          // margin: 0 1.2em;
           width: 100%;
           padding-left: 0.6em;
           text-align: center;
@@ -240,15 +209,11 @@
       display: flex;
       padding-top: 4px;
       background-color: $problem-details-background;
-      // border: 1px solid $problems-border-color;
-      // border-left: 2px solid $problem-details-background;
-      // margin-left: -2px;
       border-bottom-width: 0px;
 
       max-height: 0px;
       opacity: 0;
       overflow: hidden;
-      // transition: all 0.3s ease-out;
       transition-duration: 0.3s;
       transition-timing-function: ease-out;
       transition-property: opacity, max-height;
@@ -294,11 +259,6 @@
       }
 
       .problem-item {
-        // border-bottom: solid 2px transparent;
-        // &:hover {
-        //   border-bottom: solid 2px $blue;
-        // }
-
         .problem-item-name {
           color: $text-muted;
         }
@@ -310,11 +270,9 @@
 
 
       .problem-statusbar {
-        // margin-top: auto;
         margin-bottom: 0.6rem;
         display: flex;
         flex-direction: row;
-        // max-width: 13rem;
 
         &.compact .problem-statusbar-item {
           width: 2.5rem;
@@ -328,7 +286,6 @@
           background: $problem-statusbar-background;
           margin-right: 2px;
           border-radius: 2px;
-          // border: 1px solid $dark-5;
 
           &:hover {
             background: darken($problem-statusbar-background, 2%);
@@ -344,7 +301,6 @@
             .fa-icon-container {
               color: $problem-statusbar-fired;
               text-shadow: 0px 0px 10px rgba($problem-statusbar-fired, 0.5);
-              // animation: fade-in 1s ease-out;
             }
           }
         }
@@ -376,9 +332,7 @@
 
       .problem-details-middle {
         flex: 1 0 auto;
-        // padding: 0.6rem 1rem;
         overflow: auto;
-        // box-shadow: 1px 0 10px $problem-container-shadow;
 
         .problem-ack-container {
           margin: 0.5rem 0.4rem;
@@ -390,7 +344,6 @@
         margin-top: 0.6rem;
         margin-left: -0.6rem;
         padding: 1.2rem 0.6rem;
-        // border-top: 2px solid $dark-4;
         overflow: auto;
         box-shadow: $porblem-ack-shadow;
       }
@@ -409,16 +362,12 @@
         .problem-ack-user {
           color: $text-muted;
         }
-        // span {
-        //   padding-right: 0.6rem;
-        // }
       }
 
 
       .problem-details-right {
         flex: 0 0 auto;
         padding: 0.5rem 2rem;
-        // background: $dark-4;
         color: $text-muted;
 
         &.compact {
@@ -427,11 +376,8 @@
 
         .problem-details-right-item {
           margin-bottom: 0.2rem;
-          // border-bottom: solid 2px transparent;
 
           &:hover {
-            // box-shadow: 1px 0 10px $problem-container-shadow;
-            // border-bottom: solid 2px $blue;
             color: $text-color-emphasis;
 
             .fa-icon-container {
@@ -459,14 +405,12 @@
         position: relative;
         margin: 0.2rem 0;
         padding-top: 2.6rem;
-        // margin-top: auto;
 
         .timeline-info-container {
           position: absolute;
           top: 0;
           left: 0;
           transition: all 0.2s ease-out;
-          // opacity: 0.8;
 
           .event-timestamp {
             font-weight: 500;
@@ -482,8 +426,6 @@
         }
 
         .problem-event-region {
-          // transition: all 0.2s ease-out;
-          // opacity: 0.7;
 
           &.problem-event {
             &--ok {
@@ -496,7 +438,6 @@
 
           &:hover,
           &.highlighted {
-            // opacity: 1;
             stroke: $problem-event-highlighted;
             filter: url(#glowShadow);
           }
@@ -560,11 +501,6 @@
         }
       }
     }
-
-    // .rt-tr-group {
-    //   transition: top 1s ease-out;
-    //   animation: all 1s ease;
-    // }
   }
 
   @for $i from 8 through 9 {
@@ -619,17 +555,6 @@
 
 .panel-options-button {
   text-align: left;
-}
-
-@keyframes slide-down {
-  0% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes blink-opacity {
