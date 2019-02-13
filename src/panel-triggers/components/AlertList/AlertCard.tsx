@@ -76,7 +76,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
 
         <div className="alert-rule-item__body">
           <div className="alert-rule-item__header">
-            <p className="alert-rule-item__name">
+            <div className="alert-rule-item__name">
               <span className="zabbix-trigger-name">{problem.description}</span>
               {(panelOptions.hostField || panelOptions.hostTechNameField) && (
                 <AlertHost problem={problem} panelOptions={panelOptions} />
@@ -95,7 +95,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
                   )}
                 </span>
               )}
-            </p>
+            </div>
 
             <div className={descriptionClass}>
               {panelOptions.statusField && <AlertStatus problem={problem} blink={blink} />}
