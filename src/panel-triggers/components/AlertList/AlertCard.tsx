@@ -35,7 +35,6 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
 
   ackProblem = (data: AckProblemData) => {
     const problem = this.props.problem;
-    console.log('acknowledge: ', problem.lastEvent && problem.lastEvent.eventid, data);
     return this.props.onProblemAck(problem, data).then(result => {
       this.closeAckDialog();
     }).catch(err => {

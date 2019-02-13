@@ -57,7 +57,6 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
 
   ackProblem = (data: AckProblemData) => {
     const problem = this.props.original as ZBXTrigger;
-    console.log('acknowledge: ', problem.lastEvent && problem.lastEvent.eventid, data);
     return this.props.onProblemAck(problem, data).then(result => {
       this.closeAckDialog();
     }).catch(err => {
