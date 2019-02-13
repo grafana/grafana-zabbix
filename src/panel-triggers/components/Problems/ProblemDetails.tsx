@@ -81,6 +81,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     const wideLayout = rootWidth > 1200;
     const compactStatusBar = rootWidth < 800 || problem.acknowledges && wideLayout && rootWidth < 1400;
     const age = moment.unix(problem.lastchangeUnix).fromNow(true);
+    const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
@@ -122,14 +123,14 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
           {this.state.events.length > 0 &&
             <ProblemTimeline events={this.state.events} timeRange={this.props.timeRange} />
           }
-          {problem.acknowledges && !wideLayout &&
+          {showAcknowledges && !wideLayout &&
             <div className="problem-ack-container">
               <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
               <AcknowledgesList acknowledges={problem.acknowledges} />
             </div>
           }
         </div>
-        {problem.acknowledges && wideLayout &&
+        {showAcknowledges && wideLayout &&
           <div className="problem-details-middle">
             <div className="problem-ack-container">
               <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
