@@ -29,6 +29,7 @@ export interface ProblemsPanelOptions {
   // View options
   fontSize?: string;
   pageSize?: number;
+  problemTimeline?: boolean;
   highlightBackground?: boolean;
   highlightNewEvents?: boolean;
   highlightNewerThan?: string;

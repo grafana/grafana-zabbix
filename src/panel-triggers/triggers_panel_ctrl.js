@@ -64,6 +64,7 @@ export const PANEL_DEFAULTS = {
   layout: 'table',
   fontSize: '100%',
   pageSize: 10,
+  problemTimeline: true,
   highlightBackground: false,
   highlightNewEvents: false,
   highlightNewerThan: '1h',

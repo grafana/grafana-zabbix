@@ -13,6 +13,7 @@ import FAIcon from '../FAIcon';
 interface ProblemDetailsProps extends RTRow<ZBXTrigger> {
   rootWidth: number;
   timeRange: GFTimeRange;
+  showTimeline?: boolean;
   getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
@@ -35,7 +36,9 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
   }
 
   componentDidMount() {
-    this.fetchProblemEvents();
+    if (this.props.showTimeline) {
+      this.fetchProblemEvents();
+    }
     requestAnimationFrame(() => {
       this.setState({ show: true });
     });
@@ -119,7 +122,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
               }
             </div>
           }
-          {this.state.events.length > 0 &&
+          {this.props.showTimeline && this.state.events.length > 0 &&
             <ProblemTimeline events={this.state.events} timeRange={this.props.timeRange} />
           }
           {showAcknowledges && !wideLayout &&
