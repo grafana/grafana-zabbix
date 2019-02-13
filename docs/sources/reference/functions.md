@@ -88,6 +88,35 @@ calculates moving average over 60 points (if metric has 1 second resolution it m
 ```
 ---
 
+### _removeAboveValue_
+```
+removeAboveValue(N)
+```
+Replaces series values with `null` if value > N
+
+Examples:
+```
+removeAboveValue(1)
+```
+
+---
+
+### _removeBelowValue_
+```
+removeBelowValue(N)
+```
+Replaces series values with `null` if value < N
+
+---
+
+### _transformNull_
+```
+transformNull(N)
+```
+Replaces `null` values with N
+
+---
+
 ## Aggregate
 
 ### _aggregateBy_
