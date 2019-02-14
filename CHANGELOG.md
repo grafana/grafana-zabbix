@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.10.0] - 2019-02-14
 ### Added
 - Table-like layout for Problems (former Triggers) panel, [#673](https://github.com/alexanderzobnin/grafana-zabbix/issues/673)
 - Problems panel: able to show last problems from dashboard time range, [#550](https://github.com/alexanderzobnin/grafana-zabbix/issues/550)
