@@ -81,7 +81,13 @@ As you can see, the Grafana-Zabbix plugin uses aggregation by a given time inter
 ## InfluxDB
 Zabbix supports loadable modules which makes possible to write history data into an external database. There's a [module](https://github.com/i-ky/effluence) for InfluxDB written by [@i-ky](https://github.com/i-ky) which can export history into InfluxDB in real-time.
 
-InfluxDB Query Example:
+#### InfluxDB retention policy
+In order to keep database size under control, you should use InfluxDB retention policy mechanism. It's possible to create retention policy for long-term data and write aggregated data in the same manner as Zabbix does (trends). Then this retention policy can be used in plugin for getting data after a certain period ([Retention Policy](../../configuration/#direct-db-connection) option in data source config). Read more about how to configure retention policy for using with plugin in effluence module [docs](https://github.com/i-ky/effluence#database-sizing).
+
+#### InfluxDB Query
+
+Eventually, plugin generates InfluxDB query similar to this:
+
 ```sql
 SELECT MEAN("value")
 FROM "history"

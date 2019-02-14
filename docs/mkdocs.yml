@@ -26,7 +26,7 @@ nav:
       - 'Upgrade': 'installation/upgrade.md'
   - Configuration:
       - 'Configuration': 'configuration/index.md'
-      - 'SQL Data Source Configuration': 'configuration/sql_datasource.md'
+      - 'Direct DB Connection Configuration': 'configuration/direct_db_datasource.md'
       - 'Provisioning': 'configuration/provisioning.md'
       - 'Troubleshooting': 'configuration/troubleshooting.md'
   - User Guides:
