@@ -31,7 +31,6 @@ export class ZabbixDSConfigController {
     this.dbDataSources = this.getSupportedDBDataSources();
     this.zabbixVersions = _.cloneDeep(zabbixVersions);
     this.autoDetectZabbixVersion();
-    console.log(this.dbDataSources);
   }
 
   getSupportedDBDataSources() {
