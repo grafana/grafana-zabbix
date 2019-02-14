@@ -10,7 +10,7 @@ coverage:
     patch: off
     changes: off
 
-comment: false
+comment: off
 
 ignore:
   - "dist/test/test-setup/.*"
