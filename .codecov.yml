@@ -6,12 +6,11 @@ coverage:
   status:
     project:
       default:
-        target: 30%
-        threshold: 5%
-    patch: no
-    changes: no
+        threshold: 5
+    patch: off
+    changes: off
 
-comment: false
+comment: off
 
 ignore:
   - "dist/test/test-setup/.*"

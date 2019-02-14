@@ -1,10 +1,12 @@
 import _ from 'lodash';
 import * as utils from '../utils';
 import responseHandler from '../responseHandler';
-import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
-import { SQLConnector } from './connectors/sql/sqlConnector';
 import { CachingProxy } from './proxy/cachingProxy';
 import { ZabbixNotImplemented } from './connectors/dbConnector';
+import { DBConnector } from './connectors/dbConnector';
+import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
+import { SQLConnector } from './connectors/sql/sqlConnector';
+import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
@@ -23,7 +25,7 @@ const REQUESTS_TO_BIND = [
 ];
 
 export class Zabbix {
-  constructor(options, backendSrv, datasourceSrv) {
+  constructor(options, datasourceSrv, backendSrv) {
     let {
       url,
       username,
@@ -35,6 +37,7 @@ export class Zabbix {
       enableDirectDBConnection,
       dbConnectionDatasourceId,
       dbConnectionDatasourceName,
+      dbConnectionRetentionPolicy,
     } = options;
 
     this.enableDirectDBConnection = enableDirectDBConnection;
@@ -48,19 +51,32 @@ export class Zabbix {
 
     this.zabbixAPI = new ZabbixAPIConnector(url, username, password, zabbixVersion, basicAuth, withCredentials, backendSrv);
 
-    if (enableDirectDBConnection) {
-      let dbConnectorOptions = {
-        datasourceId: dbConnectionDatasourceId,
-        datasourceName: dbConnectionDatasourceName
-      };
-      this.dbConnector = new SQLConnector(dbConnectorOptions, backendSrv, datasourceSrv);
-      this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
-      this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
-    }
-
     this.proxyfyRequests();
     this.cacheRequests();
     this.bindRequests();
+
+    if (enableDirectDBConnection) {
+      const connectorOptions = { dbConnectionRetentionPolicy };
+      this.initDBConnector(dbConnectionDatasourceId, dbConnectionDatasourceName, datasourceSrv, connectorOptions)
+      .then(() => {
+        this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
+        this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
+      });
+    }
+  }
+
+  initDBConnector(datasourceId, datasourceName, datasourceSrv, options) {
+    return DBConnector.loadDatasource(datasourceId, datasourceName, datasourceSrv)
+    .then(ds => {
+      let connectorOptions = { datasourceId, datasourceName };
+      if (ds.type === 'influxdb') {
+        connectorOptions.retentionPolicy = options.dbConnectionRetentionPolicy;
+        this.dbConnector = new InfluxDBConnector(connectorOptions, datasourceSrv);
+      } else {
+        this.dbConnector = new SQLConnector(connectorOptions, datasourceSrv);
+      }
+      return this.dbConnector;
+    });
   }
 
   proxyfyRequests() {

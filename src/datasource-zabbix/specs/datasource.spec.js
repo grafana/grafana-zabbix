@@ -56,7 +56,7 @@ describe('ZabbixDatasource', () => {
     });
 
     it('should use trends if it enabled and time more than trendsFrom', (done) => {
-      let ranges = ['now-7d', 'now-168h', 'now-1M', 'now-1y'];
+      let ranges = ['now-8d', 'now-169h', 'now-1M', 'now-1y'];
 
       _.forEach(ranges, range => {
         ctx.options.range.from = range;
@@ -73,7 +73,7 @@ describe('ZabbixDatasource', () => {
     });
 
     it('shouldnt use trends if it enabled and time less than trendsFrom', (done) => {
-      let ranges = ['now-6d', 'now-167h', 'now-1h', 'now-30m', 'now-30s'];
+      let ranges = ['now-7d', 'now-168h', 'now-1h', 'now-30m', 'now-30s'];
 
       _.forEach(ranges, range => {
         ctx.options.range.from = range;

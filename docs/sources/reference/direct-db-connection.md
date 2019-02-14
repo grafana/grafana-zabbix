@@ -1,6 +1,6 @@
 # Direct DB Connection
 
-Since version 4.3 Grafana can use MySQL as a native data source. The Grafana-Zabbix plugin can use this data source for querying data directly from a Zabbix database.
+Since version 4.3 Grafana can use MySQL as a native data source. The idea of Direct DB Connection is that Grafana-Zabbix plugin can use this data source for querying data directly from a Zabbix database.
 
 One of the most resource intensive queries for Zabbix API is the history query. For long time intervals `history.get`
 returns a huge amount of data. In order to display it, the plugin should adjust time series resolution
@@ -9,6 +9,8 @@ time series, but that data should be loaded and processed on the client side fir
 
 Also, many users see better performance from direct database queries versus API calls. This could be the result of several reasons,
 such as the additional PHP layer and additional SQL queries (user permissions checks).
+
+Direct DB Connection feature allows using database transparently for querying historical data. Now Grafana-Zabbix plugin supports few databases for history queries: MySQL, PostgreSQL and InfluxDB. Regardless of the database type, idea and data flow remain the same.
 
 ## Data Flow
 
@@ -75,6 +77,24 @@ ORDER BY time ASC
 **Note**: these queries may be changed in future, so look into sources for actual query structure.
 
 As you can see, the Grafana-Zabbix plugin uses aggregation by a given time interval. This interval is provided by Grafana and depends on the panel width in pixels. Thus, Grafana displays the data in the proper resolution.
+
+## InfluxDB
+Zabbix supports loadable modules which makes possible to write history data into an external database. There's a [module](https://github.com/i-ky/effluence) for InfluxDB written by [@i-ky](https://github.com/i-ky) which can export history into InfluxDB in real-time.
+
+#### InfluxDB retention policy
+In order to keep database size under control, you should use InfluxDB retention policy mechanism. It's possible to create retention policy for long-term data and write aggregated data in the same manner as Zabbix does (trends). Then this retention policy can be used in plugin for getting data after a certain period ([Retention Policy](../../configuration/#direct-db-connection) option in data source config). Read more about how to configure retention policy for using with plugin in effluence module [docs](https://github.com/i-ky/effluence#database-sizing).
+
+#### InfluxDB Query
+
+Eventually, plugin generates InfluxDB query similar to this:
+
+```sql
+SELECT MEAN("value")
+FROM "history"
+WHERE ("itemid" = '10073' OR "itemid" = '10074')
+  AND "time" >= 1540000000000s AND "time" <= 1540000000060s
+GROUP BY time(10s), "itemid" fill(none)
+```
 
 ## Functions usage with Direct DB Connection
 

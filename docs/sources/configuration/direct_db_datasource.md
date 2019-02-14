@@ -32,3 +32,10 @@ database name (usually, `zabbix`) and specify credentials.
 ### Security notes
 
 Make sure you use read-only user for Zabbix database.
+
+## InfluxDB
+
+Select _InfluxDB_ data source type and provide your InfluxDB instance host address and port (8086 is default). Fill
+database name you configured in the [effluence](https://github.com/i-ky/effluence) module config (usually, `zabbix`) and specify credentials.
+
+![Configure InfluxDB data source](../img/configuration-influxdb_ds_config.png)

@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import config from 'grafana/app/core/config';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
@@ -17,6 +18,8 @@ export class ZabbixDatasource {
   constructor(instanceSettings, templateSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
     this.templateSrv = templateSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
+
+    this.enableDebugLog = config.buildInfo.env === 'development';
 
     // Use custom format for template variables
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
@@ -55,6 +58,7 @@ export class ZabbixDatasource {
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
     this.dbConnectionDatasourceId = jsonData.dbConnectionDatasourceId;
     this.dbConnectionDatasourceName = jsonData.dbConnectionDatasourceName;
+    this.dbConnectionRetentionPolicy = jsonData.dbConnectionRetentionPolicy;
 
     let zabbixOptions = {
       url: this.url,
@@ -66,10 +70,11 @@ export class ZabbixDatasource {
       cacheTTL: this.cacheTTL,
       enableDirectDBConnection: this.enableDirectDBConnection,
       dbConnectionDatasourceId: this.dbConnectionDatasourceId,
-      dbConnectionDatasourceName: this.dbConnectionDatasourceName
+      dbConnectionDatasourceName: this.dbConnectionDatasourceName,
+      dbConnectionRetentionPolicy: this.dbConnectionRetentionPolicy,
     };
 
-    this.zabbix = new Zabbix(zabbixOptions, backendSrv, datasourceSrv);
+    this.zabbix = new Zabbix(zabbixOptions, datasourceSrv, backendSrv);
   }
 
   ////////////////////////
@@ -165,11 +170,21 @@ export class ZabbixDatasource {
    * Query target data for Metrics mode
    */
   queryNumericData(target, timeRange, useTrends, options) {
+    let queryStart, queryEnd;
     let getItemOptions = {
       itemtype: 'num'
     };
     return this.zabbix.getItemsFromTarget(target, getItemOptions)
-    .then(items => this.queryNumericDataForItems(items, target, timeRange, useTrends, options));
+    .then(items => {
+      queryStart = new Date().getTime();
+      return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    }).then(result => {
+      queryEnd = new Date().getTime();
+      if (this.enableDebugLog) {
+        console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
+      }
+      return result;
+    });
   }
 
   /**
@@ -603,8 +618,8 @@ export class ZabbixDatasource {
     let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
     let useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
     let useTrends = this.trends && (
-      (timeFrom <= useTrendsFrom) ||
-      (timeTo - timeFrom >= useTrendsRange)
+      (timeFrom < useTrendsFrom) ||
+      (timeTo - timeFrom > useTrendsRange)
     );
     return useTrends;
   }

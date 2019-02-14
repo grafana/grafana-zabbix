@@ -34,8 +34,11 @@ datasources:
     disableReadOnlyUsersAck: true
     # Direct DB Connection options
     dbConnectionEnable: true
-    # Name of existing SQL datasource
+    # Name of existing datasource for Direct DB Connection
     dbConnectionDatasourceName: MySQL Zabbix
+    # Retention policy name (InfluxDB only) for fetching long-term stored data.
+    # Leave it blank if only default retention policy used.
+    dbConnectionRetentionPolicy: one_year
   version: 1
   editable: false
 
