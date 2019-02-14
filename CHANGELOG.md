@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Problems panel: able to show last problems from dashboard time range, [#550](https://github.com/alexanderzobnin/grafana-zabbix/issues/550)
 - Problems panel: filter problems by event tags, [#487](https://github.com/alexanderzobnin/grafana-zabbix/issues/487)
 - Problems panel: option for displaying groups and proxy, [#418](https://github.com/alexanderzobnin/grafana-zabbix/issues/418)
+- Support InfluxDB as Direct DB Connection datasource, [#640](https://github.com/alexanderzobnin/grafana-zabbix/issues/640), collaboration with [Gleb Ivanovsky aka @i-ky](https://github.com/i-ky)
 - Support datasource provisioning with direct DB connection enabled, [#614](https://github.com/alexanderzobnin/grafana-zabbix/issues/614)
 - Functions: `offset` function, [#387](https://github.com/alexanderzobnin/grafana-zabbix/issues/387), thanks to [@drakosha](https://github.com/drakosha)
 - Functions: `removeAboveValue`, `removeBelowValue`, `transformNull` functions, [#562](https://github.com/alexanderzobnin/grafana-zabbix/issues/562), thanks to [@gelonsoft](https://github.com/gelonsoft)
