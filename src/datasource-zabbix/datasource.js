@@ -181,7 +181,7 @@ export class ZabbixDatasource {
     }).then(result => {
       queryEnd = new Date().getTime();
       if (this.enableDebugLog) {
-        console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
+        console.debug(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
       }
       return result;
     });
