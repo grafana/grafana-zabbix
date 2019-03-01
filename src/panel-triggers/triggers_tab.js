@@ -83,6 +83,12 @@ class TriggersTabCtrl {
         this.panel.targets[ds] = getDefaultTarget();
       }
     });
+    // Remove unchecked targets
+    _.each(this.panel.targets, (target, ds) => {
+      if (!_.includes(this.panel.datasources, ds)) {
+        delete this.panel.targets[ds];
+      }
+    });
     this.parseTarget();
   }
 
