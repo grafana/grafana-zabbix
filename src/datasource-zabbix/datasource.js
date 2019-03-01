@@ -470,8 +470,9 @@ export class ZabbixDatasource {
   /////////////////
 
   annotationQuery(options) {
-    var timeFrom = Math.ceil(dateMath.parse(options.rangeRaw.from) / 1000);
-    var timeTo = Math.ceil(dateMath.parse(options.rangeRaw.to) / 1000);
+    const timeRange = options.range || options.rangeRaw;
+    const timeFrom = Math.ceil(dateMath.parse(timeRange.from) / 1000);
+    const timeTo = Math.ceil(dateMath.parse(timeRange.to) / 1000);
     var annotation = options.annotation;
     var showOkEvents = annotation.showOkEvents ? c.SHOW_ALL_EVENTS : c.SHOW_OK_EVENTS;
 
