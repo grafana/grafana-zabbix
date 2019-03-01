@@ -116,7 +116,9 @@ function aggregateByWrapper(interval, aggregateFunc, datapoints) {
 
 function aggregateWrapper(groupByCallback, interval, datapoints) {
   var flattenedPoints = _.flatten(datapoints, true);
-  return groupBy(flattenedPoints, interval, groupByCallback);
+  // groupBy_perf works with sorted series only
+  const sortedPoints = ts.sortByTime(flattenedPoints);
+  return groupBy(sortedPoints, interval, groupByCallback);
 }
 
 function percentil(interval, n, datapoints) {
