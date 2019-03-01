@@ -2,7 +2,10 @@ import angular from 'angular';
 import _ from 'lodash';
 
 const template = `
-<value-select-dropdown variable="ctrl.dsOptions" on-updated="ctrl.onChange(ctrl.dsOptions)">
+<value-select-dropdown
+  variable="ctrl.dsOptions"
+  on-updated="ctrl.onChange(ctrl.dsOptions)"
+  dashboard="ctrl.dashboard">
 </value-select-dropdown>
 `;
 
@@ -34,6 +37,11 @@ class DatasourceSelectorCtrl {
       options: _.map(options, (ds) => {
         return {text: ds, value: ds, selected: _.includes(datasources, ds)};
       })
+    };
+    // Fix for Grafana 6.0
+    // https://github.com/grafana/grafana/blob/v6.0.0/public/app/core/directives/value_select_dropdown.ts#L291
+    this.dashboard = {
+      on: () => {}
     };
   }
 
