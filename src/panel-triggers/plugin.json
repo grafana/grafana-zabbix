@@ -3,6 +3,8 @@
   "name": "Zabbix Problems",
   "id": "alexanderzobnin-zabbix-triggers-panel",
 
+  "dataFormats": [],
+
   "info": {
     "author": {
       "name": "Alexander Zobnin",
