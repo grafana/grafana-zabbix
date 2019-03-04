@@ -34,7 +34,7 @@ describe('InfluxDBConnector', () => {
 
     it('should use MEAN instead of AVG', () => {
       const { itemids, range, intervalSec, table } = ctx.defaultQueryParams;
-      const aggFunction = 'AVG';
+      const aggFunction = 'avg';
       const query = ctx.influxDBConnector.buildHistoryQuery(itemids, table, range, intervalSec, aggFunction);
       const expected = compactQuery(`SELECT MEAN("value")
         FROM "history" WHERE ("itemid" = '123' OR "itemid" = '234') AND "time" >= 15000s AND "time" <= 15100s
@@ -100,7 +100,21 @@ describe('InfluxDBConnector', () => {
       const items = [
         { itemid: '123', value_type: 3 }
       ];
-      const expectedQuery = compactQuery(`SELECT MEAN("value")
+      const expectedQuery = compactQuery(`SELECT MEAN("value_avg")
+        FROM "longterm"."history_uint" WHERE ("itemid" = '123') AND "time" >= 15000s AND "time" <= 15100s
+        GROUP BY time(5s), "itemid" fill(none)
+      `);
+      ctx.influxDBConnector.getTrends(items, timeFrom, timeTill, options);
+      expect(ctx.influxDBConnector.invokeInfluxDBQuery).toHaveBeenCalledWith(expectedQuery);
+    });
+
+    it('should use proper value column if retention policy set (trends used)', () => {
+      const { timeFrom, timeTill } = ctx.defaultQueryParams.range;
+      const options = { intervalMs: 5000, consolidateBy: 'max' };
+      const items = [
+        { itemid: '123', value_type: 3 }
+      ];
+      const expectedQuery = compactQuery(`SELECT MAX("value_max")
         FROM "longterm"."history_uint" WHERE ("itemid" = '123') AND "time" >= 15000s AND "time" <= 15100s
         GROUP BY time(5s), "itemid" fill(none)
       `);

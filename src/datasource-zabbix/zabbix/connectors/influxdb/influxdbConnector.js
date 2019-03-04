@@ -1,6 +1,14 @@
 import _ from 'lodash';
 import { compactQuery } from '../../../utils';
-import { DBConnector, HISTORY_TO_TABLE_MAP, consolidateByFunc } from '../dbConnector';
+import { DBConnector, HISTORY_TO_TABLE_MAP, consolidateByTrendColumns } from '../dbConnector';
+
+const consolidateByFunc = {
+  'avg': 'MEAN',
+  'min': 'MIN',
+  'max': 'MAX',
+  'sum': 'SUM',
+  'count': 'COUNT'
+};
 
 export class InfluxDBConnector extends DBConnector {
   constructor(options, datasourceSrv) {
@@ -25,14 +33,13 @@ export class InfluxDBConnector extends DBConnector {
 
     const range = { timeFrom, timeTill };
     consolidateBy = consolidateBy || 'avg';
-    const aggFunction = consolidateByFunc[consolidateBy] || consolidateBy;
 
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
     const promises = _.map(grouped_items, (items, value_type) => {
       const itemids = _.map(items, 'itemid');
       const table = HISTORY_TO_TABLE_MAP[value_type];
-      const query = this.buildHistoryQuery(itemids, table, range, intervalSec, aggFunction, retentionPolicy);
+      const query = this.buildHistoryQuery(itemids, table, range, intervalSec, consolidateBy, retentionPolicy);
       return this.invokeInfluxDBQuery(query);
     });
 
@@ -51,9 +58,13 @@ export class InfluxDBConnector extends DBConnector {
   buildHistoryQuery(itemids, table, range, intervalSec, aggFunction, retentionPolicy) {
     const { timeFrom, timeTill } = range;
     const measurement = retentionPolicy ? `"${retentionPolicy}"."${table}"` : `"${table}"`;
-    const AGG = aggFunction === 'AVG' ? 'MEAN' : aggFunction;
+    let value = 'value';
+    if (retentionPolicy) {
+      value = consolidateByTrendColumns[aggFunction] || 'value_avg';
+    }
+    const aggregation = consolidateByFunc[aggFunction] || aggFunction;
     const where_clause = this.buildWhereClause(itemids);
-    const query = `SELECT ${AGG}("value") FROM ${measurement}
+    const query = `SELECT ${aggregation}("${value}") FROM ${measurement}
       WHERE ${where_clause} AND "time" >= ${timeFrom}s AND "time" <= ${timeTill}s
       GROUP BY time(${intervalSec}s), "itemid" fill(none)`;
     return compactQuery(query);
