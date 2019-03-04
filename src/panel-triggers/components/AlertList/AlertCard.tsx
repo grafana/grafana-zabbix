@@ -65,14 +65,23 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     }
     const blink = panelOptions.highlightNewEvents && newProblem;
 
+    let problemColor: string;
+    if (problem.value === '0') {
+      problemColor = panelOptions.okEventColor;
+    } else if (panelOptions.markAckEvents && problem.acknowledges && problem.acknowledges.length) {
+      problemColor = panelOptions.ackEventColor;
+    } else {
+      problemColor = severityDesc.color;
+    }
+
     const cardStyle: CSSProperties = {};
     if (panelOptions.highlightBackground) {
-      cardStyle.backgroundColor = severityDesc.color;
+      cardStyle.backgroundColor = problemColor;
     }
 
     return (
       <li className={cardClass} style={cardStyle}>
-        <AlertIcon problem={problem} color={severityDesc.color} highlightBackground={panelOptions.highlightBackground} blink={blink} />
+        <AlertIcon problem={problem} color={problemColor} highlightBackground={panelOptions.highlightBackground} blink={blink} />
 
         <div className="alert-rule-item__body">
           <div className="alert-rule-item__header">
