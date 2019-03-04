@@ -380,12 +380,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
     // Filter acknowledged triggers
     if (this.panel.showTriggers === 'unacknowledged') {
       triggerList = _.filter(triggerList, trigger => {
-        return !trigger.acknowledges;
+        return !(trigger.acknowledges && trigger.acknowledges.length);
       });
     } else if (this.panel.showTriggers === 'acknowledged') {
-      triggerList = _.filter(triggerList, 'acknowledges');
-    } else {
-      triggerList = triggerList;
+      triggerList = _.filter(triggerList, trigger => {
+        return trigger.acknowledges && trigger.acknowledges.length;
+      });
     }
 
     // Filter by maintenance status
