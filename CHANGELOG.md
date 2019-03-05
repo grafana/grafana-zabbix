@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Disable auto-creation of Zabbix/Linux Server dashboards (still can be imported from datasource config page), [#422](https://github.com/alexanderzobnin/grafana-zabbix/issues/422)
 - Use Webpack for building plugin, [#632](https://github.com/alexanderzobnin/grafana-zabbix/issues/632)
+- `dist/` folder removed from repo, installation from github repo doesn't work anymore, [#693](https://github.com/alexanderzobnin/grafana-zabbix/issues/693)
 
 
 ## [3.9.1] - 2018-05-02
