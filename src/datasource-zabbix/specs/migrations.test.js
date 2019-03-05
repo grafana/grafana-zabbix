@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { migrateDSConfig, DS_CONFIG_SCHEMA } from '../migrations';
 
 describe('Migrations', () => {
@@ -36,6 +37,34 @@ describe('Migrations', () => {
       });
       expect(ctx.jsonData.dbConnectionEnable).toBeUndefined();
       expect(ctx.jsonData.dbConnectionDatasourceId).toBeUndefined();
+    });
+  });
+
+  describe('When handling provisioned datasource config', () => {
+    beforeEach(() => {
+      ctx.jsonData = {
+        username: 'zabbix',
+        password: 'zabbix',
+        trends: true,
+        trendsFrom: '7d',
+        trendsRange: '4d',
+        cacheTTL: '1h',
+        alerting: true,
+        addThresholds: false,
+        alertingMinSeverity: 3,
+        disableReadOnlyUsersAck: true,
+        dbConnectionEnable: true,
+        dbConnectionDatasourceName: 'MySQL Zabbix',
+        dbConnectionRetentionPolicy: 'one_year'
+      };
+    });
+
+    it('should not touch anything if schema is up to date', () => {
+      const originalConf = _.cloneDeep(ctx.jsonData);
+      migrateDSConfig(ctx.jsonData);
+      expect(ctx.jsonData).toMatchObject(originalConf);
+      expect(ctx.jsonData.dbConnectionEnable).toBe(true);
+      expect(ctx.jsonData.dbConnectionDatasourceName).toBeDefined();
     });
   });
 });

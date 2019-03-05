@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 /**
  * Query format migration.
  * This module can detect query format version and make migration.
@@ -54,12 +56,13 @@ export function migrateDSConfig(jsonData) {
   if (!jsonData) {
     jsonData = {};
   }
-  const oldVersion = jsonData.schema || 1;
-  jsonData.schema = DS_CONFIG_SCHEMA;
 
-  if (oldVersion === DS_CONFIG_SCHEMA) {
+  if (!shouldMigrateDSConfig(jsonData)) {
     return jsonData;
   }
+
+  const oldVersion = jsonData.schema || 1;
+  jsonData.schema = DS_CONFIG_SCHEMA;
 
   if (oldVersion < 2) {
     const dbConnectionOptions = jsonData.dbConnection || {};
@@ -69,4 +72,14 @@ export function migrateDSConfig(jsonData) {
   }
 
   return jsonData;
+}
+
+function shouldMigrateDSConfig(jsonData): boolean {
+  if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
+    return true;
+  }
+  if (jsonData.schema && jsonData.schema !== DS_CONFIG_SCHEMA) {
+    return true;
+  }
+  return false;
 }
