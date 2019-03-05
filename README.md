@@ -10,7 +10,7 @@
 
 Visualize your Zabbix metrics with the leading open source software for time series analytics.
 
-<img width="640" alt="Dashboard" src="https://cloud.githubusercontent.com/assets/4932851/16547269/69d67380-4170-11e6-9724-ac8b53cd8b93.png">
+![Dashboard](https://user-images.githubusercontent.com/4932851/53799185-e1cdc700-3f4a-11e9-9cb4-8330f501b32e.png)
 
 ## Features
 
