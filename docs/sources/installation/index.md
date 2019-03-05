@@ -23,6 +23,8 @@ service grafana-server restart
 
 Read more about installing plugins in [Grafana docs](http://docs.grafana.org/plugins/installation/)
 
+**WARNING!** The only reliable installation method is `grafana-cli`. Any other ways should be treated as a workaround an don't provide any backward-compatibulity guaranties.
+
 ## From github repo
 **WARNING!** This way doesn't work anymore (`dist/` folder was removed from git). Use `grafana-cli` or build plugin from sources.
 
