@@ -138,7 +138,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     let pageSizeOptions = [5, 10, 20, 25, 50, 100];
     if (pageSize) {
       pageSizeOptions.push(pageSize);
-      pageSizeOptions = _.sortBy(pageSizeOptions);
+      pageSizeOptions = _.uniq(_.sortBy(pageSizeOptions));
     }
 
     return (
