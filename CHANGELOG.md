@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Problems panel: unable to edit panel in Grafana 6.0, [#685](https://github.com/alexanderzobnin/grafana-zabbix/issues/685)
+- Problems panel: datasource selector is empty, [#692](https://github.com/alexanderzobnin/grafana-zabbix/issues/692)
+- Problems panel: "acknowledged" filter doesn't work correctly, [#678](https://github.com/alexanderzobnin/grafana-zabbix/issues/678) [#691](https://github.com/alexanderzobnin/grafana-zabbix/issues/691)
+- Problems panel: acknowledged color isn't working, [#676](https://github.com/alexanderzobnin/grafana-zabbix/issues/676)
+- Problems panel: highlight background doesn't work correctly for resolved events in List view, [#681](https://github.com/alexanderzobnin/grafana-zabbix/issues/681)
+- Problems panel: duplicated page size entries, [#696](https://github.com/alexanderzobnin/grafana-zabbix/issues/696)
+- Direct DB Connection: unable to get trends data from InfluxDB, [#675](https://github.com/alexanderzobnin/grafana-zabbix/issues/675)
+- Annotations are not displayed when time set to a full day/week/month, [#680](https://github.com/alexanderzobnin/grafana-zabbix/issues/680)
+- Functions: `offset` function returns `NaN` in singlestat panel, [#683](https://github.com/alexanderzobnin/grafana-zabbix/issues/683)
+- Functions: `median()` doesn't correspond to `aggregateBy(median)`, [#690](https://github.com/alexanderzobnin/grafana-zabbix/issues/690)
+- Docs: add warnings about installation methods, [#693](https://github.com/alexanderzobnin/grafana-zabbix/issues/693)
+
 
 ## [3.10.0] - 2019-02-14
 ### Added
