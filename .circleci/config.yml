@@ -97,7 +97,13 @@ jobs:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
       - image: circleci/node:8
+    environment:
+      CI_GIT_USER: CircleCI
+      CI_GIT_EMAIL: ci@grafana.com
     steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
       - checkout
       - restore_cache:
           keys:

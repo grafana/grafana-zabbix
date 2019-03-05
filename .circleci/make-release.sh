@@ -7,6 +7,11 @@ set -o errexit
 # Use the error status of the first failure, rather than that of the last item in a pipeline.
 set -o pipefail
 
+# Setup git env
+git config --global user.email $CI_GIT_EMAIL
+git config --global user.name $CI_GIT_USER
+echo "git user is $CI_GIT_USER ($CI_GIT_EMAIL)"
+
 RELEASE_VER=$(echo $CIRCLE_TAG | grep -Po "(?<=v)[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)")
 
 if [ -z $RELEASE_VER ]; then
