@@ -18,7 +18,7 @@ if [ -z $RELEASE_VER ]; then
     echo "No release version provided"
     exit 1
 fi
-if [[ $RELEASE_VER =~ ^[0-9]\.[0-9]\.[0-9]-?.* ]]; then
+if [[ $RELEASE_VER =~ ^[0-9]+(\.[0-9]+){2}(-.+|[^-.]*) ]]; then
   echo "Preparing release $RELEASE_VER"
 else
   echo "Release should has format 1.2.3[-meta], got $RELEASE_VER"
