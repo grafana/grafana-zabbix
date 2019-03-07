@@ -265,6 +265,17 @@ export function compactQuery(query) {
   return query.replace(/\s+/g, ' ').trim();
 }
 
+export function getArrayDepth(a, level = 0) {
+  if (a.length === 0) {
+    return 1;
+  }
+  const elem = a[0];
+  if (_.isArray(elem)) {
+    return getArrayDepth(elem, level + 1);
+  }
+  return level + 1;
+}
+
 // Fix for backward compatibility with lodash 2.4
 if (!_.includes) {
   _.includes = _.contains;

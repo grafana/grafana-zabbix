@@ -107,7 +107,7 @@ function groupByWrapper(interval, groupFunc, datapoints) {
 
 function aggregateByWrapper(interval, aggregateFunc, datapoints) {
   // Flatten all points in frame and then just use groupBy()
-  const flattenedPoints = _.flatten(datapoints, true);
+  const flattenedPoints = ts.flattenDatapoints(datapoints);
   // groupBy_perf works with sorted series only
   const sortedPoints = ts.sortByTime(flattenedPoints);
   let groupByCallback = aggregationFunctions[aggregateFunc];
@@ -115,14 +115,14 @@ function aggregateByWrapper(interval, aggregateFunc, datapoints) {
 }
 
 function aggregateWrapper(groupByCallback, interval, datapoints) {
-  var flattenedPoints = _.flatten(datapoints, true);
+  var flattenedPoints = ts.flattenDatapoints(datapoints);
   // groupBy_perf works with sorted series only
   const sortedPoints = ts.sortByTime(flattenedPoints);
   return groupBy(sortedPoints, interval, groupByCallback);
 }
 
 function percentil(interval, n, datapoints) {
-  var flattenedPoints = _.flatten(datapoints, true);
+  var flattenedPoints = ts.flattenDatapoints(datapoints);
   var groupByCallback = _.partial(PERCENTIL, n);
   return groupBy(flattenedPoints, interval, groupByCallback);
 }

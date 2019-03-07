@@ -138,4 +138,31 @@ describe('Utils', () => {
       done();
     });
   });
+
+  describe('getArrayDepth()', () => {
+    it('should calculate proper array depth', () => {
+      const test_cases = [
+        {
+          array: [],
+          depth: 1
+        },
+        {
+          array: [1, 2, 3],
+          depth: 1
+        },
+        {
+          array: [[1, 2], [3, 4]],
+          depth: 2
+        },
+        {
+          array: [ [[1, 2], [3, 4]], [[1, 2], [3, 4]] ],
+          depth: 3
+        },
+      ];
+
+      for (const test_case of test_cases) {
+        expect(utils.getArrayDepth(test_case.array)).toBe(test_case.depth);
+      }
+    });
+  });
 });

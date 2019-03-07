@@ -478,6 +478,15 @@ function findNearestLeft(series, pointIndex) {
   return null;
 }
 
+function flattenDatapoints(datapoints) {
+  const depth = utils.getArrayDepth(datapoints);
+  if (depth <= 2) {
+    // Don't process if datapoints already flattened
+    return datapoints;
+  }
+  return _.flatten(datapoints);
+}
+
 ////////////
 // Export //
 ////////////
@@ -501,7 +510,8 @@ const exportedFunctions = {
   MAX,
   MEDIAN,
   PERCENTIL,
-  sortByTime
+  sortByTime,
+  flattenDatapoints,
 };
 
 export default exportedFunctions;
