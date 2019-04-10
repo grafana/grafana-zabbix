@@ -25,7 +25,7 @@ Another case to use regex is comparing the same metrics for different hosts. Use
 ![Backend system time](../img/getstarting-regex_backend_system_time.png)
 
 ## Bar Chart
-Let's create a graph wich show queries stats for MySQL database. Select Group, Host, Application (_MySQL_ in my case) and Items. I use `/MySQL .* operations/` regex for filtering different types of operations.
+Let's create a graph which show queries stats for MySQL database. Select Group, Host, Application (_MySQL_ in my case) and Items. I use `/MySQL .* operations/` regex for filtering different types of operations.
 
 ![MySQL operations 1](../img/getstarting-mysql_operations_1.png)
 

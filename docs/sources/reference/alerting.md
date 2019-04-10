@@ -14,7 +14,7 @@ consists of two main parts:
 
 - **Alerting execution engine**  
     The alert rules are evaluated in the Grafana backend in a scheduler and query execution engine that is part of core 
-    Grafana. Only some data soures are supported right now. They include Graphite, Prometheus, InfluxDB and OpenTSDB.
+    Grafana. Only some data sources are supported right now. They include Graphite, Prometheus, InfluxDB and OpenTSDB.
 - **Alerting visualisations**  
     Alerts highlight panels with problems and it can easily be found on the dashboard.
 
