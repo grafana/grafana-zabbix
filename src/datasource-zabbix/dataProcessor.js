@@ -19,7 +19,7 @@ let AVERAGE = ts.AVERAGE;
 let MIN = ts.MIN;
 let MAX = ts.MAX;
 let MEDIAN = ts.MEDIAN;
-let PERCENTIL = ts.PERCENTIL;
+let PERCENTILE = ts.PERCENTILE;
 
 function limit(order, n, orderByFunc, timeseries) {
   let orderByCallback = aggregationFunctions[orderByFunc];
@@ -121,9 +121,9 @@ function aggregateWrapper(groupByCallback, interval, datapoints) {
   return groupBy(sortedPoints, interval, groupByCallback);
 }
 
-function percentil(interval, n, datapoints) {
+function percentile(interval, n, datapoints) {
   var flattenedPoints = ts.flattenDatapoints(datapoints);
-  var groupByCallback = _.partial(PERCENTIL, n);
+  var groupByCallback = _.partial(PERCENTILE, n);
   return groupBy(flattenedPoints, interval, groupByCallback);
 }
 
@@ -155,7 +155,7 @@ let metricFunctions = {
   transformNull: transformNull,
   aggregateBy: aggregateByWrapper,
   // Predefined aggs
-  percentil: percentil,
+  percentile: percentile,
   average: _.partial(aggregateWrapper, AVERAGE),
   min: _.partial(aggregateWrapper, MIN),
   max: _.partial(aggregateWrapper, MAX),

@@ -33,6 +33,7 @@ export function migrate(target) {
   if (isGrafana2target(target)) {
     return migrateFrom2To3version(target);
   }
+  migratePercentileAgg(target);
   return target;
 }
 
@@ -48,6 +49,16 @@ function convertToRegex(str) {
     return '/' + str + '/';
   } else {
     return '/.*/';
+  }
+}
+
+function migratePercentileAgg(target) {
+  if (target.functions) {
+    for (const f of target.functions) {
+      if (f.def && f.def.name === 'percentil') {
+        f.def.name = 'percentile';
+      }
+    }
   }
 }
 

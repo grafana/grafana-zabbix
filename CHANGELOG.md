@@ -189,7 +189,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - setAliasByRegex() function
 
 ### Changed
-- **Docs**: deprecate special repo with builded plugin.
+- **Docs**: deprecate special repo with built plugins.
 - **Triggers panel**: remove 'default' from datasources list (cause error), iss [#340](https://github.com/alexanderzobnin/grafana-zabbix/issues/340)
 - Add dist/ directory to repo to correspond development guide http://docs.grafana.org/plugins/development/
 

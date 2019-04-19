@@ -56,7 +56,7 @@ Direct access is still supported because in some cases it may be useful to acces
 
 Direct DB Connection allows plugin to use existing SQL data source for querying history data directly from Zabbix
 database. This way usually faster than pulling data from Zabbix API, especially on the wide time ranges, and reduces
-amount of data transfered.
+amount of data transferred.
 
 Read [how to configure](./sql_datasource) SQL data source in Grafana.
 
