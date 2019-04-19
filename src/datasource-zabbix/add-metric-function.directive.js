@@ -66,7 +66,7 @@ angular
         });
 
         $input.blur(function() {
-          // clicking the function dropdown menu wont
+          // clicking the function dropdown menu won't
           // work if you remove class at once
           setTimeout(function() {
             $input.val('');

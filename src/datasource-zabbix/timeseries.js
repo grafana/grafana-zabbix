@@ -333,7 +333,7 @@ function expMovingAverage(datapoints, n) {
   return ema;
 }
 
-function PERCENTIL(n, values) {
+function PERCENTILE(n, values) {
   var sorted = _.sortBy(values);
   return sorted[Math.floor(sorted.length * n / 100)];
 }
@@ -509,7 +509,7 @@ const exportedFunctions = {
   MIN,
   MAX,
   MEDIAN,
-  PERCENTIL,
+  PERCENTILE,
   sortByTime,
   flattenDatapoints,
 };
