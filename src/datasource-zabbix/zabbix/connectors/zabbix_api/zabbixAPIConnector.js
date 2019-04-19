@@ -421,7 +421,10 @@ export class ZabbixAPIConnector {
   getEventAlerts(eventids) {
     const params = {
       eventids: eventids,
-      output: 'extend',
+      output: [
+        'eventid',
+        'message'
+      ],
       selectUsers: true,
     };
 
