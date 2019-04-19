@@ -140,7 +140,7 @@ addFuncDef({
 });
 
 addFuncDef({
-  name: 'percentil',
+  name: 'percentile',
   category: 'Aggregate',
   params: [
     { name: 'interval', type: 'string' },
