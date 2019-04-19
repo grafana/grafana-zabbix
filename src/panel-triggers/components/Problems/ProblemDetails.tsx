@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
-import { ZBXTrigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag } from '../../types';
+import { ZBXTrigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag, ZBXAlert } from '../../types';
 import { Modal, AckProblemData } from '../Modal';
 import EventTag from '../EventTag';
 import Tooltip from '../Tooltip/Tooltip';
@@ -15,12 +15,14 @@ interface ProblemDetailsProps extends RTRow<ZBXTrigger> {
   timeRange: GFTimeRange;
   showTimeline?: boolean;
   getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
+  getProblemAlerts: (problem: ZBXTrigger) => Promise<ZBXAlert[]>;
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 interface ProblemDetailsState {
   events: ZBXEvent[];
+  alerts: ZBXAlert[];
   show: boolean;
   showAckDialog: boolean;
 }
@@ -30,6 +32,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     super(props);
     this.state = {
       events: [],
+      alerts: [],
       show: false,
       showAckDialog: false,
     };
@@ -39,6 +42,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     if (this.props.showTimeline) {
       this.fetchProblemEvents();
     }
+    this.fetchProblemAlerts();
     requestAnimationFrame(() => {
       this.setState({ show: true });
     });
@@ -55,6 +59,15 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     this.props.getProblemEvents(problem)
     .then(events => {
       this.setState({ events });
+    });
+  }
+
+  fetchProblemAlerts() {
+    const problem = this.props.original;
+    this.props.getProblemAlerts(problem)
+    .then(alerts => {
+      problem.alerts = alerts;
+      this.setState({ alerts });
     });
   }
 

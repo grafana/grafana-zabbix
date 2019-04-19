@@ -423,7 +423,9 @@ export class ZabbixAPIConnector {
       eventids: eventids,
       output: [
         'eventid',
-        'message'
+        'message',
+        'clock',
+        'error'
       ],
       selectUsers: true,
     };

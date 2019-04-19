@@ -18,7 +18,7 @@ export default function ProblemStatusBar(props: ProblemStatusBarProps) {
   const stateUnknown = problem.state === '1';
   const closeByTag = problem.correlation_mode === '1';
   const actions = problem.alerts && problem.alerts.length !== 0;
-  const actionMessage = problem.alerts ? problem.alerts[0].message : '';
+  const actionMessage = actions ? problem.alerts[0].message : '';
 
   return (
     <div className={`problem-statusbar ${className || ''}`}>

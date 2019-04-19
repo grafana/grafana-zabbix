@@ -271,14 +271,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
         }));
         return Promise.all([
           this.datasources[ds].zabbix.getExtendedEventData(eventids),
-          this.datasources[ds].zabbix.getEventAlerts(eventids),
+          // this.datasources[ds].zabbix.getEventAlerts(eventids),
           Promise.resolve(triggers)
         ]);
       })
-      .then(([events, alerts, triggers]) => {
+      .then(([events, triggers]) => {
         this.addEventTags(events, triggers);
         this.addAcknowledges(events, triggers);
-        this.addEventAlerts(alerts, triggers);
+        // this.addEventAlerts(alerts, triggers);
         return triggers;
       })
       .then(triggers => this.setMaintenanceStatus(triggers))
@@ -503,13 +503,24 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.refresh();
   }
 
-  getProblemEvents(trigger) {
-    const triggerids = [trigger.triggerid];
+  getProblemEvents(problem) {
+    const triggerids = [problem.triggerid];
     const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
     const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
-    return this.datasourceSrv.get(trigger.datasource)
+    return this.datasourceSrv.get(problem.datasource)
     .then(datasource => {
       return datasource.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
+    });
+  }
+
+  getProblemAlerts(problem) {
+    if (!problem.lastEvent || problem.lastEvent.length === 0) {
+      return Promise.resolve([]);
+    }
+    const eventids = [problem.lastEvent.eventid];
+    return this.datasourceSrv.get(problem.datasource)
+    .then(datasource => {
+      return datasource.zabbix.getEventAlerts(eventids);
     });
   }
 
@@ -663,6 +674,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         pageSize,
         fontSize: fontSizeProp,
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
+        getProblemAlerts: ctrl.getProblemAlerts.bind(ctrl),
         onPageSizeChange: ctrl.handlePageSizeChange.bind(ctrl),
         onColumnResize: ctrl.handleColumnResize.bind(ctrl),
         onProblemAck: (trigger, data) => {

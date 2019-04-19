@@ -5,7 +5,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
 import { isNewProblem } from '../../utils';
-import { ProblemsPanelOptions, ZBXTrigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized } from '../../types';
+import { ProblemsPanelOptions, ZBXTrigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized, ZBXAlert } from '../../types';
 import EventTag from '../EventTag';
 import ProblemDetails from './ProblemDetails';
 import { AckProblemData } from '../Modal';
@@ -18,7 +18,8 @@ export interface ProblemListProps {
   timeRange?: GFTimeRange;
   pageSize?: number;
   fontSize?: number;
-  getProblemEvents: (ids: string[]) => ZBXEvent[];
+  getProblemEvents: (problem: ZBXTrigger) => ZBXEvent[];
+  getProblemAlerts: (problem: ZBXTrigger) => ZBXAlert[];
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
@@ -159,6 +160,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
               timeRange={this.props.timeRange}
               showTimeline={panelOptions.problemTimeline}
               getProblemEvents={this.props.getProblemEvents}
+              getProblemAlerts={this.props.getProblemAlerts}
               onProblemAck={this.handleProblemAck}
               onTagClick={this.handleTagClick}
             />
