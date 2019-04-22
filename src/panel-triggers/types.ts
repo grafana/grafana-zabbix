@@ -162,6 +162,7 @@ export interface ZBXAcknowledge {
 }
 
 export interface ZBXAlert {
+  eventid: string;
   clock: string;
   message: string;
   error: string;
