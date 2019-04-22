@@ -24,6 +24,10 @@
 
           &.zbx-description--newline {
             max-height: unset;
+
+            .zbx-description {
+              margin-left: 0px;
+            }
           }
 
           .zbx-description {

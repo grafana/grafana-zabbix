@@ -123,9 +123,9 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
             </div>
 
             {panelOptions.descriptionField && panelOptions.descriptionAtNewLine && (
-              <div className="alert-rule-item__text" >
+              <div className="alert-rule-item__text zbx-description--newline" >
                 <span
-                  className="alert-rule-item__info zbx-description zbx-description--newline"
+                  className="alert-rule-item__info zbx-description"
                   dangerouslySetInnerHTML={{ __html: problem.comments }}
                 />
               </div>
