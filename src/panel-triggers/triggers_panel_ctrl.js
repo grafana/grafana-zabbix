@@ -271,14 +271,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
         }));
         return Promise.all([
           this.datasources[ds].zabbix.getExtendedEventData(eventids),
-          // this.datasources[ds].zabbix.getEventAlerts(eventids),
           Promise.resolve(triggers)
         ]);
       })
       .then(([events, triggers]) => {
         this.addEventTags(events, triggers);
         this.addAcknowledges(events, triggers);
-        // this.addEventAlerts(alerts, triggers);
         return triggers;
       })
       .then(triggers => this.setMaintenanceStatus(triggers))
@@ -332,18 +330,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
       });
       if (event && event.tags && event.tags.length) {
         trigger.tags = event.tags;
-      }
-    });
-    return triggers;
-  }
-
-  addEventAlerts(alerts, triggers) {
-    alerts.forEach(alert => {
-      const trigger = _.find(triggers, t => {
-        return t.lastEvent && alert.eventid === t.lastEvent.eventid;
-      });
-      if (trigger) {
-        trigger.alerts = trigger.alerts ? trigger.alerts.concat(alert) : [alert];
       }
     });
     return triggers;

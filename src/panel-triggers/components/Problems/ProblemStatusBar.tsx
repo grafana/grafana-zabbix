@@ -1,15 +1,16 @@
 import React from 'react';
 import FAIcon from '../FAIcon';
 import Tooltip from '../Tooltip/Tooltip';
-import { ZBXTrigger } from '../../types';
+import { ZBXTrigger, ZBXAlert } from '../../types';
 
 export interface ProblemStatusBarProps {
   problem: ZBXTrigger;
+  alerts?: ZBXAlert[];
   className?: string;
 }
 
 export default function ProblemStatusBar(props: ProblemStatusBarProps) {
-  const { problem, className } = props;
+  const { problem, alerts, className } = props;
   const multiEvent = problem.type === '1';
   const link = problem.url && problem.url !== '';
   const maintenance = problem.maintenance;
@@ -17,8 +18,8 @@ export default function ProblemStatusBar(props: ProblemStatusBarProps) {
   const error = problem.error && problem.error !== '';
   const stateUnknown = problem.state === '1';
   const closeByTag = problem.correlation_mode === '1';
-  const actions = problem.alerts && problem.alerts.length !== 0;
-  const actionMessage = actions ? problem.alerts[0].message : '';
+  const actions = alerts && alerts.length !== 0;
+  const actionMessage = actions ? alerts[0].message : '';
 
   return (
     <div className={`problem-statusbar ${className || ''}`}>

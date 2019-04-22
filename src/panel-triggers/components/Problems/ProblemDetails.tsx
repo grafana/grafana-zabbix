@@ -66,7 +66,6 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     const problem = this.props.original;
     this.props.getProblemAlerts(problem)
     .then(alerts => {
-      problem.alerts = alerts;
       this.setState({ alerts });
     });
   }
@@ -91,6 +90,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
 
   render() {
     const problem = this.props.original as ZBXTrigger;
+    const alerts = this.state.alerts;
     const rootWidth = this.props.rootWidth;
     const displayClass = this.state.show ? 'show' : '';
     const wideLayout = rootWidth > 1200;
@@ -109,7 +109,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
               </div>
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
-            <ProblemStatusBar problem={problem} className={compactStatusBar && 'compact'} />
+            <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
             <div className="problem-actions">
               <ProblemActionButton className="navbar-button navbar-button--settings"
                 icon="reply-all"
