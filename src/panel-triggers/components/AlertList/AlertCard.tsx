@@ -44,7 +44,10 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
   }
 
   showAckDialog = () => {
-    this.setState({ showAckDialog: true });
+    const problem = this.props.problem;
+    if (problem.showAckButton) {
+      this.setState({ showAckDialog: true });
+    }
   }
 
   closeAckDialog = () => {
@@ -258,14 +261,20 @@ class AlertAcknowledgesButton extends PureComponent<AlertAcknowledgesButtonProps
 
   render() {
     const { problem } = this.props;
-    return (
-      problem.acknowledges && problem.acknowledges.length ?
+    let content = null;
+    if (problem.acknowledges && problem.acknowledges.length) {
+      content = (
         <Tooltip placement="bottom" popperClassName="ack-tooltip" content={this.renderTooltipContent}>
           <span><i className="fa fa-comments"></i></span>
-        </Tooltip> :
+        </Tooltip>
+      );
+    } else if (problem.showAckButton) {
+      content = (
         <Tooltip placement="bottom" content="Acknowledge problem">
           <span role="button" onClick={this.handleClick}><i className="fa fa-comments-o"></i></span>
         </Tooltip>
-    );
+      );
+    }
+    return content;
   }
 }

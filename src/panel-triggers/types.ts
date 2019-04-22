@@ -75,6 +75,7 @@ export type TriggerColor = string;
 
 export interface ZBXTrigger {
   acknowledges?: ZBXAcknowledge[];
+  showAckButton?: boolean;
   alerts?: ZBXAlert[];
   age?: string;
   color?: TriggerColor;

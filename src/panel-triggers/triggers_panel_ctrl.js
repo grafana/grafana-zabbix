@@ -234,9 +234,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
   getTriggers() {
     const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
     const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
+    const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
 
     let promises = _.map(this.panel.datasources, (ds) => {
       let proxies;
+      let showAckButton = true;
       return this.datasourceSrv.get(ds)
       .then(datasource => {
         const zabbix = datasource.zabbix;
@@ -244,6 +246,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         const triggerFilter = this.panel.targets[ds];
         const showProxy = this.panel.hostProxy;
         const getProxiesPromise = showProxy ? zabbix.getProxies() : () => [];
+        showAckButton = !datasource.disableReadOnlyUsersAck || userIsEditor;
 
         // Replace template variables
         const groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
@@ -280,6 +283,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         return triggers;
       })
       .then(triggers => this.setMaintenanceStatus(triggers))
+      .then(triggers => this.setAckButtonStatus(triggers, showAckButton))
       .then(triggers => this.filterTriggersPre(triggers, ds))
       .then(triggers => this.addTriggerDataSource(triggers, ds))
       .then(triggers => this.addTriggerHostProxy(triggers, proxies));
@@ -391,6 +395,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
     _.each(triggers, (trigger) => {
       let maintenance_status = _.some(trigger.hosts, (host) => host.maintenance_status === '1');
       trigger.maintenance = maintenance_status;
+    });
+    return triggers;
+  }
+
+  setAckButtonStatus(triggers, showAckButton) {
+    _.each(triggers, (trigger) => {
+      trigger.showAckButton = showAckButton;
     });
     return triggers;
   }

@@ -36,11 +36,13 @@ export default class AlertAcknowledges extends PureComponent<AlertAcknowledgesPr
             {ackRows}
           </tbody>
         </table>
-        <div className="ack-add-button">
-          <button id="add-acknowledge-btn" className="btn btn-mini btn-inverse gf-form-button" onClick={this.handleClick}>
-            <i className="fa fa-plus"></i>
-          </button>
-        </div>
+        {problem.showAckButton &&
+          <div className="ack-add-button">
+            <button id="add-acknowledge-btn" className="btn btn-mini btn-inverse gf-form-button" onClick={this.handleClick}>
+              <i className="fa fa-plus"></i>
+            </button>
+          </div>
+        }
       </div>
     );
   }

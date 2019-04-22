@@ -110,12 +110,14 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
             <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
-            <div className="problem-actions">
-              <ProblemActionButton className="navbar-button navbar-button--settings"
-                icon="reply-all"
-                tooltip="Acknowledge problem"
-                onClick={this.showAckDialog} />
-            </div>
+            {problem.showAckButton &&
+              <div className="problem-actions">
+                <ProblemActionButton className="navbar-button navbar-button--settings"
+                  icon="reply-all"
+                  tooltip="Acknowledge problem"
+                  onClick={this.showAckDialog} />
+              </div>
+            }
           </div>
           {problem.comments &&
             <div className="problem-description">
