@@ -143,7 +143,7 @@ function handleSLAResponse(itservice, slaProperty, slaObject) {
   }
 }
 
-function handleTriggersResponse(triggers, timeRange) {
+function handleTriggersResponse(triggers, groups, timeRange) {
   if (_.isNumber(triggers)) {
     return {
       target: "triggers count",
@@ -152,16 +152,19 @@ function handleTriggersResponse(triggers, timeRange) {
       ]
     };
   } else {
-    let stats = getTriggerStats(triggers);
+    const stats = getTriggerStats(triggers);
+    const groupNames = _.map(groups, 'name');
     let table = new TableModel();
     table.addColumn({text: 'Host group'});
     _.each(_.orderBy(c.TRIGGER_SEVERITY, ['val'], ['desc']), (severity) => {
       table.addColumn({text: severity.text});
     });
     _.each(stats, (severity_stats, group) => {
-      let row = _.map(_.orderBy(_.toPairs(severity_stats), (s) => s[0], ['desc']), (s) => s[1]);
-      row = _.concat([group], ...row);
-      table.rows.push(row);
+      if (_.includes(groupNames, group)) {
+        let row = _.map(_.orderBy(_.toPairs(severity_stats), (s) => s[0], ['desc']), (s) => s[1]);
+        row = _.concat([group], ...row);
+        table.rows.push(row);
+      }
     });
     return table;
   }

@@ -330,7 +330,7 @@ export class ZabbixDatasource {
   queryTriggersData(target, timeRange) {
     let [timeFrom, timeTo] = timeRange;
     return this.zabbix.getHostsFromTarget(target)
-    .then((results) => {
+    .then(results => {
       let [hosts, apps] = results;
       if (hosts.length) {
         let hostids = _.map(hosts, 'hostid');
@@ -342,9 +342,13 @@ export class ZabbixDatasource {
           timeFrom: timeFrom,
           timeTo: timeTo
         };
-        return this.zabbix.getHostAlerts(hostids, appids, options)
-        .then((triggers) => {
-          return responseHandler.handleTriggersResponse(triggers, timeRange);
+        const groupFilter = target.group.filter;
+        return Promise.all([
+          this.zabbix.getHostAlerts(hostids, appids, options),
+          this.zabbix.getGroups(groupFilter)
+        ])
+        .then(([triggers, groups]) => {
+          return responseHandler.handleTriggersResponse(triggers, groups, timeRange);
         });
       } else {
         return Promise.resolve([]);
