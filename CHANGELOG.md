@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.10.2] - 2019-04-23
+### Fixed
+- Direct DB Connection: provisioned datasource fails to load, [#711](https://github.com/alexanderzobnin/grafana-zabbix/issues/711)
+- Functions: `sumSeries` doesn't work in couple with other aggregation functions, [#530](https://github.com/alexanderzobnin/grafana-zabbix/issues/530)
+- Problems panel: performance and memory issues, [#720](https://github.com/alexanderzobnin/grafana-zabbix/issues/720), [#712](https://github.com/alexanderzobnin/grafana-zabbix/issues/712)
+- Problems panel: hide acknowledge button for read-only users, [#722](https://github.com/alexanderzobnin/grafana-zabbix/issues/722)
+- Problems panel: "no data" overlaps table header when font size increased, [#717](https://github.com/alexanderzobnin/grafana-zabbix/issues/717)
+- Problems panel: problem description does not resize problem bar, [#704](https://github.com/alexanderzobnin/grafana-zabbix/issues/704)
+- Triggers query mode: problems not filtered by selected groups, [#709](https://github.com/alexanderzobnin/grafana-zabbix/issues/709)
+
 ## [3.10.1] - 2019-03-05
 ### Fixed
 - Problems panel: unable to edit panel in Grafana 6.0, [#685](https://github.com/alexanderzobnin/grafana-zabbix/issues/685)
