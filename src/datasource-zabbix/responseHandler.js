@@ -145,10 +145,16 @@ function handleSLAResponse(itservice, slaProperty, slaObject) {
 
 function handleTriggersResponse(triggers, groups, timeRange) {
   if (!_.isArray(triggers)) {
+    let triggersCount = null;
+    try {
+      triggersCount = Number(triggers);
+    } catch (err) {
+      console.log("Error when handling triggers count: ", err);
+    }
     return {
       target: "triggers count",
       datapoints: [
-        [triggers, timeRange[1] * 1000]
+        [triggersCount, timeRange[1] * 1000]
       ]
     };
   } else {
