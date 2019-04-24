@@ -144,7 +144,7 @@ function handleSLAResponse(itservice, slaProperty, slaObject) {
 }
 
 function handleTriggersResponse(triggers, groups, timeRange) {
-  if (_.isNumber(triggers)) {
+  if (!_.isArray(triggers)) {
     return {
       target: "triggers count",
       datapoints: [
