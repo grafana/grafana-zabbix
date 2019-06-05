@@ -72,6 +72,12 @@ export class SQLConnector extends DBConnector {
     let { intervalMs, consolidateBy } = options;
     let intervalSec = Math.ceil(intervalMs / 1000);
 
+    // The interval must match the time range exactly n times, otherwise
+    // the resulting first and last data points will yield invalid values in the
+    // calculated average value in downsampleSeries - when using consolidateBy(avg)
+    let numOfIntervals = Math.ceil((timeTill - timeFrom) / intervalSec);
+    intervalSec = (timeTill - timeFrom) / numOfIntervals;
+
     consolidateBy = consolidateBy || 'avg';
     let aggFunction = dbConnector.consolidateByFunc[consolidateBy];
 
