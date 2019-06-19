@@ -242,9 +242,9 @@ export class Zabbix {
       _.forEach(items, item => {
         if (utils.containsMacro(isTriggerItem ? item.url : item.name)) {
           if (isTriggerItem) {
-              item.url = utils.replaceMacro(item, macros, isTriggerItem);
+            item.url = utils.replaceMacro(item, macros, isTriggerItem);
           } else {
-              item.name = utils.replaceMacro(item, macros);
+            item.name = utils.replaceMacro(item, macros);
           }
         }
       });
