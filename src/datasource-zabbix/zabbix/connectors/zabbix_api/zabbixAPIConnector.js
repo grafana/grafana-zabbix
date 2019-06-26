@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import * as utils from '../../../utils';
 import { ZabbixAPICore } from './zabbixAPICore';
-import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE } from '../../../constants';
+import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_CLOSE } from '../../../constants';
 
 /**
  * Zabbix API Wrapper.
