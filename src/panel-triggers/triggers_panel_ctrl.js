@@ -602,7 +602,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.render();
   }
 
-  acknowledgeTrigger(trigger, message) {
+  acknowledgeTrigger(trigger, message, closeProblem) {
     let eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
     let grafana_user = this.contextSrv.user.name;
     let ack_message = grafana_user + ' (Grafana): ' + message;
@@ -613,7 +613,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         return Promise.reject({message: 'You have no permissions to acknowledge events.'});
       }
       if (eventid) {
-        return datasource.zabbix.acknowledgeEvent(eventid, ack_message);
+        return datasource.zabbix.acknowledgeEvent(eventid, ack_message, closeProblem);
       } else {
         return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
       }
