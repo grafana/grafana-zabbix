@@ -16,6 +16,7 @@ interface ModalState {
   value: string;
   error: boolean;
   message: string;
+  closeProblem: boolean;
 }
 
 export interface AckProblemData {
@@ -33,6 +34,7 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
       value: '',
       error: false,
       message: '',
+      closeProblem: false,
     };
 
     this.modalContainer = document.body;
@@ -41,6 +43,11 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
   handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({ value: event.target.value, error: false });
   }
+  
+  handleChangeCheckbox = () => {
+    this.setState({ closeProblem: !this.state.closeProblem, });
+  }
+
 
   handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.which === KEYBOARD_ENTER_KEY || event.key === 'Enter') {
@@ -67,7 +74,8 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
       });
     }
     this.props.onSubmit({
-      message: this.state.value
+      message: this.state.value,
+      closeProblem: this.state.closeProblem
     }).then(() => {
       this.dismiss();
     });
@@ -116,6 +124,10 @@ export class Modal extends PureComponent<ModalProps, ModalState> {
 
             <div className="gf-form-button-row text-center">
               <button className="btn btn-success" onClick={this.submit}>Acknowledge</button>
+              <label className="btn btn-inverse" style={{ marginRight: 14 }}>
+                <input style={{ marginRight: 5 }} type="checkbox" onChange={this.handleChangeCheckbox}/>
+                Close problem
+              </label>
               <button className="btn btn-inverse" onClick={this.dismiss}>Cancel</button>
             </div>
           </div>
