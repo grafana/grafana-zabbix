@@ -91,8 +91,17 @@ export class ZabbixAPIConnector {
   // Zabbix API method wrappers //
   ////////////////////////////////
 
-  acknowledgeEvent(eventid, message) {
-    const action = this.version >= 4 ? ZBX_ACK_ACTION_ACK + ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
+  acknowledgeEvent(eventid, message, closeProblem) {
+    var action = ZBX_ACK_ACTION_NONE;
+    if (this.version >= 4)
+    {
+      action = ZBX_ACK_ACTION_ACK + ZBX_ACK_ACTION_ADD_MESSAGE;
+      if (closeProblem == true)
+      {
+        action += ZBX_ACK_ACTION_CLOSE;
+      }
+    }
+    
     const params = {
       eventids: eventid,
       message: message,
