@@ -323,8 +323,8 @@ export class ZabbixDatasource {
 
     return this.zabbix.getITServices(itServiceFilter)
     .then(itservices => {
-      return this.zabbix.getSLA(itservices, timeRange, target, options);
-    });
+      return this.zabbix.getSLA(itservices, timeRange, target, options);})
+    .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target));
   }
 
   queryTriggersData(target, timeRange) {

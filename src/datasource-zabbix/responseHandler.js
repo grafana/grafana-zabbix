@@ -123,22 +123,27 @@ function extractText(str, pattern, useCaptureGroups) {
 }
 
 function handleSLAResponse(itservice, slaProperty, slaObject) {
-  var targetSLA = slaObject[itservice.serviceid].sla[0];
+  var targetSLA = slaObject[itservice.serviceid].sla;
   if (slaProperty.property === 'status') {
     var targetStatus = parseInt(slaObject[itservice.serviceid].status);
     return {
       target: itservice.name + ' ' + slaProperty.name,
       datapoints: [
-        [targetStatus, targetSLA.to * 1000]
+        [targetStatus, targetSLA[0].to * 1000]
       ]
     };
   } else {
+    let i;
+    let slaArr = [];
+    for (i = 0; i < targetSLA.length; i++) {
+      if (i === 0) {
+        slaArr.push([targetSLA[i][slaProperty.property], targetSLA[i].from * 1000]);
+      }
+      slaArr.push([targetSLA[i][slaProperty.property], targetSLA[i].to * 1000]);
+    }
     return {
       target: itservice.name + ' ' + slaProperty.name,
-      datapoints: [
-        [targetSLA[slaProperty.property], targetSLA.from * 1000],
-        [targetSLA[slaProperty.property], targetSLA.to * 1000]
-      ]
+      datapoints: slaArr
     };
   }
 }
