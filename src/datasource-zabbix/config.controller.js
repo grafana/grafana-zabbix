@@ -29,9 +29,7 @@ export class ZabbixDSConfigController {
     this.current.jsonData = migrateDSConfig(this.current.jsonData);
     _.defaults(this.current.jsonData, defaultConfig);
 
-    this.dbConnectionEnable = this.current.jsonData.dbConnectionEnable;
     this.dbConnectionDatasourceId = this.current.jsonData.dbConnectionDatasourceId;
-
     this.dbDataSources = this.getSupportedDBDataSources();
     this.zabbixVersions = _.cloneDeep(zabbixVersions);
     this.autoDetectZabbixVersion();
@@ -80,5 +78,9 @@ export class ZabbixDSConfigController {
         this.current.jsonData.zabbixVersion = version;
       }
     });
+  }
+
+  onDBConnectionDatasourceChange() {
+    this.current.jsonData.dbConnectionDatasourceId = this.dbConnectionDatasourceId;
   }
 }
