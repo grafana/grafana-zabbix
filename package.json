@@ -69,6 +69,7 @@
     "react-table": "^6.8.6",
     "react-test-renderer": "^16.7.0",
     "react-transition-group": "^2.5.2",
+    "rst2html": "github:thoward/rst2html#990cb89",
     "sass-loader": "^7.1.0",
     "style-loader": "^0.23.1",
     "tether-drop": "^1.4.2",

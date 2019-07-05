@@ -275,6 +275,12 @@ export class ZabbixQueryController extends QueryCtrl {
     this.targetChanged();
   }
 
+  moveFunction(func, offset) {
+    const index = this.target.functions.indexOf(func);
+    _.move(this.target.functions, index, index + offset);
+    this.targetChanged();
+  }
+
   moveAliasFuncLast() {
     var aliasFunc = _.find(this.target.functions, function(func) {
       return func.def.name === 'alias' ||
