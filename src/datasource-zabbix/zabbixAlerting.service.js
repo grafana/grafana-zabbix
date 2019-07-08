@@ -10,7 +10,7 @@ class ZabbixAlertingService {
   }
 
   isFullScreen() {
-    return this.dashboardSrv.dash.meta.fullscreen;
+    return this.getDashboardModel().meta.fullscreen;
   }
 
   setPanelAlertState(panelId, alertState) {
@@ -35,21 +35,18 @@ class ZabbixAlertingService {
       $(panelContainers[panelIndex]).removeClass(alertClass);
 
       if (alertState) {
-        if (alertState === 'alerting') {
-          alertClass = "panel-has-alert panel-alert-state--" + alertState;
-          $(panelContainers[panelIndex]).addClass(alertClass);
-        }
-        if (alertState === 'ok') {
-          alertClass = "panel-alert-state--" + alertState;
-          $(panelContainers[panelIndex]).addClass(alertClass);
-          $(panelContainers[panelIndex]).removeClass("panel-has-alert");
-        }
+        alertClass = "panel-has-alert panel-alert-state--" + alertState;
+        $(panelContainers[panelIndex]).addClass(alertClass);
       }
     }
   }
 
+  getDashboardModel() {
+    return this.dashboardSrv.dash || this.dashboardSrv.dashboard;
+  }
+
   getPanelModels() {
-    return _.filter(this.dashboardSrv.dash.panels, panel => panel.type !== 'row');
+    return _.filter(this.getDashboardModel().panels, panel => panel.type !== 'row');
   }
 
   getPanelModel(panelId) {
