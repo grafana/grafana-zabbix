@@ -2,7 +2,7 @@ import coreModule from 'grafana/app/core/core_module';
 import _ from 'lodash';
 import $ from 'jquery';
 import { react2AngularDirective } from './react2angular';
-import { FunctionEditor } from './FunctionEditor';
+import { FunctionEditor } from './components/FunctionEditor';
 
 /** @ngInject */
 export function zabbixFunctionEditor($compile, templateSrv) {
