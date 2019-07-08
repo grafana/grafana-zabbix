@@ -282,10 +282,8 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   moveAliasFuncLast() {
-    var aliasFunc = _.find(this.target.functions, function(func) {
-      return func.def.name === 'alias' ||
-        func.def.name === 'aliasByNode' ||
-        func.def.name === 'aliasByMetric';
+    var aliasFunc = _.find(this.target.functions, func => {
+      return func.def.category === 'Alias';
     });
 
     if (aliasFunc) {
