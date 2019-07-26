@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.10.3] - 2019-07-26
+### Fixed
+- Direct DB Connection: can't stay enabled, [#731](https://github.com/alexanderzobnin/grafana-zabbix/issues/731)
+- Triggers query mode: count doesn't work with Singlestat, [#726](https://github.com/alexanderzobnin/grafana-zabbix/issues/726)
+- Query editor: function editor looks odd in Grafana 6.x, [#765](https://github.com/alexanderzobnin/grafana-zabbix/issues/765)
+- Alerting: heart icon on panels in Grafana 6.x, [#715](https://github.com/alexanderzobnin/grafana-zabbix/issues/715)
+
 ## [3.10.2] - 2019-04-23
 ### Fixed
 - Direct DB Connection: provisioned datasource fails to load, [#711](https://github.com/alexanderzobnin/grafana-zabbix/issues/711)
