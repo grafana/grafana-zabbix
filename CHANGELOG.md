@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+### Added
+- SLA over time graphs, [#728](https://github.com/alexanderzobnin/grafana-zabbix/issues/728)
+
 ## [3.10.3] - 2019-07-26
 ### Fixed
 - Direct DB Connection: can't stay enabled, [#731](https://github.com/alexanderzobnin/grafana-zabbix/issues/731)
