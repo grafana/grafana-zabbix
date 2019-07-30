@@ -1,7 +1,8 @@
 import _ from 'lodash';
+import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { ZabbixAPICore } from './zabbixAPICore';
-import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE } from '../../../constants';
+import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
 
 /**
  * Zabbix API Wrapper.
@@ -316,25 +317,11 @@ export class ZabbixAPIConnector {
     return this.request('service.get', params);
   }
 
-  getSLA(serviceids, timeRange) {
-    let defaultRange = 86400;
-    let i;
-    let getIntervals = [];
-    let [timeFrom, timeTo] = timeRange;
-
-    for (i = timeFrom; i <= timeTo; i = i + defaultRange) {
-      if (timeTo < (i + defaultRange)) {
-        if (timeTo !== i) {
-          getIntervals.push({from : i, to : timeTo});
-        }
-      } else {
-        getIntervals.push({from : i, to : (i + defaultRange)});
-      }
-    }
-
-    var params = {
-      serviceids: serviceids,
-      intervals: getIntervals
+  getSLA(serviceids, timeRange, options) {
+    const intervals = buildSLAIntervals(timeRange, options.intervalMs);
+    const params = {
+      serviceids,
+      intervals
     };
     return this.request('service.getsla', params);
   }
@@ -535,4 +522,31 @@ function isNotAuthorized(message) {
     message === "Not authorised." ||
     message === "Not authorized."
   );
+}
+
+function getSLAInterval(intervalMs) {
+  // Too many intervals may cause significant load on the database, so decrease number of resulting points
+  const resolutionRatio = 100;
+  const interval = kbn.round_interval(intervalMs * resolutionRatio) / 1000;
+  return Math.max(interval, MIN_SLA_INTERVAL);
+}
+
+function buildSLAIntervals(timeRange, intervalMs) {
+  let [timeFrom, timeTo] = timeRange;
+  const slaInterval = getSLAInterval(intervalMs);
+  const intervals = [];
+
+  // Align time range with calculated interval
+  timeFrom = Math.floor(timeFrom / slaInterval) * slaInterval;
+  timeTo = Math.ceil(timeTo / slaInterval) * slaInterval;
+
+  for (let i = timeFrom; i <= timeTo - slaInterval; i += slaInterval) {
+    intervals.push({
+      from : i,
+      to : (i + slaInterval)
+    });
+
+  }
+
+  return intervals;
 }

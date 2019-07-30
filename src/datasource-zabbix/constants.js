@@ -34,3 +34,6 @@ export const TRIGGER_SEVERITY = [
   {val: 4, text: 'High'},
   {val: 5, text: 'Disaster'}
 ];
+
+/** Minimum interval for SLA over time (1 hour) */
+export const MIN_SLA_INTERVAL = 3600;
