@@ -317,13 +317,24 @@ export class ZabbixAPIConnector {
   }
 
   getSLA(serviceids, timeRange) {
+    let defaultRange = 86400;
+    let i;
+    let getIntervals = [];
     let [timeFrom, timeTo] = timeRange;
+
+    for (i = timeFrom; i <= timeTo; i = i + defaultRange) {
+      if (timeTo < (i + defaultRange)) {
+        if (timeTo !== i) {
+          getIntervals.push({from : i, to : timeTo});
+        }
+      } else {
+        getIntervals.push({from : i, to : (i + defaultRange)});
+      }
+    }
+
     var params = {
       serviceids: serviceids,
-      intervals: [{
-        from: timeFrom,
-        to: timeTo
-      }]
+      intervals: getIntervals
     };
     return this.request('service.getsla', params);
   }
