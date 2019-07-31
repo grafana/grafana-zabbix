@@ -17,7 +17,7 @@ module.exports = {
   entry: {
     './module': './module.js',
     'components/config': './components/config.js',
-    'datasource-zabbix/module': './datasource-zabbix/module.js',
+    'datasource-zabbix/module': './datasource-zabbix/module.ts',
     'panel-triggers/module': './panel-triggers/module.js',
   },
   output: {
