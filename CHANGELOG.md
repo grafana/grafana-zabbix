@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - SLA over time graphs, [#728](https://github.com/alexanderzobnin/grafana-zabbix/issues/728)
 
+### Fixed
+- Problems panel: query editor broken in Grafana 6.3, [#778](https://github.com/alexanderzobnin/grafana-zabbix/issues/778)
+- Problems panel: some heart icons are missing, [#754](https://github.com/alexanderzobnin/grafana-zabbix/issues/754)
+
 ## [3.10.3] - 2019-07-26
 ### Fixed
 - Direct DB Connection: can't stay enabled, [#731](https://github.com/alexanderzobnin/grafana-zabbix/issues/731)
