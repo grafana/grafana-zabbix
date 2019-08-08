@@ -9,8 +9,7 @@ interface GFHeartIconProps {
 export default function GFHeartIcon(props: GFHeartIconProps) {
   const status = props.status;
   const className = classNames("icon-gf", props.className,
-    { "icon-gf-critical": status === 'critical' || status === 'problem' },
-    { "icon-gf-warning": status === 'warning' },
+    { "icon-gf-critical": status === 'critical' || status === 'problem' || status === 'warning'},
     { "icon-gf-online": status === 'online' || status === 'ok' },
   );
   return (

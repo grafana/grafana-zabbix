@@ -557,12 +557,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   getAlertIconClass(trigger) {
     let iconClass = '';
-    if (trigger.value === '1') {
-      if (trigger.priority >= 3) {
-        iconClass = 'icon-gf-critical';
-      } else {
-        iconClass = 'icon-gf-warning';
-      }
+    if (trigger.value === '1' && trigger.priority >= 2) {
+      iconClass = 'icon-gf-critical';
     } else {
       iconClass = 'icon-gf-online';
     }
@@ -574,8 +570,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getAlertIconClassBySeverity(triggerSeverity) {
-    let iconClass = 'icon-gf-warning';
-    if (triggerSeverity.priority >= 3) {
+    let iconClass = 'icon-gf-online';
+    if (triggerSeverity.priority >= 2) {
       iconClass = 'icon-gf-critical';
     }
     return iconClass;

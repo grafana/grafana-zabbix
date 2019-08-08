@@ -13,12 +13,8 @@ export default function AlertIcon(props: AlertIconProps) {
   const { problem, color, blink, highlightBackground } = props;
   const priority = Number(problem.priority);
   let iconClass = '';
-  if (problem.value === '1') {
-    if (priority >= 3) {
-      iconClass = 'icon-gf-critical';
-    } else {
-      iconClass = 'icon-gf-warning';
-    }
+  if (problem.value === '1' && priority >= 2) {
+    iconClass = 'icon-gf-critical';
   } else {
     iconClass = 'icon-gf-online';
   }
