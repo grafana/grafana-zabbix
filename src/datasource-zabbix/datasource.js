@@ -9,6 +9,7 @@ import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
+import { MetricFindQueryTypes } from './types';
 
 const DEFAULT_ZABBIX_VERSION = 3;
 
@@ -429,42 +430,42 @@ export class ZabbixDatasource {
    *                        of metrics in "{metric1,metcic2,...,metricN}" format.
    */
   metricFindQuery(query) {
-    let result;
-    let parts = [];
+    let resultPromise;
+    let queryModel = query;
 
-    // Split query. Query structure: group.host.app.item
-    _.each(utils.splitTemplateQuery(query), part => {
-      part = this.replaceTemplateVars(part, {});
-
-      // Replace wildcard to regex
-      if (part === '*') {
-        part = '/.*/';
-      }
-      parts.push(part);
-    });
-    let template = _.zipObject(['group', 'host', 'app', 'item'], parts);
-
-    // Get items
-    if (parts.length === 4) {
-      // Search for all items, even it's not belong to any application
-      if (template.app === '/.*/') {
-        template.app = '';
-      }
-      result = this.zabbix.getItems(template.group, template.host, template.app, template.item);
-    } else if (parts.length === 3) {
-      // Get applications
-      result = this.zabbix.getApps(template.group, template.host, template.app);
-    } else if (parts.length === 2) {
-      // Get hosts
-      result = this.zabbix.getHosts(template.group, template.host);
-    } else if (parts.length === 1) {
-      // Get groups
-      result = this.zabbix.getGroups(template.group);
-    } else {
-      result = Promise.resolve([]);
+    if (!query) {
+      return Promise.resolve([]);
     }
 
-    return result.then(metrics => {
+    if (typeof query === 'string') {
+      // Backward compatibility
+      queryModel = utils.parseLegacyVariableQuery(query);
+    }
+
+    for (const prop of ['group', 'host', 'application', 'item']) {
+      queryModel[prop] = this.replaceTemplateVars(queryModel[prop], {});
+    }
+    console.log(queryModel);
+
+    switch (queryModel.queryType) {
+      case MetricFindQueryTypes.Group:
+        resultPromise = this.zabbix.getGroups(queryModel.group);
+        break;
+      case MetricFindQueryTypes.Host:
+        resultPromise = this.zabbix.getHosts(queryModel.group, queryModel.host);
+        break;
+      case MetricFindQueryTypes.Application:
+        resultPromise = this.zabbix.getApps(queryModel.group, queryModel.host, queryModel.application);
+        break;
+      case MetricFindQueryTypes.Item:
+        resultPromise = this.zabbix.getItems(queryModel.group, queryModel.host, queryModel.application, queryModel.item);
+        break;
+      default:
+        resultPromise = Promise.resolve([]);
+        break;
+    }
+
+    return resultPromise.then(metrics => {
       return _.map(metrics, formatMetric);
     });
   }

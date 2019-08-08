@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import moment from 'moment';
+import { VariableQuery, MetricFindQueryTypes } from './types';
 
 /**
  * Expand Zabbix item name
@@ -94,6 +95,56 @@ export function replaceMacro(item, macros) {
 function escapeMacro(macro) {
   macro = macro.replace(/\$/, '\\\$');
   return macro;
+}
+
+export function parseLegacyVariableQuery(query: string): VariableQuery {
+  let queryType: MetricFindQueryTypes;
+  const parts = [];
+
+  if (!query) {
+    return null;
+  }
+
+  // Split query. Query structure: group.host.app.item
+  _.each(splitTemplateQuery(query), part => {
+    // Replace wildcard to regex
+    if (part === '*') {
+      part = '/.*/';
+    }
+    parts.push(part);
+  });
+  console.log(parts);
+  const template = _.zipObject(['group', 'host', 'app', 'item'], parts);
+
+  if (parts.length === 4 && template.app === '/.*/') {
+    // Search for all items, even it's not belong to any application
+    template.app = '';
+  }
+
+  switch (parts.length) {
+    case 1:
+      queryType = MetricFindQueryTypes.Group;
+      break;
+    case 2:
+      queryType = MetricFindQueryTypes.Host;
+      break;
+    case 3:
+      queryType = MetricFindQueryTypes.Application;
+      break;
+    case 4:
+      queryType = MetricFindQueryTypes.Item;
+      break;
+  }
+
+  const variableQuery: VariableQuery = {
+    queryType,
+    group: template.group || '',
+    host: template.host || '',
+    application: template.app || '',
+    item: template.item || '',
+  };
+
+  return variableQuery;
 }
 
 /**
