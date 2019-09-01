@@ -8,13 +8,13 @@ set -o errexit
 set -o pipefail
 
 # Setup git env
-git config --global user.email $CI_GIT_EMAIL
-git config --global user.name $CI_GIT_USER
+git config --global user.email "$CI_GIT_EMAIL"
+git config --global user.name "$CI_GIT_USER"
 echo "git user is $CI_GIT_USER ($CI_GIT_EMAIL)"
 
-RELEASE_VER=$(echo $CIRCLE_TAG | grep -Po "(?<=v)[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)")
+RELEASE_VER=$(echo "$CIRCLE_TAG" | grep -Po "(?<=v)[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)")
 
-if [ -z $RELEASE_VER ]; then
+if [ -z "$RELEASE_VER" ]; then
     echo "No release version provided"
     exit 1
 fi
@@ -28,7 +28,7 @@ fi
 RELEASE_BRANCH=release-$RELEASE_VER
 
 # Build plugin
-git checkout -b $RELEASE_BRANCH
+git checkout -b "$RELEASE_BRANCH"
 yarn install --pure-lockfile && yarn build
 
 # Commit release
@@ -36,7 +36,7 @@ git add --force dist/
 git commit -m "release $RELEASE_VER"
 
 RELEASE_COMMIT_HASH=$(git log -n 1 | grep -Po "(?<=commit )[0-9a-z]{40}")
-echo $RELEASE_COMMIT_HASH
+echo "$RELEASE_COMMIT_HASH"
 
 # Push release branch
-git push origin $RELEASE_BRANCH
+git push origin "$RELEASE_BRANCH"
