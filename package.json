@@ -5,8 +5,9 @@
   "description": "Zabbix plugin for Grafana",
   "scripts": {
     "build": "webpack --config webpack/webpack.prod.conf.js --progress --colors",
-    "dev": "webpack --config webpack/webpack.dev.conf.js --progress --colors",
-    "watch": "webpack --config webpack/webpack.dev.conf.js --progress --colors",
+    "dev": "webpack --config webpack/webpack.dev.conf.js --watch --progress --colors",
+    "dev-build": "webpack --config webpack/webpack.dev.conf.js",
+    "watch": "webpack --config webpack/webpack.dev.conf.js --watch --progress --colors",
     "test": "jest",
     "jest": "jest --notify --watch",
     "codecov": "jest --coverage && codecov",
