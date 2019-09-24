@@ -10,7 +10,7 @@ import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MI
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-  constructor(api_url, username, password, version, basicAuth, withCredentials, backendSrv) {
+  constructor(api_url, username, password, version, basicAuth, withCredentials, backendSrv, datasourceId) {
     this.url              = api_url;
     this.username         = username;
     this.password         = password;
@@ -21,6 +21,9 @@ export class ZabbixAPIConnector {
       basicAuth: basicAuth,
       withCredentials: withCredentials
     };
+
+    this.datasourceId = datasourceId;
+    this.backendSrv = backendSrv;
 
     this.loginPromise = null;
     this.loginErrorCount = 0;
@@ -37,6 +40,8 @@ export class ZabbixAPIConnector {
   //////////////////////////
 
   request(method, params) {
+    this.tsdbRequest(method, params);
+
     return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
     .catch(error => {
       if (isNotAuthorized(error.data)) {
@@ -52,6 +57,25 @@ export class ZabbixAPIConnector {
       } else {
         return Promise.reject(error);
       }
+    });
+  }
+
+  tsdbRequest(method, params) {
+    const tsdbRequestData = {
+      queries: [{
+        datasourceId: this.datasourceId,
+        queryType: 'zabbixAPI',
+        target: {
+          method,
+          params,
+        },
+      }],
+    };
+
+    return this.backendSrv.datasourceRequest({
+      url: '/api/tsdb/query',
+      method: 'POST',
+      data: tsdbRequestData
     });
   }
 

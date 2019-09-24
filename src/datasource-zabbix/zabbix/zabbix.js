@@ -25,7 +25,7 @@ const REQUESTS_TO_BIND = [
 ];
 
 export class Zabbix {
-  constructor(options, datasourceSrv, backendSrv) {
+  constructor(options, datasourceSrv, backendSrv, datasourceId) {
     let {
       url,
       username,
@@ -49,7 +49,7 @@ export class Zabbix {
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, zabbixVersion, basicAuth, withCredentials, backendSrv);
+    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, zabbixVersion, basicAuth, withCredentials, backendSrv, datasourceId);
 
     this.proxyfyRequests();
     this.cacheRequests();

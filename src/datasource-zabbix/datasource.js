@@ -17,6 +17,7 @@ export class ZabbixDatasource {
   /** @ngInject */
   constructor(instanceSettings, templateSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
     this.templateSrv = templateSrv;
+    this.backendSrv = backendSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
 
     this.enableDebugLog = config.buildInfo.env === 'development';
@@ -25,6 +26,7 @@ export class ZabbixDatasource {
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
 
     // General data source settings
+    this.datasourceId     = instanceSettings.id;
     this.name             = instanceSettings.name;
     this.url              = instanceSettings.url;
     this.basicAuth        = instanceSettings.basicAuth;
@@ -74,7 +76,7 @@ export class ZabbixDatasource {
       dbConnectionRetentionPolicy: this.dbConnectionRetentionPolicy,
     };
 
-    this.zabbix = new Zabbix(zabbixOptions, datasourceSrv, backendSrv);
+    this.zabbix = new Zabbix(zabbixOptions, datasourceSrv, backendSrv, this.datasourceId);
   }
 
   ////////////////////////
@@ -87,6 +89,9 @@ export class ZabbixDatasource {
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(options) {
+    // console.log('invoking doTsdbRequest()');
+    // this.doTsdbRequest(options);
+
     // Get alerts for current panel
     if (this.alertingEnabled) {
       this.alertQuery(options).then(alert => {
@@ -164,6 +169,27 @@ export class ZabbixDatasource {
       .then(data => {
         return { data: data };
       });
+  }
+
+  doTsdbRequest(options) {
+    const tsdbRequestData = {
+      queries: options.targets.map(target => {
+        target.datasourceId = this.datasourceId;
+        target.queryType = 'zabbixAPI';
+        return target;
+      }),
+    };
+
+    if (options.range) {
+      tsdbRequestData.from = options.range.from.valueOf().toString();
+      tsdbRequestData.to = options.range.to.valueOf().toString();
+    }
+
+    return this.backendSrv.datasourceRequest({
+      url: '/api/tsdb/query',
+      method: 'POST',
+      data: tsdbRequestData
+    });
   }
 
   /**
