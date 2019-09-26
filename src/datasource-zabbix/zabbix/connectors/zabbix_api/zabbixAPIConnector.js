@@ -40,7 +40,10 @@ export class ZabbixAPIConnector {
   //////////////////////////
 
   request(method, params) {
-    this.tsdbRequest(method, params);
+    this.tsdbRequest(method, params).then(response => {
+      const result = this.handleTsdbResponse(response);
+      console.log(result);
+    });
 
     return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
     .catch(error => {
@@ -77,6 +80,14 @@ export class ZabbixAPIConnector {
       method: 'POST',
       data: tsdbRequestData
     });
+  }
+
+  handleTsdbResponse(response) {
+    if (!response || !response.data || !response.data.results) {
+      return [];
+    }
+
+    return response.data.results['zabbixAPI'].meta;
   }
 
   /**

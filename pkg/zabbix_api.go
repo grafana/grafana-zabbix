@@ -90,7 +90,23 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 	resultByte, err := result.MarshalJSON()
 	ds.logger.Debug("ZabbixAPIQuery", "result", string(resultByte))
 
-	return nil, errors.New("ZabbixAPIQuery is not implemented yet")
+	return ds.BuildResponse(result)
+}
+
+func (ds *ZabbixDatasource) BuildResponse(result *simplejson.Json) (*datasource.DatasourceResponse, error) {
+	resultByte, err := result.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	return &datasource.DatasourceResponse{
+		Results: []*datasource.QueryResult{
+			&datasource.QueryResult{
+				RefId:    "zabbixAPI",
+				MetaJson: string(resultByte),
+			},
+		},
+	}, nil
 }
 
 func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, dsInfo *datasource.DatasourceInfo, method string, params *simplejson.Json) (*simplejson.Json, error) {
