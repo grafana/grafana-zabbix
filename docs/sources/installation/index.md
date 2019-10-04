@@ -18,7 +18,7 @@ grafana-cli plugins install alexanderzobnin-zabbix-app
 
 Restart grafana after installing plugins
 ```sh
-service grafana-server restart
+systemctl restart grafana-server
 ```
 
 Read more about installing plugins in [Grafana docs](http://docs.grafana.org/plugins/installation/)
