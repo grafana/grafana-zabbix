@@ -123,7 +123,7 @@ func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, dsInfo *datasourc
 		}
 		zabbixAuth = auth
 		result, err = ds.zabbixAPIRequest(ctx, zabbixUrl, method, params, zabbixAuth)
-		if !isNotAuthorized(err.Error()) {
+		if err != nil && !isNotAuthorized(err.Error()) {
 			break
 		}
 	}
