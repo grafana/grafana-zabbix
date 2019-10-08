@@ -47,21 +47,6 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 
 	if !queryExistInCache {
 		dsInfo := tsdbReq.GetDatasource()
-		zabbixUrlStr := dsInfo.GetUrl()
-		zabbixUrl, err := url.Parse(zabbixUrlStr)
-		if err != nil {
-			return nil, err
-		}
-
-		jsonDataStr := dsInfo.GetJsonData()
-		jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
-		if err != nil {
-			return nil, err
-		}
-
-		zabbixLogin := jsonData.Get("username").MustString()
-		// zabbixPassword := jsonData.Get("password").MustString()
-		ds.logger.Debug("ZabbixAPIQuery", "url", zabbixUrl, "user", zabbixLogin)
 
 		jsonQueries := make([]*simplejson.Json, 0)
 		for _, query := range tsdbReq.Queries {
@@ -86,7 +71,7 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 		apiMethod := jsonQuery.Get("method").MustString()
 		apiParams := jsonQuery.Get("params")
 
-		result, err = ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
+		result, err := ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
 		queryCache.Set(Hash(tsdbReq.String()), result)
 		if err != nil {
 			ds.logger.Debug("ZabbixAPIQuery", "error", err)
@@ -117,7 +102,7 @@ func (ds *ZabbixDatasource) BuildResponse(result *simplejson.Json) (*datasource.
 }
 
 func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, dsInfo *datasource.DatasourceInfo, method string, params *simplejson.Json) (*simplejson.Json, error) {
-	zabbixUrl := dsInfo.GetUrl()
+	zabbixURL := dsInfo.GetUrl()
 
 	// Authenticate first
 	if zabbixAuth == "" {
@@ -128,12 +113,12 @@ func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, dsInfo *datasourc
 		zabbixAuth = auth
 	}
 
-	return ds.zabbixAPIRequest(ctx, zabbixUrl, method, params, zabbixAuth)
+	return ds.zabbixAPIRequest(ctx, zabbixURL, method, params, zabbixAuth)
 }
 
 func (ds *ZabbixDatasource) loginWithDs(ctx context.Context, dsInfo *datasource.DatasourceInfo) (string, error) {
-	zabbixUrlStr := dsInfo.GetUrl()
-	zabbixUrl, err := url.Parse(zabbixUrlStr)
+	zabbixURLStr := dsInfo.GetUrl()
+	zabbixURL, err := url.Parse(zabbixURLStr)
 	if err != nil {
 		return "", err
 	}
@@ -152,27 +137,27 @@ func (ds *ZabbixDatasource) loginWithDs(ctx context.Context, dsInfo *datasource.
 		zabbixPassword = jsonData.Get("password").MustString()
 	}
 
-	auth, err := ds.login(ctx, zabbixUrlStr, zabbixLogin, zabbixPassword)
+	auth, err := ds.login(ctx, zabbixURLStr, zabbixLogin, zabbixPassword)
 	if err != nil {
 		ds.logger.Error("loginWithDs", "error", err)
 		return "", err
 	}
-	ds.logger.Debug("loginWithDs", "url", zabbixUrl, "user", zabbixLogin, "auth", auth)
+	ds.logger.Debug("loginWithDs", "url", zabbixURL, "user", zabbixLogin, "auth", auth)
 
 	return auth, nil
 }
 
-func (ds *ZabbixDatasource) login(ctx context.Context, apiUrl string, username string, password string) (string, error) {
+func (ds *ZabbixDatasource) login(ctx context.Context, apiURL string, username string, password string) (string, error) {
 	params := map[string]interface{}{
 		"user":     username,
 		"password": password,
 	}
-	paramsJson, err := json.Marshal(params)
+	paramsJSON, err := json.Marshal(params)
 	if err != nil {
 		return "", err
 	}
-	data, _ := simplejson.NewJson(paramsJson)
-	auth, err := ds.zabbixAPIRequest(ctx, apiUrl, "user.login", data, "")
+	data, _ := simplejson.NewJson(paramsJSON)
+	auth, err := ds.zabbixAPIRequest(ctx, apiURL, "user.login", data, "")
 	if err != nil {
 		return "", err
 	}
@@ -180,8 +165,8 @@ func (ds *ZabbixDatasource) login(ctx context.Context, apiUrl string, username s
 	return auth.MustString(), nil
 }
 
-func (ds *ZabbixDatasource) zabbixAPIRequest(ctx context.Context, apiUrl string, method string, params *simplejson.Json, auth string) (*simplejson.Json, error) {
-	zabbixUrl, err := url.Parse(apiUrl)
+func (ds *ZabbixDatasource) zabbixAPIRequest(ctx context.Context, apiURL string, method string, params *simplejson.Json, auth string) (*simplejson.Json, error) {
+	zabbixURL, err := url.Parse(apiURL)
 
 	// TODO: inject auth token (obtain from 'user.login' first)
 	apiRequest := map[string]interface{}{
@@ -195,13 +180,13 @@ func (ds *ZabbixDatasource) zabbixAPIRequest(ctx context.Context, apiUrl string,
 		apiRequest["auth"] = auth
 	}
 
-	reqBodyJson, err := json.Marshal(apiRequest)
+	reqBodyJSON, err := json.Marshal(apiRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	var body io.Reader
-	body = bytes.NewReader(reqBodyJson)
+	body = bytes.NewReader(reqBodyJSON)
 	rc, ok := body.(io.ReadCloser)
 	if !ok && body != nil {
 		rc = ioutil.NopCloser(body)
@@ -209,37 +194,37 @@ func (ds *ZabbixDatasource) zabbixAPIRequest(ctx context.Context, apiUrl string,
 
 	req := &http.Request{
 		Method: "POST",
-		URL:    zabbixUrl,
+		URL:    zabbixURL,
 		Header: map[string][]string{
 			"Content-Type": {"application/json"},
 		},
 		Body: rc,
 	}
 
-	response, err := makeHttpRequest(ctx, req)
+	response, err := makeHTTPRequest(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
 	ds.logger.Debug("zabbixAPIRequest", "response", string(response))
 
-	return handleApiResult(response)
+	return handleAPIResult(response)
 }
 
-func handleApiResult(response []byte) (*simplejson.Json, error) {
+func handleAPIResult(response []byte) (*simplejson.Json, error) {
 	jsonResp, err := simplejson.NewJson([]byte(response))
 	if err != nil {
 		return nil, err
 	}
-	if errJson, isError := jsonResp.CheckGet("error"); isError {
-		errMessage := fmt.Sprintf("%s %s", errJson.Get("message").MustString(), errJson.Get("data").MustString())
+	if errJSON, isError := jsonResp.CheckGet("error"); isError {
+		errMessage := fmt.Sprintf("%s %s", errJSON.Get("message").MustString(), errJSON.Get("data").MustString())
 		return nil, errors.New(errMessage)
 	}
 	jsonResult := jsonResp.Get("result")
 	return jsonResult, nil
 }
 
-func makeHttpRequest(ctx context.Context, req *http.Request) ([]byte, error) {
+func makeHTTPRequest(ctx context.Context, req *http.Request) ([]byte, error) {
 	res, err := ctxhttp.Do(ctx, httpClient, req)
 	if err != nil {
 		return nil, err
