@@ -48,16 +48,6 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 		return nil, err
 	}
 
-	jsonDataStr := dsInfo.GetJsonData()
-	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
-	if err != nil {
-		return nil, err
-	}
-
-	zabbixLogin := jsonData.Get("username").MustString()
-	// zabbixPassword := jsonData.Get("password").MustString()
-	ds.logger.Debug("ZabbixAPIQuery", "url", zabbixUrl, "user", zabbixLogin)
-
 	jsonQueries := make([]*simplejson.Json, 0)
 	for _, query := range tsdbReq.Queries {
 		json, err := simplejson.NewJson([]byte(query.ModelJson))
@@ -138,7 +128,13 @@ func (ds *ZabbixDatasource) loginWithDs(ctx context.Context, dsInfo *datasource.
 	}
 
 	zabbixLogin := jsonData.Get("username").MustString()
-	zabbixPassword := jsonData.Get("password").MustString()
+	var zabbixPassword string
+	if securePassword, exists := dsInfo.GetDecryptedSecureJsonData()["password"]; exists {
+		zabbixPassword = securePassword
+	} else {
+		zabbixPassword = jsonData.Get("password").MustString()
+	}
+
 	auth, err := ds.login(ctx, zabbixUrlStr, zabbixLogin, zabbixPassword)
 	if err != nil {
 		ds.logger.Error("loginWithDs", "error", err)
