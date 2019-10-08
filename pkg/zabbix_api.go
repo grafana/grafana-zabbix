@@ -38,49 +38,66 @@ var httpClient = &http.Client{
 	Timeout: time.Duration(time.Second * 30),
 }
 
+var queryCache = NewCache(10*time.Minute, 10*time.Minute)
+
 var zabbixAuth string = ""
 
 func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	dsInfo := tsdbReq.GetDatasource()
-	zabbixUrlStr := dsInfo.GetUrl()
-	zabbixUrl, err := url.Parse(zabbixUrlStr)
-	if err != nil {
-		return nil, err
-	}
+	result, queryExistInCache := queryCache.Get(Hash(tsdbReq.String()))
 
-	jsonQueries := make([]*simplejson.Json, 0)
-	for _, query := range tsdbReq.Queries {
-		json, err := simplejson.NewJson([]byte(query.ModelJson))
-		apiMethod := json.GetPath("target", "method").MustString()
-		apiParams := json.GetPath("target", "params")
-
+	if !queryExistInCache {
+		dsInfo := tsdbReq.GetDatasource()
+		zabbixUrlStr := dsInfo.GetUrl()
+		zabbixUrl, err := url.Parse(zabbixUrlStr)
 		if err != nil {
 			return nil, err
 		}
 
-		ds.logger.Debug("ZabbixAPIQuery", "method", apiMethod, "params", apiParams)
+		jsonDataStr := dsInfo.GetJsonData()
+		jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
+		if err != nil {
+			return nil, err
+		}
 
-		jsonQueries = append(jsonQueries, json)
+		zabbixLogin := jsonData.Get("username").MustString()
+		// zabbixPassword := jsonData.Get("password").MustString()
+		ds.logger.Debug("ZabbixAPIQuery", "url", zabbixUrl, "user", zabbixLogin)
+
+		jsonQueries := make([]*simplejson.Json, 0)
+		for _, query := range tsdbReq.Queries {
+			json, err := simplejson.NewJson([]byte(query.ModelJson))
+			apiMethod := json.GetPath("target", "method").MustString()
+			apiParams := json.GetPath("target", "params")
+
+			if err != nil {
+				return nil, err
+			}
+
+			ds.logger.Debug("ZabbixAPIQuery", "method", apiMethod, "params", apiParams)
+
+			jsonQueries = append(jsonQueries, json)
+		}
+
+		if len(jsonQueries) == 0 {
+			return nil, errors.New("At least one query should be provided")
+		}
+
+		jsonQuery := jsonQueries[0].Get("target")
+		apiMethod := jsonQuery.Get("method").MustString()
+		apiParams := jsonQuery.Get("params")
+
+		result, err = ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
+		queryCache.Set(Hash(tsdbReq.String()), result)
+		if err != nil {
+			ds.logger.Debug("ZabbixAPIQuery", "error", err)
+			return nil, errors.New("ZabbixAPIQuery is not implemented yet")
+		}
 	}
 
-	if len(jsonQueries) == 0 {
-		return nil, errors.New("At least one query should be provided")
-	}
-
-	jsonQuery := jsonQueries[0].Get("target")
-	apiMethod := jsonQuery.Get("method").MustString()
-	apiParams := jsonQuery.Get("params")
-
-	result, err := ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
-	if err != nil {
-		ds.logger.Debug("ZabbixAPIQuery", "error", err)
-		return nil, errors.New("ZabbixAPIQuery is not implemented yet")
-	}
-
-	resultByte, err := result.MarshalJSON()
+	resultByte, _ := result.(*simplejson.Json).MarshalJSON()
 	ds.logger.Debug("ZabbixAPIQuery", "result", string(resultByte))
 
-	return ds.BuildResponse(result)
+	return ds.BuildResponse(result.(*simplejson.Json))
 }
 
 func (ds *ZabbixDatasource) BuildResponse(result *simplejson.Json) (*datasource.DatasourceResponse, error) {
