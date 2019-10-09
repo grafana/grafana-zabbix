@@ -116,15 +116,18 @@ func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, dsInfo *datasourc
 	var err error
 
 	for attempt := 0; attempt <= 3; attempt++ {
-		// Authenticate
-		auth, err := ds.loginWithDs(ctx, dsInfo)
-		if err != nil {
-			return nil, err
+		if zabbixAuth == "" {
+			// Authenticate
+			zabbixAuth, err = ds.loginWithDs(ctx, dsInfo)
+			if err != nil {
+				return nil, err
+			}
 		}
-		zabbixAuth = auth
 		result, err = ds.zabbixAPIRequest(ctx, zabbixUrl, method, params, zabbixAuth)
 		if err == nil || (err != nil && !isNotAuthorized(err.Error())) {
 			break
+		} else {
+			zabbixAuth = ""
 		}
 	}
 	return result, err
