@@ -147,7 +147,7 @@ export function groupByRange(datapoints, groupByCallback) {
     frame_values.push(point[POINT_VALUE]);
   }
   const frame_value = groupByCallback(frame_values);
-  return [ [frame_value, frame_start], [frame_value, frame_end] ];
+  return [[frame_value, frame_start], [frame_value, frame_end]];
 }
 
 /**
