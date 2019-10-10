@@ -11,7 +11,7 @@
     "test": "jest",
     "jest": "jest --notify --watch",
     "codecov": "jest --coverage && codecov",
-    "ci-test": "jest --coverage && codecov",
+    "ci-test": "jest --coverage",
     "lint": "jshint --reporter=node_modules/jshint-stylish src/ & jscs src/",
     "benchmark": "webpack --config webpack/webpack.bench.conf.js && grunt bench"
   },
