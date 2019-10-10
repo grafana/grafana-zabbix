@@ -34,6 +34,8 @@ jobs:
       - restore_cache:
           keys:
             - dependency-cache-npm-{{ checksum "yarn.lock" }}
+      - restore_cache:
+          keys:
             - dependency-cache-go-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
@@ -58,6 +60,8 @@ jobs:
       - restore_cache:
           keys:
             - dependency-cache-npm-{{ checksum "yarn.lock" }}
+      - restore_cache:
+          keys:
             - dependency-cache-go-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
@@ -89,6 +93,8 @@ jobs:
       - restore_cache:
           keys:
             - dependency-cache-npm-{{ checksum "yarn.lock" }}
+      - restore_cache:
+          keys:
             - dependency-cache-go-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
@@ -126,6 +132,8 @@ jobs:
       - restore_cache:
           keys:
             - dependency-cache-npm-{{ checksum "yarn.lock" }}
+      - restore_cache:
+          keys:
             - dependency-cache-go-{{ checksum "go.sum" }}
       - run:
           name: Install Dependencies
