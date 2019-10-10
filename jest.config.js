@@ -22,7 +22,7 @@ module.exports = {
     "^.+\\.js$": "babel-jest",
     "^.+\\.(ts|tsx)$": "ts-jest"
   },
-  "coverageDirectory": "<rootDir>/tmp/coverage/",
+  "coverageDirectory": "<rootDir>/tmp/coverage/node/",
   "collectCoverage": false,
   "globals": {
     "ts-jest": {

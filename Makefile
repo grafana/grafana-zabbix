@@ -31,7 +31,7 @@ test-backend:
 	go test -v -mod=vendor ./...
 test-ci:
 	npm run ci-test
-	go test -race -coverprofile=coverage.txt -covermode=atomic -mod=vendor
+	go test -race -coverprofile=tmp/coverage/golang/coverage.txt -covermode=atomic -mod=vendor
 
 .PHONY: clean
 clean:

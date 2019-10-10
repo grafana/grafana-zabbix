@@ -103,6 +103,7 @@ jobs:
           paths:
           - ./vendor
       - run: make test-ci
+      - run: bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
       - store_test_results:
           path: /tmp/circleci-test-results
       - store_artifacts:
