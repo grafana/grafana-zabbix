@@ -49,6 +49,7 @@ jobs:
           key: dependency-cache-go-{{ checksum "go.sum" }}
           paths:
           - ./vendor
+          - /go/pkg/mod
       - run: make build
 
   lint:
@@ -75,6 +76,7 @@ jobs:
           key: dependency-cache-go-{{ checksum "go.sum" }}
           paths:
           - ./vendor
+          - /go/pkg/mod
       - run: make lint
 
   test:
@@ -108,6 +110,7 @@ jobs:
           key: dependency-cache-go-{{ checksum "go.sum" }}
           paths:
           - ./vendor
+          - /go/pkg/mod
       - run: make test-ci
       - run: bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
       - store_test_results:
@@ -147,6 +150,7 @@ jobs:
           key: dependency-cache-go-{{ checksum "go.sum" }}
           paths:
           - ./vendor
+          - /go/pkg/mod
       - run: ./.circleci/make-release.sh
 
   build-docs:
