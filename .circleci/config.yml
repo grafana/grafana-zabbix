@@ -185,7 +185,7 @@ jobs:
     steps:
     - checkout
     - run: sudo pip install codespell
-    - run: codespell -S './.git*,./src/img*' -L que
+    - run: codespell -S './.git*,./src/img*,./go.sum' -L que
 
 workflows:
   version: 2
