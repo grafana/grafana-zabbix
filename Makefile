@@ -12,7 +12,7 @@ build: build-frontend build-backend
 build-frontend:
 	npm run dev-build
 build-backend:
-	env GOOS=linux go build -o -mod=vendor ./dist/zabbix-plugin_linux_amd64 ./pkg
+	env GOOS=linux go build -mod=vendor -o ./dist/zabbix-plugin_linux_amd64 ./pkg
 
 dist: dist-frontend dist-backend
 dist-frontend:
@@ -28,10 +28,10 @@ test: test-frontend test-backend
 test-frontend:
 	npm run test
 test-backend:
-	go test -v -mod=vendor ./...
+	go test -v -mod=vendor ./pkg/...
 test-ci:
 	npm run ci-test
-	go test -race -coverprofile=tmp/coverage/golang/coverage.txt -covermode=atomic -mod=vendor
+	go test -race -coverprofile=tmp/coverage/golang/coverage.txt -covermode=atomic -mod=vendor ./pkg/...
 
 .PHONY: clean
 clean:
