@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
@@ -249,4 +250,193 @@ func makeHttpRequest(ctx context.Context, req *http.Request) ([]byte, error) {
 		return nil, err
 	}
 	return body, nil
+}
+
+func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) error {
+	jsonQueries := make([]*simplejson.Json, 0)
+	for _, query := range tsdbReq.Queries {
+		json, err := simplejson.NewJson([]byte(query.ModelJson))
+		if err != nil {
+			return err
+		}
+
+		jsonQueries = append(jsonQueries, json)
+	}
+
+	if len(jsonQueries) == 0 {
+		return errors.New("At least one query should be provided")
+	}
+
+	jsonQuery := jsonQueries[0].Get("target")
+	groupFilter := jsonQuery.GetPath("group", "filter").MustString()
+	hostFilter := jsonQuery.GetPath("host", "filter").MustString()
+	appFilter := jsonQuery.GetPath("application", "filter").MustString()
+	itemFilter := jsonQuery.GetPath("item", "filter").MustString()
+
+	items, err := ds.getItems(ctx, tsdbReq.GetDatasource(), hostFilter, appFilter, itemFilter, groupFilter, "num")
+
+	ds.logger.Info("Items", items)
+
+	return err
+}
+
+func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) ([]*simplejson.Json, error) {
+	hosts, err := ds.getHosts(ctx, dsInfo, groupFilter, hostFilter)
+	if err != nil {
+		return nil, err
+	}
+	var hostids []string
+	for i := range hosts {
+		hostids = append(hostids, hosts[i].Get("hostid").MustString())
+	}
+
+	apps, err := ds.getApps(ctx, dsInfo, groupFilter, hostFilter, appFilter)
+	if err != nil {
+		return nil, err
+	}
+	var appids []string
+	for i := range apps {
+		appids = append(appids, apps[i].Get("applicationid").MustString())
+	}
+
+	var allItems *simplejson.Json
+	if len(hostids) > 0 {
+		allItems, err = ds.getAllItems(ctx, dsInfo, hostids, nil, itemType)
+	} else if len(appids) > 0 {
+		allItems, err = ds.getAllItems(ctx, dsInfo, nil, appids, itemType)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	var items []*simplejson.Json
+	for k := range allItems.Get("result").MustArray() {
+		if allItems.Get("result").Get("status").MustString() == "0" {
+			matched, err := regexp.MatchString(itemFilter, allItems.Get("result").GetIndex(k).MustString())
+			if err != nil {
+				return nil, err
+			} else if matched {
+				items = append(items, allItems.Get("result").GetIndex(k))
+			}
+		}
+	}
+	return items, nil
+}
+
+func (ds *ZabbixDatasource) getApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string) ([]*simplejson.Json, error) {
+	hosts, err := ds.getHosts(ctx, dsInfo, groupFilter, hostFilter)
+	if err != nil {
+		return nil, err
+	}
+	var hostids []string
+	for i := range hosts {
+		hostids = append(hostids, hosts[i].Get("hostid").MustString())
+	}
+	allApps, err := ds.getAllApps(ctx, dsInfo, hostids)
+	if err != nil {
+		return nil, err
+	}
+	var apps []*simplejson.Json
+	for k := range allApps.Get("result").MustArray() {
+		matched, err := regexp.MatchString(appFilter, allApps.Get("result").GetIndex(k).MustString())
+		if err != nil {
+			return nil, err
+		} else if matched {
+			apps = append(apps, allApps.Get("result").GetIndex(k))
+		}
+	}
+	return apps, nil
+}
+
+func (ds *ZabbixDatasource) getHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string) ([]*simplejson.Json, error) {
+	groups, err := ds.getGroups(ctx, dsInfo, groupFilter)
+	if err != nil {
+		return nil, err
+	}
+	var groupids []string
+	for i := range groups {
+		groupids = append(groupids, groups[i].Get("groupid").MustString())
+	}
+	allHosts, err := ds.getAllHosts(ctx, dsInfo, groupids)
+	if err != nil {
+		return nil, err
+	}
+	var hosts []*simplejson.Json
+	for k := range allHosts.Get("result").MustArray() {
+		matched, err := regexp.MatchString(hostFilter, allHosts.Get("result").GetIndex(k).MustString())
+		if err != nil {
+			return nil, err
+		} else if matched {
+			hosts = append(hosts, allHosts.Get("result").GetIndex(k))
+		}
+	}
+	return hosts, nil
+}
+
+func (ds *ZabbixDatasource) getGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string) ([]*simplejson.Json, error) {
+	allGroups, err := ds.getAllGroups(ctx, dsInfo)
+	if err != nil {
+		return nil, err
+	}
+	var groups []*simplejson.Json
+	for k := range allGroups.Get("result").MustArray() {
+		matched, err := regexp.MatchString(groupFilter, allGroups.Get("result").GetIndex(k).MustString())
+		if err != nil {
+			return nil, err
+		} else if matched {
+			groups = append(groups, allGroups.Get("result").GetIndex(k))
+		}
+	}
+	return groups, nil
+}
+
+func (ds *ZabbixDatasource) getAllItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string, appids []string, itemtype string) (*simplejson.Json, error) {
+	params, err := simplejson.NewJson([]byte(`{"output":["name", "key_", "value_type", "hostid", "status", "state"], "sortfield": "name", "webitems": true, "filter": {}, "selectHosts": ["hostid", "name"]}`))
+	if err != nil {
+		return nil, err
+	} else if itemtype == "num" {
+		params.SetPath([]string{"filter", "value_type"}, []int{0, 3})
+	} else if itemtype == "text" {
+		params.SetPath([]string{"filter", "value_type"}, []int{1, 2, 4})
+	}
+
+	if len(hostids) > 0 {
+		params.Set("hostids", hostids)
+	}
+
+	if len(appids) > 0 {
+		params.Set("applicationids", appids)
+	}
+
+	return ds.ZabbixRequest(ctx, dsInfo, "item.get", params)
+}
+
+func (ds *ZabbixDatasource) getAllApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string) (*simplejson.Json, error) {
+	params, err := simplejson.NewJson([]byte(`{"output":"extend"}`))
+	if err != nil {
+		return nil, err
+	} else if len(hostids) > 0 {
+		params.Set("hostids", hostids)
+	}
+
+	return ds.ZabbixRequest(ctx, dsInfo, "application.get", params)
+}
+
+func (ds *ZabbixDatasource) getAllHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupids []string) (*simplejson.Json, error) {
+	params, err := simplejson.NewJson([]byte(`{"output":["name","host"],"sortfield":"name"}`))
+	if err != nil {
+		return nil, err
+	} else if len(groupids) > 0 {
+		params.Set("groupids", groupids)
+	}
+
+	return ds.ZabbixRequest(ctx, dsInfo, "host.get", params)
+}
+
+func (ds *ZabbixDatasource) getAllGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo) (*simplejson.Json, error) {
+	params, err := simplejson.NewJson([]byte(`{"output":["name"],"sortfield":"name","real_hosts":true}`))
+	if err != nil {
+		return nil, err
+	}
+	return ds.ZabbixRequest(ctx, dsInfo, "hostgroup.get", params)
 }
