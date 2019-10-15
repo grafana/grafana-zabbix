@@ -15,35 +15,47 @@ import (
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
+	hclog "github.com/hashicorp/go-hclog"
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 )
 
-var httpClient = &http.Client{
-	Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{
-			Renegotiation: tls.RenegotiateFreelyAsClient,
-		},
-		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).Dial,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-	},
-	Timeout: time.Duration(time.Second * 30),
+// ZabbixDatasource stores state about a specific datasource and provides methods to make
+// requests to the Zabbix API
+type ZabbixDatasource struct {
+	queryCache *Cache
+	logger     hclog.Logger
+	httpClient *http.Client
+	authToken  string
 }
 
-var queryCache = NewCache(10*time.Minute, 10*time.Minute)
+// NewZabbixDatasource returns an initialized ZabbixDatasource
+func NewZabbixDatasource() *ZabbixDatasource {
+	return &ZabbixDatasource{
+		queryCache: NewCache(10*time.Minute, 10*time.Minute),
+		httpClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					Renegotiation: tls.RenegotiateFreelyAsClient,
+				},
+				Proxy: http.ProxyFromEnvironment,
+				Dial: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).Dial,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				MaxIdleConns:          100,
+				IdleConnTimeout:       90 * time.Second,
+			},
+			Timeout: time.Duration(time.Second * 30),
+		},
+	}
+}
 
-var zabbixAuth string = ""
-
+// ZabbixAPIQuery handles query requests to Zabbix
 func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	result, queryExistInCache := queryCache.Get(Hash(tsdbReq.String()))
+	result, queryExistInCache := ds.queryCache.Get(HashString(tsdbReq.String()))
 
 	if !queryExistInCache {
 		dsInfo := tsdbReq.GetDatasource()
@@ -86,8 +98,8 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 		apiMethod := jsonQuery.Get("method").MustString()
 		apiParams := jsonQuery.Get("params")
 
-		result, err = ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
-		queryCache.Set(Hash(tsdbReq.String()), result)
+		result, err := ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
+		ds.queryCache.Set(HashString(tsdbReq.String()), result)
 		if err != nil {
 			ds.logger.Debug("ZabbixAPIQuery", "error", err)
 			return nil, errors.New("ZabbixAPIQuery is not implemented yet")
@@ -100,6 +112,7 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 	return ds.BuildResponse(result.(*simplejson.Json))
 }
 
+// BuildResponse transforms a Zabbix API response to a DatasourceResponse
 func (ds *ZabbixDatasource) BuildResponse(result *simplejson.Json) (*datasource.DatasourceResponse, error) {
 	resultByte, err := result.MarshalJSON()
 	if err != nil {
@@ -116,19 +129,20 @@ func (ds *ZabbixDatasource) BuildResponse(result *simplejson.Json) (*datasource.
 	}, nil
 }
 
+// ZabbixRequest checks authentication and makes a request to the Zabbix API
 func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, dsInfo *datasource.DatasourceInfo, method string, params *simplejson.Json) (*simplejson.Json, error) {
-	zabbixUrl := dsInfo.GetUrl()
+	zabbixURL := dsInfo.GetUrl()
 
 	// Authenticate first
-	if zabbixAuth == "" {
+	if ds.authToken == "" {
 		auth, err := ds.loginWithDs(ctx, dsInfo)
 		if err != nil {
 			return nil, err
 		}
-		zabbixAuth = auth
+		ds.authToken = auth
 	}
 
-	return ds.zabbixAPIRequest(ctx, zabbixUrl, method, params, zabbixAuth)
+	return ds.zabbixAPIRequest(ctx, zabbixURL, method, params, ds.authToken)
 }
 
 func (ds *ZabbixDatasource) loginWithDs(ctx context.Context, dsInfo *datasource.DatasourceInfo) (string, error) {
@@ -210,7 +224,7 @@ func (ds *ZabbixDatasource) zabbixAPIRequest(ctx context.Context, apiUrl string,
 		Body: rc,
 	}
 
-	response, err := makeHttpRequest(ctx, req)
+	response, err := makeHTTPRequest(ctx, ds.httpClient, req)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +247,7 @@ func handleApiResult(response []byte) (*simplejson.Json, error) {
 	return jsonResult, nil
 }
 
-func makeHttpRequest(ctx context.Context, req *http.Request) ([]byte, error) {
+func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Request) ([]byte, error) {
 	res, err := ctxhttp.Do(ctx, httpClient, req)
 	if err != nil {
 		return nil, err

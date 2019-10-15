@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
@@ -10,39 +11,63 @@ import (
 	"golang.org/x/net/context"
 )
 
-type ZabbixDatasource struct {
+// ZabbixBackend implements the Grafana backend interface and forwards queries to the ZabbixDatasource
+type ZabbixBackend struct {
 	plugin.NetRPCUnsupportedPlugin
-	logger hclog.Logger
+	logger          hclog.Logger
+	datasourceCache *Cache
 }
 
-func (ds *ZabbixDatasource) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (b *ZabbixBackend) newZabbixDatasource() *ZabbixDatasource {
+	ds := NewZabbixDatasource()
+	ds.logger = b.logger
+	return ds
+}
+
+// Query receives requests from the Grafana backend. Requests are filtered by query type and sent to the
+// applicable ZabbixDatasource.
+func (b *ZabbixBackend) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+	zabbixDs := b.getCachedDatasource(tsdbReq)
+
 	queryType, err := GetQueryType(tsdbReq)
 	if err != nil {
 		return nil, err
 	}
 
-	dsInfo := tsdbReq.GetDatasource()
-	ds.logger.Debug("createRequest", "dsInfo", dsInfo)
-
-	ds.logger.Debug("createRequest", "queryType", queryType)
-
 	switch queryType {
 	case "zabbixAPI":
-		return ds.ZabbixAPIQuery(ctx, tsdbReq)
+		return zabbixDs.ZabbixAPIQuery(ctx, tsdbReq)
 	default:
 		return nil, errors.New("Query is not implemented yet")
 	}
 }
 
+func (b *ZabbixBackend) getCachedDatasource(tsdbReq *datasource.DatasourceRequest) *ZabbixDatasource {
+	dsInfoHash := HashDatasourceInfo(tsdbReq.GetDatasource())
+
+	if cachedData, ok := b.datasourceCache.Get(dsInfoHash); ok {
+		if cachedDS, ok := cachedData.(*ZabbixDatasource); ok {
+			return cachedDS
+		}
+	}
+
+	if b.logger.IsDebug() {
+		dsInfo := tsdbReq.GetDatasource()
+		b.logger.Debug(fmt.Sprintf("Datasource cache miss (Org %d Id %d '%s' %s)", dsInfo.GetOrgId(), dsInfo.GetId(), dsInfo.GetName(), dsInfoHash))
+	}
+	return b.newZabbixDatasource()
+}
+
+// GetQueryType determines the query type from a query or list of queries
 func GetQueryType(tsdbReq *datasource.DatasourceRequest) (string, error) {
 	queryType := "query"
 	if len(tsdbReq.Queries) > 0 {
 		firstQuery := tsdbReq.Queries[0]
-		queryJson, err := simplejson.NewJson([]byte(firstQuery.ModelJson))
+		queryJSON, err := simplejson.NewJson([]byte(firstQuery.ModelJson))
 		if err != nil {
 			return "", err
 		}
-		queryType = queryJson.Get("queryType").MustString("query")
+		queryType = queryJSON.Get("queryType").MustString("query")
 	}
 	return queryType, nil
 }
