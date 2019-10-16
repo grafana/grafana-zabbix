@@ -43,6 +43,16 @@ var queryCache = NewCache(10*time.Minute, 10*time.Minute)
 
 var zabbixAuth string = ""
 
+type categories struct {
+	Transform []map[string]interface{}
+	Aggregate []map[string]interface{}
+	Filter    []map[string]interface{}
+	Trends    []map[string]interface{}
+	Time      []map[string]interface{}
+	Alias     []map[string]interface{}
+	Special   []map[string]interface{}
+}
+
 func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	result, queryExistInCache := queryCache.Get(Hash(tsdbReq.String()))
 
@@ -273,10 +283,11 @@ func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *data
 	appFilter := jsonQuery.GetPath("application", "filter").MustString()
 	itemFilter := jsonQuery.GetPath("item", "filter").MustString()
 
-	items, err := ds.getItems(ctx, tsdbReq.GetDatasource(), hostFilter, appFilter, itemFilter, groupFilter, "num")
+	items, err := ds.getItems(ctx, tsdbReq.GetDatasource(), groupFilter, hostFilter, appFilter, itemFilter, "num")
 
-	ds.logger.Info("Items", items)
+	response, err := ds.queryNumericDataForItems(ctx, tsdbReq, items, jsonQueries, isUseTrend(tsdbReq.GetTimeRange()))
 
+	ds.logger.Info("queryNumericItems response", response)
 	return err
 }
 
@@ -439,4 +450,99 @@ func (ds *ZabbixDatasource) getAllGroups(ctx context.Context, dsInfo *datasource
 		return nil, err
 	}
 	return ds.ZabbixRequest(ctx, dsInfo, "hostgroup.get", params)
+}
+func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items []*simplejson.Json, jsonQueries []*simplejson.Json, useTrend bool) ([]*simplejson.Json, error) {
+	valueType := ds.getTrendValueType(jsonQueries)
+	var consolidateBy string
+	if ds.getConsolidateBy(jsonQueries) != "" {
+		consolidateBy = ds.getConsolidateBy(jsonQueries)
+	} else {
+		consolidateBy = valueType
+	}
+	ds.logger.Info(consolidateBy)
+
+	return ds.getHistotyOrTrend(ctx, tsdbReq, items, useTrend)
+	// Todo: convert the response
+}
+func (ds *ZabbixDatasource) getTrendValueType(jsonQueries []*simplejson.Json) string {
+	var trendFunctions []string
+	var trendValueFunc string
+
+	// loop over actual returned categories
+	for _, j := range new(categories).Trends {
+		trendFunctions = append(trendFunctions, j["name"].(string))
+	}
+
+	for i := range jsonQueries[0].Get("target").MustArray() {
+		for _, j := range trendFunctions {
+			if j == jsonQueries[0].Get("target").GetIndex(i).GetPath("function", "def", "name").MustString() {
+				trendValueFunc = j
+			}
+		}
+	}
+
+	if trendValueFunc == "" {
+		trendValueFunc = "avg"
+	}
+
+	return trendValueFunc
+}
+
+func (ds *ZabbixDatasource) getConsolidateBy(jsonQueries []*simplejson.Json) string {
+	var consolidateBy []string
+	for i, j := range jsonQueries[0].Get("target").MustArray() {
+		if jsonQueries[0].Get("target").GetIndex(i).GetPath("function", "def", "name").MustString() == "consolidateBy" {
+			consolidateBy = append(consolidateBy, j.(string))
+		}
+	}
+	return consolidateBy[0]
+}
+
+func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items []*simplejson.Json, useTrend bool) ([]*simplejson.Json, error) {
+	var result []*simplejson.Json
+	var response *simplejson.Json
+	timeRange := tsdbReq.GetTimeRange()
+	groupedItems := map[string][]*simplejson.Json{}
+
+	for _, j := range items {
+		groupedItems[j.Get("value_type").MustString()] = append(groupedItems[j.Get("value_type").MustString()], j)
+	}
+
+	for k, l := range groupedItems {
+		var itemids []string
+		for _, m := range l {
+			itemids = append(itemids, m.Get("itemid").MustString())
+		}
+		params, err := simplejson.NewJson([]byte(`{"output":"extend", "sortfield": "clock", "sortorder": "ASC"}`))
+		if err != nil {
+			return nil, err
+		}
+		params.Set("history", k)
+		params.Set("itemids", itemids)
+		params.Set("time_from", timeRange.GetFromRaw)
+
+		if timeRange.GetToRaw() != "" {
+			params.Set("time_till", timeRange.GetToRaw())
+		}
+
+		if useTrend {
+			response, err = ds.ZabbixRequest(ctx, tsdbReq.GetDatasource(), "trend.get", params)
+		} else {
+			response, err = ds.ZabbixRequest(ctx, tsdbReq.GetDatasource(), "history.get", params)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, response)
+	}
+	return result, nil
+}
+
+func isUseTrend(timeRange *datasource.TimeRange) bool {
+	if (timeRange.GetFromEpochMs() < 7*24*time.Hour.Nanoseconds()/1000000) ||
+		(timeRange.GetFromEpochMs()-timeRange.GetToEpochMs() > 4*24*time.Hour.Nanoseconds()/1000000) {
+		return true
+	}
+	return false
 }
