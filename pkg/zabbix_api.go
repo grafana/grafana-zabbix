@@ -140,8 +140,8 @@ func (ds *ZabbixDatasource) TestConnection(ctx context.Context, tsdbReq *datasou
 }
 
 // BuildResponse transforms a Zabbix API response to a DatasourceResponse
-func (ds *ZabbixDatasource) BuildResponse(result interface{}) (*datasource.DatasourceResponse, error) {
-	jsonBytes, err := json.Marshal(result)
+func (ds *ZabbixDatasource) BuildResponse(responseData interface{}) (*datasource.DatasourceResponse, error) {
+	jsonBytes, err := json.Marshal(responseData)
 	if err != nil {
 		return nil, err
 	}
