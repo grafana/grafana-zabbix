@@ -110,7 +110,7 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 	resultByte, _ := result.(*simplejson.Json).MarshalJSON()
 	ds.logger.Debug("ZabbixAPIQuery", "result", string(resultByte))
 
-	return ds.BuildResponse(result.(*simplejson.Json))
+	return ds.BuildResponse(result)
 }
 
 // TestConnection checks authentication and version of the Zabbix API and returns that info
@@ -135,22 +135,13 @@ func (ds *ZabbixDatasource) TestConnection(ctx context.Context, tsdbReq *datasou
 	testResponse := connectionTestResponse{
 		ZabbixVersion: response.MustString(),
 	}
-	responseJSON, err := json.Marshal(testResponse)
-	if err != nil {
-		return nil, err
-	}
 
-	responseSimpleJSON, err := simplejson.NewJson(responseJSON)
-	if err != nil {
-		return nil, err
-	}
-
-	return ds.BuildResponse(responseSimpleJSON)
+	return ds.BuildResponse(testResponse)
 }
 
 // BuildResponse transforms a Zabbix API response to a DatasourceResponse
-func (ds *ZabbixDatasource) BuildResponse(result *simplejson.Json) (*datasource.DatasourceResponse, error) {
-	resultByte, err := result.MarshalJSON()
+func (ds *ZabbixDatasource) BuildResponse(result interface{}) (*datasource.DatasourceResponse, error) {
+	jsonBytes, err := json.Marshal(result)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +150,7 @@ func (ds *ZabbixDatasource) BuildResponse(result *simplejson.Json) (*datasource.
 		Results: []*datasource.QueryResult{
 			&datasource.QueryResult{
 				RefId:    "zabbixAPI",
-				MetaJson: string(resultByte),
+				MetaJson: string(jsonBytes),
 			},
 		},
 	}, nil
