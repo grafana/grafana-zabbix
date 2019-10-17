@@ -9,13 +9,35 @@ import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
+import {
+  PluginMeta,
+  DataSourceApi,
+  DataSourceInstanceSettings,
+  DataQueryError,
+  DataQueryRequest,
+  DataQueryResponse,
+  AnnotationQueryRequest,
+  MetricFindValue,
+} from '@grafana/ui';
+import { BackendSrv, DataSourceSrv } from '@grafana/runtime';
+import { ZabbixAlertingService } from './zabbixAlerting.service'
+import { ZabbixConnectionTestQuery, ZabbixMetricsQuery, ZabbixConnectionInfo, TemplateSrv } from './types'
 
-const DEFAULT_ZABBIX_VERSION = 3;
+const DEFAULT_ZABBIX_VERSION = 3
 
-export class ZabbixDatasource {
+export class ZabbixDatasource extends DataSourceApi {
 
-  /** @ngInject */
+  /**
+   * @ngInject
+   * @param {DataSourceInstanceSettings} instanceSettings
+   * @param {TemplateSrv} templateSrv
+   * @param {BackendSrv} backendSrv
+   * @param {DataSourceSrv} datasourceSrv
+   * @param {ZabbixAlertingService} zabbixAlertingSrv
+   */
   constructor(instanceSettings, templateSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
+    super(instanceSettings)
+    this.type = 'zabbix'
     this.templateSrv = templateSrv;
     this.backendSrv = backendSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
@@ -185,11 +207,26 @@ export class ZabbixDatasource {
       tsdbRequestData.to = options.range.to.valueOf().toString();
     }
 
-    return this.backendSrv.datasourceRequest({
-      url: '/api/tsdb/query',
-      method: 'POST',
-      data: tsdbRequestData
-    });
+    return this.backendSrv.post('/api/tsdb/query', tsdbRequestData);
+  }
+
+  /**
+   * @returns {Promise<ZabbixConnectionInfo>}
+   */
+  doTSDBConnectionTest() {
+    /**
+     * @type {{ queries: ZabbixConnectionTestQuery[] }}
+     */
+    const tsdbRequestData = {
+      queries: [
+        {
+          datasourceId: this.datasourceId,
+          queryType: 'connectionTest'
+        }
+      ]
+    };
+
+    return this.backendSrv.post('/api/tsdb/query', tsdbRequestData);
   }
 
   /**
@@ -386,8 +423,7 @@ export class ZabbixDatasource {
    * Test connection to Zabbix API and external history DB.
    */
   testDatasource() {
-    return this.zabbix.testDataSource()
-    .then(result => {
+    return this.doTSDBConnectionTest().then(result => {
       const { zabbixVersion, dbConnectorStatus } = result;
       let message = `Zabbix API version: ${zabbixVersion}`;
       if (dbConnectorStatus) {
@@ -398,8 +434,7 @@ export class ZabbixDatasource {
         title: "Success",
         message: message
       };
-    })
-    .catch(error => {
+    }).catch(error => {
       if (error instanceof ZabbixAPIError) {
         return {
           status: "error",

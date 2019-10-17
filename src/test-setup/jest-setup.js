@@ -18,6 +18,14 @@ jest.mock('angular', () => {
   };
 }, {virtual: true});
 
+jest.mock('grafana/app/features/templating/template_srv', () => {
+  return {};
+}, {virtual: true});
+
+jest.mock('grafana/app/features/dashboard/dashboard_srv', () => {
+  return {};
+}, {virtual: true});
+
 jest.mock('grafana/app/core/core_module', () => {
   return {
     directive: function() {},
@@ -28,7 +36,6 @@ let mockPanelCtrl = PanelCtrl;
 jest.mock('grafana/app/plugins/sdk', () => {
   return {
     QueryCtrl: null,
-    loadPluginCss: () => {},
     PanelCtrl: mockPanelCtrl
   };
 }, {virtual: true});
@@ -74,9 +81,9 @@ jest.mock('grafana/app/core/config', () => {
 
 jest.mock('jquery', () => 'module not found', {virtual: true});
 
-jest.mock('@grafana/ui', () => {
-  return {};
-}, {virtual: true});
+jest.mock('@grafana/ui');
+
+jest.mock('@grafana/runtime');
 
 // Required for loading angularjs
 let dom = new JSDOM('<html><head><script></script></head><body></body></html>');

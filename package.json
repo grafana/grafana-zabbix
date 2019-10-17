@@ -26,6 +26,10 @@
   },
   "devDependencies": {
     "@types/classnames": "^2.2.6",
+    "@grafana/data": "^6.4.3",
+    "@grafana/runtime": "^6.4.3",
+    "@grafana/toolkit": "^6.4.3",
+    "@grafana/ui": "^6.4.3",
     "@types/grafana": "github:CorpGlory/types-grafana",
     "@types/jest": "^23.1.1",
     "@types/jquery": "^3.3.0",
