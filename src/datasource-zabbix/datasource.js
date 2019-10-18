@@ -10,18 +10,12 @@ import responseHandler from './responseHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 import {
-  PluginMeta,
   DataSourceApi,
   DataSourceInstanceSettings,
-  DataQueryError,
-  DataQueryRequest,
-  DataQueryResponse,
-  AnnotationQueryRequest,
-  MetricFindValue,
 } from '@grafana/ui';
 import { BackendSrv, DataSourceSrv } from '@grafana/runtime';
 import { ZabbixAlertingService } from './zabbixAlerting.service'
-import { ZabbixConnectionTestQuery, ZabbixMetricsQuery, ZabbixConnectionInfo, TemplateSrv } from './types'
+import { ZabbixConnectionTestQuery, ZabbixConnectionInfo, TemplateSrv, TSDBResponse } from './types'
 
 const DEFAULT_ZABBIX_VERSION = 3
 
@@ -211,7 +205,7 @@ export class ZabbixDatasource extends DataSourceApi {
   }
 
   /**
-   * @returns {Promise<ZabbixConnectionInfo>}
+   * @returns {Promise<TSDBResponse>}
    */
   doTSDBConnectionTest() {
     /**
@@ -422,9 +416,13 @@ export class ZabbixDatasource extends DataSourceApi {
   /**
    * Test connection to Zabbix API and external history DB.
    */
-  testDatasource() {
-    return this.doTSDBConnectionTest().then(result => {
-      const { zabbixVersion, dbConnectorStatus } = result;
+  async testDatasource() {
+    try {
+      const result = await this.doTSDBConnectionTest();
+      /**
+       * @type {ZabbixConnectionInfo}
+       */
+      const { zabbixVersion, dbConnectorStatus } = result.results["zabbixAPI"].meta;
       let message = `Zabbix API version: ${zabbixVersion}`;
       if (dbConnectorStatus) {
         message += `, DB connector type: ${dbConnectorStatus.dsType}`;
@@ -434,26 +432,30 @@ export class ZabbixDatasource extends DataSourceApi {
         title: "Success",
         message: message
       };
-    }).catch(error => {
+    }
+    catch (error) {
       if (error instanceof ZabbixAPIError) {
         return {
           status: "error",
           title: error.message,
           message: error.message
         };
-      } else if (error.data && error.data.message) {
+      }
+      else if (error.data && error.data.message) {
         return {
           status: "error",
-          title: "Connection failed",
-          message: "Connection failed: " + error.data.message
+          title: "Zabbix Client Error",
+          message: error.data.message
         };
-      } else if (typeof(error) === 'string') {
+      }
+      else if (typeof (error) === 'string') {
         return {
           status: "error",
-          title: "Connection failed",
-          message: "Connection failed: " + error
+          title: "Unknown Error",
+          message: error
         };
-      } else {
+      }
+      else {
         console.log(error);
         return {
           status: "error",
@@ -461,7 +463,7 @@ export class ZabbixDatasource extends DataSourceApi {
           message: "Could not connect to given url"
         };
       }
-    });
+    }
   }
 
   /**

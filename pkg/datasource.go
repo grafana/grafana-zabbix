@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -37,10 +38,11 @@ func (b *ZabbixBackend) Query(ctx context.Context, tsdbReq *datasource.Datasourc
 	switch queryType {
 	case "zabbixAPI":
 		return zabbixDs.ZabbixAPIQuery(ctx, tsdbReq)
-	case "zabbixConnectionTest":
+	case "connectionTest":
 		return zabbixDs.TestConnection(ctx, tsdbReq)
 	default:
-		return nil, errors.New("Query is not implemented yet")
+		err = errors.New("Query not implemented")
+		return BuildErrorResponse(err), nil
 	}
 }
 
@@ -72,4 +74,33 @@ func GetQueryType(tsdbReq *datasource.DatasourceRequest) (string, error) {
 		queryType = queryJSON.Get("queryType").MustString("query")
 	}
 	return queryType, nil
+}
+
+// BuildResponse transforms a Zabbix API response to a DatasourceResponse
+func BuildResponse(responseData interface{}) (*datasource.DatasourceResponse, error) {
+	jsonBytes, err := json.Marshal(responseData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &datasource.DatasourceResponse{
+		Results: []*datasource.QueryResult{
+			&datasource.QueryResult{
+				RefId:    "zabbixAPI",
+				MetaJson: string(jsonBytes),
+			},
+		},
+	}, nil
+}
+
+// BuildErrorResponse creates a QueryResult that forwards an error to the front-end
+func BuildErrorResponse(err error) *datasource.DatasourceResponse {
+	return &datasource.DatasourceResponse{
+		Results: []*datasource.QueryResult{
+			&datasource.QueryResult{
+				RefId: "zabbixAPI",
+				Error: err.Error(),
+			},
+		},
+	}
 }
