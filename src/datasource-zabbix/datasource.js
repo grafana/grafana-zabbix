@@ -14,10 +14,10 @@ import {
   DataSourceInstanceSettings,
 } from '@grafana/ui';
 import { BackendSrv, DataSourceSrv } from '@grafana/runtime';
-import { ZabbixAlertingService } from './zabbixAlerting.service'
-import { ZabbixConnectionTestQuery, ZabbixConnectionInfo, TemplateSrv, TSDBResponse } from './types'
+import { ZabbixAlertingService } from './zabbixAlerting.service';
+import { ZabbixConnectionTestQuery, ZabbixConnectionInfo, TemplateSrv, TSDBResponse } from './types';
 
-const DEFAULT_ZABBIX_VERSION = 3
+const DEFAULT_ZABBIX_VERSION = 3;
 
 export class ZabbixDatasource extends DataSourceApi {
 
@@ -30,8 +30,8 @@ export class ZabbixDatasource extends DataSourceApi {
    * @param {ZabbixAlertingService} zabbixAlertingSrv
    */
   constructor(instanceSettings, templateSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
-    super(instanceSettings)
-    this.type = 'zabbix'
+    super(instanceSettings);
+    this.type = 'zabbix';
     this.templateSrv = templateSrv;
     this.backendSrv = backendSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
