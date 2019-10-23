@@ -29,6 +29,8 @@ func (ds *ZabbixDatasource) Query(ctx context.Context, tsdbReq *datasource.Datas
 	switch queryType {
 	case "zabbixAPI":
 		return ds.ZabbixAPIQuery(ctx, tsdbReq)
+	case "zabbixAlerting":
+		return ds.queryNumericItems(ctx, tsdbReq)
 	default:
 		return nil, errors.New("Query is not implemented yet")
 	}

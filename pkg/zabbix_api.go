@@ -262,19 +262,19 @@ func makeHttpRequest(ctx context.Context, req *http.Request) ([]byte, error) {
 	return body, nil
 }
 
-func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) error {
+func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	jsonQueries := make([]*simplejson.Json, 0)
 	for _, query := range tsdbReq.Queries {
 		json, err := simplejson.NewJson([]byte(query.ModelJson))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		jsonQueries = append(jsonQueries, json)
 	}
 
 	if len(jsonQueries) == 0 {
-		return errors.New("At least one query should be provided")
+		return nil, errors.New("At least one query should be provided")
 	}
 
 	jsonQuery := jsonQueries[0].Get("target")
@@ -284,11 +284,16 @@ func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *data
 	itemFilter := jsonQuery.GetPath("item", "filter").MustString()
 
 	items, err := ds.getItems(ctx, tsdbReq.GetDatasource(), groupFilter, hostFilter, appFilter, itemFilter, "num")
+	if err != nil {
+		return nil, err
+	}
 
 	response, err := ds.queryNumericDataForItems(ctx, tsdbReq, items, jsonQueries, isUseTrend(tsdbReq.GetTimeRange()))
+	if err != nil {
+		return nil, err
+	}
 
-	ds.logger.Info("queryNumericItems response", response)
-	return err
+	return ds.BuildResponse(response)
 }
 
 func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) ([]*simplejson.Json, error) {
@@ -451,7 +456,7 @@ func (ds *ZabbixDatasource) getAllGroups(ctx context.Context, dsInfo *datasource
 	}
 	return ds.ZabbixRequest(ctx, dsInfo, "hostgroup.get", params)
 }
-func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items []*simplejson.Json, jsonQueries []*simplejson.Json, useTrend bool) ([]*simplejson.Json, error) {
+func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items []*simplejson.Json, jsonQueries []*simplejson.Json, useTrend bool) (*simplejson.Json, error) {
 	valueType := ds.getTrendValueType(jsonQueries)
 	var consolidateBy string
 	if ds.getConsolidateBy(jsonQueries) != "" {
@@ -461,14 +466,17 @@ func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbRe
 	}
 	ds.logger.Info(consolidateBy)
 
-	return ds.getHistotyOrTrend(ctx, tsdbReq, items, useTrend)
-	// Todo: convert the response
+	history, err := ds.getHistotyOrTrend(ctx, tsdbReq, items, useTrend)
+	if err != nil {
+		return nil, err
+	}
+	return convertHistory(history, items)
 }
 func (ds *ZabbixDatasource) getTrendValueType(jsonQueries []*simplejson.Json) string {
 	var trendFunctions []string
 	var trendValueFunc string
 
-	// loop over actual returned categories
+	// TODO: loop over actual returned categories
 	for _, j := range new(categories).Trends {
 		trendFunctions = append(trendFunctions, j["name"].(string))
 	}
@@ -545,4 +553,34 @@ func isUseTrend(timeRange *datasource.TimeRange) bool {
 		return true
 	}
 	return false
+}
+
+func convertHistory(history []*simplejson.Json, items []*simplejson.Json) (*simplejson.Json, error) {
+	groupedHistory := map[string][]*simplejson.Json{}
+	hosts := map[string][]*simplejson.Json{}
+	params, err := simplejson.NewJson([]byte(``))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, i := range history {
+		groupedHistory[i.Get("itemid").MustString()] = append(groupedHistory[i.Get("itemid").MustString()], i)
+	}
+
+	for _, j := range items {
+		hosts[j.Get("hostid").MustString()] = append(hosts[j.Get("hostid").MustString()], j.Get("hosts"))
+	}
+
+	for _, k := range groupedHistory {
+		item := k[0].Get("item")
+		alias := item.Get("name").MustString()
+		for l, m := range hosts {
+			if l == item.Get("hostid").MustString() {
+				alias += m[0].Get("name").MustString()
+			}
+		}
+		params.Set(alias, k)
+	}
+	return params, nil
+
 }
