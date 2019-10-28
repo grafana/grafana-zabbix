@@ -30,7 +30,8 @@ class ZabbixAlertingService {
       });
     }
 
-    if (panelIndex >= 0) {
+    // Don't apply alert styles to .panel-container--absolute (it rewrites position from absolute to relative)
+    if (panelIndex >= 0 && !panelContainers[panelIndex].className.includes('panel-container--absolute')) {
       let alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
       $(panelContainers[panelIndex]).removeClass(alertClass);
 
