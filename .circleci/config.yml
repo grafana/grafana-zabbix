@@ -162,7 +162,7 @@ jobs:
     steps:
     - checkout
     - run: sudo pip install codespell
-    - run: codespell -S './.git*,./src/img*' -L que
+    - run: codespell -S './.git*,./src/img*' -L que --ignore-words=./.codespell_ignore
 
 workflows:
   version: 2
