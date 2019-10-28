@@ -1,6 +1,21 @@
 Functions reference
 ===================
 
+## Functions Variables
+
+There are some built-in template variables available for using in functions:
+
+- `$__range_ms` - panel time range in ms
+- `$__range_s` - panel time range in seconds
+- `$__range` - panel time range, string representation (`30s`, `1m`, `1h`)
+- `$__range_series` - invoke function over all series values
+
+Examples:
+```
+groupBy($__range, avg)
+percentile($__range_series, 95) - 95th percentile over all values
+```
+
 ## Transform
 
 
