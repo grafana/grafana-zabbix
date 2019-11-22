@@ -21,9 +21,9 @@ Restart grafana after installing plugins
 systemctl restart grafana-server
 ```
 
-Read more about installing plugins in [Grafana docs](http://docs.grafana.org/plugins/installation/)
+Read more about installing plugins in [Grafana docs](https://grafana.com/docs/plugins/installation/)
 
-**WARNING!** The only reliable installation method is `grafana-cli`. Any other ways should be treated as a workaround an don't provide any backward-compatibulity guaranties.
+**WARNING!** The only reliable installation method is `grafana-cli`. Any other way should be treated as a workaround and doesn't provide any backward-compatibility guaranties.
 
 ## From github repo
 **WARNING!** This way doesn't work anymore (`dist/` folder was removed from git). Use `grafana-cli` or build plugin from sources.
