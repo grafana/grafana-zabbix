@@ -63,14 +63,15 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 		jsonQueries := make([]*simplejson.Json, 0)
 		for _, query := range tsdbReq.Queries {
 			json, err := simplejson.NewJson([]byte(query.ModelJson))
-			apiMethod := json.GetPath("target", "method").MustString()
-			apiParams := json.GetPath("target", "params").MustMap()
 
 			if err != nil {
 				return nil, err
-			}
+			} else {
+				apiMethod := json.GetPath("target", "method").MustString()
+				apiParams := json.GetPath("target", "params").MustMap()
+				ds.logger.Debug("ZabbixAPIQuery", "method", apiMethod, "params", apiParams)
 
-			ds.logger.Debug("ZabbixAPIQuery", "method", apiMethod, "params", apiParams)
+			}
 
 			jsonQueries = append(jsonQueries, json)
 		}
@@ -83,9 +84,9 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 		apiMethod := jsonQuery.Get("method").MustString()
 		apiParams := jsonQuery.Get("params").MustMap()
 
-		response, err := ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
-		ds.queryCache.Set(HashString(tsdbReq.String()), response)
-		result = response
+		var err error
+		result, err = ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
+		ds.queryCache.Set(HashString(tsdbReq.String()), result)
 		if err != nil {
 			ds.logger.Debug("ZabbixAPIQuery", "error", err)
 			return nil, errors.New("ZabbixAPIQuery is not implemented yet")
@@ -104,14 +105,14 @@ func (ds *ZabbixDatasource) TestConnection(ctx context.Context, tsdbReq *datasou
 
 	auth, err := ds.loginWithDs(ctx, dsInfo)
 	if err != nil {
-		return BuildErrorResponse(fmt.Errorf("Authentication failed: %w", err)), nil
+		return BuildErrorResponse(fmt.Errorf("Authentication failed: %s", err)), nil
 	}
 	ds.authToken = auth
 
 	response, err := ds.zabbixAPIRequest(ctx, dsInfo.GetUrl(), "apiinfo.version", map[string]interface{}{}, "")
 	if err != nil {
 		ds.logger.Debug("TestConnection", "error", err)
-		return BuildErrorResponse(fmt.Errorf("Version check failed: %w", err)), nil
+		return BuildErrorResponse(fmt.Errorf("Version check failed: %s", err)), nil
 	}
 
 	resultByte, _ := response.MarshalJSON()
