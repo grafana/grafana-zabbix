@@ -10,5 +10,5 @@ require (
 	github.com/hashicorp/go-plugin v1.0.1
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	golang.org/x/net v0.0.0-20180826012351-8a410e7b638d
+	golang.org/x/net v0.0.0-20190311183353-d8887717615a
 )
