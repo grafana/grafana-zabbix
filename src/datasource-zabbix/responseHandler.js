@@ -26,7 +26,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   var grouped_history = _.groupBy(history, 'itemid');
   var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');  //uniqBy is needed to deduplicate
 
-  return _.map(grouped_history, function(hist, itemid) {
+  return _.map(grouped_history, function(historyPoint, itemid) {
     var item = _.find(items, {'itemid': itemid});
     var alias = item.name;
     if (_.keys(hosts).length > 1 && addHostName) {   //only when actual multi hosts selected
@@ -35,7 +35,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
     }
     return {
       target: alias,
-      datapoints: _.map(hist, convertPointCallback)
+      datapoints: _.map(historyPoint, convertPointCallback)
     };
   });
 }
