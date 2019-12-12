@@ -10,13 +10,13 @@ install:
 
 build: build-frontend build-backend
 build-frontend:
-	npm run dev-build
+	yarn dev-build
 build-backend:
 	env GOOS=linux go build -mod=vendor -o ./dist/zabbix-plugin_linux_amd64 ./pkg
 
 dist: dist-frontend dist-backend
 dist-frontend:
-	npm run build
+	yarn build
 dist-backend: dist-backend-linux dist-backend-darwin dist-backend-windows
 dist-backend-windows: extension = .exe
 dist-backend-%:
@@ -26,11 +26,11 @@ dist-backend-%:
 .PHONY: test
 test: test-frontend test-backend
 test-frontend:
-	npm run test
+	yarn test
 test-backend:
 	go test -v -mod=vendor ./pkg/...
 test-ci:
-	npm run ci-test
+	yarn ci-test
 	mkdir -p tmp/coverage/golang/
 	go test -race -coverprofile=tmp/coverage/golang/coverage.txt -covermode=atomic -mod=vendor ./pkg/...
 
@@ -40,5 +40,5 @@ clean:
 
 .PHONY: lint
 lint:
-	npm run lint
+	yarn lint
 	golint -set_exit_status pkg/...
