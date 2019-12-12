@@ -3,11 +3,6 @@
   "name": "Zabbix",
   "id": "alexanderzobnin-zabbix-app",
 
-  "metrics": true,
-  "annotations": true,
-  "backend": true,
-  "executable": "zabbix",
-
   "info": {
     "description": "Zabbix plugin for Grafana",
     "author": {
@@ -31,7 +26,7 @@
       {"name": "Metric Editor", "path": "img/screenshot-metric_editor.png"},
       {"name": "Triggers", "path": "img/screenshot-triggers.png"}
     ],
-    "version": "4.0.0",
+    "version": "4.0.0-alpha",
     "updated": "2019-10-08"
   },
 
@@ -47,7 +42,7 @@
   ],
 
   "dependencies": {
-    "grafanaVersion": "6.x",
+    "grafanaVersion": "6.4",
     "plugins": []
   }
 }
