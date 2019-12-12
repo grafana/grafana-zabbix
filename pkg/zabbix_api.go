@@ -119,16 +119,25 @@ func (ds *ZabbixDatasource) BuildResponse(result *simplejson.Json) (*datasource.
 func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, dsInfo *datasource.DatasourceInfo, method string, params *simplejson.Json) (*simplejson.Json, error) {
 	zabbixUrl := dsInfo.GetUrl()
 
-	// Authenticate first
-	if zabbixAuth == "" {
-		auth, err := ds.loginWithDs(ctx, dsInfo)
-		if err != nil {
-			return nil, err
-		}
-		zabbixAuth = auth
-	}
+	var result *simplejson.Json
+	var err error
 
-	return ds.zabbixAPIRequest(ctx, zabbixUrl, method, params, zabbixAuth)
+	for attempt := 0; attempt <= 3; attempt++ {
+		if zabbixAuth == "" {
+			// Authenticate
+			zabbixAuth, err = ds.loginWithDs(ctx, dsInfo)
+			if err != nil {
+				return nil, err
+			}
+		}
+		result, err = ds.zabbixAPIRequest(ctx, zabbixUrl, method, params, zabbixAuth)
+		if err == nil || (err != nil && !isNotAuthorized(err.Error())) {
+			break
+		} else {
+			zabbixAuth = ""
+		}
+	}
+	return result, err
 }
 
 func (ds *ZabbixDatasource) loginWithDs(ctx context.Context, dsInfo *datasource.DatasourceInfo) (string, error) {
@@ -249,4 +258,10 @@ func makeHttpRequest(ctx context.Context, req *http.Request) ([]byte, error) {
 		return nil, err
 	}
 	return body, nil
+}
+
+func isNotAuthorized(message string) bool {
+	return message == "Session terminated, re-login, please." ||
+		message == "Not authorised." ||
+		message == "Not authorized."
 }
