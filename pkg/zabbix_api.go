@@ -71,7 +71,8 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 		apiMethod := jsonQuery.Get("method").MustString()
 		apiParams := jsonQuery.Get("params")
 
-		result, err := ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
+		var err error
+		result, err = ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
 		queryCache.Set(Hash(tsdbReq.String()), result)
 		if err != nil {
 			ds.logger.Debug("ZabbixAPIQuery", "error", err)
