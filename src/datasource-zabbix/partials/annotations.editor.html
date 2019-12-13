@@ -1,5 +1,4 @@
 <div class="gf-form-group">
-  <h6>Filter Triggers</h6>
   <div class="gf-form-inline">
     <div class="gf-form">
       <span class="gf-form-label width-10">Group</span>
@@ -36,8 +35,9 @@
   </div>
 </div>
 <div class="gf-form-group">
+  <h6>Options</h6>
   <div class="gf-form">
-    <span class="gf-form-label width-10">Minimum severity</span>
+    <span class="gf-form-label width-12">Minimum severity</span>
     <div class="gf-form-select-wrapper">
       <select class="gf-form-input gf-size-auto"
               ng-init='ctrl.annotation.minseverity = ctrl.annotation.minseverity || 0'
@@ -54,12 +54,16 @@
       </select>
     </div>
   </div>
-</div>
-<div class="gf-form-group">
-  <h6>Options</h6>
-  <div class="gf-form">
-    <editor-checkbox text="Show OK events" model="ctrl.annotation.showOkEvents"></editor-checkbox>
-    <editor-checkbox text="Hide acknowledged events" model="ctrl.annotation.hideAcknowledged"></editor-checkbox>
-    <editor-checkbox text="Show hostname" model="ctrl.annotation.showHostname"></editor-checkbox>
-  </div>
+  <gf-form-switch class="gf-form" label-class="width-12"
+    label="Show OK events"
+    checked="ctrl.annotation.showOkEvents">
+  </gf-form-switch>
+  <gf-form-switch class="gf-form" label-class="width-12"
+    label="Hide acknowledged events"
+    checked="ctrl.annotation.hideAcknowledged">
+  </gf-form-switch>
+  <gf-form-switch class="gf-form" label-class="width-12"
+    label="Show hostname"
+    checked="ctrl.annotation.showHostname">
+  </gf-form-switch>
 </div>

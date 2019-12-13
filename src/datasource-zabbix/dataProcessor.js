@@ -1,9 +1,8 @@
 import _ from 'lodash';
 import * as utils from './utils';
-import ts from './timeseries';
+import ts, { groupBy_perf as groupBy } from './timeseries';
 
 let downsampleSeries = ts.downsample;
-let groupBy = ts.groupBy_perf;
 let groupBy_exported = (interval, groupFunc, datapoints) => groupBy(datapoints, interval, groupFunc);
 let sumSeries = ts.sumSeries;
 let delta = ts.delta;
