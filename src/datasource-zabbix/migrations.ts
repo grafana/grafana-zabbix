@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { ZabbixMetricsQuery } from './types';
 
 /**
  * Query format migration.
@@ -19,7 +20,7 @@ export function isGrafana2target(target) {
   }
 }
 
-export function migrateFrom2To3version(target) {
+export function migrateFrom2To3version(target: ZabbixMetricsQuery) {
   target.group.filter = target.group.name === "*" ? "/.*/" : target.group.name;
   target.host.filter = target.host.name === "*" ? convertToRegex(target.hostFilter) : target.host.name;
   target.application.filter = target.application.name === "*" ? "" : target.application.name;

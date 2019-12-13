@@ -1,4 +1,4 @@
-import { loadPluginCss } from 'grafana/app/plugins/sdk';
+import { loadPluginCss } from '@grafana/runtime';
 import { ZabbixDatasource } from './datasource';
 import { ZabbixQueryController } from './query.controller';
 import { ZabbixDSConfigController } from './config.controller';

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/grafana/grafana_plugin_model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
@@ -22,8 +24,9 @@ func main() {
 			MagicCookieValue: "datasource",
 		},
 		Plugins: map[string]plugin.Plugin{
-			"zabbix-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &ZabbixDatasource{
-				logger: pluginLogger,
+			"zabbix-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &ZabbixBackend{
+				datasourceCache: NewCache(10*time.Minute, 10*time.Minute),
+				logger:          pluginLogger,
 			}},
 		},
 
