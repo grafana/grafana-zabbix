@@ -2,9 +2,11 @@ import _ from 'lodash';
 import $ from 'jquery';
 import angular from 'angular';
 
-class ZabbixAlertingService {
+export class ZabbixAlertingService {
 
-  /** @ngInject */
+  /**
+   * @ngInject
+   */
   constructor(dashboardSrv) {
     this.dashboardSrv = dashboardSrv;
   }
