@@ -105,14 +105,14 @@ func (ds *ZabbixDatasource) TestConnection(ctx context.Context, tsdbReq *datasou
 
 	auth, err := ds.loginWithDs(ctx, dsInfo)
 	if err != nil {
-		return BuildErrorResponse(fmt.Errorf("Authentication failed: %s", err)), nil
+		return BuildErrorResponse(fmt.Errorf("Authentication failed: %w", err)), nil
 	}
 	ds.authToken = auth
 
 	response, err := ds.zabbixAPIRequest(ctx, dsInfo.GetUrl(), "apiinfo.version", map[string]interface{}{}, "")
 	if err != nil {
 		ds.logger.Debug("TestConnection", "error", err)
-		return BuildErrorResponse(fmt.Errorf("Version check failed: %s", err)), nil
+		return BuildErrorResponse(fmt.Errorf("Version check failed: %w", err)), nil
 	}
 
 	resultByte, _ := response.MarshalJSON()
