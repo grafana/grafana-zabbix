@@ -38,6 +38,8 @@ func (b *ZabbixBackend) Query(ctx context.Context, tsdbReq *datasource.Datasourc
 	switch queryType {
 	case "zabbixAPI":
 		return zabbixDs.ZabbixAPIQuery(ctx, tsdbReq)
+	case "query":
+		return zabbixDs.queryNumericItems(ctx, tsdbReq)
 	case "connectionTest":
 		return zabbixDs.TestConnection(ctx, tsdbReq)
 	default:
