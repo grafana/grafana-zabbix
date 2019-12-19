@@ -589,8 +589,10 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 }
 
 func isUseTrend(timeRange *datasource.TimeRange) bool {
-	if (timeRange.GetFromEpochMs() < 7*24*time.Hour.Nanoseconds()/1000000) ||
-		(timeRange.GetFromEpochMs()-timeRange.GetToEpochMs() > 4*24*time.Hour.Nanoseconds()/1000000) {
+	fromSec := timeRange.GetFromEpochMs() / 1000
+	toSec := timeRange.GetToEpochMs() / 1000
+	if (fromSec < time.Now().Add(time.Hour*-7*24).Unix()) ||
+		(fromSec-toSec > 4*24*time.Hour.Milliseconds()) {
 		return true
 	}
 	return false
