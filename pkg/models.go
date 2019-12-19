@@ -42,17 +42,21 @@ func (p *zabbixParamOutput) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("zabbixParamOutput: UnmarshalJSON on nil pointer")
 	}
 	var obj interface{}
-	json.Unmarshal(data, &obj)
+	err := json.Unmarshal(data, &obj)
+	if err != nil {
+		return err
+	}
 
 	switch t := obj.(type) {
 	case string:
 		p.Mode = obj.(string)
+		return nil
 	case []string:
 		p.Fields = obj.([]string)
+		return nil
 	default:
 		return fmt.Errorf("Unsupported type: %s", t)
 	}
-	return nil
 }
 
 type zabbixParams struct {

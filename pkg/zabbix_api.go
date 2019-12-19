@@ -578,11 +578,17 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 		if err != nil {
 			return nil, err
 		}
-		point, ok := response.Interface().(zabbix.HistoryPoint)
-		if ok {
-			history = append(history, point)
+		pointJSON, err := response.MarshalJSON()
+		if err != nil {
+			return nil, fmt.Errorf("Internal error parsing response JSON: %w", err)
+		}
+		point := zabbix.HistoryPoint{}
+		err = json.Unmarshal(pointJSON, &point)
+
+		if err != nil {
+			ds.logger.Warn(fmt.Sprintf("Could not map Zabbix response to History Point: %s", err.Error()))
 		} else {
-			ds.logger.Warn("Could not map Zabbix response to History Point")
+			history = append(history, point)
 		}
 	}
 	return history, nil
