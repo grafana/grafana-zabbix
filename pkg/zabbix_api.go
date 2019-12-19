@@ -561,8 +561,8 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 			SortField: "clock",
 			SortOrder: "ASC",
 			ItemIDs:   itemids,
-			TimeFrom:  timeRange.GetFromRaw(),
-			TimeTill:  timeRange.GetToRaw(),
+			TimeFrom:  timeRange.GetFromEpochMs(),
+			TimeTill:  timeRange.GetToEpochMs(),
 		}
 
 		var response *simplejson.Json

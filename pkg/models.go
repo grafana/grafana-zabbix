@@ -85,6 +85,6 @@ type zabbixParams struct {
 	History int `json:"history,omitempty"`
 
 	// History/Trends GET
-	TimeFrom string `json:"time_from,omitempty"`
-	TimeTill string `json:"time_till,omitempty"`
+	TimeFrom int64 `json:"time_from,omitempty"`
+	TimeTill int64 `json:"time_till,omitempty"`
 }
