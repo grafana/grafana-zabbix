@@ -592,7 +592,7 @@ func isUseTrend(timeRange *datasource.TimeRange) bool {
 	fromSec := timeRange.GetFromEpochMs() / 1000
 	toSec := timeRange.GetToEpochMs() / 1000
 	if (fromSec < time.Now().Add(time.Hour*-7*24).Unix()) ||
-		(fromSec-toSec > 4*24*time.Hour.Milliseconds()) {
+		(toSec-fromSec > (4 * 24 * time.Hour).Milliseconds()) {
 		return true
 	}
 	return false

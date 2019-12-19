@@ -283,3 +283,40 @@ func TestHandleAPIResultError(t *testing.T) {
 // 		})
 // 	}
 // }
+
+func Test_isUseTrend(t *testing.T) {
+	tests := []struct {
+		name      string
+		timeRange *datasource.TimeRange
+		want      bool
+	}{
+		{
+			name: "History time",
+			timeRange: &datasource.TimeRange{
+				FromEpochMs: time.Now().Add(-time.Hour*48).Unix() * 1000,
+				ToEpochMs:   time.Now().Add(-time.Hour*12).Unix() * 1000,
+			},
+			want: false,
+		},
+		{
+			name: "Trend time (past 7 days)",
+			timeRange: &datasource.TimeRange{
+				FromEpochMs: time.Now().Add(-time.Hour*24*14).Unix() * 1000,
+				ToEpochMs:   time.Now().Add(-time.Hour*24*13).Unix() * 1000,
+			},
+			want: true,
+		},
+		{
+			name: "Trend time (longer than 4 days)",
+			timeRange: &datasource.TimeRange{
+				FromEpochMs: time.Now().Add(-time.Hour*24*8).Unix() * 1000,
+				ToEpochMs:   time.Now().Add(-time.Hour*24*1).Unix() * 1000,
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		got := isUseTrend(tt.timeRange)
+		assert.Equal(t, tt.want, got, tt.name, tt.timeRange)
+	}
+}
