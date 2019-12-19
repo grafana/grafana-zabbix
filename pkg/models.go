@@ -1,5 +1,7 @@
 package main
 
+import "encoding/json"
+
 type connectionTestResponse struct {
 	ZabbixVersion     string              `json:"zabbixVersion"`
 	DbConnectorStatus *dbConnectionStatus `json:"dbConnectorStatus"`
@@ -19,11 +21,23 @@ type queryRequest struct {
 	Params zabbixParams `json:"params,omitempty"`
 }
 
+type zabbixParamOutput struct {
+	Mode   string
+	Fields []string
+}
+
+func (p zabbixParamOutput) MarshalJSON() ([]byte, error) {
+	if p.Mode != "" {
+		return json.Marshal(p.Mode)
+	}
+	return json.Marshal(p.Fields)
+}
+
 type zabbixParams struct {
-	Output    []string         `json:"output,omitempty"`
-	SortField string           `json:"sortfield,omitempty"`
-	SortOrder string           `json:"sortorder,omitempty"`
-	Filter    map[string][]int `json:"filter,omitempty"`
+	Output    zabbixParamOutput `json:"output,omitempty"`
+	SortField string            `json:"sortfield,omitempty"`
+	SortOrder string            `json:"sortorder,omitempty"`
+	Filter    map[string][]int  `json:"filter,omitempty"`
 
 	// Login
 	User     string `json:"user,omitempty"`
