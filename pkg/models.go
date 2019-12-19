@@ -1,6 +1,9 @@
 package main
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type connectionTestResponse struct {
 	ZabbixVersion     string              `json:"zabbixVersion"`
@@ -26,12 +29,30 @@ type zabbixParamOutput struct {
 	Fields []string
 }
 
-func (p zabbixParamOutput) MarshalJSON() ([]byte, error) {
+func (p *zabbixParamOutput) MarshalJSON() ([]byte, error) {
 	if p.Mode != "" {
 		return json.Marshal(p.Mode)
 	}
 
 	return json.Marshal(p.Fields)
+}
+
+func (p *zabbixParamOutput) UnmarshalJSON(data []byte) error {
+	if p == nil {
+		return fmt.Errorf("zabbixParamOutput: UnmarshalJSON on nil pointer")
+	}
+	var obj interface{}
+	json.Unmarshal(data, &obj)
+
+	switch t := obj.(type) {
+	case string:
+		p.Mode = obj.(string)
+	case []string:
+		p.Fields = obj.([]string)
+	default:
+		return fmt.Errorf("Unsupported type: %s", t)
+	}
+	return nil
 }
 
 type zabbixParams struct {

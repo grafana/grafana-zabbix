@@ -485,8 +485,11 @@ func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbRe
 	zItems := zabbix.Items{}
 	for _, item := range items {
 		var zItem zabbix.Item
-		decoder, _ := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Result: zItem})
-		err := decoder.Decode(item)
+		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Result: &zItem})
+		if err != nil {
+			return nil, fmt.Errorf("Internal error creating map decoder: %w", err)
+		}
+		err = decoder.Decode(item)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to convert simplejson Item to zabbix.Item: %s", item)
 		}
