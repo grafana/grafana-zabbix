@@ -5,7 +5,7 @@ type Item struct {
 	ID        string     `json:"itemid,omitempty"`
 	Key       string     `json:"key_,omitempty"`
 	Name      string     `json:"name,omitempty"`
-	ValueType int        `json:"value_type,omitempty"`
+	ValueType int        `json:"value_type,omitempty,string"`
 	HostID    string     `json:"hostid,omitempty"`
 	Hosts     []ItemHost `json:"hosts,omitempty"`
 	Status    string     `json:"status,omitempty"`
