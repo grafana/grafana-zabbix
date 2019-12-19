@@ -42,7 +42,7 @@ export class ZabbixAPIConnector {
   request(method, params) {
     return this.tsdbRequest(method, params).then(response => {
       const result = this.handleTsdbResponse(response);
-
+      
       return result;
     });
   }
@@ -146,7 +146,7 @@ export class ZabbixAPIConnector {
 
   getApps(hostids) {
     var params = {
-      output: ['extend'],
+      output: 'extend',
       hostids: hostids
     };
 
@@ -213,7 +213,7 @@ export class ZabbixAPIConnector {
 
   getMacros(hostids) {
     var params = {
-      output: ['extend'],
+      output: 'extend',
       hostids: hostids
     };
 
@@ -222,7 +222,7 @@ export class ZabbixAPIConnector {
 
   getGlobalMacros() {
     var params = {
-      output: ['extend'],
+      output: 'extend',
       globalmacro: true
     };
 
@@ -253,7 +253,7 @@ export class ZabbixAPIConnector {
     let promises = _.map(grouped_items, (items, value_type) => {
       let itemids = _.map(items, 'itemid');
       let params = {
-        output: ['extend'],
+        output: 'extend',
         history: value_type,
         itemids: itemids,
         sortfield: 'clock',
@@ -288,7 +288,7 @@ export class ZabbixAPIConnector {
     let promises = _.map(grouped_items, (items, value_type) => {
       let itemids = _.map(items, 'itemid');
       let params = {
-        output: ['extend'],
+        output: 'extend',
         trend: value_type,
         itemids: itemids,
         sortfield: 'clock',
@@ -330,7 +330,7 @@ export class ZabbixAPIConnector {
 
   getITService(serviceids) {
     var params = {
-      output: ['extend'],
+      output: 'extend',
       serviceids: serviceids
     };
     return this.request('service.get', params);
@@ -349,7 +349,7 @@ export class ZabbixAPIConnector {
     let {showTriggers, maintenance, timeFrom, timeTo} = options;
 
     let params = {
-      output: ['extend'],
+      output: 'extend',
       groupids: groupids,
       hostids: hostids,
       applicationids: applicationids,
@@ -387,7 +387,7 @@ export class ZabbixAPIConnector {
 
   getEvents(objectids, timeFrom, timeTo, showEvents, limit) {
     var params = {
-      output: ['extend'],
+      output: 'extend',
       time_from: timeFrom,
       time_till: timeTo,
       objectids: objectids,
@@ -407,7 +407,7 @@ export class ZabbixAPIConnector {
 
   getAcknowledges(eventids) {
     var params = {
-      output: ['extend'],
+      output: 'extend',
       eventids: eventids,
       preservekeys: true,
       select_acknowledges: 'extend',
@@ -423,7 +423,7 @@ export class ZabbixAPIConnector {
 
   getExtendedEventData(eventids) {
     var params = {
-      output: ['extend'],
+      output: 'extend',
       eventids: eventids,
       preservekeys: true,
       select_acknowledges: 'extend',
@@ -452,7 +452,7 @@ export class ZabbixAPIConnector {
 
   getAlerts(itemids, timeFrom, timeTo) {
     var params = {
-      output: ['extend'],
+      output: 'extend',
       itemids: itemids,
       expandDescription: true,
       expandData: true,
@@ -477,7 +477,7 @@ export class ZabbixAPIConnector {
   getHostAlerts(hostids, applicationids, options) {
     let {minSeverity, acknowledged, count, timeFrom, timeTo} = options;
     let params = {
-      output: ['extend'],
+      output: 'extend',
       hostids: hostids,
       min_severity: minSeverity,
       filter: { value: 1 },
