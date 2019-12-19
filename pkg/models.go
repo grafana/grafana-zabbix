@@ -20,10 +20,10 @@ type queryRequest struct {
 }
 
 type zabbixParams struct {
-	Output    []string            `json:"output,omitempty"`
-	SortField string              `json:"sortfield,omitempty"`
-	SortOrder string              `json:"sortorder,omitempty"`
-	Filter    map[string][]string `json:"filter,omitempty"`
+	Output    []string         `json:"output,omitempty"`
+	SortField string           `json:"sortfield,omitempty"`
+	SortOrder string           `json:"sortorder,omitempty"`
+	Filter    map[string][]int `json:"filter,omitempty"`
 
 	// Login
 	User     string `json:"user,omitempty"`

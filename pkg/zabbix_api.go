@@ -382,6 +382,7 @@ func (ds *ZabbixDatasource) getApps(ctx context.Context, dsInfo *datasource.Data
 	}
 	var apps []map[string]interface{}
 	for _, i := range allApps.MustArray() {
+		ds.logger.Info(fmt.Sprintf("App: %+v", i.(map[string]interface{})))
 		matched, err := regexp.MatchString(appFilter, i.(map[string]interface{})["name"].(string))
 		if err != nil {
 			return nil, err
@@ -439,16 +440,16 @@ func (ds *ZabbixDatasource) getAllItems(ctx context.Context, dsInfo *datasource.
 		Output:      []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"},
 		SortField:   "name",
 		WebItems:    true,
-		Filter:      map[string][]string{},
+		Filter:      map[string][]int{},
 		SelectHosts: []string{"hostid", "name"},
 		HostIDs:     hostids,
 		AppIDs:      appids,
 	}
 
 	if itemtype == "num" {
-		params.Filter["value_type"] = []string{"0", "3"}
+		params.Filter["value_type"] = []int{0, 3}
 	} else if itemtype == "text" {
-		params.Filter["value_type"] = []string{"1", "2", "4"}
+		params.Filter["value_type"] = []int{1, 2, 4}
 	}
 
 	return ds.ZabbixRequest(ctx, dsInfo, "item.get", params)
