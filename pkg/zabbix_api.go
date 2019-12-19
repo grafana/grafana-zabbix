@@ -75,36 +75,26 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 	if !queryExistInCache {
 		dsInfo := tsdbReq.GetDatasource()
 
-		jsonQueries := make([]*simplejson.Json, 0)
+		queries := []requestModel{}
 		for _, query := range tsdbReq.Queries {
-			json, err := simplejson.NewJson([]byte(query.ModelJson))
+			req := requestModel{}
+			err := json.Unmarshal([]byte(query.GetModelJson()), &req)
 
 			if err != nil {
 				return nil, err
-			} else {
-				apiMethod := json.GetPath("target", "method").MustString()
-				apiParams := json.GetPath("target", "params").MustMap()
-				ds.logger.Debug("ZabbixAPIQuery", "method", apiMethod, "params", apiParams)
-
 			}
 
-			jsonQueries = append(jsonQueries, json)
+			ds.logger.Debug("ZabbixAPIQuery", "method", req.Target.Method, "params", req.Target.Params)
+			queries = append(queries, req)
 		}
 
-		if len(jsonQueries) == 0 {
+		if len(queries) == 0 {
 			return nil, errors.New("At least one query should be provided")
 		}
 
-		jsonQuery := jsonQueries[0].Get("target")
-		apiMethod := jsonQuery.Get("method").MustString()
-
-		apiParams, ok := jsonQuery.Get("params").Interface().(zabbixParams)
-		if !ok {
-			return nil, fmt.Errorf("Unable to parse params: %s", jsonQuery.Get("params").MustString())
-		}
-
+		query := queries[0].Target
 		var err error
-		result, err = ds.ZabbixRequest(ctx, dsInfo, apiMethod, apiParams)
+		result, err = ds.ZabbixRequest(ctx, dsInfo, query.Method, query.Params)
 		ds.queryCache.Set(HashString(tsdbReq.String()), result)
 		if err != nil {
 			ds.logger.Debug("ZabbixAPIQuery", "error", err)

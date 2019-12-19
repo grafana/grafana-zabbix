@@ -10,6 +10,15 @@ type dbConnectionStatus struct {
 	DsName string `json:"dsName"`
 }
 
+type requestModel struct {
+	Target queryRequest `json:"target,omitempty"`
+}
+
+type queryRequest struct {
+	Method string       `json:"method,omitempty"`
+	Params zabbixParams `json:"params,omitempty"`
+}
+
 type zabbixParams struct {
 	Output    []string            `json:"output,omitempty"`
 	SortField string              `json:"sortfield,omitempty"`
