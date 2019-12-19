@@ -19,7 +19,6 @@ import (
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
-	"github.com/mitchellh/mapstructure"
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 )
@@ -324,7 +323,7 @@ func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *data
 	return BuildMetricsResponse(metrics)
 }
 
-func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) ([]map[string]interface{}, error) {
+func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (zabbix.Items, error) {
 	hosts, err := ds.getHosts(ctx, dsInfo, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -350,20 +349,29 @@ func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.Dat
 		allItems, err = ds.getAllItems(ctx, dsInfo, nil, appids, itemType)
 	}
 
+	itemsJSON, err := allItems.MarshalJSON()
 	if err != nil {
 		return nil, err
 	}
-	var items []map[string]interface{}
-	for _, i := range allItems.MustArray() {
-		if i.(map[string]interface{})["status"].(string) == "0" {
-			matched, err := regexp.MatchString(itemFilter, i.(map[string]interface{})["name"].(string))
+
+	var items zabbix.Items
+	err = json.Unmarshal(itemsJSON, &items)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredItems := zabbix.Items{}
+	for _, item := range items {
+		if item.Status == "0" {
+			matched, err := regexp.MatchString(itemFilter, item.Name)
 			if err != nil {
 				return nil, err
 			} else if matched {
-				items = append(items, i.(map[string]interface{}))
+				filteredItems = append(filteredItems, item)
 			}
 		}
 	}
+
 	return items, nil
 }
 
@@ -472,7 +480,7 @@ func (ds *ZabbixDatasource) getAllGroups(ctx context.Context, dsInfo *datasource
 
 	return ds.ZabbixRequest(ctx, dsInfo, "hostgroup.get", params)
 }
-func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items []map[string]interface{}, jsonQueries []*simplejson.Json, useTrend bool) ([]*datasource.TimeSeries, error) {
+func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, jsonQueries []*simplejson.Json, useTrend bool) ([]*datasource.TimeSeries, error) {
 	valueType := ds.getTrendValueType(jsonQueries)
 
 	consolidateBy := ds.getConsolidateBy(jsonQueries)
@@ -482,26 +490,12 @@ func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbRe
 	}
 	ds.logger.Info(consolidateBy)
 
-	zItems := zabbix.Items{}
-	for _, item := range items {
-		var zItem zabbix.Item
-		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{Result: &zItem})
-		if err != nil {
-			return nil, fmt.Errorf("Internal error creating map decoder: %w", err)
-		}
-		err = decoder.Decode(item)
-		if err != nil {
-			return nil, fmt.Errorf("Unable to convert simplejson Item to zabbix.Item: %s", item)
-		}
-		zItems = append(zItems, zItem)
-	}
-
-	history, err := ds.getHistotyOrTrend(ctx, tsdbReq, zItems, useTrend)
+	history, err := ds.getHistotyOrTrend(ctx, tsdbReq, items, useTrend)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertHistory(history, zItems)
+	return convertHistory(history, items)
 }
 func (ds *ZabbixDatasource) getTrendValueType(jsonQueries []*simplejson.Json) string {
 	var trendFunctions []string
