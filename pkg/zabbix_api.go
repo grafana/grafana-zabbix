@@ -437,7 +437,7 @@ func (ds *ZabbixDatasource) getGroups(ctx context.Context, dsInfo *datasource.Da
 
 func (ds *ZabbixDatasource) getAllItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string, appids []string, itemtype string) (*simplejson.Json, error) {
 	params := zabbixParams{
-		Output:      zabbixParamOutput{Fields: []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"}},
+		Output:      &zabbixParamOutput{Fields: []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"}},
 		SortField:   "name",
 		WebItems:    true,
 		Filter:      map[string][]int{},
@@ -456,19 +456,19 @@ func (ds *ZabbixDatasource) getAllItems(ctx context.Context, dsInfo *datasource.
 }
 
 func (ds *ZabbixDatasource) getAllApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string) (*simplejson.Json, error) {
-	params := zabbixParams{Output: zabbixParamOutput{Mode: "extend"}, HostIDs: hostids}
+	params := zabbixParams{Output: &zabbixParamOutput{Mode: "extend"}, HostIDs: hostids}
 
 	return ds.ZabbixRequest(ctx, dsInfo, "application.get", params)
 }
 
 func (ds *ZabbixDatasource) getAllHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupids []string) (*simplejson.Json, error) {
-	params := zabbixParams{Output: zabbixParamOutput{Fields: []string{"name", "host"}}, SortField: "name", GroupIDs: groupids}
+	params := zabbixParams{Output: &zabbixParamOutput{Fields: []string{"name", "host"}}, SortField: "name", GroupIDs: groupids}
 
 	return ds.ZabbixRequest(ctx, dsInfo, "host.get", params)
 }
 
 func (ds *ZabbixDatasource) getAllGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo) (*simplejson.Json, error) {
-	params := zabbixParams{Output: zabbixParamOutput{Fields: []string{"name"}}, SortField: "name", RealHosts: true}
+	params := zabbixParams{Output: &zabbixParamOutput{Fields: []string{"name"}}, SortField: "name", RealHosts: true}
 
 	return ds.ZabbixRequest(ctx, dsInfo, "hostgroup.get", params)
 }
@@ -554,7 +554,7 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 		}
 
 		params := zabbixParams{
-			Output:    zabbixParamOutput{Mode: "extend"},
+			Output:    &zabbixParamOutput{Mode: "extend"},
 			SortField: "clock",
 			SortOrder: "ASC",
 			ItemIDs:   itemids,

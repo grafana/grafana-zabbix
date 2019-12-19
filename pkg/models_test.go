@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ func Test_zabbixParamOutput(t *testing.T) {
 		{
 			name: "Mode extend",
 			input: zabbixParams{
-				Output: zabbixParamOutput{
+				Output: &zabbixParamOutput{
 					Mode: "extend",
 				},
 				GroupIDs: []string{"test1", "test2"},
@@ -26,17 +27,25 @@ func Test_zabbixParamOutput(t *testing.T) {
 		{
 			name: "Fields",
 			input: zabbixParams{
-				Output: zabbixParamOutput{
+				Output: &zabbixParamOutput{
 					Fields: []string{"name", "key_", "hostid"},
 				},
 				GroupIDs: []string{"test1", "test2"},
 			},
 			want: `{ "output": ["name", "key_", "hostid"], "groupids": ["test1", "test2"] }`,
 		},
+		{
+			name: "No Output",
+			input: zabbixParams{
+				GroupIDs: []string{"test1", "test2"},
+			},
+			want: `{ "groupids": ["test1", "test2"] }`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			out, err := json.Marshal(tt.input)
+			fmt.Printf("Output: %s\n", out)
 			assert.NoError(t, err)
 			assert.JSONEq(t, tt.want, string(out))
 		})
