@@ -541,7 +541,7 @@ func (ds *ZabbixDatasource) getConsolidateBy(jsonQueries []*simplejson.Json) str
 }
 
 func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, useTrend bool) (zabbix.History, error) {
-	history := zabbix.History{}
+	allHistory := zabbix.History{}
 
 	timeRange := tsdbReq.GetTimeRange()
 	groupedItems := map[int]zabbix.Items{}
@@ -582,16 +582,16 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 		if err != nil {
 			return nil, fmt.Errorf("Internal error parsing response JSON: %w", err)
 		}
-		point := zabbix.HistoryPoint{}
-		err = json.Unmarshal(pointJSON, &point)
+		history := zabbix.History{}
+		err = json.Unmarshal(pointJSON, &history)
 
 		if err != nil {
-			ds.logger.Warn(fmt.Sprintf("Could not map Zabbix response to History Point: %s", err.Error()))
+			ds.logger.Warn(fmt.Sprintf("Could not map Zabbix response to History: %s", err.Error()))
 		} else {
-			history = append(history, point)
+			allHistory = append(allHistory, history...)
 		}
 	}
-	return history, nil
+	return allHistory, nil
 }
 
 func isUseTrend(timeRange *datasource.TimeRange) bool {

@@ -55,7 +55,7 @@ func (p *zabbixParamOutput) UnmarshalJSON(data []byte) error {
 		p.Fields = obj.([]string)
 		return nil
 	default:
-		return fmt.Errorf("Unsupported type: %s", t)
+		return fmt.Errorf("Unsupported type: %+v", t)
 	}
 }
 

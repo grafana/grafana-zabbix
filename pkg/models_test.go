@@ -44,10 +44,17 @@ func Test_zabbixParamOutput(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out, err := json.Marshal(tt.input)
-			fmt.Printf("Output: %s\n", out)
+			jsonOut, err := json.Marshal(tt.input)
+			fmt.Printf("Output: %s\n", jsonOut)
 			assert.NoError(t, err)
-			assert.JSONEq(t, tt.want, string(out))
+			if !assert.JSONEq(t, tt.want, string(jsonOut)) {
+				return
+			}
+
+			objOut := zabbixParams{}
+			err = json.Unmarshal(jsonOut, &objOut)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.input, objOut)
 		})
 	}
 }
