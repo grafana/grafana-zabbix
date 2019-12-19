@@ -41,22 +41,23 @@ func (p *zabbixParamOutput) UnmarshalJSON(data []byte) error {
 	if p == nil {
 		return fmt.Errorf("zabbixParamOutput: UnmarshalJSON on nil pointer")
 	}
-	var obj interface{}
-	err := json.Unmarshal(data, &obj)
-	if err != nil {
-		return err
+
+	var strArray []string
+	err := json.Unmarshal(data, &strArray)
+	if err == nil {
+		p.Fields = strArray
+		return nil
 	}
 
-	switch t := obj.(type) {
-	case string:
-		p.Mode = obj.(string)
+	var str string
+	err = json.Unmarshal(data, &str)
+	if err == nil {
+		p.Mode = str
 		return nil
-	case []string:
-		p.Fields = obj.([]string)
-		return nil
-	default:
-		return fmt.Errorf("Unsupported type: %+v", t)
 	}
+
+	return fmt.Errorf("Unsupported type: %w", err)
+
 }
 
 type zabbixParams struct {
