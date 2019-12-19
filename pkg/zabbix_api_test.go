@@ -142,7 +142,7 @@ func TestLoginWithDsError(t *testing.T) {
 }
 
 func TestZabbixRequest(t *testing.T) {
-	resp, err := mockDataSource.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", make(map[string]interface{}))
+	resp, err := mockDataSource.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", zabbixParams{})
 	assert.Equal(t, "sampleResult", resp.MustString())
 	assert.Nil(t, err)
 }
@@ -162,26 +162,26 @@ func TestZabbixRequestWithNoAuthToken(t *testing.T) {
 		},
 	}
 
-	resp, err := mockDataSource.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", make(map[string]interface{}))
+	resp, err := mockDataSource.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", zabbixParams{})
 	assert.Equal(t, "auth", resp.MustString())
 	assert.Nil(t, err)
 }
 
 func TestZabbixRequestError(t *testing.T) {
-	resp, err := mockDataSourceError.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", make(map[string]interface{}))
+	resp, err := mockDataSourceError.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", zabbixParams{})
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
 
 func TestZabbixAPIRequest(t *testing.T) {
-	resp, err := mockDataSource.zabbixAPIRequest(context.Background(), "apiURL", "item.get", make(map[string]interface{}), "auth")
+	resp, err := mockDataSource.zabbixAPIRequest(context.Background(), "apiURL", "item.get", zabbixParams{}, "auth")
 
 	assert.Equal(t, "sampleResult", resp.MustString())
 	assert.Nil(t, err)
 }
 
 func TestZabbixAPIRequestError(t *testing.T) {
-	resp, err := mockDataSourceError.zabbixAPIRequest(context.Background(), "apiURL", "item.get", make(map[string]interface{}), "auth")
+	resp, err := mockDataSourceError.zabbixAPIRequest(context.Background(), "apiURL", "item.get", zabbixParams{}, "auth")
 
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
@@ -230,3 +230,56 @@ func TestHandleAPIResultError(t *testing.T) {
 	assert.Equal(t, "Message Data", err.Error())
 	assert.Nil(t, expectedResponse)
 }
+
+// func TestZabbixDatasource_getHistotyOrTrend(t *testing.T) {
+// 	type args struct {
+// 		items    zabbix.Items
+// 		useTrend bool
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		args    args
+// 		want    zabbix.History
+// 		wantErr bool
+// 	}{
+// 		{
+// 			name: "Experiment",
+// 			args: args{
+// 				items: zabbix.Items{
+// 					zabbix.Item{
+// 						ID:        "test",
+// 						Key:       "test.key",
+// 						Name:      "MyTest",
+// 						ValueType: 2,
+// 						HostID:    "hostid",
+// 						Hosts: []zabbix.ItemHost{
+// 							zabbix.ItemHost{
+// 								ID:   "hostid",
+// 								Name: "MyHost",
+// 							},
+// 						},
+// 						Status: "0",
+// 						State:  "0",
+// 					},
+// 				},
+// 				useTrend: false,
+// 			},
+// 			want: zabbix.History{
+// 				zabbix.HistoryPoint{},
+// 			},
+// 			wantErr: false,
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			got, err := mockDataSource.getHistotyOrTrend(context.Background(), mockDataSourceRequest("{}"), tt.args.items, tt.args.useTrend)
+// 			if tt.wantErr {
+// 				assert.Error(t, err)
+// 				return
+// 			}
+
+// 			assert.NoError(t, err)
+// 			assert.Equal(t, tt.want, got)
+// 		})
+// 	}
+// }
