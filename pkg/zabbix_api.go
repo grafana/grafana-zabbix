@@ -68,7 +68,6 @@ func NewZabbixDatasource() *ZabbixDatasource {
 
 // ZabbixAPIQuery handles query requests to Zabbix
 func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	ds.logger.Debug("ZabbixDatasourceRequest", "request", tsdbReq.String())
 	result, queryExistInCache := ds.queryCache.Get(HashString(tsdbReq.String()))
 
 	if !queryExistInCache {
@@ -82,8 +81,6 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 			if err != nil {
 				return nil, err
 			}
-
-			ds.logger.Debug("ZabbixAPIQuery", "method", req.Target.Method, "params", req.Target.Params)
 			queries = append(queries, req)
 		}
 
@@ -103,7 +100,6 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 
 	resultByte, _ := result.(*simplejson.Json).MarshalJSON()
 	ds.logger.Debug("ZabbixAPIQuery", "result", string(resultByte))
-	ds.logger.Debug("Query", "request", tsdbReq.String())
 
 	return BuildResponse(result)
 }
@@ -238,13 +234,11 @@ func (ds *ZabbixDatasource) zabbixAPIRequest(ctx context.Context, apiURL string,
 		},
 		Body: rc,
 	}
-	ds.logger.Debug("ZabbixDatasourceRequest", "startTime", time.Now())
 
 	response, err := makeHTTPRequest(ctx, ds.httpClient, req)
 	if err != nil {
 		return nil, err
 	}
-	ds.logger.Debug("ZabbixDatasourceRequest", "endTime", time.Now())
 	ds.logger.Debug("zabbixAPIRequest", "response", string(response))
 
 	return handleAPIResult(response)
@@ -288,7 +282,6 @@ func isNotAuthorized(message string) bool {
 }
 
 func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	ds.logger.Debug("ZabbixDatasourceRequest", "request", tsdbReq.String())
 	jsonQueries := make([]*simplejson.Json, 0)
 	for _, query := range tsdbReq.Queries {
 		json, err := simplejson.NewJson([]byte(query.ModelJson))
@@ -390,7 +383,6 @@ func (ds *ZabbixDatasource) getApps(ctx context.Context, dsInfo *datasource.Data
 	}
 	var apps []map[string]interface{}
 	for _, i := range allApps.MustArray() {
-		ds.logger.Info(fmt.Sprintf("App: %+v", i.(map[string]interface{})))
 		matched, err := regexp.MatchString(appFilter, i.(map[string]interface{})["name"].(string))
 		if err != nil {
 			return nil, err
@@ -480,15 +472,14 @@ func (ds *ZabbixDatasource) getAllGroups(ctx context.Context, dsInfo *datasource
 
 	return ds.ZabbixRequest(ctx, dsInfo, "hostgroup.get", params)
 }
+
 func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, jsonQueries []*simplejson.Json, useTrend bool) ([]*datasource.TimeSeries, error) {
 	valueType := ds.getTrendValueType(jsonQueries)
-
 	consolidateBy := ds.getConsolidateBy(jsonQueries)
 
 	if consolidateBy == "" {
 		consolidateBy = valueType
 	}
-	ds.logger.Info(consolidateBy)
 
 	history, err := ds.getHistotyOrTrend(ctx, tsdbReq, items, useTrend)
 	if err != nil {
@@ -497,11 +488,12 @@ func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbRe
 
 	return convertHistory(history, items)
 }
+
 func (ds *ZabbixDatasource) getTrendValueType(jsonQueries []*simplejson.Json) string {
 	var trendFunctions []string
 	var trendValueFunc string
 
-	// TODO: loop over actual returned categories
+	// TODO: loop over populated categories
 	for _, j := range new(categories).Trends {
 		trendFunctions = append(trendFunctions, j["name"].(string))
 	}
@@ -555,13 +547,12 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 			SortField: "clock",
 			SortOrder: "ASC",
 			ItemIDs:   itemids,
-			TimeFrom:  timeRange.GetFromEpochMs(),
-			TimeTill:  timeRange.GetToEpochMs(),
+			TimeFrom:  timeRange.GetFromEpochMs() / 1000,
+			TimeTill:  timeRange.GetToEpochMs() / 1000,
 		}
 
 		var response *simplejson.Json
 		var err error
-
 		if useTrend {
 			response, err = ds.ZabbixRequest(ctx, tsdbReq.GetDatasource(), "trend.get", params)
 		} else {
@@ -572,13 +563,14 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 		if err != nil {
 			return nil, err
 		}
+
 		pointJSON, err := response.MarshalJSON()
 		if err != nil {
 			return nil, fmt.Errorf("Internal error parsing response JSON: %w", err)
 		}
+
 		history := zabbix.History{}
 		err = json.Unmarshal(pointJSON, &history)
-
 		if err != nil {
 			ds.logger.Warn(fmt.Sprintf("Could not map Zabbix response to History: %s", err.Error()))
 		} else {
