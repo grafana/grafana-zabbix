@@ -10,6 +10,7 @@ import { triggerPanelTriggersTab } from './triggers_tab';
 import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
 import ProblemList from './components/Problems/Problems';
 import AlertList from './components/AlertList/AlertList';
+import { getNextRefIdChar } from './utils';
 
 const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
 const PROBLEM_EVENTS_LIMIT = 100;
@@ -23,7 +24,17 @@ export const DEFAULT_TARGET = {
   proxy: {filter: ""},
 };
 
-export const getDefaultTarget = () => DEFAULT_TARGET;
+export const getDefaultTarget = (targets) => {
+  return {
+    group: {filter: ""},
+    host: {filter: ""},
+    application: {filter: ""},
+    trigger: {filter: ""},
+    tags: {filter: ""},
+    proxy: {filter: ""},
+    refId: getNextRefIdChar(targets),
+  };
+};
 
 export const DEFAULT_SEVERITY = [
   { priority: 0, severity: 'Not classified',  color: 'rgb(108, 108, 108)', show: true},
@@ -105,6 +116,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     this.panel = migratePanelSchema(this.panel);
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
+
+    this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
 
     this.initDatasources();
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
