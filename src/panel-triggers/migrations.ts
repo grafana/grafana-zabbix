@@ -48,11 +48,9 @@ export function migratePanelSchema(panel) {
 
   if (schemaVersion < 7) {
     const updatedTargets = [];
-    console.log(panel.targets);
     for (const targetKey in panel.targets) {
       const target = panel.targets[targetKey];
-      console.log(target, isEmptyTarget(target));
-      if (!isEmptyTarget(target)) {
+      if (!isEmptyTarget(target) && !isInvalidTarget(target, targetKey)) {
         updatedTargets.push({
           ...target,
           datasource: targetKey,
@@ -64,7 +62,6 @@ export function migratePanelSchema(panel) {
         target.refId = getNextRefIdChar(updatedTargets);
       }
     }
-    console.log(updatedTargets);
     panel.targets = updatedTargets;
   }
 
@@ -85,4 +82,8 @@ function isEmptyTargets(targets) {
 
 function isEmptyTarget(target) {
   return !target || !(target.group && target.host && target.application && target.trigger);
+}
+
+function isInvalidTarget(target, targetKey) {
+  return target && target.refId === 'A' && targetKey === '0';
 }

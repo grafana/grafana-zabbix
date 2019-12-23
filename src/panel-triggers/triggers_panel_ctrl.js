@@ -40,7 +40,6 @@ const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
 export const PANEL_DEFAULTS = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
-  datasources: [],
   targets: {},
   // Fields
   hostField: true,
@@ -107,14 +106,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.panel = migratePanelSchema(this.panel);
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
-    this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
-    if (this.panel.datasources.length === 0) {
-      this.panel.datasources.push(this.available_datasources[0]);
-    }
-    if (this.isEmptyTargets()) {
-      this.panel.targets[this.panel.datasources[0]] = getDefaultTarget();
-    }
-
     this.initDatasources();
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
     this.events.on('refresh', this.onRefresh.bind(this));
@@ -138,7 +129,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   initDatasources() {
-    let promises = _.map(this.panel.datasources, (ds) => {
+    if (!this.panel.targets) {
+      return;
+    }
+    const targetDatasources = _.compact(this.panel.targets.map(target => target.datasource));
+    let promises = targetDatasources.map(ds => {
       // Load datasource
       return this.datasourceSrv.get(ds)
       .then(datasource => {
