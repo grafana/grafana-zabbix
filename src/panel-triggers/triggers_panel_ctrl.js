@@ -51,7 +51,7 @@ const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
 export const PANEL_DEFAULTS = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
-  targets: {},
+  targets: [getDefaultTarget([])],
   // Fields
   hostField: true,
   hostTechNameField: false,
@@ -118,6 +118,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
     this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
+    if (this.panel.targets && !this.panel.targets[0].datasource) {
+      this.panel.targets[0].datasource = this.available_datasources[0];
+    }
 
     this.initDatasources();
     this.events.on('init-edit-mode', this.onInitEditMode.bind(this));

@@ -63,6 +63,7 @@ export function migratePanelSchema(panel) {
       }
     }
     panel.targets = updatedTargets;
+    delete panel.datasources;
   }
 
   return panel;
