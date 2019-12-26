@@ -492,7 +492,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return _.map(tags, (tag) => `${tag.tag}:${tag.value}`).join(', ');
   }
 
-  addTagFilter(tag, target) {
+  addTagFilter(tag, datasource) {
+    const target = this.panel.targets.find(t => t.datasource === datasource);
+    console.log(target);
     let tagFilter = target.tags.filter;
     let targetTags = this.parseTags(tagFilter);
     let newTag = {tag: tag.tag, value: tag.value};
@@ -503,7 +505,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.refresh();
   }
 
-  removeTagFilter(tag, target) {
+  removeTagFilter(tag, datasource) {
+    const target = this.panel.targets.find(t => t.datasource === datasource);
     let tagFilter = target.tags.filter;
     let targetTags = this.parseTags(tagFilter);
     _.remove(targetTags, t => t.tag === tag.tag && t.value === tag.value);
