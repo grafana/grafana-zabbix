@@ -1,0 +1,48 @@
+{
+  "type": "app",
+  "name": "Zabbix",
+  "id": "alexanderzobnin-zabbix-app",
+
+  "info": {
+    "description": "Zabbix plugin for Grafana",
+    "author": {
+      "name": "Alexander Zobnin",
+      "url": "https://github.com/alexanderzobnin"
+    },
+    "keywords": ["zabbix"],
+    "logos": {
+      "small": "img/zabbix_app_logo.svg",
+      "large": "img/zabbix_app_logo.svg"
+    },
+    "links": [
+      {"name": "GitHub", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
+      {"name": "Docs", "url": "https://alexanderzobnin.github.io/grafana-zabbix"},
+      {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE"}
+    ],
+    "screenshots": [
+      {"name": "Showcase", "path": "img/screenshot-showcase.png"},
+      {"name": "Dashboard", "path": "img/screenshot-dashboard01.png"},
+      {"name": "Annotations", "path": "img/screenshot-annotations.png"},
+      {"name": "Metric Editor", "path": "img/screenshot-metric_editor.png"},
+      {"name": "Triggers", "path": "img/screenshot-triggers.png"}
+    ],
+    "version": "3.10.5",
+    "updated": "2019-12-26"
+  },
+
+  "includes": [
+    {
+      "type": "datasource",
+      "name": "Zabbix Datasource"
+    },
+    {
+      "type": "panel",
+      "name": "Triggers Panel"
+    }
+  ],
+
+  "dependencies": {
+    "grafanaVersion": "6.x",
+    "plugins": []
+  }
+}
