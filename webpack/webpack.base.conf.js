@@ -28,7 +28,7 @@ module.exports = {
   externals: [
     // remove the line below if you don't want to use builtin versions
     'jquery', 'lodash', 'moment', 'angular',
-    'react', 'react-dom', '@grafana/ui',
+    'react', 'react-dom', '@grafana/ui', '@grafana/data',
     function (context, request, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {
@@ -63,7 +63,7 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           query: {
-            presets: ['babel-preset-env']
+            presets: ['@babel/preset-env']
           }
         }
       },

@@ -26,7 +26,7 @@ jobs:
   build:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     steps:
       - checkout
       - restore_cache:
@@ -45,7 +45,7 @@ jobs:
   lint:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     steps:
       - checkout
       - restore_cache:
@@ -67,7 +67,7 @@ jobs:
       CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
       CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     steps:
       - checkout
       # Prepare for artifact and test results collection equivalent to how it was done on 1.0.
@@ -96,7 +96,7 @@ jobs:
   make-release:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     environment:
       CI_GIT_USER: CircleCI
       CI_GIT_EMAIL: ci@grafana.com
@@ -141,7 +141,7 @@ jobs:
   deploy-docs:
     working_directory: ~/grafana-zabbix
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     environment:
       GH_PAGES_BRANCH: gh-pages
       CI_GIT_USER: CircleCI
@@ -162,7 +162,7 @@ jobs:
     steps:
     - checkout
     - run: sudo pip install codespell
-    - run: codespell -S './.git*,./src/img*' -L que
+    - run: codespell -S './.git*,./src/img*' -L que --ignore-words=./.codespell_ignore
 
 workflows:
   version: 2

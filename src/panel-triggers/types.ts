@@ -1,7 +1,7 @@
 export interface ProblemsPanelOptions {
   schemaVersion: number;
   datasources: any[];
-  targets: Map<string, ProblemsPanelTarget>;
+  targets: ProblemsPanelTarget[];
   // Fields
   hostField?: boolean;
   hostTechNameField?: boolean;
@@ -62,6 +62,7 @@ export interface ProblemsPanelTarget {
   proxy: {
     filter: string
   };
+  datasource: string;
 }
 
 export interface TriggerSeverity {

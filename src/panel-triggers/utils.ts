@@ -1,4 +1,6 @@
+import _ from 'lodash';
 import moment from 'moment';
+import { DataQuery } from '@grafana/ui/';
 import * as utils from '../datasource-zabbix/utils';
 import { ZBXTrigger } from './types';
 
@@ -20,3 +22,13 @@ export function formatLastChange(lastchangeUnix: number, customFormat?: string) 
   const lastchange = timestamp.format(format);
   return lastchange;
 }
+
+export const getNextRefIdChar = (queries: DataQuery[]): string => {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  return _.find(letters, refId => {
+    return _.every(queries, other => {
+      return other.refId !== refId;
+    });
+  });
+};

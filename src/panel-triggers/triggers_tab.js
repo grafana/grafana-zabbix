@@ -10,7 +10,7 @@ class TriggersTabCtrl {
     this.panelCtrl = $scope.ctrl;
     this.panel = this.panelCtrl.panel;
     this.templateSrv = templateSrv;
-    this.datasources = this.panelCtrl.datasources;
+    this.datasources = {};
 
     // Load scope defaults
     var scopeDefaults = {
@@ -21,6 +21,7 @@ class TriggersTabCtrl {
       oldTarget: _.cloneDeep(this.panel.targets)
     };
     _.defaultsDeep(this, scopeDefaults);
+    this.selectedDatasources = this.getSelectedDatasources();
 
     this.initDatasources();
     this.panelCtrl.refresh();
@@ -30,6 +31,7 @@ class TriggersTabCtrl {
     return this.panelCtrl.initDatasources()
     .then((datasources) => {
       _.each(datasources, (datasource) => {
+        this.datasources[datasource.name] = datasource;
         this.bindSuggestionFunctions(datasource);
       });
     });
@@ -44,6 +46,10 @@ class TriggersTabCtrl {
     this.getProxyNames[ds] = _.bind(this.suggestProxies, this, datasource);
   }
 
+  getSelectedDatasources() {
+    return _.compact(this.panel.targets.map(target => target.datasource));
+  }
+
   suggestGroups(datasource, query, callback) {
     return datasource.zabbix.getAllGroups()
     .then(groups => {
@@ -53,7 +59,8 @@ class TriggersTabCtrl {
   }
 
   suggestHosts(datasource, query, callback) {
-    let groupFilter = datasource.replaceTemplateVars(this.panel.targets[datasource.name].group.filter);
+    const target = this.panel.targets.find(t => t.datasource === datasource.name);
+    let groupFilter = datasource.replaceTemplateVars(target.group.filter);
     return datasource.zabbix.getAllHosts(groupFilter)
     .then(hosts => {
       return _.map(hosts, 'name');
@@ -62,8 +69,9 @@ class TriggersTabCtrl {
   }
 
   suggestApps(datasource, query, callback) {
-    let groupFilter = datasource.replaceTemplateVars(this.panel.targets[datasource.name].group.filter);
-    let hostFilter = datasource.replaceTemplateVars(this.panel.targets[datasource.name].host.filter);
+    const target = this.panel.targets.find(t => t.datasource === datasource.name);
+    let groupFilter = datasource.replaceTemplateVars(target.group.filter);
+    let hostFilter = datasource.replaceTemplateVars(target.host.filter);
     return datasource.zabbix.getAllApps(groupFilter, hostFilter)
     .then(apps => {
       return _.map(apps, 'name');
@@ -78,16 +86,17 @@ class TriggersTabCtrl {
   }
 
   datasourcesChanged() {
-    _.each(this.panel.datasources, (ds) => {
-      if (!this.panel.targets[ds]) {
-        this.panel.targets[ds] = getDefaultTarget();
+    const newTargets = [];
+    _.each(this.selectedDatasources, (ds) => {
+      const dsTarget = this.panel.targets.find((target => target.datasource === ds));
+      if (dsTarget) {
+        newTargets.push(dsTarget);
+      } else {
+        const newTarget = getDefaultTarget(this.panel.targets);
+        newTarget.datasource = ds;
+        newTargets.push(newTarget);
       }
-    });
-    // Remove unchecked targets
-    _.each(this.panel.targets, (target, ds) => {
-      if (!_.includes(this.panel.datasources, ds)) {
-        delete this.panel.targets[ds];
-      }
+      this.panel.targets = newTargets;
     });
     this.parseTarget();
   }

@@ -1,5 +1,7 @@
 import _ from 'lodash';
 import moment from 'moment';
+import kbn from 'grafana/app/core/utils/kbn';
+import * as c from './constants';
 import { VariableQuery, MetricFindQueryTypes } from './types';
 
 /**
@@ -190,6 +192,18 @@ export function isTemplateVariable(str, templateVariables) {
   } else {
     return false;
   }
+}
+
+export function getRangeScopedVars(range) {
+  const msRange = range.to.diff(range.from);
+  const sRange = Math.round(msRange / 1000);
+  const regularRange = kbn.secondsToHms(msRange / 1000);
+  return {
+    __range_ms: { text: msRange, value: msRange },
+    __range_s: { text: sRange, value: sRange },
+    __range: { text: regularRange, value: regularRange },
+    __range_series: {text: c.RANGE_VARIABLE_VALUE, value: c.RANGE_VARIABLE_VALUE},
+  };
 }
 
 export function buildRegex(str) {

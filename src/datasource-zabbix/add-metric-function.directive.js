@@ -47,7 +47,7 @@ angular
             }
 
             $scope.$apply(function() {
-              $scope.addFunction(funcDef);
+              $scope.ctrl.addFunction(funcDef);
             });
 
             $input.trigger('blur');
