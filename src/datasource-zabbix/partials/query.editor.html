@@ -201,10 +201,12 @@
   </div>
 
   <!-- Metric processing functions -->
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.ITEMID">
+  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.ITEMID || ctrl.target.mode == editorMode.ITSERVICE">
     <div class="gf-form">
       <label class="gf-form-label query-keyword width-7">Functions</label>
-      <div ng-repeat="func in ctrl.target.functions" class="gf-form-label query-part" metric-function-editor></div>
+    </div>
+    <div ng-repeat="func in ctrl.target.functions" class="gf-form">
+      <span zabbix-function-editor class="gf-form-label query-part" ng-hide="func.hidden"></span>
     </div>
     <div class="gf-form dropdown" add-metric-function>
     </div>

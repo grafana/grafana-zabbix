@@ -1,7 +1,7 @@
 export interface ProblemsPanelOptions {
   schemaVersion: number;
   datasources: any[];
-  targets: Map<string, ProblemsPanelTarget>;
+  targets: ProblemsPanelTarget[];
   // Fields
   hostField?: boolean;
   hostTechNameField?: boolean;
@@ -62,6 +62,7 @@ export interface ProblemsPanelTarget {
   proxy: {
     filter: string
   };
+  datasource: string;
 }
 
 export interface TriggerSeverity {
@@ -75,6 +76,7 @@ export type TriggerColor = string;
 
 export interface ZBXTrigger {
   acknowledges?: ZBXAcknowledge[];
+  showAckButton?: boolean;
   alerts?: ZBXAlert[];
   age?: string;
   color?: TriggerColor;
@@ -162,6 +164,7 @@ export interface ZBXAcknowledge {
 }
 
 export interface ZBXAlert {
+  eventid: string;
   clock: string;
   message: string;
   error: string;

@@ -4,6 +4,7 @@
   "id": "alexanderzobnin-zabbix-triggers-panel",
 
   "dataFormats": [],
+  "skipDataQuery": true,
 
   "info": {
     "author": {

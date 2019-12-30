@@ -28,7 +28,7 @@ module.exports = {
   externals: [
     // remove the line below if you don't want to use builtin versions
     'jquery', 'lodash', 'moment', 'angular',
-    'react', 'react-dom',
+    'react', 'react-dom', '@grafana/ui', '@grafana/data',
     function (context, request, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {
@@ -53,7 +53,7 @@ module.exports = {
     ExtractTextPluginDark,
   ],
   resolve: {
-    extensions: [".js", ".ts", ".tsx", ".html", ".scss"]
+    extensions: ['.js', '.es6', '.ts', '.tsx', '.html', '.scss']
   },
   module: {
     rules: [
@@ -63,7 +63,7 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           query: {
-            presets: ['babel-preset-env']
+            presets: ['@babel/preset-env']
           }
         }
       },

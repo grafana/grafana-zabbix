@@ -1,5 +1,7 @@
 import _ from 'lodash';
 import moment from 'moment';
+import kbn from 'grafana/app/core/utils/kbn';
+import * as c from './constants';
 
 /**
  * Expand Zabbix item name
@@ -141,6 +143,18 @@ export function isTemplateVariable(str, templateVariables) {
   }
 }
 
+export function getRangeScopedVars(range) {
+  const msRange = range.to.diff(range.from);
+  const sRange = Math.round(msRange / 1000);
+  const regularRange = kbn.secondsToHms(msRange / 1000);
+  return {
+    __range_ms: { text: msRange, value: msRange },
+    __range_s: { text: sRange, value: sRange },
+    __range: { text: regularRange, value: regularRange },
+    __range_series: {text: c.RANGE_VARIABLE_VALUE, value: c.RANGE_VARIABLE_VALUE},
+  };
+}
+
 export function buildRegex(str) {
   var matches = str.match(regexPattern);
   var pattern = matches[1];
@@ -263,6 +277,17 @@ export function parseVersion(version) {
  */
 export function compactQuery(query) {
   return query.replace(/\s+/g, ' ').trim();
+}
+
+export function getArrayDepth(a, level = 0) {
+  if (a.length === 0) {
+    return 1;
+  }
+  const elem = a[0];
+  if (_.isArray(elem)) {
+    return getArrayDepth(elem, level + 1);
+  }
+  return level + 1;
 }
 
 // Fix for backward compatibility with lodash 2.4

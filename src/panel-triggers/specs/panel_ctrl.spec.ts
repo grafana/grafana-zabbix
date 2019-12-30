@@ -5,9 +5,9 @@ import {PANEL_DEFAULTS, DEFAULT_TARGET} from '../triggers_panel_ctrl';
 // import { create } from 'domain';
 
 describe('TriggerPanelCtrl', () => {
-  let ctx = {};
+  let ctx: any = {};
   let datasourceSrvMock, zabbixDSMock;
-  let timeoutMock = () => {};
+  const timeoutMock = () => {};
   let createPanelCtrl;
 
   beforeEach(() => {
@@ -61,7 +61,7 @@ describe('TriggerPanelCtrl', () => {
   describe('When adding new panel', () => {
     it('should suggest all zabbix data sources', () => {
       ctx.scope.panel = {};
-      let panelCtrl = createPanelCtrl();
+      const panelCtrl = createPanelCtrl();
       expect(panelCtrl.available_datasources).toEqual([
         'zabbix_default', 'zabbix'
       ]);
@@ -69,10 +69,8 @@ describe('TriggerPanelCtrl', () => {
 
     it('should load first zabbix data source as default', () => {
       ctx.scope.panel = {};
-      let panelCtrl = createPanelCtrl();
-      expect(panelCtrl.panel.datasources).toEqual([
-        'zabbix_default'
-      ]);
+      const panelCtrl = createPanelCtrl();
+      expect(panelCtrl.panel.targets[0].datasource).toEqual('zabbix_default');
     });
 
     it('should rewrite default empty target', () => {
@@ -82,7 +80,7 @@ describe('TriggerPanelCtrl', () => {
           "refId": "A"
         }],
       };
-      let panelCtrl = createPanelCtrl();
+      const panelCtrl = createPanelCtrl();
       expect(panelCtrl.available_datasources).toEqual([
         'zabbix_default', 'zabbix'
       ]);
@@ -92,16 +90,22 @@ describe('TriggerPanelCtrl', () => {
   describe('When refreshing panel', () => {
     beforeEach(() => {
       ctx.scope.panel.datasources = ['zabbix_default', 'zabbix'];
-      ctx.scope.panel.targets = {
-        'zabbix_default': DEFAULT_TARGET,
-        'zabbix': DEFAULT_TARGET
-      };
+      ctx.scope.panel.targets = [
+        {
+          ...DEFAULT_TARGET,
+          datasource: 'zabbix_default'
+        },
+        {
+          ...DEFAULT_TARGET,
+          datasource: 'zabbix'
+        },
+      ];
       ctx.panelCtrl = createPanelCtrl();
     });
 
     it('should format triggers', (done) => {
       ctx.panelCtrl.onRefresh().then(() => {
-        let formattedTrigger = _.find(ctx.panelCtrl.triggerList, {triggerid: "1"});
+        const formattedTrigger: any = _.find(ctx.panelCtrl.triggerList, {triggerid: "1"});
         expect(formattedTrigger.host).toBe('backend01');
         expect(formattedTrigger.hostTechName).toBe('backend01_tech');
         expect(formattedTrigger.datasource).toBe('zabbix_default');
@@ -113,7 +117,7 @@ describe('TriggerPanelCtrl', () => {
 
     it('should sort triggers by time by default', (done) => {
       ctx.panelCtrl.onRefresh().then(() => {
-        let trigger_ids = _.map(ctx.panelCtrl.triggerList, 'triggerid');
+        const trigger_ids = _.map(ctx.panelCtrl.triggerList, 'triggerid');
         expect(trigger_ids).toEqual([
           '2', '4', '3', '1'
         ]);
@@ -124,7 +128,7 @@ describe('TriggerPanelCtrl', () => {
     it('should sort triggers by severity', (done) => {
       ctx.panelCtrl.panel.sortTriggersBy = { text: 'severity', value: 'priority' };
       ctx.panelCtrl.onRefresh().then(() => {
-        let trigger_ids = _.map(ctx.panelCtrl.triggerList, 'triggerid');
+        const trigger_ids = _.map(ctx.panelCtrl.triggerList, 'triggerid');
         expect(trigger_ids).toEqual([
           '1', '3', '2', '4'
         ]);
@@ -134,7 +138,7 @@ describe('TriggerPanelCtrl', () => {
 
     it('should add acknowledges to trigger', (done) => {
       ctx.panelCtrl.onRefresh().then(() => {
-        let trigger = getTriggerById(1, ctx);
+        const trigger = getTriggerById(1, ctx);
         expect(trigger.acknowledges).toHaveLength(1);
         expect(trigger.acknowledges[0].message).toBe("event ack");
 
@@ -153,15 +157,15 @@ describe('TriggerPanelCtrl', () => {
 
     it('should handle new lines in trigger description', () => {
       ctx.panelCtrl.setTriggerSeverity = jest.fn((trigger) => trigger);
-      let trigger = {comments: "this is\ndescription"};
+      const trigger = {comments: "this is\ndescription"};
       const formattedTrigger = ctx.panelCtrl.formatTrigger(trigger);
       expect(formattedTrigger.comments).toBe("this is<br>description");
     });
 
     it('should format host name to display (default)', (done) => {
       ctx.panelCtrl.onRefresh().then(() => {
-        let trigger = getTriggerById(1, ctx);
-        let hostname = ctx.panelCtrl.formatHostName(trigger);
+        const trigger = getTriggerById(1, ctx);
+        const hostname = ctx.panelCtrl.formatHostName(trigger);
         expect(hostname).toBe('backend01');
         done();
       });
@@ -171,8 +175,8 @@ describe('TriggerPanelCtrl', () => {
       ctx.panelCtrl.panel.hostField = false;
       ctx.panelCtrl.panel.hostTechNameField = true;
       ctx.panelCtrl.onRefresh().then(() => {
-        let trigger = getTriggerById(1, ctx);
-        let hostname = ctx.panelCtrl.formatHostName(trigger);
+        const trigger = getTriggerById(1, ctx);
+        const hostname = ctx.panelCtrl.formatHostName(trigger);
         expect(hostname).toBe('backend01_tech');
         done();
       });
@@ -182,8 +186,8 @@ describe('TriggerPanelCtrl', () => {
       ctx.panelCtrl.panel.hostField = true;
       ctx.panelCtrl.panel.hostTechNameField = true;
       ctx.panelCtrl.onRefresh().then(() => {
-        let trigger = getTriggerById(1, ctx);
-        let hostname = ctx.panelCtrl.formatHostName(trigger);
+        const trigger = getTriggerById(1, ctx);
+        const hostname = ctx.panelCtrl.formatHostName(trigger);
         expect(hostname).toBe('backend01 (backend01_tech)');
         done();
       });
@@ -193,8 +197,8 @@ describe('TriggerPanelCtrl', () => {
       ctx.panelCtrl.panel.hostField = false;
       ctx.panelCtrl.panel.hostTechNameField = false;
       ctx.panelCtrl.onRefresh().then(() => {
-        let trigger = getTriggerById(1, ctx);
-        let hostname = ctx.panelCtrl.formatHostName(trigger);
+        const trigger = getTriggerById(1, ctx);
+        const hostname = ctx.panelCtrl.formatHostName(trigger);
         expect(hostname).toBe("");
         done();
       });
@@ -222,7 +226,7 @@ describe('TriggerPanelCtrl', () => {
   });
 });
 
-const defaultTrigger = {
+const defaultTrigger: any = {
   "triggerid": "13565",
   "value": "1",
   "groups": [{"groupid": "1", "name": "Backend"}] ,
@@ -248,7 +252,7 @@ const defaultTrigger = {
   "flags": "0", "type": "0", "items": [] , "error": ""
 };
 
-const defaultEvent = {
+const defaultEvent: any = {
   "eventid": "11",
   "acknowledges": [
     {
@@ -272,8 +276,8 @@ const defaultEvent = {
   "objectid": "1",
 };
 
-function generateTrigger(id, timestamp, severity) {
-  let trigger = _.cloneDeep(defaultTrigger);
+function generateTrigger(id, timestamp?, severity?): any {
+  const trigger = _.cloneDeep(defaultTrigger);
   trigger.triggerid = id.toString();
   if (severity) {
     trigger.priority = severity.toString();
@@ -284,13 +288,13 @@ function generateTrigger(id, timestamp, severity) {
   return trigger;
 }
 
-function createTrigger(props) {
+function createTrigger(props): any {
   let trigger = _.cloneDeep(defaultTrigger);
   trigger = _.merge(trigger, props);
   trigger.lastEvent.objectid = trigger.triggerid;
   return trigger;
 }
 
-function getTriggerById(id, ctx) {
+function getTriggerById(id, ctx): any {
   return _.find(ctx.panelCtrl.triggerList, {triggerid: id.toString()});
 }

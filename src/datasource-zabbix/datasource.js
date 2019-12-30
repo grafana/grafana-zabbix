@@ -111,6 +111,9 @@ export class ZabbixDatasource {
       let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
       let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
 
+      // Add range variables
+      options.scopedVars = Object.assign({}, options.scopedVars, utils.getRangeScopedVars(options.range));
+
       // Prevent changes of original object
       let target = _.cloneDeep(t);
 
@@ -323,14 +326,14 @@ export class ZabbixDatasource {
 
     return this.zabbix.getITServices(itServiceFilter)
     .then(itservices => {
-      return this.zabbix.getSLA(itservices, timeRange, target, options);
-    });
+      return this.zabbix.getSLA(itservices, timeRange, target, options);})
+    .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target));
   }
 
   queryTriggersData(target, timeRange) {
     let [timeFrom, timeTo] = timeRange;
     return this.zabbix.getHostsFromTarget(target)
-    .then((results) => {
+    .then(results => {
       let [hosts, apps] = results;
       if (hosts.length) {
         let hostids = _.map(hosts, 'hostid');
@@ -342,9 +345,13 @@ export class ZabbixDatasource {
           timeFrom: timeFrom,
           timeTo: timeTo
         };
-        return this.zabbix.getHostAlerts(hostids, appids, options)
-        .then((triggers) => {
-          return responseHandler.handleTriggersResponse(triggers, timeRange);
+        const groupFilter = target.group.filter;
+        return Promise.all([
+          this.zabbix.getHostAlerts(hostids, appids, options),
+          this.zabbix.getGroups(groupFilter)
+        ])
+        .then(([triggers, groups]) => {
+          return responseHandler.handleTriggersResponse(triggers, groups, timeRange);
         });
       } else {
         return Promise.resolve([]);

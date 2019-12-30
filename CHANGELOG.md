@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+## [3.10.5] - 2019-12-26
+### Added
+- SLA over time graphs, [#728](https://github.com/alexanderzobnin/grafana-zabbix/issues/728)
+- Additional time ranges in functions, [#531](https://github.com/alexanderzobnin/grafana-zabbix/issues/531)
+
+### Fixed
+- Problems panel: query editor broken in Grafana 6.4, [#817](https://github.com/alexanderzobnin/grafana-zabbix/issues/817)
+- Datasource: function editor is not working, [#810](https://github.com/alexanderzobnin/grafana-zabbix/issues/810)
+- Datasource: cannot add a function to query from typeahead, [#468](https://github.com/alexanderzobnin/grafana-zabbix/issues/468)
+- Datasource: annotations editor broken in Grafana 6.x, [#813](https://github.com/alexanderzobnin/grafana-zabbix/issues/813)
+- React plugins issue, [#823](https://github.com/alexanderzobnin/grafana-zabbix/issues/823)
+
+## [3.10.4] - 2019-08-08
+### Fixed
+- Problems panel: query editor broken in Grafana 6.3, [#778](https://github.com/alexanderzobnin/grafana-zabbix/issues/778)
+- Problems panel: some heart icons are missing, [#754](https://github.com/alexanderzobnin/grafana-zabbix/issues/754)
+
+## [3.10.3] - 2019-07-26
+### Fixed
+- Direct DB Connection: can't stay enabled, [#731](https://github.com/alexanderzobnin/grafana-zabbix/issues/731)
+- Triggers query mode: count doesn't work with Singlestat, [#726](https://github.com/alexanderzobnin/grafana-zabbix/issues/726)
+- Query editor: function editor looks odd in Grafana 6.x, [#765](https://github.com/alexanderzobnin/grafana-zabbix/issues/765)
+- Alerting: heart icon on panels in Grafana 6.x, [#715](https://github.com/alexanderzobnin/grafana-zabbix/issues/715)
+
+## [3.10.2] - 2019-04-23
+### Fixed
+- Direct DB Connection: provisioned datasource fails to load, [#711](https://github.com/alexanderzobnin/grafana-zabbix/issues/711)
+- Functions: `sumSeries` doesn't work in couple with other aggregation functions, [#530](https://github.com/alexanderzobnin/grafana-zabbix/issues/530)
+- Problems panel: performance and memory issues, [#720](https://github.com/alexanderzobnin/grafana-zabbix/issues/720), [#712](https://github.com/alexanderzobnin/grafana-zabbix/issues/712)
+- Problems panel: hide acknowledge button for read-only users, [#722](https://github.com/alexanderzobnin/grafana-zabbix/issues/722)
+- Problems panel: "no data" overlaps table header when font size increased, [#717](https://github.com/alexanderzobnin/grafana-zabbix/issues/717)
+- Problems panel: problem description does not resize problem bar, [#704](https://github.com/alexanderzobnin/grafana-zabbix/issues/704)
+- Triggers query mode: problems not filtered by selected groups, [#709](https://github.com/alexanderzobnin/grafana-zabbix/issues/709)
+
 ## [3.10.1] - 2019-03-05
 ### Fixed
 - Problems panel: unable to edit panel in Grafana 6.0, [#685](https://github.com/alexanderzobnin/grafana-zabbix/issues/685)
@@ -189,7 +225,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - setAliasByRegex() function
 
 ### Changed
-- **Docs**: deprecate special repo with builded plugin.
+- **Docs**: deprecate special repo with built plugins.
 - **Triggers panel**: remove 'default' from datasources list (cause error), iss [#340](https://github.com/alexanderzobnin/grafana-zabbix/issues/340)
 - Add dist/ directory to repo to correspond development guide http://docs.grafana.org/plugins/development/
 

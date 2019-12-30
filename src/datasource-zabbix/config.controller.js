@@ -28,9 +28,14 @@ export class ZabbixDSConfigController {
 
     this.current.jsonData = migrateDSConfig(this.current.jsonData);
     _.defaults(this.current.jsonData, defaultConfig);
+
+    this.dbConnectionDatasourceId = this.current.jsonData.dbConnectionDatasourceId;
     this.dbDataSources = this.getSupportedDBDataSources();
     this.zabbixVersions = _.cloneDeep(zabbixVersions);
     this.autoDetectZabbixVersion();
+    if (!this.dbConnectionDatasourceId) {
+      this.loadCurrentDBDatasource();
+    }
   }
 
   getSupportedDBDataSources() {
@@ -41,9 +46,19 @@ export class ZabbixDSConfigController {
   }
 
   getCurrentDatasourceType() {
-    const dsId = this.current.jsonData.dbConnectionDatasourceId;
+    const dsId = this.dbConnectionDatasourceId;
     const currentDs = _.find(this.dbDataSources, { 'id': dsId });
     return currentDs ? currentDs.type : null;
+  }
+
+  loadCurrentDBDatasource() {
+    const dsName= this.current.jsonData.dbConnectionDatasourceName;
+    this.datasourceSrv.loadDatasource(dsName)
+    .then(ds => {
+      if (ds) {
+        this.dbConnectionDatasourceId = ds.id;
+      }
+    });
   }
 
   autoDetectZabbixVersion() {
@@ -63,5 +78,9 @@ export class ZabbixDSConfigController {
         this.current.jsonData.zabbixVersion = version;
       }
     });
+  }
+
+  onDBConnectionDatasourceChange() {
+    this.current.jsonData.dbConnectionDatasourceId = this.dbConnectionDatasourceId;
   }
 }

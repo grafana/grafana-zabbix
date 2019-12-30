@@ -1,9 +1,8 @@
 import _ from 'lodash';
 import * as utils from './utils';
-import ts from './timeseries';
+import ts, { groupBy_perf as groupBy } from './timeseries';
 
 let downsampleSeries = ts.downsample;
-let groupBy = ts.groupBy_perf;
 let groupBy_exported = (interval, groupFunc, datapoints) => groupBy(datapoints, interval, groupFunc);
 let sumSeries = ts.sumSeries;
 let delta = ts.delta;
@@ -19,7 +18,7 @@ let AVERAGE = ts.AVERAGE;
 let MIN = ts.MIN;
 let MAX = ts.MAX;
 let MEDIAN = ts.MEDIAN;
-let PERCENTIL = ts.PERCENTIL;
+let PERCENTILE = ts.PERCENTILE;
 
 function limit(order, n, orderByFunc, timeseries) {
   let orderByCallback = aggregationFunctions[orderByFunc];
@@ -107,7 +106,7 @@ function groupByWrapper(interval, groupFunc, datapoints) {
 
 function aggregateByWrapper(interval, aggregateFunc, datapoints) {
   // Flatten all points in frame and then just use groupBy()
-  const flattenedPoints = _.flatten(datapoints, true);
+  const flattenedPoints = ts.flattenDatapoints(datapoints);
   // groupBy_perf works with sorted series only
   const sortedPoints = ts.sortByTime(flattenedPoints);
   let groupByCallback = aggregationFunctions[aggregateFunc];
@@ -115,15 +114,15 @@ function aggregateByWrapper(interval, aggregateFunc, datapoints) {
 }
 
 function aggregateWrapper(groupByCallback, interval, datapoints) {
-  var flattenedPoints = _.flatten(datapoints, true);
+  var flattenedPoints = ts.flattenDatapoints(datapoints);
   // groupBy_perf works with sorted series only
   const sortedPoints = ts.sortByTime(flattenedPoints);
   return groupBy(sortedPoints, interval, groupByCallback);
 }
 
-function percentil(interval, n, datapoints) {
-  var flattenedPoints = _.flatten(datapoints, true);
-  var groupByCallback = _.partial(PERCENTIL, n);
+function percentile(interval, n, datapoints) {
+  var flattenedPoints = ts.flattenDatapoints(datapoints);
+  var groupByCallback = _.partial(PERCENTILE, n);
   return groupBy(flattenedPoints, interval, groupByCallback);
 }
 
@@ -155,7 +154,7 @@ let metricFunctions = {
   transformNull: transformNull,
   aggregateBy: aggregateByWrapper,
   // Predefined aggs
-  percentil: percentil,
+  percentile: percentile,
   average: _.partial(aggregateWrapper, AVERAGE),
   min: _.partial(aggregateWrapper, MIN),
   max: _.partial(aggregateWrapper, MAX),

@@ -10,15 +10,15 @@ set -o pipefail
 echo "current dir: $(pwd)"
 
 # Setup git env
-git config --global user.email $CI_GIT_EMAIL
-git config --global user.name $CI_GIT_USER
+git config --global user.email "$CI_GIT_EMAIL"
+git config --global user.name "$CI_GIT_USER"
 echo "git user is $CI_GIT_USER ($CI_GIT_EMAIL)"
 
-git checkout -b $GH_PAGES_BRANCH
-rm -rf * || true
+git checkout -b "$GH_PAGES_BRANCH"
+rm -rf ./* || true
 mv ../gh-pages/docs/site/* ./
 git add --force .
 git commit -m "build docs from commit ${CIRCLE_SHA1:0:7} (branch $CIRCLE_BRANCH)"
 git log -n 3
 
-git push origin $GH_PAGES_BRANCH --force
+git push origin "$GH_PAGES_BRANCH" --force

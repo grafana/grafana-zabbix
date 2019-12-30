@@ -123,45 +123,59 @@ function extractText(str, pattern, useCaptureGroups) {
 }
 
 function handleSLAResponse(itservice, slaProperty, slaObject) {
-  var targetSLA = slaObject[itservice.serviceid].sla[0];
+  var targetSLA = slaObject[itservice.serviceid].sla;
   if (slaProperty.property === 'status') {
     var targetStatus = parseInt(slaObject[itservice.serviceid].status);
     return {
       target: itservice.name + ' ' + slaProperty.name,
       datapoints: [
-        [targetStatus, targetSLA.to * 1000]
+        [targetStatus, targetSLA[0].to * 1000]
       ]
     };
   } else {
+    let i;
+    let slaArr = [];
+    for (i = 0; i < targetSLA.length; i++) {
+      if (i === 0) {
+        slaArr.push([targetSLA[i][slaProperty.property], targetSLA[i].from * 1000]);
+      }
+      slaArr.push([targetSLA[i][slaProperty.property], targetSLA[i].to * 1000]);
+    }
     return {
       target: itservice.name + ' ' + slaProperty.name,
-      datapoints: [
-        [targetSLA[slaProperty.property], targetSLA.from * 1000],
-        [targetSLA[slaProperty.property], targetSLA.to * 1000]
-      ]
+      datapoints: slaArr
     };
   }
 }
 
-function handleTriggersResponse(triggers, timeRange) {
-  if (_.isNumber(triggers)) {
+function handleTriggersResponse(triggers, groups, timeRange) {
+  if (!_.isArray(triggers)) {
+    let triggersCount = null;
+    try {
+      triggersCount = Number(triggers);
+    } catch (err) {
+      console.log("Error when handling triggers count: ", err);
+    }
     return {
       target: "triggers count",
       datapoints: [
-        [triggers, timeRange[1] * 1000]
+        [triggersCount, timeRange[1] * 1000]
       ]
     };
   } else {
-    let stats = getTriggerStats(triggers);
+    const stats = getTriggerStats(triggers);
+    const groupNames = _.map(groups, 'name');
     let table = new TableModel();
     table.addColumn({text: 'Host group'});
     _.each(_.orderBy(c.TRIGGER_SEVERITY, ['val'], ['desc']), (severity) => {
       table.addColumn({text: severity.text});
     });
     _.each(stats, (severity_stats, group) => {
-      let row = _.map(_.orderBy(_.toPairs(severity_stats), (s) => s[0], ['desc']), (s) => s[1]);
-      row = _.concat([group], ...row);
-      table.rows.push(row);
+      if (_.includes(groupNames, group)) {
+        let row = _.map(_.orderBy(_.toPairs(severity_stats), (s) => s[0], ['desc']), (s) => s[1]);
+        row = _.concat([group], ...row);
+        table.rows.push(row);
+      }
     });
     return table;
   }

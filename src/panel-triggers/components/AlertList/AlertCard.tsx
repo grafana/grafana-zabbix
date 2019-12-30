@@ -13,7 +13,7 @@ import AlertIcon from './AlertIcon';
 interface AlertCardProps {
   problem: ZBXTrigger;
   panelOptions: ProblemsPanelOptions;
-  onTagClick?: (tag: ZBXTag, datasource: string) => void;
+  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
 }
 
@@ -27,9 +27,9 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     this.state = { showAckDialog: false };
   }
 
-  handleTagClick = (tag: ZBXTag) => {
+  handleTagClick = (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, this.props.problem.datasource);
+      this.props.onTagClick(tag, this.props.problem.datasource, ctrlKey, shiftKey);
     }
   }
 
@@ -44,7 +44,10 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
   }
 
   showAckDialog = () => {
-    this.setState({ showAckDialog: true });
+    const problem = this.props.problem;
+    if (problem.showAckButton) {
+      this.setState({ showAckDialog: true });
+    }
   }
 
   closeAckDialog = () => {
@@ -53,6 +56,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
 
   render() {
     const { problem, panelOptions } = this.props;
+    const showDatasourceName = panelOptions.targets && panelOptions.targets.length > 1;
     const cardClass = classNames('alert-rule-item', 'zbx-trigger-card', { 'zbx-trigger-highlighted': panelOptions.highlightBackground });
     const descriptionClass = classNames('alert-rule-item__text', { 'zbx-description--newline': panelOptions.descriptionAtNewLine });
     const severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.priority));
@@ -120,9 +124,9 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
             </div>
 
             {panelOptions.descriptionField && panelOptions.descriptionAtNewLine && (
-              <div className="alert-rule-item__text" >
+              <div className="alert-rule-item__text zbx-description--newline" >
                 <span
-                  className="alert-rule-item__info zbx-description zbx-description--newline"
+                  className="alert-rule-item__info zbx-description"
                   dangerouslySetInnerHTML={{ __html: problem.comments }}
                 />
               </div>
@@ -131,7 +135,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
           </div>
         </div>
 
-        {panelOptions.datasources.length > 1 && (
+        {showDatasourceName && (
           <div className="alert-rule-item__time zabbix-trigger-source">
             <span>
               <i className="fa fa-database"></i>
@@ -258,14 +262,20 @@ class AlertAcknowledgesButton extends PureComponent<AlertAcknowledgesButtonProps
 
   render() {
     const { problem } = this.props;
-    return (
-      problem.acknowledges && problem.acknowledges.length ?
+    let content = null;
+    if (problem.acknowledges && problem.acknowledges.length) {
+      content = (
         <Tooltip placement="bottom" popperClassName="ack-tooltip" content={this.renderTooltipContent}>
           <span><i className="fa fa-comments"></i></span>
-        </Tooltip> :
+        </Tooltip>
+      );
+    } else if (problem.showAckButton) {
+      content = (
         <Tooltip placement="bottom" content="Acknowledge problem">
           <span role="button" onClick={this.handleClick}><i className="fa fa-comments-o"></i></span>
         </Tooltip>
-    );
+      );
+    }
+    return content;
   }
 }

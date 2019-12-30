@@ -65,6 +65,9 @@ export class DBConnector {
       if (!this.datasourceName) {
         this.datasourceName = ds.name;
       }
+      if (!this.datasourceId) {
+        this.datasourceId = ds.id;
+      }
       return ds;
     });
   }

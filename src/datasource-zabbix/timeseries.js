@@ -11,6 +11,7 @@
 
 import _ from 'lodash';
 import * as utils from './utils';
+import * as c from './constants';
 
 const POINT_VALUE = 0;
 const POINT_TIMESTAMP = 1;
@@ -94,9 +95,13 @@ function groupBy(datapoints, interval, groupByCallback) {
   }));
 }
 
-function groupBy_perf(datapoints, interval, groupByCallback) {
+export function groupBy_perf(datapoints, interval, groupByCallback) {
   if (datapoints.length === 0) {
     return [];
+  }
+
+  if (interval === c.RANGE_VARIABLE_VALUE) {
+    return groupByRange(datapoints, groupByCallback);
   }
 
   let ms_interval = utils.parseInterval(interval);
@@ -130,6 +135,19 @@ function groupBy_perf(datapoints, interval, groupByCallback) {
   grouped_series.push([frame_value, frame_ts]);
 
   return grouped_series;
+}
+
+export function groupByRange(datapoints, groupByCallback) {
+  const frame_values = [];
+  const frame_start = datapoints[0][POINT_TIMESTAMP];
+  const frame_end = datapoints[datapoints.length - 1][POINT_TIMESTAMP];
+  let point;
+  for (let i=0; i < datapoints.length; i++) {
+    point = datapoints[i];
+    frame_values.push(point[POINT_VALUE]);
+  }
+  const frame_value = groupByCallback(frame_values);
+  return [[frame_value, frame_start], [frame_value, frame_end]];
 }
 
 /**
@@ -333,7 +351,7 @@ function expMovingAverage(datapoints, n) {
   return ema;
 }
 
-function PERCENTIL(n, values) {
+function PERCENTILE(n, values) {
   var sorted = _.sortBy(values);
   return sorted[Math.floor(sorted.length * n / 100)];
 }
@@ -478,6 +496,15 @@ function findNearestLeft(series, pointIndex) {
   return null;
 }
 
+function flattenDatapoints(datapoints) {
+  const depth = utils.getArrayDepth(datapoints);
+  if (depth <= 2) {
+    // Don't process if datapoints already flattened
+    return datapoints;
+  }
+  return _.flatten(datapoints);
+}
+
 ////////////
 // Export //
 ////////////
@@ -486,6 +513,7 @@ const exportedFunctions = {
   downsample,
   groupBy,
   groupBy_perf,
+  groupByRange,
   sumSeries,
   scale,
   offset,
@@ -500,8 +528,9 @@ const exportedFunctions = {
   MIN,
   MAX,
   MEDIAN,
-  PERCENTIL,
-  sortByTime
+  PERCENTILE,
+  sortByTime,
+  flattenDatapoints,
 };
 
 export default exportedFunctions;

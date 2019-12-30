@@ -6,11 +6,17 @@ aliases:
     branches:
       ignore:
         - master
+        - /^release-[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)$/
         - docs
         - gh-pages
   - &filter-only-master
     branches:
       only: master
+  - &filter-only-release
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^v[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)$/
   - &filter-docs
     branches:
       only: docs
@@ -20,7 +26,7 @@ jobs:
   build:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     steps:
       - checkout
       - restore_cache:
@@ -39,7 +45,7 @@ jobs:
   lint:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     steps:
       - checkout
       - restore_cache:
@@ -61,7 +67,7 @@ jobs:
       CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
       CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     steps:
       - checkout
       # Prepare for artifact and test results collection equivalent to how it was done on 1.0.
@@ -87,6 +93,31 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
+  make-release:
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    docker:
+      - image: circleci/node:12
+    environment:
+      CI_GIT_USER: CircleCI
+      CI_GIT_EMAIL: ci@grafana.com
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: yarn install
+          command: 'yarn install --pure-lockfile --no-progress'
+          no_output_timeout: 15m
+      - save_cache:
+          key: dependency-cache-{{ checksum "yarn.lock" }}
+          paths:
+          - ./node_modules
+      - run: ./.circleci/make-release.sh
+
   build-docs:
     working_directory: ~/grafana-zabbix
     docker:
@@ -110,7 +141,7 @@ jobs:
   deploy-docs:
     working_directory: ~/grafana-zabbix
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:12
     environment:
       GH_PAGES_BRANCH: gh-pages
       CI_GIT_USER: CircleCI
@@ -124,11 +155,22 @@ jobs:
           at: ../gh-pages
       - run: ./.circleci/deploy-docs.sh
 
+  codespell:
+    docker:
+    - image: circleci/python
+
+    steps:
+    - checkout
+    - run: sudo pip install codespell
+    - run: codespell -S './.git*,./src/img*' -L que --ignore-words=./.codespell_ignore
+
 workflows:
   version: 2
   build-master:
     jobs:
       - build:
+          filters: *filter-only-master
+      - codespell:
           filters: *filter-only-master
       - lint:
           filters: *filter-only-master
@@ -139,10 +181,30 @@ workflows:
     jobs:
       - build:
           filters: *filter-not-release-or-master
+      - codespell:
+          filters: *filter-not-release-or-master
       - lint:
           filters: *filter-not-release-or-master
       - test:
           filters: *filter-not-release-or-master
+
+  build-release:
+    jobs:
+      - build:
+          filters: *filter-only-release
+      - codespell:
+          filters: *filter-only-release
+      - lint:
+          filters: *filter-only-release
+      - test:
+          filters: *filter-only-release
+      - make-release:
+          requires:
+            - build
+            - codespell
+            - lint
+            - test
+          filters: *filter-only-release
 
   build-docs:
     jobs:
