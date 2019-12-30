@@ -13,7 +13,7 @@ import AlertIcon from './AlertIcon';
 interface AlertCardProps {
   problem: ZBXTrigger;
   panelOptions: ProblemsPanelOptions;
-  onTagClick?: (tag: ZBXTag, datasource: string) => void;
+  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
 }
 
@@ -27,9 +27,9 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     this.state = { showAckDialog: false };
   }
 
-  handleTagClick = (tag: ZBXTag) => {
+  handleTagClick = (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, this.props.problem.datasource);
+      this.props.onTagClick(tag, this.props.problem.datasource, ctrlKey, shiftKey);
     }
   }
 

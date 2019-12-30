@@ -12,7 +12,7 @@ export interface AlertListProps {
   pageSize?: number;
   fontSize?: number;
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => void;
-  onTagClick?: (tag: ZBXTag, datasource: string) => void;
+  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 interface AlertListState {
@@ -45,9 +45,9 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
   }
 
 
-  handleTagClick = (tag: ZBXTag, datasource: string) => {
+  handleTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, datasource);
+      this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
   }
 
