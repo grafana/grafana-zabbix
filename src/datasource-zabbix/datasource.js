@@ -132,6 +132,9 @@ export class ZabbixDatasource extends DataSourceApi {
       let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
       let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
 
+      // Add range variables
+      options.scopedVars = Object.assign({}, options.scopedVars, utils.getRangeScopedVars(options.range));
+
       // Prevent changes of original object
       let target = _.cloneDeep(t);
 
