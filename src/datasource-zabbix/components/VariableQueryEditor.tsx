@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import React, { PureComponent } from 'react';
 import { parseLegacyVariableQuery } from '../utils';
-import { Select, Input, AsyncSelect, SelectOptionItem } from '@grafana/ui';
+import { Select, Input, AsyncSelect } from '@grafana/ui';
+import { SelectableValue } from '@grafana/data';
 import { VariableQuery, MetricFindQueryTypes } from '../types';
 
 export interface VariableQueryProps {
@@ -12,12 +13,12 @@ export interface VariableQueryProps {
 }
 
 export interface VariableQueryState extends VariableQuery {
-  selectedQueryType: SelectOptionItem<string>;
+  selectedQueryType: SelectableValue<string>;
   legacyQuery?: string;
 }
 
 export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryState> {
-  queryTypes: Array<SelectOptionItem<MetricFindQueryTypes>> = [
+  queryTypes: Array<SelectableValue<MetricFindQueryTypes>> = [
     { value: MetricFindQueryTypes.Group, label: 'Group'},
     { value: MetricFindQueryTypes.Host, label: 'Host' },
     { value: MetricFindQueryTypes.Application, label: 'Application' },
@@ -86,7 +87,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   }
 
-  handleQueryTypeChange = (selectedItem: SelectOptionItem<MetricFindQueryTypes>) => {
+  handleQueryTypeChange = (selectedItem: SelectableValue<MetricFindQueryTypes>) => {
     console.log(selectedItem);
     this.setState({
       ...this.state,
