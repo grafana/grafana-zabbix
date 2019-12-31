@@ -9,7 +9,7 @@ import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
-import { MetricFindQueryTypes } from './types';
+import { VariableQueryTypes } from './types';
 
 const DEFAULT_ZABBIX_VERSION = 3;
 
@@ -448,19 +448,18 @@ export class ZabbixDatasource {
     for (const prop of ['group', 'host', 'application', 'item']) {
       queryModel[prop] = this.replaceTemplateVars(queryModel[prop], {});
     }
-    console.log(queryModel);
 
     switch (queryModel.queryType) {
-      case MetricFindQueryTypes.Group:
+      case VariableQueryTypes.Group:
         resultPromise = this.zabbix.getGroups(queryModel.group);
         break;
-      case MetricFindQueryTypes.Host:
+      case VariableQueryTypes.Host:
         resultPromise = this.zabbix.getHosts(queryModel.group, queryModel.host);
         break;
-      case MetricFindQueryTypes.Application:
+      case VariableQueryTypes.Application:
         resultPromise = this.zabbix.getApps(queryModel.group, queryModel.host, queryModel.application);
         break;
-      case MetricFindQueryTypes.Item:
+      case VariableQueryTypes.Item:
         resultPromise = this.zabbix.getItems(queryModel.group, queryModel.host, queryModel.application, queryModel.item);
         break;
       default:

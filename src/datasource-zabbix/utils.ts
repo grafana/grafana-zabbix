@@ -2,7 +2,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as c from './constants';
-import { VariableQuery, MetricFindQueryTypes } from './types';
+import { VariableQuery, VariableQueryTypes } from './types';
 
 /**
  * Expand Zabbix item name
@@ -100,7 +100,7 @@ function escapeMacro(macro) {
 }
 
 export function parseLegacyVariableQuery(query: string): VariableQuery {
-  let queryType: MetricFindQueryTypes;
+  let queryType: VariableQueryTypes;
   const parts = [];
 
   if (!query) {
@@ -115,7 +115,6 @@ export function parseLegacyVariableQuery(query: string): VariableQuery {
     }
     parts.push(part);
   });
-  console.log(parts);
   const template = _.zipObject(['group', 'host', 'app', 'item'], parts);
 
   if (parts.length === 4 && template.app === '/.*/') {
@@ -125,16 +124,16 @@ export function parseLegacyVariableQuery(query: string): VariableQuery {
 
   switch (parts.length) {
     case 1:
-      queryType = MetricFindQueryTypes.Group;
+      queryType = VariableQueryTypes.Group;
       break;
     case 2:
-      queryType = MetricFindQueryTypes.Host;
+      queryType = VariableQueryTypes.Host;
       break;
     case 3:
-      queryType = MetricFindQueryTypes.Application;
+      queryType = VariableQueryTypes.Application;
       break;
     case 4:
-      queryType = MetricFindQueryTypes.Item;
+      queryType = VariableQueryTypes.Item;
       break;
   }
 

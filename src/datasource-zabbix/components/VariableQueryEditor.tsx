@@ -1,33 +1,20 @@
-import _ from 'lodash';
 import React, { PureComponent } from 'react';
 import { parseLegacyVariableQuery } from '../utils';
 import { Select, Input, AsyncSelect, FormLabel } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
-import { VariableQuery, MetricFindQueryTypes } from '../types';
+import { VariableQuery, VariableQueryTypes, VariableQueryProps, VariableQueryData } from '../types';
 
-export interface VariableQueryProps {
-  query: string | VariableQuery;
-  onChange: (query: VariableQuery, definition: string) => void;
-  datasource: any;
-  templateSrv: any;
-}
-
-export interface VariableQueryState extends VariableQuery {
-  selectedQueryType: SelectableValue<string>;
-  legacyQuery?: string;
-}
-
-export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryState> {
-  queryTypes: Array<SelectableValue<MetricFindQueryTypes>> = [
-    { value: MetricFindQueryTypes.Group, label: 'Group'},
-    { value: MetricFindQueryTypes.Host, label: 'Host' },
-    { value: MetricFindQueryTypes.Application, label: 'Application' },
-    { value: MetricFindQueryTypes.Item, label: 'Item' },
+export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryData> {
+  queryTypes: Array<SelectableValue<VariableQueryTypes>> = [
+    { value: VariableQueryTypes.Group, label: 'Group'},
+    { value: VariableQueryTypes.Host, label: 'Host' },
+    { value: VariableQueryTypes.Application, label: 'Application' },
+    { value: VariableQueryTypes.Item, label: 'Item' },
   ];
 
-  defaults: VariableQueryState = {
-    selectedQueryType: this.queryTypes[0],
-    queryType: MetricFindQueryTypes.Group,
+  defaults: VariableQueryData = {
+    selectedQueryType: { value: VariableQueryTypes.Group, label: 'Group' },
+    queryType: VariableQueryTypes.Group,
     group: '/.*/',
     host: '',
     application: '',
@@ -37,7 +24,6 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   constructor(props: VariableQueryProps) {
     super(props);
 
-    console.log(props);
     if (this.props.query && typeof this.props.query === 'string') {
       // Backward compatibility
       const query = parseLegacyVariableQuery(this.props.query);
@@ -58,17 +44,15 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     } else {
       this.state = this.defaults;
     }
-    console.log(this.state);
   }
 
-  getSelectedQueryType(queryType: MetricFindQueryTypes) {
+  getSelectedQueryType(queryType: VariableQueryTypes) {
     return this.queryTypes.find(q => q.value === queryType);
   }
 
   handleQueryUpdate = (evt: React.ChangeEvent<HTMLInputElement>, prop: string) => {
-    console.log(evt.currentTarget.value, prop);
     const value = evt.currentTarget.value;
-    this.setState((prevState: VariableQueryState) => {
+    this.setState((prevState: VariableQueryData) => {
       const newQuery = {
         ...prevState,
       };
@@ -83,12 +67,10 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   handleQueryChange = () => {
     const { queryType, group, host, application, item } = this.state;
     const queryModel = { queryType, group, host, application, item };
-    // console.log(queryModel);
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   }
 
-  handleQueryTypeChange = (selectedItem: SelectableValue<MetricFindQueryTypes>) => {
-    console.log(selectedItem);
+  handleQueryTypeChange = (selectedItem: SelectableValue<VariableQueryTypes>) => {
     this.setState({
       ...this.state,
       selectedQueryType: selectedItem,
@@ -124,7 +106,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
               onBlur={this.handleQueryChange}
             />
           </div>
-          {selectedQueryType.value !== MetricFindQueryTypes.Group &&
+          {selectedQueryType.value !== VariableQueryTypes.Group &&
             <div className="gf-form max-width-30">
               <FormLabel width={10}>Host</FormLabel>
               <Input
@@ -135,8 +117,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
             </div>
           }
         </div>
-        {(selectedQueryType.value === MetricFindQueryTypes.Application ||
-          selectedQueryType.value === MetricFindQueryTypes.Item) &&
+        {(selectedQueryType.value === VariableQueryTypes.Application ||
+          selectedQueryType.value === VariableQueryTypes.Item) &&
           <div className="gf-form-inline">
             <div className="gf-form max-width-30">
               <FormLabel width={10}>Application</FormLabel>
@@ -146,7 +128,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
                 onBlur={this.handleQueryChange}
               />
             </div>
-            {selectedQueryType.value === MetricFindQueryTypes.Item &&
+            {selectedQueryType.value === VariableQueryTypes.Item &&
               <div className="gf-form max-width-30">
                 <FormLabel width={10}>Item</FormLabel>
                 <Input
