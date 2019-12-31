@@ -242,7 +242,7 @@ describe('ZabbixDatasource', () => {
       };
     });
 
-    it('should return groups', (done) => {
+  it('should return groups', (done) => {
       const tests = [
         {query: '*',        expect: '/.*/'},
         {query: 'Backend',  expect: 'Backend'},
@@ -257,7 +257,17 @@ describe('ZabbixDatasource', () => {
       done();
     });
 
-    it('should return hosts', (done) => {
+  it('should return empty list for empty query', (done) => {
+      ctx.ds.metricFindQuery('').then(result => {
+        expect(ctx.ds.zabbix.getGroups).toBeCalledTimes(0);
+        ctx.ds.zabbix.getGroups.mockClear();
+
+        expect(result).toEqual([]);
+        done();
+      });
+    });
+
+  it('should return hosts', (done) => {
       const tests = [
         {query: '*.*',       expect: ['/.*/', '/.*/']},
         {query: '.',         expect: ['', '']},

@@ -111,10 +111,6 @@ export function parseLegacyVariableQuery(query: string): VariableQuery {
   let queryType: VariableQueryTypes;
   const parts = [];
 
-  if (!query) {
-    return null;
-  }
-
   // Split query. Query structure: group.host.app.item
   _.each(splitTemplateQuery(query), part => {
     // Replace wildcard to regex
