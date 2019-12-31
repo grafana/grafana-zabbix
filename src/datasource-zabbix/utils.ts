@@ -4,6 +4,14 @@ import kbn from 'grafana/app/core/utils/kbn';
 import * as c from './constants';
 import { VariableQuery, VariableQueryTypes } from './types';
 
+/*
+ * This regex matches 3 types of variable reference with an optional format specifier
+ * \$(\w+)                          $var1
+ * \[\[([\s\S]+?)(?::(\w+))?\]\]    [[var2]] or [[var2:fmt2]]
+ * \${(\w+)(?::(\w+))?}             ${var3} or ${var3:fmt3}
+ */
+export const variableRegex = /\$(\w+)|\[\[([\s\S]+?)(?::(\w+))?\]\]|\${(\w+)(?:\.([^:^\}]+))?(?::(\w+))?}/g;
+
 /**
  * Expand Zabbix item name
  *

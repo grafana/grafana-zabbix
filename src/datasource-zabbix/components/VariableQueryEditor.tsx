@@ -3,6 +3,7 @@ import { parseLegacyVariableQuery } from '../utils';
 import { Select, Input, AsyncSelect, FormLabel } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { VariableQuery, VariableQueryTypes, VariableQueryProps, VariableQueryData } from '../types';
+import { ZabbixInput } from './ZabbixInput';
 
 export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryData> {
   queryTypes: Array<SelectableValue<VariableQueryTypes>> = [
@@ -100,7 +101,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
         <div className="gf-form-inline">
           <div className="gf-form max-width-30">
             <FormLabel width={10}>Group</FormLabel>
-            <Input
+            <ZabbixInput
               value={group}
               onChange={evt => this.handleQueryUpdate(evt, 'group')}
               onBlur={this.handleQueryChange}
@@ -109,7 +110,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           {selectedQueryType.value !== VariableQueryTypes.Group &&
             <div className="gf-form max-width-30">
               <FormLabel width={10}>Host</FormLabel>
-              <Input
+              <ZabbixInput
                 value={host}
                 onChange={evt => this.handleQueryUpdate(evt, 'host')}
                 onBlur={this.handleQueryChange}
@@ -122,7 +123,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           <div className="gf-form-inline">
             <div className="gf-form max-width-30">
               <FormLabel width={10}>Application</FormLabel>
-              <Input
+              <ZabbixInput
                 value={application}
                 onChange={evt => this.handleQueryUpdate(evt, 'application')}
                 onBlur={this.handleQueryChange}
@@ -131,7 +132,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
             {selectedQueryType.value === VariableQueryTypes.Item &&
               <div className="gf-form max-width-30">
                 <FormLabel width={10}>Item</FormLabel>
-                <Input
+                <ZabbixInput
                   value={item}
                   onChange={evt => this.handleQueryUpdate(evt, 'item')}
                   onBlur={this.handleQueryChange}
