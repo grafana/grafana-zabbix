@@ -231,7 +231,7 @@ describe('ZabbixDatasource', () => {
     });
   });
 
-  describe('When invoking metricFindQuery()', () => {
+  describe('When invoking metricFindQuery() with legacy query', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
       ctx.ds.zabbix = {
@@ -245,7 +245,6 @@ describe('ZabbixDatasource', () => {
     it('should return groups', (done) => {
       const tests = [
         {query: '*',        expect: '/.*/'},
-        {query: '',         expect: ''},
         {query: 'Backend',  expect: 'Backend'},
         {query: 'Back*',    expect: 'Back*'},
       ];
