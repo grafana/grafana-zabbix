@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import React, { PureComponent } from 'react';
 import { parseLegacyVariableQuery } from '../utils';
-import { Select, Input, AsyncSelect } from '@grafana/ui';
+import { Select, Input, AsyncSelect, FormLabel } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { VariableQuery, MetricFindQueryTypes } from '../types';
 
@@ -103,12 +103,13 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
 
   render() {
     const { selectedQueryType, legacyQuery, group, host, application, item } = this.state;
+
     return (
       <>
         <div className="gf-form max-width-21">
-          <span className="gf-form-label width-10 query-keyword">Query Type</span>
+          <FormLabel width={10}>Query Type</FormLabel>
           <Select
-            className="max-width-14"
+            width={11}
             value={selectedQueryType}
             options={this.queryTypes}
             onChange={this.handleQueryTypeChange}
@@ -116,7 +117,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
         </div>
         <div className="gf-form-inline">
           <div className="gf-form max-width-30">
-            <span className="gf-form-label width-10">Group</span>
+            <FormLabel width={10}>Group</FormLabel>
             <Input
               value={group}
               onChange={evt => this.handleQueryUpdate(evt, 'group')}
@@ -125,7 +126,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           </div>
           {selectedQueryType.value !== MetricFindQueryTypes.Group &&
             <div className="gf-form max-width-30">
-              <span className="gf-form-label width-10">Host</span>
+              <FormLabel width={10}>Host</FormLabel>
               <Input
                 value={host}
                 onChange={evt => this.handleQueryUpdate(evt, 'host')}
@@ -138,7 +139,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           selectedQueryType.value === MetricFindQueryTypes.Item) &&
           <div className="gf-form-inline">
             <div className="gf-form max-width-30">
-              <span className="gf-form-label width-10">Application</span>
+              <FormLabel width={10}>Application</FormLabel>
               <Input
                 value={application}
                 onChange={evt => this.handleQueryUpdate(evt, 'application')}
@@ -147,7 +148,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
             </div>
             {selectedQueryType.value === MetricFindQueryTypes.Item &&
               <div className="gf-form max-width-30">
-                <span className="gf-form-label width-10">Item</span>
+                <FormLabel width={10}>Item</FormLabel>
                 <Input
                   value={item}
                   onChange={evt => this.handleQueryUpdate(evt, 'item')}
@@ -160,7 +161,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
 
         {legacyQuery &&
           <div className="gf-form">
-            <span className="gf-form-label width-10 query-keyword">Legacy Query</span>
+            <FormLabel width={10} tooltip="Original query string, read-only">Legacy Query</FormLabel>
             <Input
               value={legacyQuery}
               readOnly={true}
