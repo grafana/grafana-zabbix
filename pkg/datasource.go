@@ -61,7 +61,10 @@ func (b *ZabbixBackend) getCachedDatasource(tsdbReq *datasource.DatasourceReques
 		dsInfo := tsdbReq.GetDatasource()
 		b.logger.Debug(fmt.Sprintf("Datasource cache miss (Org %d Id %d '%s' %s)", dsInfo.GetOrgId(), dsInfo.GetId(), dsInfo.GetName(), dsInfoHash))
 	}
-	return b.newZabbixDatasource()
+
+	ds := b.newZabbixDatasource()
+	b.datasourceCache.Set(dsInfoHash, ds)
+	return ds
 }
 
 // GetQueryType determines the query type from a query or list of queries
