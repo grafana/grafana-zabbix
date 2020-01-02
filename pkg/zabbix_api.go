@@ -98,9 +98,6 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 		}
 	}
 
-	resultByte, _ := result.(*simplejson.Json).MarshalJSON()
-	ds.logger.Debug("ZabbixAPIQuery", "result", string(resultByte))
-
 	return BuildResponse(result)
 }
 
@@ -235,11 +232,14 @@ func (ds *ZabbixDatasource) zabbixAPIRequest(ctx context.Context, apiURL string,
 		Body: rc,
 	}
 
+	tStart := time.Now()
 	response, err := makeHTTPRequest(ctx, ds.httpClient, req)
 	if err != nil {
 		return nil, err
 	}
-	ds.logger.Debug("zabbixAPIRequest", "response", string(response))
+
+	requestTime := time.Now().Sub(tStart)
+	ds.logger.Debug("Response from Zabbix Request", "method", method, "requestTime", requestTime)
 
 	return handleAPIResult(response)
 }
@@ -282,6 +282,7 @@ func isNotAuthorized(message string) bool {
 }
 
 func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+	tStart := time.Now()
 	jsonQueries := make([]*simplejson.Json, 0)
 	for _, query := range tsdbReq.Queries {
 		json, err := simplejson.NewJson([]byte(query.ModelJson))
@@ -303,20 +304,30 @@ func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *data
 	appFilter := firstQuery.GetPath("application", "filter").MustString()
 	itemFilter := firstQuery.GetPath("item", "filter").MustString()
 
+	ds.logger.Debug("queryNumericItems",
+		"func", "ds.getItems",
+		"groupFilter", groupFilter,
+		"hostFilter", hostFilter,
+		"appFilter", appFilter,
+		"itemFilter", itemFilter)
 	items, err := ds.getItems(ctx, tsdbReq.GetDatasource(), groupFilter, hostFilter, appFilter, itemFilter, "num")
 	if err != nil {
 		return nil, err
 	}
+	ds.logger.Debug("queryNumericItems", "finished", "ds.getItems", "timeElapsed", time.Now().Sub(tStart))
 
 	metrics, err := ds.queryNumericDataForItems(ctx, tsdbReq, items, jsonQueries, isUseTrend(tsdbReq.GetTimeRange()))
 	if err != nil {
 		return nil, err
 	}
+	ds.logger.Debug("queryNumericItems", "finished", "queryNumericDataForItems", "timeElapsed", time.Now().Sub(tStart))
 
 	return BuildMetricsResponse(metrics)
 }
 
 func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (zabbix.Items, error) {
+	tStart := time.Now()
+
 	hosts, err := ds.getHosts(ctx, dsInfo, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -325,6 +336,7 @@ func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.Dat
 	for _, k := range hosts {
 		hostids = append(hostids, k["hostid"].(string))
 	}
+	ds.logger.Debug("getItems", "finished", "getHosts", "timeElapsed", time.Now().Sub(tStart))
 
 	apps, err := ds.getApps(ctx, dsInfo, groupFilter, hostFilter, appFilter)
 	if err != nil {
@@ -334,23 +346,32 @@ func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.Dat
 	for _, l := range apps {
 		appids = append(appids, l["applicationid"].(string))
 	}
+	ds.logger.Debug("getItems", "finished", "getApps", "timeElapsed", time.Now().Sub(tStart))
 
 	var allItems *simplejson.Json
 	if len(hostids) > 0 {
+		ds.logger.Debug("getAllItems", "with", "hostFilter")
 		allItems, err = ds.getAllItems(ctx, dsInfo, hostids, nil, itemType)
 	} else if len(appids) > 0 {
+		ds.logger.Debug("getAllItems", "with", "appFilter")
 		allItems, err = ds.getAllItems(ctx, dsInfo, nil, appids, itemType)
 	}
-
-	itemsJSON, err := allItems.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
+	ds.logger.Debug("getItems", "finished", "getAllItems", "timeElapsed", time.Now().Sub(tStart))
 
 	var items zabbix.Items
-	err = json.Unmarshal(itemsJSON, &items)
-	if err != nil {
-		return nil, err
+
+	if allItems == nil {
+		items = zabbix.Items{}
+	} else {
+		itemsJSON, err := allItems.MarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal(itemsJSON, &items)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	filteredItems := zabbix.Items{}
@@ -364,7 +385,8 @@ func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.Dat
 			}
 		}
 	}
-
+	ds.logger.Debug("getItems", "found", len(items), "matches", len(filteredItems))
+	ds.logger.Debug("getItems", "totalTimeTaken", time.Now().Sub(tStart))
 	return filteredItems, nil
 }
 
@@ -390,6 +412,7 @@ func (ds *ZabbixDatasource) getApps(ctx context.Context, dsInfo *datasource.Data
 			apps = append(apps, i.(map[string]interface{}))
 		}
 	}
+	ds.logger.Debug("getapps", "found", len(allApps.MustArray()), "matches", len(apps))
 	return apps, nil
 }
 
@@ -415,6 +438,7 @@ func (ds *ZabbixDatasource) getHosts(ctx context.Context, dsInfo *datasource.Dat
 			hosts = append(hosts, i.(map[string]interface{}))
 		}
 	}
+	ds.logger.Debug("getHosts", "found", len(allHosts.MustArray()), "matches", len(hosts))
 	return hosts, nil
 }
 
