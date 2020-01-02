@@ -556,7 +556,7 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 		if useTrend {
 			response, err = ds.ZabbixRequest(ctx, tsdbReq.GetDatasource(), "trend.get", params)
 		} else {
-			params.History = k
+			params.History = &k
 			response, err = ds.ZabbixRequest(ctx, tsdbReq.GetDatasource(), "history.get", params)
 		}
 

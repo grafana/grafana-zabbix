@@ -82,7 +82,7 @@ type zabbixParams struct {
 	RealHosts bool `json:"real_hosts,omitempty"`
 
 	// History GET
-	History int `json:"history,omitempty,string"`
+	History *int `json:"history,omitempty,string"`
 
 	// History/Trends GET
 	TimeFrom int64 `json:"time_from,omitempty"`
