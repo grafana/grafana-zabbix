@@ -375,7 +375,13 @@ func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.Dat
 	}
 
 	isRegex, itemFilter := parseFilter(itemFilter)
-	re := regexp.MustCompile(itemFilter)
+	var re *regexp.Regexp
+	if isRegex {
+		re, err = regexp.Compile(itemFilter)
+		if err != nil {
+			return nil, err
+		}
+	}
 	filteredItems := zabbix.Items{}
 	for _, item := range items {
 		if item.Status == "0" {
@@ -409,7 +415,13 @@ func (ds *ZabbixDatasource) getApps(ctx context.Context, dsInfo *datasource.Data
 	}
 
 	isRegex, appFilter := parseFilter(appFilter)
-	re := regexp.MustCompile(appFilter)
+	var re *regexp.Regexp
+	if isRegex {
+		re, err = regexp.Compile(appFilter)
+		if err != nil {
+			return nil, err
+		}
+	}
 	var apps []map[string]interface{}
 	for _, i := range allApps.MustArray() {
 		name := i.(map[string]interface{})["name"].(string)
@@ -441,7 +453,13 @@ func (ds *ZabbixDatasource) getHosts(ctx context.Context, dsInfo *datasource.Dat
 		return nil, err
 	}
 	isRegex, hostFilter := parseFilter(hostFilter)
-	re := regexp.MustCompile(hostFilter)
+	var re *regexp.Regexp
+	if isRegex {
+		re, err = regexp.Compile(hostFilter)
+		if err != nil {
+			return nil, err
+		}
+	}
 	var hosts []map[string]interface{}
 	for _, i := range allHosts.MustArray() {
 		name := i.(map[string]interface{})["name"].(string)
@@ -465,7 +483,13 @@ func (ds *ZabbixDatasource) getGroups(ctx context.Context, dsInfo *datasource.Da
 		return nil, err
 	}
 	isRegex, groupFilter := parseFilter(groupFilter)
-	re := regexp.MustCompile(groupFilter)
+	var re *regexp.Regexp
+	if isRegex {
+		re, err = regexp.Compile(groupFilter)
+		if err != nil {
+			return nil, err
+		}
+	}
 	var groups []map[string]interface{}
 	for _, i := range allGroups.MustArray() {
 		name := i.(map[string]interface{})["name"].(string)
