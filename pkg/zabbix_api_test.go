@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"testing"
 	"time"
 
@@ -392,4 +393,59 @@ func Test_isUseTrend(t *testing.T) {
 		assert.Equal(t, tt.want, got, tt.name, tt.timeRange)
 	}
 
+}
+
+func Test_parseFilter(t *testing.T) {
+	tests := []struct {
+		name    string
+		filter  string
+		want    *regexp.Regexp
+		wantErr string
+	}{
+		{
+			name:   "Non-regex filter",
+			filter: "foobar",
+			want:   nil,
+		},
+		{
+			name:   "Non-regex filter (would-be invalid regex)",
+			filter: "fooba(r",
+			want:   nil,
+		},
+		{
+			name:   "Regex filter",
+			filter: "/^foo.+/",
+			want:   regexp.MustCompile("^foo.+"),
+		},
+		{
+			name:   "Regex filter with flags",
+			filter: "/^foo.+/s",
+			want:   regexp.MustCompile("(?s)^foo.+"),
+		},
+		{
+			name:    "Invalid regex",
+			filter:  "/fooba(r/",
+			wantErr: "error parsing regexp: missing closing ): `fooba(r`",
+		},
+		{
+			name:    "Unsupported flag",
+			filter:  "/foo.+/z",
+			wantErr: "error parsing regexp: unsupported flags `z` (expected [imsU])",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseFilter(tt.filter)
+
+			if tt.wantErr != "" {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tt.wantErr)
+				assert.Nil(t, got)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
