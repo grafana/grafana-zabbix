@@ -280,7 +280,7 @@ func TestGetGroupsError(t *testing.T) {
 
 func TestGetHosts(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":[{"groupid": "46489126", "hostid": "7468763", "name": "hostname1"},{"groupid": "46489127","hostid": "846586", "name":"hostname2"}]}`, 200)
-	resp, err := zabbixDatasource.getHosts(context.Background(), basicDatasourceInfo, "nam", "hostna")
+	resp, err := zabbixDatasource.getHosts(context.Background(), basicDatasourceInfo, "nam", "hostname1")
 
 	assert.Equal(t, "7468763", resp[0]["hostid"])
 	assert.Equal(t, "hostname1", resp[0]["name"])
@@ -317,7 +317,7 @@ func TestGetAppsError(t *testing.T) {
 func TestGetItems(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":[{"groupid": "46489126", "hostid": "7468763", "applicationid": "7947934", "itemid": "837465", "name": "itemname1", "status": "0"},
 	{"groupid": "46489127","hostid": "846586", "applicationid": "9182763", "itemid" : "0288374", "name": "itemname2", "status": "0"}]}`, 200)
-	resp, err := zabbixDatasource.getItems(context.Background(), basicDatasourceInfo, "name", "name", "name", "name", "num")
+	resp, err := zabbixDatasource.getItems(context.Background(), basicDatasourceInfo, "itemname1", "itemname1", "itemname1", "itemname1", "num")
 
 	assert.Equal(t, "837465", resp[0].ID)
 	assert.Equal(t, "itemname1", resp[0].Name)

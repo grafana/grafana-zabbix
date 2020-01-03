@@ -374,13 +374,17 @@ func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.Dat
 		}
 	}
 
+	isRegex, itemFilter := parseFilter(itemFilter)
+	re := regexp.MustCompile(itemFilter)
 	filteredItems := zabbix.Items{}
 	for _, item := range items {
 		if item.Status == "0" {
-			matched, err := regexp.MatchString(itemFilter, item.Name)
-			if err != nil {
-				return nil, err
-			} else if matched {
+			if isRegex {
+				matched := re.MatchString(item.Name)
+				if matched {
+					filteredItems = append(filteredItems, item)
+				}
+			} else if item.Name == itemFilter {
 				filteredItems = append(filteredItems, item)
 			}
 		}
@@ -403,12 +407,19 @@ func (ds *ZabbixDatasource) getApps(ctx context.Context, dsInfo *datasource.Data
 	if err != nil {
 		return nil, err
 	}
+
+	isRegex, appFilter := parseFilter(appFilter)
+	re := regexp.MustCompile(appFilter)
 	var apps []map[string]interface{}
 	for _, i := range allApps.MustArray() {
-		matched, err := regexp.MatchString(appFilter, i.(map[string]interface{})["name"].(string))
-		if err != nil {
-			return nil, err
-		} else if matched {
+		name := i.(map[string]interface{})["name"].(string)
+		if isRegex {
+			matched := re.MatchString(name)
+			if matched {
+				apps = append(apps, i.(map[string]interface{}))
+			}
+
+		} else if name == appFilter {
 			apps = append(apps, i.(map[string]interface{}))
 		}
 	}
@@ -429,14 +440,20 @@ func (ds *ZabbixDatasource) getHosts(ctx context.Context, dsInfo *datasource.Dat
 	if err != nil {
 		return nil, err
 	}
+	isRegex, hostFilter := parseFilter(hostFilter)
+	re := regexp.MustCompile(hostFilter)
 	var hosts []map[string]interface{}
 	for _, i := range allHosts.MustArray() {
-		matched, err := regexp.MatchString(hostFilter, i.(map[string]interface{})["name"].(string))
-		if err != nil {
-			return nil, err
-		} else if matched {
+		name := i.(map[string]interface{})["name"].(string)
+		if isRegex {
+			matched := re.MatchString(name)
+			if matched {
+				hosts = append(hosts, i.(map[string]interface{}))
+			}
+		} else if name == hostFilter {
 			hosts = append(hosts, i.(map[string]interface{}))
 		}
+
 	}
 	ds.logger.Debug("getHosts", "found", len(allHosts.MustArray()), "matches", len(hosts))
 	return hosts, nil
@@ -447,12 +464,17 @@ func (ds *ZabbixDatasource) getGroups(ctx context.Context, dsInfo *datasource.Da
 	if err != nil {
 		return nil, err
 	}
+	isRegex, groupFilter := parseFilter(groupFilter)
+	re := regexp.MustCompile(groupFilter)
 	var groups []map[string]interface{}
 	for _, i := range allGroups.MustArray() {
-		matched, err := regexp.MatchString(groupFilter, i.(map[string]interface{})["name"].(string))
-		if err != nil {
-			return nil, err
-		} else if matched {
+		name := i.(map[string]interface{})["name"].(string)
+		if isRegex {
+			matched := re.MatchString(name)
+			if matched {
+				groups = append(groups, i.(map[string]interface{}))
+			}
+		} else if name == groupFilter {
 			groups = append(groups, i.(map[string]interface{}))
 		}
 	}
@@ -636,4 +658,17 @@ func convertHistory(history zabbix.History, items zabbix.Items) ([]*datasource.T
 		seriesList = append(seriesList, series)
 	}
 	return seriesList, nil
+}
+
+func parseFilter(filter string) (bool, string) {
+	isRegex, _ := regexp.MatchString("^/.*/[i,m,s,U]*$", filter)
+	if isRegex {
+		regex := regexp.MustCompile(`^/(.*)/(.*)`)
+		matches := regex.FindStringSubmatch(filter)
+		if matches[2] == "" {
+			return true, matches[1]
+		}
+		return true, "(?" + matches[2] + ")" + matches[1]
+	}
+	return false, filter
 }
