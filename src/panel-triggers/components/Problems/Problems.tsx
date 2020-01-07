@@ -183,7 +183,7 @@ function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSev
   color = severityDesc.color;
 
   // Mark acknowledged triggers with different color
-  if (markAckEvents && problem.acknowledges && problem.acknowledges.length) {
+  if (markAckEvents && problem.lastEvent.acknowledged == "1") {
     color = ackEventColor;
   }
 
