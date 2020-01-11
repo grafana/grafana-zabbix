@@ -121,9 +121,11 @@ function aggregateWrapper(groupByCallback, interval, datapoints) {
 }
 
 function percentile(interval, n, datapoints) {
-  var flattenedPoints = ts.flattenDatapoints(datapoints);
-  var groupByCallback = _.partial(PERCENTILE, n);
-  return groupBy(flattenedPoints, interval, groupByCallback);
+  const flattenedPoints = ts.flattenDatapoints(datapoints);
+  // groupBy_perf works with sorted series only
+  const sortedPoints = ts.sortByTime(flattenedPoints);
+  let groupByCallback = _.partial(PERCENTILE, n);
+  return groupBy(sortedPoints, interval, groupByCallback);
 }
 
 function timeShift(interval, range) {
