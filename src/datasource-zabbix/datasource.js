@@ -434,7 +434,7 @@ export class ZabbixDatasource {
    */
   metricFindQuery(query) {
     let resultPromise;
-    let queryModel = query;
+    let queryModel = _.cloneDeep(query);
 
     if (!query) {
       return Promise.resolve([]);
