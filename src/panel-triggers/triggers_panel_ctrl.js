@@ -398,7 +398,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     // Filter triggers by severity
     triggerList = _.filter(triggerList, trigger => {
-      return this.panel.triggerSeverity[trigger.priority].show;
+      //return this.panel.triggerSeverity[trigger.priority].show;
+      if (trigger.lastEvent.severity) {
+        return this.panel.triggerSeverity[trigger.lastEvent.severity].show;
+      } else {
+        return this.panel.triggerSeverity[trigger.priority].show;
+      }
     });
 
     return triggerList;
