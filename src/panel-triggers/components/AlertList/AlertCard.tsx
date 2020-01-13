@@ -72,7 +72,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     let problemColor: string;
     if (problem.value === '0') {
       problemColor = panelOptions.okEventColor;
-    } else if (panelOptions.markAckEvents && problem.lastEvent.acknowledged == "1") {
+    } else if (panelOptions.markAckEvents && problem.lastEvent.acknowledged === "1") {
       problemColor = panelOptions.ackEventColor;
     } else {
       problemColor = severityDesc.color;
