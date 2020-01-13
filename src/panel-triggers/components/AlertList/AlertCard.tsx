@@ -61,9 +61,9 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     const descriptionClass = classNames('alert-rule-item__text', { 'zbx-description--newline': panelOptions.descriptionAtNewLine });
     
     let severityDesc: TriggerSeverity;
-    severityDesc = _.find(panelOptions.TriggerSeverity, s => s.priority === Number(problem.priority));
+    severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.priority));
     if (problem.lastEvent.severity) {
-      severityDesc = _.find(panelOptions.TriggerSeverity, s => s.priority === Number(problem.lastEvent.severity));
+      severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.lastEvent.severity));
     }
 
     const lastchange = formatLastChange(problem.lastchangeUnix, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat);
