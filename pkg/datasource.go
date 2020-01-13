@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"runtime/debug"
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
@@ -27,7 +28,16 @@ func (b *ZabbixBackend) newZabbixDatasource() *ZabbixDatasource {
 
 // Query receives requests from the Grafana backend. Requests are filtered by query type and sent to the
 // applicable ZabbixDatasource.
-func (b *ZabbixBackend) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (b *ZabbixBackend) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (resp *datasource.DatasourceResponse, _e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			pErr, _ := r.(error)
+			b.logger.Error("Fatal error in Zabbix Plugin Backend", "Error", pErr)
+			b.logger.Error(string(debug.Stack()))
+			resp = BuildErrorResponse(fmt.Errorf("Unrecoverable error in grafana-zabbix plugin backend"))
+		}
+	}()
+
 	zabbixDs := b.getCachedDatasource(tsdbReq)
 
 	queryType, err := GetQueryType(tsdbReq)
@@ -37,13 +47,17 @@ func (b *ZabbixBackend) Query(ctx context.Context, tsdbReq *datasource.Datasourc
 
 	switch queryType {
 	case "zabbixAPI":
-		return zabbixDs.ZabbixAPIQuery(ctx, tsdbReq)
+		resp, err = zabbixDs.ZabbixAPIQuery(ctx, tsdbReq)
+	case "query":
+		resp, err = zabbixDs.queryNumericItems(ctx, tsdbReq)
 	case "connectionTest":
-		return zabbixDs.TestConnection(ctx, tsdbReq)
+		resp, err = zabbixDs.TestConnection(ctx, tsdbReq)
 	default:
 		err = errors.New("Query not implemented")
 		return BuildErrorResponse(err), nil
 	}
+
+	return
 }
 
 func (b *ZabbixBackend) getCachedDatasource(tsdbReq *datasource.DatasourceRequest) *ZabbixDatasource {
@@ -59,7 +73,10 @@ func (b *ZabbixBackend) getCachedDatasource(tsdbReq *datasource.DatasourceReques
 		dsInfo := tsdbReq.GetDatasource()
 		b.logger.Debug(fmt.Sprintf("Datasource cache miss (Org %d Id %d '%s' %s)", dsInfo.GetOrgId(), dsInfo.GetId(), dsInfo.GetName(), dsInfoHash))
 	}
-	return b.newZabbixDatasource()
+
+	ds := b.newZabbixDatasource()
+	b.datasourceCache.Set(dsInfoHash, ds)
+	return ds
 }
 
 // GetQueryType determines the query type from a query or list of queries
@@ -103,4 +120,16 @@ func BuildErrorResponse(err error) *datasource.DatasourceResponse {
 			},
 		},
 	}
+}
+
+// BuildMetricsResponse builds a response object using a given TimeSeries array
+func BuildMetricsResponse(metrics []*datasource.TimeSeries) (*datasource.DatasourceResponse, error) {
+	return &datasource.DatasourceResponse{
+		Results: []*datasource.QueryResult{
+			&datasource.QueryResult{
+				RefId:  "zabbixMetrics",
+				Series: metrics,
+			},
+		},
+	}, nil
 }
