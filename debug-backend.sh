@@ -5,8 +5,7 @@ if [ "$1" == "-h" ]; then
 fi
 
 PORT="${2:-3222}"
-PLUGIN_NAME="${1:-'zabbix-plugin_'}"
-echo $PORT $PLUGIN_NAME
+PLUGIN_NAME="${1:-zabbix-plugin_}"
 
 ptrace_scope=`cat /proc/sys/kernel/yama/ptrace_scope`
 if [ "$ptrace_scope" != 0 ]; then
@@ -14,5 +13,6 @@ if [ "$ptrace_scope" != 0 ]; then
 Read more at https://www.kernel.org/doc/Documentation/security/Yama.txt"
 fi
 
-dlv attach `pgrep ${PLUGIN_NAME}` --headless --listen 0.0.0.0:${PORT} --api-version 2
+PLUGIN_PID=`pgrep ${PLUGIN_NAME}`
+dlv attach ${PLUGIN_PID} --headless --listen 0.0.0.0:${PORT} --api-version 2
 pkill dlv
