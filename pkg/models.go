@@ -20,8 +20,8 @@ type requestModel struct {
 }
 
 type queryRequest struct {
-	Method string       `json:"method,omitempty"`
-	Params zabbixParams `json:"params,omitempty"`
+	Method string          `json:"method,omitempty"`
+	Params ZabbixAPIParams `json:"params,omitempty"`
 }
 
 type zabbixParamOutput struct {
@@ -60,7 +60,7 @@ func (p *zabbixParamOutput) UnmarshalJSON(data []byte) error {
 
 }
 
-type zabbixParams struct {
+type ZabbixAPIParams struct {
 	Output    *zabbixParamOutput `json:"output,omitempty"`
 	SortField string             `json:"sortfield,omitempty"`
 	SortOrder string             `json:"sortorder,omitempty"`

@@ -24,7 +24,7 @@ func main() {
 			MagicCookieValue: "datasource",
 		},
 		Plugins: map[string]plugin.Plugin{
-			"zabbix-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &ZabbixBackend{
+			"zabbix-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &ZabbixPlugin{
 				datasourceCache: NewCache(10*time.Minute, 10*time.Minute),
 				logger:          pluginLogger,
 			}},

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"regexp"
 	"testing"
 	"time"
@@ -31,7 +32,7 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 var basicDatasourceInfo = &datasource.DatasourceInfo{
 	Id:       1,
 	Name:     "TestDatasource",
-	Url:      "sameUrl",
+	Url:      "http://zabbix.org/zabbix",
 	JsonData: `{"username":"username", "password":"password"}}`,
 }
 
@@ -47,7 +48,10 @@ func mockDataSourceRequest(modelJSON string) *datasource.DatasourceRequest {
 }
 
 func mockZabbixDataSource(body string, statusCode int) ZabbixDatasource {
+	apiUrl, _ := url.Parse(basicDatasourceInfo.Url)
 	return ZabbixDatasource{
+		url:        apiUrl,
+		dsInfo:     basicDatasourceInfo,
 		queryCache: NewCache(10*time.Minute, 10*time.Minute),
 		httpClient: NewTestClient(func(req *http.Request) *http.Response {
 			return &http.Response{
@@ -102,7 +106,7 @@ func TestZabbixAPIQueryError(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 200)
-	resp, err := zabbixDatasource.login(context.Background(), "apiURL", "username", "password")
+	resp, err := zabbixDatasource.login(context.Background(), "username", "password")
 
 	assert.Equal(t, "sampleResult", resp)
 	assert.Nil(t, err)
@@ -110,7 +114,7 @@ func TestLogin(t *testing.T) {
 
 func TestLoginError(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 500)
-	resp, err := zabbixDatasource.login(context.Background(), "apiURL", "username", "password")
+	resp, err := zabbixDatasource.login(context.Background(), "username", "password")
 
 	assert.Equal(t, "", resp)
 	assert.NotNil(t, err)
@@ -118,55 +122,45 @@ func TestLoginError(t *testing.T) {
 
 func TestLoginWithDs(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 200)
-	resp, err := zabbixDatasource.loginWithDs(context.Background(), basicDatasourceInfo)
+	err := zabbixDatasource.loginWithDs(context.Background())
 
-	assert.Equal(t, "sampleResult", resp)
+	assert.Equal(t, "sampleResult", zabbixDatasource.authToken)
 	assert.Nil(t, err)
 }
 
 func TestLoginWithDsError(t *testing.T) {
-	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 500)
-	resp, err := zabbixDatasource.loginWithDs(context.Background(), basicDatasourceInfo)
+	errResponse := `{"error":{"code":-32500,"message":"Application error.","data":"Login name or password is incorrect."}}`
+	zabbixDatasource := mockZabbixDataSource(errResponse, 200)
+	err := zabbixDatasource.loginWithDs(context.Background())
 
-	assert.Equal(t, "", resp)
+	assert.Equal(t, "", zabbixDatasource.authToken)
 	assert.NotNil(t, err)
 }
 
 func TestZabbixRequest(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 200)
-	resp, err := zabbixDatasource.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", zabbixParams{})
+	resp, err := zabbixDatasource.ZabbixRequest(context.Background(), "method", ZabbixAPIParams{})
 	assert.Equal(t, "sampleResult", resp.MustString())
 	assert.Nil(t, err)
 }
 
 func TestZabbixRequestWithNoAuthToken(t *testing.T) {
-	var mockDataSource = ZabbixDatasource{
-		queryCache: NewCache(10*time.Minute, 10*time.Minute),
-		httpClient: NewTestClient(func(req *http.Request) *http.Response {
-			return &http.Response{
-				StatusCode: 200,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(`{"result":"auth"}`)),
-				Header:     make(http.Header),
-			}
-		}),
-		logger: hclog.Default(),
-	}
-
-	resp, err := mockDataSource.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", zabbixParams{})
+	zabbixDatasource := mockZabbixDataSource(`{"result":"auth"}`, 200)
+	resp, err := zabbixDatasource.ZabbixRequest(context.Background(), "method", ZabbixAPIParams{})
 	assert.Equal(t, "auth", resp.MustString())
 	assert.Nil(t, err)
 }
 
 func TestZabbixRequestError(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 500)
-	resp, err := zabbixDatasource.ZabbixRequest(context.Background(), basicDatasourceInfo, "method", zabbixParams{})
+	resp, err := zabbixDatasource.ZabbixRequest(context.Background(), "method", ZabbixAPIParams{})
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)
 }
 
 func TestZabbixAPIRequest(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 200)
-	resp, err := zabbixDatasource.zabbixAPIRequest(context.Background(), "apiURL", "item.get", zabbixParams{}, "auth")
+	resp, err := zabbixDatasource.ZabbixAPIRequest(context.Background(), "item.get", ZabbixAPIParams{}, "auth")
 
 	assert.Equal(t, "sampleResult", resp.MustString())
 	assert.Nil(t, err)
@@ -174,7 +168,7 @@ func TestZabbixAPIRequest(t *testing.T) {
 
 func TestZabbixAPIRequestError(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 500)
-	resp, err := zabbixDatasource.zabbixAPIRequest(context.Background(), "apiURL", "item.get", zabbixParams{}, "auth")
+	resp, err := zabbixDatasource.ZabbixAPIRequest(context.Background(), "item.get", ZabbixAPIParams{}, "auth")
 
 	assert.Nil(t, resp)
 	assert.NotNil(t, err)

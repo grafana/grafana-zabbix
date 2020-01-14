@@ -11,12 +11,12 @@ import (
 func Test_zabbixParamOutput(t *testing.T) {
 	tests := []struct {
 		name  string
-		input zabbixParams
+		input ZabbixAPIParams
 		want  string
 	}{
 		{
 			name: "Mode extend",
-			input: zabbixParams{
+			input: ZabbixAPIParams{
 				Output: &zabbixParamOutput{
 					Mode: "extend",
 				},
@@ -26,7 +26,7 @@ func Test_zabbixParamOutput(t *testing.T) {
 		},
 		{
 			name: "Fields",
-			input: zabbixParams{
+			input: ZabbixAPIParams{
 				Output: &zabbixParamOutput{
 					Fields: []string{"name", "key_", "hostid"},
 				},
@@ -36,7 +36,7 @@ func Test_zabbixParamOutput(t *testing.T) {
 		},
 		{
 			name: "No Output",
-			input: zabbixParams{
+			input: ZabbixAPIParams{
 				GroupIDs: []string{"test1", "test2"},
 			},
 			want: `{ "groupids": ["test1", "test2"] }`,
@@ -51,7 +51,7 @@ func Test_zabbixParamOutput(t *testing.T) {
 				return
 			}
 
-			objOut := zabbixParams{}
+			objOut := ZabbixAPIParams{}
 			err = json.Unmarshal(jsonOut, &objOut)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.input, objOut)

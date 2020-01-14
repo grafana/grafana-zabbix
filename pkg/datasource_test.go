@@ -15,18 +15,21 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 	basicDatasourceInfo := &datasource.DatasourceInfo{
 		Id:   1,
 		Name: "TestDatasource",
+		Url:  "http://zabbix.org/zabbix",
 	}
 	basicDatasourceInfoHash := HashDatasourceInfo(basicDatasourceInfo)
 
-	modifiedDatasource := NewZabbixDatasource()
+	modifiedDatasource, _ := newZabbixDatasource(basicDatasourceInfo)
 	modifiedDatasource.authToken = "AB404F1234"
 
 	altDatasourceInfo := &datasource.DatasourceInfo{
 		Id:   2,
 		Name: "AnotherDatasource",
+		Url:  "http://zabbix.org/another/zabbix",
 	}
 	altDatasourceInfoHash := HashDatasourceInfo(altDatasourceInfo)
 
+	basicDS, _ := newZabbixDatasource(basicDatasourceInfo)
 	tests := []struct {
 		name    string
 		cache   *cache.Cache
@@ -38,7 +41,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 			request: &datasource.DatasourceRequest{
 				Datasource: basicDatasourceInfo,
 			},
-			want: NewZabbixDatasource(),
+			want: basicDS,
 		},
 		{
 			name: "Uncached Datasource (cache miss)",
@@ -48,12 +51,12 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 			request: &datasource.DatasourceRequest{
 				Datasource: altDatasourceInfo,
 			},
-			want: NewZabbixDatasource(),
+			want: basicDS,
 		},
 		{
 			name: "Cached Datasource",
 			cache: cache.NewFrom(cache.NoExpiration, cache.NoExpiration, map[string]cache.Item{
-				altDatasourceInfoHash:   cache.Item{Object: NewZabbixDatasource()},
+				altDatasourceInfoHash:   cache.Item{Object: basicDS},
 				basicDatasourceInfoHash: cache.Item{Object: modifiedDatasource},
 			}),
 			request: &datasource.DatasourceRequest{
@@ -67,14 +70,14 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 			if tt.cache == nil {
 				tt.cache = cache.New(cache.NoExpiration, cache.NoExpiration)
 			}
-			b := &ZabbixBackend{
+			b := &ZabbixPlugin{
 				logger: hclog.New(&hclog.LoggerOptions{
 					Name:  "TestZabbixBackend_getCachedDatasource",
 					Level: hclog.LevelFromString("DEBUG"),
 				}),
 				datasourceCache: &Cache{cache: tt.cache},
 			}
-			got := b.getCachedDatasource(tt.request)
+			got, _ := b.GetDatasource(tt.request)
 
 			// Only checking the authToken, being the easiest value to, and guarantee equality for
 			assert.Equal(t, tt.want.authToken, got.authToken)

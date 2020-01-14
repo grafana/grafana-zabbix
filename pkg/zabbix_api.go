@@ -1,38 +1,20 @@
 package main
 
 import (
-	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"math"
-	"net"
-	"net/http"
-	"net/url"
 	"regexp"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
-	hclog "github.com/hashicorp/go-hclog"
 	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
 )
 
-// ZabbixDatasource stores state about a specific datasource and provides methods to make
-// requests to the Zabbix API
-type ZabbixDatasource struct {
-	queryCache *Cache
-	logger     hclog.Logger
-	httpClient *http.Client
-	authToken  string
-}
-
-type categories struct {
+type FunctionCategories struct {
 	Transform []map[string]interface{}
 	Aggregate []map[string]interface{}
 	Filter    []map[string]interface{}
@@ -42,37 +24,11 @@ type categories struct {
 	Special   []map[string]interface{}
 }
 
-// NewZabbixDatasource returns an initialized ZabbixDatasource
-func NewZabbixDatasource() *ZabbixDatasource {
-	return &ZabbixDatasource{
-		queryCache: NewCache(10*time.Minute, 10*time.Minute),
-		httpClient: &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					Renegotiation: tls.RenegotiateFreelyAsClient,
-				},
-				Proxy: http.ProxyFromEnvironment,
-				Dial: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-				}).Dial,
-				TLSHandshakeTimeout:   10 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-				MaxIdleConns:          100,
-				IdleConnTimeout:       90 * time.Second,
-			},
-			Timeout: time.Duration(time.Second * 30),
-		},
-	}
-}
-
 // ZabbixAPIQuery handles query requests to Zabbix
 func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	result, queryExistInCache := ds.queryCache.Get(HashString(tsdbReq.String()))
 
 	if !queryExistInCache {
-		dsInfo := tsdbReq.GetDatasource()
-
 		queries := []requestModel{}
 		for _, query := range tsdbReq.Queries {
 			req := requestModel{}
@@ -90,7 +46,7 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 
 		query := queries[0].Target
 		var err error
-		result, err = ds.ZabbixRequest(ctx, dsInfo, query.Method, query.Params)
+		result, err = ds.ZabbixRequest(ctx, query.Method, query.Params)
 		ds.queryCache.Set(HashString(tsdbReq.String()), result)
 		if err != nil {
 			ds.logger.Debug("ZabbixAPIQuery", "error", err)
@@ -103,15 +59,12 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 
 // TestConnection checks authentication and version of the Zabbix API and returns that info
 func (ds *ZabbixDatasource) TestConnection(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	dsInfo := tsdbReq.GetDatasource()
-
-	auth, err := ds.loginWithDs(ctx, dsInfo)
+	err := ds.loginWithDs(ctx)
 	if err != nil {
 		return BuildErrorResponse(fmt.Errorf("Authentication failed: %s", err)), nil
 	}
-	ds.authToken = auth
 
-	response, err := ds.zabbixAPIRequest(ctx, dsInfo.GetUrl(), "apiinfo.version", zabbixParams{}, "")
+	response, err := ds.ZabbixAPIRequest(ctx, "apiinfo.version", ZabbixAPIParams{}, "")
 	if err != nil {
 		ds.logger.Debug("TestConnection", "error", err)
 		return BuildErrorResponse(fmt.Errorf("Version check failed: %s", err)), nil
@@ -125,160 +78,6 @@ func (ds *ZabbixDatasource) TestConnection(ctx context.Context, tsdbReq *datasou
 	}
 
 	return BuildResponse(testResponse)
-}
-
-// ZabbixRequest checks authentication and makes a request to the Zabbix API
-func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, dsInfo *datasource.DatasourceInfo, method string, params zabbixParams) (*simplejson.Json, error) {
-	zabbixURL := dsInfo.GetUrl()
-
-	var result *simplejson.Json
-	var err error
-
-	for attempt := 0; attempt <= 3; attempt++ {
-		if ds.authToken == "" {
-			// Authenticate
-			ds.authToken, err = ds.loginWithDs(ctx, dsInfo)
-			if err != nil {
-				return nil, err
-			}
-		}
-		result, err = ds.zabbixAPIRequest(ctx, zabbixURL, method, params, ds.authToken)
-		if err == nil || (err != nil && !isNotAuthorized(err.Error())) {
-			break
-		} else {
-			ds.authToken = ""
-		}
-	}
-	return result, err
-}
-
-func (ds *ZabbixDatasource) loginWithDs(ctx context.Context, dsInfo *datasource.DatasourceInfo) (string, error) {
-	zabbixURLStr := dsInfo.GetUrl()
-	zabbixURL, err := url.Parse(zabbixURLStr)
-	if err != nil {
-		return "", err
-	}
-
-	jsonDataStr := dsInfo.GetJsonData()
-	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
-	if err != nil {
-		return "", err
-	}
-
-	zabbixLogin := jsonData.Get("username").MustString()
-	var zabbixPassword string
-	if securePassword, exists := dsInfo.GetDecryptedSecureJsonData()["password"]; exists {
-		zabbixPassword = securePassword
-	} else {
-		zabbixPassword = jsonData.Get("password").MustString()
-	}
-
-	auth, err := ds.login(ctx, zabbixURLStr, zabbixLogin, zabbixPassword)
-	if err != nil {
-		ds.logger.Error("loginWithDs", "error", err)
-		return "", err
-	}
-	ds.logger.Debug("loginWithDs", "url", zabbixURL, "user", zabbixLogin, "auth", auth)
-
-	return auth, nil
-}
-
-func (ds *ZabbixDatasource) login(ctx context.Context, apiURL string, username string, password string) (string, error) {
-	params := zabbixParams{
-		User:     username,
-		Password: password,
-	}
-	auth, err := ds.zabbixAPIRequest(ctx, apiURL, "user.login", params, "")
-	if err != nil {
-		return "", err
-	}
-
-	return auth.MustString(), nil
-}
-
-func (ds *ZabbixDatasource) zabbixAPIRequest(ctx context.Context, apiURL string, method string, params zabbixParams, auth string) (*simplejson.Json, error) {
-	zabbixURL, err := url.Parse(apiURL)
-
-	// TODO: inject auth token (obtain from 'user.login' first)
-	apiRequest := map[string]interface{}{
-		"jsonrpc": "2.0",
-		"id":      2,
-		"method":  method,
-		"params":  params,
-	}
-
-	if auth != "" {
-		apiRequest["auth"] = auth
-	}
-
-	reqBodyJSON, err := json.Marshal(apiRequest)
-	if err != nil {
-		return nil, err
-	}
-
-	var body io.Reader
-	body = bytes.NewReader(reqBodyJSON)
-	rc, ok := body.(io.ReadCloser)
-	if !ok && body != nil {
-		rc = ioutil.NopCloser(body)
-	}
-
-	req := &http.Request{
-		Method: "POST",
-		URL:    zabbixURL,
-		Header: map[string][]string{
-			"Content-Type": {"application/json"},
-		},
-		Body: rc,
-	}
-
-	tStart := time.Now()
-	response, err := makeHTTPRequest(ctx, ds.httpClient, req)
-	if err != nil {
-		return nil, err
-	}
-
-	requestTime := time.Now().Sub(tStart)
-	ds.logger.Debug("Response from Zabbix Request", "method", method, "requestTime", requestTime)
-
-	return handleAPIResult(response)
-}
-
-func handleAPIResult(response []byte) (*simplejson.Json, error) {
-	jsonResp, err := simplejson.NewJson([]byte(response))
-	if err != nil {
-		return nil, err
-	}
-	if errJSON, isError := jsonResp.CheckGet("error"); isError {
-		errMessage := fmt.Sprintf("%s %s", errJSON.Get("message").MustString(), errJSON.Get("data").MustString())
-		return nil, errors.New(errMessage)
-	}
-	jsonResult := jsonResp.Get("result")
-	return jsonResult, nil
-}
-
-func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Request) ([]byte, error) {
-	res, err := ctxhttp.Do(ctx, httpClient, req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid status code. status: %v", res.Status)
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
-}
-
-func isNotAuthorized(message string) bool {
-	return message == "Session terminated, re-login, please." ||
-		message == "Not authorised." ||
-		message == "Not authorized."
 }
 
 func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
@@ -490,7 +289,7 @@ func (ds *ZabbixDatasource) getGroups(ctx context.Context, dsInfo *datasource.Da
 }
 
 func (ds *ZabbixDatasource) getAllItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string, appids []string, itemtype string) (*simplejson.Json, error) {
-	params := zabbixParams{
+	params := ZabbixAPIParams{
 		Output:      &zabbixParamOutput{Fields: []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"}},
 		SortField:   "name",
 		WebItems:    true,
@@ -506,25 +305,25 @@ func (ds *ZabbixDatasource) getAllItems(ctx context.Context, dsInfo *datasource.
 		params.Filter["value_type"] = []int{1, 2, 4}
 	}
 
-	return ds.ZabbixRequest(ctx, dsInfo, "item.get", params)
+	return ds.ZabbixRequest(ctx, "item.get", params)
 }
 
 func (ds *ZabbixDatasource) getAllApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string) (*simplejson.Json, error) {
-	params := zabbixParams{Output: &zabbixParamOutput{Mode: "extend"}, HostIDs: hostids}
+	params := ZabbixAPIParams{Output: &zabbixParamOutput{Mode: "extend"}, HostIDs: hostids}
 
-	return ds.ZabbixRequest(ctx, dsInfo, "application.get", params)
+	return ds.ZabbixRequest(ctx, "application.get", params)
 }
 
 func (ds *ZabbixDatasource) getAllHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupids []string) (*simplejson.Json, error) {
-	params := zabbixParams{Output: &zabbixParamOutput{Fields: []string{"name", "host"}}, SortField: "name", GroupIDs: groupids}
+	params := ZabbixAPIParams{Output: &zabbixParamOutput{Fields: []string{"name", "host"}}, SortField: "name", GroupIDs: groupids}
 
-	return ds.ZabbixRequest(ctx, dsInfo, "host.get", params)
+	return ds.ZabbixRequest(ctx, "host.get", params)
 }
 
 func (ds *ZabbixDatasource) getAllGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo) (*simplejson.Json, error) {
-	params := zabbixParams{Output: &zabbixParamOutput{Fields: []string{"name"}}, SortField: "name", RealHosts: true}
+	params := ZabbixAPIParams{Output: &zabbixParamOutput{Fields: []string{"name"}}, SortField: "name", RealHosts: true}
 
-	return ds.ZabbixRequest(ctx, dsInfo, "hostgroup.get", params)
+	return ds.ZabbixRequest(ctx, "hostgroup.get", params)
 }
 
 func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, jsonQueries []*simplejson.Json, useTrend bool) ([]*datasource.TimeSeries, error) {
@@ -548,7 +347,7 @@ func (ds *ZabbixDatasource) getTrendValueType(jsonQueries []*simplejson.Json) st
 	var trendValueFunc string
 
 	// TODO: loop over populated categories
-	for _, j := range new(categories).Trends {
+	for _, j := range new(FunctionCategories).Trends {
 		trendFunctions = append(trendFunctions, j["name"].(string))
 	}
 	for _, k := range jsonQueries[0].Get("functions").MustArray() {
@@ -596,7 +395,7 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 			itemids = append(itemids, m.ID)
 		}
 
-		params := zabbixParams{
+		params := ZabbixAPIParams{
 			Output:    &zabbixParamOutput{Mode: "extend"},
 			SortField: "clock",
 			SortOrder: "ASC",
@@ -608,10 +407,10 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 		var response *simplejson.Json
 		var err error
 		if useTrend {
-			response, err = ds.ZabbixRequest(ctx, tsdbReq.GetDatasource(), "trend.get", params)
+			response, err = ds.ZabbixRequest(ctx, "trend.get", params)
 		} else {
 			params.History = &k
-			response, err = ds.ZabbixRequest(ctx, tsdbReq.GetDatasource(), "history.get", params)
+			response, err = ds.ZabbixRequest(ctx, "history.get", params)
 		}
 
 		if err != nil {
