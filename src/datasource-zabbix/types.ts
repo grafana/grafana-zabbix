@@ -1,4 +1,4 @@
-import { DataQuery } from '@grafana/ui';
+import { SelectableValue, DataQuery } from "@grafana/data";
 
 export interface ZabbixConnectionInfo {
   zabbixVersion: string;
@@ -81,5 +81,34 @@ interface QueryResult {
 
 export interface TSDBResponse {
 	results: { [key: string]: QueryResult };
-	message: string;
+  message: string;
+}
+
+export interface VariableQueryProps {
+  query: LegacyVariableQuery;
+  onChange: (query: VariableQuery, definition: string) => void;
+  datasource: any;
+  templateSrv: any;
+}
+
+export interface VariableQueryData extends VariableQuery {
+  selectedQueryType: SelectableValue<VariableQueryTypes>;
+  legacyQuery?: string;
+}
+
+export interface VariableQuery {
+  queryType: VariableQueryTypes;
+  group?: string;
+  host?: string;
+  application?: string;
+  item?: string;
+}
+
+export type LegacyVariableQuery = VariableQuery | string;
+
+export enum VariableQueryTypes {
+  Group = 'group',
+  Host = 'host',
+  Application = 'application',
+  Item = 'item',
 }

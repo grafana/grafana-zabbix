@@ -1,8 +1,9 @@
 import _ from 'lodash';
+import { getNextRefIdChar } from './utils';
 import { getDefaultTarget } from './triggers_panel_ctrl';
 
 // Actual schema version
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 export function migratePanelSchema(panel) {
   if (isEmptyPanel(panel)) {
@@ -45,6 +46,26 @@ export function migratePanelSchema(panel) {
     }
   }
 
+  if (schemaVersion < 7) {
+    const updatedTargets = [];
+    for (const targetKey in panel.targets) {
+      const target = panel.targets[targetKey];
+      if (!isEmptyTarget(target) && !isInvalidTarget(target, targetKey)) {
+        updatedTargets.push({
+          ...target,
+          datasource: targetKey,
+        });
+      }
+    }
+    for (const target of updatedTargets) {
+      if (!target.refId) {
+        target.refId = getNextRefIdChar(updatedTargets);
+      }
+    }
+    panel.targets = updatedTargets;
+    delete panel.datasources;
+  }
+
   return panel;
 }
 
@@ -58,4 +79,12 @@ function isEmptyPanel(panel) {
 
 function isEmptyTargets(targets) {
   return !targets || (_.isArray(targets) && (targets.length === 0 || targets.length === 1 && _.isEmpty(targets[0])));
+}
+
+function isEmptyTarget(target) {
+  return !target || !(target.group && target.host && target.application && target.trigger);
+}
+
+function isInvalidTarget(target, targetKey) {
+  return target && target.refId === 'A' && targetKey === '0';
 }

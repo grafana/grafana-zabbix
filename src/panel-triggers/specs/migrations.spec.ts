@@ -5,16 +5,16 @@ import {DEFAULT_TARGET, DEFAULT_SEVERITY, PANEL_DEFAULTS} from '../triggers_pane
 import {CURRENT_SCHEMA_VERSION} from '../migrations';
 
 describe('Triggers Panel schema migration', () => {
-  let ctx = {};
+  let ctx: any = {};
   let updatePanelCtrl;
-  let datasourceSrvMock = {
+  const datasourceSrvMock = {
     getMetricSources: () => {
       return [{ meta: {id: 'alexanderzobnin-zabbix-datasource'}, value: {}, name: 'zabbix_default' }];
     },
     get: () => Promise.resolve({})
   };
 
-  let timeoutMock = () => {};
+  const timeoutMock = () => {};
 
   beforeEach(() => {
     ctx = {
@@ -47,14 +47,16 @@ describe('Triggers Panel schema migration', () => {
   });
 
   it('should update old panel schema', () => {
-    let updatedPanelCtrl = updatePanelCtrl(ctx.scope);
+    const updatedPanelCtrl = updatePanelCtrl(ctx.scope);
 
-    let expected = _.defaultsDeep({
+    const expected = _.defaultsDeep({
       schemaVersion: CURRENT_SCHEMA_VERSION,
-      datasources: ['zabbix'],
-      targets: {
-        'zabbix': DEFAULT_TARGET
-      },
+      targets: [
+        {
+          ...DEFAULT_TARGET,
+          datasource: 'zabbix',
+        }
+      ],
       ageField: true,
       statusField: false,
       severityField: false,
@@ -68,29 +70,29 @@ describe('Triggers Panel schema migration', () => {
 
   it('should create new panel with default schema', () => {
     ctx.scope.panel = {};
-    let updatedPanelCtrl = updatePanelCtrl(ctx.scope);
+    const updatedPanelCtrl = updatePanelCtrl(ctx.scope);
 
-    let expected = _.defaultsDeep({
+    const expected = _.defaultsDeep({
       schemaVersion: CURRENT_SCHEMA_VERSION,
-      datasources: ['zabbix_default'],
-      targets: {
-        'zabbix_default': DEFAULT_TARGET
-      }
+      targets: [{
+        ...DEFAULT_TARGET,
+        datasource: 'zabbix_default'
+      }]
     }, PANEL_DEFAULTS);
     expect(updatedPanelCtrl.panel).toEqual(expected);
   });
 
   it('should set default targets for new panel with empty targets', () => {
     ctx.scope.panel = {
-      targets: [{}]
+      targets: []
     };
-    let updatedPanelCtrl = updatePanelCtrl(ctx.scope);
+    const updatedPanelCtrl = updatePanelCtrl(ctx.scope);
 
-    let expected = _.defaultsDeep({
-      datasources: ['zabbix_default'],
-      targets: {
-        'zabbix_default': DEFAULT_TARGET
-      },
+    const expected = _.defaultsDeep({
+      targets: [{
+        ...DEFAULT_TARGET,
+        datasource: 'zabbix_default'
+      }]
     }, PANEL_DEFAULTS);
 
     expect(updatedPanelCtrl.panel).toEqual(expected);

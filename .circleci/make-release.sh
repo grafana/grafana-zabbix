@@ -28,7 +28,7 @@ fi
 RELEASE_BRANCH=release-$RELEASE_VER
 
 # Build plugin
-git checkout -b $RELEASE_BRANCH
+git checkout -b "$RELEASE_BRANCH"
 make clean install dist
 
 # Commit release

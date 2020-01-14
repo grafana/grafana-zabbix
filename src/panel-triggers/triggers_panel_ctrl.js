@@ -10,6 +10,7 @@ import { triggerPanelTriggersTab } from './triggers_tab';
 import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
 import ProblemList from './components/Problems/Problems';
 import AlertList from './components/AlertList/AlertList';
+import { getNextRefIdChar } from './utils';
 
 const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
 const PROBLEM_EVENTS_LIMIT = 100;
@@ -23,7 +24,17 @@ export const DEFAULT_TARGET = {
   proxy: {filter: ""},
 };
 
-export const getDefaultTarget = () => DEFAULT_TARGET;
+export const getDefaultTarget = (targets) => {
+  return {
+    group: {filter: ""},
+    host: {filter: ""},
+    application: {filter: ""},
+    trigger: {filter: ""},
+    tags: {filter: ""},
+    proxy: {filter: ""},
+    refId: getNextRefIdChar(targets),
+  };
+};
 
 export const DEFAULT_SEVERITY = [
   { priority: 0, severity: 'Not classified',  color: 'rgb(108, 108, 108)', show: true},
@@ -40,8 +51,7 @@ const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
 export const PANEL_DEFAULTS = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
-  datasources: [],
-  targets: {},
+  targets: [getDefaultTarget([])],
   // Fields
   hostField: true,
   hostTechNameField: false,
@@ -108,11 +118,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
     this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
-    if (this.panel.datasources.length === 0) {
-      this.panel.datasources.push(this.available_datasources[0]);
-    }
-    if (this.isEmptyTargets()) {
-      this.panel.targets[this.panel.datasources[0]] = getDefaultTarget();
+    if (this.panel.targets && !this.panel.targets[0].datasource) {
+      this.panel.targets[0].datasource = this.available_datasources[0];
     }
 
     this.initDatasources();
@@ -138,7 +145,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   initDatasources() {
-    let promises = _.map(this.panel.datasources, (ds) => {
+    if (!this.panel.targets) {
+      return;
+    }
+    const targetDatasources = _.compact(this.panel.targets.map(target => target.datasource));
+    let promises = targetDatasources.map(ds => {
       // Load datasource
       return this.datasourceSrv.get(ds)
       .then(datasource => {
@@ -236,14 +247,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
     const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
     const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
 
-    let promises = _.map(this.panel.datasources, (ds) => {
+    let promises = _.map(this.panel.targets, (target) => {
+      const ds = target.datasource;
       let proxies;
       let showAckButton = true;
       return this.datasourceSrv.get(ds)
       .then(datasource => {
         const zabbix = datasource.zabbix;
         const showEvents = this.panel.showEvents.value;
-        const triggerFilter = this.panel.targets[ds];
+        const triggerFilter = target;
         const showProxy = this.panel.hostProxy;
         const getProxiesPromise = showProxy ? zabbix.getProxies() : () => [];
         showAckButton = !datasource.disableReadOnlyUsersAck || userIsEditor;
@@ -284,8 +296,8 @@ export class TriggerPanelCtrl extends PanelCtrl {
       })
       .then(triggers => this.setMaintenanceStatus(triggers))
       .then(triggers => this.setAckButtonStatus(triggers, showAckButton))
-      .then(triggers => this.filterTriggersPre(triggers, ds))
-      .then(triggers => this.addTriggerDataSource(triggers, ds))
+      .then(triggers => this.filterTriggersPre(triggers, target))
+      .then(triggers => this.addTriggerDataSource(triggers, target))
       .then(triggers => this.addTriggerHostProxy(triggers, proxies));
     });
 
@@ -339,16 +351,17 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return triggers;
   }
 
-  filterTriggersPre(triggerList, ds) {
+  filterTriggersPre(triggerList, target) {
     // Filter triggers by description
-    let triggerFilter = this.panel.targets[ds].trigger.filter;
+    const ds = target.datasource;
+    let triggerFilter = target.trigger.filter;
     triggerFilter = this.datasources[ds].replaceTemplateVars(triggerFilter);
     if (triggerFilter) {
       triggerList = filterTriggers(triggerList, triggerFilter);
     }
 
     // Filter by tags
-    const target = this.panel.targets[ds];
+    // const target = this.panel.targets[ds];
     if (target.tags.filter) {
       let tagsFilter = this.datasources[ds].replaceTemplateVars(target.tags.filter);
       // replaceTemplateVars() builds regex-like string, so we should trim it.
@@ -406,9 +419,9 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return triggers;
   }
 
-  addTriggerDataSource(triggers, ds) {
+  addTriggerDataSource(triggers, target) {
     _.each(triggers, (trigger) => {
-      trigger.datasource = ds;
+      trigger.datasource = target.datasource;
     });
     return triggers;
   }
@@ -479,24 +492,27 @@ export class TriggerPanelCtrl extends PanelCtrl {
     return _.map(tags, (tag) => `${tag.tag}:${tag.value}`).join(', ');
   }
 
-  addTagFilter(tag, ds) {
-    let tagFilter = this.panel.targets[ds].tags.filter;
+  addTagFilter(tag, datasource) {
+    const target = this.panel.targets.find(t => t.datasource === datasource);
+    console.log(target);
+    let tagFilter = target.tags.filter;
     let targetTags = this.parseTags(tagFilter);
     let newTag = {tag: tag.tag, value: tag.value};
     targetTags.push(newTag);
     targetTags = _.uniqWith(targetTags, _.isEqual);
     let newFilter = this.tagsToString(targetTags);
-    this.panel.targets[ds].tags.filter = newFilter;
+    target.tags.filter = newFilter;
     this.refresh();
   }
 
-  removeTagFilter(tag, ds) {
-    let tagFilter = this.panel.targets[ds].tags.filter;
+  removeTagFilter(tag, datasource) {
+    const target = this.panel.targets.find(t => t.datasource === datasource);
+    let tagFilter = target.tags.filter;
     let targetTags = this.parseTags(tagFilter);
     _.remove(targetTags, t => t.tag === tag.tag && t.value === tag.value);
     targetTags = _.uniqWith(targetTags, _.isEqual);
     let newFilter = this.tagsToString(targetTags);
-    this.panel.targets[ds].tags.filter = newFilter;
+    target.tags.filter = newFilter;
     this.refresh();
   }
 

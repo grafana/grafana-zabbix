@@ -183,7 +183,7 @@ function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSev
   color = severityDesc.color;
 
   // Mark acknowledged triggers with different color
-  if (markAckEvents && problem.acknowledges && problem.acknowledges.length) {
+  if (markAckEvents && problem.lastEvent.acknowledged === "1") {
     color = ackEventColor;
   }
 
@@ -260,13 +260,13 @@ function LastChangeCell(props: RTCell<ZBXTrigger>, customFormat?: string) {
 }
 
 interface TagCellProps extends RTCell<ZBXTrigger> {
-  onTagClick: (tag: ZBXTag, datasource: string) => void;
+  onTagClick: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 class TagCell extends PureComponent<TagCellProps> {
-  handleTagClick = (tag: ZBXTag) => {
+  handleTagClick = (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, this.props.original.datasource);
+      this.props.onTagClick(tag, this.props.original.datasource, ctrlKey, shiftKey);
     }
   }
 
