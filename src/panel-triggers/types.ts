@@ -193,7 +193,7 @@ export interface RTRow<T> {
   /** true if this row was produced by a pivot */
   groupedByPivot?: boolean;
   /** any sub rows defined by the `subRowKey` prop */
-  subRows?: boolean;
+  subRows?: any[];
 }
 
 export interface RTCell<T> extends RTRow<T> {

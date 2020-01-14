@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 import { css, cx } from 'emotion';
-import { Themeable, withTheme, Input, GrafanaTheme, EventsWithValidation, ValidationEvents } from '@grafana/ui';
+import { Themeable, withTheme, Input, EventsWithValidation, ValidationEvents } from '@grafana/ui';
+import { GrafanaTheme } from '@grafana/data';
 import { isRegex, variableRegex } from '../utils';
 
 const variablePattern = RegExp(`^${variableRegex.source}`);

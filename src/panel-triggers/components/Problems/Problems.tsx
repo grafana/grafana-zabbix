@@ -18,8 +18,8 @@ export interface ProblemListProps {
   timeRange?: GFTimeRange;
   pageSize?: number;
   fontSize?: number;
-  getProblemEvents: (problem: ZBXTrigger) => ZBXEvent[];
-  getProblemAlerts: (problem: ZBXTrigger) => ZBXAlert[];
+  getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
+  getProblemAlerts: (problem: ZBXTrigger) => Promise<ZBXAlert[]>;
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
