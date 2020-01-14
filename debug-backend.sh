@@ -14,5 +14,5 @@ Read more at https://www.kernel.org/doc/Documentation/security/Yama.txt"
 fi
 
 PLUGIN_PID=`pgrep ${PLUGIN_NAME}`
-dlv attach ${PLUGIN_PID} --headless --listen 0.0.0.0:${PORT} --api-version 2
+dlv attach ${PLUGIN_PID} --headless --listen=:${PORT} --api-version 2 --log
 pkill dlv
