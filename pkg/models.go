@@ -71,12 +71,25 @@ type ZabbixAPIParams struct {
 	Password string `json:"password,omitempty"`
 
 	// Item GET
-	WebItems    bool     `json:"webitems,omitempty"`
-	SelectHosts []string `json:"selectHosts,omitempty"`
-	ItemIDs     []string `json:"itemids,omitempty"`
-	GroupIDs    []string `json:"groupids,omitempty"`
-	HostIDs     []string `json:"hostids,omitempty"`
-	AppIDs      []string `json:"applicationids,omitempty"`
+	WebItems    bool        `json:"webitems,omitempty"`
+	SelectHosts interface{} `json:"selectHosts,omitempty"`
+	ItemIDs     []string    `json:"itemids,omitempty"`
+	GroupIDs    []string    `json:"groupids,omitempty"`
+	HostIDs     []string    `json:"hostids,omitempty"`
+	AppIDs      []string    `json:"applicationids,omitempty"`
+
+	// event.get
+	SelectAcknowledges interface{} `json:"select_acknowledges,omitempty"`
+	ObjectIDs          []string    `json:"objectids,omitempty"`
+	Value              interface{} `json:"value,omitempty"`
+
+	// trigger.get
+	ExpandDescription bool        `json:"expandDescription,omitempty"`
+	ExpandData        bool        `json:"expandData,omitempty"`
+	ExpandComment     bool        `json:"expandComment,omitempty"`
+	Monitored         bool        `json:"monitored,omitempty"`
+	SkipDependent     bool        `json:"skipDependent,omitempty"`
+	SelectLastEvent   interface{} `json:"selectLastEvent,omitempty"`
 
 	// Host Group GET
 	RealHosts bool `json:"real_hosts,omitempty"`
