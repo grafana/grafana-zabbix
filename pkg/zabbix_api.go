@@ -293,7 +293,7 @@ func (ds *ZabbixDatasource) getAllItems(ctx context.Context, dsInfo *datasource.
 		Output:      &zabbixParamOutput{Fields: []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"}},
 		SortField:   "name",
 		WebItems:    true,
-		Filter:      map[string][]int{},
+		Filter:      map[string]interface{}{},
 		SelectHosts: []string{"hostid", "name"},
 		HostIDs:     hostids,
 		AppIDs:      appids,

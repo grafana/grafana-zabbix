@@ -61,10 +61,10 @@ func (p *zabbixParamOutput) UnmarshalJSON(data []byte) error {
 }
 
 type ZabbixAPIParams struct {
-	Output    *zabbixParamOutput `json:"output,omitempty"`
-	SortField string             `json:"sortfield,omitempty"`
-	SortOrder string             `json:"sortorder,omitempty"`
-	Filter    map[string][]int   `json:"filter,omitempty"`
+	Output    *zabbixParamOutput     `json:"output,omitempty"`
+	SortField string                 `json:"sortfield,omitempty"`
+	SortOrder string                 `json:"sortorder,omitempty"`
+	Filter    map[string]interface{} `json:"filter,omitempty"`
 
 	// Login
 	User     string `json:"user,omitempty"`
