@@ -13,6 +13,8 @@ build-frontend:
 	yarn dev-build
 build-backend:
 	env GOOS=linux go build -mod=vendor -o ./dist/zabbix-plugin_linux_amd64 ./pkg
+build-debug:
+	env GOOS=linux go build -mod=vendor -gcflags=all="-N -l" -o ./dist/zabbix-plugin_linux_amd64 ./pkg
 
 dist: dist-frontend dist-backend
 dist-frontend:
