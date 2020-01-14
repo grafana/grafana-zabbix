@@ -113,7 +113,7 @@ func TestBuildResponse(t *testing.T) {
 			},
 		},
 		{
-			name: "Connetion Status Response",
+			name: "Connection Status Response",
 			responseData: connectionTestResponse{
 				ZabbixVersion: "2.4",
 				DbConnectorStatus: &dbConnectionStatus{

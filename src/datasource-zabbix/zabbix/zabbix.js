@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as utils from '../utils';
 import responseHandler from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
-import { ZabbixNotImplemented } from './connectors/dbConnector';
+// import { ZabbixNotImplemented } from './connectors/dbConnector';
 import { DBConnector } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';

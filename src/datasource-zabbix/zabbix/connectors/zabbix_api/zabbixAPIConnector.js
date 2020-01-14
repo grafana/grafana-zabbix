@@ -42,7 +42,7 @@ export class ZabbixAPIConnector {
   request(method, params) {
     return this.tsdbRequest(method, params).then(response => {
       const result = this.handleTsdbResponse(response);
-      
+
       return result;
     });
   }
@@ -535,13 +535,13 @@ function filterTriggersByAcknowledge(triggers, acknowledged) {
   }
 }
 
-function isNotAuthorized(message) {
-  return (
-    message === "Session terminated, re-login, please." ||
-    message === "Not authorised." ||
-    message === "Not authorized."
-  );
-}
+// function isNotAuthorized(message) {
+//   return (
+//     message === "Session terminated, re-login, please." ||
+//     message === "Not authorised." ||
+//     message === "Not authorized."
+//   );
+// }
 
 function getSLAInterval(intervalMs) {
   // Too many intervals may cause significant load on the database, so decrease number of resulting points

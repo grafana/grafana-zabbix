@@ -11,11 +11,11 @@ import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 import {
   DataSourceApi,
-  DataSourceInstanceSettings,
+  // DataSourceInstanceSettings,
 } from '@grafana/ui';
-import { BackendSrv, DataSourceSrv } from '@grafana/runtime';
-import { ZabbixAlertingService } from './zabbixAlerting.service';
-import { ZabbixConnectionTestQuery, ZabbixConnectionInfo, TemplateSrv, TSDBResponse } from './types';
+// import { BackendSrv, DataSourceSrv } from '@grafana/runtime';
+// import { ZabbixAlertingService } from './zabbixAlerting.service';
+// import { ZabbixConnectionTestQuery, ZabbixConnectionInfo, TemplateSrv, TSDBResponse } from './types';
 
 const DEFAULT_ZABBIX_VERSION = 3;
 
