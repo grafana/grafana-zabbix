@@ -231,3 +231,160 @@ func isNotAuthorized(message string) bool {
 		message == "Not authorized."
 }
 
+// GetFilteredItems queries Zabbix for the items belonging to the provided hosts and apps
+func (c *ZabbixAPIClient) GetFilteredItems(ctx context.Context, hostids []string, appids []string, itemtype string) (zabbix.Items, error) {
+	params := ZabbixAPIParams{
+		Output:      &zabbixParamOutput{Fields: []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"}},
+		SortField:   "name",
+		WebItems:    true,
+		Filter:      map[string]interface{}{},
+		SelectHosts: []string{"hostid", "name"},
+		HostIDs:     hostids,
+		AppIDs:      appids,
+	}
+
+	if itemtype == "num" {
+		params.Filter["value_type"] = []int{0, 3}
+	} else if itemtype == "text" {
+		params.Filter["value_type"] = []int{1, 2, 4}
+	}
+
+	result, err := c.APIRequest(ctx, "item.get", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var items zabbix.Items
+	err = json.Unmarshal(result, &items)
+	if err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
+// GetAppsByHostIDs queries Zabbix for the apps found on the given hosts
+func (c *ZabbixAPIClient) GetAppsByHostIDs(ctx context.Context, hostids []string) (zabbix.Applications, error) {
+	params := ZabbixAPIParams{Output: &zabbixParamOutput{Mode: "extend"}, HostIDs: hostids}
+	result, err := c.APIRequest(ctx, "application.get", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var apps zabbix.Applications
+	err = json.Unmarshal(result, &apps)
+	if err != nil {
+		return nil, err
+	}
+
+	return apps, nil
+
+}
+
+// GetHostsByGroupIDs queries Zabbix for the hosts belonging to the given groups
+func (c *ZabbixAPIClient) GetHostsByGroupIDs(ctx context.Context, groupids []string) (zabbix.Hosts, error) {
+	params := ZabbixAPIParams{Output: &zabbixParamOutput{Fields: []string{"hostid", "name", "host"}}, SortField: "name", GroupIDs: groupids}
+	result, err := c.APIRequest(ctx, "host.get", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var hosts zabbix.Hosts
+	err = json.Unmarshal(result, &hosts)
+	if err != nil {
+		return nil, err
+	}
+
+	return hosts, nil
+}
+
+// GetAllGroups queries Zabbix for all available host groups
+func (c *ZabbixAPIClient) GetAllGroups(ctx context.Context) (zabbix.Groups, error) {
+	params := ZabbixAPIParams{Output: &zabbixParamOutput{Fields: []string{"groupid", "name"}}, SortField: "name", RealHosts: true}
+	result, err := c.APIRequest(ctx, "hostgroup.get", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var groups zabbix.Groups
+	err = json.Unmarshal(result, &groups)
+	if err != nil {
+		return nil, err
+	}
+
+	return groups, nil
+}
+
+// GetHistory returns timeseries data for the given items within the bounds of the TSDB request
+func (c *ZabbixAPIClient) GetHistory(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items) (zabbix.History, error) {
+	totalHistory := zabbix.History{}
+
+	timeRange := tsdbReq.GetTimeRange()
+	groupedItems := map[int]zabbix.Items{}
+
+	for _, item := range items {
+		groupedItems[item.ValueType] = append(groupedItems[item.ValueType], item)
+	}
+
+	for valueType, items := range groupedItems {
+		var itemids []string
+		for _, item := range items {
+			itemids = append(itemids, item.ID)
+		}
+		params := ZabbixAPIParams{
+			Output:    &zabbixParamOutput{Mode: "extend"},
+			SortField: "clock",
+			SortOrder: "ASC",
+			ItemIDs:   itemids,
+			TimeFrom:  timeRange.GetFromEpochMs() / 1000,
+			TimeTill:  timeRange.GetToEpochMs() / 1000,
+			History:   &valueType,
+		}
+
+		var history zabbix.History
+		result, err := c.APIRequest(ctx, "history.get", params)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal(result, &history)
+		if err != nil {
+			return nil, err
+		}
+
+		totalHistory = append(totalHistory, history...)
+	}
+	c.logger.Debug("getHistory", "count", len(totalHistory))
+	return totalHistory, nil
+}
+
+// GetTrend returns historical timeseries data for the given items within the bounds of the TSDB request
+func (c *ZabbixAPIClient) GetTrend(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items) (zabbix.Trend, error) {
+	timeRange := tsdbReq.GetTimeRange()
+
+	var itemids []string
+	for _, item := range items {
+		itemids = append(itemids, item.ID)
+	}
+	params := ZabbixAPIParams{
+		Output:    &zabbixParamOutput{Mode: "extend"},
+		SortField: "clock",
+		SortOrder: "ASC",
+		ItemIDs:   itemids,
+		TimeFrom:  timeRange.GetFromEpochMs(),
+		TimeTill:  timeRange.GetToEpochMs(),
+	}
+
+	var trend zabbix.Trend
+	result, err := c.APIRequest(ctx, "trend.get", params)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(result, &trend)
+	if err != nil {
+		return nil, err
+	}
+
+	return trend, nil
+}
