@@ -182,7 +182,7 @@ function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSev
   
   let severityDesc: TriggerSeverity;
   severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(props.original.priority));
-  if (problem.lastEvent.severity) {
+  if (problem.lastEvent && problem.lastEvent.severity) {
     severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(problem.lastEvent.severity));
   }
 

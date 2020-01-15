@@ -62,7 +62,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     
     let severityDesc: TriggerSeverity;
     severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.priority));
-    if (problem.lastEvent.severity) {
+    if (problem.lastEvent && problem.lastEvent.severity) {
       severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.lastEvent.severity));
     }
 
