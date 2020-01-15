@@ -161,3 +161,104 @@ func TestIsNotAuthorized(t *testing.T) {
 	assert.False(t, testNegative)
 }
 
+func TestGetAllGroups(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 200, Body: `{"result":[{"groupid": "46489126", "name": "name1"},{"groupid": "46489127", "name":"name2"}]}`})
+	resp, err := mockDataSource.GetAllGroups(context.Background())
+
+	assert.Equal(t, "46489126", resp[0].ID)
+	assert.Equal(t, "46489127", resp[1].ID)
+	assert.Nil(t, err)
+}
+
+func TestGetAllGroupsError(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 500, Body: ``})
+	resp, err := mockDataSource.GetAllGroups(context.Background())
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
+
+func TestGetHostsByGroupIDs(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 200, Body: `{"result":[{"hostid": "46489126", "name": "hostname1"},{"hostid": "46489127", "name":"hostname2"}]}`})
+	resp, err := mockDataSource.GetHostsByGroupIDs(context.Background(), []string{"46489127", "46489127"})
+
+	assert.Equal(t, "46489126", resp[0].ID)
+	assert.Equal(t, "46489127", resp[1].ID)
+	assert.Nil(t, err)
+}
+
+func TestGetHostsByGroupIDsError(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 500, Body: ``})
+	resp, err := mockDataSource.GetHostsByGroupIDs(context.Background(), []string{"46489127", "46489127"})
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
+
+func TestGetAppsByHostIDs(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 200, Body: `{"result":[{"applicationid": "46489126", "name": "hostname1"},{"applicationid": "46489127", "name":"hostname2"}]}`})
+	resp, err := mockDataSource.GetAppsByHostIDs(context.Background(), []string{"46489127", "46489127"})
+
+	assert.Equal(t, "46489126", resp[0].ID)
+	assert.Equal(t, "46489127", resp[1].ID)
+	assert.Nil(t, err)
+}
+
+func TestGetAppsByHostIDsError(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 500, Body: ``})
+	resp, err := mockDataSource.GetAppsByHostIDs(context.Background(), []string{"46489127", "46489127"})
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
+
+func TestGetFilteredItems(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 200, Body: `{"result":[{"itemid": "46489126", "name": "hostname1"},{"itemid": "46489127", "name":"hostname2"}]}`})
+	resp, err := mockDataSource.GetFilteredItems(context.Background(), []string{"46489127", "46489127"}, []string{"7947934", "9182763"}, "num")
+
+	assert.Equal(t, "46489126", resp[0].ID)
+	assert.Equal(t, "46489127", resp[1].ID)
+	assert.Nil(t, err)
+}
+
+func TestGetFilteredItemsError(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 500, Body: ``})
+	resp, err := mockDataSource.GetFilteredItems(context.Background(), []string{"46489127", "46489127"}, []string{"7947934", "9182763"}, "num")
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
+
+func TestGetHistory(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 200, Body: `{"result":[{"itemid": "46489126", "name": "hostname1"},{"itemid": "46489127", "name":"hostname2"}]}`})
+	resp, err := mockDataSource.GetHistory(context.Background(), mockDataSourceRequest(""), zabbix.Items{zabbix.Item{ID: "13244235"}, zabbix.Item{ID: "82643598"}})
+
+	assert.Equal(t, "46489126", resp[0].ItemID)
+	assert.Equal(t, "46489127", resp[1].ItemID)
+	assert.Nil(t, err)
+}
+
+func TestGetHistoryError(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 200, Body: ``})
+	resp, err := mockDataSource.GetHistory(context.Background(), mockDataSourceRequest(""), zabbix.Items{zabbix.Item{ID: "13244235"}, zabbix.Item{ID: "82643598"}})
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
+
+func TestGetTrend(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 200, Body: `{"result":[{"itemid": "46489126", "name": "hostname1"},{"itemid": "46489127", "name":"hostname2"}]}`})
+	resp, err := mockDataSource.GetTrend(context.Background(), mockDataSourceRequest(""), zabbix.Items{zabbix.Item{ID: "13244235"}, zabbix.Item{ID: "82643598"}})
+
+	assert.Equal(t, "46489126", resp[0].ItemID)
+	assert.Equal(t, "46489127", resp[1].ItemID)
+	assert.Nil(t, err)
+}
+
+func TestGetTrendError(t *testing.T) {
+	mockDataSource := NewMockZabbixAPIClient(t, MockResponse{Status: 200, Body: ``})
+	resp, err := mockDataSource.GetTrend(context.Background(), mockDataSourceRequest(""), zabbix.Items{zabbix.Item{ID: "13244235"}, zabbix.Item{ID: "82643598"}})
+
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+}
