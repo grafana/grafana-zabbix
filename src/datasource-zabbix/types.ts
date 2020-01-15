@@ -13,7 +13,43 @@ export interface ZabbixConnectionTestQuery {
   queryType: string;
 }
 
+export interface ZabbixJsonData extends DataSourceJsonData {
+  alerting: boolean;
+  alertingMinSeverity: number;
+  addThresholds: boolean;
+  dbConnectionEnable?: boolean;
+  dbConnectionDatasourceId?: any;
+  dbConnectionRetentionPolicy?: string;
+  dbConnectionDatasourceName?: string;
+  schema?: any;
+  trends?: boolean;
+  trendsRange?: string;
+  trendsFrom?: string;
+  disableReadOnlyUsersAck: boolean;
+  username?: string;
+  password?: string;
+  cacheTTL: string;
+  zabbixVersion: number;
+}
+
+export interface ZabbixJsonDataV1 extends DataSourceJsonData {
+  alerting: boolean;
+  alertingMinSeverity: number;
+  addThresholds: boolean;
+  dbConnection?: { enable?: boolean; datasourceId?: number };
+  schema?: any;
+  trends?: boolean;
+  trendsRange?: string;
+  trendsFrom?: string;
+  disableReadOnlyUsersAck: boolean;
+  username?: string;
+  password?: string;
+  cacheTTL: string;
+  zabbixVersion: number;
+}
+
 export interface ZabbixMetricsQuery extends DataQuery {
+  resultFormat: string;
   triggers: { minSeverity: string; acknowledged: boolean; count: number; };
   queryType: string;
   datasourceId: number;
@@ -23,12 +59,33 @@ export interface ZabbixMetricsQuery extends DataQuery {
   mode: number;
   itemids: number[];
   useCaptureGroups: boolean;
-  group: { filter: string; name: string; };
-  host: { filter: string; name: string; };
-  hostFilter: string;
-  application: { filter: string; name: string; };
-  item: { filter: string; name: string; };
-  itemFilter: string;
+  group: { filter: string; };
+  host: { filter: string; };
+  application: { filter: string; };
+  item: { filter: string; };
+}
+
+export interface LegacyZabbixMetricsQuery extends ZabbixMetricsQuery {
+  downsampleFunction?: string;
+  group: { filter: string; name?: string; };
+  host: { filter: string; name?: string; host?: string; };
+  hostFilter?: string;
+  application: { filter: string; name?: string; };
+  item: { filter: string; name?: string; };
+  itemFilter?: string;
+}
+
+export interface CurrentConfig {
+  secureJsonFields: { [key: string]: boolean };
+  jsonData: ZabbixJsonData;
+  secureJsonData: { username?: string; password?: string; };
+  id: number;
+  name: string;
+}
+
+export interface ConfigController {
+  datasourceSrv: any;
+  current: CurrentConfig;
 }
 
 // export { TemplateSrv } from 'grafana/app/features/templating/template_srv';

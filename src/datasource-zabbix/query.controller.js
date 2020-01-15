@@ -4,12 +4,19 @@ import * as c from './constants';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
+import { ZabbixDatasource } from './datasource';
 
 export class ZabbixQueryController extends QueryCtrl {
 
   /** @ngInject */
   constructor($scope, $injector, $rootScope, $sce, templateSrv) {
     super($scope, $injector);
+
+    /**
+     * @type ZabbixDatasource
+     */
+    this.datasource;
+
     this.zabbix = this.datasource.zabbix;
 
     // Use custom format for template variables
@@ -123,13 +130,13 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   initFilters() {
-    let itemtype = _.find(this.editorModes, {'mode': this.target.mode});
-    itemtype = itemtype ? itemtype.value : null;
+    let editorMode = _.find(this.editorModes, {'mode': this.target.mode});
+    let targetMode = editorMode ? editorMode.value : null;
     return Promise.all([
       this.suggestGroups(),
       this.suggestHosts(),
       this.suggestApps(),
-      this.suggestItems(itemtype)
+      this.suggestItems(targetMode)
     ]);
   }
 

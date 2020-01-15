@@ -11,11 +11,13 @@ import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 import {
   DataSourceApi,
-  // DataSourceInstanceSettings,
+  DataSourceInstanceSettings,
+  DataQueryRequest,
+  DataQueryResponse
 } from '@grafana/data';
-// import { BackendSrv, DataSourceSrv } from '@grafana/runtime';
-// import { ZabbixAlertingService } from './zabbixAlerting.service';
-// import { ZabbixConnectionTestQuery, ZabbixConnectionInfo, TemplateSrv, TSDBResponse } from './types';
+import { BackendSrv, DataSourceSrv } from '@grafana/runtime';
+import { ZabbixAlertingService } from './zabbixAlerting.service';
+import { ZabbixConnectionTestQuery, ZabbixConnectionInfo, ZabbixMetricsQuery, ZabbixJsonData, TemplateSrv, TSDBResponse } from './types';
 import { VariableQueryTypes } from './types';
 
 const DEFAULT_ZABBIX_VERSION = 3;
@@ -24,7 +26,7 @@ export class ZabbixDatasource extends DataSourceApi {
 
   /**
    * @ngInject
-   * @param {DataSourceInstanceSettings} instanceSettings
+   * @param {DataSourceInstanceSettings<ZabbixJsonData>} instanceSettings
    * @param {TemplateSrv} templateSrv
    * @param {BackendSrv} backendSrv
    * @param {DataSourceSrv} datasourceSrv
@@ -102,8 +104,8 @@ export class ZabbixDatasource extends DataSourceApi {
 
   /**
    * Query panel data. Calls for each panel in dashboard.
-   * @param  {Object} options   Contains time range, targets and other info.
-   * @return {Object} Grafana metrics object with timeseries data for each target.
+   * @param {DataQueryRequest<ZabbixMetricsQuery>} options Contains time range, targets and other info.
+   * @return {Promise<DataQueryResponse>} Grafana metrics object with timeseries data for each target.
    */
   query(options) {
     // console.log('invoking doTsdbRequest()');
