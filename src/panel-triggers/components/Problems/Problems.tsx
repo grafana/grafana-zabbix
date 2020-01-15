@@ -89,6 +89,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const statusIconCell = props => StatusIconCell(props, highlightNewerThan);
 
     const columns = [
+      { Header: 'Data Source', accessor: 'datasource', show: options.dataSourceField },
       { Header: 'Host', accessor: 'host', show: options.hostField },
       { Header: 'Host (Technical Name)', accessor: 'hostTechName', show: options.hostTechNameField },
       { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
