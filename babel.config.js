@@ -1,7 +1,7 @@
 module.exports = {
   "presets": [
-    [ "@babel/env", { targets: { node: 'current' } } ],
+    [ "@babel/preset-env", { "targets": { "node": "current" } } ],
     "@babel/react"
   ],
   "retainLines": true
-}
+};

@@ -231,7 +231,7 @@ describe('ZabbixDatasource', () => {
     });
   });
 
-  describe('When invoking metricFindQuery()', () => {
+  describe('When invoking metricFindQuery() with legacy query', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
       ctx.ds.zabbix = {
@@ -245,7 +245,6 @@ describe('ZabbixDatasource', () => {
     it('should return groups', (done) => {
       const tests = [
         {query: '*',        expect: '/.*/'},
-        {query: '',         expect: ''},
         {query: 'Backend',  expect: 'Backend'},
         {query: 'Back*',    expect: 'Back*'},
       ];
@@ -256,6 +255,16 @@ describe('ZabbixDatasource', () => {
         ctx.ds.zabbix.getGroups.mockClear();
       }
       done();
+    });
+
+    it('should return empty list for empty query', (done) => {
+      ctx.ds.metricFindQuery('').then(result => {
+        expect(ctx.ds.zabbix.getGroups).toBeCalledTimes(0);
+        ctx.ds.zabbix.getGroups.mockClear();
+
+        expect(result).toEqual([]);
+        done();
+      });
     });
 
     it('should return hosts', (done) => {

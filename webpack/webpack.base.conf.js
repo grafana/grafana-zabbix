@@ -17,7 +17,7 @@ module.exports = {
   entry: {
     './module': './module.js',
     'components/config': './components/config.js',
-    'datasource-zabbix/module': './datasource-zabbix/module.js',
+    'datasource-zabbix/module': './datasource-zabbix/module.ts',
     'panel-triggers/module': './panel-triggers/module.js',
   },
   output: {
@@ -28,7 +28,7 @@ module.exports = {
   externals: [
     // remove the line below if you don't want to use builtin versions
     'jquery', 'lodash', 'moment', 'angular',
-    'react', 'react-dom', '@grafana/ui', '@grafana/runtime',
+    'react', 'react-dom', '@grafana/ui', '@grafana/runtime','@grafana/data',
     function (context, request, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {

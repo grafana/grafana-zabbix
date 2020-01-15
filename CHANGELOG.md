@@ -6,8 +6,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+## [3.10.5] - 2019-12-26
 ### Added
 - SLA over time graphs, [#728](https://github.com/alexanderzobnin/grafana-zabbix/issues/728)
+- Additional time ranges in functions, [#531](https://github.com/alexanderzobnin/grafana-zabbix/issues/531)
+
+### Fixed
+- Problems panel: query editor broken in Grafana 6.4, [#817](https://github.com/alexanderzobnin/grafana-zabbix/issues/817)
+- Datasource: function editor is not working, [#810](https://github.com/alexanderzobnin/grafana-zabbix/issues/810)
+- Datasource: cannot add a function to query from typeahead, [#468](https://github.com/alexanderzobnin/grafana-zabbix/issues/468)
+- Datasource: annotations editor broken in Grafana 6.x, [#813](https://github.com/alexanderzobnin/grafana-zabbix/issues/813)
+- React plugins issue, [#823](https://github.com/alexanderzobnin/grafana-zabbix/issues/823)
 
 ## [3.10.4] - 2019-08-08
 ### Fixed
