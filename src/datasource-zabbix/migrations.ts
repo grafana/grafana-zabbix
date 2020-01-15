@@ -93,3 +93,23 @@ function shouldMigrateDSConfig(jsonData: ZabbixJsonDataV1): boolean {
   }
   return false;
 }
+
+export function migrateCredentials(configCtrl: ConfigController) {
+  if (configCtrl.current.secureJsonData == null) {
+    configCtrl.current.secureJsonData = {};
+  }
+
+  if (configCtrl.current.jsonData.username) {
+    configCtrl.current.secureJsonData.username = configCtrl.current.jsonData.username;
+    configCtrl.current.jsonData.username = null;
+    configCtrl.current.secureJsonFields.username = false
+  }
+
+  if (configCtrl.current.jsonData.password) {
+    configCtrl.current.secureJsonData.password = configCtrl.current.jsonData.password;
+    configCtrl.current.jsonData.password = null;
+    configCtrl.current.secureJsonFields.password = false
+  }
+
+
+}

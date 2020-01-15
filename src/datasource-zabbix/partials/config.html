@@ -1,30 +1,25 @@
 <datasource-http-settings current="ctrl.current" suggest-url="http://localhost/zabbix/api_jsonrpc.php">
 </datasource-http-settings>
 
-<div class="gf-form-group">
+<div class="gf-form-group  max-width-30">
   <h3 class="page-heading">Zabbix API details</h3>
 
   <div class="gf-form">
-    <span class="gf-form-label width-7">
-      Username
-    </span>
-    <input class="gf-form-input max-width-21"
-           type="text"
-           ng-model='ctrl.current.jsonData.username'
-           placeholder="user"
-           required>
-    </input>
+    <label class="gf-form-label width-7">Username: </label>
+
+    <label class="gf-form-label width-14" ng-show="ctrl.current.secureJsonFields.username">Configured</label>
+    <a class="btn btn-secondary gf-form-btn" type="submit" ng-click="ctrl.resetUsername()" ng-show="ctrl.current.secureJsonFields.username">Reset</a>
+
+    <input type="text" class="gf-form-input max-width-21" ng-hide="ctrl.current.secureJsonFields.username" ng-model='ctrl.current.secureJsonData.username'></input>
   </div>
 
   <div class="gf-form">
-    <span class="gf-form-label width-7">
-      Password
-    </span>
-    <input class="gf-form-input max-width-21"
-           type="password"
-           ng-model='ctrl.current.jsonData.password'
-           placeholder="password">
-    </input>
+    <label class="gf-form-label width-7">Password: </label>
+
+    <label class="gf-form-label width-14" ng-show="ctrl.current.secureJsonFields.password">Configured</label>
+    <a class="btn btn-secondary gf-form-btn" type="submit" ng-click="ctrl.resetPassword()" ng-show="ctrl.current.secureJsonFields.password">Reset</a>
+
+    <input type="password" class="gf-form-input max-width-21" ng-hide="ctrl.current.secureJsonFields.password" ng-model='ctrl.current.secureJsonData.password'></input>
   </div>
 
   <gf-form-switch class="gf-form" label-class="width-7"

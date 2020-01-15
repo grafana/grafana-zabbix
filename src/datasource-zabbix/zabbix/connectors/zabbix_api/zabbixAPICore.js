@@ -66,18 +66,6 @@ export class ZabbixAPICore {
   }
 
   /**
-   * Get authentication token.
-   * @return {string}  auth token
-   */
-  login(api_url, username, password, options) {
-    let params = {
-      user: username,
-      password: password
-    };
-    return this.request(api_url, 'user.login', params, options, null);
-  }
-
-  /**
    * Get Zabbix API version
    * Matches the version of Zabbix starting from Zabbix 2.0.4
    */

@@ -10,10 +10,8 @@ import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MI
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-  constructor(api_url, username, password, version, basicAuth, withCredentials, backendSrv, datasourceId) {
+  constructor(api_url, version, basicAuth, withCredentials, backendSrv, datasourceId) {
     this.url              = api_url;
-    this.username         = username;
-    this.password         = password;
     this.auth             = '';
     this.version          = version;
 
@@ -24,10 +22,6 @@ export class ZabbixAPIConnector {
 
     this.datasourceId = datasourceId;
     this.backendSrv = backendSrv;
-
-    this.loginPromise = null;
-    this.loginErrorCount = 0;
-    this.maxLoginAttempts = 3;
 
     this.zabbixAPICore = new ZabbixAPICore(backendSrv);
 
@@ -72,32 +66,6 @@ export class ZabbixAPIConnector {
     }
 
     return response.data.results['zabbixAPI'].meta;
-  }
-
-  /**
-   * When API unauthenticated or auth token expired each request produce login()
-   * call. But auth token is common to all requests. This function wraps login() method
-   * and call it once. If login() already called just wait for it (return its promise).
-   * @return login promise
-   */
-  loginOnce() {
-    if (!this.loginPromise) {
-      this.loginPromise = Promise.resolve(
-        this.login().then(auth => {
-          this.auth = auth;
-          this.loginPromise = null;
-          return auth;
-        })
-      );
-    }
-    return this.loginPromise;
-  }
-
-  /**
-   * Get authentication token.
-   */
-  login() {
-    return this.zabbixAPICore.login(this.url, this.username, this.password, this.requestOptions);
   }
 
   /**
@@ -155,10 +123,10 @@ export class ZabbixAPIConnector {
 
   /**
    * Get Zabbix items
-   * @param  {[type]} hostids  host ids
-   * @param  {[type]} appids   application ids
+   * @param  {any} hostids  host ids
+   * @param  {any} appids   application ids
    * @param  {String} itemtype 'num' or 'text'
-   * @return {[type]}          array of items
+   * @return {any[]}          array of items
    */
   getItems(hostids, appids, itemtype) {
     var params = {
@@ -244,7 +212,7 @@ export class ZabbixAPIConnector {
    * @param  {Array}  items       Array of Zabbix item objects
    * @param  {Number} timeFrom   Time in seconds
    * @param  {Number} timeTill   Time in seconds
-   * @return {Array}  Array of Zabbix history objects
+   * @return {Promise<Array>}  Array of Zabbix history objects
    */
   getHistory(items, timeFrom, timeTill) {
 
@@ -277,9 +245,9 @@ export class ZabbixAPIConnector {
    * Use trends api extension from ZBXNEXT-1193 patch.
    *
    * @param  {Array}  items       Array of Zabbix item objects
-   * @param  {Number} time_from   Time in seconds
-   * @param  {Number} time_till   Time in seconds
-   * @return {Array}  Array of Zabbix trend objects
+   * @param  {Number} timeFrom   Time in seconds
+   * @param  {Number} timeTill   Time in seconds
+   * @return {Promise<Array>}  Array of Zabbix trend objects
    */
   getTrend_ZBXNEXT1193(items, timeFrom, timeTill) {
 

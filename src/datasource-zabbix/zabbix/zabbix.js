@@ -20,7 +20,7 @@ const REQUESTS_TO_CACHE = [
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'getVersion', 'login', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
+  'getAcknowledges', 'getITService', 'getVersion', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
   'getExtendedEventData'
 ];
 
@@ -28,8 +28,6 @@ export class Zabbix {
   constructor(options, datasourceSrv, backendSrv, datasourceId) {
     let {
       url,
-      username,
-      password,
       basicAuth,
       withCredentials,
       zabbixVersion,
@@ -40,6 +38,9 @@ export class Zabbix {
       dbConnectionRetentionPolicy,
     } = options;
 
+    // This is bound to this class later
+    this.getMacros = undefined;
+
     this.enableDirectDBConnection = enableDirectDBConnection;
 
     // Initialize caching proxy for requests
@@ -49,7 +50,7 @@ export class Zabbix {
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, zabbixVersion, basicAuth, withCredentials, backendSrv, datasourceId);
+    this.zabbixAPI = new ZabbixAPIConnector(url, zabbixVersion, basicAuth, withCredentials, backendSrv, datasourceId);
 
     this.proxyfyRequests();
     this.cacheRequests();
@@ -62,7 +63,7 @@ export class Zabbix {
         this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
         this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
       });
-    }
+    };
   }
 
   initDBConnector(datasourceId, datasourceName, datasourceSrv, options) {
@@ -394,9 +395,9 @@ function findByName(list, name) {
  * Different hosts can contains applications and items with same name.
  * For this reason use _.filter, which return all elements instead _.find,
  * which return only first finded.
- * @param  {[type]} list list of elements
- * @param  {[type]} name app name
- * @return {[type]}      array with finded element or empty array
+ * @param  {Array} list list of elements
+ * @param  {String} name app name
+ * @return {Array}      array with finded element or empty array
  */
 function filterByName(list, name) {
   var finded = _.filter(list, {'name': name});
