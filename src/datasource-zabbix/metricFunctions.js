@@ -86,6 +86,16 @@ addFuncDef({
 });
 
 addFuncDef({
+  name: 'percentile',
+  category: 'Transform',
+  params: [
+    { name: 'interval', type: 'string' },
+    { name: 'percent', type: 'float', options: [25, 50, 75, 90, 95, 99, 99.9] }
+  ],
+  defaultParams: ['1m', 95],
+});
+
+addFuncDef({
   name: 'removeAboveValue',
   category: 'Transform',
   params: [
@@ -140,7 +150,7 @@ addFuncDef({
 });
 
 addFuncDef({
-  name: 'percentile',
+  name: 'percentileAgg',
   category: 'Aggregate',
   params: [
     { name: 'interval', type: 'string' },

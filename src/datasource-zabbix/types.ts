@@ -57,30 +57,30 @@ type TimeSeriesPoints = TimePoint[];
 type TimeSeriesSlice = TimeSeries[];
 
 interface TimeSeries {
-	name: string;
-	points: TimeSeriesPoints;
-	tags: { [key: string]: string };
+  name: string;
+  points: TimeSeriesPoints;
+  tags: { [key: string]: string };
 }
 
 interface TableColumn {
-	text: string;
+  text: string;
 }
 
 interface Table {
-	columns: TableColumn[];
-	rows: RowValues[];
+  columns: TableColumn[];
+  rows: RowValues[];
 }
 
 interface QueryResult {
-	error: string;
-	refId: string;
-	meta: any;
-	series: TimeSeriesSlice[];
-	tables: Table[];
+  error: string;
+  refId: string;
+  meta: any;
+  series: TimeSeriesSlice[];
+  tables: Table[];
 }
 
 export interface TSDBResponse {
-	results: { [key: string]: QueryResult };
+  results: { [key: string]: QueryResult };
   message: string;
 }
 

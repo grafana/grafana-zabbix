@@ -82,6 +82,10 @@ jest.mock('grafana/app/core/config', () => {
 
 jest.mock('jquery', () => 'module not found', {virtual: true});
 
+// jest.mock('@grafana/ui', () => {
+//   return {};
+// }, {virtual: true});
+
 // Required for loading angularjs
 let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
 // Setup jsdom
