@@ -478,15 +478,3 @@ func parseFilter(filter string) (*regexp.Regexp, error) {
 
 	return regexp.Compile(pattern)
 }
-
-// BuildMetricsResponse builds a response object using a given TimeSeries array
-func BuildMetricsResponse(metrics []*datasource.TimeSeries) (*datasource.DatasourceResponse, error) {
-	return &datasource.DatasourceResponse{
-		Results: []*datasource.QueryResult{
-			&datasource.QueryResult{
-				RefId:  "zabbixMetrics",
-				Series: metrics,
-			},
-		},
-	}, nil
-}
