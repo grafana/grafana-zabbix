@@ -24,6 +24,7 @@ module.exports = {
   },
   "coverageDirectory": "<rootDir>/tmp/coverage/node/",
   "collectCoverage": false,
+  "testEnvironment": "jest-environment-jsdom-fifteen",
   "globals": {
     "ts-jest": {
       "tsConfig": "tsconfig.test.json"
