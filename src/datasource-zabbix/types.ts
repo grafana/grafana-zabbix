@@ -1,4 +1,4 @@
-import { SelectableValue, DataQuery } from "@grafana/data";
+import { DataQuery, DataSourceJsonData, SelectableValue } from "@grafana/data";
 
 export interface ZabbixConnectionInfo {
   zabbixVersion: string;
