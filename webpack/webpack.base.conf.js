@@ -27,8 +27,8 @@ module.exports = {
   },
   externals: [
     // remove the line below if you don't want to use builtin versions
-    'jquery', 'lodash', 'moment', 'angular',
-    'react', 'react-dom', '@grafana/ui', '@grafana/runtime','@grafana/data',
+    'jquery', 'lodash', 'moment', 'angular', 'emotion',
+    'react', 'react-dom', '@grafana/ui', '@grafana/runtime','@grafana/data', '@grafana/toolkit'
     function (context, request, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {
