@@ -62,7 +62,7 @@ export const PANEL_DEFAULTS = {
   statusIcon: false,
   severityField: true,
   ageField: false,
-  dataSourceField: true,
+  dataSourceField: false,
   descriptionField: true,
   descriptionAtNewLine: false,
   // Options
