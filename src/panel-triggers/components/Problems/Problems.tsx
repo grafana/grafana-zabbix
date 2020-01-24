@@ -179,7 +179,13 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
 function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSeverity[], markAckEvents?: boolean, ackEventColor?: string) {
   const problem = props.original;
   let color: string;
-  const severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(props.original.priority));
+  
+  let severityDesc: TriggerSeverity;
+  severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(props.original.priority));
+  if (problem.lastEvent && problem.lastEvent.severity) {
+    severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(problem.lastEvent.severity));
+  }
+
   color = severityDesc.color;
 
   // Mark acknowledged triggers with different color

@@ -3,7 +3,7 @@ import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
 import { isNewProblem, formatLastChange } from '../../utils';
-import { ProblemsPanelOptions, ZBXTrigger, ZBXTag } from '../../types';
+import { ProblemsPanelOptions, ZBXTrigger, TriggerSeverity, ZBXTag } from '../../types';
 import { AckProblemData, Modal } from '.././Modal';
 import EventTag from '../EventTag';
 import Tooltip from '.././Tooltip/Tooltip';
@@ -59,7 +59,13 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     const showDatasourceName = panelOptions.targets && panelOptions.targets.length > 1;
     const cardClass = classNames('alert-rule-item', 'zbx-trigger-card', { 'zbx-trigger-highlighted': panelOptions.highlightBackground });
     const descriptionClass = classNames('alert-rule-item__text', { 'zbx-description--newline': panelOptions.descriptionAtNewLine });
-    const severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.priority));
+    
+    let severityDesc: TriggerSeverity;
+    severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.priority));
+    if (problem.lastEvent && problem.lastEvent.severity) {
+      severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.lastEvent.severity));
+    }
+
     const lastchange = formatLastChange(problem.lastchangeUnix, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat);
     const age = moment.unix(problem.lastchangeUnix).fromNow(true);
 

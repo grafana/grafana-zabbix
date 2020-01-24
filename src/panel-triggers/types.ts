@@ -140,6 +140,7 @@ export interface ZBXEvent {
   object?: string;
   objectid?: string;
   acknowledged?: string;
+  severity?: string;
   hosts?: ZBXHost[];
   acknowledges?: ZBXAcknowledge[];
 }
