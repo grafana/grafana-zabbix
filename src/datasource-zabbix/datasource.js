@@ -1,6 +1,4 @@
 import _ from 'lodash';
-import config from 'grafana/app/core/config';
-import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
@@ -10,12 +8,14 @@ import responseHandler from './responseHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 import {
-  DataSourceApi,
   DataSourceInstanceSettings,
   DataQueryRequest,
-  DataQueryResponse
-} from '@grafana/data';
-import { BackendSrv, DataSourceSrv } from '@grafana/runtime';
+  DataQueryResponse,
+  DataSourceApi,
+  MetricFindValue
+} from '@grafana/ui';
+import { dateMath } from '@grafana/data';
+import { BackendSrv, DataSourceSrv, config } from '@grafana/runtime';
 import { ZabbixAlertingService } from './zabbixAlerting.service';
 import { ZabbixConnectionTestQuery, ZabbixConnectionInfo, ZabbixMetricsQuery, ZabbixJsonData, TemplateSrv, TSDBResponse } from './types';
 import { VariableQueryTypes } from './types';
@@ -126,8 +126,8 @@ export class ZabbixDatasource extends DataSourceApi {
         return [];
       }
 
-      let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
-      let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
+      let timeFrom = Math.ceil(dateMath.parse(options.range.from).unix());
+      let timeTo = Math.ceil(dateMath.parse(options.range.to).unix());
 
       // Add range variables
       options.scopedVars = Object.assign({}, options.scopedVars, utils.getRangeScopedVars(options.range));
@@ -487,9 +487,9 @@ export class ZabbixDatasource extends DataSourceApi {
   /**
    * Find metrics from templated request.
    *
-   * @param  {string} query Query from Templating
-   * @return {string}       Metric name - group, host, app or item or list
-   *                        of metrics in "{metric1,metcic2,...,metricN}" format.
+   * @param  {import('./types').VariableQuery} query Query from Templating
+   * @return {Promise<MetricFindValue[]>}       Metric name - group, host, app or item or list
+   *                        of metrics in "{ metric1, metcic2, ..., metricN }" format.
    */
   metricFindQuery(query) {
     let resultPromise;
@@ -537,8 +537,8 @@ export class ZabbixDatasource extends DataSourceApi {
 
   annotationQuery(options) {
     const timeRange = options.range || options.rangeRaw;
-    const timeFrom = Math.ceil(dateMath.parse(timeRange.from) / 1000);
-    const timeTo = Math.ceil(dateMath.parse(timeRange.to) / 1000);
+    const timeFrom = Math.ceil(dateMath.parse(timeRange.from).unix());
+    const timeTo = Math.ceil(dateMath.parse(timeRange.to).unix());
     var annotation = options.annotation;
     var showOkEvents = annotation.showOkEvents ? c.SHOW_ALL_EVENTS : c.SHOW_OK_EVENTS;
 
@@ -682,7 +682,7 @@ export class ZabbixDatasource extends DataSourceApi {
 
   isUseTrends(timeRange) {
     let [timeFrom, timeTo] = timeRange;
-    let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
+    let useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom).unix());
     let useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
     let useTrends = this.trends && (
       (timeFrom < useTrendsFrom) ||
@@ -793,7 +793,3 @@ function getTriggerThreshold(expression) {
     return null;
   }
 }
-
-// Fix for backward compatibility with lodash 2.4
-if (!_.includes) {_.includes = _.contains;}
-if (!_.keyBy) {_.keyBy = _.indexBy;}

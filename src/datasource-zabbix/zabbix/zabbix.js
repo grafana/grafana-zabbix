@@ -38,8 +38,13 @@ export class Zabbix {
       dbConnectionRetentionPolicy,
     } = options;
 
-    // This is bound to this class later
+    // These are bound to this class later
+    this.getAlerts = undefined;
+    this.getEvents = undefined;
+    this.getHostAlerts = undefined;
+    this.getItemsByIDs = undefined;
     this.getMacros = undefined;
+    this.getVersion = undefined;
 
     this.enableDirectDBConnection = enableDirectDBConnection;
 

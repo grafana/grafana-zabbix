@@ -4,9 +4,7 @@ import angular from 'angular';
 
 export class ZabbixAlertingService {
 
-  /**
-   * @ngInject
-   */
+  /** @ngInject */
   constructor(dashboardSrv) {
     this.dashboardSrv = dashboardSrv;
   }

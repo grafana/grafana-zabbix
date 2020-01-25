@@ -28,7 +28,7 @@ module.exports = {
   externals: [
     // remove the line below if you don't want to use builtin versions
     'jquery', 'lodash', 'moment', 'angular', 'emotion',
-    'react', 'react-dom', '@grafana/ui', '@grafana/runtime','@grafana/data', '@grafana/toolkit',
+    'react', 'react-dom', '@grafana/ui', '@grafana/runtime', '@grafana/data', '@grafana/toolkit',
     function (context, request, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {
@@ -38,7 +38,7 @@ module.exports = {
     }
   ],
   plugins: [
-    new webpack.optimize.OccurrenceOrderPlugin(),
+    new webpack.optimize.OccurrenceOrderPlugin(false),
     new CopyWebpackPlugin([
       { from: '**/plugin.json' },
       { from: '**/*.html' },

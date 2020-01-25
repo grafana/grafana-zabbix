@@ -1,4 +1,5 @@
-import { DataQuery, DataSourceJsonData, SelectableValue } from "@grafana/data";
+import { SelectableValue } from "@grafana/data";
+import { DataQuery, DataSourceJsonData } from '@grafana/ui'
 
 export interface ZabbixConnectionInfo {
   zabbixVersion: string;
@@ -87,12 +88,6 @@ export interface ConfigController {
   datasourceSrv: any;
   current: CurrentConfig;
 }
-
-// export { TemplateSrv } from 'grafana/app/features/templating/template_srv';
-// export { DashboardSrv } from 'grafana/app/features/dashboard/dashboard_srv';
-
-// The paths of these files have moved around in Grafana and they don't resolve properly
-// either. Safer not to bother trying to import them just for type hinting.
 
 export interface TemplateSrv {
   variables: {

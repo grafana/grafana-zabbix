@@ -18,14 +18,6 @@ jest.mock('angular', () => {
   };
 }, {virtual: true});
 
-jest.mock('grafana/app/features/templating/template_srv', () => {
-  return {};
-}, {virtual: true});
-
-jest.mock('grafana/app/features/dashboard/dashboard_srv', () => {
-  return {};
-}, {virtual: true});
-
 jest.mock('grafana/app/core/core_module', () => {
   return {
     directive: function() {},

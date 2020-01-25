@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import moment from 'moment';
-import { DataQuery } from '@grafana/data';
+import { DataQuery } from '@grafana/ui';
 import * as utils from '../datasource-zabbix/utils';
 import { ZBXTrigger } from './types';
 

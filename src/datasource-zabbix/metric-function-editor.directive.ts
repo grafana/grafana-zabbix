@@ -1,4 +1,4 @@
-import coreModule from 'grafana/app/core/core_module';
+import angular from 'angular';
 import _ from 'lodash';
 import $ from 'jquery';
 import { react2AngularDirective } from './react2angular';
@@ -251,6 +251,8 @@ export function zabbixFunctionEditor($compile, templateSrv) {
   };
 }
 
-coreModule.directive('zabbixFunctionEditor', zabbixFunctionEditor);
+angular
+  .module('grafana.directives')
+  .directive('zabbixFunctionEditor', ["$compile", "templateSrv", zabbixFunctionEditor]);
 
 react2AngularDirective('zbxFunctionEditor', FunctionEditor, ['func', 'onRemove', 'onMoveLeft', 'onMoveRight']);
