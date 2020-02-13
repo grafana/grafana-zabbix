@@ -536,12 +536,13 @@ export class ZabbixDatasource {
             let title = Number(event.value) ? 'Problem' : 'OK';
 
             let formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
+            let event_name = this.zabbixVersion < 4 ? indexedTriggers[event.objectid].description : event.name;
             return {
               annotation: annotation,
               time: event.clock * 1000,
               title: title,
               tags: tags,
-              text: indexedTriggers[event.objectid].description + formatted_acknowledges
+              text: event_name + formatted_acknowledges
             };
           });
         });
