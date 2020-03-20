@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Problems panel: stopped working in Grafana 6.7.0, [#907](https://github.com/alexanderzobnin/grafana-zabbix/issues/907)
 - Problems panel: event severity change, [#870](https://github.com/alexanderzobnin/grafana-zabbix/issues/870)
-- Problems panel: color is changed to acknowleged even if there is only message without acknowlegement, [#857](https://github.com/alexanderzobnin/grafana-zabbix/issues/857)
+- Problems panel: color is changed to acknowledged even if there is only message without acknowledgment, [#857](https://github.com/alexanderzobnin/grafana-zabbix/issues/857)
 - Percentile function returns incorrect results, [#862](https://github.com/alexanderzobnin/grafana-zabbix/issues/862)
 
 ## [3.10.5] - 2019-12-26
