@@ -709,7 +709,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
       } else {
         problemsReactElem = React.createElement(ProblemList, problemsListProps);
       }
-      ReactDOM.render(problemsReactElem, elem.find('.panel-content')[0]);
+
+      const panelContainerElem = elem.find('.panel-content');
+      if (panelContainerElem && panelContainerElem.length) {
+        ReactDOM.render(problemsReactElem, panelContainerElem[0]);
+      } else {
+        ReactDOM.render(problemsReactElem, elem[0]);
+      }
     }
   }
 }
