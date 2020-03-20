@@ -16,7 +16,7 @@ const DEFAULT_ZABBIX_VERSION = 3;
 export class ZabbixDatasource {
 
   /** @ngInject */
-  constructor(instanceSettings, templateSrv, backendSrv, datasourceSrv, zabbixAlertingSrv) {
+  constructor(instanceSettings, templateSrv, datasourceSrv, zabbixAlertingSrv) {
     this.templateSrv = templateSrv;
     this.zabbixAlertingSrv = zabbixAlertingSrv;
 
@@ -75,7 +75,7 @@ export class ZabbixDatasource {
       dbConnectionRetentionPolicy: this.dbConnectionRetentionPolicy,
     };
 
-    this.zabbix = new Zabbix(zabbixOptions, datasourceSrv, backendSrv);
+    this.zabbix = new Zabbix(zabbixOptions, datasourceSrv);
   }
 
   ////////////////////////

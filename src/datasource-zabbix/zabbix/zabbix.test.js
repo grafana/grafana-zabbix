@@ -13,9 +13,9 @@ describe('Zabbix', () => {
 
   beforeEach(() => {
     ctx.options = options;
-    ctx.backendSrv = mocks.backendSrvMock;
+    // ctx.backendSrv = mocks.backendSrvMock;
     ctx.datasourceSrv = mocks.datasourceSrvMock;
-    zabbix = new Zabbix(ctx.options, ctx.backendSrvMock, ctx.datasourceSrvMock);
+    zabbix = new Zabbix(ctx.options, ctx.datasourceSrvMock);
   });
 
   describe('When querying proxies', () => {

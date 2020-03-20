@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import ReactTable from 'react-table';
+import ReactTable from 'react-table-6';
 import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
@@ -18,8 +18,8 @@ export interface ProblemListProps {
   timeRange?: GFTimeRange;
   pageSize?: number;
   fontSize?: number;
-  getProblemEvents: (problem: ZBXTrigger) => ZBXEvent[];
-  getProblemAlerts: (problem: ZBXTrigger) => ZBXAlert[];
+  getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
+  getProblemAlerts: (problem: ZBXTrigger) => Promise<ZBXAlert[]>;
   onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
@@ -163,6 +163,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
               getProblemAlerts={this.props.getProblemAlerts}
               onProblemAck={this.handleProblemAck}
               onTagClick={this.handleTagClick}
+              subRows={false}
             />
           }
           expanded={this.getExpandedPage(this.state.page)}
@@ -179,7 +180,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
 function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSeverity[], markAckEvents?: boolean, ackEventColor?: string) {
   const problem = props.original;
   let color: string;
-  
+
   let severityDesc: TriggerSeverity;
   severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(props.original.priority));
   if (problem.lastEvent && problem.lastEvent.severity) {

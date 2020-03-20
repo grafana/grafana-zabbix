@@ -21,11 +21,11 @@ describe('ZabbixDatasource', () => {
     };
 
     ctx.templateSrv = mocks.templateSrvMock;
-    ctx.backendSrv = mocks.backendSrvMock;
+    // ctx.backendSrv = mocks.backendSrvMock;
     ctx.datasourceSrv = mocks.datasourceSrvMock;
     ctx.zabbixAlertingSrv = mocks.zabbixAlertingSrvMock;
 
-    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.backendSrv, ctx.datasourceSrv, ctx.zabbixAlertingSrv);
+    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.datasourceSrv, ctx.zabbixAlertingSrv);
   });
 
   describe('When querying data', () => {
