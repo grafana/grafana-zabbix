@@ -4,15 +4,20 @@ import {TriggerPanelCtrl} from '../triggers_panel_ctrl';
 import {DEFAULT_TARGET, DEFAULT_SEVERITY, PANEL_DEFAULTS} from '../triggers_panel_ctrl';
 import {CURRENT_SCHEMA_VERSION} from '../migrations';
 
+jest.mock('@grafana/runtime', () => {
+  return {
+    getDataSourceSrv: () => ({
+      getMetricSources: () => {
+        return [{ meta: {id: 'alexanderzobnin-zabbix-datasource'}, value: {}, name: 'zabbix_default' }];
+      },
+      get: () => Promise.resolve({})
+    }),
+  };
+}, {virtual: true});
+
 describe('Triggers Panel schema migration', () => {
   let ctx: any = {};
   let updatePanelCtrl;
-  const datasourceSrvMock = {
-    getMetricSources: () => {
-      return [{ meta: {id: 'alexanderzobnin-zabbix-datasource'}, value: {}, name: 'zabbix_default' }];
-    },
-    get: () => Promise.resolve({})
-  };
 
   const timeoutMock = () => {};
 
@@ -43,7 +48,7 @@ describe('Triggers Panel schema migration', () => {
       }
     };
 
-    updatePanelCtrl = (scope) => new TriggerPanelCtrl(scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {}, mocks.timeSrvMock);
+    updatePanelCtrl = (scope) => new TriggerPanelCtrl(scope, {}, timeoutMock, {}, {}, {}, mocks.timeSrvMock);
   });
 
   it('should update old panel schema', () => {

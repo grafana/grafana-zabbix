@@ -11,8 +11,8 @@ const consolidateByFunc = {
 };
 
 export class InfluxDBConnector extends DBConnector {
-  constructor(options, datasourceSrv) {
-    super(options, datasourceSrv);
+  constructor(options) {
+    super(options);
     this.retentionPolicy = options.retentionPolicy;
     super.loadDBDataSource().then(ds => {
       this.influxDS = ds;

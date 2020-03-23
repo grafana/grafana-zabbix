@@ -1,17 +1,20 @@
 import { InfluxDBConnector } from '../zabbix/connectors/influxdb/influxdbConnector';
 import { compactQuery } from '../utils';
 
+jest.mock('@grafana/runtime', () => ({
+  getDataSourceSrv: jest.fn(() => ({
+    loadDatasource: jest.fn().mockResolvedValue(
+      { id: 42, name: 'InfluxDB DS', meta: {} }
+    ),
+  })),
+}));
+
 describe('InfluxDBConnector', () => {
   let ctx = {};
 
   beforeEach(() => {
     ctx.options = { datasourceName: 'InfluxDB DS', retentionPolicy: 'longterm' };
-    ctx.datasourceSrvMock = {
-      loadDatasource: jest.fn().mockResolvedValue(
-        { id: 42, name: 'InfluxDB DS', meta: {} }
-      ),
-    };
-    ctx.influxDBConnector = new InfluxDBConnector(ctx.options, ctx.datasourceSrvMock);
+    ctx.influxDBConnector = new InfluxDBConnector(ctx.options);
     ctx.influxDBConnector.invokeInfluxDBQuery = jest.fn().mockResolvedValue([]);
     ctx.defaultQueryParams = {
       itemids: ['123', '234'],

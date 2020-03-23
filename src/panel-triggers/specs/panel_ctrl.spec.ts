@@ -4,9 +4,16 @@ import {TriggerPanelCtrl} from '../triggers_panel_ctrl';
 import {PANEL_DEFAULTS, DEFAULT_TARGET} from '../triggers_panel_ctrl';
 // import { create } from 'domain';
 
+let datasourceSrvMock, zabbixDSMock;
+
+jest.mock('@grafana/runtime', () => {
+  return {
+    getDataSourceSrv: () => datasourceSrvMock,
+  };
+}, {virtual: true});
+
 describe('TriggerPanelCtrl', () => {
   let ctx: any = {};
-  let datasourceSrvMock, zabbixDSMock;
   const timeoutMock = () => {};
   let createPanelCtrl;
 
@@ -31,7 +38,8 @@ describe('TriggerPanelCtrl', () => {
       },
       get: () => Promise.resolve(zabbixDSMock)
     };
-    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, datasourceSrvMock, {}, {}, {}, mocks.timeSrvMock);
+
+    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, {}, {}, {}, mocks.timeSrvMock);
 
     const getTriggersResp = [
       [

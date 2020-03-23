@@ -11,8 +11,8 @@ const supportedDatabases = {
 };
 
 export class SQLConnector extends DBConnector {
-  constructor(options, datasourceSrv) {
-    super(options, datasourceSrv);
+  constructor(options) {
+    super(options);
 
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     this.sqlDialect = null;
