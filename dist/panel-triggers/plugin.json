@@ -1,0 +1,15 @@
+{
+  "type": "panel",
+  "name": "Zabbix Problems",
+  "id": "alexanderzobnin-zabbix-triggers-panel",
+
+  "dataFormats": [],
+  "skipDataQuery": true,
+
+  "info": {
+    "author": {
+      "name": "Alexander Zobnin",
+      "url": "https://github.com/alexanderzobnin/grafana-zabbix"
+    }
+  }
+}

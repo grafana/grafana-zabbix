@@ -1,0 +1,104 @@
+<div class="editor-row">
+  <div class="section gf-form-group">
+    <div class="gf-form-inline">
+      <div class="gf-form">
+        <label class="gf-form-label width-9">Data sources</label>
+      </div>
+      <div class="gf-form">
+        <datasource-selector
+          datasources="editor.selectedDatasources"
+          options="editor.panelCtrl.available_datasources"
+          on-change="editor.datasourcesChanged()">
+        </datasource-selector>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="editor-row" ng-repeat="target in ctrl.panel.targets">
+  <div class="section gf-form-group">
+    <h5 class="section-heading">{{ target.datasource }}</h5>
+    <div class="gf-form-inline">
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-7">Group</label>
+        <input type="text"
+          ng-model="target.group.filter"
+          bs-typeahead="editor.getGroupNames[target.datasource]"
+          ng-blur="editor.parseTarget()"
+          data-min-length=0
+          data-items=100
+          class="gf-form-input width-14"
+          ng-class="{
+            'zbx-variable': editor.isVariable(target.group.filter),
+            'zbx-regex': editor.isRegex(target.group.filter)
+          }">
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-7">Host</label>
+        <input type="text"
+          ng-model="target.host.filter"
+          bs-typeahead="editor.getHostNames[target.datasource]"
+          ng-blur="editor.parseTarget()"
+          data-min-length=0
+          data-items=100
+          class="gf-form-input width-14"
+          ng-class="{
+            'zbx-variable': editor.isVariable(target.host.filter),
+            'zbx-regex': editor.isRegex(target.host.filter)
+          }">
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-7">Proxy</label>
+        <input type="text"
+          ng-model="target.proxy.filter"
+          bs-typeahead="editor.getProxyNames[target.datasource]"
+          ng-blur="editor.parseTarget()"
+          data-min-length=0
+          data-items=100
+          class="gf-form-input width-14"
+          ng-class="{
+            'zbx-variable': editor.isVariable(target.proxy.filter),
+            'zbx-regex': editor.isRegex(target.proxy.filter)
+          }">
+      </div>
+    </div>
+
+    <div class="gf-form-inline">
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-7">Application</label>
+        <input type="text"
+          ng-model="target.application.filter"
+          bs-typeahead="editor.getApplicationNames[target.datasource]"
+          ng-blur="editor.parseTarget()"
+          data-min-length=0
+          data-items=100
+          class="gf-form-input width-14"
+          ng-class="{
+            'zbx-variable': editor.isVariable(target.application.filter),
+            'zbx-regex': editor.isRegex(target.application.filter)
+          }">
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-7">Trigger</label>
+        <input type="text"
+          ng-model="target.trigger.filter"
+          ng-blur="editor.parseTarget()"
+          placeholder="trigger name"
+          class="gf-form-input width-14"
+          ng-style="target.trigger.style"
+          ng-class="{
+            'zbx-variable': editor.isVariable(target.trigger.filter),
+            'zbx-regex': editor.isRegex(target.trigger.filter)
+          }"
+          empty-to-null>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-7">Tags</label>
+        <input type="text" class="gf-form-input width-14"
+          ng-model="target.tags.filter"
+          ng-blur="editor.parseTarget()"
+          placeholder="tag1:value1, tag2:value2">
+      </div>
+    </div>
+  </div>
+</div>
