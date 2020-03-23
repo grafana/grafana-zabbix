@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [3.11.0] - 2020-03-20
+## [3.11.0] - 2020-03-23
 ### Added
 - Improve variable query editor, [#705](https://github.com/alexanderzobnin/grafana-zabbix/issues/705)
 - Transform/percentile function, [#868](https://github.com/alexanderzobnin/grafana-zabbix/issues/868)
