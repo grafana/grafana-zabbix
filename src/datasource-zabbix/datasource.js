@@ -334,9 +334,9 @@ export class ZabbixDatasource {
     .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target));
   }
 
-   /**
-   * Query target data for Maps mode
-   */
+  /**
+  * Query target data for Maps mode
+  */
   queryMapData(target, timeRange, options) {
     let mapFilter;
     options.isOldVersion = target.map && !target.mapFilter;
@@ -351,7 +351,7 @@ export class ZabbixDatasource {
     console.debug('mapQueryType: ' + target.mapQueryType.queryType);
     return this.zabbix.getMaps(mapFilter, target.mapQueryType.queryType)
       .then((results) => {
-        console.debug('Map recieved: ', results[0]);
+        console.debug('Map received: ', results[0]);
         return responseHandler.handleMapsResponse(results[0], target.mapQueryType.queryType);
       });
   }

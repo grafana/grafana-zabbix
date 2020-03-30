@@ -317,7 +317,7 @@ export class ZabbixAPIConnector {
     return this.request('service.get', params);
   }
 
-  getMap(mapids, queryType) {
+  getMap(mapids) {
     var params = {
     //   output: 'extend',
     //   selectSelements: 'extend',

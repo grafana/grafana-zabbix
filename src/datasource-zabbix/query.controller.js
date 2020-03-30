@@ -46,7 +46,7 @@ export class ZabbixQueryController extends QueryCtrl {
       {name: "Properties", queryType: "properties"},
       {name: "Elements", queryType: "elements"},
       {name: "Links", queryType: "links"}
-    ]
+    ];
 
     this.ackFilters = [
       {text: 'all triggers', value: 2},
