@@ -319,9 +319,9 @@ export class ZabbixAPIConnector {
 
   getMap(mapids) {
     var params = {
-    //   output: 'extend',
-    //   selectSelements: 'extend',
-    //   selectLinks: 'extend',
+      //   output: 'extend',
+      //   selectSelements: 'extend',
+      //   selectLinks: 'extend',
       output: ['sysmapid', 'name', 'width', 'height', 'backgroundid'],
       selectSelements: ['selementid', 'sysmapid', 'elementtype', 'label', 'x', 'y'],
       selectLinks: 'extend',

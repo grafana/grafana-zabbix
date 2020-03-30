@@ -206,7 +206,7 @@ function handleMapsResponse(zbxmap, queryType) {
       table.rows.push(row);
     });
   } else if (queryType === "links") {
-  console.debug('Filling links');
+    console.debug('Filling links');
 
   }
   console.debug('Table for ' + queryType + ': ', table);
