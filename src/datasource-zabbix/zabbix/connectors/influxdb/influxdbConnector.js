@@ -24,7 +24,14 @@ export class InfluxDBConnector extends DBConnector {
    * Try to invoke test query for one of Zabbix database tables.
    */
   testDataSource() {
-    return this.influxDS.testDatasource();
+    return this.influxDS.testDatasource().then(result => {
+      if (result.status && result.status === 'error') {
+        return Promise.reject({ data: {
+          message: `InfluxDB connection error: ${result.message}`
+        }});
+      }
+      return result;
+    });
   }
 
   getHistory(items, timeFrom, timeTill, options) {
