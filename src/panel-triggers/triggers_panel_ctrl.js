@@ -261,10 +261,10 @@ export class TriggerPanelCtrl extends PanelCtrl {
         showAckButton = !datasource.disableReadOnlyUsersAck || userIsEditor;
 
         // Replace template variables
-        const groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter);
-        const hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter);
-        const appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter);
-        const proxyFilter = datasource.replaceTemplateVars(triggerFilter.proxy.filter);
+        const groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter, this.panel.scopedVars);
+        const hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter, this.panel.scopedVars);
+        const appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter, this.panel.scopedVars);
+        const proxyFilter = datasource.replaceTemplateVars(triggerFilter.proxy.filter, this.panel.scopedVars);
 
         let triggersOptions = {
           showTriggers: showEvents
