@@ -269,6 +269,20 @@ timeShift(+1d)  - shift metric forward in 1 day
 
 ## Alias
 
+Following template variables available for using in `setAlias()` and `replaceAlias()` functions:
+
+- `$__zbx_item`, `$__zbx_item_name` - item name
+- `$__zbx_item_key` - item key
+- `$__zbx_host_name` - visible name of the host
+- `$__zbx_host` - technical name of the host
+
+Examples:
+```
+setAlias($__zbx_host_name: $__zbx_item) -> backend01: CPU user time
+setAlias(Item key: $__zbx_item_key) -> Item key: system.cpu.load[percpu,avg1]
+setAlias($__zbx_host_name) -> backend01
+```
+
 ### _setAlias_
 ```
 setAlias(alias)
