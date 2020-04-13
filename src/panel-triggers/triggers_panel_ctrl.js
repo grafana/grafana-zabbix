@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
 import moment from 'moment';
+import { getDataSourceSrv } from '@grafana/runtime';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from '../datasource-zabbix/utils';
 import { PanelCtrl } from 'grafana/app/plugins/sdk';
@@ -96,9 +97,8 @@ const triggerStatusMap = {
 export class TriggerPanelCtrl extends PanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $timeout, datasourceSrv, templateSrv, contextSrv, dashboardSrv, timeSrv) {
+  constructor($scope, $injector, $timeout, templateSrv, contextSrv, dashboardSrv, timeSrv) {
     super($scope, $injector);
-    this.datasourceSrv = datasourceSrv;
     this.templateSrv = templateSrv;
     this.contextSrv = contextSrv;
     this.dashboardSrv = dashboardSrv;
@@ -151,7 +151,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     const targetDatasources = _.compact(this.panel.targets.map(target => target.datasource));
     let promises = targetDatasources.map(ds => {
       // Load datasource
-      return this.datasourceSrv.get(ds)
+      return getDataSourceSrv().get(ds)
       .then(datasource => {
         this.datasources[ds] = datasource;
         return datasource;
@@ -161,7 +161,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
   }
 
   getZabbixDataSources() {
-    return _.filter(this.datasourceSrv.getMetricSources(), datasource => {
+    return _.filter(getDataSourceSrv().getMetricSources(), datasource => {
       return datasource.meta.id === ZABBIX_DS_ID && datasource.value;
     });
   }
@@ -251,7 +251,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       const ds = target.datasource;
       let proxies;
       let showAckButton = true;
-      return this.datasourceSrv.get(ds)
+      return getDataSourceSrv().get(ds)
       .then(datasource => {
         const zabbix = datasource.zabbix;
         const showEvents = this.panel.showEvents.value;
@@ -398,7 +398,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
     // Filter triggers by severity
     triggerList = _.filter(triggerList, trigger => {
-      return this.panel.triggerSeverity[trigger.priority].show;
+      if (trigger.lastEvent && trigger.lastEvent.severity) {
+        return this.panel.triggerSeverity[trigger.lastEvent.severity].show;
+      } else {
+        return this.panel.triggerSeverity[trigger.priority].show;
+      }
     });
 
     return triggerList;
@@ -520,7 +524,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     const triggerids = [problem.triggerid];
     const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
     const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
-    return this.datasourceSrv.get(problem.datasource)
+    return getDataSourceSrv().get(problem.datasource)
     .then(datasource => {
       return datasource.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
     });
@@ -531,7 +535,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
       return Promise.resolve([]);
     }
     const eventids = [problem.lastEvent.eventid];
-    return this.datasourceSrv.get(problem.datasource)
+    return getDataSourceSrv().get(problem.datasource)
     .then(datasource => {
       return datasource.zabbix.getEventAlerts(eventids);
     });
@@ -618,7 +622,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
     let eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
     let grafana_user = this.contextSrv.user.name;
     let ack_message = grafana_user + ' (Grafana): ' + message;
-    return this.datasourceSrv.get(trigger.datasource)
+    return getDataSourceSrv().get(trigger.datasource)
     .then(datasource => {
       const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
       if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
@@ -705,7 +709,13 @@ export class TriggerPanelCtrl extends PanelCtrl {
       } else {
         problemsReactElem = React.createElement(ProblemList, problemsListProps);
       }
-      ReactDOM.render(problemsReactElem, elem.find('.panel-content')[0]);
+
+      const panelContainerElem = elem.find('.panel-content');
+      if (panelContainerElem && panelContainerElem.length) {
+        ReactDOM.render(problemsReactElem, panelContainerElem[0]);
+      } else {
+        ReactDOM.render(problemsReactElem, elem[0]);
+      }
     }
   }
 }

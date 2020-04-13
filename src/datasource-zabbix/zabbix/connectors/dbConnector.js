@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { getDataSourceSrv } from '@grafana/runtime';
 
 export const DEFAULT_QUERY_LIMIT = 10000;
 export const HISTORY_TO_TABLE_MAP = {
@@ -34,31 +35,30 @@ export const consolidateByTrendColumns = {
  * `testDataSource()` methods, which describe how to fetch data from source other than Zabbix API.
  */
 export class DBConnector {
-  constructor(options, datasourceSrv) {
-    this.datasourceSrv = datasourceSrv;
+  constructor(options) {
     this.datasourceId = options.datasourceId;
     this.datasourceName = options.datasourceName;
     this.datasourceTypeId = null;
     this.datasourceTypeName = null;
   }
 
-  static loadDatasource(dsId, dsName, datasourceSrv) {
+  static loadDatasource(dsId, dsName) {
     if (!dsName && dsId !== undefined) {
-      let ds = _.find(datasourceSrv.getAll(), {'id': dsId});
+      let ds = _.find(getDataSourceSrv().getAll(), {'id': dsId});
       if (!ds) {
         return Promise.reject(`Data Source with ID ${dsId} not found`);
       }
       dsName = ds.name;
     }
     if (dsName) {
-      return datasourceSrv.loadDatasource(dsName);
+      return getDataSourceSrv().loadDatasource(dsName);
     } else {
       return Promise.reject(`Data Source name should be specified`);
     }
   }
 
   loadDBDataSource() {
-    return DBConnector.loadDatasource(this.datasourceId, this.datasourceName, this.datasourceSrv)
+    return DBConnector.loadDatasource(this.datasourceId, this.datasourceName)
     .then(ds => {
       this.datasourceTypeId = ds.meta.id;
       this.datasourceTypeName = ds.meta.name;

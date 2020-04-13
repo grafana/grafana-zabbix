@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { getBackendSrv } from '@grafana/runtime';
 import { compactQuery } from '../../../utils';
 import mysql from './mysql';
 import postgres from './postgres';
@@ -10,15 +11,14 @@ const supportedDatabases = {
 };
 
 export class SQLConnector extends DBConnector {
-  constructor(options, datasourceSrv) {
-    super(options, datasourceSrv);
+  constructor(options) {
+    super(options);
 
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     this.sqlDialect = null;
 
     super.loadDBDataSource()
-    .then(ds => {
-      this.backendSrv = ds.backendSrv;
+    .then(() => {
       this.loadSQLDialect();
     });
   }
@@ -96,7 +96,7 @@ export class SQLConnector extends DBConnector {
       maxDataPoints: this.limit
     };
 
-    return this.backendSrv.datasourceRequest({
+    return getBackendSrv().datasourceRequest({
       url: '/api/tsdb/query',
       method: 'POST',
       data: {

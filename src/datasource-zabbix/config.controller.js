@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { getDataSourceSrv } from '@grafana/runtime';
 import { migrateDSConfig } from './migrations';
 
 const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
@@ -23,9 +24,7 @@ const defaultConfig = {
 export class ZabbixDSConfigController {
 
   /** @ngInject */
-  constructor($scope, $injector, datasourceSrv) {
-    this.datasourceSrv = datasourceSrv;
-
+  constructor() {
     this.current.jsonData = migrateDSConfig(this.current.jsonData);
     _.defaults(this.current.jsonData, defaultConfig);
 
@@ -39,7 +38,7 @@ export class ZabbixDSConfigController {
   }
 
   getSupportedDBDataSources() {
-    let datasources = this.datasourceSrv.getAll();
+    let datasources = getDataSourceSrv().getAll();
     return _.filter(datasources, ds => {
       return _.includes(SUPPORTED_SQL_DS, ds.type);
     });
@@ -53,7 +52,7 @@ export class ZabbixDSConfigController {
 
   loadCurrentDBDatasource() {
     const dsName= this.current.jsonData.dbConnectionDatasourceName;
-    this.datasourceSrv.loadDatasource(dsName)
+    getDataSourceSrv().loadDatasource(dsName)
     .then(ds => {
       if (ds) {
         this.dbConnectionDatasourceId = ds.id;
@@ -66,7 +65,7 @@ export class ZabbixDSConfigController {
       return;
     }
 
-    this.datasourceSrv.loadDatasource(this.current.name)
+    getDataSourceSrv().loadDatasource(this.current.name)
     .then(ds => {
       return ds.getVersion();
     })

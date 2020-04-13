@@ -10,7 +10,7 @@ import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MI
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-  constructor(api_url, username, password, version, basicAuth, withCredentials, backendSrv) {
+  constructor(api_url, username, password, version, basicAuth, withCredentials) {
     this.url              = api_url;
     this.username         = username;
     this.password         = password;
@@ -26,7 +26,7 @@ export class ZabbixAPIConnector {
     this.loginErrorCount = 0;
     this.maxLoginAttempts = 3;
 
-    this.zabbixAPICore = new ZabbixAPICore(backendSrv);
+    this.zabbixAPICore = new ZabbixAPICore();
 
     this.getTrend = this.getTrend_ZBXNEXT1193;
     //getTrend = getTrend_30;

@@ -1,11 +1,17 @@
-import mocks from '../../test-setup/mocks';
 import { DBConnector } from '../zabbix/connectors/dbConnector';
 
+const loadDatasourceMock = jest.fn().mockResolvedValue({ id: 42, name: 'foo', meta: {} });
+const getAllMock = jest.fn().mockReturnValue([{ id: 42, name: 'foo', meta: {} }]);
+
+jest.mock('@grafana/runtime', () => ({
+  getDataSourceSrv: () => ({
+    loadDatasource: loadDatasourceMock,
+    getAll: getAllMock
+  }),
+}));
+
 describe('DBConnector', () => {
-  let ctx = {};
-  const datasourceSrv = mocks.datasourceSrvMock;
-  datasourceSrv.loadDatasource.mockResolvedValue({ id: 42, name: 'foo', meta: {} });
-  datasourceSrv.getAll.mockReturnValue([{ id: 42, name: 'foo' }]);
+  const ctx: any = {};
 
   describe('When init DB connector', () => {
     beforeEach(() => {
@@ -13,34 +19,34 @@ describe('DBConnector', () => {
         datasourceId: 42,
         datasourceName: undefined
       };
+
+      loadDatasourceMock.mockClear();
+      getAllMock.mockClear();
     });
 
     it('should try to load datasource by name first', () => {
-      ctx.options = {
-        datasourceName: 'bar'
-      };
-      const dbConnector = new DBConnector(ctx.options, datasourceSrv);
+      const dbConnector = new DBConnector({ datasourceName: 'bar' });
       dbConnector.loadDBDataSource();
-      expect(datasourceSrv.getAll).not.toHaveBeenCalled();
-      expect(datasourceSrv.loadDatasource).toHaveBeenCalledWith('bar');
+      expect(getAllMock).not.toHaveBeenCalled();
+      expect(loadDatasourceMock).toHaveBeenCalledWith('bar');
     });
 
     it('should load datasource by id if name not present', () => {
-      const dbConnector = new DBConnector(ctx.options, datasourceSrv);
+      const dbConnector = new DBConnector({ datasourceId: 42 });
       dbConnector.loadDBDataSource();
-      expect(datasourceSrv.getAll).toHaveBeenCalled();
-      expect(datasourceSrv.loadDatasource).toHaveBeenCalledWith('foo');
+      expect(getAllMock).toHaveBeenCalled();
+      expect(loadDatasourceMock).toHaveBeenCalledWith('foo');
     });
 
     it('should throw error if no name and id specified', () => {
       ctx.options = {};
-      const dbConnector = new DBConnector(ctx.options, datasourceSrv);
+      const dbConnector = new DBConnector(ctx.options);
       return expect(dbConnector.loadDBDataSource()).rejects.toBe('Data Source name should be specified');
     });
 
     it('should throw error if datasource with given id is not found', () => {
       ctx.options.datasourceId = 45;
-      const dbConnector = new DBConnector(ctx.options, datasourceSrv);
+      const dbConnector = new DBConnector(ctx.options);
       return expect(dbConnector.loadDBDataSource()).rejects.toBe('Data Source with ID 45 not found');
     });
   });

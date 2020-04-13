@@ -1,12 +1,12 @@
 /**
  * General Zabbix API methods
  */
+import { getBackendSrv } from '@grafana/runtime';
 
 export class ZabbixAPICore {
 
   /** @ngInject */
-  constructor(backendSrv) {
-    this.backendSrv = backendSrv;
+  constructor() {
   }
 
   /**
@@ -50,7 +50,7 @@ export class ZabbixAPICore {
   }
 
   datasourceRequest(requestOptions) {
-    return this.backendSrv.datasourceRequest(requestOptions)
+    return getBackendSrv().datasourceRequest(requestOptions)
     .then((response) => {
       if (!response.data) {
         return Promise.reject(new ZabbixAPIError({data: "General Error, no data"}));

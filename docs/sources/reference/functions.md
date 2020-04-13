@@ -105,6 +105,19 @@ calculates moving average over 60 points (if metric has 1 second resolution it m
 ```
 ---
 
+### _percentile_
+```
+percentile(interval, N)
+```
+Takes a series of values and a window size and consolidate all its points fallen in the given _interval_ into one point by Nth percentile.
+
+Examples:
+```
+percentile(1h, 99)
+percentile($__range_series, 95) - 95th percentile over all series values
+```
+---
+
 ### _removeAboveValue_
 ```
 removeAboveValue(N)
@@ -159,16 +172,16 @@ This will add metrics together and return the sum at each datapoint. This method
 
 ---
 
-### _percentile_
+### _percentileAgg_
 ```
-percentile(interval, N)
+percentileAgg(interval, N)
 ```
 Takes all timeseries and consolidate all its points fallen in the given _interval_ into one point by Nth percentile.
 
 Examples:
 ```
-percentile(1h, 99)
-percentile($__range_series, 95) - 95th percentile over all values
+percentileAgg(1h, 99)
+percentileAgg($__range_series, 95) - 95th percentile over all values
 ```
 
 ---
