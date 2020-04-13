@@ -535,13 +535,14 @@ export class ZabbixDatasource {
             // Show event type (OK or Problem)
             let title = Number(event.value) ? 'Problem' : 'OK';
 
-            let formatted_acknowledges = utils.formatAcknowledges(event.acknowledges);
+            let formattedAcknowledges = utils.formatAcknowledges(event.acknowledges);
+            let eventName = event.name || indexedTriggers[event.objectid].description;
             return {
               annotation: annotation,
               time: event.clock * 1000,
               title: title,
               tags: tags,
-              text: indexedTriggers[event.objectid].description + formatted_acknowledges
+              text: eventName + formattedAcknowledges
             };
           });
         });
