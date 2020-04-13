@@ -119,7 +119,7 @@ describe('ZabbixDatasource', () => {
         item: {filter: "System information"},
         textFilter: "",
         useCaptureGroups: true,
-        mode: 2,
+        queryType: 2,
         resultFormat: "table",
         options: {
           skipEmptyValues: false

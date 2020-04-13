@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import * as c from './constants';
 
 /**
  * Query format migration.
@@ -27,6 +28,29 @@ export function migrateFrom2To3version(target) {
   return target;
 }
 
+function migratePercentileAgg(target) {
+  if (target.functions) {
+    for (const f of target.functions) {
+      if (f.def && f.def.name === 'percentil') {
+        f.def.name = 'percentile';
+      }
+    }
+  }
+}
+
+function migrateQueryType(target) {
+  if (target.queryType === undefined) {
+    if (target.mode === 'Metrics') {
+      // Explore mode
+      target.queryType = c.MODE_METRICS;
+    } else if (target.mode !== undefined) {
+      target.queryType = target.mode;
+      delete target.mode;
+    }
+  }
+
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -34,6 +58,7 @@ export function migrate(target) {
     return migrateFrom2To3version(target);
   }
   migratePercentileAgg(target);
+  migrateQueryType(target);
   return target;
 }
 
@@ -49,16 +74,6 @@ function convertToRegex(str) {
     return '/' + str + '/';
   } else {
     return '/.*/';
-  }
-}
-
-function migratePercentileAgg(target) {
-  if (target.functions) {
-    for (const f of target.functions) {
-      if (f.def && f.def.name === 'percentil') {
-        f.def.name = 'percentile';
-      }
-    }
   }
 }
 

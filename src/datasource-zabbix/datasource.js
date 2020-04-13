@@ -133,29 +133,29 @@ export class ZabbixDatasource {
 
       let useTrends = this.isUseTrends(timeRange);
 
-      // Metrics or Text query mode
-      if (!target.mode || target.mode === c.MODE_METRICS || target.mode === c.MODE_TEXT) {
+      // Metrics or Text query
+      if (!target.queryType || target.queryType === c.MODE_METRICS || target.queryType === c.MODE_TEXT) {
         // Don't request undefined targets
         if (!target.group || !target.host || !target.item) {
           return [];
         }
 
-        if (!target.mode || target.mode === c.MODE_METRICS) {
+        if (!target.queryType || target.queryType === c.MODE_METRICS) {
           return this.queryNumericData(target, timeRange, useTrends, options);
-        } else if (target.mode === c.MODE_TEXT) {
+        } else if (target.queryType === c.MODE_TEXT) {
           return this.queryTextData(target, timeRange);
         }
-      } else if (target.mode === c.MODE_ITEMID) {
-        // Item ID mode
+      } else if (target.queryType === c.MODE_ITEMID) {
+        // Item ID query
         if (!target.itemids) {
           return [];
         }
         return this.queryItemIdData(target, timeRange, useTrends, options);
-      } else if (target.mode === c.MODE_ITSERVICE) {
-        // IT services mode
+      } else if (target.queryType === c.MODE_ITSERVICE) {
+        // IT services query
         return this.queryITServiceData(target, timeRange, options);
-      } else if (target.mode === c.MODE_TRIGGERS) {
-        // Triggers mode
+      } else if (target.queryType === c.MODE_TRIGGERS) {
+        // Triggers query
         return this.queryTriggersData(target, timeRange);
       } else {
         return [];
@@ -171,7 +171,7 @@ export class ZabbixDatasource {
   }
 
   /**
-   * Query target data for Metrics mode
+   * Query target data for Metrics
    */
   queryNumericData(target, timeRange, useTrends, options) {
     let queryStart, queryEnd;
@@ -276,7 +276,7 @@ export class ZabbixDatasource {
   }
 
   /**
-   * Query target data for Text mode
+   * Query target data for Text
    */
   queryTextData(target, timeRange) {
     let options = {
@@ -289,7 +289,7 @@ export class ZabbixDatasource {
   }
 
   /**
-   * Query target data for Item ID mode
+   * Query target data for Item ID
    */
   queryItemIdData(target, timeRange, useTrends, options) {
     let itemids = target.itemids;
@@ -307,7 +307,7 @@ export class ZabbixDatasource {
   }
 
   /**
-   * Query target data for IT Services mode
+   * Query target data for IT Services
    */
   queryITServiceData(target, timeRange, options) {
     // Don't show undefined and hidden targets

@@ -5,13 +5,13 @@
       <label class="gf-form-label width-7">Query Mode</label>
       <div class="gf-form-select-wrapper max-width-20">
         <select class="gf-form-input"
-              ng-change="ctrl.switchEditorMode(ctrl.target.mode)"
-              ng-model="ctrl.target.mode"
-              ng-options="m.mode as m.text for m in ctrl.editorModes">
+              ng-change="ctrl.switchEditorMode(ctrl.target.queryType)"
+              ng-model="ctrl.target.queryType"
+              ng-options="m.queryType as m.text for m in ctrl.editorModes">
         </select>
       </div>
     </div>
-    <div class="gf-form" ng-show="ctrl.target.mode == editorMode.TEXT">
+    <div class="gf-form" ng-show="ctrl.target.queryType == editorMode.TEXT">
       <label class="gf-form-label query-keyword width-8">Format As</label>
       <div class="gf-form-select-wrapper">
         <select class="gf-form-input gf-size-auto" ng-model="ctrl.target.resultFormat" ng-options="f.value as f.text for f in ctrl.resultFormats" ng-change="ctrl.refresh()"></select>
@@ -23,7 +23,7 @@
   </div>
 
   <!-- IT Service editor -->
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.ITSERVICE">
+  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.ITSERVICE">
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">IT Service</label>
       <input type="text"
@@ -54,7 +54,7 @@
     </div>
   </div>
 
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.TEXT || ctrl.target.mode == editorMode.TRIGGERS">
+  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS">
     <!-- Select Group -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Group</label>
@@ -91,7 +91,7 @@
     </div>
   </div>
 
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.TEXT || ctrl.target.mode == editorMode.TRIGGERS">
+  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS">
     <!-- Select Application -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Application</label>
@@ -109,7 +109,7 @@
     </div>
 
     <!-- Select Item -->
-    <div class="gf-form" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.TEXT">
+    <div class="gf-form" ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT">
       <label class="gf-form-label query-keyword width-8">Item</label>
       <input type="text"
         ng-model="ctrl.target.item.filter"
@@ -124,7 +124,7 @@
         }">
     </div>
 
-    <div class="gf-form max-width-23" ng-show="ctrl.target.mode == editorMode.TRIGGERS">
+    <div class="gf-form max-width-23" ng-show="ctrl.target.queryType == editorMode.TRIGGERS">
       <label class="gf-form-label query-keyword width-8">Min Severity</label>
       <div class="gf-form-select-wrapper width-16">
         <select class="gf-form-input"
@@ -134,7 +134,7 @@
         </select>
       </div>
     </div>
-    <div class="gf-form max-width-20" ng-show="ctrl.target.mode == editorMode.TRIGGERS">
+    <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.TRIGGERS">
       <label class="gf-form-label query-keyword width-8">Acknowledged</label>
       <div class="gf-form-select-wrapper width-12">
         <select class="gf-form-input"
@@ -145,13 +145,13 @@
       </div>
     </div>
 
-    <gf-form-switch class="gf-form" label="Count" ng-show="ctrl.target.mode == editorMode.TRIGGERS"
+    <gf-form-switch class="gf-form" label="Count" ng-show="ctrl.target.queryType == editorMode.TRIGGERS"
       checked="ctrl.target.triggers.count" on-change="ctrl.onTargetBlur()">
     </gf-form-switch>
 
     <div class="gf-form gf-form--grow">
       <label class="gf-form-label gf-form-label--grow">
-        <a ng-click="ctrl.toggleQueryOptions()" ng-hide="ctrl.target.mode == editorMode.TRIGGERS">
+        <a ng-click="ctrl.toggleQueryOptions()" ng-hide="ctrl.target.queryType == editorMode.TRIGGERS">
           <i class="fa fa-caret-down" ng-show="ctrl.showQueryOptions"></i>
           <i class="fa fa-caret-right" ng-hide="ctrl.showQueryOptions"></i>
           {{ctrl.queryOptionsText}}
@@ -162,14 +162,14 @@
 
   <!-- Query options -->
   <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
-    <div class="gf-form offset-width-7" ng-hide="ctrl.target.mode == editorMode.TRIGGERS">
+    <div class="gf-form offset-width-7" ng-hide="ctrl.target.queryType == editorMode.TRIGGERS">
       <gf-form-switch class="gf-form" label-class="width-10"
         label="Show disabled items"
         checked="ctrl.target.options.showDisabledItems"
         on-change="ctrl.onQueryOptionChange()">
       </gf-form-switch>
     </div>
-    <div class="gf-form offset-width-7" ng-show="ctrl.target.mode === editorMode.TEXT && ctrl.target.resultFormat === 'table'">
+    <div class="gf-form offset-width-7" ng-show="ctrl.target.queryType === editorMode.TEXT && ctrl.target.resultFormat === 'table'">
       <gf-form-switch class="gf-form" label-class="width-10"
         label="Skip empty values"
         checked="ctrl.target.options.skipEmptyValues"
@@ -179,7 +179,7 @@
   </div>
 
   <!-- Item IDs editor mode -->
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.ITEMID">
+  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.ITEMID">
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Item IDs</label>
       <input type="text"
@@ -201,7 +201,7 @@
   </div>
 
   <!-- Metric processing functions -->
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.METRICS || ctrl.target.mode == editorMode.ITEMID || ctrl.target.mode == editorMode.ITSERVICE">
+  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.ITEMID || ctrl.target.queryType == editorMode.ITSERVICE">
     <div class="gf-form">
       <label class="gf-form-label query-keyword width-7">Functions</label>
     </div>
@@ -216,7 +216,7 @@
   </div>
 
   <!-- Text mode options -->
-  <div class="gf-form-inline" ng-show="ctrl.target.mode == editorMode.TEXT">
+  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.TEXT">
     <!-- Text metric regex -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Text filter</label>

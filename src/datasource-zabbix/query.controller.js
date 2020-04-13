@@ -17,11 +17,11 @@ export class ZabbixQueryController extends QueryCtrl {
     this.templateSrv = templateSrv;
 
     this.editorModes = [
-      {value: 'num',       text: 'Metrics',     mode: c.MODE_METRICS},
-      {value: 'text',      text: 'Text',        mode: c.MODE_TEXT},
-      {value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE},
-      {value: 'itemid',    text: 'Item ID',     mode: c.MODE_ITEMID},
-      {value: 'triggers',  text: 'Triggers',    mode: c.MODE_TRIGGERS}
+      {value: 'num',       text: 'Metrics',     queryType: c.MODE_METRICS},
+      {value: 'text',      text: 'Text',        queryType: c.MODE_TEXT},
+      {value: 'itservice', text: 'IT Services', queryType: c.MODE_ITSERVICE},
+      {value: 'itemid',    text: 'Item ID',     queryType: c.MODE_ITEMID},
+      {value: 'triggers',  text: 'Triggers',    queryType: c.MODE_TRIGGERS}
     ];
 
     this.$scope.editorMode = {
@@ -81,7 +81,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
       // Load default values
       var targetDefaults = {
-        'mode': c.MODE_METRICS,
+        'queryType': c.MODE_METRICS,
         'group': { 'filter': "" },
         'host': { 'filter': "" },
         'application': { 'filter': "" },
@@ -107,12 +107,12 @@ export class ZabbixQueryController extends QueryCtrl {
         return metricFunctions.createFuncInstance(func.def, func.params);
       });
 
-      if (target.mode === c.MODE_METRICS ||
-          target.mode === c.MODE_TEXT ||
-          target.mode === c.MODE_TRIGGERS) {
+      if (target.queryType === c.MODE_METRICS ||
+          target.queryType === c.MODE_TEXT ||
+          target.queryType === c.MODE_TRIGGERS) {
         this.initFilters();
       }
-      else if (target.mode === c.MODE_ITSERVICE) {
+      else if (target.queryType === c.MODE_ITSERVICE) {
         _.defaults(target, {slaProperty: {name: "SLA", property: "sla"}});
         this.suggestITServices();
       }
@@ -123,7 +123,7 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   initFilters() {
-    let itemtype = _.find(this.editorModes, {'mode': this.target.mode});
+    let itemtype = _.find(this.editorModes, {'queryType': this.target.queryType});
     itemtype = itemtype ? itemtype.value : null;
     return Promise.all([
       this.suggestGroups(),
@@ -329,7 +329,7 @@ export class ZabbixQueryController extends QueryCtrl {
    *  2 - Text metrics
    */
   switchEditorMode(mode) {
-    this.target.mode = mode;
+    this.target.queryType = mode;
     this.init();
     this.targetChanged();
   }
