@@ -23,16 +23,17 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
    */
 
   // Group history by itemid
-  var grouped_history = _.groupBy(history, 'itemid');
-  var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');  //uniqBy is needed to deduplicate
+  const grouped_history = _.groupBy(history, 'itemid');
+  const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');  //uniqBy is needed to deduplicate
 
-  return _.map(grouped_history, function(hist, itemid) {
-    var item = _.find(items, {'itemid': itemid});
-    var alias = item.name;
+  return _.map(grouped_history, (hist, itemid) => {
+    const item = _.find(items, {'itemid': itemid}) as any;
+    let alias = item.name;
     if (_.keys(hosts).length > 1 && addHostName) {   //only when actual multi hosts selected
-      var host = _.find(hosts, {'hostid': item.hostid});
+      const host = _.find(hosts, {'hostid': item.hostid});
       alias = host.name + ": " + alias;
     }
+
     return {
       target: alias,
       datapoints: _.map(hist, convertPointCallback)
@@ -53,29 +54,29 @@ function handleHistory(history, items, addHostName = true) {
 }
 
 function handleTrends(history, items, valueType, addHostName = true) {
-  var convertPointCallback = _.partial(convertTrendPoint, valueType);
+  const convertPointCallback = _.partial(convertTrendPoint, valueType);
   return convertHistory(history, items, addHostName, convertPointCallback);
 }
 
 function handleText(history, items, target, addHostName = true) {
-  let convertTextCallback = _.partial(convertText, target);
+  const convertTextCallback = _.partial(convertText, target);
   return convertHistory(history, items, addHostName, convertTextCallback);
 }
 
 function handleHistoryAsTable(history, items, target) {
-  let table = new TableModel();
+  const table: any = new TableModel();
   table.addColumn({text: 'Host'});
   table.addColumn({text: 'Item'});
   table.addColumn({text: 'Key'});
   table.addColumn({text: 'Last value'});
 
-  let grouped_history = _.groupBy(history, 'itemid');
+  const grouped_history = _.groupBy(history, 'itemid');
   _.each(items, (item) => {
-    let itemHistory = grouped_history[item.itemid] || [];
-    let lastPoint = _.last(itemHistory);
+    const itemHistory = grouped_history[item.itemid] || [];
+    const lastPoint = _.last(itemHistory);
     let lastValue = lastPoint ? lastPoint.value : null;
 
-    if(target.options.skipEmptyValues && (!lastValue || lastValue === '')) {
+    if (target.options.skipEmptyValues && (!lastValue || lastValue === '')) {
       return;
     }
 
@@ -84,7 +85,7 @@ function handleHistoryAsTable(history, items, target) {
       lastValue = extractText(lastValue, target.textFilter, target.useCaptureGroups);
     }
 
-    let host = _.first(item.hosts);
+    let host: any = _.first(item.hosts);
     host = host ? host.name : "";
 
     table.rows.push([
@@ -110,22 +111,22 @@ function convertText(target, point) {
 }
 
 function extractText(str, pattern, useCaptureGroups) {
-  let extractPattern = new RegExp(pattern);
-  let extractedValue = extractPattern.exec(str);
+  const extractPattern = new RegExp(pattern);
+  const extractedValue = extractPattern.exec(str);
   if (extractedValue) {
     if (useCaptureGroups) {
-      extractedValue = extractedValue[1];
+      return extractedValue[1];
     } else {
-      extractedValue = extractedValue[0];
+      return extractedValue[0];
     }
   }
-  return extractedValue;
+  return "";
 }
 
 function handleSLAResponse(itservice, slaProperty, slaObject) {
-  var targetSLA = slaObject[itservice.serviceid].sla;
+  const targetSLA = slaObject[itservice.serviceid].sla;
   if (slaProperty.property === 'status') {
-    var targetStatus = parseInt(slaObject[itservice.serviceid].status);
+    const targetStatus = parseInt(slaObject[itservice.serviceid].status, 10);
     return {
       target: itservice.name + ' ' + slaProperty.name,
       datapoints: [
@@ -134,7 +135,7 @@ function handleSLAResponse(itservice, slaProperty, slaObject) {
     };
   } else {
     let i;
-    let slaArr = [];
+    const slaArr = [];
     for (i = 0; i < targetSLA.length; i++) {
       if (i === 0) {
         slaArr.push([targetSLA[i][slaProperty.property], targetSLA[i].from * 1000]);
@@ -165,7 +166,7 @@ function handleTriggersResponse(triggers, groups, timeRange) {
   } else {
     const stats = getTriggerStats(triggers);
     const groupNames = _.map(groups, 'name');
-    let table = new TableModel();
+    const table: any = new TableModel();
     table.addColumn({text: 'Host group'});
     _.each(_.orderBy(c.TRIGGER_SEVERITY, ['val'], ['desc']), (severity) => {
       table.addColumn({text: severity.text});
@@ -182,11 +183,11 @@ function handleTriggersResponse(triggers, groups, timeRange) {
 }
 
 function getTriggerStats(triggers) {
-  let groups = _.uniq(_.flattenDeep(_.map(triggers, (trigger) => _.map(trigger.groups, 'name'))));
+  const groups = _.uniq(_.flattenDeep(_.map(triggers, (trigger) => _.map(trigger.groups, 'name'))));
   // let severity = _.map(c.TRIGGER_SEVERITY, 'text');
-  let stats = {};
+  const stats = {};
   _.each(groups, (group) => {
-    stats[group] = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0}; // severity:count
+    stats[group] = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; // severity:count
   });
   _.each(triggers, (trigger) => {
     _.each(trigger.groups, (group) => {
@@ -205,7 +206,7 @@ function convertHistoryPoint(point) {
 }
 
 function convertTrendPoint(valueType, point) {
-  var value;
+  let value;
   switch (valueType) {
     case "min":
       value = point.value_min;
