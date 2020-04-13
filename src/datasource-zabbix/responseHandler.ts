@@ -29,14 +29,29 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   return _.map(grouped_history, (hist, itemid) => {
     const item = _.find(items, {'itemid': itemid}) as any;
     let alias = item.name;
-    if (_.keys(hosts).length > 1 && addHostName) {   //only when actual multi hosts selected
+
+    // Add scopedVars for using in alias functions
+    const scopedVars: any = {
+      '__zbx_item': { value: item.name },
+      '__zbx_item_name': { value: item.name },
+      '__zbx_item_key': { value: item.key_ },
+    };
+
+    if (_.keys(hosts).length > 0) {
       const host = _.find(hosts, {'hostid': item.hostid});
-      alias = host.name + ": " + alias;
+      scopedVars['__zbx_host'] = { value: host.host };
+      scopedVars['__zbx_host_name'] = { value: host.name };
+
+      // Only add host when multiple hosts selected
+      if (_.keys(hosts).length > 1 && addHostName) {
+        alias = host.name + ": " + alias;
+      }
     }
 
     return {
       target: alias,
-      datapoints: _.map(hist, convertPointCallback)
+      datapoints: _.map(hist, convertPointCallback),
+      scopedVars,
     };
   });
 }

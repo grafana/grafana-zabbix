@@ -153,7 +153,7 @@ export class ZabbixAPIConnector {
       sortfield: 'name',
       webitems: true,
       filter: {},
-      selectHosts: ['hostid', 'name']
+      selectHosts: ['hostid', 'name', 'host']
     };
     if (hostids) {
       params.hostids = hostids;

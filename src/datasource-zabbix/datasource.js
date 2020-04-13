@@ -253,7 +253,7 @@ export class ZabbixDatasource {
     }
 
     // Apply alias functions
-    _.forEach(timeseries_data, utils.sequence(aliasFunctions));
+    _.forEach(timeseries_data, utils.sequence(aliasFunctions).bind(this));
 
     // Apply Time-related functions (timeShift(), etc)
     // Find timeShift() function and get specified trend value

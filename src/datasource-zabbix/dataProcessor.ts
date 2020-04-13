@@ -1,35 +1,37 @@
 import _ from 'lodash';
+// Available in 7.0
+// import { getTemplateSrv } from '@grafana/runtime';
 import * as utils from './utils';
 import ts, { groupBy_perf as groupBy } from './timeseries';
 
-let SUM = ts.SUM;
-let COUNT = ts.COUNT;
-let AVERAGE = ts.AVERAGE;
-let MIN = ts.MIN;
-let MAX = ts.MAX;
-let MEDIAN = ts.MEDIAN;
-let PERCENTILE = ts.PERCENTILE;
+const SUM = ts.SUM;
+const COUNT = ts.COUNT;
+const AVERAGE = ts.AVERAGE;
+const MIN = ts.MIN;
+const MAX = ts.MAX;
+const MEDIAN = ts.MEDIAN;
+const PERCENTILE = ts.PERCENTILE;
 
-let downsampleSeries = ts.downsample;
-let groupBy_exported = (interval, groupFunc, datapoints) => groupBy(datapoints, interval, groupFunc);
-let sumSeries = ts.sumSeries;
-let delta = ts.delta;
-let rate = ts.rate;
-let scale = (factor, datapoints) => ts.scale_perf(datapoints, factor);
-let offset = (delta, datapoints) => ts.offset(datapoints, delta);
-let simpleMovingAverage = (n, datapoints) => ts.simpleMovingAverage(datapoints, n);
-let expMovingAverage = (a, datapoints) => ts.expMovingAverage(datapoints, a);
-let percentile = (interval, n, datapoints) => groupBy(datapoints, interval, _.partial(PERCENTILE, n));
+const downsampleSeries = ts.downsample;
+const groupBy_exported = (interval, groupFunc, datapoints) => groupBy(datapoints, interval, groupFunc);
+const sumSeries = ts.sumSeries;
+const delta = ts.delta;
+const rate = ts.rate;
+const scale = (factor, datapoints) => ts.scale_perf(datapoints, factor);
+const offset = (delta, datapoints) => ts.offset(datapoints, delta);
+const simpleMovingAverage = (n, datapoints) => ts.simpleMovingAverage(datapoints, n);
+const expMovingAverage = (a, datapoints) => ts.expMovingAverage(datapoints, a);
+const percentile = (interval, n, datapoints) => groupBy(datapoints, interval, _.partial(PERCENTILE, n));
 
 function limit(order, n, orderByFunc, timeseries) {
-  let orderByCallback = aggregationFunctions[orderByFunc];
-  let sortByIteratee = (ts) => {
-    let values = _.map(ts.datapoints, (point) => {
+  const orderByCallback = aggregationFunctions[orderByFunc];
+  const sortByIteratee = (ts) => {
+    const values = _.map(ts.datapoints, (point) => {
       return point[0];
     });
     return orderByCallback(values);
   };
-  let sortedTimeseries = _.sortBy(timeseries, sortByIteratee);
+  const sortedTimeseries = _.sortBy(timeseries, sortByIteratee);
   if (order === 'bottom') {
     return sortedTimeseries.slice(0, n);
   } else {
@@ -64,13 +66,17 @@ function transformNull(n, datapoints) {
   });
 }
 
-function sortSeries(direction, timeseries) {
-  return _.orderBy(timeseries, [function (ts) {
+function sortSeries(direction, timeseries: any[]) {
+  return _.orderBy(timeseries, [ts => {
     return ts.target.toLowerCase();
   }], direction);
 }
 
 function setAlias(alias, timeseries) {
+  // TODO: use getTemplateSrv() when available (since 7.0)
+  if (this.templateSrv && timeseries && timeseries.scopedVars) {
+    alias = this.templateSrv.replace(alias, timeseries.scopedVars);
+  }
   timeseries.target = alias;
   return timeseries;
 }
@@ -84,6 +90,10 @@ function replaceAlias(regexp, newAlias, timeseries) {
   }
 
   let alias = timeseries.target.replace(pattern, newAlias);
+  // TODO: use getTemplateSrv() when available (since 7.0)
+  if (this.templateSrv && timeseries && timeseries.scopedVars) {
+    alias = this.templateSrv.replace(alias, timeseries.scopedVars);
+  }
   timeseries.target = alias;
   return timeseries;
 }
@@ -94,14 +104,13 @@ function setAliasByRegex(alias, timeseries) {
 }
 
 function extractText(str, pattern) {
-  var extractPattern = new RegExp(pattern);
-  var extractedValue = extractPattern.exec(str);
-  extractedValue = extractedValue[0];
-  return extractedValue;
+  const extractPattern = new RegExp(pattern);
+  const extractedValue = extractPattern.exec(str);
+  return extractedValue[0];
 }
 
 function groupByWrapper(interval, groupFunc, datapoints) {
-  var groupByCallback = aggregationFunctions[groupFunc];
+  const groupByCallback = aggregationFunctions[groupFunc];
   return groupBy(datapoints, interval, groupByCallback);
 }
 
@@ -110,12 +119,12 @@ function aggregateByWrapper(interval, aggregateFunc, datapoints) {
   const flattenedPoints = ts.flattenDatapoints(datapoints);
   // groupBy_perf works with sorted series only
   const sortedPoints = ts.sortByTime(flattenedPoints);
-  let groupByCallback = aggregationFunctions[aggregateFunc];
+  const groupByCallback = aggregationFunctions[aggregateFunc];
   return groupBy(sortedPoints, interval, groupByCallback);
 }
 
 function aggregateWrapper(groupByCallback, interval, datapoints) {
-  var flattenedPoints = ts.flattenDatapoints(datapoints);
+  const flattenedPoints = ts.flattenDatapoints(datapoints);
   // groupBy_perf works with sorted series only
   const sortedPoints = ts.sortByTime(flattenedPoints);
   return groupBy(sortedPoints, interval, groupByCallback);
@@ -125,19 +134,19 @@ function percentileAgg(interval, n, datapoints) {
   const flattenedPoints = ts.flattenDatapoints(datapoints);
   // groupBy_perf works with sorted series only
   const sortedPoints = ts.sortByTime(flattenedPoints);
-  let groupByCallback = _.partial(PERCENTILE, n);
+  const groupByCallback = _.partial(PERCENTILE, n);
   return groupBy(sortedPoints, interval, groupByCallback);
 }
 
 function timeShift(interval, range) {
-  let shift = utils.parseTimeShiftInterval(interval) / 1000;
+  const shift = utils.parseTimeShiftInterval(interval) / 1000;
   return _.map(range, time => {
     return time - shift;
   });
 }
 
 function unShiftTimeSeries(interval, datapoints) {
-  let unshift = utils.parseTimeShiftInterval(interval);
+  const unshift = utils.parseTimeShiftInterval(interval);
   return _.map(datapoints, dp => {
     return [
       dp[0],
@@ -146,7 +155,7 @@ function unShiftTimeSeries(interval, datapoints) {
   });
 }
 
-let metricFunctions = {
+const metricFunctions = {
   groupBy: groupByWrapper,
   scale: scale,
   offset: offset,
@@ -177,7 +186,7 @@ let metricFunctions = {
   replaceAlias: replaceAlias
 };
 
-let aggregationFunctions = {
+const aggregationFunctions = {
   avg: AVERAGE,
   min: MIN,
   max: MAX,
