@@ -59,10 +59,10 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     const showDatasourceName = panelOptions.targets && panelOptions.targets.length > 1;
     const cardClass = classNames('alert-rule-item', 'zbx-trigger-card', { 'zbx-trigger-highlighted': panelOptions.highlightBackground });
     const descriptionClass = classNames('alert-rule-item__text', { 'zbx-description--newline': panelOptions.descriptionAtNewLine });
-    
+
     let severityDesc: TriggerSeverity;
     severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.priority));
-    if (problem.lastEvent && problem.lastEvent.severity) {
+    if (problem.lastEvent?.severity) {
       severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.lastEvent.severity));
     }
 
@@ -78,7 +78,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     let problemColor: string;
     if (problem.value === '0') {
       problemColor = panelOptions.okEventColor;
-    } else if (panelOptions.markAckEvents && problem.lastEvent.acknowledged === "1") {
+    } else if (panelOptions.markAckEvents && problem.lastEvent?.acknowledged === "1") {
       problemColor = panelOptions.ackEventColor;
     } else {
       problemColor = severityDesc.color;
