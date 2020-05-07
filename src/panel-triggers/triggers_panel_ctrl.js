@@ -2,11 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
 import { getDataSourceSrv } from '@grafana/runtime';
+import { PanelEvents } from '@grafana/data';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from '../datasource-zabbix/utils';
-import { PanelCtrl } from 'grafana/app/plugins/sdk';
+import { MetricsPanelCtrl } from 'grafana/app/plugins/sdk';
 import { triggerPanelOptionsTab } from './options_tab';
-import { triggerPanelTriggersTab } from './triggers_tab';
 import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
 import ProblemList from './components/Problems/Problems';
 import AlertList from './components/AlertList/AlertList';
@@ -51,7 +51,7 @@ const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
 export const PANEL_DEFAULTS = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
-  targets: [getDefaultTarget([])],
+  // targets: [getDefaultTarget([])],
   // Fields
   hostField: true,
   hostTechNameField: false,
@@ -93,7 +93,7 @@ const triggerStatusMap = {
   '1': 'PROBLEM'
 };
 
-export class TriggerPanelCtrl extends PanelCtrl {
+export class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   /** @ngInject */
   constructor($scope, $injector, $timeout, templateSrv, contextSrv, dashboardSrv, timeSrv) {
@@ -105,25 +105,59 @@ export class TriggerPanelCtrl extends PanelCtrl {
     this.scope = $scope;
     this.$timeout = $timeout;
 
+    // Tell Grafana do not convert data frames to table or series
+    this.useDataFrames = true;
+
     this.editorTabIndex = 1;
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = DEFAULT_TIME_FORMAT;
     this.pageIndex = 0;
-    this.triggerList = [];
-    this.datasources = {};
     this.range = {};
+    this.renderData = [];
 
-    this.panel = migratePanelSchema(this.panel);
+    // this.panel = migratePanelSchema(this.panel);
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
-    this.available_datasources = _.map(this.getZabbixDataSources(), 'name');
-    if (this.panel.targets && !this.panel.targets[0].datasource) {
-      this.panel.targets[0].datasource = this.available_datasources[0];
+    this.events.on(PanelEvents.render, this.onRender.bind(this));
+    this.events.on('data-frames-received', this.onDataFramesReceived.bind(this));
+    this.events.on(PanelEvents.dataSnapshotLoad, this.onDataSnapshotLoad.bind(this));
+    this.events.on(PanelEvents.editModeInitialized, this.onInitEditMode.bind(this));
+  }
+
+  onInitEditMode() {
+    this.addEditorTab('Options', triggerPanelOptionsTab);
+  }
+
+  onDataFramesReceived(data) {
+    let problems = [];
+
+    if (data && data.length) {
+      for (const dataFrame of data) {
+        try {
+          const values = dataFrame.fields[0].values;
+          if (values.toArray) {
+            problems.push(values.toArray());
+          } else if (values.length > 0) {
+            // On snapshot mode values is a plain Array, not ArrayVector
+            problems.push(values);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
     }
 
-    this.initDatasources();
-    this.events.on('init-edit-mode', this.onInitEditMode.bind(this));
-    this.events.on('refresh', this.onRefresh.bind(this));
+    this.loading = false;
+    problems = _.flatten(problems);
+    this.renderProblems(problems);
+  }
+
+  onDataSnapshotLoad(snapshotData) {
+    this.onDataFramesReceived(snapshotData);
+  }
+
+  onRender() {
+    this.range = this.timeSrv.timeRange();
   }
 
   setPanelError(err, defaultError) {
@@ -139,93 +173,12 @@ export class TriggerPanelCtrl extends PanelCtrl {
       }
     }
 
-    this.events.emit('data-error', err);
+    // this.events.emit(PanelEvents.dataError, err);
     console.log('Panel data error:', err);
   }
 
-  initDatasources() {
-    if (!this.panel.targets) {
-      return;
-    }
-    const targetDatasources = _.compact(this.panel.targets.map(target => target.datasource));
-    let promises = targetDatasources.map(ds => {
-      // Load datasource
-      return getDataSourceSrv().get(ds)
-      .then(datasource => {
-        this.datasources[ds] = datasource;
-        return datasource;
-      });
-    });
-    return Promise.all(promises);
-  }
-
-  getZabbixDataSources() {
-    return _.filter(getDataSourceSrv().getMetricSources(), datasource => {
-      return datasource.meta.id === ZABBIX_DS_ID && datasource.value;
-    });
-  }
-
-  isEmptyTargets() {
-    const emptyTargets = _.isEmpty(this.panel.targets);
-    const emptyTarget = (this.panel.targets.length === 1 && (
-      _.isEmpty(this.panel.targets[0]) ||
-      this.panel.targets[0].target === ""
-    ));
-    return emptyTargets || emptyTarget;
-  }
-
-  onInitEditMode() {
-    this.addEditorTab('Triggers', triggerPanelTriggersTab, 1);
-    this.addEditorTab('Options', triggerPanelOptionsTab, 2);
-  }
-
-  setTimeQueryStart() {
-    this.timing.queryStart = new Date().getTime();
-  }
-
-  setTimeQueryEnd() {
-    this.timing.queryEnd = (new Date()).getTime();
-  }
-
-  onRefresh() {
-    // ignore fetching data if another panel is in fullscreen
-    if (this.otherPanelInFullscreenMode()) { return; }
-
-    this.range = this.timeSrv.timeRange();
-
-    // clear loading/error state
-    delete this.error;
-    this.loading = true;
-    this.setTimeQueryStart();
-    this.pageIndex = 0;
-
-    return this.getTriggers()
-    .then(triggers => {
-      // Notify panel that request is finished
-      this.loading = false;
-      this.setTimeQueryEnd();
-      return this.renderTriggers(triggers);
-    })
-    .then(() => {
-      this.$timeout(() => {
-        this.renderingCompleted();
-      });
-    })
-    .catch(err => {
-      this.loading = false;
-
-      if (err.cancelled) {
-        console.log('Panel request cancelled', err);
-        return;
-      }
-
-      this.setPanelError(err);
-    });
-  }
-
-  renderTriggers(zabbixTriggers) {
-    let triggers = _.cloneDeep(zabbixTriggers || this.triggerListUnfiltered);
-    this.triggerListUnfiltered = _.cloneDeep(triggers);
+  renderProblems(problems) {
+    let triggers = _.cloneDeep(problems);
 
     triggers = _.map(triggers, this.formatTrigger.bind(this));
     triggers = this.filterTriggersPost(triggers);
@@ -234,42 +187,11 @@ export class TriggerPanelCtrl extends PanelCtrl {
     // Limit triggers number
     triggers = triggers.slice(0, this.panel.limit || PANEL_DEFAULTS.limit);
 
-    this.triggerList = triggers;
+    this.renderData = triggers;
 
     return this.$timeout(() => {
-      return super.render(this.triggerList);
+      return super.render(triggers);
     });
-  }
-
-  getTriggers() {
-    const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
-    const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
-    const timeRange = [timeFrom, timeTo];
-
-    const options = {
-      scopedVars: this.panel.scopedVars
-    };
-
-    let promises = _.map(this.panel.targets, (target) => {
-      const ds = target.datasource;
-      return getDataSourceSrv().get(ds)
-      .then(datasource => {
-        return datasource.queryProblems(target, timeRange, options);
-      })
-      .then(results => {
-        let problems = [];
-        if (results && results.fields && results.fields.length) {
-          try {
-            problems = results.fields[0].values.toArray();
-          } catch (error) {
-            console.log(error);
-          }
-        }
-        return problems;
-      });
-    });
-
-    return Promise.all(promises).then(_.flatten);
   }
 
   filterTriggersPost(triggers) {
@@ -358,7 +280,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   addTagFilter(tag, datasource) {
     const target = this.panel.targets.find(t => t.datasource === datasource);
-    console.log(target);
     let tagFilter = target.tags.filter;
     let targetTags = this.parseTags(tagFilter);
     let newTag = {tag: tag.tag, value: tag.value};
@@ -494,7 +415,7 @@ export class TriggerPanelCtrl extends PanelCtrl {
         return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
       }
     })
-    .then(this.onRefresh.bind(this))
+    .then(this.onMetricsPanelRefresh.bind(this))
     .catch((err) => {
       this.setPanelError(err);
     });
@@ -517,15 +438,15 @@ export class TriggerPanelCtrl extends PanelCtrl {
 
   link(scope, elem, attrs, ctrl) {
     let panel = ctrl.panel;
-    let triggerList = ctrl.triggerList;
+    // let problems = ctrl.problems;
 
-    scope.$watchGroup(['ctrl.triggerList'], renderPanel);
-    ctrl.events.on('render', (renderData) => {
-      triggerList = renderData || triggerList;
-      renderPanel();
+    // scope.$watchGroup(['ctrl.renderData'], renderPanel);
+    ctrl.events.on(PanelEvents.render, (renderData) => {
+      renderData = renderData || this.renderData;
+      renderPanel(renderData);
     });
 
-    function renderPanel() {
+    function renderPanel(problems) {
       const timeFrom = Math.ceil(dateMath.parse(ctrl.range.from) / 1000);
       const timeTo = Math.ceil(dateMath.parse(ctrl.range.to) / 1000);
 
@@ -533,14 +454,14 @@ export class TriggerPanelCtrl extends PanelCtrl {
       const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
 
       const pageSize = panel.pageSize || 10;
-      const loading = ctrl.loading && (!ctrl.triggerList || !ctrl.triggerList.length);
+      const loading = ctrl.loading && (!problems || !problems.length);
 
       let panelOptions = {};
       for (let prop in PANEL_DEFAULTS) {
         panelOptions[prop] = ctrl.panel[prop];
       }
       const problemsListProps = {
-        problems: ctrl.triggerList,
+        problems,
         panelOptions,
         timeRange: { timeFrom, timeTo },
         loading,
