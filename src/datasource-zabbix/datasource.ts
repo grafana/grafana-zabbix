@@ -398,9 +398,9 @@ export class ZabbixDatasource {
     let showAckButton = true;
 
     // const showEvents = this.panel.showEvents.value;
-    const showEvents = target.showEvents?.value || 1;
+    const showEvents = target.options.showEvents?.value || 1;
     // const showProxy = this.panel.hostProxy;
-    const showProxy = target.hostProxy;
+    const showProxy = target.options.hostProxy;
 
     const getProxiesPromise = showProxy ? this.zabbix.getProxies() : () => [];
     showAckButton = !this.disableReadOnlyUsersAck || userIsEditor;

@@ -48,6 +48,23 @@ export class ZabbixQueryController extends QueryCtrl {
       {text: 'acknowledged', value: 1},
     ];
 
+    this.problemAckFilters = [
+      'all triggers',
+      'unacknowledged',
+      'acknowledged'
+    ];
+
+    this.sortByFields = [
+      { text: 'last change', value: 'lastchange' },
+      { text: 'severity',    value: 'priority' }
+    ];
+
+    this.showEventsFields = [
+      { text: 'All',      value: [0,1] },
+      { text: 'OK',       value: [0] },
+      { text: 'Problems', value: 1 }
+    ];
+
     this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
 
     this.triggerSeverity = c.TRIGGER_SEVERITY;
@@ -307,7 +324,12 @@ export class ZabbixQueryController extends QueryCtrl {
   renderQueryOptionsText() {
     var optionsMap = {
       showDisabledItems: "Show disabled items",
-      skipEmptyValues: "Skip empty values"
+      skipEmptyValues: "Skip empty values",
+      hostsInMaintenance: "Show hosts in maintenance",
+      showTriggers: "Acknowledged",
+      sortTriggersBy: "Sort problems",
+      showEvents: "Show events",
+      limit: "Limit problems",
     };
     var options = [];
     _.forOwn(this.target.options, (value, key) => {
@@ -317,7 +339,13 @@ export class ZabbixQueryController extends QueryCtrl {
           options.push(optionsMap[key]);
         } else {
           // Show "option = value" for another options
-          options.push(optionsMap[key] + " = " + value);
+          let optionValue = value;
+          if (value && value.text) {
+            optionValue = value.text;
+          } else if (value && value.value) {
+            optionValue = value.value;
+          }
+          options.push(optionsMap[key] + " = " + optionValue);
         }
       }
     });
