@@ -222,10 +222,11 @@ export function escapeRegex(value) {
   return value.replace(/[\\^$*+?.()|[\]{}\/]/g, '\\$&');
 }
 
-export function parseInterval(interval) {
+export function parseInterval(interval: string): number {
   const intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)/g;
   const momentInterval: any[] = intervalPattern.exec(interval);
-  return moment.duration(Number(momentInterval[1]), momentInterval[2]).valueOf();
+  const duration = moment.duration(Number(momentInterval[1]), momentInterval[2]);
+  return (duration.valueOf() as number);
 }
 
 export function parseTimeShiftInterval(interval) {
