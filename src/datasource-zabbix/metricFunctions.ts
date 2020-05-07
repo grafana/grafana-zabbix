@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import $ from 'jquery';
+import { isNumeric } from './utils';
 
-var index = [];
-var categories = {
+const index = [];
+const categories = {
   Transform: [],
   Aggregate: [],
   Filter: [],
@@ -298,11 +298,15 @@ addFuncDef({
   defaultParams: ['avg'],
 });
 
-_.each(categories, function(funcList, catName) {
+_.each(categories, (funcList, catName) => {
   categories[catName] = _.sortBy(funcList, 'name');
 });
 
 class FuncInstance {
+  def: any;
+  params: any;
+  text: string;
+
   constructor(funcDef, params) {
     this.def = funcDef;
 
@@ -318,13 +322,13 @@ class FuncInstance {
   }
 
   bindFunction(metricFunctions) {
-    var func = metricFunctions[this.def.name];
+    const func = metricFunctions[this.def.name];
     if (func) {
 
       // Bind function arguments
-      var bindedFunc = func;
-      var param;
-      for (var i = 0; i < this.params.length; i++) {
+      let bindedFunc = func;
+      let param;
+      for (let i = 0; i < this.params.length; i++) {
         param = this.params[i];
 
         // Convert numeric params
@@ -341,23 +345,21 @@ class FuncInstance {
   }
 
   render(metricExp) {
-    var str = this.def.name + '(';
-    var parameters = _.map(this.params, function(value, index) {
-
-      var paramType = this.def.params[index].type;
+    const str = this.def.name + '(';
+    const parameters = _.map(this.params, (value, index) => {
+      const paramType = this.def.params[index].type;
       if (paramType === 'int' ||
           paramType === 'float' ||
           paramType === 'value_or_series' ||
           paramType === 'boolean') {
         return value;
-      }
-      else if (paramType === 'int_or_interval' && $.isNumeric(value)) {
+      } else if (paramType === 'int_or_interval' && isNumeric(value)) {
         return value;
       }
 
       return "'" + value + "'";
 
-    }, this);
+    });
 
     if (metricExp) {
       parameters.unshift(metricExp);
@@ -378,16 +380,15 @@ class FuncInstance {
     // handle optional parameters
     // if string contains ',' and next param is optional, split and update both
     if (this._hasMultipleParamsInString(strValue, index)) {
-      _.each(strValue.split(','), function(partVal, idx) {
+      _.each(strValue.split(','), (partVal, idx) => {
         this.updateParam(partVal.trim(), idx);
-      }, this);
+      });
       return;
     }
 
     if (strValue === '' && this.def.params[index].optional) {
       this.params.splice(index, 1);
-    }
-    else {
+    }else {
       this.params[index] = strValue;
     }
 
@@ -400,7 +401,7 @@ class FuncInstance {
       return;
     }
 
-    var text = this.def.name + '(';
+    let text = this.def.name + '(';
     text += this.params.join(', ');
     text += ')';
     this.text = text;

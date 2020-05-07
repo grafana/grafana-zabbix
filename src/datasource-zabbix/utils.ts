@@ -345,6 +345,13 @@ export function getArrayDepth(a, level = 0) {
   return level + 1;
 }
 
+/**
+ * Checks whether its argument represents a numeric value.
+ */
+export function isNumeric(n: any): boolean {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
 // Fix for backward compatibility with lodash 2.4
 if (!_.includes) {
   _.includes = (_ as any).contains;
