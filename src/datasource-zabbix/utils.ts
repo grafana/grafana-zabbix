@@ -351,8 +351,3 @@ export function getArrayDepth(a, level = 0) {
 export function isNumeric(n: any): boolean {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
-
-// Fix for backward compatibility with lodash 2.4
-if (!_.includes) {
-  _.includes = (_ as any).contains;
-}
