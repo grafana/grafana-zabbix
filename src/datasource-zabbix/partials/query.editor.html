@@ -304,6 +304,12 @@
           </select>
         </div>
       </div>
+      <gf-form-switch class="gf-form"
+        label-class="width-8"
+        label="Host proxy"
+        checked="ctrl.target.options.hostProxy"
+        on-change="ctrl.onQueryOptionChange()">
+      </gf-form-switch>
       <div class="gf-form">
         <label class="gf-form-label width-8">Limit triggers</label>
         <input class="gf-form-input width-5"

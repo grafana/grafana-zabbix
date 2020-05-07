@@ -330,6 +330,7 @@ export class ZabbixQueryController extends QueryCtrl {
       sortTriggersBy: "Sort problems",
       showEvents: "Show events",
       limit: "Limit problems",
+      hostProxy: "Show proxy",
     };
     var options = [];
     _.forOwn(this.target.options, (value, key) => {
