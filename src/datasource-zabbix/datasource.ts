@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import config from 'grafana/app/core/config';
+import { contextSrv } from 'grafana/app/core/core';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
@@ -7,9 +8,11 @@ import * as metricFunctions from './metricFunctions';
 import * as c from './constants';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
+import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 import { VariableQueryTypes } from './types';
+import { getDataSourceSrv } from '@grafana/runtime';
 
 const DEFAULT_ZABBIX_VERSION = 3;
 
@@ -37,7 +40,7 @@ export class ZabbixDatasource {
   enableDebugLog: boolean;
   zabbix: any;
 
-  replaceTemplateVars: (templateSrv: any, target: any, scopedVars?: any) => any;
+  replaceTemplateVars: (target: any, scopedVars?: any) => any;
 
   /** @ngInject */
   constructor(instanceSettings, private templateSrv, private zabbixAlertingSrv) {
@@ -181,6 +184,9 @@ export class ZabbixDatasource {
       } else if (target.queryType === c.MODE_TRIGGERS) {
         // Triggers query
         return this.queryTriggersData(target, timeRange);
+      } else if (target.queryType === c.MODE_PROBLEMS) {
+        // Problems query
+        return this.queryProblems(target, timeRange, options);
       } else {
         return [];
       }
@@ -381,6 +387,78 @@ export class ZabbixDatasource {
       } else {
         return Promise.resolve([]);
       }
+    });
+  }
+
+  queryProblems(target, timeRange, options) {
+    const [timeFrom, timeTo] = timeRange;
+    const userIsEditor = contextSrv.isEditor || contextSrv.isGrafanaAdmin;
+
+    let proxies;
+    let showAckButton = true;
+
+    // const showEvents = this.panel.showEvents.value;
+    const showEvents = target.showEvents?.value || 1;
+    // const showProxy = this.panel.hostProxy;
+    const showProxy = target.hostProxy;
+
+    const getProxiesPromise = showProxy ? this.zabbix.getProxies() : () => [];
+    showAckButton = !this.disableReadOnlyUsersAck || userIsEditor;
+
+    // Replace template variables
+    const groupFilter = this.replaceTemplateVars(target.group?.filter, options.scopedVars);
+    const hostFilter = this.replaceTemplateVars(target.host?.filter, options.scopedVars);
+    const appFilter = this.replaceTemplateVars(target.application?.filter, options.scopedVars);
+    const proxyFilter = this.replaceTemplateVars(target.proxy?.filter, options.scopedVars);
+
+    const triggerFilter = this.replaceTemplateVars(target.trigger?.filter, options.scopedVars);
+    const tagsFilter = this.replaceTemplateVars(target.tags?.filter, options.scopedVars);
+
+    const replacedTarget = {
+      ...target,
+      trigger: { filter: triggerFilter },
+      tags: { filter: tagsFilter },
+    };
+
+    const triggersOptions: any = {
+      showTriggers: showEvents
+    };
+
+    if (showEvents !== 1) {
+      triggersOptions.timeFrom = timeFrom;
+      triggersOptions.timeTo = timeTo;
+    }
+
+    const problemsPromises = Promise.all([
+      this.zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions, proxyFilter),
+      getProxiesPromise
+    ])
+    .then(([triggers, sourceProxies]) => {
+      proxies = _.keyBy(sourceProxies, 'proxyid');
+      const eventids = _.compact(triggers.map(trigger => {
+        return trigger.lastEvent.eventid;
+      }));
+      return Promise.all([
+        this.zabbix.getExtendedEventData(eventids),
+        Promise.resolve(triggers)
+      ]);
+    })
+    .then(([events, triggers]) => {
+      problemsHandler.addEventTags(events, triggers);
+      problemsHandler.addAcknowledges(events, triggers);
+      return triggers;
+    })
+    .then(triggers => problemsHandler.setMaintenanceStatus(triggers))
+    .then(triggers => problemsHandler.setAckButtonStatus(triggers, showAckButton))
+    .then(triggers => problemsHandler.filterTriggersPre(triggers, replacedTarget))
+    .then(triggers => problemsHandler.addTriggerDataSource(triggers, target))
+    .then(triggers => problemsHandler.addTriggerHostProxy(triggers, proxies));
+
+    return problemsPromises.then(problems => {
+      const problemsDataFrame = problemsHandler.toDataFrame(problems);
+      console.log(problems);
+      console.log(problemsDataFrame);
+      return problemsDataFrame;
     });
   }
 

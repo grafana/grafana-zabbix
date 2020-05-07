@@ -351,3 +351,19 @@ export function getArrayDepth(a, level = 0) {
 export function isNumeric(n: any): boolean {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
+
+/**
+ * Parses tags string into array of {tag: value} objects
+ */
+export function parseTags(tagStr: string): any[] {
+  if (!tagStr) {
+    return [];
+  }
+
+  let tags: any[] = _.map(tagStr.split(','), (tag) => tag.trim());
+  tags = _.map(tags, (tag) => {
+    const tagParts = tag.split(':');
+    return {tag: tagParts[0].trim(), value: tagParts[1].trim()};
+  });
+  return tags;
+}

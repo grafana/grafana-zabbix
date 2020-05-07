@@ -54,7 +54,7 @@
     </div>
   </div>
 
-  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS">
+  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
     <!-- Select Group -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Group</label>
@@ -91,7 +91,7 @@
     </div>
   </div>
 
-  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS">
+  <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
     <!-- Select Application -->
     <div class="gf-form max-width-20">
       <label class="gf-form-label query-keyword width-7">Application</label>
@@ -124,7 +124,7 @@
         }">
     </div>
 
-    <div class="gf-form max-width-23" ng-show="ctrl.target.queryType == editorMode.TRIGGERS">
+    <div class="gf-form max-width-23" ng-show="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
       <label class="gf-form-label query-keyword width-8">Min Severity</label>
       <div class="gf-form-select-wrapper width-16">
         <select class="gf-form-input"
@@ -134,7 +134,7 @@
         </select>
       </div>
     </div>
-    <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.TRIGGERS">
+    <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
       <label class="gf-form-label query-keyword width-8">Acknowledged</label>
       <div class="gf-form-select-wrapper width-12">
         <select class="gf-form-input"
@@ -145,13 +145,13 @@
       </div>
     </div>
 
-    <gf-form-switch class="gf-form" label="Count" ng-show="ctrl.target.queryType == editorMode.TRIGGERS"
+    <gf-form-switch class="gf-form" label="Count" ng-show="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS"
       checked="ctrl.target.triggers.count" on-change="ctrl.onTargetBlur()">
     </gf-form-switch>
 
     <div class="gf-form gf-form--grow">
       <label class="gf-form-label gf-form-label--grow">
-        <a ng-click="ctrl.toggleQueryOptions()" ng-hide="ctrl.target.queryType == editorMode.TRIGGERS">
+        <a ng-click="ctrl.toggleQueryOptions()" ng-hide="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
           <i class="fa fa-caret-down" ng-show="ctrl.showQueryOptions"></i>
           <i class="fa fa-caret-right" ng-hide="ctrl.showQueryOptions"></i>
           {{ctrl.queryOptionsText}}
@@ -162,7 +162,7 @@
 
   <!-- Query options -->
   <div class="gf-form-group" ng-if="ctrl.showQueryOptions">
-    <div class="gf-form offset-width-7" ng-hide="ctrl.target.queryType == editorMode.TRIGGERS">
+    <div class="gf-form offset-width-7" ng-hide="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
       <gf-form-switch class="gf-form" label-class="width-10"
         label="Show disabled items"
         checked="ctrl.target.options.showDisabledItems"

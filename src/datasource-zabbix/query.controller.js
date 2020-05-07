@@ -21,7 +21,8 @@ export class ZabbixQueryController extends QueryCtrl {
       {value: 'text',      text: 'Text',        queryType: c.MODE_TEXT},
       {value: 'itservice', text: 'IT Services', queryType: c.MODE_ITSERVICE},
       {value: 'itemid',    text: 'Item ID',     queryType: c.MODE_ITEMID},
-      {value: 'triggers',  text: 'Triggers',    queryType: c.MODE_TRIGGERS}
+      {value: 'triggers',  text: 'Triggers',    queryType: c.MODE_TRIGGERS},
+      {value: 'problems',  text: 'Problems',    queryType: c.MODE_PROBLEMS},
     ];
 
     this.$scope.editorMode = {
@@ -29,7 +30,8 @@ export class ZabbixQueryController extends QueryCtrl {
       TEXT: c.MODE_TEXT,
       ITSERVICE: c.MODE_ITSERVICE,
       ITEMID: c.MODE_ITEMID,
-      TRIGGERS: c.MODE_TRIGGERS
+      TRIGGERS: c.MODE_TRIGGERS,
+      PROBLEMS: c.MODE_PROBLEMS,
     };
 
     this.slaPropertyList = [
@@ -109,7 +111,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
       if (target.queryType === c.MODE_METRICS ||
           target.queryType === c.MODE_TEXT ||
-          target.queryType === c.MODE_TRIGGERS) {
+          target.queryType === c.MODE_TRIGGERS ||
+          target.queryType === c.MODE_PROBLEMS) {
         this.initFilters();
       }
       else if (target.queryType === c.MODE_ITSERVICE) {
