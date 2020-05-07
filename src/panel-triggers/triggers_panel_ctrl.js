@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
-import moment from 'moment';
 import { getDataSourceSrv } from '@grafana/runtime';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from '../datasource-zabbix/utils';
@@ -245,136 +244,32 @@ export class TriggerPanelCtrl extends PanelCtrl {
   getTriggers() {
     const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
     const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
-    const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
+    const timeRange = [timeFrom, timeTo];
+
+    const options = {
+      scopedVars: this.panel.scopedVars
+    };
 
     let promises = _.map(this.panel.targets, (target) => {
       const ds = target.datasource;
-      let proxies;
-      let showAckButton = true;
       return getDataSourceSrv().get(ds)
       .then(datasource => {
-        const zabbix = datasource.zabbix;
-        const showEvents = this.panel.showEvents.value;
-        const triggerFilter = target;
-        const showProxy = this.panel.hostProxy;
-        const getProxiesPromise = showProxy ? zabbix.getProxies() : () => [];
-        showAckButton = !datasource.disableReadOnlyUsersAck || userIsEditor;
-
-        // Replace template variables
-        const groupFilter = datasource.replaceTemplateVars(triggerFilter.group.filter, this.panel.scopedVars);
-        const hostFilter = datasource.replaceTemplateVars(triggerFilter.host.filter, this.panel.scopedVars);
-        const appFilter = datasource.replaceTemplateVars(triggerFilter.application.filter, this.panel.scopedVars);
-        const proxyFilter = datasource.replaceTemplateVars(triggerFilter.proxy.filter, this.panel.scopedVars);
-
-        let triggersOptions = {
-          showTriggers: showEvents
-        };
-
-        if (showEvents !== 1) {
-          triggersOptions.timeFrom = timeFrom;
-          triggersOptions.timeTo = timeTo;
+        return datasource.queryProblems(target, timeRange, options);
+      })
+      .then(results => {
+        let problems = [];
+        if (results && results.fields && results.fields.length) {
+          try {
+            problems = results.fields[0].values.toArray();
+          } catch (error) {
+            console.log(error);
+          }
         }
-
-        return Promise.all([
-          zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions, proxyFilter),
-          getProxiesPromise
-        ]);
-      }).then(([triggers, sourceProxies]) => {
-        proxies = _.keyBy(sourceProxies, 'proxyid');
-        const eventids = _.compact(triggers.map(trigger => {
-          return trigger.lastEvent.eventid;
-        }));
-        return Promise.all([
-          this.datasources[ds].zabbix.getExtendedEventData(eventids),
-          Promise.resolve(triggers)
-        ]);
-      })
-      .then(([events, triggers]) => {
-        this.addEventTags(events, triggers);
-        this.addAcknowledges(events, triggers);
-        return triggers;
-      })
-      .then(triggers => this.setMaintenanceStatus(triggers))
-      .then(triggers => this.setAckButtonStatus(triggers, showAckButton))
-      .then(triggers => this.filterTriggersPre(triggers, target))
-      .then(triggers => this.addTriggerDataSource(triggers, target))
-      .then(triggers => this.addTriggerHostProxy(triggers, proxies));
+        return problems;
+      });
     });
 
-    return Promise.all(promises)
-    .then(results => _.flatten(results));
-  }
-
-  addAcknowledges(events, triggers) {
-    // Map events to triggers
-    _.each(triggers, trigger => {
-      var event = _.find(events, event => {
-        return event.eventid === trigger.lastEvent.eventid;
-      });
-
-      if (event) {
-        trigger.acknowledges = _.map(event.acknowledges, this.formatAcknowledge.bind(this));
-      }
-
-      if (!trigger.lastEvent.eventid) {
-        trigger.lastEvent = null;
-      }
-    });
-
-    return triggers;
-  }
-
-  formatAcknowledge(ack) {
-    let timestamp = moment.unix(ack.clock);
-    if (this.panel.customLastChangeFormat) {
-      ack.time = timestamp.format(this.panel.lastChangeFormat);
-    } else {
-      ack.time = timestamp.format(this.defaultTimeFormat);
-    }
-    ack.user = ack.alias || '';
-    if (ack.name || ack.surname) {
-      const fullName = `${ack.name || ''} ${ack.surname || ''}`;
-      ack.user += ` (${fullName})`;
-    }
-    return ack;
-  }
-
-  addEventTags(events, triggers) {
-    _.each(triggers, trigger => {
-      var event = _.find(events, event => {
-        return event.eventid === trigger.lastEvent.eventid;
-      });
-      if (event && event.tags && event.tags.length) {
-        trigger.tags = event.tags;
-      }
-    });
-    return triggers;
-  }
-
-  filterTriggersPre(triggerList, target) {
-    // Filter triggers by description
-    const ds = target.datasource;
-    let triggerFilter = target.trigger.filter;
-    triggerFilter = this.datasources[ds].replaceTemplateVars(triggerFilter);
-    if (triggerFilter) {
-      triggerList = filterTriggers(triggerList, triggerFilter);
-    }
-
-    // Filter by tags
-    // const target = this.panel.targets[ds];
-    if (target.tags.filter) {
-      let tagsFilter = this.datasources[ds].replaceTemplateVars(target.tags.filter);
-      // replaceTemplateVars() builds regex-like string, so we should trim it.
-      tagsFilter = tagsFilter.replace('/^', '').replace('$/', '');
-      const tags = this.parseTags(tagsFilter);
-      triggerList = _.filter(triggerList, trigger => {
-        return _.every(tags, (tag) => {
-          return _.find(trigger.tags, {tag: tag.tag, value: tag.value});
-        });
-      });
-    }
-
-    return triggerList;
+    return Promise.all(promises).then(_.flatten);
   }
 
   filterTriggersPost(triggers) {
@@ -406,41 +301,6 @@ export class TriggerPanelCtrl extends PanelCtrl {
     });
 
     return triggerList;
-  }
-
-  setMaintenanceStatus(triggers) {
-    _.each(triggers, (trigger) => {
-      let maintenance_status = _.some(trigger.hosts, (host) => host.maintenance_status === '1');
-      trigger.maintenance = maintenance_status;
-    });
-    return triggers;
-  }
-
-  setAckButtonStatus(triggers, showAckButton) {
-    _.each(triggers, (trigger) => {
-      trigger.showAckButton = showAckButton;
-    });
-    return triggers;
-  }
-
-  addTriggerDataSource(triggers, target) {
-    _.each(triggers, (trigger) => {
-      trigger.datasource = target.datasource;
-    });
-    return triggers;
-  }
-
-  addTriggerHostProxy(triggers, proxies) {
-    triggers.forEach(trigger => {
-      if (trigger.hosts && trigger.hosts.length) {
-        let host = trigger.hosts[0];
-        if (host.proxy_hostid !== '0') {
-          const hostProxy = proxies[host.proxy_hostid];
-          host.proxy = hostProxy ? hostProxy.host : '';
-        }
-      }
-    });
-    return triggers;
   }
 
   sortTriggers(triggerList) {
@@ -721,15 +581,3 @@ export class TriggerPanelCtrl extends PanelCtrl {
 }
 
 TriggerPanelCtrl.templateUrl = 'public/plugins/alexanderzobnin-zabbix-app/panel-triggers/partials/module.html';
-
-function filterTriggers(triggers, triggerFilter) {
-  if (utils.isRegex(triggerFilter)) {
-    return _.filter(triggers, function(trigger) {
-      return utils.buildRegex(triggerFilter).test(trigger.description);
-    });
-  } else {
-    return _.filter(triggers, function(trigger) {
-      return trigger.description === triggerFilter;
-    });
-  }
-}
