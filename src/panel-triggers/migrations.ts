@@ -3,7 +3,16 @@ import { getNextRefIdChar } from './utils';
 import { getDefaultTarget } from './triggers_panel_ctrl';
 
 // Actual schema version
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
+
+export function getDefaultTargetOptions() {
+  return {
+    hostsInMaintenance: true,
+    showTriggers: 'all triggers',
+    sortTriggersBy: { text: 'last change', value: 'lastchange' },
+    showEvents: { text: 'Problems', value: 1 },
+  };
+}
 
 export function migratePanelSchema(panel) {
   if (isEmptyPanel(panel)) {
@@ -12,7 +21,7 @@ export function migratePanelSchema(panel) {
   }
 
   const schemaVersion = getSchemaVersion(panel);
-  panel.schemaVersion = CURRENT_SCHEMA_VERSION;
+  // panel.schemaVersion = CURRENT_SCHEMA_VERSION;
 
   if (schemaVersion < 2) {
     panel.datasources = [panel.datasource];
@@ -64,6 +73,23 @@ export function migratePanelSchema(panel) {
     }
     panel.targets = updatedTargets;
     delete panel.datasources;
+  }
+
+  if (schemaVersion < 8) {
+    if (panel.targets.length === 1) {
+      if (panel.targets[0].datasource) {
+        panel.datasource = panel.targets[0].datasource;
+        delete panel.targets[0].datasource;
+      }
+    } else if (panel.targets.length > 1) {
+      // Mixed data sources
+      panel.datasource = '-- Mixed --';
+    }
+    for (const target of panel.targets) {
+      // set queryType to PROBLEMS
+      target.queryType = 5;
+      target.options = getDefaultTargetOptions();
+    }
   }
 
   return panel;

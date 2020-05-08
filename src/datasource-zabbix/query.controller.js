@@ -5,6 +5,37 @@ import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
 
+function getTargetDefaults() {
+  return {
+    queryType: c.MODE_METRICS,
+    group: { 'filter': "" },
+    host: { 'filter': "" },
+    application: { 'filter': "" },
+    item: { 'filter': "" },
+    functions: [],
+    triggers: {
+      'count': true,
+      'minSeverity': 3,
+      'acknowledged': 2
+    },
+    trigger: {filter: ""},
+    tags: {filter: ""},
+    proxy: {filter: ""},
+    options: {
+      showDisabledItems: false,
+      skipEmptyValues: false,
+      // Problems
+      hostsInMaintenance: false,
+      showTriggers: null,
+      sortTriggersBy: null,
+      showEvents: null,
+    },
+    table: {
+      'skipEmptyValues': false
+    },
+  };
+}
+
 export class ZabbixQueryController extends QueryCtrl {
 
   /** @ngInject */
@@ -86,6 +117,7 @@ export class ZabbixQueryController extends QueryCtrl {
     });
 
     this.init = function() {
+      console.log(this);
       var target = this.target;
 
       // Migrate old targets
@@ -99,27 +131,12 @@ export class ZabbixQueryController extends QueryCtrl {
       _.defaults(this, scopeDefaults);
 
       // Load default values
-      var targetDefaults = {
-        'queryType': c.MODE_METRICS,
-        'group': { 'filter': "" },
-        'host': { 'filter': "" },
-        'application': { 'filter': "" },
-        'item': { 'filter': "" },
-        'functions': [],
-        'triggers': {
-          'count': true,
-          'minSeverity': 3,
-          'acknowledged': 2
-        },
-        'options': {
-          'showDisabledItems': false,
-          'skipEmptyValues': false
-        },
-        'table': {
-          'skipEmptyValues': false
-        }
-      };
-      _.defaults(target, targetDefaults);
+      const targetDefaults = getTargetDefaults();
+      _.defaultsDeep(target, targetDefaults);
+
+      if (this.panel.type === c.ZABBIX_PROBLEMS_PANEL_ID) {
+        target.queryType = c.MODE_PROBLEMS;
+      }
 
       // Create function instances from saved JSON
       target.functions = _.map(target.functions, function(func) {

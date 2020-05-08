@@ -10,9 +10,7 @@ import { triggerPanelOptionsTab } from './options_tab';
 import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
 import ProblemList from './components/Problems/Problems';
 import AlertList from './components/AlertList/AlertList';
-import { getNextRefIdChar } from './utils';
 
-const ZABBIX_DS_ID = 'alexanderzobnin-zabbix-datasource';
 const PROBLEM_EVENTS_LIMIT = 100;
 
 export const DEFAULT_TARGET = {
@@ -22,18 +20,6 @@ export const DEFAULT_TARGET = {
   trigger: {filter: ""},
   tags: {filter: ""},
   proxy: {filter: ""},
-};
-
-export const getDefaultTarget = (targets) => {
-  return {
-    group: {filter: ""},
-    host: {filter: ""},
-    application: {filter: ""},
-    trigger: {filter: ""},
-    tags: {filter: ""},
-    proxy: {filter: ""},
-    refId: getNextRefIdChar(targets),
-  };
 };
 
 export const DEFAULT_SEVERITY = [
@@ -51,7 +37,6 @@ const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
 
 export const PANEL_DEFAULTS = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
-  // targets: [getDefaultTarget([])],
   // Fields
   hostField: true,
   hostTechNameField: false,
@@ -115,7 +100,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.range = {};
     this.renderData = [];
 
-    // this.panel = migratePanelSchema(this.panel);
+    this.panel = migratePanelSchema(this.panel);
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
     this.events.on(PanelEvents.render, this.onRender.bind(this));
@@ -125,6 +110,8 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   onInitEditMode() {
+    // Update schema version to prevent migration on up-to-date targets
+    this.panel.schemaVersion = CURRENT_SCHEMA_VERSION;
     this.addEditorTab('Options', triggerPanelOptionsTab);
   }
 
