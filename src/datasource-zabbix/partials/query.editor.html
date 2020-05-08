@@ -86,6 +86,21 @@
           }">
     </div>
 
+    <div class="gf-form" ng-show="ctrl.target.queryType == editorMode.PROBLEMS">
+      <label class="gf-form-label query-keyword width-7">Proxy</label>
+      <input type="text"
+        ng-model="ctrl.target.proxy.filter"
+        bs-typeahead="ctrl.getProxyNames"
+        ng-blur="ctrl.onTargetBlur()"
+        data-min-length=0
+        data-items=100
+        class="gf-form-input width-14"
+        ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.proxy.filter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.proxy.filter)
+        }">
+    </div>
+
     <div class="gf-form gf-form--grow">
       <div class="gf-form-label gf-form-label--grow"></div>
     </div>

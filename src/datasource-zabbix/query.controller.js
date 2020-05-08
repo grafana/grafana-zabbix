@@ -106,6 +106,7 @@ export class ZabbixQueryController extends QueryCtrl {
     this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
     this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
     this.getITServices = _.bind(this.getMetricNames, this, 'itServiceList');
+    this.getProxyNames = _.bind(this.getMetricNames, this, 'proxyList');
     this.getVariables = _.bind(this.getTemplateVariables, this);
 
     // Update metric suggestion when template variable was changed
@@ -161,12 +162,18 @@ export class ZabbixQueryController extends QueryCtrl {
   initFilters() {
     let itemtype = _.find(this.editorModes, {'queryType': this.target.queryType});
     itemtype = itemtype ? itemtype.value : null;
-    return Promise.all([
+    const promises = [
       this.suggestGroups(),
       this.suggestHosts(),
       this.suggestApps(),
-      this.suggestItems(itemtype)
-    ]);
+      this.suggestItems(itemtype),
+    ];
+
+    if (this.target.queryType === c.MODE_PROBLEMS) {
+      promises.push(this.suggestProxies());
+    }
+
+    return Promise.all(promises);
   }
 
   // Get list of metric names for bs-typeahead directive
@@ -240,6 +247,15 @@ export class ZabbixQueryController extends QueryCtrl {
     .then(itservices => {
       this.metric.itServiceList = itservices;
       return itservices;
+    });
+  }
+
+  suggestProxies() {
+    return this.zabbix.getProxies()
+    .then(response => {
+      const proxies = _.map(response, 'host');
+      this.metric.proxyList = proxies;
+      return proxies;
     });
   }
 
