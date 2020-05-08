@@ -12,7 +12,6 @@ import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 import { VariableQueryTypes } from './types';
-import { getDataSourceSrv } from '@grafana/runtime';
 
 const DEFAULT_ZABBIX_VERSION = 3;
 
