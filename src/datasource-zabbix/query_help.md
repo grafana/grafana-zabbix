@@ -29,3 +29,7 @@ This mode is suitable for rendering charts in grafana by passing itemids as url 
 
 ##### Triggers
 Active triggers count for selected hosts or table data like Zabbix _System status_ panel on the main dashboard.
+
+#### Documentation links:
+
+[Grafana-Zabbix Documentation](https://alexanderzobnin.github.io/grafana-zabbix)
