@@ -86,7 +86,7 @@ export function filterTriggersPre(triggerList, replacedTarget) {
     const tags = utils.parseTags(tagsFilter);
     triggerList = _.filter(triggerList, trigger => {
       return _.every(tags, tag => {
-        return _.includes(trigger.tags, {tag: tag.tag, value: tag.value});
+        return _.find(trigger.tags, t => t.tag === tag.tag && (!tag.value || t.value === tag.value));
       });
     });
   }

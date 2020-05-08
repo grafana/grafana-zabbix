@@ -117,7 +117,6 @@ export class ZabbixQueryController extends QueryCtrl {
     });
 
     this.init = function() {
-      console.log(this);
       var target = this.target;
 
       // Migrate old targets
