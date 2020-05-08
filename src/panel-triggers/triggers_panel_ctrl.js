@@ -81,19 +81,14 @@ const triggerStatusMap = {
 export class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   /** @ngInject */
-  constructor($scope, $injector, $timeout, templateSrv, contextSrv, dashboardSrv, timeSrv) {
+  constructor($scope, $injector, $timeout) {
     super($scope, $injector);
-    this.templateSrv = templateSrv;
-    this.contextSrv = contextSrv;
-    this.dashboardSrv = dashboardSrv;
-    this.timeSrv = timeSrv;
     this.scope = $scope;
     this.$timeout = $timeout;
 
     // Tell Grafana do not convert data frames to table or series
     this.useDataFrames = true;
 
-    this.editorTabIndex = 1;
     this.triggerStatusMap = triggerStatusMap;
     this.defaultTimeFormat = DEFAULT_TIME_FORMAT;
     this.pageIndex = 0;
