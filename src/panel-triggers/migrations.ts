@@ -1,9 +1,20 @@
 import _ from 'lodash';
 import { getNextRefIdChar } from './utils';
-import { getDefaultTarget } from './triggers_panel_ctrl';
 
 // Actual schema version
 export const CURRENT_SCHEMA_VERSION = 8;
+
+export const getDefaultTarget = (targets?) => {
+  return {
+    group: {filter: ""},
+    host: {filter: ""},
+    application: {filter: ""},
+    trigger: {filter: ""},
+    tags: {filter: ""},
+    proxy: {filter: ""},
+    refId: getNextRefIdChar(targets),
+  };
+};
 
 export function getDefaultTargetOptions() {
   return {
@@ -89,6 +100,7 @@ export function migratePanelSchema(panel) {
       // set queryType to PROBLEMS
       target.queryType = 5;
       target.options = getDefaultTargetOptions();
+      _.defaults(target, {tags: {filter: ""}});
     }
   }
 

@@ -266,25 +266,32 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   addTagFilter(tag, datasource) {
-    const target = this.panel.targets.find(t => t.datasource === datasource);
-    let tagFilter = target.tags.filter;
-    let targetTags = this.parseTags(tagFilter);
-    let newTag = {tag: tag.tag, value: tag.value};
-    targetTags.push(newTag);
-    targetTags = _.uniqWith(targetTags, _.isEqual);
-    let newFilter = this.tagsToString(targetTags);
-    target.tags.filter = newFilter;
+    for (const target of this.panel.targets) {
+      if (target.datasource === datasource || this.panel.datasource === datasource) {
+        let tagFilter = target.tags.filter;
+        let targetTags = this.parseTags(tagFilter);
+        let newTag = {tag: tag.tag, value: tag.value};
+        targetTags.push(newTag);
+        targetTags = _.uniqWith(targetTags, _.isEqual);
+        let newFilter = this.tagsToString(targetTags);
+        target.tags.filter = newFilter;
+      }
+    }
     this.refresh();
   }
 
   removeTagFilter(tag, datasource) {
-    const target = this.panel.targets.find(t => t.datasource === datasource);
-    let tagFilter = target.tags.filter;
-    let targetTags = this.parseTags(tagFilter);
-    _.remove(targetTags, t => t.tag === tag.tag && t.value === tag.value);
-    targetTags = _.uniqWith(targetTags, _.isEqual);
-    let newFilter = this.tagsToString(targetTags);
-    target.tags.filter = newFilter;
+    const matchTag = t => t.tag === tag.tag && t.value === tag.value;
+    for (const target of this.panel.targets) {
+      if (target.datasource === datasource || this.panel.datasource === datasource) {
+        let tagFilter = target.tags.filter;
+        let targetTags = this.parseTags(tagFilter);
+        _.remove(targetTags, matchTag);
+        targetTags = _.uniqWith(targetTags, _.isEqual);
+        let newFilter = this.tagsToString(targetTags);
+        target.tags.filter = newFilter;
+      }
+    }
     this.refresh();
   }
 

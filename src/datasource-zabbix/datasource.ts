@@ -456,8 +456,6 @@ export class ZabbixDatasource {
 
     return problemsPromises.then(problems => {
       const problemsDataFrame = problemsHandler.toDataFrame(problems);
-      console.log(problems);
-      console.log(problemsDataFrame);
       return problemsDataFrame;
     });
   }
