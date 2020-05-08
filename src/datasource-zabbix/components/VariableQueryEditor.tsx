@@ -1,9 +1,13 @@
 import React, { PureComponent } from 'react';
 import { parseLegacyVariableQuery } from '../utils';
-import { Select, Input, AsyncSelect, FormLabel } from '@grafana/ui';
+import { Select, Input } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { VariableQuery, VariableQueryTypes, VariableQueryProps, VariableQueryData } from '../types';
 import { ZabbixInput } from './ZabbixInput';
+
+// FormLabel was renamed to InlineFormLabel in Grafana 7.0
+import * as grafanaUi from '@grafana/ui';
+const FormLabel = grafanaUi.FormLabel || (grafanaUi as any).InlineFormLabel;
 
 export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryData> {
   queryTypes: Array<SelectableValue<VariableQueryTypes>> = [
