@@ -25,7 +25,7 @@ jest.mock('grafana/app/core/core_module', () => {
 }, {virtual: true});
 
 jest.mock('grafana/app/core/core', () => ({
-    contextSrv: {},
+  contextSrv: {},
 }), {virtual: true});
 
 const mockPanelCtrl = PanelCtrl;
