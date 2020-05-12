@@ -39,7 +39,7 @@ describe('TriggerPanelCtrl', () => {
       get: () => Promise.resolve(zabbixDSMock)
     };
 
-    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock, {}, {}, {}, mocks.timeSrvMock);
+    createPanelCtrl = () => new TriggerPanelCtrl(ctx.scope, {}, timeoutMock);
 
     const getTriggersResp = [
       [
