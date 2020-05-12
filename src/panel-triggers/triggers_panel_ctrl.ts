@@ -79,6 +79,14 @@ const triggerStatusMap = {
 };
 
 export class TriggerPanelCtrl extends MetricsPanelCtrl {
+  scope: any;
+  useDataFrames: boolean;
+  triggerStatusMap: any;
+  defaultTimeFormat: string;
+  pageIndex: number;
+  renderData: any[];
+  contextSrv: any;
+  static templateUrl: string;
 
   /** @ngInject */
   constructor($scope, $injector, $timeout) {
@@ -142,10 +150,9 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.range = this.timeSrv.timeRange();
   }
 
-  setPanelError(err, defaultError) {
-    const defaultErrorMessage = defaultError || "Request Error";
+  setPanelError(err, defaultError = "Request Error") {
     this.inspector = { error: err };
-    this.error = err.message || defaultErrorMessage;
+    this.error = err.message || defaultError;
     if (err.data) {
       if (err.data.message) {
         this.error = err.data.message;
@@ -217,7 +224,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   formatTrigger(zabbixTrigger) {
-    let trigger = _.cloneDeep(zabbixTrigger);
+    const trigger = _.cloneDeep(zabbixTrigger);
 
     // Set host and proxy that the trigger belongs
     if (trigger.hosts && trigger.hosts.length) {
@@ -263,12 +270,12 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   addTagFilter(tag, datasource) {
     for (const target of this.panel.targets) {
       if (target.datasource === datasource || this.panel.datasource === datasource) {
-        let tagFilter = target.tags.filter;
+        const tagFilter = target.tags.filter;
         let targetTags = this.parseTags(tagFilter);
-        let newTag = {tag: tag.tag, value: tag.value};
+        const newTag = {tag: tag.tag, value: tag.value};
         targetTags.push(newTag);
         targetTags = _.uniqWith(targetTags, _.isEqual);
-        let newFilter = this.tagsToString(targetTags);
+        const newFilter = this.tagsToString(targetTags);
         target.tags.filter = newFilter;
       }
     }
@@ -279,11 +286,11 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     const matchTag = t => t.tag === tag.tag && t.value === tag.value;
     for (const target of this.panel.targets) {
       if (target.datasource === datasource || this.panel.datasource === datasource) {
-        let tagFilter = target.tags.filter;
+        const tagFilter = target.tags.filter;
         let targetTags = this.parseTags(tagFilter);
         _.remove(targetTags, matchTag);
         targetTags = _.uniqWith(targetTags, _.isEqual);
-        let newFilter = this.tagsToString(targetTags);
+        const newFilter = this.tagsToString(targetTags);
         target.tags.filter = newFilter;
       }
     }
@@ -295,7 +302,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     const timeFrom = Math.ceil(dateMath.parse(this.range.from) / 1000);
     const timeTo = Math.ceil(dateMath.parse(this.range.to) / 1000);
     return getDataSourceSrv().get(problem.datasource)
-    .then(datasource => {
+    .then((datasource: any) => {
       return datasource.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
     });
   }
@@ -306,7 +313,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     }
     const eventids = [problem.lastEvent.eventid];
     return getDataSourceSrv().get(problem.datasource)
-    .then(datasource => {
+    .then((datasource: any) => {
       return datasource.zabbix.getEventAlerts(eventids);
     });
   }
@@ -328,7 +335,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   formatHostGroups(trigger) {
     let groupNames = "";
     if (this.panel.hostGroups) {
-      let groups = _.map(trigger.groups, 'name').join(', ');
+      const groups = _.map(trigger.groups, 'name').join(', ');
       groupNames += `[ ${groups} ]`;
     }
 
@@ -389,11 +396,11 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   acknowledgeTrigger(trigger, message) {
-    let eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
-    let grafana_user = this.contextSrv.user.name;
-    let ack_message = grafana_user + ' (Grafana): ' + message;
+    const eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
+    const grafana_user = this.contextSrv.user.name;
+    const ack_message = grafana_user + ' (Grafana): ' + message;
     return getDataSourceSrv().get(trigger.datasource)
-    .then(datasource => {
+    .then((datasource: any) => {
       const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
       if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
         return Promise.reject({message: 'You have no permissions to acknowledge events.'});
@@ -404,7 +411,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
         return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
       }
     })
-    .then(this.onMetricsPanelRefresh.bind(this))
+    .then(this.refresh.bind(this))
     .catch((err) => {
       this.setPanelError(err);
     });
@@ -426,7 +433,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   link(scope, elem, attrs, ctrl) {
-    let panel = ctrl.panel;
+    const panel = ctrl.panel;
     // let problems = ctrl.problems;
 
     // scope.$watchGroup(['ctrl.renderData'], renderPanel);
@@ -439,14 +446,14 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
       const timeFrom = Math.ceil(dateMath.parse(ctrl.range.from) / 1000);
       const timeTo = Math.ceil(dateMath.parse(ctrl.range.to) / 1000);
 
-      const fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1));
+      const fontSize = parseInt(panel.fontSize.slice(0, panel.fontSize.length - 1), 10);
       const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
 
       const pageSize = panel.pageSize || 10;
       const loading = ctrl.loading && (!problems || !problems.length);
 
-      let panelOptions = {};
-      for (let prop in PANEL_DEFAULTS) {
+      const panelOptions = {};
+      for (const prop in PANEL_DEFAULTS) {
         panelOptions[prop] = ctrl.panel[prop];
       }
       const problemsListProps = {

@@ -48,7 +48,7 @@ describe('Triggers Panel schema migration', () => {
       }
     };
 
-    updatePanelCtrl = (scope) => new TriggerPanelCtrl(scope, {}, timeoutMock, {}, {}, {}, mocks.timeSrvMock);
+    updatePanelCtrl = (scope) => new TriggerPanelCtrl(scope, {}, timeoutMock);
   });
 
   it('should update old panel schema', () => {
