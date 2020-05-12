@@ -183,14 +183,14 @@ function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSev
 
   let severityDesc: TriggerSeverity;
   severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(problem.priority));
-  if (problem.lastEvent && problem.lastEvent.severity && problem.value === '1') {
+  if (problem.lastEvent?.severity && problem.value === '1') {
     severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(problem.lastEvent.severity));
   }
 
   color = severityDesc.color;
 
   // Mark acknowledged triggers with different color
-  if (markAckEvents && problem.lastEvent.acknowledged === "1") {
+  if (markAckEvents && problem.lastEvent?.acknowledged === "1") {
     color = ackEventColor;
   }
 
