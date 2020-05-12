@@ -26,9 +26,9 @@ function getTargetDefaults() {
       skipEmptyValues: false,
       // Problems
       hostsInMaintenance: false,
-      showTriggers: null,
-      sortTriggersBy: null,
-      showEvents: null,
+      hostProxy: false,
+      sortTriggersBy: { text: 'last change', value: 'lastchange' },
+      showEvents: { text: 'Problems', value: 1 },
     },
     table: {
       'skipEmptyValues': false
@@ -358,15 +358,13 @@ export class ZabbixQueryController extends QueryCtrl {
       showDisabledItems: "Show disabled items",
       skipEmptyValues: "Skip empty values",
       hostsInMaintenance: "Show hosts in maintenance",
-      showTriggers: "Acknowledged",
       sortTriggersBy: "Sort problems",
-      showEvents: "Show events",
       limit: "Limit problems",
       hostProxy: "Show proxy",
     };
     var options = [];
     _.forOwn(this.target.options, (value, key) => {
-      if (value) {
+      if (value && optionsMap[key]) {
         if (value === true) {
           // Show only option name (if enabled) for boolean options
           options.push(optionsMap[key]);
