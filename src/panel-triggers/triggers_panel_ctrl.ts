@@ -118,7 +118,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.addEditorTab('Options', triggerPanelOptionsTab);
   }
 
-  onDataFramesReceived(data) {
+  onDataFramesReceived(data: any): Promise<any> {
     let problems = [];
 
     if (data && data.length) {
@@ -133,17 +133,18 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
           }
         } catch (error) {
           console.log(error);
+          return Promise.reject(error);
         }
       }
     }
 
     this.loading = false;
     problems = _.flatten(problems);
-    this.renderProblems(problems);
+    return this.renderProblems(problems);
   }
 
   onDataSnapshotLoad(snapshotData) {
-    this.onDataFramesReceived(snapshotData);
+    return this.onDataFramesReceived(snapshotData);
   }
 
   onRender() {
