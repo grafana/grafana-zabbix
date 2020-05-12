@@ -92,3 +92,7 @@ let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
 global.window = dom.window;
 global.document = global.window.document;
 global.Node = window.Node;
+
+// Mock Canvas.getContext(), fixes
+// Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+window.HTMLCanvasElement.prototype.getContext = () => {};
