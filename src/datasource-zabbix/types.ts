@@ -28,3 +28,9 @@ export enum VariableQueryTypes {
   Application = 'application',
   Item = 'item',
 }
+
+export enum ShowProblemTypes {
+  Problems = 'problems',
+  Recent = 'recent',
+  History = 'history',
+}

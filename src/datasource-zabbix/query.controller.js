@@ -4,6 +4,7 @@ import * as c from './constants';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
+import { ShowProblemTypes } from './types';
 
 function getTargetDefaults() {
   return {
@@ -28,10 +29,24 @@ function getTargetDefaults() {
       hostsInMaintenance: false,
       hostProxy: false,
       sortTriggersBy: { text: 'last change', value: 'lastchange' },
-      showEvents: { text: 'Problems', value: 1 },
     },
     table: {
       'skipEmptyValues': false
+    },
+  };
+}
+
+function getSLATargetDefaults() {
+  return {
+    slaProperty: { name: "SLA", property: "sla" },
+  };
+}
+
+function getProblemsTargetDefaults() {
+  return {
+    showProblems: ShowProblemTypes.Problems,
+    options: {
+      acknowledged: 2,
     },
   };
 }
@@ -96,6 +111,12 @@ export class ZabbixQueryController extends QueryCtrl {
       { text: 'Problems', value: 1 }
     ];
 
+    this.showProblemsOptions = [
+      { text: 'Problems', value: 'problems' },
+      { text: 'Recent problems', value: 'recent' },
+      { text: 'History', value: 'history' },
+    ];
+
     this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
 
     this.triggerSeverity = c.TRIGGER_SEVERITY;
@@ -143,14 +164,20 @@ export class ZabbixQueryController extends QueryCtrl {
         return metricFunctions.createFuncInstance(func.def, func.params);
       });
 
+      if (target.queryType === c.MODE_ITSERVICE) {
+        _.defaultsDeep(target, getSLATargetDefaults());
+      }
+
+      if (target.queryType === c.MODE_PROBLEMS) {
+        _.defaultsDeep(target, getProblemsTargetDefaults());
+      }
+
       if (target.queryType === c.MODE_METRICS ||
           target.queryType === c.MODE_TEXT ||
           target.queryType === c.MODE_TRIGGERS ||
           target.queryType === c.MODE_PROBLEMS) {
         this.initFilters();
-      }
-      else if (target.queryType === c.MODE_ITSERVICE) {
-        _.defaults(target, {slaProperty: {name: "SLA", property: "sla"}});
+      } else if (target.queryType === c.MODE_ITSERVICE) {
         this.suggestITServices();
       }
     };
@@ -354,15 +381,28 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   renderQueryOptionsText() {
-    var optionsMap = {
+    const metricOptionsMap = {
       showDisabledItems: "Show disabled items",
+    };
+
+    const problemsOptionsMap = {
+      sortTriggersBy: "Sort problems",
+      acknowledged: "Acknowledged",
       skipEmptyValues: "Skip empty values",
       hostsInMaintenance: "Show hosts in maintenance",
-      sortTriggersBy: "Sort problems",
       limit: "Limit problems",
       hostProxy: "Show proxy",
     };
-    var options = [];
+
+    let optionsMap = {};
+
+    if (this.target.queryType === c.MODE_METRICS) {
+      optionsMap = metricOptionsMap;
+    } else if (this.target.queryType === c.MODE_PROBLEMS || this.target.queryType === c.MODE_TRIGGERS) {
+      optionsMap = problemsOptionsMap;
+    }
+
+    const options = [];
     _.forOwn(this.target.options, (value, key) => {
       if (value && optionsMap[key]) {
         if (value === true) {
@@ -392,6 +432,7 @@ export class ZabbixQueryController extends QueryCtrl {
    */
   switchEditorMode(mode) {
     this.target.queryType = mode;
+    this.queryOptionsText = this.renderQueryOptionsText();
     this.init();
     this.targetChanged();
   }

@@ -91,6 +91,11 @@ export function filterTriggersPre(triggerList, replacedTarget) {
     });
   }
 
+  // Filter by maintenance status
+  if (!replacedTarget.options.hostsInMaintenance) {
+    triggerList = _.filter(triggerList, (trigger) => !trigger.maintenance);
+  }
+
   return triggerList;
 }
 

@@ -34,8 +34,9 @@ describe('Triggers Panel schema migration', () => {
           ageField: true,
           infoField: true,
           limit: 10,
-          showTriggers: 'all triggers',
+          showTriggers: 'unacknowledged',
           hideHostsInMaintenance: false,
+          hostsInMaintenance: false,
           sortTriggersBy: { text: 'last change', value: 'lastchange' },
           showEvents: { text: 'Problems', value: '1' },
           triggerSeverity: DEFAULT_SEVERITY,
@@ -61,12 +62,12 @@ describe('Triggers Panel schema migration', () => {
         {
           ...DEFAULT_TARGET,
           queryType: 5,
+          showProblems: 'problems',
           options: {
-            hostsInMaintenance: true,
-            showTriggers: 'all triggers',
+            hostsInMaintenance: false,
+            acknowledged: 0,
             sortTriggersBy: { text: 'last change', value: 'lastchange' },
-            showEvents: { text: 'Problems', value: 1 },
-          }
+          },
         }
       ],
       ageField: true,

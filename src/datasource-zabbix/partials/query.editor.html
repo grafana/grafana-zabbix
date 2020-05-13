@@ -169,12 +169,12 @@
 
   <div class="gf-form-inline" ng-show="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
     <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS">
-      <label class="gf-form-label query-keyword width-7">Show events</label>
+      <label class="gf-form-label query-keyword width-7">Show</label>
       <div class="gf-form-select-wrapper max-width-20">
         <select class="gf-form-input"
-          ng-model="ctrl.target.options.showEvents"
-          ng-options="f.text for f in ctrl.showEventsFields track by f.value"
-          ng-change="ctrl.onQueryOptionChange()">
+          ng-model="ctrl.target.showProblems"
+          ng-options="v.value as v.text for v in ctrl.showProblemsOptions"
+          ng-change="ctrl.onTargetBlur()">
         </select>
       </div>
     </div>
@@ -279,23 +279,21 @@
     </div>
 
     <div class="gf-form-group" ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS">
-      <div ng-show="ctrl.target.queryType == editorMode.TRIGGERS">
-        <div class="gf-form max-width-20">
-          <label class="gf-form-label width-7">Acknowledged</label>
-          <div class="gf-form-select-wrapper width-14">
-            <select class="gf-form-input"
-                  ng-change="ctrl.onTargetBlur()"
-                  ng-model="ctrl.target.triggers.acknowledged"
-                  ng-options="a.value as a.text for a in ctrl.ackFilters">
-            </select>
-          </div>
+      <gf-form-switch class="gf-form" ng-show="ctrl.target.queryType == editorMode.TRIGGERS"
+        label-class="width-9"
+        label="Count"
+        checked="ctrl.target.triggers.count"
+        on-change="ctrl.onTargetBlur()">
+      </gf-form-switch>
+      <div class="gf-form" ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS">
+        <label class="gf-form-label width-9">Acknowledged</label>
+        <div class="gf-form-select-wrapper width-12">
+          <select class="gf-form-input"
+                ng-change="ctrl.onTargetBlur()"
+                ng-model="ctrl.target.options.acknowledged"
+                ng-options="a.value as a.text for a in ctrl.ackFilters">
+          </select>
         </div>
-        <gf-form-switch class="gf-form"
-          label-class="width-9"
-          label="Count"
-          checked="ctrl.target.triggers.count"
-          on-change="ctrl.onTargetBlur()">
-        </gf-form-switch>
       </div>
 
       <div ng-show="ctrl.target.queryType == editorMode.PROBLEMS">

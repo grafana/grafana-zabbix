@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { getNextRefIdChar } from './utils';
+import { ShowProblemTypes } from '../datasource-zabbix/types';
 
 // Actual schema version
 export const CURRENT_SCHEMA_VERSION = 8;
@@ -19,9 +20,7 @@ export const getDefaultTarget = (targets?) => {
 export function getDefaultTargetOptions() {
   return {
     hostsInMaintenance: true,
-    showTriggers: 'all triggers',
     sortTriggersBy: { text: 'last change', value: 'lastchange' },
-    showEvents: { text: 'Problems', value: 1 },
   };
 }
 
@@ -99,12 +98,43 @@ export function migratePanelSchema(panel) {
     for (const target of panel.targets) {
       // set queryType to PROBLEMS
       target.queryType = 5;
-      target.options = getDefaultTargetOptions();
-      _.defaults(target, {tags: {filter: ""}});
+      target.showProblems = migrateShowEvents(panel);
+      target.options = migrateOptions(panel);
+      _.defaults(target.options, getDefaultTargetOptions());
+      _.defaults(target, { tags: { filter: "" } });
     }
+
+    delete panel.showEvents;
+    delete panel.showTriggers;
+    delete panel.hostsInMaintenance;
   }
 
   return panel;
+}
+
+function migrateOptions(panel) {
+  let acknowledged = 2;
+  if (panel.showTriggers === 'acknowledged') {
+    acknowledged = 1;
+  } else if (panel.showTriggers === 'unacknowledged') {
+    acknowledged = 0;
+  }
+
+  return {
+    hostsInMaintenance: panel.hostsInMaintenance,
+    sortTriggersBy: panel.sortTriggersBy,
+    acknowledged: acknowledged,
+  };
+}
+
+function migrateShowEvents(panel) {
+  if (panel.showEvents?.value === 1) {
+    return ShowProblemTypes.Problems;
+  } else if (panel.showEvents?.value === 0 || panel.showEvents?.value?.length > 1) {
+    return ShowProblemTypes.History;
+  } else {
+    return ShowProblemTypes.Problems;
+  }
 }
 
 function getSchemaVersion(panel) {

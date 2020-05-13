@@ -11,7 +11,7 @@ import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
-import { VariableQueryTypes } from './types';
+import { VariableQueryTypes, ShowProblemTypes } from './types';
 
 const DEFAULT_ZABBIX_VERSION = 3;
 
@@ -396,9 +396,7 @@ export class ZabbixDatasource {
     let proxies;
     let showAckButton = true;
 
-    // const showEvents = this.panel.showEvents.value;
-    const showEvents = target.options.showEvents?.value || 1;
-    // const showProxy = this.panel.hostProxy;
+    const showProblems = target.showProblems || ShowProblemTypes.Problems;
     const showProxy = target.options.hostProxy;
 
     const getProxiesPromise = showProxy ? this.zabbix.getProxies() : () => [];
@@ -420,10 +418,10 @@ export class ZabbixDatasource {
     };
 
     const triggersOptions: any = {
-      showTriggers: showEvents
+      showTriggers: showProblems
     };
 
-    if (showEvents !== 1) {
+    if (showProblems !== ShowProblemTypes.Problems) {
       triggersOptions.timeFrom = timeFrom;
       triggersOptions.timeTo = timeTo;
     }

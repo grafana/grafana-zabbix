@@ -3,6 +3,7 @@ import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { ZabbixAPICore } from './zabbixAPICore';
 import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
+import { ShowProblemTypes } from '../../../types';
 
 /**
  * Zabbix API Wrapper.
@@ -350,8 +351,10 @@ export class ZabbixAPIConnector {
       selectTags: 'extend'
     };
 
-    if (showTriggers) {
-      params.filter.value = showTriggers;
+    if (showTriggers === ShowProblemTypes.Problems) {
+      params.filter.value = 1;
+    } else if (showTriggers === ShowProblemTypes.Recent || showTriggers === ShowProblemTypes.History) {
+      params.filter.value = [0, 1];
     }
 
     if (maintenance) {

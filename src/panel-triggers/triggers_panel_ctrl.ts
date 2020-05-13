@@ -20,6 +20,7 @@ export const DEFAULT_TARGET = {
   trigger: {filter: ""},
   tags: {filter: ""},
   proxy: {filter: ""},
+  showProblems: 'problems',
 };
 
 export const DEFAULT_SEVERITY = [
@@ -41,7 +42,6 @@ export const PANEL_DEFAULTS = {
   hostField: true,
   hostTechNameField: false,
   hostGroups: false,
-  hostProxy: false,
   showTags: true,
   statusField: true,
   statusIcon: false,
@@ -50,11 +50,8 @@ export const PANEL_DEFAULTS = {
   descriptionField: true,
   descriptionAtNewLine: false,
   // Options
-  hostsInMaintenance: true,
-  showTriggers: 'all triggers',
   sortTriggersBy: { text: 'last change', value: 'lastchange' },
-  showEvents: { text: 'Problems', value: 1 },
-  limit: 100,
+  limit: null,
   // View options
   layout: 'table',
   fontSize: '100%',
@@ -175,7 +172,9 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     triggers = this.sortTriggers(triggers);
 
     // Limit triggers number
-    triggers = triggers.slice(0, this.panel.limit || PANEL_DEFAULTS.limit);
+    if (this.panel.limit) {
+      triggers = triggers.slice(0, this.panel.limit);
+    }
 
     this.renderData = triggers;
 
@@ -196,11 +195,6 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
       triggerList = _.filter(triggerList, trigger => {
         return trigger.acknowledges && trigger.acknowledges.length;
       });
-    }
-
-    // Filter by maintenance status
-    if (!this.panel.hostsInMaintenance) {
-      triggerList = _.filter(triggerList, (trigger) => trigger.maintenance === false);
     }
 
     // Filter triggers by severity
