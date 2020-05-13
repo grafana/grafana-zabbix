@@ -41,6 +41,7 @@ export const PANEL_DEFAULTS = {
   // Fields
   hostField: true,
   hostTechNameField: false,
+  hostProxy: false,
   hostGroups: false,
   showTags: true,
   statusField: true,
