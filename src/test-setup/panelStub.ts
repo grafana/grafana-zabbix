@@ -137,6 +137,10 @@ export class MetricsPanelCtrl extends PanelCtrl {
     super($scope, $injector);
 
     this.events.on(PanelEvents.refresh, this.onMetricsPanelRefresh.bind(this));
+
+    this.timeSrv = {
+      timeRange: () => {},
+    };
   }
 
   onInitMetricsPanelEditMode() {}
