@@ -89,7 +89,7 @@
         <select class="gf-form-input"
           ng-model="ctrl.panel.sortProblems"
           ng-options="f.value as f.text for f in editor.sortingOptions"
-          ng-change="ctrl.render()">
+          ng-change="ctrl.reRenderProblems()">
         </select>
       </div>
     </div>
@@ -187,7 +187,7 @@
         label-class="width-0"
         label="Show"
         checked="trigger.show"
-        on-change="ctrl.refresh()">
+        on-change="ctrl.reRenderProblems()">
       </gf-form-switch>
     </div>
 
@@ -209,7 +209,7 @@
         label-class="width-0"
         label="Show"
         checked="ctrl.panel.markAckEvents"
-        on-change="ctrl.refresh()">
+        on-change="ctrl.reRenderProblems()">
       </gf-form-switch>
     </div>
     <div class="gf-form-inline">

@@ -82,6 +82,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   defaultTimeFormat: string;
   pageIndex: number;
   renderData: any[];
+  problems: any[];
   contextSrv: any;
   static templateUrl: string;
 
@@ -103,7 +104,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.panel = migratePanelSchema(this.panel);
     _.defaultsDeep(this.panel, _.cloneDeep(PANEL_DEFAULTS));
 
-    this.events.on(PanelEvents.render, this.onRender.bind(this));
+    // this.events.on(PanelEvents.render, this.onRender.bind(this));
     this.events.on('data-frames-received', this.onDataFramesReceived.bind(this));
     this.events.on(PanelEvents.dataSnapshotLoad, this.onDataSnapshotLoad.bind(this));
     this.events.on(PanelEvents.editModeInitialized, this.onInitEditMode.bind(this));
@@ -116,6 +117,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   onDataFramesReceived(data: any): Promise<any> {
+    this.range = this.timeSrv.timeRange();
     let problems = [];
 
     if (data && data.length) {
@@ -137,6 +139,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
 
     this.loading = false;
     problems = _.flatten(problems);
+    this.problems = problems;
     return this.renderProblems(problems);
   }
 
@@ -144,10 +147,9 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     return this.onDataFramesReceived(snapshotData);
   }
 
-  onRender() {
-    this.range = this.timeSrv.timeRange();
-    if (this.renderData) {
-      this.renderProblems(this.renderData);
+  reRenderProblems() {
+    if (this.problems) {
+      this.renderProblems(this.problems);
     }
   }
 
@@ -432,9 +434,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   link(scope, elem, attrs, ctrl) {
     const panel = ctrl.panel;
-    // let problems = ctrl.problems;
 
-    // scope.$watchGroup(['ctrl.renderData'], renderPanel);
     ctrl.events.on(PanelEvents.render, (renderData) => {
       renderData = renderData || this.renderData;
       renderPanel(renderData);
