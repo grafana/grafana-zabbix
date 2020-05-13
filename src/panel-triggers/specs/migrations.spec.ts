@@ -66,10 +66,11 @@ describe('Triggers Panel schema migration', () => {
           options: {
             hostsInMaintenance: false,
             acknowledged: 0,
-            sortTriggersBy: { text: 'last change', value: 'lastchange' },
+            sortProblems: 'default',
           },
         }
       ],
+      sortProblems: 'lastchange',
       ageField: true,
       statusField: false,
       severityField: false,

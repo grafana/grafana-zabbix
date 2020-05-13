@@ -15,7 +15,12 @@ describe('TriggerPanelCtrl', () => {
   let createPanelCtrl: () => any;
 
   beforeEach(() => {
-    ctx = { scope: { panel: PANEL_DEFAULTS } };
+    ctx = { scope: {
+      panel: {
+        ...PANEL_DEFAULTS,
+        sortProblems: 'lastchange',
+      }
+    }};
     ctx.scope.panel.targets = [{
       ...DEFAULT_TARGET,
       datasource: 'zabbix_default',
@@ -84,7 +89,7 @@ describe('TriggerPanelCtrl', () => {
     });
 
     it('should sort triggers by severity', (done) => {
-      ctx.panelCtrl.panel.sortTriggersBy = { text: 'severity', value: 'priority' };
+      ctx.panelCtrl.panel.sortProblems = 'priority';
       ctx.panelCtrl.onDataFramesReceived(ctx.dataFramesReceived).then(() => {
         const trigger_ids = _.map(ctx.panelCtrl.renderData, 'triggerid');
         expect(trigger_ids).toEqual([

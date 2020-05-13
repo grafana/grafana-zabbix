@@ -87,8 +87,8 @@
       <label class="gf-form-label width-10">Sort by</label>
       <div class="gf-form-select-wrapper max-width-8">
         <select class="gf-form-input"
-          ng-model="ctrl.panel.sortTriggersBy"
-          ng-options="f.text for f in editor.sortByFields track by f.value"
+          ng-model="ctrl.panel.sortProblems"
+          ng-options="f.value as f.text for f in editor.sortingOptions"
           ng-change="ctrl.render()">
         </select>
       </div>

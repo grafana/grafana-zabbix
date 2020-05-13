@@ -25,10 +25,6 @@ function getTargetDefaults() {
     options: {
       showDisabledItems: false,
       skipEmptyValues: false,
-      // Problems
-      hostsInMaintenance: false,
-      hostProxy: false,
-      sortTriggersBy: { text: 'last change', value: 'lastchange' },
     },
     table: {
       'skipEmptyValues': false
@@ -46,7 +42,10 @@ function getProblemsTargetDefaults() {
   return {
     showProblems: ShowProblemTypes.Problems,
     options: {
+      sortTriggersBy: 'default',
       acknowledged: 2,
+      hostsInMaintenance: false,
+      hostProxy: false,
     },
   };
 }
@@ -101,8 +100,9 @@ export class ZabbixQueryController extends QueryCtrl {
     ];
 
     this.sortByFields = [
-      { text: 'last change', value: 'lastchange' },
-      { text: 'severity',    value: 'priority' }
+      { text: 'Default', value: 'default' },
+      { text: 'Last change', value: 'lastchange' },
+      { text: 'Severity',    value: 'priority' },
     ];
 
     this.showEventsFields = [

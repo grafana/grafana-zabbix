@@ -301,8 +301,8 @@
           <label class="gf-form-label width-9">Sort by</label>
           <div class="gf-form-select-wrapper width-12">
             <select class="gf-form-input"
-              ng-model="ctrl.target.options.sortTriggersBy"
-              ng-options="f.text for f in ctrl.sortByFields track by f.value"
+              ng-model="ctrl.target.options.sortProblems"
+              ng-options="f.value as f.text for f in ctrl.sortByFields"
               ng-change="ctrl.onQueryOptionChange()">
             </select>
           </div>

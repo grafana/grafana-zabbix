@@ -50,7 +50,7 @@ export const PANEL_DEFAULTS = {
   descriptionField: true,
   descriptionAtNewLine: false,
   // Options
-  sortTriggersBy: { text: 'last change', value: 'lastchange' },
+  sortProblems: 'lastchange',
   limit: null,
   // View options
   layout: 'table',
@@ -146,6 +146,9 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   onRender() {
     this.range = this.timeSrv.timeRange();
+    if (this.renderData) {
+      this.renderProblems(this.renderData);
+    }
   }
 
   setPanelError(err, defaultError = "Request Error") {
@@ -210,9 +213,9 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   sortTriggers(triggerList) {
-    if (this.panel.sortTriggersBy.value === 'priority') {
+    if (this.panel.sortProblems === 'priority') {
       triggerList = _.orderBy(triggerList, ['priority', 'lastchangeUnix', 'triggerid'], ['desc', 'desc', 'desc']);
-    } else {
+    } else if (this.panel.sortProblems === 'lastchange') {
       triggerList = _.orderBy(triggerList, ['lastchangeUnix', 'priority', 'triggerid'], ['desc', 'desc', 'desc']);
     }
     return triggerList;

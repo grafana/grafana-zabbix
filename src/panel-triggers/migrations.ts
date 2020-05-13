@@ -20,7 +20,6 @@ export const getDefaultTarget = (targets?) => {
 export function getDefaultTargetOptions() {
   return {
     hostsInMaintenance: true,
-    sortTriggersBy: { text: 'last change', value: 'lastchange' },
   };
 }
 
@@ -100,13 +99,17 @@ export function migratePanelSchema(panel) {
       target.queryType = 5;
       target.showProblems = migrateShowEvents(panel);
       target.options = migrateOptions(panel);
+
       _.defaults(target.options, getDefaultTargetOptions());
       _.defaults(target, { tags: { filter: "" } });
     }
 
+    panel.sortProblems = panel.sortTriggersBy?.value === 'priority' ? 'priority' : 'lastchange';
+
     delete panel.showEvents;
     delete panel.showTriggers;
     delete panel.hostsInMaintenance;
+    delete panel.sortTriggersBy;
   }
 
   return panel;
@@ -122,7 +125,7 @@ function migrateOptions(panel) {
 
   return {
     hostsInMaintenance: panel.hostsInMaintenance,
-    sortTriggersBy: panel.sortTriggersBy,
+    sortProblems: panel.sortTriggersBy?.value === 'priority' ? 'priority' : 'default',
     acknowledged: acknowledged,
   };
 }
