@@ -2,7 +2,7 @@
 /* globals global: false */
 
 import { JSDOM } from 'jsdom';
-import { PanelCtrl } from './panelStub';
+import { PanelCtrl, MetricsPanelCtrl } from './panelStub';
 
 // Mock Grafana modules that are not available outside of the core project
 // Required for loading module.js
@@ -24,12 +24,19 @@ jest.mock('grafana/app/core/core_module', () => {
   };
 }, {virtual: true});
 
-let mockPanelCtrl = PanelCtrl;
+jest.mock('grafana/app/core/core', () => ({
+  contextSrv: {},
+}), {virtual: true});
+
+const mockPanelCtrl = PanelCtrl;
+const mockMetricsPanelCtrl = MetricsPanelCtrl;
+
 jest.mock('grafana/app/plugins/sdk', () => {
   return {
     QueryCtrl: null,
     loadPluginCss: () => {},
-    PanelCtrl: mockPanelCtrl
+    PanelCtrl: mockPanelCtrl,
+    MetricsPanelCtrl: mockMetricsPanelCtrl,
   };
 }, {virtual: true});
 
@@ -85,3 +92,7 @@ let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
 global.window = dom.window;
 global.document = global.window.document;
 global.Node = window.Node;
+
+// Mock Canvas.getContext(), fixes
+// Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+window.HTMLCanvasElement.prototype.getContext = () => {};

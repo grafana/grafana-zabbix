@@ -222,10 +222,11 @@ export function escapeRegex(value) {
   return value.replace(/[\\^$*+?.()|[\]{}\/]/g, '\\$&');
 }
 
-export function parseInterval(interval) {
+export function parseInterval(interval: string): number {
   const intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)/g;
   const momentInterval: any[] = intervalPattern.exec(interval);
-  return moment.duration(Number(momentInterval[1]), momentInterval[2]).valueOf();
+  const duration = moment.duration(Number(momentInterval[1]), momentInterval[2]);
+  return (duration.valueOf() as number);
 }
 
 export function parseTimeShiftInterval(interval) {
@@ -344,7 +345,25 @@ export function getArrayDepth(a, level = 0) {
   return level + 1;
 }
 
-// Fix for backward compatibility with lodash 2.4
-if (!_.includes) {
-  _.includes = (_ as any).contains;
+/**
+ * Checks whether its argument represents a numeric value.
+ */
+export function isNumeric(n: any): boolean {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+/**
+ * Parses tags string into array of {tag: value} objects
+ */
+export function parseTags(tagStr: string): any[] {
+  if (!tagStr) {
+    return [];
+  }
+
+  let tags: any[] = _.map(tagStr.split(','), (tag) => tag.trim());
+  tags = _.map(tags, (tag) => {
+    const tagParts = tag.split(':');
+    return {tag: tagParts[0].trim(), value: tagParts[1].trim()};
+  });
+  return tags;
 }

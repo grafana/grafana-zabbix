@@ -937,22 +937,22 @@
   resolved "https://registry.yarnpkg.com/@emotion/weak-memoize/-/weak-memoize-0.2.5.tgz#8eed982e2ee6f7f4e44c253e12962980791efd46"
   integrity sha512-6U71C2Wp7r5XtFtQzYrW5iKFT67OixrSxjI4MptCHzdSVlgabczzqLe0ZSgnub/5Kp4hSbpDB1tMytZY9pwxxA==
 
-"@grafana/data@6.7.0", "@grafana/data@^6.7.0":
-  version "6.7.0"
-  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-6.7.0.tgz#c413ea0f4ec623a3a5e6a03eb14ba9209a2983fc"
-  integrity sha512-qhEtiLGNVvFqazjihkUiNRVQzhgxXNeQEIk4cLCxDaNPcocrIWtsXcTpsKCABzseKfRuH4gm+mPlk11FF7QnqQ==
+"@grafana/data@6.7.3", "@grafana/data@^6.7.3":
+  version "6.7.3"
+  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-6.7.3.tgz#e9e1bade8c2d35c131df3f3e4d652e5fd6140c23"
+  integrity sha512-5B8bNfSYFVw49It2/nTuw3NBM8jO/BM4bRT5wqVBbKQDOt94GsUTcsI0oVKl/VCQAwT+rlZdaF5/XTme4DiPhg==
   dependencies:
     apache-arrow "0.15.1"
     lodash "4.17.15"
     rxjs "6.5.4"
 
-"@grafana/runtime@^6.7.0":
-  version "6.7.0"
-  resolved "https://registry.yarnpkg.com/@grafana/runtime/-/runtime-6.7.0.tgz#5b6f6233b5186fcfe2aaac8911b6944d2665366f"
-  integrity sha512-lE1spLKqalIGysqzIJdknSwhUORciYxIWaTNxu9InVnuH6nlw8sTY9pQ49C5sffzid8DLP4ihH4B3KUVlB9c9A==
+"@grafana/runtime@^6.7.3":
+  version "6.7.3"
+  resolved "https://registry.yarnpkg.com/@grafana/runtime/-/runtime-6.7.3.tgz#998b35aaf2ab618bbf19358dde15b455d9227b20"
+  integrity sha512-6FXusFDrblFAJGAhCscXJxfqMqqBX4A0xHHpaD/rwNTqm6KOFxivQgd2Bf6Cr9W6ws5dNtHPaOC77xsDQIpIMg==
   dependencies:
-    "@grafana/data" "6.7.0"
-    "@grafana/ui" "6.7.0"
+    "@grafana/data" "6.7.3"
+    "@grafana/ui" "6.7.3"
     systemjs "0.20.19"
     systemjs-plugin-css "0.1.37"
 
@@ -983,13 +983,13 @@
   resolved "https://registry.yarnpkg.com/@grafana/tsconfig/-/tsconfig-1.0.0-rc1.tgz#d07ea16755a50cae21000113f30546b61647a200"
   integrity sha512-nucKPGyzlSKYSiJk5RA8GzMdVWhdYNdF+Hh65AXxjD9PlY69JKr5wANj8bVdQboag6dgg0BFKqgKPyY+YtV4Iw==
 
-"@grafana/ui@6.7.0", "@grafana/ui@^6.7.0":
-  version "6.7.0"
-  resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-6.7.0.tgz#22ab8c242814591ddcb6f4ba22a7587e2f4b96ab"
-  integrity sha512-y1NrMYH24VTM5Tg8Lm3PMM99i9/7MaOJSDjzrWUaUxdljzsDpaN7T8qUvr9pLwP+N5yGvS7A7ZMZ943ihjDfgg==
+"@grafana/ui@6.7.3", "@grafana/ui@^6.7.3":
+  version "6.7.3"
+  resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-6.7.3.tgz#509d3a252ea0942f3850821cb028669366656044"
+  integrity sha512-b4Ltk/GlBUa4d/ahCcxG4NAbIDjqLknEcynNaFI3kOj0DzVdlC+AGrv+5f/pZZ+bEr/ZKUdBJMeH0sZIOP+dOg==
   dependencies:
     "@emotion/core" "^10.0.27"
-    "@grafana/data" "6.7.0"
+    "@grafana/data" "6.7.3"
     "@grafana/slate-react" "0.22.9-grafana"
     "@grafana/tsconfig" "^1.0.0-rc1"
     "@torkelo/react-select" "3.0.8"

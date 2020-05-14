@@ -258,6 +258,3 @@ export default {
   handleTriggersResponse,
   sortTimeseries
 };
-
-// Fix for backward compatibility with lodash 2.4
-if (!_.uniqBy) {_.uniqBy = _.uniq;}
