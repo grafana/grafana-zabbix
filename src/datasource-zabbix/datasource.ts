@@ -13,8 +13,6 @@ import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
 import { VariableQueryTypes, ShowProblemTypes } from './types';
 
-const DEFAULT_ZABBIX_VERSION = 3;
-
 export class ZabbixDatasource {
   name: string;
   url: string;
@@ -31,7 +29,6 @@ export class ZabbixDatasource {
   addThresholds: boolean;
   alertingMinSeverity: string;
   disableReadOnlyUsersAck: boolean;
-  zabbixVersion: string;
   enableDirectDBConnection: boolean;
   dbConnectionDatasourceId: number;
   dbConnectionDatasourceName: string;
@@ -79,7 +76,6 @@ export class ZabbixDatasource {
 
     // Other options
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
-    this.zabbixVersion = jsonData.zabbixVersion || DEFAULT_ZABBIX_VERSION;
 
     // Direct DB Connection options
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
@@ -93,7 +89,6 @@ export class ZabbixDatasource {
       password: this.password,
       basicAuth: this.basicAuth,
       withCredentials: this.withCredentials,
-      zabbixVersion: this.zabbixVersion,
       cacheTTL: this.cacheTTL,
       enableDirectDBConnection: this.enableDirectDBConnection,
       dbConnectionDatasourceId: this.dbConnectionDatasourceId,
@@ -501,20 +496,6 @@ export class ZabbixDatasource {
           message: "Could not connect to given url"
         };
       }
-    });
-  }
-
-  /**
-   * Get Zabbix version
-   */
-  getVersion() {
-    return this.zabbix.getVersion()
-    .then(version => {
-      const zabbixVersion = utils.parseVersion(version);
-      if (!zabbixVersion) {
-        return null;
-      }
-      return zabbixVersion.major;
     });
   }
 

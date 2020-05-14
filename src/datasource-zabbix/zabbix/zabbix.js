@@ -32,7 +32,6 @@ export class Zabbix {
       password,
       basicAuth,
       withCredentials,
-      zabbixVersion,
       cacheTTL,
       enableDirectDBConnection,
       dbConnectionDatasourceId,
@@ -49,7 +48,7 @@ export class Zabbix {
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, zabbixVersion, basicAuth, withCredentials);
+    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials);
 
     this.proxyfyRequests();
     this.cacheRequests();

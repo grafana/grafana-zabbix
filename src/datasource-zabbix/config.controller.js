@@ -4,12 +4,6 @@ import { migrateDSConfig } from './migrations';
 
 const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
 
-const zabbixVersions = [
-  { name: '2.x', value: 2 },
-  { name: '3.x', value: 3 },
-  { name: '4.x', value: 4 },
-];
-
 const defaultConfig = {
   trends: false,
   dbConnectionEnable: false,
@@ -18,7 +12,6 @@ const defaultConfig = {
   addThresholds: false,
   alertingMinSeverity: 3,
   disableReadOnlyUsersAck: false,
-  zabbixVersion: 3,
 };
 
 export class ZabbixDSConfigController {
@@ -30,8 +23,6 @@ export class ZabbixDSConfigController {
 
     this.dbConnectionDatasourceId = this.current.jsonData.dbConnectionDatasourceId;
     this.dbDataSources = this.getSupportedDBDataSources();
-    this.zabbixVersions = _.cloneDeep(zabbixVersions);
-    this.autoDetectZabbixVersion();
     if (!this.dbConnectionDatasourceId) {
       this.loadCurrentDBDatasource();
     }
@@ -56,25 +47,6 @@ export class ZabbixDSConfigController {
     .then(ds => {
       if (ds) {
         this.dbConnectionDatasourceId = ds.id;
-      }
-    });
-  }
-
-  autoDetectZabbixVersion() {
-    if (!this.current.id) {
-      return;
-    }
-
-    getDataSourceSrv().loadDatasource(this.current.name)
-    .then(ds => {
-      return ds.getVersion();
-    })
-    .then(version => {
-      if (version) {
-        if (!_.find(zabbixVersions, ['value', version])) {
-          this.zabbixVersions.push({ name: version + '.x', value: version });
-        }
-        this.current.jsonData.zabbixVersion = version;
       }
     });
   }

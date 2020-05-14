@@ -82,7 +82,10 @@ export class ZabbixAPICore {
    * Matches the version of Zabbix starting from Zabbix 2.0.4
    */
   getVersion(api_url, options) {
-    return this.request(api_url, 'apiinfo.version', [], options);
+    return this.request(api_url, 'apiinfo.version', [], options).catch(err => {
+      console.error(err);
+      return undefined;
+    });
   }
 }
 

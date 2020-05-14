@@ -8,7 +8,6 @@ describe('Zabbix', () => {
     url: 'http://localhost',
     username: 'zabbix',
     password: 'zabbix',
-    zabbixVersion: 4,
   };
 
   beforeEach(() => {

@@ -1,9 +1,12 @@
 import _ from 'lodash';
+import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { ZabbixAPICore } from './zabbixAPICore';
 import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
 import { ShowProblemTypes } from '../../../types';
+
+const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
 /**
  * Zabbix API Wrapper.
@@ -11,12 +14,11 @@ import { ShowProblemTypes } from '../../../types';
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-  constructor(api_url, username, password, version, basicAuth, withCredentials) {
+  constructor(api_url, username, password, basicAuth, withCredentials) {
     this.url              = api_url;
     this.username         = username;
     this.password         = password;
     this.auth             = '';
-    this.version          = version;
 
     this.requestOptions = {
       basicAuth: basicAuth,
@@ -31,6 +33,8 @@ export class ZabbixAPIConnector {
 
     this.getTrend = this.getTrend_ZBXNEXT1193;
     //getTrend = getTrend_30;
+
+    this.initVersion();
   }
 
   //////////////////////////
@@ -38,6 +42,10 @@ export class ZabbixAPIConnector {
   //////////////////////////
 
   request(method, params) {
+    if (!this.version) {
+      return this.initVersion().then(() => this.request(method, params));
+    }
+
     return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
     .catch(error => {
       if (isNotAuthorized(error.data)) {
@@ -89,12 +97,31 @@ export class ZabbixAPIConnector {
     return this.zabbixAPICore.getVersion(this.url, this.requestOptions);
   }
 
+  initVersion() {
+    if (!this.getVersionPromise) {
+      this.getVersionPromise = Promise.resolve(
+        this.getVersion().then(version => {
+          if (version) {
+            console.log(`Zabbix version detected: ${version}`);
+          } else {
+            console.log(`Failed to detect Zabbix version, use default ${DEFAULT_ZABBIX_VERSION}`);
+          }
+
+          this.version = version || DEFAULT_ZABBIX_VERSION;
+          this.getVersionPromise = null;
+          return version;
+        })
+      );
+    }
+    return this.getVersionPromise;
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
 
   acknowledgeEvent(eventid, message) {
-    const action = this.version >= 4 ? ZBX_ACK_ACTION_ACK + ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
+    const action = semver.gte(this.version, '4.0.0') ? ZBX_ACK_ACTION_ACK + ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
     const params = {
       eventids: eventid,
       message: message,

@@ -315,7 +315,7 @@ export function isValidVersion(version) {
   return versionPattern.exec(version);
 }
 
-export function parseVersion(version) {
+export function parseVersion(version: string) {
   const match = versionPattern.exec(version);
   if (!match) {
     return null;
