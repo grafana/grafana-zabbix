@@ -177,11 +177,6 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     triggers = this.filterTriggersPost(triggers);
     triggers = this.sortTriggers(triggers);
 
-    // Limit triggers number
-    if (this.panel.limit) {
-      triggers = triggers.slice(0, this.panel.limit);
-    }
-
     this.renderData = triggers;
 
     return this.$timeout(() => {
