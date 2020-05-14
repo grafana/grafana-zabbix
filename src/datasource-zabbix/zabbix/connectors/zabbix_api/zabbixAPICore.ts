@@ -13,8 +13,8 @@ export class ZabbixAPICore {
    * Request data from Zabbix API
    * @return {object}  response.result
    */
-  request(api_url, method, params, options, auth) {
-    let requestData = {
+  request(api_url, method, params, options, auth?) {
+    const requestData: any = {
       jsonrpc: '2.0',
       method: method,
       params: params,
@@ -29,7 +29,7 @@ export class ZabbixAPICore {
       requestData.auth = auth;
     }
 
-    let requestOptions = {
+    const requestOptions: any = {
       method: 'POST',
       url: api_url,
       data: requestData,
@@ -70,7 +70,7 @@ export class ZabbixAPICore {
    * @return {string}  auth token
    */
   login(api_url, username, password, options) {
-    let params = {
+    const params = {
       user: username,
       password: password
     };
@@ -91,6 +91,11 @@ export class ZabbixAPICore {
 
 // Define zabbix API exception type
 export class ZabbixAPIError {
+  code: any;
+  name: any;
+  data: any;
+  message: string;
+
   constructor(error) {
     this.code = error.code || null;
     this.name = error.message || "";
