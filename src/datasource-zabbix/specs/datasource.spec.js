@@ -4,6 +4,12 @@ import { Datasource } from "../module";
 import { zabbixTemplateFormat } from "../datasource";
 import { dateMath } from '@grafana/data';
 
+jest.mock('@grafana/runtime', () => ({
+  getBackendSrv: () => ({
+    datasourceRequest: jest.fn().mockResolvedValue({data: {result: ''}}),
+  }),
+}), {virtual: true});
+
 describe('ZabbixDatasource', () => {
   let ctx = {};
 
@@ -25,7 +31,7 @@ describe('ZabbixDatasource', () => {
     ctx.datasourceSrv = mocks.datasourceSrvMock;
     ctx.zabbixAlertingSrv = mocks.zabbixAlertingSrvMock;
 
-    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.datasourceSrv, ctx.zabbixAlertingSrv);
+    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.zabbixAlertingSrv);
   });
 
   describe('When querying data', () => {

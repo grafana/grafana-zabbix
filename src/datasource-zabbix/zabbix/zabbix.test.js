@@ -1,5 +1,10 @@
-import mocks from '../../test-setup/mocks';
 import { Zabbix } from './zabbix';
+
+jest.mock('@grafana/runtime', () => ({
+  getBackendSrv: () => ({
+    datasourceRequest: jest.fn().mockResolvedValue({data: {result: ''}}),
+  }),
+}), {virtual: true});
 
 describe('Zabbix', () => {
   let ctx = {};
@@ -13,8 +18,8 @@ describe('Zabbix', () => {
   beforeEach(() => {
     ctx.options = options;
     // ctx.backendSrv = mocks.backendSrvMock;
-    ctx.datasourceSrv = mocks.datasourceSrvMock;
-    zabbix = new Zabbix(ctx.options, ctx.datasourceSrvMock);
+    // ctx.datasourceSrv = mocks.datasourceSrvMock;
+    zabbix = new Zabbix(ctx.options);
   });
 
   describe('When querying proxies', () => {

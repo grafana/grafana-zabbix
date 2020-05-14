@@ -4,6 +4,8 @@
 import { JSDOM } from 'jsdom';
 import { PanelCtrl, MetricsPanelCtrl } from './panelStub';
 
+console.log = () => {};
+
 // Mock Grafana modules that are not available outside of the core project
 // Required for loading module.js
 jest.mock('angular', () => {
@@ -15,6 +17,14 @@ jest.mock('angular', () => {
         factory: function() {}
       };
     }
+  };
+}, {virtual: true});
+
+jest.mock('@grafana/runtime', () => {
+  return {
+    getBackendSrv: () => ({
+      datasourceRequest: jest.fn().mockResolvedValue(),
+    }),
   };
 }, {virtual: true});
 

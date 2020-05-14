@@ -52,16 +52,16 @@ export class ZabbixAPICore {
   datasourceRequest(requestOptions) {
     return getBackendSrv().datasourceRequest(requestOptions)
     .then((response) => {
-      if (!response.data) {
+      if (!response?.data) {
         return Promise.reject(new ZabbixAPIError({data: "General Error, no data"}));
-      } else if (response.data.error) {
+      } else if (response?.data.error) {
 
         // Handle Zabbix API errors
         return Promise.reject(new ZabbixAPIError(response.data.error));
       }
 
       // Success
-      return response.data.result;
+      return response?.data.result;
     });
   }
 
