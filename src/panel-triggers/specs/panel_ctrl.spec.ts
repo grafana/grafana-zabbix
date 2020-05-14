@@ -99,61 +99,6 @@ describe('TriggerPanelCtrl', () => {
       });
     });
   });
-
-  describe('When formatting triggers', () => {
-    beforeEach(() => {
-      ctx.panelCtrl = createPanelCtrl();
-    });
-
-    it('should handle new lines in trigger description', () => {
-      ctx.panelCtrl.setTriggerSeverity = jest.fn((trigger) => trigger);
-      const trigger = { comments: "this is\ndescription" };
-      const formattedTrigger = ctx.panelCtrl.formatTrigger(trigger);
-      expect(formattedTrigger.comments).toBe("this is<br>description");
-    });
-
-    it('should format host name to display (default)', (done) => {
-      ctx.panelCtrl.onDataFramesReceived(ctx.dataFramesReceived).then(() => {
-        const trigger = getProblemById(1, ctx);
-        const hostname = ctx.panelCtrl.formatHostName(trigger);
-        expect(hostname).toBe('backend01');
-        done();
-      });
-    });
-
-    it('should format host name to display (tech name)', (done) => {
-      ctx.panelCtrl.panel.hostField = false;
-      ctx.panelCtrl.panel.hostTechNameField = true;
-      ctx.panelCtrl.onDataFramesReceived(ctx.dataFramesReceived).then(() => {
-        const trigger = getProblemById(1, ctx);
-        const hostname = ctx.panelCtrl.formatHostName(trigger);
-        expect(hostname).toBe('backend01_tech');
-        done();
-      });
-    });
-
-    it('should format host name to display (both tech and visible)', (done) => {
-      ctx.panelCtrl.panel.hostField = true;
-      ctx.panelCtrl.panel.hostTechNameField = true;
-      ctx.panelCtrl.onDataFramesReceived(ctx.dataFramesReceived).then(() => {
-        const trigger = getProblemById(1, ctx);
-        const hostname = ctx.panelCtrl.formatHostName(trigger);
-        expect(hostname).toBe('backend01 (backend01_tech)');
-        done();
-      });
-    });
-
-    it('should hide hostname if both visible and tech name checkboxes unset', (done) => {
-      ctx.panelCtrl.panel.hostField = false;
-      ctx.panelCtrl.panel.hostTechNameField = false;
-      ctx.panelCtrl.onDataFramesReceived(ctx.dataFramesReceived).then(() => {
-        const trigger = getProblemById(1, ctx);
-        const hostname = ctx.panelCtrl.formatHostName(trigger);
-        expect(hostname).toBe("");
-        done();
-      });
-    });
-  });
 });
 
 const defaultProblem: any = {

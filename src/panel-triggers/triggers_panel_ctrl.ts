@@ -319,76 +319,12 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     });
   }
 
-  formatHostName(trigger) {
-    let host = "";
-    if (this.panel.hostField && this.panel.hostTechNameField) {
-      host = `${trigger.host} (${trigger.hostTechName})`;
-    } else if (this.panel.hostField || this.panel.hostTechNameField) {
-      host = this.panel.hostField ? trigger.host : trigger.hostTechName;
-    }
-    if (this.panel.hostProxy && trigger.proxy) {
-      host = `${trigger.proxy}: ${host}`;
-    }
-
-    return host;
-  }
-
-  formatHostGroups(trigger) {
-    let groupNames = "";
-    if (this.panel.hostGroups) {
-      const groups = _.map(trigger.groups, 'name').join(', ');
-      groupNames += `[ ${groups} ]`;
-    }
-
-    return groupNames;
-  }
-
-  isNewTrigger(trigger) {
-    try {
-      const highlightIntervalMs = utils.parseInterval(this.panel.highlightNewerThan || PANEL_DEFAULTS.highlightNewerThan);
-      const durationSec = (Date.now() - trigger.lastchangeUnix * 1000);
-      return durationSec < highlightIntervalMs;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  getAlertIconClass(trigger) {
-    let iconClass = '';
-    if (trigger.value === '1' && trigger.priority >= 2) {
-      iconClass = 'icon-gf-critical';
-    } else {
-      iconClass = 'icon-gf-online';
-    }
-
-    if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
-      iconClass += ' zabbix-trigger--blinked';
-    }
-    return iconClass;
-  }
-
   getAlertIconClassBySeverity(triggerSeverity) {
     let iconClass = 'icon-gf-online';
     if (triggerSeverity.priority >= 2) {
       iconClass = 'icon-gf-critical';
     }
     return iconClass;
-  }
-
-  getAlertStateClass(trigger) {
-    let statusClass = '';
-
-    if (trigger.value === '1') {
-      statusClass = 'alert-state-critical';
-    } else {
-      statusClass = 'alert-state-ok';
-    }
-
-    if (this.panel.highlightNewEvents && this.isNewTrigger(trigger)) {
-      statusClass += ' zabbix-trigger--blinked';
-    }
-
-    return statusClass;
   }
 
   resetResizedColumns() {
