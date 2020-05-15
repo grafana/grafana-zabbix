@@ -4,36 +4,45 @@ import TableModel from 'grafana/app/core/table_model';
 import * as utils from '../datasource-zabbix/utils';
 import * as c from './constants';
 import { DataFrame, Field, FieldType, ArrayVector } from '@grafana/data';
+import { ZBXProblem, ZBXTrigger, ProblemDTO } from './types';
 
-export function addEventTags(events, triggers) {
-  _.each(triggers, trigger => {
-    const event = _.find(events, event => {
-      return event.eventid === trigger.lastEvent.eventid;
-    });
-    if (event && event.tags && event.tags.length) {
-      trigger.tags = event.tags;
-    }
-  });
-  return triggers;
-}
+export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTrigger[]): ProblemDTO[] {
+  const problemDTOList: ProblemDTO[] = [];
+  for (let i = 0; i < problems.length; i++) {
+    const p = problems[i];
+    const triggerId = Number(p.objectid);
+    const t = triggers[triggerId];
+    const problemDTO: ProblemDTO = {
+      timestamp: Number(p.clock),
+      triggerid: p.objectid,
+      eventid: p.eventid,
+      name: p.name,
+      severity: p.severity,
+      acknowledged: p.acknowledged,
+      acknowledges: p.acknowledges,
+      tags: p.tags,
+      suppressed: p.suppressed,
+      suppression_data: p.suppression_data,
+      description: t.description,
+      comments: t.comments,
+      value: t.value,
+      groups: t.groups,
+      hosts: t.hosts,
+      items: t.items,
+      alerts: t.alerts,
+      url: t.url,
+      expression: t.expression,
+      correlation_mode: t.correlation_mode,
+      correlation_tag: t.correlation_tag,
+      manual_close: t.manual_close,
+      state: t.state,
+      error: t.error,
+    };
 
-export function addAcknowledges(events, triggers) {
-  // Map events to triggers
-  _.each(triggers, trigger => {
-    const event = _.find(events, event => {
-      return event.eventid === trigger.lastEvent.eventid;
-    });
+    problemDTOList.push(problemDTO);
+  }
 
-    if (event) {
-      trigger.acknowledges = event.acknowledges;
-    }
-
-    if (!trigger.lastEvent.eventid) {
-      trigger.lastEvent = null;
-    }
-  });
-
-  return triggers;
+  return problemDTOList;
 }
 
 export function setMaintenanceStatus(triggers) {
@@ -129,8 +138,6 @@ export function toDataFrame(problems: any[]): DataFrame {
 }
 
 const problemsHandler = {
-  addEventTags,
-  addAcknowledges,
   addTriggerDataSource,
   addTriggerHostProxy,
   setMaintenanceStatus,

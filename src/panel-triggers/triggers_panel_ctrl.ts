@@ -10,6 +10,7 @@ import { triggerPanelOptionsTab } from './options_tab';
 import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
 import ProblemList from './components/Problems/Problems';
 import AlertList from './components/AlertList/AlertList';
+import { ProblemDTO } from 'datasource-zabbix/types';
 
 const PROBLEM_EVENTS_LIMIT = 100;
 
@@ -174,7 +175,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     let triggers = _.cloneDeep(problems);
 
     triggers = _.map(triggers, this.formatTrigger.bind(this));
-    triggers = this.filterTriggersPost(triggers);
+    triggers = this.filterProblems(triggers);
     triggers = this.sortTriggers(triggers);
 
     this.renderData = triggers;
@@ -184,30 +185,30 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     });
   }
 
-  filterTriggersPost(triggers) {
-    let triggerList = _.cloneDeep(triggers);
+  filterProblems(problems) {
+    let problemsList = _.cloneDeep(problems);
 
     // Filter acknowledged triggers
     if (this.panel.showTriggers === 'unacknowledged') {
-      triggerList = _.filter(triggerList, trigger => {
+      problemsList = _.filter(problemsList, trigger => {
         return !(trigger.acknowledges && trigger.acknowledges.length);
       });
     } else if (this.panel.showTriggers === 'acknowledged') {
-      triggerList = _.filter(triggerList, trigger => {
+      problemsList = _.filter(problemsList, trigger => {
         return trigger.acknowledges && trigger.acknowledges.length;
       });
     }
 
     // Filter triggers by severity
-    triggerList = _.filter(triggerList, trigger => {
-      if (trigger.lastEvent && trigger.lastEvent.severity) {
-        return this.panel.triggerSeverity[trigger.lastEvent.severity].show;
+    problemsList = _.filter(problemsList, problem => {
+      if (problem.severity) {
+        return this.panel.triggerSeverity[problem.severity].show;
       } else {
-        return this.panel.triggerSeverity[trigger.priority].show;
+        return this.panel.triggerSeverity[problem.priority].show;
       }
     });
 
-    return triggerList;
+    return problemsList;
   }
 
   sortTriggers(triggerList) {
@@ -303,11 +304,11 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     });
   }
 
-  getProblemAlerts(problem) {
-    if (!problem.lastEvent || problem.lastEvent.length === 0) {
+  getProblemAlerts(problem: ProblemDTO) {
+    if (!problem.eventid) {
       return Promise.resolve([]);
     }
-    const eventids = [problem.lastEvent.eventid];
+    const eventids = [problem.eventid];
     return getDataSourceSrv().get(problem.datasource)
     .then((datasource: any) => {
       return datasource.zabbix.getEventAlerts(eventids);
@@ -327,11 +328,11 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.render();
   }
 
-  acknowledgeTrigger(trigger, message) {
-    const eventid = trigger.lastEvent ? trigger.lastEvent.eventid : null;
+  acknowledgeProblem(problem: ProblemDTO, message) {
+    const eventid = problem.eventid;
     const grafana_user = this.contextSrv.user.name;
     const ack_message = grafana_user + ' (Grafana): ' + message;
-    return getDataSourceSrv().get(trigger.datasource)
+    return getDataSourceSrv().get(problem.datasource)
     .then((datasource: any) => {
       const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
       if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
@@ -399,7 +400,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
         onColumnResize: ctrl.handleColumnResize.bind(ctrl),
         onProblemAck: (trigger, data) => {
           const message = data.message;
-          return ctrl.acknowledgeTrigger(trigger, message);
+          return ctrl.acknowledgeProblem(trigger, message);
         },
         onTagClick: (tag, datasource, ctrlKey, shiftKey) => {
           if (ctrlKey || shiftKey) {

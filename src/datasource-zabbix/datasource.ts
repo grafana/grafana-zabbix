@@ -412,39 +412,29 @@ export class ZabbixDatasource {
       tags: { filter: tagsFilter },
     };
 
-    const triggersOptions: any = {
-      showTriggers: showProblems
+    const problemsOptions: any = {
+      recent: showProblems === ShowProblemTypes.Recent,
+      limit: target.options?.limit,
     };
 
     if (showProblems !== ShowProblemTypes.Problems) {
-      triggersOptions.timeFrom = timeFrom;
-      triggersOptions.timeTo = timeTo;
+      problemsOptions.timeFrom = timeFrom;
+      problemsOptions.timeTo = timeTo;
     }
 
     const problemsPromises = Promise.all([
-      this.zabbix.getTriggers(groupFilter, hostFilter, appFilter, triggersOptions, proxyFilter),
+      this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions),
       getProxiesPromise
     ])
-    .then(([triggers, sourceProxies]) => {
+    .then(([problems, sourceProxies]) => {
       proxies = _.keyBy(sourceProxies, 'proxyid');
-      const eventids = _.compact(triggers.map(trigger => {
-        return trigger.lastEvent.eventid;
-      }));
-      return Promise.all([
-        this.zabbix.getExtendedEventData(eventids),
-        Promise.resolve(triggers)
-      ]);
+      return problems;
     })
-    .then(([events, triggers]) => {
-      problemsHandler.addEventTags(events, triggers);
-      problemsHandler.addAcknowledges(events, triggers);
-      return triggers;
-    })
-    .then(triggers => problemsHandler.setMaintenanceStatus(triggers))
-    .then(triggers => problemsHandler.setAckButtonStatus(triggers, showAckButton))
-    .then(triggers => problemsHandler.filterTriggersPre(triggers, replacedTarget))
-    .then(triggers => problemsHandler.addTriggerDataSource(triggers, target))
-    .then(triggers => problemsHandler.addTriggerHostProxy(triggers, proxies));
+    .then(problems => problemsHandler.setMaintenanceStatus(problems))
+    .then(problems => problemsHandler.setAckButtonStatus(problems, showAckButton))
+    .then(problems => problemsHandler.filterTriggersPre(problems, replacedTarget))
+    .then(problems => problemsHandler.addTriggerDataSource(problems, target))
+    .then(problems => problemsHandler.addTriggerHostProxy(problems, proxies));
 
     return problemsPromises.then(problems => {
       const problemsDataFrame = problemsHandler.toDataFrame(problems);
@@ -567,13 +557,13 @@ export class ZabbixDatasource {
       hideHostsInMaintenance: false
     };
 
-    const getTriggers = this.zabbix.getTriggers(this.replaceTemplateVars(annotation.group, {}),
-                                              this.replaceTemplateVars(annotation.host, {}),
-                                              this.replaceTemplateVars(annotation.application, {}),
-                                              triggersOptions);
+    const groupFilter = this.replaceTemplateVars(annotation.group, {});
+    const hostFilter = this.replaceTemplateVars(annotation.host, {});
+    const appFilter = this.replaceTemplateVars(annotation.application, {});
+    const proxyFilter = undefined;
 
-    return getTriggers.then(triggers => {
-
+    return this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, triggersOptions)
+    .then(triggers => {
       // Filter triggers by description
       const triggerName = this.replaceTemplateVars(annotation.trigger, {});
       if (utils.isRegex(triggerName)) {

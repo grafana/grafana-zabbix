@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
-import { ZBXTrigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag, ZBXAlert } from '../../types';
+import { ZBXItem, ZBXAcknowledge, GFTimeRange, RTRow } from '../../types';
 import { Modal, AckProblemData } from '../Modal';
 import EventTag from '../EventTag';
 import Tooltip from '../Tooltip/Tooltip';
@@ -9,14 +9,15 @@ import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
 import FAIcon from '../FAIcon';
+import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
 
-interface ProblemDetailsProps extends RTRow<ZBXTrigger> {
+interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
   timeRange: GFTimeRange;
   showTimeline?: boolean;
-  getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
-  getProblemAlerts: (problem: ZBXTrigger) => Promise<ZBXAlert[]>;
-  onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
+  getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
+  getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
+  onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
@@ -71,7 +72,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
   }
 
   ackProblem = (data: AckProblemData) => {
-    const problem = this.props.original as ZBXTrigger;
+    const problem = this.props.original as ProblemDTO;
     return this.props.onProblemAck(problem, data).then(result => {
       this.closeAckDialog();
     }).catch(err => {
@@ -89,13 +90,13 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
   }
 
   render() {
-    const problem = this.props.original as ZBXTrigger;
+    const problem = this.props.original as ProblemDTO;
     const alerts = this.state.alerts;
     const rootWidth = this.props.rootWidth;
     const displayClass = this.state.show ? 'show' : '';
     const wideLayout = rootWidth > 1200;
     const compactStatusBar = rootWidth < 800 || problem.acknowledges && wideLayout && rootWidth < 1400;
-    const age = moment.unix(problem.lastchangeUnix).fromNow(true);
+    const age = moment.unix(problem.timestamp).fromNow(true);
     const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
 
     return (

@@ -8,6 +8,7 @@ import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
+import { joinTriggersWithProblems } from '../problemsHandler';
 
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
@@ -286,10 +287,7 @@ export class Zabbix implements ZabbixConnector {
     .then(itServices => findByFilter(itServices, itServiceFilter));
   }
 
-  /**
-   * Build query - convert target filters to array of Zabbix items
-   */
-  getTriggers(groupFilter, hostFilter, appFilter, options?, proxyFilter?) {
+  getProblems(groupFilter, hostFilter, appFilter, proxyFilter?, options?) {
     const promises = [
       this.getGroups(groupFilter),
       this.getHosts(groupFilter, hostFilter),
@@ -313,7 +311,13 @@ export class Zabbix implements ZabbixConnector {
 
       return query;
     })
-    .then(query => this.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options))
+    // .then(query => this.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options))
+    .then(query => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
+    .then(problems => {
+      const triggerids = problems?.map(problem => problem.objectid);
+      return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+    })
+    .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
     .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter))
     .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
@@ -324,14 +328,13 @@ export class Zabbix implements ZabbixConnector {
       if (proxyFilter && proxyFilter !== '/.*/' && triggers) {
         const proxy_ids = proxies.map(proxy => proxy.proxyid);
         triggers = triggers.filter(trigger => {
-          let filtered = false;
           for (let i = 0; i < trigger.hosts.length; i++) {
             const host = trigger.hosts[i];
             if (proxy_ids.includes(host.proxy_hostid)) {
-              filtered = true;
+              return true;
             }
           }
-          return filtered;
+          return false;
         });
       }
       return triggers;

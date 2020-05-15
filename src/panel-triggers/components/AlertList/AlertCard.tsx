@@ -3,18 +3,19 @@ import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
 import { isNewProblem, formatLastChange } from '../../utils';
-import { ProblemsPanelOptions, ZBXTrigger, TriggerSeverity, ZBXTag } from '../../types';
+import { ProblemsPanelOptions, TriggerSeverity } from '../../types';
 import { AckProblemData, Modal } from '.././Modal';
 import EventTag from '../EventTag';
 import Tooltip from '.././Tooltip/Tooltip';
 import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
+import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
 
 interface AlertCardProps {
-  problem: ZBXTrigger;
+  problem: ProblemDTO;
   panelOptions: ProblemsPanelOptions;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
-  onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
+  onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
 }
 
 interface AlertCardState {
@@ -61,13 +62,13 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     const descriptionClass = classNames('alert-rule-item__text', { 'zbx-description--newline': panelOptions.descriptionAtNewLine });
 
     let severityDesc: TriggerSeverity;
-    severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.priority));
-    if (problem.lastEvent?.severity) {
-      severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.lastEvent.severity));
+    severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.severity));
+    if (problem.severity) {
+      severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.severity));
     }
 
-    const lastchange = formatLastChange(problem.lastchangeUnix, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat);
-    const age = moment.unix(problem.lastchangeUnix).fromNow(true);
+    const lastchange = formatLastChange(problem.timestamp, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat);
+    const age = moment.unix(problem.timestamp).fromNow(true);
 
     let newProblem = false;
     if (panelOptions.highlightNewerThan) {
@@ -78,7 +79,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     let problemColor: string;
     if (problem.value === '0') {
       problemColor = panelOptions.okEventColor;
-    } else if (panelOptions.markAckEvents && problem.lastEvent?.acknowledged === "1") {
+    } else if (panelOptions.markAckEvents && problem.acknowledged === "1") {
       problemColor = panelOptions.ackEventColor;
     } else {
       problemColor = severityDesc.color;
@@ -159,7 +160,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
                 <span><i className="fa fa-question-circle"></i></span>
               </Tooltip>
             )}
-            {problem.lastEvent && (
+            {problem.eventid && (
               <AlertAcknowledgesButton problem={problem} onClick={this.showAckDialog} />
             )}
           </div>
@@ -174,7 +175,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
 }
 
 interface AlertHostProps {
-  problem: ZBXTrigger;
+  problem: ProblemDTO;
   panelOptions: ProblemsPanelOptions;
 }
 
@@ -200,7 +201,7 @@ function AlertHost(props: AlertHostProps) {
 }
 
 interface AlertGroupProps {
-  problem: ZBXTrigger;
+  problem: ProblemDTO;
   panelOptions: ProblemsPanelOptions;
 }
 
@@ -253,7 +254,7 @@ function AlertSeverity(props) {
 }
 
 interface AlertAcknowledgesButtonProps {
-  problem: ZBXTrigger;
+  problem: ProblemDTO;
   onClick: (event?) => void;
 }
 

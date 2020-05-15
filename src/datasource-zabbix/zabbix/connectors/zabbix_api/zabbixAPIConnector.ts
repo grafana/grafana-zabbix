@@ -4,7 +4,7 @@ import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { ZabbixAPICore } from './zabbixAPICore';
 import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
-import { ShowProblemTypes } from '../../../types';
+import { ShowProblemTypes, ZBXProblem } from '../../../types';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
@@ -365,6 +365,62 @@ export class ZabbixAPIConnector {
       intervals
     };
     return this.request('service.getsla', params);
+  }
+
+  getProblems(groupids, hostids, applicationids, options): Promise<ZBXProblem[]> {
+    const { timeFrom, timeTo, recent, severities, limit } = options;
+
+    const params: any = {
+      output: 'extend',
+      selectAcknowledges: 'extend',
+      selectSuppressionData: 'extend',
+      selectTags: 'extend',
+      source: '0',
+      object: '0',
+      sortfield: ['eventid'],
+      sortorder: 'DESC',
+      evaltype: '0',
+      // preservekeys: '1',
+      groupids,
+      hostids,
+      applicationids,
+      recent,
+    };
+
+    if (severities) {
+      params.severities = severities;
+    }
+
+    if (limit) {
+      params.limit = limit;
+    }
+
+    if (timeFrom || timeTo) {
+      params.time_from = timeFrom;
+      params.time_till = timeTo;
+    }
+
+    return this.request('problem.get', params);
+  }
+
+  getTriggersByIds(triggerids: string[]) {
+    const params: any = {
+      output: 'extend',
+      triggerids: triggerids,
+      expandDescription: true,
+      expandData: true,
+      expandComment: true,
+      monitored: true,
+      skipDependent: true,
+      selectGroups: ['name'],
+      selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
+      selectItems: ['name', 'key_', 'lastvalue'],
+      // selectLastEvent: 'extend',
+      // selectTags: 'extend',
+      preservekeys: '1',
+    };
+
+    return this.request('trigger.get', params);
   }
 
   getTriggers(groupids, hostids, applicationids, options) {

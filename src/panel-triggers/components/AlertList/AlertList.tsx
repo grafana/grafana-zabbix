@@ -1,23 +1,24 @@
 import React, { PureComponent, CSSProperties } from 'react';
 import classNames from 'classnames';
-import { ProblemsPanelOptions, ZBXTrigger, GFTimeRange, ZBXTag } from '../../types';
+import { ProblemsPanelOptions, GFTimeRange } from '../../types';
 import { AckProblemData } from '.././Modal';
 import AlertCard from './AlertCard';
+import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
 
 export interface AlertListProps {
-  problems: ZBXTrigger[];
+  problems: ProblemDTO[];
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
   timeRange?: GFTimeRange;
   pageSize?: number;
   fontSize?: number;
-  onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => void;
+  onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 interface AlertListState {
   page: number;
-  currentProblems: ZBXTrigger[];
+  currentProblems: ProblemDTO[];
 }
 
 export default class AlertList extends PureComponent<AlertListProps, AlertListState> {
@@ -51,7 +52,7 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
     }
   }
 
-  handleProblemAck = (problem: ZBXTrigger, data: AckProblemData) => {
+  handleProblemAck = (problem: ProblemDTO, data: AckProblemData) => {
     return this.props.onProblemAck(problem, data);
   }
 
