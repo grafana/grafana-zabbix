@@ -86,7 +86,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const result = [];
     const options = this.props.panelOptions;
     const highlightNewerThan = options.highlightNewEvents && options.highlightNewerThan;
-    const statusCell = props => StatusCell(props, options.okEventColor, DEFAULT_PROBLEM_COLOR, highlightNewerThan);
+    const statusCell = props => StatusCell(props, highlightNewerThan);
     const statusIconCell = props => StatusIconCell(props, highlightNewerThan);
 
     const columns = [
@@ -98,7 +98,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         Header: 'Severity', show: options.severityField, className: 'problem-severity', width: 120,
         accessor: problem => problem.priority,
         id: 'severity',
-        Cell: props => SeverityCell(props, options.triggerSeverity, options.markAckEvents, options.ackEventColor),
+        Cell: props => SeverityCell(props, options.triggerSeverity, options.markAckEvents, options.ackEventColor, options.okEventColor),
       },
       {
         Header: '', id: 'statusIcon', show: options.statusIcon, className: 'problem-status-icon', width: 50,
@@ -178,7 +178,13 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
   }
 }
 
-function SeverityCell(props: RTCell<ProblemDTO>, problemSeverityDesc: TriggerSeverity[], markAckEvents?: boolean, ackEventColor?: string) {
+function SeverityCell(
+  props: RTCell<ProblemDTO>,
+  problemSeverityDesc: TriggerSeverity[],
+  markAckEvents?: boolean,
+  ackEventColor?: string,
+  okColor = DEFAULT_OK_COLOR
+  ) {
   const problem = props.original;
   let color: string;
 
@@ -189,7 +195,7 @@ function SeverityCell(props: RTCell<ProblemDTO>, problemSeverityDesc: TriggerSev
     severityDesc = _.find(problemSeverityDesc, s => s.priority === severity);
   }
 
-  color = severityDesc.color;
+  color = problem.value === '0' ? okColor : severityDesc.color;
 
   // Mark acknowledged triggers with different color
   if (markAckEvents && problem.acknowledged === "1") {
@@ -206,9 +212,9 @@ function SeverityCell(props: RTCell<ProblemDTO>, problemSeverityDesc: TriggerSev
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
 
-function StatusCell(props: RTCell<ProblemDTO>, okColor = DEFAULT_OK_COLOR, problemColor = DEFAULT_PROBLEM_COLOR, highlightNewerThan?: string) {
+function StatusCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {
   const status = props.value === '0' ? 'RESOLVED' : 'PROBLEM';
-  const color = props.value === '0' ? okColor : problemColor;
+  const color = props.value === '0' ? DEFAULT_OK_COLOR : DEFAULT_PROBLEM_COLOR;
   let newProblem = false;
   if (highlightNewerThan) {
     newProblem = isNewProblem(props.original, highlightNewerThan);
