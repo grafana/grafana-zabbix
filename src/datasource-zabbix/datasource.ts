@@ -34,7 +34,7 @@ export class ZabbixDatasource {
   dbConnectionDatasourceName: string;
   dbConnectionRetentionPolicy: string;
   enableDebugLog: boolean;
-  zabbix: any;
+  zabbix: Zabbix;
 
   replaceTemplateVars: (target: any, scopedVars?: any) => any;
 

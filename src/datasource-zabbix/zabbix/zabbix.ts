@@ -21,7 +21,7 @@ const REQUESTS_TO_CACHE = [
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'getVersion', 'login', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
+  'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'login', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
   'getExtendedEventData'
 ];
 
@@ -33,9 +33,21 @@ export class Zabbix implements ZabbixConnector {
   dbConnector: any;
   getTrendsDB: any;
 
-  getMacros: any;
-  getVersion: any;
-  login: any;
+  getHistory: (items, timeFrom, timeTill) => Promise<any>;
+  getTrend: (items, timeFrom, timeTill) => Promise<any>;
+  getItemsByIDs: (itemids) => Promise<any>;
+  getEvents: (objectids, timeFrom, timeTo, showEvents, limit?) => Promise<any>;
+  getAlerts: (itemids, timeFrom?, timeTo?) => Promise<any>;
+  getHostAlerts: (hostids, applicationids, options?) => Promise<any>;
+  getAcknowledges: (eventids) => Promise<any>;
+  getITService: (serviceids?) => Promise<any>;
+  acknowledgeEvent: (eventid, message) => Promise<any>;
+  getProxies: () => Promise<any>;
+  getEventAlerts: (eventids) => Promise<any>;
+  getExtendedEventData: (eventids) => Promise<any>;
+  getMacros: (hostids: any[]) => Promise<any>;
+  getVersion: () => Promise<string>;
+  login: () => Promise<any>;
 
   constructor(options) {
     const {
@@ -277,7 +289,7 @@ export class Zabbix implements ZabbixConnector {
   /**
    * Build query - convert target filters to array of Zabbix items
    */
-  getTriggers(groupFilter, hostFilter, appFilter, options, proxyFilter) {
+  getTriggers(groupFilter, hostFilter, appFilter, options?, proxyFilter?) {
     const promises = [
       this.getGroups(groupFilter),
       this.getHosts(groupFilter, hostFilter),
