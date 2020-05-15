@@ -98,17 +98,17 @@ function cacheRequest(func, funcName, funcScope, self) {
 
 function getRequestHash(args) {
   const argsJson = JSON.stringify(args);
-  return argsJson.getHash();
+  return getHash(argsJson);
 }
 
-String.prototype.getHash = function() {
+function getHash(str: string): number {
   let hash = 0, i, chr, len;
-  if (this.length !== 0) {
-    for (i = 0, len = this.length; i < len; i++) {
-      chr   = this.charCodeAt(i);
+  if (str.length !== 0) {
+    for (i = 0, len = str.length; i < len; i++) {
+      chr   = str.charCodeAt(i);
       hash  = ((hash << 5) - hash) + chr;
       hash |= 0; // Convert to 32bit integer
     }
   }
   return hash;
-};
+}
