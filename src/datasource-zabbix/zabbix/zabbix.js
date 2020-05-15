@@ -234,13 +234,17 @@ export class Zabbix {
     .then(this.expandUserMacro.bind(this));
   }
 
-  expandUserMacro(items) {
+  expandUserMacro(items, isTriggerItem) {
     let hostids = getHostIds(items);
     return this.getMacros(hostids)
     .then(macros => {
       _.forEach(items, item => {
-        if (utils.containsMacro(item.name)) {
-          item.name = utils.replaceMacro(item, macros);
+        if (utils.containsMacro(isTriggerItem ? item.url : item.name)) {
+          if (isTriggerItem) {
+            item.url = utils.replaceMacro(item, macros, isTriggerItem);
+          } else {
+            item.name = utils.replaceMacro(item, macros);
+          }
         }
       });
       return items;
@@ -285,7 +289,8 @@ export class Zabbix {
       return query;
     })
     .then(query => this.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options))
-    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter));
+    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter))
+    .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
   filterTriggersByProxy(triggers, proxyFilter) {
