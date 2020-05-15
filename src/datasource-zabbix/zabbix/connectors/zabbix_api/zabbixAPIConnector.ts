@@ -14,6 +14,19 @@ const DEFAULT_ZABBIX_VERSION = '3.0.0';
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
+  url: any;
+  username: any;
+  password: any;
+  auth: string;
+  requestOptions: { basicAuth: any; withCredentials: any; };
+  loginPromise: any;
+  loginErrorCount: number;
+  maxLoginAttempts: number;
+  zabbixAPICore: ZabbixAPICore;
+  getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
+  version: any;
+  getVersionPromise: any;
+
   constructor(api_url, username, password, basicAuth, withCredentials) {
     this.url              = api_url;
     this.username         = username;
@@ -132,7 +145,7 @@ export class ZabbixAPIConnector {
   }
 
   getGroups() {
-    var params = {
+    const params = {
       output: ['name'],
       sortfield: 'name',
       real_hosts: true
@@ -142,7 +155,7 @@ export class ZabbixAPIConnector {
   }
 
   getHosts(groupids) {
-    var params = {
+    const params: any = {
       output: ['name', 'host'],
       sortfield: 'name'
     };
@@ -154,7 +167,7 @@ export class ZabbixAPIConnector {
   }
 
   getApps(hostids) {
-    var params = {
+    const params = {
       output: 'extend',
       hostids: hostids
     };
@@ -170,7 +183,7 @@ export class ZabbixAPIConnector {
    * @return {[type]}          array of items
    */
   getItems(hostids, appids, itemtype) {
-    var params = {
+    const params: any = {
       output: [
         'name', 'key_',
         'value_type',
@@ -203,7 +216,7 @@ export class ZabbixAPIConnector {
   }
 
   getItemsByIDs(itemids) {
-    var params = {
+    const params = {
       itemids: itemids,
       output: [
         'name', 'key_',
@@ -221,7 +234,7 @@ export class ZabbixAPIConnector {
   }
 
   getMacros(hostids) {
-    var params = {
+    const params = {
       output: 'extend',
       hostids: hostids
     };
@@ -230,7 +243,7 @@ export class ZabbixAPIConnector {
   }
 
   getGlobalMacros() {
-    var params = {
+    const params = {
       output: 'extend',
       globalmacro: true
     };
@@ -239,7 +252,7 @@ export class ZabbixAPIConnector {
   }
 
   getLastValue(itemid) {
-    var params = {
+    const params = {
       output: ['lastvalue'],
       itemids: itemid
     };
@@ -258,10 +271,10 @@ export class ZabbixAPIConnector {
   getHistory(items, timeFrom, timeTill) {
 
     // Group items by value type and perform request for each value type
-    let grouped_items = _.groupBy(items, 'value_type');
-    let promises = _.map(grouped_items, (items, value_type) => {
-      let itemids = _.map(items, 'itemid');
-      let params = {
+    const grouped_items = _.groupBy(items, 'value_type');
+    const promises = _.map(grouped_items, (items, value_type) => {
+      const itemids = _.map(items, 'itemid');
+      const params: any = {
         output: 'extend',
         history: value_type,
         itemids: itemids,
@@ -293,10 +306,10 @@ export class ZabbixAPIConnector {
   getTrend_ZBXNEXT1193(items, timeFrom, timeTill) {
 
     // Group items by value type and perform request for each value type
-    let grouped_items = _.groupBy(items, 'value_type');
-    let promises = _.map(grouped_items, (items, value_type) => {
-      let itemids = _.map(items, 'itemid');
-      let params = {
+    const grouped_items = _.groupBy(items, 'value_type');
+    const promises = _.map(grouped_items, (items, value_type) => {
+      const itemids = _.map(items, 'itemid');
+      const params: any = {
         output: 'extend',
         trend: value_type,
         itemids: itemids,
@@ -317,10 +330,10 @@ export class ZabbixAPIConnector {
   }
 
   getTrend_30(items, time_from, time_till, value_type) {
-    var self = this;
-    var itemids = _.map(items, 'itemid');
+    const self = this;
+    const itemids = _.map(items, 'itemid');
 
-    var params = {
+    const params: any = {
       output: ["itemid",
         "clock",
         value_type
@@ -338,7 +351,7 @@ export class ZabbixAPIConnector {
   }
 
   getITService(serviceids) {
-    var params = {
+    const params = {
       output: 'extend',
       serviceids: serviceids
     };
@@ -355,9 +368,9 @@ export class ZabbixAPIConnector {
   }
 
   getTriggers(groupids, hostids, applicationids, options) {
-    let {showTriggers, maintenance, timeFrom, timeTo} = options;
+    const {showTriggers, maintenance, timeFrom, timeTo} = options;
 
-    let params = {
+    const params: any = {
       output: 'extend',
       groupids: groupids,
       hostids: hostids,
@@ -397,7 +410,7 @@ export class ZabbixAPIConnector {
   }
 
   getEvents(objectids, timeFrom, timeTo, showEvents, limit) {
-    var params = {
+    const params: any = {
       output: 'extend',
       time_from: timeFrom,
       time_till: timeTo,
@@ -417,7 +430,7 @@ export class ZabbixAPIConnector {
   }
 
   getAcknowledges(eventids) {
-    var params = {
+    const params = {
       output: 'extend',
       eventids: eventids,
       preservekeys: true,
@@ -433,7 +446,7 @@ export class ZabbixAPIConnector {
   }
 
   getExtendedEventData(eventids) {
-    var params = {
+    const params = {
       output: 'extend',
       eventids: eventids,
       preservekeys: true,
@@ -462,7 +475,7 @@ export class ZabbixAPIConnector {
   }
 
   getAlerts(itemids, timeFrom, timeTo) {
-    var params = {
+    const params: any = {
       output: 'extend',
       itemids: itemids,
       expandDescription: true,
@@ -486,8 +499,8 @@ export class ZabbixAPIConnector {
   }
 
   getHostAlerts(hostids, applicationids, options) {
-    let {minSeverity, acknowledged, count, timeFrom, timeTo} = options;
-    let params = {
+    const {minSeverity, acknowledged, count, timeFrom, timeTo} = options;
+    const params: any = {
       output: 'extend',
       hostids: hostids,
       min_severity: minSeverity,
@@ -528,7 +541,7 @@ export class ZabbixAPIConnector {
   }
 
   getProxies() {
-    var params = {
+    const params = {
       output: ['proxyid', 'host'],
     };
 
