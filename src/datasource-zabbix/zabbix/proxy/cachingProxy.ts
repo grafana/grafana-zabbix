@@ -4,6 +4,10 @@
  */
 
 export class CachingProxy {
+  cacheEnabled: boolean;
+  ttl: number;
+  cache: any;
+  promises: any;
 
   constructor(cacheOptions) {
     this.cacheEnabled = cacheOptions.enabled;
@@ -33,13 +37,13 @@ export class CachingProxy {
   }
 
   proxyfyWithCache(func, funcName, funcScope) {
-    let proxyfied = this.proxyfy(func, funcName, funcScope);
+    const proxyfied = this.proxyfy(func, funcName, funcScope);
     return this.cacheRequest(proxyfied, funcName, funcScope);
   }
 
   _isExpired(cacheObject) {
     if (cacheObject) {
-      let object_age = Date.now() - cacheObject.timestamp;
+      const object_age = Date.now() - cacheObject.timestamp;
       return !(cacheObject.timestamp && object_age < this.ttl);
     } else {
       return true;
@@ -52,8 +56,9 @@ export class CachingProxy {
  * with same params when waiting for result.
  */
 function callOnce(func, promiseKeeper, funcScope) {
+  // tslint:disable-next-line: only-arrow-functions
   return function() {
-    var hash = getRequestHash(arguments);
+    const hash = getRequestHash(arguments);
     if (!promiseKeeper[hash]) {
       promiseKeeper[hash] = Promise.resolve(
         func.apply(funcScope, arguments)
@@ -68,13 +73,14 @@ function callOnce(func, promiseKeeper, funcScope) {
 }
 
 function cacheRequest(func, funcName, funcScope, self) {
+  // tslint:disable-next-line: only-arrow-functions
   return function() {
     if (!self.cache[funcName]) {
       self.cache[funcName] = {};
     }
 
-    let cacheObject = self.cache[funcName];
-    let hash = getRequestHash(arguments);
+    const cacheObject = self.cache[funcName];
+    const hash = getRequestHash(arguments);
     if (self.cacheEnabled && !self._isExpired(cacheObject[hash])) {
       return Promise.resolve(cacheObject[hash].value);
     } else {
@@ -96,7 +102,7 @@ function getRequestHash(args) {
 }
 
 String.prototype.getHash = function() {
-  var hash = 0, i, chr, len;
+  let hash = 0, i, chr, len;
   if (this.length !== 0) {
     for (i = 0, len = this.length; i < len; i++) {
       chr   = this.charCodeAt(i);
