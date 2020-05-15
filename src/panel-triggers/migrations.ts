@@ -123,10 +123,17 @@ function migrateOptions(panel) {
     acknowledged = 0;
   }
 
+  // Default limit in Zabbix
+  let limit = 1001;
+  if (panel.limit && panel.limit !== 100) {
+    limit = panel.limit;
+  }
+
   return {
     hostsInMaintenance: panel.hostsInMaintenance,
     sortProblems: panel.sortTriggersBy?.value === 'priority' ? 'priority' : 'default',
     acknowledged: acknowledged,
+    limit: limit,
   };
 }
 

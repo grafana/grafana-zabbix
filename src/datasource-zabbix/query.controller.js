@@ -42,10 +42,11 @@ function getProblemsTargetDefaults() {
   return {
     showProblems: ShowProblemTypes.Problems,
     options: {
-      sortTriggersBy: 'default',
+      sortProblems: 'default',
       acknowledged: 2,
       hostsInMaintenance: false,
       hostProxy: false,
+      limit: c.DEFAULT_ZABBIX_PROBLEMS_LIMIT,
     },
   };
 }
@@ -386,7 +387,7 @@ export class ZabbixQueryController extends QueryCtrl {
     };
 
     const problemsOptionsMap = {
-      sortTriggersBy: "Sort problems",
+      sortProblems: "Sort problems",
       acknowledged: "Acknowledged",
       skipEmptyValues: "Skip empty values",
       hostsInMaintenance: "Show hosts in maintenance",
