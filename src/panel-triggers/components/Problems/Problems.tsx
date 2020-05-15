@@ -11,6 +11,7 @@ import { AckProblemData } from '../Modal';
 import GFHeartIcon from '../GFHeartIcon';
 import { ProblemsPanelOptions, GFTimeRange, RTCell, TriggerSeverity, RTResized } from '../../types';
 import { ProblemDTO, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
+import FAIcon from '../FAIcon';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -88,10 +89,12 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const highlightNewerThan = options.highlightNewEvents && options.highlightNewerThan;
     const statusCell = props => StatusCell(props, highlightNewerThan);
     const statusIconCell = props => StatusIconCell(props, highlightNewerThan);
+    const hostNameCell = props => <HostCell name={props.original.host} maintenance={props.original.maintenance} />;
+    const hostTechNameCell = props => <HostCell name={props.original.hostTechName} maintenance={props.original.maintenance} />;
 
     const columns = [
-      { Header: 'Host', accessor: 'host', show: options.hostField },
-      { Header: 'Host (Technical Name)', accessor: 'hostTechName', show: options.hostTechNameField },
+      { Header: 'Host', id: 'host', show: options.hostField, Cell: hostNameCell },
+      { Header: 'Host (Technical Name)', id: 'hostTechName', show: options.hostTechNameField, Cell: hostTechNameCell },
       { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
       { Header: 'Proxy', accessor: 'proxy', show: options.hostProxy },
       {
@@ -177,6 +180,20 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     );
   }
 }
+
+interface HostCellProps {
+  name: string;
+  maintenance: boolean;
+}
+
+const HostCell: React.FC<HostCellProps> = ({ name, maintenance }) => {
+  return (
+    <div>
+      <span style={{ paddingRight: '0.4rem' }}>{name}</span>
+      {maintenance && <FAIcon customClass="fired" icon="wrench" />}
+    </div>
+  );
+};
 
 function SeverityCell(
   props: RTCell<ProblemDTO>,
