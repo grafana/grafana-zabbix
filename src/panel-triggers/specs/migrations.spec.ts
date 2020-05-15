@@ -67,6 +67,7 @@ describe('Triggers Panel schema migration', () => {
             hostsInMaintenance: false,
             acknowledged: 0,
             sortProblems: 'default',
+            minSeverity: 0,
             limit: 10,
           },
         }

@@ -414,8 +414,14 @@ export class ZabbixDatasource {
 
     const problemsOptions: any = {
       recent: showProblems === ShowProblemTypes.Recent,
+      minSeverity: target.options?.minSeverity,
       limit: target.options?.limit,
     };
+
+    if (target.options?.minSeverity) {
+      const severities = [0, 1, 2, 3, 4, 5].filter(v => v >= target.options?.minSeverity);
+      problemsOptions.severities = severities;
+    }
 
     if (showProblems !== ShowProblemTypes.Problems) {
       problemsOptions.timeFrom = timeFrom;

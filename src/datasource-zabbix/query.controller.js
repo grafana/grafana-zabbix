@@ -42,6 +42,7 @@ function getProblemsTargetDefaults() {
   return {
     showProblems: ShowProblemTypes.Problems,
     options: {
+      minSeverity: 0,
       sortProblems: 'default',
       acknowledged: 2,
       hostsInMaintenance: false,
@@ -49,6 +50,10 @@ function getProblemsTargetDefaults() {
       limit: c.DEFAULT_ZABBIX_PROBLEMS_LIMIT,
     },
   };
+}
+
+function getSeverityOptions() {
+  return c.TRIGGER_SEVERITY;
 }
 
 export class ZabbixQueryController extends QueryCtrl {
@@ -120,7 +125,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
     this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
 
-    this.triggerSeverity = c.TRIGGER_SEVERITY;
+    this.severityOptions = getSeverityOptions();
 
     // Map functions for bs-typeahead
     this.getGroupNames = _.bind(this.getMetricNames, this, 'groupList');

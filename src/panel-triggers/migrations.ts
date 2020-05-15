@@ -132,6 +132,7 @@ function migrateOptions(panel) {
   return {
     hostsInMaintenance: panel.hostsInMaintenance,
     sortProblems: panel.sortTriggersBy?.value === 'priority' ? 'priority' : 'default',
+    minSeverity: 0,
     acknowledged: acknowledged,
     limit: limit,
   };

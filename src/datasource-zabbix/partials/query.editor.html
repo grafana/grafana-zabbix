@@ -178,13 +178,23 @@
         </select>
       </div>
     </div>
+    <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS">
+      <label class="gf-form-label query-keyword width-7">Min severity</label>
+      <div class="gf-form-select-wrapper max-width-20">
+        <select class="gf-form-input"
+          ng-model="ctrl.target.options.minSeverity"
+          ng-options="v.val as v.text for v in ctrl.severityOptions"
+          ng-change="ctrl.onTargetBlur()">
+        </select>
+      </div>
+    </div>
     <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.TRIGGERS">
       <label class="gf-form-label query-keyword width-7">Min Severity</label>
       <div class="gf-form-select-wrapper width-14">
         <select class="gf-form-input"
               ng-change="ctrl.onTargetBlur()"
               ng-model="ctrl.target.triggers.minSeverity"
-              ng-options="s.val as s.text for s in ctrl.triggerSeverity">
+              ng-options="s.val as s.text for s in ctrl.severityOptions">
         </select>
       </div>
     </div>
