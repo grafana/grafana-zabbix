@@ -7,6 +7,7 @@ import { DBConnector } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
+import { ZabbixConnector } from './types';
 
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
@@ -24,9 +25,20 @@ const REQUESTS_TO_BIND = [
   'getExtendedEventData'
 ];
 
-export class Zabbix {
+export class Zabbix implements ZabbixConnector {
+  enableDirectDBConnection: boolean;
+  cachingProxy: CachingProxy;
+  zabbixAPI: ZabbixAPIConnector;
+  getHistoryDB: any;
+  dbConnector: any;
+  getTrendsDB: any;
+
+  getMacros: any;
+  getVersion: any;
+  login: any;
+
   constructor(options) {
-    let {
+    const {
       url,
       username,
       password,
@@ -42,7 +54,7 @@ export class Zabbix {
     this.enableDirectDBConnection = enableDirectDBConnection;
 
     // Initialize caching proxy for requests
-    let cacheOptions = {
+    const cacheOptions = {
       enabled: true,
       ttl: cacheTTL
     };
@@ -55,7 +67,7 @@ export class Zabbix {
     this.bindRequests();
 
     if (enableDirectDBConnection) {
-      const connectorOptions = { dbConnectionRetentionPolicy };
+      const connectorOptions: any = { dbConnectionRetentionPolicy };
       this.initDBConnector(dbConnectionDatasourceId, dbConnectionDatasourceName, connectorOptions)
       .then(() => {
         this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
@@ -67,7 +79,7 @@ export class Zabbix {
   initDBConnector(datasourceId, datasourceName, options) {
     return DBConnector.loadDatasource(datasourceId, datasourceName)
     .then(ds => {
-      let connectorOptions = { datasourceId, datasourceName };
+      const connectorOptions: any = { datasourceId, datasourceName };
       if (ds.type === 'influxdb') {
         connectorOptions.retentionPolicy = options.dbConnectionRetentionPolicy;
         this.dbConnector = new InfluxDBConnector(connectorOptions);
@@ -79,19 +91,19 @@ export class Zabbix {
   }
 
   proxyfyRequests() {
-    for (let request of REQUESTS_TO_PROXYFY) {
+    for (const request of REQUESTS_TO_PROXYFY) {
       this.zabbixAPI[request] = this.cachingProxy.proxyfy(this.zabbixAPI[request], request, this.zabbixAPI);
     }
   }
 
   cacheRequests() {
-    for (let request of REQUESTS_TO_CACHE) {
+    for (const request of REQUESTS_TO_CACHE) {
       this.zabbixAPI[request] = this.cachingProxy.cacheRequest(this.zabbixAPI[request], request, this.zabbixAPI);
     }
   }
 
   bindRequests() {
-    for (let request of REQUESTS_TO_BIND) {
+    for (const request of REQUESTS_TO_BIND) {
       this[request] = this.zabbixAPI[request].bind(this.zabbixAPI);
     }
   }
@@ -100,14 +112,14 @@ export class Zabbix {
    * Perform test query for Zabbix API and external history DB.
    * @return {object} test result object:
    * ```
-    {
-      zabbixVersion,
-      dbConnectorStatus: {
-        dsType,
-        dsName
-      }
-    }
-   ```
+   *    {
+   *      zabbixVersion,
+   *      dbConnectorStatus: {
+   *        dsType,
+   *        dsName
+   *      }
+   *    }
+   * ```
    */
   testDataSource() {
     let zabbixVersion;
@@ -142,18 +154,19 @@ export class Zabbix {
   }
 
   getItemsFromTarget(target, options) {
-    let parts = ['group', 'host', 'application', 'item'];
-    let filters = _.map(parts, p => target[p].filter);
+    const parts = ['group', 'host', 'application', 'item'];
+    const filters = _.map(parts, p => target[p].filter);
     return this.getItems(...filters, options);
   }
 
   getHostsFromTarget(target) {
-    let parts = ['group', 'host', 'application'];
-    let filters = _.map(parts, p => target[p].filter);
+    const parts = ['group', 'host', 'application'];
+    const filters = _.map(parts, p => target[p].filter);
     return Promise.all([
       this.getHosts(...filters),
       this.getApps(...filters),
     ]).then((results) => {
+      // tslint:disable-next-line: prefer-const
       let [hosts, apps] = results;
       if (apps.appFilterEmpty) {
         apps = [];
@@ -177,12 +190,12 @@ export class Zabbix {
   getAllHosts(groupFilter) {
     return this.getGroups(groupFilter)
     .then(groups => {
-      let groupids = _.map(groups, 'groupid');
+      const groupids = _.map(groups, 'groupid');
       return this.zabbixAPI.getHosts(groupids);
     });
   }
 
-  getHosts(groupFilter, hostFilter) {
+  getHosts(groupFilter?, hostFilter?) {
     return this.getAllHosts(groupFilter)
     .then(hosts => findByFilter(hosts, hostFilter));
   }
@@ -193,15 +206,15 @@ export class Zabbix {
   getAllApps(groupFilter, hostFilter) {
     return this.getHosts(groupFilter, hostFilter)
     .then(hosts => {
-      let hostids = _.map(hosts, 'hostid');
+      const hostids = _.map(hosts, 'hostid');
       return this.zabbixAPI.getApps(hostids);
     });
   }
 
-  getApps(groupFilter, hostFilter, appFilter) {
+  getApps(groupFilter?, hostFilter?, appFilter?) {
     return this.getHosts(groupFilter, hostFilter)
     .then(hosts => {
-      let hostids = _.map(hosts, 'hostid');
+      const hostids = _.map(hosts, 'hostid');
       if (appFilter) {
         return this.zabbixAPI.getApps(hostids)
         .then(apps => filterByQuery(apps, appFilter));
@@ -214,13 +227,13 @@ export class Zabbix {
     });
   }
 
-  getAllItems(groupFilter, hostFilter, appFilter, options = {}) {
+  getAllItems(groupFilter, hostFilter, appFilter, options: any = {}) {
     return this.getApps(groupFilter, hostFilter, appFilter)
     .then(apps => {
       if (apps.appFilterEmpty) {
         return this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
       } else {
-        let appids = _.map(apps, 'applicationid');
+        const appids = _.map(apps, 'applicationid');
         return this.zabbixAPI.getItems(undefined, appids, options.itemtype);
       }
     })
@@ -235,7 +248,7 @@ export class Zabbix {
   }
 
   expandUserMacro(items, isTriggerItem) {
-    let hostids = getHostIds(items);
+    const hostids = getHostIds(items);
     return this.getMacros(hostids)
     .then(macros => {
       _.forEach(items, item => {
@@ -251,7 +264,7 @@ export class Zabbix {
     });
   }
 
-  getItems(groupFilter, hostFilter, appFilter, itemFilter, options = {}) {
+  getItems(groupFilter?, hostFilter?, appFilter?, itemFilter?, options = {}) {
     return this.getAllItems(groupFilter, hostFilter, appFilter, options)
     .then(items => filterByQuery(items, itemFilter));
   }
@@ -265,7 +278,7 @@ export class Zabbix {
    * Build query - convert target filters to array of Zabbix items
    */
   getTriggers(groupFilter, hostFilter, appFilter, options, proxyFilter) {
-    let promises = [
+    const promises = [
       this.getGroups(groupFilter),
       this.getHosts(groupFilter, hostFilter),
       this.getApps(groupFilter, hostFilter, appFilter)
@@ -273,8 +286,8 @@ export class Zabbix {
 
     return Promise.all(promises)
     .then(results => {
-      let [filteredGroups, filteredHosts, filteredApps] = results;
-      let query = {};
+      const [filteredGroups, filteredHosts, filteredApps] = results;
+      const query: any = {};
 
       if (appFilter) {
         query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
@@ -300,7 +313,7 @@ export class Zabbix {
         const proxy_ids = proxies.map(proxy => proxy.proxyid);
         triggers = triggers.filter(trigger => {
           let filtered = false;
-          for(let i = 0; i < trigger.hosts.length; i++) {
+          for (let i = 0; i < trigger.hosts.length; i++) {
             const host = trigger.hosts[i];
             if (proxy_ids.includes(host.proxy_hostid)) {
               filtered = true;
@@ -322,7 +335,7 @@ export class Zabbix {
   }
 
   getHistoryTS(items, timeRange, options) {
-    let [timeFrom, timeTo] = timeRange;
+    const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
       return this.getHistoryDB(items, timeFrom, timeTo, options)
       .then(history => this.dbConnector.handleGrafanaTSResponse(history, items));
@@ -333,12 +346,12 @@ export class Zabbix {
   }
 
   getTrends(items, timeRange, options) {
-    let [timeFrom, timeTo] = timeRange;
+    const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
       return this.getTrendsDB(items, timeFrom, timeTo, options)
       .then(history => this.dbConnector.handleGrafanaTSResponse(history, items));
     } else {
-      let valueType = options.consolidateBy || options.valueType;
+      const valueType = options.consolidateBy || options.valueType;
       return this.zabbixAPI.getTrend(items, timeFrom, timeTo)
       .then(history => responseHandler.handleTrends(history, items, valueType))
       .then(responseHandler.sortTimeseries); // Sort trend data, issue #202
@@ -346,7 +359,7 @@ export class Zabbix {
   }
 
   getHistoryText(items, timeRange, target) {
-    let [timeFrom, timeTo] = timeRange;
+    const [timeFrom, timeTo] = timeRange;
     if (items.length) {
       return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
       .then(history => {
@@ -366,11 +379,11 @@ export class Zabbix {
     if (options.isOldVersion) {
       itServices = _.filter(itServices, {'serviceid': target.itservice.serviceid});
     }
-    let itServiceIds = _.map(itServices, 'serviceid');
+    const itServiceIds = _.map(itServices, 'serviceid');
     return this.zabbixAPI.getSLA(itServiceIds, timeRange, options)
     .then(slaResponse => {
       return _.map(itServiceIds, serviceid => {
-        let itservice = _.find(itServices, {'serviceid': serviceid});
+        const itservice = _.find(itServices, {'serviceid': serviceid});
         return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
       });
     });
@@ -386,7 +399,7 @@ export class Zabbix {
  * @return      array with finded element or empty array
  */
 function findByName(list, name) {
-  var finded = _.find(list, {'name': name});
+  const finded = _.find(list, {'name': name});
   if (finded) {
     return [finded];
   } else {
@@ -403,7 +416,7 @@ function findByName(list, name) {
  * @return {[type]}      array with finded element or empty array
  */
 function filterByName(list, name) {
-  var finded = _.filter(list, {'name': name});
+  const finded = _.filter(list, {'name': name});
   if (finded) {
     return finded;
   } else {
@@ -412,8 +425,8 @@ function filterByName(list, name) {
 }
 
 function filterByRegex(list, regex) {
-  var filterPattern = utils.buildRegex(regex);
-  return _.filter(list, function (zbx_obj) {
+  const filterPattern = utils.buildRegex(regex);
+  return _.filter(list, (zbx_obj) => {
     return filterPattern.test(zbx_obj.name);
   });
 }
@@ -435,7 +448,7 @@ function filterByQuery(list, filter) {
 }
 
 function getHostIds(items) {
-  let hostIds = _.map(items, item => {
+  const hostIds = _.map(items, item => {
     return _.map(item.hosts, 'hostid');
   });
   return _.uniq(_.flatten(hostIds));

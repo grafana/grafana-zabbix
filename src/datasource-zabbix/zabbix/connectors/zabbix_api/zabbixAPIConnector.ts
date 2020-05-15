@@ -350,7 +350,7 @@ export class ZabbixAPIConnector {
     return self.request('trend.get', params);
   }
 
-  getITService(serviceids) {
+  getITService(serviceids?) {
     const params = {
       output: 'extend',
       serviceids: serviceids

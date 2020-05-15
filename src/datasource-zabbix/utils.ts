@@ -78,7 +78,7 @@ export function containsMacro(itemName) {
   return MACRO_PATTERN.test(itemName);
 }
 
-export function replaceMacro(item, macros, isTriggerItem) {
+export function replaceMacro(item, macros, isTriggerItem?) {
   let itemName = isTriggerItem ? item.url : item.name;
   const item_macros = itemName.match(MACRO_PATTERN);
   _.forEach(item_macros, macro => {
