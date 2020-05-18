@@ -48,6 +48,7 @@ export const PANEL_DEFAULTS = {
   statusField: true,
   statusIcon: false,
   severityField: true,
+  ackField: true,
   ageField: false,
   descriptionField: true,
   descriptionAtNewLine: false,

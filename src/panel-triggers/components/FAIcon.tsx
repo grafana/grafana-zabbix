@@ -5,10 +5,12 @@ interface FAIconProps {
   customClass?: string;
 }
 
-export default function FAIcon(props: FAIconProps) {
+export const FAIcon: React.FC<FAIconProps> = (props: FAIconProps) => {
   return (
     <span className={`fa-icon-container ${props.customClass || ''}`}>
       <i className={`fa fa-${props.icon}`}></i>
     </span>
   );
-}
+};
+
+export default FAIcon;

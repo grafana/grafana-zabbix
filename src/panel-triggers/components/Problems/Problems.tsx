@@ -11,7 +11,8 @@ import { AckProblemData } from '../Modal';
 import GFHeartIcon from '../GFHeartIcon';
 import { ProblemsPanelOptions, GFTimeRange, RTCell, TriggerSeverity, RTResized } from '../../types';
 import { ProblemDTO, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
-import FAIcon from '../FAIcon';
+import { FAIcon } from '../FAIcon';
+import { AckCell } from './AckCell';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -110,6 +111,10 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
       },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell},
+      {
+        Header: 'Ack', id: 'ack', show: options.ackField, width: 70,
+        Cell: props => <AckCell {...props} />
+      },
       {
         Header: 'Tags', accessor: 'tags', show: options.showTags, className: 'problem-tags',
         Cell: props => <TagCell {...props} onTagClick={this.handleTagClick} />
