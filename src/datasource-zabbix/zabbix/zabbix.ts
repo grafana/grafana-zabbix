@@ -10,6 +10,11 @@ import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
 import { joinTriggersWithProblems } from '../problemsHandler';
 
+interface AppsResponse extends Array<any> {
+  appFilterEmpty?: boolean;
+  hostids?: any[];
+}
+
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
   'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'getProxies',
@@ -178,9 +183,9 @@ export class Zabbix implements ZabbixConnector {
     return Promise.all([
       this.getHosts(...filters),
       this.getApps(...filters),
-    ]).then((results) => {
-      // tslint:disable-next-line: prefer-const
-      let [hosts, apps] = results;
+    ]).then(results => {
+      const hosts = results[0];
+      let apps: AppsResponse = results[1];
       if (apps.appFilterEmpty) {
         apps = [];
       }
@@ -224,7 +229,7 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getApps(groupFilter?, hostFilter?, appFilter?) {
+  getApps(groupFilter?, hostFilter?, appFilter?): Promise<AppsResponse> {
     return this.getHosts(groupFilter, hostFilter)
     .then(hosts => {
       const hostids = _.map(hosts, 'hostid');
@@ -232,10 +237,10 @@ export class Zabbix implements ZabbixConnector {
         return this.zabbixAPI.getApps(hostids)
         .then(apps => filterByQuery(apps, appFilter));
       } else {
-        return {
-          appFilterEmpty: true,
-          hostids: hostids
-        };
+        const appsResponse: AppsResponse = hostids;
+        appsResponse.hostids = hostids;
+        appsResponse.appFilterEmpty = true;
+        return Promise.resolve(appsResponse);
       }
     });
   }

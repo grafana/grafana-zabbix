@@ -2,19 +2,15 @@
  * General Zabbix API methods
  */
 import { getBackendSrv } from '@grafana/runtime';
+import { JSONRPCRequest, ZabbixRequestResponse, JSONRPCError, APILoginResponse, GFHTTPRequest, GFRequestOptions } from './types';
 
 export class ZabbixAPICore {
-
-  /** @ngInject */
-  constructor() {
-  }
-
   /**
    * Request data from Zabbix API
    * @return {object}  response.result
    */
-  request(api_url, method, params, options, auth?) {
-    const requestData: any = {
+  request(api_url: string, method: string, params: any, options: GFRequestOptions, auth?: string) {
+    const requestData: JSONRPCRequest = {
       jsonrpc: '2.0',
       method: method,
       params: params,
@@ -29,7 +25,7 @@ export class ZabbixAPICore {
       requestData.auth = auth;
     }
 
-    const requestOptions: any = {
+    const requestOptions: GFHTTPRequest = {
       method: 'POST',
       url: api_url,
       data: requestData,
@@ -51,7 +47,7 @@ export class ZabbixAPICore {
 
   datasourceRequest(requestOptions) {
     return getBackendSrv().datasourceRequest(requestOptions)
-    .then((response) => {
+    .then((response: ZabbixRequestResponse) => {
       if (!response?.data) {
         return Promise.reject(new ZabbixAPIError({data: "General Error, no data"}));
       } else if (response?.data.error) {
@@ -69,7 +65,7 @@ export class ZabbixAPICore {
    * Get authentication token.
    * @return {string}  auth token
    */
-  login(api_url, username, password, options) {
+  login(api_url: string, username: string, password: string, options: GFRequestOptions): Promise<APILoginResponse> {
     const params = {
       user: username,
       password: password
@@ -81,7 +77,7 @@ export class ZabbixAPICore {
    * Get Zabbix API version
    * Matches the version of Zabbix starting from Zabbix 2.0.4
    */
-  getVersion(api_url, options) {
+  getVersion(api_url: string, options: GFRequestOptions): Promise<string> {
     return this.request(api_url, 'apiinfo.version', [], options).catch(err => {
       console.error(err);
       return undefined;
@@ -91,12 +87,12 @@ export class ZabbixAPICore {
 
 // Define zabbix API exception type
 export class ZabbixAPIError {
-  code: any;
-  name: any;
-  data: any;
+  code: number;
+  name: string;
+  data: string;
   message: string;
 
-  constructor(error) {
+  constructor(error: JSONRPCError) {
     this.code = error.code || null;
     this.name = error.message || "";
     this.data = error.data || "";

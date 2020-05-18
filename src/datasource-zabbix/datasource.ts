@@ -165,6 +165,8 @@ export class ZabbixDatasource {
           return this.queryNumericData(target, timeRange, useTrends, options);
         } else if (target.queryType === c.MODE_TEXT) {
           return this.queryTextData(target, timeRange);
+        } else {
+          return [];
         }
       } else if (target.queryType === c.MODE_ITEMID) {
         // Item ID query

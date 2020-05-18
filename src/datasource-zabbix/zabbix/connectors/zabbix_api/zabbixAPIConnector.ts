@@ -5,6 +5,7 @@ import * as utils from '../../../utils';
 import { ZabbixAPICore } from './zabbixAPICore';
 import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
 import { ShowProblemTypes, ZBXProblem } from '../../../types';
+import { JSONRPCRequestParams } from './types';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
@@ -14,20 +15,20 @@ const DEFAULT_ZABBIX_VERSION = '3.0.0';
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-  url: any;
-  username: any;
-  password: any;
+  url: string;
+  username: string;
+  password: string;
   auth: string;
-  requestOptions: { basicAuth: any; withCredentials: any; };
-  loginPromise: any;
+  requestOptions: { basicAuth: any; withCredentials: boolean; };
+  loginPromise: Promise<string>;
   loginErrorCount: number;
   maxLoginAttempts: number;
   zabbixAPICore: ZabbixAPICore;
   getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
-  version: any;
-  getVersionPromise: any;
+  version: string;
+  getVersionPromise: Promise<string>;
 
-  constructor(api_url, username, password, basicAuth, withCredentials) {
+  constructor(api_url: string, username: string, password: string, basicAuth: any, withCredentials: boolean) {
     this.url              = api_url;
     this.username         = username;
     this.password         = password;
@@ -54,7 +55,7 @@ export class ZabbixAPIConnector {
   // Core method wrappers //
   //////////////////////////
 
-  request(method, params) {
+  request(method: string, params: JSONRPCRequestParams): Promise<any> {
     if (!this.version) {
       return this.initVersion().then(() => this.request(method, params));
     }
@@ -81,9 +82,8 @@ export class ZabbixAPIConnector {
    * When API unauthenticated or auth token expired each request produce login()
    * call. But auth token is common to all requests. This function wraps login() method
    * and call it once. If login() already called just wait for it (return its promise).
-   * @return login promise
    */
-  loginOnce() {
+  loginOnce(): Promise<string> {
     if (!this.loginPromise) {
       this.loginPromise = Promise.resolve(
         this.login().then(auth => {
@@ -99,7 +99,7 @@ export class ZabbixAPIConnector {
   /**
    * Get authentication token.
    */
-  login() {
+  login(): Promise<string> {
     return this.zabbixAPICore.login(this.url, this.username, this.password, this.requestOptions);
   }
 
@@ -110,7 +110,7 @@ export class ZabbixAPIConnector {
     return this.zabbixAPICore.getVersion(this.url, this.requestOptions);
   }
 
-  initVersion() {
+  initVersion(): Promise<string> {
     if (!this.getVersionPromise) {
       this.getVersionPromise = Promise.resolve(
         this.getVersion().then(version => {
@@ -166,7 +166,7 @@ export class ZabbixAPIConnector {
     return this.request('host.get', params);
   }
 
-  getApps(hostids) {
+  getApps(hostids): Promise<any[]> {
     const params = {
       output: 'extend',
       hostids: hostids
