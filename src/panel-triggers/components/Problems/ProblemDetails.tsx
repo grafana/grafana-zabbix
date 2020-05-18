@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
-import { MODE_ITEMID } from '../../../datasource-zabbix/constants';
+import { MODE_ITEMID, MODE_METRICS } from '../../../datasource-zabbix/constants';
 import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
 import { ZBXItem, ZBXAcknowledge, GFTimeRange, RTRow } from '../../types';
 import { Modal, AckProblemData } from '../Modal';
@@ -95,16 +95,31 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
 
   openInExplore = () => {
     const problem = this.props.original as ProblemDTO;
-    const itemids = problem.items?.map(p => p.itemid).join(',');
+    let query: any = {};
+
+    if (problem.items?.length === 1 && problem.hosts?.length === 1) {
+      const item = problem.items[0];
+      const host = problem.hosts[0];
+      query = {
+        queryType: MODE_METRICS,
+        group: { filter: '/.*/' },
+        application: { filter: '' },
+        host: { filter: host.name },
+        item: { filter: item.name },
+      };
+    } else {
+      const itemids = problem.items?.map(p => p.itemid).join(',');
+      query = {
+        queryType: MODE_ITEMID,
+        itemids: itemids,
+      };
+    }
 
     const state: any = {
       datasource: problem.datasource,
       context: 'explore',
       originPanelId: this.props.panelId,
-      queries: [{
-        queryType: MODE_ITEMID,
-        itemids: itemids,
-      }],
+      queries: [query],
     };
 
     const exploreState = JSON.stringify(state);
