@@ -160,9 +160,11 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
             }
           </div>
           {problem.comments &&
-            <div className="problem-description">
-              <span className="description-label">Description:&nbsp;</span>
-              <span>{problem.comments}</span>
+            <div className="problem-description-row">
+              <div className="problem-description">
+                <span className="description-label">Description:&nbsp;</span>
+                <span>{problem.comments}</span>
+              </div>
             </div>
           }
           {problem.tags && problem.tags.length > 0 &&

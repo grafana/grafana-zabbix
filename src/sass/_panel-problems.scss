@@ -251,10 +251,30 @@
         flex-direction: column;
       }
 
-      .description-label {
-        font-weight: 500;
-        font-style: italic;
-        color: $text-muted;
+      .problem-description-row {
+
+        .problem-description {
+          position: relative;
+          height: 4.5rem;
+          overflow: hidden;
+
+          &:after {
+            content: "";
+            text-align: right;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 70%;
+            height: 1.5rem;
+            background: linear-gradient(to right, rgba($problem-details-background, 0), rgba($problem-details-background, 1) 50%);
+          }
+        }
+
+        .description-label {
+          font-weight: 500;
+          font-style: italic;
+          color: $text-muted;
+        }
       }
 
       .problem-age {
