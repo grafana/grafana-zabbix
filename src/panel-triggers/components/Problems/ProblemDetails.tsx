@@ -319,10 +319,8 @@ interface ExploreButtonProps {
 
 const ExploreButton: React.FC<ExploreButtonProps> = ({ onClick }) => {
   return (
-    <Tooltip placement="bottom" content="Open in Explore">
-      <button className="btn problem-explore-button" onClick={onClick}>
-        <FAIcon icon="compass" /><span>Explore</span>
-      </button>
-    </Tooltip>
+    <button className="btn problem-explore-button" onClick={onClick}>
+      <FAIcon icon="compass" /><span>Explore</span>
+    </button>
   );
 };
