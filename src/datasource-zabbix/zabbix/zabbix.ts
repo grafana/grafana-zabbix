@@ -316,8 +316,41 @@ export class Zabbix implements ZabbixConnector {
 
       return query;
     })
-    // .then(query => this.zabbixAPI.getTriggers(query.groupids, query.hostids, query.applicationids, options))
     .then(query => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
+    .then(problems => {
+      const triggerids = problems?.map(problem => problem.objectid);
+      return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+    })
+    .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
+    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter))
+    .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
+  }
+
+  getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter?, options?) {
+    const promises = [
+      this.getGroups(groupFilter),
+      this.getHosts(groupFilter, hostFilter),
+      this.getApps(groupFilter, hostFilter, appFilter)
+    ];
+
+    return Promise.all(promises)
+    .then(results => {
+      const [filteredGroups, filteredHosts, filteredApps] = results;
+      const query: any = {};
+
+      if (appFilter) {
+        query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
+      }
+      if (hostFilter) {
+        query.hostids = _.map(filteredHosts, 'hostid');
+      }
+      if (groupFilter) {
+        query.groupids = _.map(filteredGroups, 'groupid');
+      }
+
+      return query;
+    })
+    .then(query => this.zabbixAPI.getEventsHistory(query.groupids, query.hostids, query.applicationids, options))
     .then(problems => {
       const triggerids = problems?.map(problem => problem.objectid);
       return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);

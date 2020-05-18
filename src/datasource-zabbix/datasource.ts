@@ -425,13 +425,17 @@ export class ZabbixDatasource {
       problemsOptions.severities = severities;
     }
 
-    if (showProblems !== ShowProblemTypes.Problems) {
+    if (showProblems === ShowProblemTypes.History) {
       problemsOptions.timeFrom = timeFrom;
       problemsOptions.timeTo = timeTo;
     }
 
+    const getProblemsPromise = showProblems === ShowProblemTypes.History ?
+      this.zabbix.getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions) :
+      this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);
+
     const problemsPromises = Promise.all([
-      this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions),
+      getProblemsPromise,
       getProxiesPromise
     ])
     .then(([problems, sourceProxies]) => {

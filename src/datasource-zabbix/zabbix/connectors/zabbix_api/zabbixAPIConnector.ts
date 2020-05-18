@@ -485,20 +485,34 @@ export class ZabbixAPIConnector {
     return this.request('event.get', params);
   }
 
-  getAcknowledges(eventids) {
-    const params = {
+  getEventsHistory(groupids, hostids, applicationids, options) {
+    const { timeFrom, timeTo, severities, limit } = options;
+
+    const params: any = {
       output: 'extend',
-      eventids: eventids,
-      preservekeys: true,
-      select_acknowledges: 'extend',
-      sortfield: 'clock',
-      sortorder: 'DESC'
+      time_from: timeFrom,
+      time_till: timeTo,
+      value: '1',
+      source: '0',
+      object: '0',
+      evaltype: '0',
+      sortfield: ['eventid'],
+      sortorder: 'DESC',
+      selectSuppressionData: ['maintenanceid', 'suppress_until'],
+      groupids,
+      hostids,
+      applicationids,
     };
 
-    return this.request('event.get', params)
-    .then(events => {
-      return _.filter(events, (event) => event.acknowledges.length);
-    });
+    if (limit) {
+      params.limit = limit;
+    }
+
+    if (severities) {
+      params.severities = severities;
+    }
+
+    return this.request('event.get', params);
   }
 
   getExtendedEventData(eventids) {
@@ -528,6 +542,22 @@ export class ZabbixAPIConnector {
     };
 
     return this.request('alert.get', params);
+  }
+
+  getAcknowledges(eventids) {
+    const params = {
+      output: 'extend',
+      eventids: eventids,
+      preservekeys: true,
+      select_acknowledges: 'extend',
+      sortfield: 'clock',
+      sortorder: 'DESC'
+    };
+
+    return this.request('event.get', params)
+    .then(events => {
+      return _.filter(events, (event) => event.acknowledges.length);
+    });
   }
 
   getAlerts(itemids, timeFrom, timeTo) {
