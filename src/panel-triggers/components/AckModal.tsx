@@ -16,6 +16,7 @@ interface Props {
   canAck?: boolean;
   canClose?: boolean;
   isOpen?: boolean;
+  severity?: number;
   withBackdrop?: boolean;
   onSubmit: (data?: AckProblemData) => Promise<any> | any;
   onClose?: () => void;
@@ -66,7 +67,7 @@ export class AckModal extends PureComponent<Props, State> {
       acknowledge: false,
       closeProblem: false,
       changeSeverity: false,
-      selectedSeverity: 0,
+      selectedSeverity: props.severity || 0,
       loading: false,
     };
 

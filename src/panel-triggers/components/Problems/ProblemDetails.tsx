@@ -133,6 +133,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     const compactStatusBar = rootWidth < 800 || problem.acknowledges && wideLayout && rootWidth < 1400;
     const age = moment.unix(problem.timestamp).fromNow(true);
     const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
+    const problemSeverity = Number(problem.severity);
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
@@ -210,6 +211,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
         </div>
         <AckModal
           canClose={problem.manual_close === '1'}
+          severity={problemSeverity}
           isOpen={this.state.showAckDialog}
           onSubmit={this.ackProblem}
           onClose={this.closeAckDialog} />
