@@ -395,6 +395,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
         loading,
         pageSize,
         fontSize: fontSizeProp,
+        panelId: ctrl.panel.id,
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
         getProblemAlerts: ctrl.getProblemAlerts.bind(ctrl),
         onPageSizeChange: ctrl.handlePageSizeChange.bind(ctrl),

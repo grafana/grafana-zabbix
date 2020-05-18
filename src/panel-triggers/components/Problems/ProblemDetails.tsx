@@ -1,6 +1,8 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
+import { MODE_ITEMID } from '../../../datasource-zabbix/constants';
+import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
 import { ZBXItem, ZBXAcknowledge, GFTimeRange, RTRow } from '../../types';
 import { Modal, AckProblemData } from '../Modal';
 import EventTag from '../EventTag';
@@ -9,12 +11,14 @@ import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
 import FAIcon from '../FAIcon';
-import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
+import { renderUrl } from '../../utils';
+import { getLocationSrv } from '@grafana/runtime';
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
   timeRange: GFTimeRange;
   showTimeline?: boolean;
+  panelId?: number;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
@@ -89,6 +93,25 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
     this.setState({ showAckDialog: false });
   }
 
+  openInExplore = () => {
+    const problem = this.props.original as ProblemDTO;
+    const itemids = problem.items?.map(p => p.itemid).join(',');
+
+    const state: any = {
+      datasource: problem.datasource,
+      context: 'explore',
+      originPanelId: this.props.panelId,
+      queries: [{
+        queryType: MODE_ITEMID,
+        itemids: itemids,
+      }],
+    };
+
+    const exploreState = JSON.stringify(state);
+    const url = renderUrl('/explore', { left: exploreState });
+    getLocationSrv().update({ path: url, query: {} });
+  };
+
   render() {
     const problem = this.props.original as ProblemDTO;
     const alerts = this.state.alerts;
@@ -110,6 +133,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
               </div>
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
+            <ExploreButton onClick={this.openInExplore} />
             <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
             {problem.showAckButton &&
               <div className="problem-actions">
@@ -273,3 +297,17 @@ class ProblemActionButton extends PureComponent<ProblemActionButtonProps> {
     return button;
   }
 }
+
+interface ExploreButtonProps {
+  onClick: (event?) => void;
+}
+
+const ExploreButton: React.FC<ExploreButtonProps> = ({ onClick }) => {
+  return (
+    <Tooltip placement="bottom" content="Open in Explore">
+      <button className="btn problem-explore-button" onClick={onClick}>
+        <FAIcon icon="compass" /><span>Explore</span>
+      </button>
+    </Tooltip>
+  );
+};

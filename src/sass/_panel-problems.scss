@@ -339,6 +339,32 @@
         }
       }
 
+      .problem-explore-button {
+        &.btn {
+          width: 6rem;
+          height: 2rem;
+
+          background-image: none;
+          background-color: $action-button-color;
+          border: 1px solid darken($action-button-color, 6%);
+          border-radius: 1px;
+
+          margin-right: 1.6rem;
+
+          span {
+            color: $action-button-text-color;
+          }
+
+          i {
+            vertical-align: middle;
+          }
+
+          &:hover {
+            background-color: darken($action-button-color, 4%);
+          }
+        }
+      }
+
       .problem-details-middle {
         flex: 1 0 auto;
         overflow: auto;

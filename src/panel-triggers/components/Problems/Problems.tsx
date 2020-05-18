@@ -21,6 +21,7 @@ export interface ProblemListProps {
   timeRange?: GFTimeRange;
   pageSize?: number;
   fontSize?: number;
+  panelId?: number;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
@@ -168,6 +169,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
               rootWidth={this.rootWidth}
               timeRange={this.props.timeRange}
               showTimeline={panelOptions.problemTimeline}
+              panelId={this.props.panelId}
               getProblemEvents={this.props.getProblemEvents}
               getProblemAlerts={this.props.getProblemAlerts}
               onProblemAck={this.handleProblemAck}
