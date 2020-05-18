@@ -154,7 +154,7 @@
         empty-to-null>
     </div>
 
-    <div class="gf-form max-width-20">
+    <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS">
       <label class="gf-form-label query-keyword width-7">Tags</label>
       <input type="text" class="gf-form-input width-14"
         ng-model="ctrl.target.tags.filter"
