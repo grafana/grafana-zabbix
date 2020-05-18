@@ -18,6 +18,7 @@
     "noImplicitUseStrict": false,
     "noImplicitAny": false,
     "noUnusedLocals": false,
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "strictFunctionTypes": false
   }
 }

@@ -28,8 +28,10 @@ export const SHOW_OK_EVENTS = 1;
 
 // Acknowledge
 export const ZBX_ACK_ACTION_NONE = 0;
+export const ZBX_ACK_ACTION_CLOSE = 1;
 export const ZBX_ACK_ACTION_ACK = 2;
 export const ZBX_ACK_ACTION_ADD_MESSAGE = 4;
+export const ZBX_ACK_ACTION_CHANGE_SEVERITY = 8;
 
 export const TRIGGER_SEVERITY = [
   {val: 0, text: 'Not classified'},

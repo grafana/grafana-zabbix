@@ -329,7 +329,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     this.render();
   }
 
-  acknowledgeProblem(problem: ProblemDTO, message) {
+  acknowledgeProblem(problem: ProblemDTO, message, action, severity) {
     const eventid = problem.eventid;
     const grafana_user = this.contextSrv.user.name;
     const ack_message = grafana_user + ' (Grafana): ' + message;
@@ -340,7 +340,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
         return Promise.reject({message: 'You have no permissions to acknowledge events.'});
       }
       if (eventid) {
-        return datasource.zabbix.acknowledgeEvent(eventid, ack_message);
+        return datasource.zabbix.acknowledgeEvent(eventid, ack_message, action, severity);
       } else {
         return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
       }
@@ -348,6 +348,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     .then(this.refresh.bind(this))
     .catch((err) => {
       this.setPanelError(err);
+      return Promise.reject(err);
     });
   }
 
@@ -401,8 +402,8 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
         onPageSizeChange: ctrl.handlePageSizeChange.bind(ctrl),
         onColumnResize: ctrl.handleColumnResize.bind(ctrl),
         onProblemAck: (trigger, data) => {
-          const message = data.message;
-          return ctrl.acknowledgeProblem(trigger, message);
+          const { message, action, severity } = data;
+          return ctrl.acknowledgeProblem(trigger, message, action, severity);
         },
         onTagClick: (tag, datasource, ctrlKey, shiftKey) => {
           if (ctrlKey || shiftKey) {

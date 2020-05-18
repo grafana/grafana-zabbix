@@ -4,7 +4,7 @@ import * as utils from '../../../datasource-zabbix/utils';
 import { MODE_ITEMID, MODE_METRICS } from '../../../datasource-zabbix/constants';
 import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
 import { ZBXItem, ZBXAcknowledge, GFTimeRange, RTRow } from '../../types';
-import { Modal, AckProblemData } from '../Modal';
+import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
 import Tooltip from '../Tooltip/Tooltip';
 import ProblemStatusBar from './ProblemStatusBar';
@@ -78,9 +78,6 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
   ackProblem = (data: AckProblemData) => {
     const problem = this.props.original as ProblemDTO;
     return this.props.onProblemAck(problem, data).then(result => {
-      this.closeAckDialog();
-    }).catch(err => {
-      console.log(err);
       this.closeAckDialog();
     });
   }
@@ -211,7 +208,8 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
           {problem.groups && <ProblemGroups groups={problem.groups} className="problem-details-right-item" />}
           {problem.hosts && <ProblemHosts hosts={problem.hosts} className="problem-details-right-item" />}
         </div>
-        <Modal withBackdrop={true}
+        <AckModal
+          canClose={problem.manual_close === '1'}
           isOpen={this.state.showAckDialog}
           onSubmit={this.ackProblem}
           onClose={this.closeAckDialog} />

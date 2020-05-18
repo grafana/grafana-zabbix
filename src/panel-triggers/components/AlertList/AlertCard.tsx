@@ -4,7 +4,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import { isNewProblem, formatLastChange } from '../../utils';
 import { ProblemsPanelOptions, TriggerSeverity } from '../../types';
-import { AckProblemData, Modal } from '.././Modal';
+import { AckProblemData, AckModal } from '../AckModal';
 import EventTag from '../EventTag';
 import Tooltip from '.././Tooltip/Tooltip';
 import AlertAcknowledges from './AlertAcknowledges';
@@ -165,7 +165,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
             )}
           </div>
         </div>
-        <Modal withBackdrop={true}
+        <AckModal
           isOpen={this.state.showAckDialog}
           onSubmit={this.ackProblem}
           onClose={this.closeAckDialog} />

@@ -7,7 +7,7 @@ import * as utils from '../../../datasource-zabbix/utils';
 import { isNewProblem } from '../../utils';
 import EventTag from '../EventTag';
 import ProblemDetails from './ProblemDetails';
-import { AckProblemData } from '../Modal';
+import { AckProblemData } from '../AckModal';
 import GFHeartIcon from '../GFHeartIcon';
 import { ProblemsPanelOptions, GFTimeRange, RTCell, TriggerSeverity, RTResized } from '../../types';
 import { ProblemDTO, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';

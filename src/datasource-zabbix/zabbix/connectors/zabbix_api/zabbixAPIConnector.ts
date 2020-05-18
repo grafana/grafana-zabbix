@@ -133,13 +133,20 @@ export class ZabbixAPIConnector {
   // Zabbix API method wrappers //
   ////////////////////////////////
 
-  acknowledgeEvent(eventid, message) {
-    const action = semver.gte(this.version, '4.0.0') ? ZBX_ACK_ACTION_ACK + ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
-    const params = {
+  acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number) {
+    if (!action) {
+      action = semver.gte(this.version, '4.0.0') ? ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
+    }
+
+    const params: any = {
       eventids: eventid,
       message: message,
       action: action
     };
+
+    if (severity) {
+      params.severity = severity;
+    }
 
     return this.request('event.acknowledge', params);
   }

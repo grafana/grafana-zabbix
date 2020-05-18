@@ -1,7 +1,7 @@
 import React, { PureComponent, CSSProperties } from 'react';
 import classNames from 'classnames';
 import { ProblemsPanelOptions, GFTimeRange } from '../../types';
-import { AckProblemData } from '.././Modal';
+import { AckProblemData } from '../AckModal';
 import AlertCard from './AlertCard';
 import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
 

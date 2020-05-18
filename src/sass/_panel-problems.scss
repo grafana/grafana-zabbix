@@ -598,9 +598,19 @@
 }
 
 .zbx-ack-modal {
-  .gf-form-input.zbx-ack-error {
+  .zbx-ack-error {
     border-color: $btn-danger-bg;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 5px $btn-danger-bg;
+    // box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 5px $btn-danger-bg;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #141619, 0 0 0px 4px $btn-danger-bg;
+  }
+
+  .ack-request-error {
+    padding-top: 1.2rem;
+  }
+
+  .ack-error-message {
+    color: $error-text-color;
   }
 
   .gf-form .gf-form-hint {
@@ -610,7 +620,6 @@
 
       &.ack-error-message {
         float: left;
-        color: $error-text-color;
       }
     }
   }
