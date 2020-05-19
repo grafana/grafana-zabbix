@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default class BodyPortal extends PureComponent<Props> {
-  node: HTMLElement = document.createElement('div');
+  node: HTMLElement;
   portalRoot: HTMLElement;
 
   constructor(props) {
@@ -17,6 +17,7 @@ export default class BodyPortal extends PureComponent<Props> {
       root = document.body
     } = this.props;
 
+    this.node = document.createElement('div');
     if (className) {
       this.node.classList.add(className);
     }

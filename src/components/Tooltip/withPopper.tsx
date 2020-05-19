@@ -21,44 +21,28 @@ interface Props {
 }
 
 interface State {
-  placement: string;
   show: boolean;
 }
 
-export default function withPopper(WrappedComponent) {
+export const withPopper = (WrappedComponent) => {
   return class extends React.Component<Props, State> {
+    static defaultProps: Partial<Props> = {
+      placement: 'auto',
+    };
+
     constructor(props) {
       super(props);
-      this.setState = this.setState.bind(this);
       this.state = {
-        placement: this.props.placement || 'auto',
         show: false,
       };
     }
 
-    componentWillReceiveProps(nextProps) {
-      if (nextProps.placement && nextProps.placement !== this.state.placement) {
-        this.setState(prevState => {
-          return {
-            ...prevState,
-            placement: nextProps.placement,
-          };
-        });
-      }
-    }
-
     showPopper = () => {
-      this.setState(prevState => ({
-        ...prevState,
-        show: true,
-      }));
+      this.setState({ show: true });
     };
 
     hidePopper = () => {
-      this.setState(prevState => ({
-        ...prevState,
-        show: false,
-      }));
+      this.setState({ show: false });
     };
 
     renderContent(content) {
@@ -71,8 +55,8 @@ export default function withPopper(WrappedComponent) {
     }
 
     render() {
-      const { show, placement } = this.state;
-      const className = this.props.className || '';
+      const { show } = this.state;
+      const { placement, className } = this.props;
 
       return (
         <WrappedComponent
@@ -80,11 +64,13 @@ export default function withPopper(WrappedComponent) {
           showPopper={this.showPopper}
           hidePopper={this.hidePopper}
           renderContent={this.renderContent}
-          show={show}
           placement={placement}
           className={className}
+          show={show}
         />
       );
     }
   };
-}
+};
+
+export default withPopper;

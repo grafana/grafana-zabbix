@@ -6,7 +6,7 @@ import { isNewProblem, formatLastChange } from '../../utils';
 import { ProblemsPanelOptions, TriggerSeverity } from '../../types';
 import { AckProblemData, AckModal } from '../AckModal';
 import EventTag from '../EventTag';
-import Tooltip from '.././Tooltip/Tooltip';
+import Tooltip from '../../../components/Tooltip/Tooltip';
 import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
 import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';

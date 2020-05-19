@@ -6,7 +6,7 @@ import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../..
 import { ZBXItem, ZBXAcknowledge, GFTimeRange, RTRow } from '../../types';
 import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
-import Tooltip from '../Tooltip/Tooltip';
+import Tooltip from '../../../components/Tooltip/Tooltip';
 import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';

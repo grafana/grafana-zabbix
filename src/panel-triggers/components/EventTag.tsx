@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import { ZBXTag } from '../types';
-import Tooltip from './Tooltip/Tooltip';
+import Tooltip from '../../components/Tooltip/Tooltip';
 
 const TAG_COLORS = [
   '#E24D42',

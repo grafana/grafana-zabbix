@@ -65,6 +65,7 @@
     "jshint-stylish": "^2.1.0",
     "load-grunt-tasks": "~3.2.0",
     "lodash": "~4.17.13",
+    "memoize-one": "^5.1.1",
     "moment": "~2.21.0",
     "ng-annotate-webpack-plugin": "^0.3.0",
     "node-sass": "^4.13.0",
