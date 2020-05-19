@@ -5,7 +5,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import { isNewProblem } from '../../utils';
 import EventTag from '../EventTag';
-import ProblemDetails from './ProblemDetails';
+import { ProblemDetails } from './ProblemDetails';
 import { AckProblemData } from '../AckModal';
 import { GFHeartIcon, FAIcon } from '../../../components';
 import { ProblemsPanelOptions, GFTimeRange, RTCell, TriggerSeverity, RTResized } from '../../types';

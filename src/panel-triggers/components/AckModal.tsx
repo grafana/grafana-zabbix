@@ -1,25 +1,24 @@
 import React, { PureComponent } from 'react';
-import ReactDOM from 'react-dom';
-import classNames from 'classnames';
+import { cx, css } from 'emotion';
 import { ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_CHANGE_SEVERITY, ZBX_ACK_ACTION_CLOSE } from '../../datasource-zabbix/constants';
-import { Button, Input, VerticalGroup, Spinner } from '@grafana/ui';
+import { Button, VerticalGroup, Spinner, Modal, Input, Forms, stylesFactory, withTheme, Themeable } from '@grafana/ui';
 import { FAIcon } from '../../components';
 
 import * as grafanaUi from '@grafana/ui';
-const Checkbox: any = grafanaUi.Forms?.Checkbox || (grafanaUi as any).Checkbox;
-const RadioButtonGroup: any = grafanaUi.Forms?.RadioButtonGroup || (grafanaUi as any).RadioButtonGroup;
+import { GrafanaTheme } from '@grafana/data';
+const Checkbox: any = Forms?.Checkbox || (grafanaUi as any).Checkbox;
+const RadioButtonGroup: any = Forms?.RadioButtonGroup || (grafanaUi as any).RadioButtonGroup;
 
 const KEYBOARD_ENTER_KEY = 13;
 const KEYBOARD_ESCAPE_KEY = 27;
 
-interface Props {
+interface Props extends Themeable {
   canAck?: boolean;
   canClose?: boolean;
-  isOpen?: boolean;
   severity?: number;
   withBackdrop?: boolean;
   onSubmit: (data?: AckProblemData) => Promise<any> | any;
-  onClose?: () => void;
+  onDismiss?: () => void;
 }
 
 interface State {
@@ -50,9 +49,7 @@ const severityOptions = [
   {value: 5, label: 'Disaster'}
 ];
 
-export class AckModal extends PureComponent<Props, State> {
-  modalContainer: HTMLElement;
-
+export class AckModalUnthemed extends PureComponent<Props, State> {
   static defaultProps: Partial<Props> = {
     withBackdrop: true,
   };
@@ -70,8 +67,6 @@ export class AckModal extends PureComponent<Props, State> {
       selectedSeverity: props.severity || 0,
       loading: false,
     };
-
-    this.modalContainer = document.body;
   }
 
   handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +103,7 @@ export class AckModal extends PureComponent<Props, State> {
 
   dismiss = () => {
     this.setState({ value: '', error: false, errorMessage: '', ackError: '', loading: false });
-    this.props.onClose();
+    this.props.onDismiss();
   }
 
   submit = () => {
@@ -141,7 +136,7 @@ export class AckModal extends PureComponent<Props, State> {
     }
     ackData.action = action;
 
-    this.props.onSubmit(ackData).then((response) => {
+    this.props.onSubmit(ackData).then(() => {
       this.dismiss();
     }).catch(err => {
       this.setState({
@@ -151,87 +146,131 @@ export class AckModal extends PureComponent<Props, State> {
     });
   }
 
-  render() {
-    const { canClose, canAck } = this.props;
-    if (!this.props.isOpen || !this.modalContainer) {
-      return null;
-    }
+  renderActions() {
+    const { canClose } = this.props;
 
-    const inputClass = classNames({ 'zbx-ack-error': this.state.error });
-
-    const modalNode = (
-      <div className="modal modal--narrow zbx-ack-modal" key="modal">
-        <div className="modal-body">
-          <div className="modal-header">
-            <h2 className="modal-header-title" style={{ display: 'flex' }}>
-              {this.state.loading ? <Spinner size={18} /> : <FAIcon icon="reply-all" />}
-              <span className="p-l-1">Acknowledge Problem</span>
-            </h2>
-
-            <a className="modal-header-close" onClick={this.dismiss}>
-              <FAIcon icon="remove" />
-            </a>
-          </div>
-          <div className="modal-content">
-            <div className="gf-form">
-              <label className="gf-form-hint">
-                <Input className={inputClass}
-                  type="text"
-                  name="message"
-                  placeholder="Message"
-                  maxLength={64}
-                  autoComplete="off"
-                  autoFocus={true}
-                  value={this.state.value}
-                  onChange={this.handleChange}
-                  onKeyUp={this.handleKeyUp}>
-                </Input>
-                <small className="gf-form-hint-text muted">Press Enter to submit</small>
-                {this.state.error &&
-                  <small className="gf-form-hint-text muted ack-error-message">{this.state.errorMessage}</small>
-                }
-              </label>
-            </div>
-
-            <div className="gf-form">
-              <VerticalGroup>
-                <Checkbox label="Acknowledge" value={this.state.acknowledge} onChange={this.onAcknowledgeToggle} />
-                <Checkbox label="Change severity" description="" value={this.state.changeSeverity} onChange={this.onChangeSeverityToggle} />
-                {this.state.changeSeverity &&
-                  <RadioButtonGroup
-                    size="sm"
-                    options={severityOptions}
-                    value={this.state.selectedSeverity}
-                    onChange={this.onChangeSelectedSeverity}
-                  />
-                }
-                {canClose &&
-                  <Checkbox label="Close problem" disabled={!canClose} value={this.state.closeProblem} onChange={this.onCloseProblemToggle} />
-                }
-              </VerticalGroup>
-            </div>
-
-            {this.state.ackError &&
-              <div className="gf-form ack-request-error">
-                <span className="ack-error-message">{this.state.ackError}</span>
-              </div>
-            }
-
-            <div className="gf-form-button-row text-center">
-              <Button variant="primary" onClick={this.submit}>Update</Button>
-              <Button variant="secondary" onClick={this.dismiss}>Cancel</Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-
-    const modalNodeWithBackdrop = [
-      modalNode,
-      <div className="modal-backdrop in" key="modal-backdrop" onClick={this.handleBackdropClick}></div>
+    const actions = [
+      <Checkbox key="ack" label="Acknowledge" value={this.state.acknowledge} onChange={this.onAcknowledgeToggle} />,
+      <Checkbox
+        key="change-severity"
+        label="Change severity"
+        description=""
+        value={this.state.changeSeverity}
+        onChange={this.onChangeSeverityToggle}
+      />,
+      this.state.changeSeverity &&
+        <RadioButtonGroup
+          key="severity"
+          size="sm"
+          options={severityOptions}
+          value={this.state.selectedSeverity}
+          onChange={this.onChangeSelectedSeverity}
+        />,
+      canClose &&
+        <Checkbox key="close" label="Close problem" disabled={!canClose} value={this.state.closeProblem} onChange={this.onCloseProblemToggle} />,
     ];
 
-    const modal = this.props.withBackdrop ? modalNodeWithBackdrop : modalNode;
-    return ReactDOM.createPortal(modal, this.modalContainer);
+    // <VerticalGroup /> doesn't handle empty elements properly, so don't return it
+    return actions.filter(e => e);
+  }
+
+  render() {
+    const { theme } = this.props;
+
+    const styles = getStyles(theme);
+    const modalClass = cx(styles.modal);
+    const modalTitleClass = cx(styles.modalHeaderTitle);
+    const inputGroupClass = cx('gf-form', styles.inputGroup);
+    const inputClass = cx(this.state.error && styles.input);
+    const inputHintClass = cx('gf-form-hint-text', styles.inputHint);
+    const inputErrorClass = cx('gf-form-hint-text', styles.inputError);
+
+    return (
+      <Modal
+        isOpen={true}
+        onDismiss={this.dismiss}
+        className={modalClass}
+        title={
+          <div className={modalTitleClass}>
+            {this.state.loading ? <Spinner size={18} /> : <FAIcon icon="reply-all" />}
+            <span className="p-l-1">Acknowledge Problem</span>
+          </div>
+        }
+      >
+        <div className={inputGroupClass}>
+          <label className="gf-form-hint">
+            <Input className={inputClass}
+              type="text"
+              name="message"
+              placeholder="Message"
+              maxLength={64}
+              autoComplete="off"
+              autoFocus={true}
+              value={this.state.value}
+              onChange={this.handleChange}
+              onKeyUp={this.handleKeyUp}>
+            </Input>
+            <small className={inputHintClass}>Press Enter to submit</small>
+            {this.state.error &&
+              <small className={inputErrorClass}>{this.state.errorMessage}</small>
+            }
+          </label>
+        </div>
+
+        <div className="gf-form">
+          <VerticalGroup>
+            {this.renderActions()}
+          </VerticalGroup>
+        </div>
+
+        {this.state.ackError &&
+          <div className="gf-form ack-request-error">
+            <span className={styles.ackError}>{this.state.ackError}</span>
+          </div>
+        }
+
+        <div className="gf-form-button-row text-center">
+          <Button variant="primary" onClick={this.submit}>Update</Button>
+          <Button variant="secondary" onClick={this.dismiss}>Cancel</Button>
+        </div>
+      </Modal>
+    );
   }
 }
+
+const getStyles = stylesFactory((theme: GrafanaTheme) => {
+  return {
+    modal: css`
+      width: 500px;
+    `,
+    modalHeaderTitle: css`
+      font-size: ${theme.typography.heading.h3};
+      padding-top: ${theme.spacing.sm};
+      margin: 0 ${theme.spacing.md};
+      display: flex;
+    `,
+    inputGroup: css`
+      margin-bottom: 16px;
+    `,
+    input: css`
+      border-color: ${theme.colors.red};
+      border-radius: 2px;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 2px ${theme.colors.pageBg}, 0 0 0px 4px ${theme.colors.red};
+    `,
+    inputHint: css`
+      display: inherit;
+      float: right;
+      color: ${theme.colors.textWeak};
+    `,
+    inputError: css`
+      float: left;
+      color: ${theme.colors.red};
+    `,
+    ackError: css`
+      color: ${theme.colors.red};
+    `,
+  };
+});
+
+export const AckModal = withTheme(AckModalUnthemed);

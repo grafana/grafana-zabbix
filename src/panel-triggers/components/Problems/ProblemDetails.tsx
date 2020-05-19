@@ -9,7 +9,7 @@ import EventTag from '../EventTag';
 import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import { FAIcon, Tooltip } from '../../../components';
+import { FAIcon, Tooltip, ModalController } from '../../../components';
 import { renderUrl } from '../../utils';
 import { getLocationSrv } from '@grafana/runtime';
 
@@ -28,17 +28,15 @@ interface ProblemDetailsState {
   events: ZBXEvent[];
   alerts: ZBXAlert[];
   show: boolean;
-  showAckDialog: boolean;
 }
 
-export default class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDetailsState> {
+export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDetailsState> {
   constructor(props) {
     super(props);
     this.state = {
       events: [],
       alerts: [],
       show: false,
-      showAckDialog: false,
     };
   }
 
@@ -76,17 +74,7 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
 
   ackProblem = (data: AckProblemData) => {
     const problem = this.props.original as ProblemDTO;
-    return this.props.onProblemAck(problem, data).then(result => {
-      this.closeAckDialog();
-    });
-  }
-
-  showAckDialog = () => {
-    this.setState({ showAckDialog: true });
-  }
-
-  closeAckDialog = () => {
-    this.setState({ showAckDialog: false });
+    return this.props.onProblemAck(problem, data);
   }
 
   openInExplore = () => {
@@ -149,10 +137,23 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
             <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
             {problem.showAckButton &&
               <div className="problem-actions">
-                <ProblemActionButton className="navbar-button navbar-button--settings"
-                  icon="reply-all"
-                  tooltip="Acknowledge problem"
-                  onClick={this.showAckDialog} />
+                <ModalController>
+                  {({ showModal, hideModal }) => (
+                    <ProblemActionButton
+                      className="navbar-button navbar-button--settings"
+                      icon="reply-all"
+                      tooltip="Acknowledge problem"
+                      onClick={() => {
+                        showModal(AckModal, {
+                          canClose: problem.manual_close === '1',
+                          severity: problemSeverity,
+                          onSubmit: this.ackProblem,
+                          onDismiss: hideModal,
+                        });
+                      }}
+                    />
+                  )}
+                </ModalController>
               </div>
             }
           </div>
@@ -208,12 +209,6 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
           {problem.groups && <ProblemGroups groups={problem.groups} className="problem-details-right-item" />}
           {problem.hosts && <ProblemHosts hosts={problem.hosts} className="problem-details-right-item" />}
         </div>
-        <AckModal
-          canClose={problem.manual_close === '1'}
-          severity={problemSeverity}
-          isOpen={this.state.showAckDialog}
-          onSubmit={this.ackProblem}
-          onClose={this.closeAckDialog} />
       </div>
     );
   }

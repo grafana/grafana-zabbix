@@ -6,10 +6,10 @@ import { isNewProblem, formatLastChange } from '../../utils';
 import { ProblemsPanelOptions, TriggerSeverity } from '../../types';
 import { AckProblemData, AckModal } from '../AckModal';
 import EventTag from '../EventTag';
-import Tooltip from '../../../components/Tooltip/Tooltip';
 import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
 import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
+import { ModalController, Tooltip } from '../../../components';
 
 interface AlertCardProps {
   problem: ProblemDTO;
@@ -18,15 +18,7 @@ interface AlertCardProps {
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
 }
 
-interface AlertCardState {
-  showAckDialog: boolean;
-}
-
-export default class AlertCard extends PureComponent<AlertCardProps, AlertCardState> {
-  constructor(props) {
-    super(props);
-    this.state = { showAckDialog: false };
-  }
+export default class AlertCard extends PureComponent<AlertCardProps> {
 
   handleTagClick = (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
@@ -36,23 +28,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
 
   ackProblem = (data: AckProblemData) => {
     const problem = this.props.problem;
-    return this.props.onProblemAck(problem, data).then(result => {
-      this.closeAckDialog();
-    }).catch(err => {
-      console.log(err);
-      this.closeAckDialog();
-    });
-  }
-
-  showAckDialog = () => {
-    const problem = this.props.problem;
-    if (problem.showAckButton) {
-      this.setState({ showAckDialog: true });
-    }
-  }
-
-  closeAckDialog = () => {
-    this.setState({ showAckDialog: false });
+    return this.props.onProblemAck(problem, data);
   }
 
   render() {
@@ -61,10 +37,11 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
     const cardClass = classNames('alert-rule-item', 'zbx-trigger-card', { 'zbx-trigger-highlighted': panelOptions.highlightBackground });
     const descriptionClass = classNames('alert-rule-item__text', { 'zbx-description--newline': panelOptions.descriptionAtNewLine });
 
+    const problemSeverity = Number(problem.severity);
     let severityDesc: TriggerSeverity;
-    severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.severity));
+    severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === problemSeverity);
     if (problem.severity) {
-      severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === Number(problem.severity));
+      severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === problemSeverity);
     }
 
     const lastchange = formatLastChange(problem.timestamp, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat);
@@ -161,14 +138,24 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
               </Tooltip>
             )}
             {problem.eventid && (
-              <AlertAcknowledgesButton problem={problem} onClick={this.showAckDialog} />
+              <ModalController>
+              {({ showModal, hideModal }) => (
+                <AlertAcknowledgesButton
+                  problem={problem}
+                  onClick={() => {
+                    showModal(AckModal, {
+                      canClose: problem.manual_close === '1',
+                      severity: problemSeverity,
+                      onSubmit: this.ackProblem,
+                      onDismiss: hideModal,
+                    });
+                  }}
+                />
+              )}
+            </ModalController>
             )}
           </div>
         </div>
-        <AckModal
-          isOpen={this.state.showAckDialog}
-          onSubmit={this.ackProblem}
-          onClose={this.closeAckDialog} />
       </li>
     );
   }
