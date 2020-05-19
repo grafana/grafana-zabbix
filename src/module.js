@@ -1,7 +1,7 @@
 import './sass/grafana-zabbix.dark.scss';
 import './sass/grafana-zabbix.light.scss';
 
-import {ZabbixAppConfigCtrl} from './components/config';
+import {ZabbixAppConfigCtrl} from './app_config_ctrl/config';
 import {loadPluginCss} from 'grafana/app/plugins/sdk';
 
 loadPluginCss({
