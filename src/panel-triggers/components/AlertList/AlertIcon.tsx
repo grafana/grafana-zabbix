@@ -1,33 +1,34 @@
-import React, { CSSProperties } from 'react';
-import classNames from 'classnames';
-import { ZBXTrigger } from '../../types';
+import React, { FC } from 'react';
+import { cx, css } from 'emotion';
+import { GFHeartIcon } from '../../../components';
+import { ProblemDTO } from '../../../datasource-zabbix/types';
 
-interface AlertIconProps {
-  problem: ZBXTrigger;
+interface Props {
+  problem: ProblemDTO;
   color: string;
   blink?: boolean;
   highlightBackground?: boolean;
 }
 
-export default function AlertIcon(props: AlertIconProps) {
-  const { problem, color, blink, highlightBackground } = props;
-  const priority = Number(problem.priority);
-  let iconClass = '';
-  if (problem.value === '1' && priority >= 2) {
-    iconClass = 'icon-gf-critical';
-  } else {
-    iconClass = 'icon-gf-online';
-  }
+export const AlertIcon: FC<Props> = ({ problem, color, blink, highlightBackground }) => {
+  const severity = Number(problem.severity);
+  const status = problem.value === '1' && severity >= 2 ? 'critical' : 'online';
 
-  const className = classNames('icon-gf', iconClass, { 'zabbix-trigger--blinked': blink });
-  const style: CSSProperties = {};
-  if (!highlightBackground) {
-    style.color = color;
-  }
+  const iconClass = cx(
+    'icon-gf',
+    blink && 'zabbix-trigger--blinked',
+  );
+
+  const wrapperClass = cx(
+    'alert-rule-item__icon',
+    !highlightBackground && css`color: ${color}`
+  );
 
   return (
-    <div className="alert-rule-item__icon" style={style}>
-      <i className={className}></i>
+    <div className={wrapperClass}>
+      <GFHeartIcon status={status} className={iconClass} />
     </div>
   );
-}
+};
+
+export default AlertIcon;

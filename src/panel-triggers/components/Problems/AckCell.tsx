@@ -2,7 +2,7 @@ import React from 'react';
 import { css } from 'emotion';
 import { RTCell } from '../../types';
 import { ProblemDTO } from '../../../datasource-zabbix/types';
-import { FAIcon } from '../FAIcon';
+import { FAIcon } from '../../../components';
 import { useTheme, stylesFactory } from '@grafana/ui';
 import { GrafanaTheme } from '@grafana/data';
 

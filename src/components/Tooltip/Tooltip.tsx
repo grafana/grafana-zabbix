@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import Popper from './Popper';
 import withPopper, { UsingPopperProps } from './withPopper';
 
-const Tooltip: FC<UsingPopperProps> = ({ hidePopper, showPopper, className, children, ...restProps }) => {
+const TooltipWrapper: FC<UsingPopperProps> = ({ hidePopper, showPopper, className, children, ...restProps }) => {
   return (
     <div className={`popper__manager ${className}`} onMouseEnter={showPopper} onMouseLeave={hidePopper}>
       <Popper {...restProps}>{children}</Popper>
@@ -10,4 +10,6 @@ const Tooltip: FC<UsingPopperProps> = ({ hidePopper, showPopper, className, chil
   );
 };
 
-export default withPopper(Tooltip);
+export const Tooltip = withPopper(TooltipWrapper);
+
+export default Tooltip;

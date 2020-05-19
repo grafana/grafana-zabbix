@@ -3,14 +3,13 @@ import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
 import { MODE_ITEMID, MODE_METRICS } from '../../../datasource-zabbix/constants';
 import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
-import { ZBXItem, ZBXAcknowledge, GFTimeRange, RTRow } from '../../types';
+import { ZBXItem, GFTimeRange, RTRow } from '../../types';
 import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
-import Tooltip from '../../../components/Tooltip/Tooltip';
 import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import FAIcon from '../FAIcon';
+import { FAIcon, Tooltip } from '../../../components';
 import { renderUrl } from '../../utils';
 import { getLocationSrv } from '@grafana/runtime';
 

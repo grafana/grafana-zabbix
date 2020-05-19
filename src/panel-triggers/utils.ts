@@ -2,12 +2,12 @@ import _ from 'lodash';
 import moment from 'moment';
 import { DataQuery } from '@grafana/data';
 import * as utils from '../datasource-zabbix/utils';
-import { ZBXTrigger } from './types';
+import { ProblemDTO } from 'datasource-zabbix/types';
 
-export function isNewProblem(problem: ZBXTrigger, highlightNewerThan: string): boolean {
+export function isNewProblem(problem: ProblemDTO, highlightNewerThan: string): boolean {
   try {
     const highlightIntervalMs = utils.parseInterval(highlightNewerThan);
-    const durationSec = (Date.now() - problem.lastchangeUnix * 1000);
+    const durationSec = (Date.now() - problem.timestamp * 1000);
     return durationSec < highlightIntervalMs;
   } catch (e) {
     return false;

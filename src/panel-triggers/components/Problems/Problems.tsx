@@ -3,15 +3,13 @@ import ReactTable from 'react-table-6';
 import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
-import * as utils from '../../../datasource-zabbix/utils';
 import { isNewProblem } from '../../utils';
 import EventTag from '../EventTag';
 import ProblemDetails from './ProblemDetails';
 import { AckProblemData } from '../AckModal';
-import GFHeartIcon from '../GFHeartIcon';
+import { GFHeartIcon, FAIcon } from '../../../components';
 import { ProblemsPanelOptions, GFTimeRange, RTCell, TriggerSeverity, RTResized } from '../../types';
 import { ProblemDTO, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
-import { FAIcon } from '../FAIcon';
 import { AckCell } from './AckCell';
 
 export interface ProblemListProps {
@@ -121,12 +119,12 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         Cell: props => <TagCell {...props} onTagClick={this.handleTagClick} />
       },
       {
-        Header: 'Age', className: 'problem-age', width: 100, show: options.ageField, accessor: 'lastchangeUnix',
+        Header: 'Age', className: 'problem-age', width: 100, show: options.ageField, accessor: 'timestamp',
         id: 'age',
         Cell: AgeCell,
       },
       {
-        Header: 'Time', className: 'last-change', width: 150, accessor: 'lastchangeUnix',
+        Header: 'Time', className: 'last-change', width: 150, accessor: 'timestamp',
         id: 'lastchange',
         Cell: props => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
       },

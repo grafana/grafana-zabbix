@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import classNames from 'classnames';
 import { ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_CHANGE_SEVERITY, ZBX_ACK_ACTION_CLOSE } from '../../datasource-zabbix/constants';
 import { Button, Input, VerticalGroup, Spinner } from '@grafana/ui';
-import { FAIcon } from './FAIcon';
+import { FAIcon } from '../../components';
 
 import * as grafanaUi from '@grafana/ui';
 const Checkbox: any = grafanaUi.Forms?.Checkbox || (grafanaUi as any).Checkbox;
