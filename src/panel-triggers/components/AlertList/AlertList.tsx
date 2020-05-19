@@ -69,7 +69,7 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
           <ol className={alertListClass}>
             {currentProblems.map(problem =>
               <AlertCard
-                key={`${problem.triggerid}-${problem.datasource}`}
+                key={`${problem.triggerid}-${problem.eventid}-${problem.datasource}`}
                 problem={problem}
                 panelOptions={panelOptions}
                 onTagClick={this.handleTagClick}
