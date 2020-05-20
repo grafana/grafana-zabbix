@@ -239,6 +239,7 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
 }
 
 const getStyles = stylesFactory((theme: GrafanaTheme) => {
+  const red = theme.colors.red || (theme as any).palette.red;
   return {
     modal: css`
       width: 500px;
@@ -253,10 +254,10 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
       margin-bottom: 16px;
     `,
     input: css`
-      border-color: ${theme.colors.red};
+      border-color: ${red};
       border-radius: 2px;
       outline-offset: 2px;
-      box-shadow: 0 0 0 2px ${theme.colors.pageBg}, 0 0 0px 4px ${theme.colors.red};
+      box-shadow: 0 0 0 2px ${theme.colors.pageBg || (theme as any).colors.bg1}, 0 0 0px 4px ${red};
     `,
     inputHint: css`
       display: inherit;
@@ -265,10 +266,10 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
     `,
     inputError: css`
       float: left;
-      color: ${theme.colors.red};
+      color: ${red};
     `,
     ackError: css`
-      color: ${theme.colors.red};
+      color: ${red};
     `,
   };
 });
