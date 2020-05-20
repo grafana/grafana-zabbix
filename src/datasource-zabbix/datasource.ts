@@ -353,6 +353,9 @@ export class ZabbixDatasource {
 
     return this.zabbix.getITServices(itServiceFilter)
     .then(itservices => {
+      if (options.isOldVersion) {
+        itservices = _.filter(itservices, {'serviceid': target.itservice?.serviceid});
+      }
       return this.zabbix.getSLA(itservices, timeRange, target, options);})
     .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target));
   }

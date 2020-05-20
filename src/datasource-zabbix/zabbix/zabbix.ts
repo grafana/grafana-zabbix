@@ -27,7 +27,7 @@ const REQUESTS_TO_CACHE = [
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'login', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
+  'getAcknowledges', 'getITService', 'getVersion', 'login', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
   'getExtendedEventData'
 ];
 
@@ -428,15 +428,11 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getSLA(itservices, timeRange, target, options) {
-    let itServices = itservices;
-    if (options.isOldVersion) {
-      itServices = _.filter(itServices, {'serviceid': target.itservice.serviceid});
-    }
-    const itServiceIds = _.map(itServices, 'serviceid');
+    const itServiceIds = _.map(itservices, 'serviceid');
     return this.zabbixAPI.getSLA(itServiceIds, timeRange, options)
     .then(slaResponse => {
       return _.map(itServiceIds, serviceid => {
-        const itservice = _.find(itServices, {'serviceid': serviceid});
+        const itservice = _.find(itservices, {'serviceid': serviceid});
         return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
       });
     });
