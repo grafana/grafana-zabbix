@@ -371,7 +371,7 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
       };
 
       return (
-        <rect key={event.eventid} className={className} {...attributes} />
+        <rect key={`${event.eventid}-${index}`} className={className} {...attributes} />
       );
     });
 
@@ -480,7 +480,7 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
 
       return (
         <TimelinePoint
-          key={event.eventid}
+          key={`${event.eventid}-${i}`}
           className={className}
           x={posLeft}
           r={pointR}
@@ -611,7 +611,7 @@ class TimelineAcks extends PureComponent<TimelineAcksProps, TimelineAcksState> {
 
       return (
         <TimelineAck
-          key={ack.eventid}
+          key={`${ack.eventid}-${i}`}
           x={posLeft}
           r={pointR}
           highlighted={highlighted}
