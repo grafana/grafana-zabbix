@@ -19,7 +19,7 @@ export const variableRegex = /\$(\w+)|\[\[([\s\S]+?)(?::(\w+))?\]\]|\${(\w+)(?:\
  * @param  {string} key  item key, ie system.cpu.util[,system,avg1]
  * @return {string}      expanded name, ie "CPU system time"
  */
-export function expandItemName(name, key) {
+export function expandItemName(name: string, key: string): string {
 
   // extract params from key:
   // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]

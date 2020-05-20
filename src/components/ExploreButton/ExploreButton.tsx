@@ -5,6 +5,7 @@ import { GrafanaTheme, GrafanaThemeType } from '@grafana/data';
 import { getLocationSrv } from '@grafana/runtime';
 import { MODE_METRICS, MODE_ITEMID } from '../../datasource-zabbix/constants';
 import { renderUrl } from '../../panel-triggers/utils';
+import { expandItemName } from '../../datasource-zabbix/utils';
 import { FAIcon } from '../FAIcon/FAIcon';
 import { ProblemDTO } from '../../datasource-zabbix/types';
 
@@ -26,18 +27,18 @@ export const ExploreButton: FC<Props> = ({ problem, panelId }) => {
 };
 
 const openInExplore = (problem: ProblemDTO, panelId: number) => {
-  console.log(problem, panelId);
   let query: any = {};
 
   if (problem.items?.length === 1 && problem.hosts?.length === 1) {
     const item = problem.items[0];
     const host = problem.hosts[0];
+    const itemName = expandItemName(item.name, item.key_);
     query = {
       queryType: MODE_METRICS,
       group: { filter: '/.*/' },
       application: { filter: '' },
       host: { filter: host.name },
-      item: { filter: item.name },
+      item: { filter: itemName },
     };
   } else {
     const itemids = problem.items?.map(p => p.itemid).join(',');
@@ -56,7 +57,6 @@ const openInExplore = (problem: ProblemDTO, panelId: number) => {
 
   const exploreState = JSON.stringify(state);
   const url = renderUrl('/explore', { left: exploreState });
-  console.log(url);
   getLocationSrv().update({ path: url, query: {} });
 };
 
