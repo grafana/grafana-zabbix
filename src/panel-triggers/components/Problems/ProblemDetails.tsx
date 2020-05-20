@@ -8,7 +8,7 @@ import EventTag from '../EventTag';
 import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import { FAIcon, ExploreButton, Tooltip, ModalController } from '../../../components';
+import { FAIcon, ExploreButton, AckButton, Tooltip, ModalController } from '../../../components';
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
@@ -96,16 +96,16 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
               </div>
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
-            <ExploreButton problem={problem} panelId={this.props.panelId} />
+            <div className="problem-actions-left">
+              <ExploreButton problem={problem} panelId={this.props.panelId} />
+            </div>
             <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
             {problem.showAckButton &&
               <div className="problem-actions">
                 <ModalController>
                   {({ showModal, hideModal }) => (
-                    <ProblemActionButton
+                    <AckButton
                       className="navbar-button navbar-button--settings"
-                      icon="reply-all"
-                      tooltip="Acknowledge problem"
                       onClick={() => {
                         showModal(AckModal, {
                           canClose: problem.manual_close === '1',
@@ -239,35 +239,5 @@ class ProblemHosts extends PureComponent<ProblemHostsProps> {
         <span>{h.name}</span>
       </div>
     ));
-  }
-}
-
-interface ProblemActionButtonProps {
-  icon: string;
-  tooltip?: string;
-  className?: string;
-  onClick?: (event?) => void;
-}
-
-class ProblemActionButton extends PureComponent<ProblemActionButtonProps> {
-  handleClick = (event) => {
-    this.props.onClick(event);
-  }
-
-  render() {
-    const { icon, tooltip, className } = this.props;
-    let button = (
-      <button className={`btn problem-action-button ${className || ''}`} onClick={this.handleClick}>
-        <FAIcon icon={icon} />
-      </button>
-    );
-    if (tooltip) {
-      button = (
-        <Tooltip placement="bottom" content={tooltip}>
-          {button}
-        </Tooltip>
-      );
-    }
-    return button;
   }
 }

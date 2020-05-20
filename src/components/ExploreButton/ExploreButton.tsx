@@ -1,13 +1,10 @@
 import React, { FC } from 'react';
-import { cx, css } from 'emotion';
-import { stylesFactory, useTheme } from '@grafana/ui';
-import { GrafanaTheme, GrafanaThemeType } from '@grafana/data';
 import { getLocationSrv } from '@grafana/runtime';
 import { MODE_METRICS, MODE_ITEMID } from '../../datasource-zabbix/constants';
 import { renderUrl } from '../../panel-triggers/utils';
 import { expandItemName } from '../../datasource-zabbix/utils';
-import { FAIcon } from '../FAIcon/FAIcon';
 import { ProblemDTO } from '../../datasource-zabbix/types';
+import { ActionButton } from '../ActionButton/ActionButton';
 
 interface Props {
   problem: ProblemDTO;
@@ -15,14 +12,10 @@ interface Props {
 }
 
 export const ExploreButton: FC<Props> = ({ problem, panelId }) => {
-  const theme = useTheme();
-  const styles = getStyles(theme);
-  const buttonClass = cx('btn', styles.button);
-
   return (
-    <button className={buttonClass} onClick={() => openInExplore(problem, panelId)}>
-      <FAIcon icon="compass" customClass={styles.icon} /><span>Explore</span>
-    </button>
+    <ActionButton icon="compass" width={6} onClick={() => openInExplore(problem, panelId)}>
+      Explore
+    </ActionButton>
   );
 };
 
@@ -59,31 +52,3 @@ const openInExplore = (problem: ProblemDTO, panelId: number) => {
   const url = renderUrl('/explore', { left: exploreState });
   getLocationSrv().update({ path: url, query: {} });
 };
-
-const getStyles = stylesFactory((theme: GrafanaTheme) => {
-  const actionBlue = theme.type === GrafanaThemeType.Light ? '#497dc0' : '#005f81';
-  return {
-    button: css`
-      width: 6rem;
-      height: 2rem;
-      background-image: none;
-      background-color: ${actionBlue};
-      border: 1px solid darken(${actionBlue}, 6%);
-      border-radius: 1px;
-      margin-right: 1.6rem;
-
-      i {
-        vertical-align: middle;
-      }
-
-      &:hover {
-        background-color: darken(${actionBlue}, 4%);
-      }
-    `,
-    icon: css`
-      i {
-        color: ${theme.colors.text};
-      }
-    `,
-  };
-});

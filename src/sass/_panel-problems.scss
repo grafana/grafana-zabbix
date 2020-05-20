@@ -339,51 +339,8 @@
         margin-left: 1.6rem;
       }
 
-      .problem-action-button {
-        &.btn {
-          width: 3rem;
-          height: 2rem;
-          align-items: baseline;
-
-          background-image: none;
-          background-color: $action-button-color;
-          border: 1px solid darken($action-button-color, 6%);
-          border-radius: 1px;
-
-          span {
-            color: $action-button-text-color;
-          }
-
-          &:hover {
-            background-color: darken($action-button-color, 4%);
-          }
-        }
-      }
-
-      .problem-explore-button {
-        &.btn {
-          width: 6rem;
-          height: 2rem;
-
-          background-image: none;
-          background-color: $action-button-color;
-          border: 1px solid darken($action-button-color, 6%);
-          border-radius: 1px;
-
-          margin-right: 1.6rem;
-
-          span {
-            color: $action-button-text-color;
-          }
-
-          i {
-            vertical-align: middle;
-          }
-
-          &:hover {
-            background-color: darken($action-button-color, 4%);
-          }
-        }
+      .problem-actions-left {
+        margin-right: 1.6rem;
       }
 
       .problem-details-middle {
