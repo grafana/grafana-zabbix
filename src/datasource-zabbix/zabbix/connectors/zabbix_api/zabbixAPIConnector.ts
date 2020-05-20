@@ -366,11 +366,21 @@ export class ZabbixAPIConnector {
   }
 
   getSLA(serviceids, timeRange, options) {
-    const intervals = buildSLAIntervals(timeRange, options.intervalMs);
-    const params = {
+    const [timeFrom, timeTo] = timeRange;
+    let intervals = [{ from: timeFrom, to: timeTo }];
+    if (options.slaInterval === 'auto') {
+      const interval = getSLAInterval(options.intervalMs);
+      intervals = buildSLAIntervals(timeRange, interval);
+    } else if (options.slaInterval !== 'none') {
+      const interval = utils.parseInterval(options.slaInterval) / 1000;
+      intervals = buildSLAIntervals(timeRange, interval);
+    }
+
+    const params: any = {
       serviceids,
       intervals
     };
+
     return this.request('service.getsla', params);
   }
 
@@ -667,19 +677,18 @@ function getSLAInterval(intervalMs) {
   return Math.max(interval, MIN_SLA_INTERVAL);
 }
 
-function buildSLAIntervals(timeRange, intervalMs) {
+function buildSLAIntervals(timeRange, interval) {
   let [timeFrom, timeTo] = timeRange;
-  const slaInterval = getSLAInterval(intervalMs);
   const intervals = [];
 
   // Align time range with calculated interval
-  timeFrom = Math.floor(timeFrom / slaInterval) * slaInterval;
-  timeTo = Math.ceil(timeTo / slaInterval) * slaInterval;
+  timeFrom = Math.floor(timeFrom / interval) * interval;
+  timeTo = Math.ceil(timeTo / interval) * interval;
 
-  for (let i = timeFrom; i <= timeTo - slaInterval; i += slaInterval) {
+  for (let i = timeFrom; i <= timeTo - interval; i += interval) {
     intervals.push({
       from : i,
-      to : (i + slaInterval)
+      to : (i + interval)
     });
 
   }

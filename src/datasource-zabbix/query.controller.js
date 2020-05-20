@@ -35,6 +35,7 @@ function getTargetDefaults() {
 function getSLATargetDefaults() {
   return {
     slaProperty: { name: "SLA", property: "sla" },
+    slaInterval: 'none',
   };
 }
 
@@ -91,6 +92,16 @@ export class ZabbixQueryController extends QueryCtrl {
       {name: "OK time", property: "okTime"},
       {name: "Problem time", property: "problemTime"},
       {name: "Down time", property: "downtimeTime"}
+    ];
+
+    this.slaIntervals = [
+      { text: 'No interval', value: 'none' },
+      { text: 'Auto', value: 'auto' },
+      { text: '1 hour', value: '1h' },
+      { text: '12 hours', value: '12h' },
+      { text: '24 hours', value: '1d' },
+      { text: '1 week', value: '1w' },
+      { text: '1 month', value: '1M' },
     ];
 
     this.ackFilters = [

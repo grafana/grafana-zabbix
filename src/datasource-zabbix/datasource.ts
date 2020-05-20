@@ -351,6 +351,8 @@ export class ZabbixDatasource {
       itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, options.scopedVars);
     }
 
+    options.slaInterval = target.slaInterval;
+
     return this.zabbix.getITServices(itServiceFilter)
     .then(itservices => {
       if (options.isOldVersion) {

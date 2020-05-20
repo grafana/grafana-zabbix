@@ -48,7 +48,12 @@ function migrateQueryType(target) {
       delete target.mode;
     }
   }
+}
 
+function migrateSLA(target) {
+  if (target.queryType === c.MODE_ITSERVICE && !target.slaInterval) {
+    target.slaInterval = 'none';
+  }
 }
 
 export function migrate(target) {
@@ -59,6 +64,7 @@ export function migrate(target) {
   }
   migratePercentileAgg(target);
   migrateQueryType(target);
+  migrateSLA(target);
   return target;
 }
 
