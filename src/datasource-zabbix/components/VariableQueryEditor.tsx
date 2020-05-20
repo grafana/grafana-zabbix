@@ -15,6 +15,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     { value: VariableQueryTypes.Host, label: 'Host' },
     { value: VariableQueryTypes.Application, label: 'Application' },
     { value: VariableQueryTypes.Item, label: 'Item' },
+    { value: VariableQueryTypes.ItemValues, label: 'Item values' },
   ];
 
   defaults: VariableQueryData = {
@@ -123,7 +124,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           }
         </div>
         {(selectedQueryType.value === VariableQueryTypes.Application ||
-          selectedQueryType.value === VariableQueryTypes.Item) &&
+          selectedQueryType.value === VariableQueryTypes.Item ||
+          selectedQueryType.value === VariableQueryTypes.ItemValues) &&
           <div className="gf-form-inline">
             <div className="gf-form max-width-30">
               <FormLabel width={10}>Application</FormLabel>
@@ -133,7 +135,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
                 onBlur={this.handleQueryChange}
               />
             </div>
-            {selectedQueryType.value === VariableQueryTypes.Item &&
+            {(selectedQueryType.value === VariableQueryTypes.Item ||
+              selectedQueryType.value === VariableQueryTypes.ItemValues) &&
               <div className="gf-form max-width-30">
                 <FormLabel width={10}>Item</FormLabel>
                 <ZabbixInput

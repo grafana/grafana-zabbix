@@ -27,6 +27,7 @@ export enum VariableQueryTypes {
   Host = 'host',
   Application = 'application',
   Item = 'item',
+  ItemValues = 'itemValues',
 }
 
 export enum ShowProblemTypes {

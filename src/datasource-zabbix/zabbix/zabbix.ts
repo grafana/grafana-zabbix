@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import moment from 'moment';
 import * as utils from '../utils';
 import responseHandler from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
@@ -285,6 +286,25 @@ export class Zabbix implements ZabbixConnector {
   getItems(groupFilter?, hostFilter?, appFilter?, itemFilter?, options = {}) {
     return this.getAllItems(groupFilter, hostFilter, appFilter, options)
     .then(items => filterByQuery(items, itemFilter));
+  }
+
+  getItemValues(groupFilter?, hostFilter?, appFilter?, itemFilter?, options: any = {}) {
+    return this.getItems(groupFilter, hostFilter, appFilter, itemFilter, options).then(items => {
+      let timeRange = [moment().subtract(2, 'h').unix(), moment().unix()];
+      if (options.range) {
+        timeRange = [options.range.from.unix(), options.range.to.unix()];
+      }
+      const [timeFrom, timeTo] = timeRange;
+
+      return this.zabbixAPI.getHistory(items, timeFrom, timeTo).then(history => {
+        if (history) {
+          const values = _.uniq(history.map(v => v.value));
+          return values.map(value => ({ name: value }));
+        } else {
+          return [];
+        }
+      });
+    });
   }
 
   getITServices(itServiceFilter) {

@@ -517,7 +517,7 @@ export class ZabbixDatasource {
    * @return {string}       Metric name - group, host, app or item or list
    *                        of metrics in "{metric1,metcic2,...,metricN}" format.
    */
-  metricFindQuery(query) {
+  metricFindQuery(query, options) {
     let resultPromise;
     let queryModel = _.cloneDeep(query);
 
@@ -534,6 +534,8 @@ export class ZabbixDatasource {
       queryModel[prop] = this.replaceTemplateVars(queryModel[prop], {});
     }
 
+    const { group, host, application, item } = queryModel;
+
     switch (queryModel.queryType) {
       case VariableQueryTypes.Group:
         resultPromise = this.zabbix.getGroups(queryModel.group);
@@ -546,6 +548,10 @@ export class ZabbixDatasource {
         break;
       case VariableQueryTypes.Item:
         resultPromise = this.zabbix.getItems(queryModel.group, queryModel.host, queryModel.application, queryModel.item);
+        break;
+      case VariableQueryTypes.ItemValues:
+        const range = options?.range;
+        resultPromise = this.zabbix.getItemValues(group, host, application, item, { range });
         break;
       default:
         resultPromise = Promise.resolve([]);
