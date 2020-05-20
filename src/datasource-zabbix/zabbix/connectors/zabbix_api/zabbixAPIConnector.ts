@@ -194,7 +194,6 @@ export class ZabbixAPIConnector {
    * @return {[type]}          array of items
    */
   getItems(hostids, appids, itemtype) {
-    console.log(itemtype);
     const params: any = {
       output: [
         'name', 'key_',
