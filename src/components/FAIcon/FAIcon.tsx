@@ -7,7 +7,7 @@ interface Props {
 }
 
 export const FAIcon: FC<Props> = ({ icon, customClass }) => {
-  const wrapperClass = cx('fa-icon-container', customClass);
+  const wrapperClass = cx(customClass, 'fa-icon-container');
 
   return (
     <span className={wrapperClass}>

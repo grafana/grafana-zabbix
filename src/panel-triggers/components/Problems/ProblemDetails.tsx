@@ -1,7 +1,6 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
-import { MODE_ITEMID, MODE_METRICS } from '../../../datasource-zabbix/constants';
 import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
 import { ZBXItem, GFTimeRange, RTRow } from '../../types';
 import { AckModal, AckProblemData } from '../AckModal';
@@ -9,9 +8,7 @@ import EventTag from '../EventTag';
 import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import { FAIcon, Tooltip, ModalController } from '../../../components';
-import { renderUrl } from '../../utils';
-import { getLocationSrv } from '@grafana/runtime';
+import { FAIcon, ExploreButton, Tooltip, ModalController } from '../../../components';
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
@@ -77,40 +74,6 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
     return this.props.onProblemAck(problem, data);
   }
 
-  openInExplore = () => {
-    const problem = this.props.original as ProblemDTO;
-    let query: any = {};
-
-    if (problem.items?.length === 1 && problem.hosts?.length === 1) {
-      const item = problem.items[0];
-      const host = problem.hosts[0];
-      query = {
-        queryType: MODE_METRICS,
-        group: { filter: '/.*/' },
-        application: { filter: '' },
-        host: { filter: host.name },
-        item: { filter: item.name },
-      };
-    } else {
-      const itemids = problem.items?.map(p => p.itemid).join(',');
-      query = {
-        queryType: MODE_ITEMID,
-        itemids: itemids,
-      };
-    }
-
-    const state: any = {
-      datasource: problem.datasource,
-      context: 'explore',
-      originPanelId: this.props.panelId,
-      queries: [query],
-    };
-
-    const exploreState = JSON.stringify(state);
-    const url = renderUrl('/explore', { left: exploreState });
-    getLocationSrv().update({ path: url, query: {} });
-  };
-
   render() {
     const problem = this.props.original as ProblemDTO;
     const alerts = this.state.alerts;
@@ -133,7 +96,7 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
               </div>
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
-            <ExploreButton onClick={this.openInExplore} />
+            <ExploreButton problem={problem} panelId={this.props.panelId} />
             <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
             {problem.showAckButton &&
               <div className="problem-actions">
@@ -308,15 +271,3 @@ class ProblemActionButton extends PureComponent<ProblemActionButtonProps> {
     return button;
   }
 }
-
-interface ExploreButtonProps {
-  onClick: (event?) => void;
-}
-
-const ExploreButton: React.FC<ExploreButtonProps> = ({ onClick }) => {
-  return (
-    <button className="btn problem-explore-button" onClick={onClick}>
-      <FAIcon icon="compass" /><span>Explore</span>
-    </button>
-  );
-};
