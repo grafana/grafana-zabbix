@@ -44,6 +44,7 @@ export function renderUrl(path: string, query: UrlQueryMap | undefined): string 
 
 function encodeURIComponentAsAngularJS(val: string, pctEncodeSpaces?: boolean) {
   return encodeURIComponent(val)
+    .replace(/%25/gi, '%2525')
     .replace(/%40/gi, '@')
     .replace(/%3A/gi, ':')
     .replace(/%24/g, '$')
