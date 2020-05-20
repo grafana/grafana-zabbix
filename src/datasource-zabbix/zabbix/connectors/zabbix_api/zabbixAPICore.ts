@@ -19,7 +19,7 @@ export class ZabbixAPICore {
 
     if (auth === "") {
       // Reject immediately if not authenticated
-      return Promise.reject(new ZabbixAPIError({data: "Not authorised."}));
+      return Promise.reject(new ZabbixAPIError({data: "Not initialized"}));
     } else if (auth) {
       // Set auth parameter only if it needed
       requestData.auth = auth;

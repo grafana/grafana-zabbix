@@ -86,10 +86,12 @@ function cacheRequest(func, funcName, funcScope, self) {
     } else {
       return func.apply(funcScope, arguments)
       .then(result => {
-        cacheObject[hash] = {
-          value: result,
-          timestamp: Date.now()
-        };
+        if (result !== undefined) {
+          cacheObject[hash] = {
+            value: result,
+            timestamp: Date.now()
+          };
+        }
         return result;
       });
     }

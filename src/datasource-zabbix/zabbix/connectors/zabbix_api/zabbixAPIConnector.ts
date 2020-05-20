@@ -62,12 +62,16 @@ export class ZabbixAPIConnector {
 
     return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
     .catch(error => {
-      if (isNotAuthorized(error.data)) {
+      if (isNotInitialized(error.data)) {
+        // If API not initialized yet (auth is empty), login first
+        return this.loginOnce()
+        .then(() => this.request(method, params));
+      } else if (isNotAuthorized(error.data)) {
         // Handle auth errors
         this.loginErrorCount++;
         if (this.loginErrorCount > this.maxLoginAttempts) {
           this.loginErrorCount = 0;
-          return null;
+          return Promise.resolve();
         } else {
           return this.loginOnce()
           .then(() => this.request(method, params));
@@ -237,7 +241,7 @@ export class ZabbixAPIConnector {
     };
 
     return this.request('item.get', params)
-    .then(utils.expandItems);
+    .then(items => utils.expandItems(items));
   }
 
   getMacros(hostids) {
@@ -660,6 +664,10 @@ function filterTriggersByAcknowledge(triggers, acknowledged) {
   } else {
     return triggers;
   }
+}
+
+function isNotInitialized(message) {
+  return message === "Not initialized";
 }
 
 function isNotAuthorized(message) {
