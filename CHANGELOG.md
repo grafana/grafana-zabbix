@@ -1,9 +1,32 @@
 # Change Log
 
-All notable changes to this project will be documented in this file.
+## [3.12.0] - 2020-05-21
+### Added
+- Variables: able to query item values, [#417](https://github.com/alexanderzobnin/grafana-zabbix/issues/417)
+- Functions: expose host, item, app to the alias functions, [#619](https://github.com/alexanderzobnin/grafana-zabbix/issues/619)
+- Problems: navigate to Explore and show graphs for the problem, [#948](https://github.com/alexanderzobnin/grafana-zabbix/issues/948)
+- Problems: able to show Problems/Recent problems/History, [#495](https://github.com/alexanderzobnin/grafana-zabbix/issues/495)
+- Problems: icon with acknowledges count, [#946](https://github.com/alexanderzobnin/grafana-zabbix/issues/946)
+- IT Services: support SLA intervals, [#885](https://github.com/alexanderzobnin/grafana-zabbix/issues/885)
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/)
-and this project adheres to [Semantic Versioning](http://semver.org/).
+### Fixed
+- Explore doesn't work with Zabbix datasource, [#888](https://github.com/alexanderzobnin/grafana-zabbix/issues/888)
+- SLA value is incorrect, [#885](https://github.com/alexanderzobnin/grafana-zabbix/issues/885)
+- Graph panel randomly shows no data, [#861](https://github.com/alexanderzobnin/grafana-zabbix/issues/861)
+- Variables: unable to edit variables in Grafana 7.0.0, [#949](https://github.com/alexanderzobnin/grafana-zabbix/issues/949)
+- Variables: wrong variable scope inside repeated rows, [#912](https://github.com/alexanderzobnin/grafana-zabbix/issues/912)
+- Problems: resolve macros in URLs, [#190](https://github.com/alexanderzobnin/grafana-zabbix/issues/190)
+- Problems: unable to acknowledge resolved problem, [#942](https://github.com/alexanderzobnin/grafana-zabbix/issues/942)
+- Problems: resolved problems color and severity set to Not classified, [#909](https://github.com/alexanderzobnin/grafana-zabbix/issues/909)
+- Problems: can't acknowledge alert in panel with a single problem, [#900](https://github.com/alexanderzobnin/grafana-zabbix/issues/900)
+- Annotations: `ITEM.VALUE` behaves like `ITEM.LASTVALUE` in annotations, [#891](https://github.com/alexanderzobnin/grafana-zabbix/issues/891)
+- Alert state on the panel (heart icon) doesn't work in Grafana 6.7, [#931](https://github.com/alexanderzobnin/grafana-zabbix/issues/931)
+- Consolidated average is not accurate with direct DB connection, [#752](https://github.com/alexanderzobnin/grafana-zabbix/issues/752)
+
+### Changed
+- Problems panel uses new `problem.get` API which is not compatible with Zabbix 3.x, [#495](https://github.com/alexanderzobnin/grafana-zabbix/issues/495)
+- Problems panel is metrics panel now, problems query editor moved to the data source.
+- Zabbix version is auto detected now, [#727](https://github.com/alexanderzobnin/grafana-zabbix/issues/727)
 
 ## [3.11.0] - 2020-03-23
 ### Added
