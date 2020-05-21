@@ -11,8 +11,8 @@
     },
     "keywords": ["zabbix"],
     "logos": {
-      "small": "img/zabbix_app_logo.svg",
-      "large": "img/zabbix_app_logo.svg"
+      "small": "img/icn-zabbix-app.svg",
+      "large": "img/icn-zabbix-app.svg"
     },
     "links": [
       {"name": "GitHub", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},

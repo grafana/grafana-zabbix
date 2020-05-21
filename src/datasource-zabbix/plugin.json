@@ -34,8 +34,8 @@
       "url": "https://github.com/alexanderzobnin/grafana-zabbix"
     },
     "logos": {
-      "small": "img/zabbix_app_logo.svg",
-      "large": "img/zabbix_app_logo.svg"
+      "small": "img/icn-zabbix-datasource.svg",
+      "large": "img/icn-zabbix-datasource.svg"
     }
   }
 }
