@@ -7,6 +7,10 @@
     "author": {
       "name": "Alexander Zobnin",
       "url": "https://github.com/alexanderzobnin/grafana-zabbix"
+    },
+    "logos": {
+      "small": "img/icn-zabbix-problems-panel.svg",
+      "large": "img/icn-zabbix-problems-panel.svg"
     }
   }
 }
