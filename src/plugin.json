@@ -33,11 +33,11 @@
   "includes": [
     {
       "type": "datasource",
-      "name": "Zabbix Datasource"
+      "name": "Zabbix data source"
     },
     {
       "type": "panel",
-      "name": "Triggers Panel"
+      "name": "Problems panel"
     }
   ],
 
