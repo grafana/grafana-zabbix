@@ -309,7 +309,7 @@
         <label class="gf-form-label width-9">Acknowledged</label>
         <div class="gf-form-select-wrapper width-12">
           <select class="gf-form-input"
-                ng-change="ctrl.onTargetBlur()"
+                ng-change="ctrl.onQueryOptionChange()"
                 ng-model="ctrl.target.options.acknowledged"
                 ng-options="a.value as a.text for a in ctrl.ackFilters">
           </select>

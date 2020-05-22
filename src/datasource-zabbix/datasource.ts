@@ -425,6 +425,10 @@ export class ZabbixDatasource {
       limit: target.options?.limit,
     };
 
+    if (target.options?.acknowledged === 0 || target.options?.acknowledged === 1) {
+      problemsOptions.acknowledged = target.options?.acknowledged ? true : false;
+    }
+
     if (target.options?.minSeverity) {
       const severities = [0, 1, 2, 3, 4, 5].filter(v => v >= target.options?.minSeverity);
       problemsOptions.severities = severities;
