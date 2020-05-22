@@ -1,8 +1,5 @@
 import _ from 'lodash';
-import moment from 'moment';
-import TableModel from 'grafana/app/core/table_model';
 import * as utils from '../datasource-zabbix/utils';
-import * as c from './constants';
 import { DataFrame, Field, FieldType, ArrayVector } from '@grafana/data';
 import { ZBXProblem, ZBXTrigger, ProblemDTO } from './types';
 
