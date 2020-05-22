@@ -9,34 +9,38 @@ export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTr
     const p = problems[i];
     const triggerId = Number(p.objectid);
     const t = triggers[triggerId];
-    const problemDTO: ProblemDTO = {
-      timestamp: Number(p.clock),
-      triggerid: p.objectid,
-      eventid: p.eventid,
-      name: p.name,
-      severity: p.severity,
-      acknowledged: p.acknowledged,
-      acknowledges: p.acknowledges,
-      tags: p.tags,
-      suppressed: p.suppressed,
-      suppression_data: p.suppression_data,
-      description: t.description,
-      comments: t.comments,
-      value: t.value,
-      groups: t.groups,
-      hosts: t.hosts,
-      items: t.items,
-      alerts: t.alerts,
-      url: t.url,
-      expression: t.expression,
-      correlation_mode: t.correlation_mode,
-      correlation_tag: t.correlation_tag,
-      manual_close: t.manual_close,
-      state: t.state,
-      error: t.error,
-    };
 
-    problemDTOList.push(problemDTO);
+    if (t) {
+      const problemDTO: ProblemDTO = {
+        timestamp: Number(p.clock),
+        triggerid: p.objectid,
+        eventid: p.eventid,
+        name: p.name,
+        severity: p.severity,
+        acknowledged: p.acknowledged,
+        acknowledges: p.acknowledges,
+        tags: p.tags,
+        suppressed: p.suppressed,
+        suppression_data: p.suppression_data,
+        description: t.description,
+        comments: t.comments,
+        value: t.value,
+        groups: t.groups,
+        hosts: t.hosts,
+        items: t.items,
+        alerts: t.alerts,
+        url: t.url,
+        expression: t.expression,
+        correlation_mode: t.correlation_mode,
+        correlation_tag: t.correlation_tag,
+        manual_close: t.manual_close,
+        state: t.state,
+        error: t.error,
+      };
+
+      problemDTOList.push(problemDTO);
+    }
+
   }
 
   return problemDTOList;
