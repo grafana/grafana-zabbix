@@ -524,6 +524,7 @@ export class ZabbixAPIConnector {
       sortfield: ['eventid'],
       sortorder: 'ASC',
       select_acknowledges: 'extend',
+      selectTags: 'extend',
       selectSuppressionData: ['maintenanceid', 'suppress_until'],
       groupids,
       hostids,
