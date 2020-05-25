@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.12.1] - 2020-05-25
+### Fixed
+- Problems: panel fails with error (cannot read property 'description' of undefined), [#954](https://github.com/alexanderzobnin/grafana-zabbix/issues/954)
+- Problems: problem name filter doesn't work, [#962](https://github.com/alexanderzobnin/grafana-zabbix/issues/962)
+- Problems: acknowledged filter doesn't work, [#961](https://github.com/alexanderzobnin/grafana-zabbix/issues/961)
+
 ## [3.12.0] - 2020-05-21
 ### Added
 - Variables: able to query item values, [#417](https://github.com/alexanderzobnin/grafana-zabbix/issues/417)
