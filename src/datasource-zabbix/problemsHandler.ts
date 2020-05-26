@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import * as utils from '../datasource-zabbix/utils';
 import { DataFrame, Field, FieldType, ArrayVector } from '@grafana/data';
-import { ZBXProblem, ZBXTrigger, ProblemDTO } from './types';
+import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent } from './types';
 
 export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTrigger[]): ProblemDTO[] {
   const problemDTOList: ProblemDTO[] = [];
@@ -25,6 +25,54 @@ export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTr
         description: t.description,
         comments: t.comments,
         value: t.value,
+        groups: t.groups,
+        hosts: t.hosts,
+        items: t.items,
+        alerts: t.alerts,
+        url: t.url,
+        expression: t.expression,
+        correlation_mode: t.correlation_mode,
+        correlation_tag: t.correlation_tag,
+        manual_close: t.manual_close,
+        state: t.state,
+        error: t.error,
+      };
+
+      problemDTOList.push(problemDTO);
+    }
+
+  }
+
+  return problemDTOList;
+}
+
+interface JoinOptions {
+  valueFromEvent?: boolean;
+}
+
+export function joinTriggersWithEvents(events: ZBXEvent[], triggers: ZBXTrigger[], options?: JoinOptions): ProblemDTO[] {
+  const { valueFromEvent } = options;
+
+  const problemDTOList: ProblemDTO[] = [];
+  for (let i = 0; i < events.length; i++) {
+    const e = events[i];
+    const triggerId = Number(e.objectid);
+    const t = triggers[triggerId];
+
+    if (t) {
+      const problemDTO: ProblemDTO = {
+        value: valueFromEvent ? e.value : t.value,
+        timestamp: Number(e.clock),
+        triggerid: e.objectid,
+        eventid: e.eventid,
+        name: e.name,
+        severity: e.severity,
+        acknowledged: e.acknowledged,
+        acknowledges: e.acknowledges,
+        tags: e.tags,
+        suppressed: e.suppressed,
+        description: t.description,
+        comments: t.comments,
         groups: t.groups,
         hosts: t.hosts,
         items: t.items,
@@ -145,6 +193,8 @@ const problemsHandler = {
   setAckButtonStatus,
   filterTriggersPre,
   toDataFrame,
+  joinTriggersWithProblems,
+  joinTriggersWithEvents,
 };
 
 export default problemsHandler;

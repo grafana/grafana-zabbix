@@ -170,13 +170,16 @@ export interface ZBXEvent {
   clock: string;
   ns?: string;
   value?: string;
+  name?: string;
   source?: string;
   object?: string;
   objectid?: string;
-  acknowledged?: string;
   severity?: string;
   hosts?: ZBXHost[];
+  acknowledged?: '1' | '0';
   acknowledges?: ZBXAcknowledge[];
+  tags?: ZBXTag[];
+  suppressed?: string;
 }
 
 export interface ZBXTag {

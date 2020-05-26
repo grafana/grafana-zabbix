@@ -576,71 +576,62 @@ export class ZabbixDatasource {
     const timeFrom = Math.ceil(dateMath.parse(timeRange.from) / 1000);
     const timeTo = Math.ceil(dateMath.parse(timeRange.to) / 1000);
     const annotation = options.annotation;
-    const showOkEvents = annotation.showOkEvents ? c.SHOW_ALL_EVENTS : c.SHOW_OK_EVENTS;
 
     // Show all triggers
-    const triggersOptions = {
-      showTriggers: c.SHOW_ALL_TRIGGERS,
-      hideHostsInMaintenance: false
+    const problemsOptions: any = {
+      value: annotation.showOkEvents ? ['0', '1'] : '1',
+      valueFromEvent: true,
+      timeFrom,
+      timeTo,
     };
+
+    if (annotation.minseverity) {
+      const severities = [0, 1, 2, 3, 4, 5].filter(v => v >= Number(annotation.minseverity));
+      problemsOptions.severities = severities;
+    }
 
     const groupFilter = this.replaceTemplateVars(annotation.group, {});
     const hostFilter = this.replaceTemplateVars(annotation.host, {});
     const appFilter = this.replaceTemplateVars(annotation.application, {});
     const proxyFilter = undefined;
 
-    return this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, triggersOptions)
-    .then(triggers => {
+    return this.zabbix.getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions)
+    .then(problems => {
       // Filter triggers by description
-      const triggerName = this.replaceTemplateVars(annotation.trigger, {});
-      if (utils.isRegex(triggerName)) {
-        triggers = _.filter(triggers, trigger => {
-          return utils.buildRegex(triggerName).test(trigger.description);
+      const problemName = this.replaceTemplateVars(annotation.trigger, {});
+      if (utils.isRegex(problemName)) {
+        problems = _.filter(problems, p => {
+          return utils.buildRegex(problemName).test(p.description);
         });
-      } else if (triggerName) {
-        triggers = _.filter(triggers, trigger => {
-          return trigger.description === triggerName;
+      } else if (problemName) {
+        problems = _.filter(problems, p => {
+          return p.description === problemName;
         });
       }
 
-      // Remove events below the chose severity
-      triggers = _.filter(triggers, trigger => {
-        return Number(trigger.priority) >= Number(annotation.minseverity);
-      });
-
-      const objectids = _.map(triggers, 'triggerid');
-      return this.zabbix
-        .getEvents(objectids, timeFrom, timeTo, showOkEvents)
-        .then(events => {
-          const indexedTriggers = _.keyBy(triggers, 'triggerid');
-
-          // Hide acknowledged events if option enabled
-          if (annotation.hideAcknowledged) {
-            events = _.filter(events, event => {
-              return !event.acknowledges.length;
-            });
-          }
-
-          return _.map(events, event => {
-            let tags;
-            if (annotation.showHostname) {
-              tags = _.map(event.hosts, 'name');
-            }
-
-            // Show event type (OK or Problem)
-            const title = Number(event.value) ? 'Problem' : 'OK';
-
-            const formattedAcknowledges = utils.formatAcknowledges(event.acknowledges);
-            const eventName = event.name || indexedTriggers[event.objectid].description;
-            return {
-              annotation: annotation,
-              time: event.clock * 1000,
-              title: title,
-              tags: tags,
-              text: eventName + formattedAcknowledges
-            };
-          });
+      // Hide acknowledged events if option enabled
+      if (annotation.hideAcknowledged) {
+        problems = _.filter(problems, p => {
+          return !p.acknowledges?.length;
         });
+      }
+
+      return _.map(problems, p => {
+        const formattedAcknowledges = utils.formatAcknowledges(p.acknowledges);
+
+        let annotationTags: string[] = [];
+        if (annotation.showHostname) {
+          annotationTags = _.map(p.hosts, 'name');
+        }
+
+        return {
+          title: p.value === '1' ? 'Problem' : 'OK',
+          time: p.timestamp * 1000,
+          annotation: annotation,
+          text: p.name + formattedAcknowledges,
+          tags: annotationTags,
+        };
+      });
     });
   }
 

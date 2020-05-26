@@ -9,7 +9,8 @@ import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
-import { joinTriggersWithProblems } from '../problemsHandler';
+import { joinTriggersWithProblems, joinTriggersWithEvents } from '../problemsHandler';
+import { ProblemDTO } from '../types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -346,7 +347,9 @@ export class Zabbix implements ZabbixConnector {
     .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
-  getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter?, options?) {
+  getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {
+    const { valueFromEvent } = options;
+
     const promises = [
       this.getGroups(groupFilter),
       this.getHosts(groupFilter, hostFilter),
@@ -375,7 +378,7 @@ export class Zabbix implements ZabbixConnector {
       const triggerids = problems?.map(problem => problem.objectid);
       return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
     })
-    .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
+    .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
     .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter))
     .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
