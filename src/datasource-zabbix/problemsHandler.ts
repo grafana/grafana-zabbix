@@ -5,6 +5,7 @@ import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent } from './types';
 
 export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTrigger[]): ProblemDTO[] {
   const problemDTOList: ProblemDTO[] = [];
+
   for (let i = 0; i < problems.length; i++) {
     const p = problems[i];
     const triggerId = Number(p.objectid);
@@ -52,8 +53,8 @@ interface JoinOptions {
 
 export function joinTriggersWithEvents(events: ZBXEvent[], triggers: ZBXTrigger[], options?: JoinOptions): ProblemDTO[] {
   const { valueFromEvent } = options;
-
   const problemDTOList: ProblemDTO[] = [];
+
   for (let i = 0; i < events.length; i++) {
     const e = events[i];
     const triggerId = Number(e.objectid);

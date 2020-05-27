@@ -425,7 +425,7 @@ export class ZabbixAPIConnector {
       params.time_till = timeTo;
     }
 
-    return this.request('problem.get', params);
+    return this.request('problem.get', params).then(utils.mustArray);
   }
 
   getTriggersByIds(triggerids: string[]) {
@@ -445,7 +445,7 @@ export class ZabbixAPIConnector {
       preservekeys: '1',
     };
 
-    return this.request('trigger.get', params);
+    return this.request('trigger.get', params).then(utils.mustArray);
   }
 
   getTriggers(groupids, hostids, applicationids, options) {
@@ -507,7 +507,7 @@ export class ZabbixAPIConnector {
       params.sortorder = 'DESC';
     }
 
-    return this.request('event.get', params);
+    return this.request('event.get', params).then(utils.mustArray);
   }
 
   getEventsHistory(groupids, hostids, applicationids, options) {
@@ -543,7 +543,7 @@ export class ZabbixAPIConnector {
       params.value = value;
     }
 
-    return this.request('event.get', params);
+    return this.request('event.get', params).then(utils.mustArray);
   }
 
   getExtendedEventData(eventids) {

@@ -380,3 +380,7 @@ export function parseTags(tagStr: string): any[] {
   });
   return tags;
 }
+
+export function mustArray(result: any): any[] {
+  return result || [];
+}
