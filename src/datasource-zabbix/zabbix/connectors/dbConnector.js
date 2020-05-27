@@ -123,22 +123,36 @@ export class ZabbixNotImplemented {
  */
 function convertGrafanaTSResponse(time_series, items, addHostName) {
   //uniqBy is needed to deduplicate
-  var hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
+  const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
   let grafanaSeries = _.map(_.compact(time_series), series => {
-    let itemid = series.name;
-    var item = _.find(items, {'itemid': itemid});
-    var alias = item.name;
-    //only when actual multi hosts selected
-    if (_.keys(hosts).length > 1 && addHostName) {
-      var host = _.find(hosts, {'hostid': item.hostid});
-      alias = host.name + ": " + alias;
+    const itemid = series.name;
+    const item = _.find(items, {'itemid': itemid});
+    let alias = item.name;
+
+    // Add scopedVars for using in alias functions
+    const scopedVars = {
+      '__zbx_item': { value: item.name },
+      '__zbx_item_name': { value: item.name },
+      '__zbx_item_key': { value: item.key_ },
+    };
+
+    if (_.keys(hosts).length > 0) {
+      const host = _.find(hosts, {'hostid': item.hostid});
+      scopedVars['__zbx_host'] = { value: host.host };
+      scopedVars['__zbx_host_name'] = { value: host.name };
+
+      // Only add host when multiple hosts selected
+      if (_.keys(hosts).length > 1 && addHostName) {
+        alias = host.name + ": " + alias;
+      }
     }
     // CachingProxy deduplicates requests and returns one time series for equal queries.
     // Clone is needed to prevent changing of series object shared between all targets.
-    let datapoints = _.cloneDeep(series.points);
+    const datapoints = _.cloneDeep(series.points);
     return {
       target: alias,
-      datapoints: datapoints
+      datapoints,
+      scopedVars,
     };
   });
 
