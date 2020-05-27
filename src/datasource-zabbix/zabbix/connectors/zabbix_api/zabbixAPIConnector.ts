@@ -5,7 +5,7 @@ import * as utils from '../../../utils';
 import { ZabbixAPICore } from './zabbixAPICore';
 import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
 import { ShowProblemTypes, ZBXProblem } from '../../../types';
-import { JSONRPCRequestParams } from './types';
+import { JSONRPCRequestParams, APIScriptGetResponse } from './types';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
@@ -663,6 +663,15 @@ export class ZabbixAPIConnector {
     };
 
     return this.request('proxy.get', params);
+  }
+
+  getScripts(hostids: string[], options?: any): APIScriptGetResponse {
+    const params: any = {
+      output: 'extend',
+      hostids,
+    };
+
+    return this.request('script.get', params);
   }
 }
 
