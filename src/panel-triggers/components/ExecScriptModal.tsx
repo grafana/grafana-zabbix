@@ -1,21 +1,17 @@
 import React, { PureComponent } from 'react';
 import { cx, css } from 'emotion';
 import { ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_CHANGE_SEVERITY, ZBX_ACK_ACTION_CLOSE } from '../../datasource-zabbix/constants';
-import { APIScriptGetResponse, ZBXScript } from '../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
-import { Button, VerticalGroup, Spinner, Modal, Select, Forms, stylesFactory, withTheme, Themeable } from '@grafana/ui';
-import { FAIcon } from '../../components';
-
-import * as grafanaUi from '@grafana/ui';
+import { ZBXScript, APIExecuteScriptResponse } from '../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
+import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable } from '@grafana/ui';
 import { GrafanaTheme, SelectableValue } from '@grafana/data';
-const Checkbox: any = Forms?.Checkbox || (grafanaUi as any).Checkbox;
-const RadioButtonGroup: any = Forms?.RadioButtonGroup || (grafanaUi as any).RadioButtonGroup;
+import { FAIcon } from '../../components';
 
 const KEYBOARD_ENTER_KEY = 13;
 const KEYBOARD_ESCAPE_KEY = 27;
 
 interface Props extends Themeable {
-  getScripts(): Promise<APIScriptGetResponse>;
-  onSubmit(data?: AckProblemData): Promise<any> | any;
+  getScripts(): Promise<ZBXScript[]>;
+  onSubmit(data?: ExecScriptData): Promise<any> | any;
   onDismiss?(): void;
 }
 
@@ -24,17 +20,14 @@ interface State {
   scriptOptions: Array<SelectableValue<string>>;
   script: ZBXScript;
   error: boolean;
-  errorMessage: string;
+  errorMessage: string | JSX.Element;
+  result: string | JSX.Element;
   selectError: string;
-  result: string;
   loading: boolean;
 }
 
-export interface AckProblemData {
-  message: string;
-  closeProblem?: boolean;
-  action?: number;
-  severity?: number;
+export interface ExecScriptData {
+  scriptid: string;
 }
 
 export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
@@ -71,21 +64,9 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
     this.setState({ scriptOptions, selectedScript, script });
   }
 
-  handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.which === KEYBOARD_ENTER_KEY || event.key === 'Enter') {
-      this.submit();
-    } else if (event.which === KEYBOARD_ESCAPE_KEY || event.key === 'Escape') {
-      this.dismiss();
-    }
-  }
-
-  handleBackdropClick = () => {
-    this.dismiss();
-  }
-
   onChangeSelectedScript = (v: SelectableValue<string>) => {
     const script = this.scripts.find(s => v.value === s.scriptid);
-    this.setState({ selectedScript: v, script });
+    this.setState({ selectedScript: v, script, errorMessage: '', loading: false, result: '' });
   };
 
   dismiss = () => {
@@ -94,55 +75,54 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
   }
 
   submit = () => {
-    // const { acknowledge, changeSeverity, closeProblem } = this.state;
+    const { selectedScript } = this.state;
 
-    // const actionSelected = acknowledge || changeSeverity || closeProblem;
-    // if (!this.state.value && !actionSelected) {
-    //   return this.setState({
-    //     error: true,
-    //     errorMessage: 'Enter message text or select an action'
-    //   });
-    // }
+    if (!selectedScript) {
+      return this.setState({
+        selectError: 'Select a script to execute.'
+      });
+    }
 
-    // this.setState({ ackError: '', loading: true });
+    this.setState({ errorMessage: '', loading: true, result: '' });
 
-    // const ackData: AckProblemData = {
-    //   message: this.state.value,
-    // };
+    const data: ExecScriptData = {
+      scriptid: selectedScript.value,
+    };
 
-    // let action = ZBX_ACK_ACTION_ADD_MESSAGE;
-    // if (this.state.acknowledge) {
-    //   action += ZBX_ACK_ACTION_ACK;
-    // }
-    // if (this.state.changeSeverity) {
-    //   action += ZBX_ACK_ACTION_CHANGE_SEVERITY;
-    //   ackData.severity = this.state.selectedSeverity;
-    // }
-    // if (this.state.closeProblem) {
-    //   action += ZBX_ACK_ACTION_CLOSE;
-    // }
-    // ackData.action = action;
+    this.props.onSubmit(data).then((result: APIExecuteScriptResponse) => {
+      const message = this.formatResult(result?.value || '');
+      if (result?.response === 'success') {
+        this.setState({ result: message, loading: false });
+      } else {
+        this.setState({ error: true, errorMessage: message, loading: false });
+      }
+    }).catch(err => {
+      let errorMessage = err.message || err.data || '';
+      errorMessage = this.formatResult(errorMessage);
+      this.setState({
+        error: true,
+        loading: false,
+        errorMessage,
+      });
+    });
+  }
 
-    // this.props.onSubmit(ackData).then(() => {
-    //   this.dismiss();
-    // }).catch(err => {
-    //   this.setState({
-    //     ackError: err.message || err.data,
-    //     loading: false,
-    //   });
-    // });
+  formatResult = (result: string) => {
+    const formatted = result.split('\n').map((p, i) => {
+      return <p key={i}>{p}</p>;
+    });
+    return <>{formatted}</>;
   }
 
   render() {
     const { theme } = this.props;
-    const { scriptOptions, selectedScript, script, selectError, errorMessage } = this.state;
+    const { scriptOptions, selectedScript, script, result, selectError, errorMessage, error } = this.state;
 
     const styles = getStyles(theme);
     const modalClass = cx(styles.modal);
     const modalTitleClass = cx(styles.modalHeaderTitle);
-    const inputGroupClass = cx('gf-form', styles.inputGroup);
-    const inputHintClass = cx('gf-form-hint-text', styles.inputHint);
-    const inputErrorClass = cx('gf-form-hint-text', styles.inputError);
+    const selectErrorClass = cx('gf-form-hint-text', styles.inputError);
+    const scriptCommandContainerClass = cx('gf-form', styles.scriptCommandContainer);
     const scriptCommandClass = cx('gf-form-hint-text', styles.scriptCommand);
 
     return (
@@ -157,28 +137,30 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
           </div>
         }
       >
-        <div className={inputGroupClass}>
+        <div className="gf-form">
           <label className="gf-form-hint">
             <Select
               options={scriptOptions}
               value={selectedScript}
               onChange={this.onChangeSelectedScript}
             />
-            <small className={inputHintClass}>Press Enter to execute</small>
             {selectError &&
-              <small className={inputErrorClass}>{selectError}</small>
+              <small className={selectErrorClass}>{selectError}</small>
             }
           </label>
         </div>
-        <div className="gf-form">
+        <div className={scriptCommandContainerClass}>
           {script && <small className={scriptCommandClass}>{script.command}</small>}
         </div>
 
-        {this.state.error &&
-          <div className="gf-form ack-request-error">
-            <span className={styles.execError}>{errorMessage}</span>
-          </div>
+        <div className={styles.resultContainer}>
+        {result &&
+          <span className={styles.execResult}>{result}</span>
         }
+        {error &&
+          <span className={styles.execError}>{errorMessage}</span>
+        }
+        </div>
 
         <div className="gf-form-button-row text-center">
           <Button variant="primary" onClick={this.submit}>Execute</Button>
@@ -193,7 +175,7 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
   const red = theme.colors.red || (theme as any).palette.red;
   return {
     modal: css`
-      width: 500px;
+      width: 600px;
     `,
     modalHeaderTitle: css`
       font-size: ${theme.typography.heading.h3};
@@ -201,16 +183,16 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
       margin: 0 ${theme.spacing.md};
       display: flex;
     `,
-    inputGroup: css`
-    `,
     input: css`
       border-color: ${red};
       border-radius: 2px;
       outline-offset: 2px;
       box-shadow: 0 0 0 2px ${theme.colors.pageBg || (theme as any).colors.bg1}, 0 0 0px 4px ${red};
     `,
+    scriptCommandContainer: css`
+      margin-bottom: ${theme.spacing.md};
+    `,
     scriptCommand: css`
-      float: left;
       color: ${theme.colors.textWeak};
       text-align: left;
       font-family: ${theme.typography.fontFamily.monospace};
@@ -223,6 +205,17 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
     inputError: css`
       float: left;
       color: ${red};
+    `,
+    resultContainer: css`
+      min-height: 50px;
+      font-family: ${theme.typography.fontFamily.monospace};
+      font-size: ${theme.typography.size.sm};
+      p {
+        font-size: ${theme.typography.size.sm};
+        margin-bottom: 0px;
+      }
+    `,
+    execResult: css`
     `,
     execError: css`
       color: ${red};

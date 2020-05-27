@@ -10,7 +10,7 @@ import { AckProblemData } from '../AckModal';
 import { GFHeartIcon, FAIcon } from '../../../components';
 import { ProblemsPanelOptions, GFTimeRange, RTCell, TriggerSeverity, RTResized } from '../../types';
 import { ProblemDTO, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
-import { ZBXScript } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
+import { ZBXScript, APIExecuteScriptResponse } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
 
 export interface ProblemListProps {
@@ -24,6 +24,7 @@ export interface ProblemListProps {
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
   getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
+  onExecuteScript: (problem: ProblemDTO, scriptid: string) => Promise<APIExecuteScriptResponse>;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
@@ -53,6 +54,9 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
 
   handleProblemAck = (problem: ProblemDTO, data: AckProblemData) => {
     return this.props.onProblemAck(problem, data);
+  }
+
+  onExecuteScript = (problem: ProblemDTO, data: AckProblemData) => {
   }
 
   handlePageSizeChange = (pageSize, pageIndex) => {
@@ -174,6 +178,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
               getProblemAlerts={this.props.getProblemAlerts}
               getScripts={this.props.getScripts}
               onProblemAck={this.handleProblemAck}
+              onExecuteScript={this.props.onExecuteScript}
               onTagClick={this.handleTagClick}
               subRows={false}
             />

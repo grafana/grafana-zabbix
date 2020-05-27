@@ -54,4 +54,7 @@ export interface ZBXScript {
   execute_on?: string;
 }
 
-export type APIScriptGetResponse = ZabbixAPIResponse<ZBXScript[]>;
+export interface APIExecuteScriptResponse {
+  response: 'success' | 'failed';
+  value?: string;
+}

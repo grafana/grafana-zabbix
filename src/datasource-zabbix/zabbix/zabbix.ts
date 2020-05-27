@@ -30,7 +30,7 @@ const REQUESTS_TO_CACHE = [
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
   'getAcknowledges', 'getITService', 'getVersion', 'login', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
-  'getExtendedEventData', 'getScripts'
+  'getExtendedEventData', 'getScripts', 'executeScript',
 ];
 
 export class Zabbix implements ZabbixConnector {

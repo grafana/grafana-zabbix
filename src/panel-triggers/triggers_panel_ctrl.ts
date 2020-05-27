@@ -317,11 +317,11 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   }
 
   getProblemScripts(problem: ProblemDTO) {
-    const hostIds = problem.hosts?.map(h => h.hostid);
+    const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
 
     return getDataSourceSrv().get(problem.datasource)
     .then((datasource: any) => {
-      return datasource.zabbix.getScripts(hostIds);
+      return datasource.zabbix.getScripts([hostid]);
     });
   }
 
@@ -358,6 +358,15 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     .catch((err) => {
       this.setPanelError(err);
       return Promise.reject(err);
+    });
+  }
+
+  executeScript(problem: ProblemDTO, scriptid: string) {
+    const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
+
+    return getDataSourceSrv().get(problem.datasource)
+    .then((datasource: any) => {
+      return datasource.zabbix.executeScript(hostid, scriptid);
     });
   }
 
@@ -415,6 +424,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
           const { message, action, severity } = data;
           return ctrl.acknowledgeProblem(trigger, message, action, severity);
         },
+        onExecuteScript: ctrl.executeScript.bind(ctrl),
         onTagClick: (tag, datasource, ctrlKey, shiftKey) => {
           if (ctrlKey || shiftKey) {
             ctrl.removeTagFilter(tag, datasource);
