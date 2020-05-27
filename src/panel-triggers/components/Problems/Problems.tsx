@@ -10,6 +10,7 @@ import { AckProblemData } from '../AckModal';
 import { GFHeartIcon, FAIcon } from '../../../components';
 import { ProblemsPanelOptions, GFTimeRange, RTCell, TriggerSeverity, RTResized } from '../../types';
 import { ProblemDTO, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
+import { ZBXScript } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
 
 export interface ProblemListProps {
@@ -22,6 +23,7 @@ export interface ProblemListProps {
   panelId?: number;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
+  getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
@@ -170,6 +172,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
               panelId={this.props.panelId}
               getProblemEvents={this.props.getProblemEvents}
               getProblemAlerts={this.props.getProblemAlerts}
+              getScripts={this.props.getScripts}
               onProblemAck={this.handleProblemAck}
               onTagClick={this.handleTagClick}
               subRows={false}

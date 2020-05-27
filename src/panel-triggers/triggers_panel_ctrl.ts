@@ -316,6 +316,15 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     });
   }
 
+  getProblemScripts(problem: ProblemDTO) {
+    const hostIds = problem.hosts?.map(h => h.hostid);
+
+    return getDataSourceSrv().get(problem.datasource)
+    .then((datasource: any) => {
+      return datasource.zabbix.getScripts(hostIds);
+    });
+  }
+
   getAlertIconClassBySeverity(triggerSeverity) {
     let iconClass = 'icon-gf-online';
     if (triggerSeverity.priority >= 2) {
@@ -399,6 +408,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
         panelId: ctrl.panel.id,
         getProblemEvents: ctrl.getProblemEvents.bind(ctrl),
         getProblemAlerts: ctrl.getProblemAlerts.bind(ctrl),
+        getScripts: ctrl.getProblemScripts.bind(ctrl),
         onPageSizeChange: ctrl.handlePageSizeChange.bind(ctrl),
         onColumnResize: ctrl.handleColumnResize.bind(ctrl),
         onProblemAck: (trigger, data) => {
