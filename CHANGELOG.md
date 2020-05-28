@@ -1,5 +1,10 @@
 # Change Log
 
+## [3.12.2] - 2020-05-28
+### Fixed
+- Annotations feature doesn't work, [#964](https://github.com/alexanderzobnin/grafana-zabbix/issues/964)
+- Alias variables do not work with direct DB connection enabled, [#965](https://github.com/alexanderzobnin/grafana-zabbix/issues/965)
+
 ## [3.12.1] - 2020-05-25
 ### Fixed
 - Problems: panel fails with error (cannot read property 'description' of undefined), [#954](https://github.com/alexanderzobnin/grafana-zabbix/issues/954)
