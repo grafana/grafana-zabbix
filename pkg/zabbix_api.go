@@ -25,7 +25,27 @@ type FunctionCategories struct {
 }
 
 // ZabbixAPIQuery handles query requests to Zabbix
-func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*interface{}, error) {
+	var result interface{}
+	var err error
+	var queryExistInCache bool
+	result, queryExistInCache = dsInstance.queryCache.Get(HashString(apiReq.String()))
+
+	if !queryExistInCache {
+		result, err = dsInstance.ZabbixRequest(ctx, apiReq.Method, apiReq.Params)
+		dsInstance.logger.Debug("ZabbixAPIQuery", "result", result)
+		dsInstance.queryCache.Set(HashString(apiReq.String()), result)
+		if err != nil {
+			dsInstance.logger.Debug("ZabbixAPIQuery", "error", err)
+			return nil, errors.New("ZabbixAPIQuery is not implemented yet")
+		}
+	}
+
+	// return BuildResponse(result)
+	return &result, nil
+}
+
+func (ds *ZabbixDatasourceInstance) ZabbixAPIQueryOld(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	result, queryExistInCache := ds.queryCache.Get(HashString(tsdbReq.String()))
 
 	if !queryExistInCache {
@@ -58,7 +78,7 @@ func (ds *ZabbixDatasource) ZabbixAPIQuery(ctx context.Context, tsdbReq *datasou
 }
 
 // TestConnection checks authentication and version of the Zabbix API and returns that info
-func (ds *ZabbixDatasource) TestConnection(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	err := ds.loginWithDs(ctx)
 	if err != nil {
 		return BuildErrorResponse(fmt.Errorf("Authentication failed: %s", err)), nil
@@ -80,7 +100,7 @@ func (ds *ZabbixDatasource) TestConnection(ctx context.Context, tsdbReq *datasou
 	return BuildResponse(testResponse)
 }
 
-func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
 	tStart := time.Now()
 	jsonQueries := make([]*simplejson.Json, 0)
 	for _, query := range tsdbReq.Queries {
@@ -124,7 +144,7 @@ func (ds *ZabbixDatasource) queryNumericItems(ctx context.Context, tsdbReq *data
 	return BuildMetricsResponse(metrics)
 }
 
-func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (zabbix.Items, error) {
+func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (zabbix.Items, error) {
 	tStart := time.Now()
 
 	hosts, err := ds.getHosts(ctx, dsInfo, groupFilter, hostFilter)
@@ -195,7 +215,7 @@ func (ds *ZabbixDatasource) getItems(ctx context.Context, dsInfo *datasource.Dat
 	return filteredItems, nil
 }
 
-func (ds *ZabbixDatasource) getApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string) ([]map[string]interface{}, error) {
+func (ds *ZabbixDatasourceInstance) getApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string) ([]map[string]interface{}, error) {
 	hosts, err := ds.getHosts(ctx, dsInfo, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -229,7 +249,7 @@ func (ds *ZabbixDatasource) getApps(ctx context.Context, dsInfo *datasource.Data
 	return apps, nil
 }
 
-func (ds *ZabbixDatasource) getHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string) ([]map[string]interface{}, error) {
+func (ds *ZabbixDatasourceInstance) getHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string) ([]map[string]interface{}, error) {
 	groups, err := ds.getGroups(ctx, dsInfo, groupFilter)
 	if err != nil {
 		return nil, err
@@ -264,7 +284,7 @@ func (ds *ZabbixDatasource) getHosts(ctx context.Context, dsInfo *datasource.Dat
 	return hosts, nil
 }
 
-func (ds *ZabbixDatasource) getGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string) ([]map[string]interface{}, error) {
+func (ds *ZabbixDatasourceInstance) getGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string) ([]map[string]interface{}, error) {
 	allGroups, err := ds.getAllGroups(ctx, dsInfo)
 	if err != nil {
 		return nil, err
@@ -288,45 +308,46 @@ func (ds *ZabbixDatasource) getGroups(ctx context.Context, dsInfo *datasource.Da
 	return groups, nil
 }
 
-func (ds *ZabbixDatasource) getAllItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string, appids []string, itemtype string) (*simplejson.Json, error) {
+func (ds *ZabbixDatasourceInstance) getAllItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string, appids []string, itemtype string) (*simplejson.Json, error) {
 	params := ZabbixAPIParams{
-		Output:      &zabbixParamOutput{Fields: []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"}},
-		SortField:   "name",
-		WebItems:    true,
-		Filter:      map[string]interface{}{},
-		SelectHosts: []string{"hostid", "name"},
-		HostIDs:     hostids,
-		AppIDs:      appids,
+		"output":      &zabbixParamOutput{Fields: []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"}},
+		"sortField":   "name",
+		"webItems":    true,
+		"filter":      map[string]interface{}{},
+		"selectHosts": []string{"hostid", "name"},
+		"hostIDs":     hostids,
+		"appIDs":      appids,
 	}
 
+	filter := params["filter"].(map[string]interface{})
 	if itemtype == "num" {
-		params.Filter["value_type"] = []int{0, 3}
+		filter["value_type"] = []int{0, 3}
 	} else if itemtype == "text" {
-		params.Filter["value_type"] = []int{1, 2, 4}
+		filter["value_type"] = []int{1, 2, 4}
 	}
 
 	return ds.ZabbixRequest(ctx, "item.get", params)
 }
 
-func (ds *ZabbixDatasource) getAllApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string) (*simplejson.Json, error) {
-	params := ZabbixAPIParams{Output: &zabbixParamOutput{Mode: "extend"}, HostIDs: hostids}
+func (ds *ZabbixDatasourceInstance) getAllApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string) (*simplejson.Json, error) {
+	params := ZabbixAPIParams{"output": &zabbixParamOutput{Mode: "extend"}, "hostIDs": hostids}
 
 	return ds.ZabbixRequest(ctx, "application.get", params)
 }
 
-func (ds *ZabbixDatasource) getAllHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupids []string) (*simplejson.Json, error) {
-	params := ZabbixAPIParams{Output: &zabbixParamOutput{Fields: []string{"name", "host"}}, SortField: "name", GroupIDs: groupids}
+func (ds *ZabbixDatasourceInstance) getAllHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupids []string) (*simplejson.Json, error) {
+	params := ZabbixAPIParams{"output": &zabbixParamOutput{Fields: []string{"name", "host"}}, "sortField": "name", "groupIDs": groupids}
 
 	return ds.ZabbixRequest(ctx, "host.get", params)
 }
 
-func (ds *ZabbixDatasource) getAllGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo) (*simplejson.Json, error) {
-	params := ZabbixAPIParams{Output: &zabbixParamOutput{Fields: []string{"name"}}, SortField: "name", RealHosts: true}
+func (ds *ZabbixDatasourceInstance) getAllGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo) (*simplejson.Json, error) {
+	params := ZabbixAPIParams{"output": &zabbixParamOutput{Fields: []string{"name"}}, "sortField": "name", "realHosts": true}
 
 	return ds.ZabbixRequest(ctx, "hostgroup.get", params)
 }
 
-func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, jsonQueries []*simplejson.Json, useTrend bool) ([]*datasource.TimeSeries, error) {
+func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, jsonQueries []*simplejson.Json, useTrend bool) ([]*datasource.TimeSeries, error) {
 	valueType := ds.getTrendValueType(jsonQueries)
 	consolidateBy := ds.getConsolidateBy(jsonQueries)
 
@@ -342,7 +363,7 @@ func (ds *ZabbixDatasource) queryNumericDataForItems(ctx context.Context, tsdbRe
 	return convertHistory(history, items)
 }
 
-func (ds *ZabbixDatasource) getTrendValueType(jsonQueries []*simplejson.Json) string {
+func (ds *ZabbixDatasourceInstance) getTrendValueType(jsonQueries []*simplejson.Json) string {
 	var trendFunctions []string
 	var trendValueFunc string
 
@@ -365,7 +386,7 @@ func (ds *ZabbixDatasource) getTrendValueType(jsonQueries []*simplejson.Json) st
 	return trendValueFunc
 }
 
-func (ds *ZabbixDatasource) getConsolidateBy(jsonQueries []*simplejson.Json) string {
+func (ds *ZabbixDatasourceInstance) getConsolidateBy(jsonQueries []*simplejson.Json) string {
 	var consolidateBy string
 
 	for _, k := range jsonQueries[0].Get("functions").MustArray() {
@@ -379,7 +400,7 @@ func (ds *ZabbixDatasource) getConsolidateBy(jsonQueries []*simplejson.Json) str
 	return consolidateBy
 }
 
-func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, useTrend bool) (zabbix.History, error) {
+func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, useTrend bool) (zabbix.History, error) {
 	allHistory := zabbix.History{}
 
 	timeRange := tsdbReq.GetTimeRange()
@@ -396,12 +417,12 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 		}
 
 		params := ZabbixAPIParams{
-			Output:    &zabbixParamOutput{Mode: "extend"},
-			SortField: "clock",
-			SortOrder: "ASC",
-			ItemIDs:   itemids,
-			TimeFrom:  timeRange.GetFromEpochMs() / 1000,
-			TimeTill:  timeRange.GetToEpochMs() / 1000,
+			"output":    &zabbixParamOutput{Mode: "extend"},
+			"sortField": "clock",
+			"sortOrder": "ASC",
+			"itemIDs":   itemids,
+			"timeFrom":  timeRange.GetFromEpochMs() / 1000,
+			"timeTill":  timeRange.GetToEpochMs() / 1000,
 		}
 
 		var response *simplejson.Json
@@ -409,7 +430,7 @@ func (ds *ZabbixDatasource) getHistotyOrTrend(ctx context.Context, tsdbReq *data
 		if useTrend {
 			response, err = ds.ZabbixRequest(ctx, "trend.get", params)
 		} else {
-			params.History = &k
+			params["history"] = &k
 			response, err = ds.ZabbixRequest(ctx, "history.get", params)
 		}
 

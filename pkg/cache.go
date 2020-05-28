@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/grafana/grafana_plugin_model/go/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	cache "github.com/patrickmn/go-cache"
 )
 
@@ -40,7 +40,7 @@ func HashString(text string) string {
 }
 
 // HashDatasourceInfo converts the given datasource info to hash string
-func HashDatasourceInfo(dsInfo *datasource.DatasourceInfo) string {
+func HashDatasourceInfo(dsInfo *backend.DataSourceInstanceSettings) string {
 	digester := sha1.New()
 	if err := json.NewEncoder(digester).Encode(dsInfo); err != nil {
 		panic(err) // This shouldn't be possible but just in case DatasourceInfo changes

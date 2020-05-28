@@ -61,7 +61,8 @@ export class ZabbixAPIConnector {
 
   request(method, params) {
     return this.tsdbRequest(method, params).then(response => {
-      const result = this.handleTsdbResponse(response);
+      // const result = this.handleTsdbResponse(response);
+      const result = this.handleZabbixAPIResourceResponse(response);
 
       return result;
     });
@@ -80,10 +81,20 @@ export class ZabbixAPIConnector {
     };
 
     return getBackendSrv().datasourceRequest({
-      url: '/api/tsdb/query',
+      url: `/api/datasources/${this.datasourceId}/resources/zabbix-api`,
       method: 'POST',
-      data: tsdbRequestData
+      data: {
+        datasourceId: this.datasourceId,
+        method,
+        params,
+      },
     });
+
+    // return getBackendSrv().datasourceRequest({
+    //   url: '/api/tsdb/query',
+    //   method: 'POST',
+    //   data: tsdbRequestData
+    // });
   }
 
   _request(method: string, params: JSONRPCRequestParams): Promise<any> {
@@ -119,6 +130,10 @@ export class ZabbixAPIConnector {
     }
 
     return response.data.results['zabbixAPI'].meta;
+  }
+
+  handleZabbixAPIResourceResponse(response) {
+    return response?.data;
   }
 
   /**

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
@@ -29,27 +30,27 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 	}
 }
 
-var basicDatasourceInfo = &datasource.DatasourceInfo{
-	Id:       1,
+var basicDatasourceInfo = &backend.DataSourceInstanceSettings{
+	ID:       1,
 	Name:     "TestDatasource",
-	Url:      "http://zabbix.org/zabbix",
-	JsonData: `{"username":"username", "password":"password"}}`,
+	URL:      "http://zabbix.org/zabbix",
+	JSONData: []byte(`{"username":"username", "password":"password"}}`),
 }
 
 func mockDataSourceRequest(modelJSON string) *datasource.DatasourceRequest {
 	return &datasource.DatasourceRequest{
 		Datasource: basicDatasourceInfo,
 		Queries: []*datasource.Query{
-			&datasource.Query{
+			{
 				ModelJson: modelJSON,
 			},
 		},
 	}
 }
 
-func mockZabbixDataSource(body string, statusCode int) ZabbixDatasource {
+func mockZabbixDataSource(body string, statusCode int) ZabbixDatasourceInstance {
 	apiUrl, _ := url.Parse(basicDatasourceInfo.Url)
-	return ZabbixDatasource{
+	return ZabbixDatasourceInstance{
 		url:        apiUrl,
 		dsInfo:     basicDatasourceInfo,
 		queryCache: NewCache(10*time.Minute, 10*time.Minute),

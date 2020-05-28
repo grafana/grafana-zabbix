@@ -1,36 +1,49 @@
 package main
 
 import (
-	"time"
+	"net/http"
 
-	"github.com/grafana/grafana_plugin_model/go/datasource"
-	hclog "github.com/hashicorp/go-hclog"
-	plugin "github.com/hashicorp/go-plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
-var pluginLogger = hclog.New(&hclog.LoggerOptions{
-	Name:  "zabbix-datasource",
-	Level: hclog.LevelFromString("DEBUG"),
-})
+const ZABBIX_PLUGIN_ID = "alexanderzobnin-zabbix-datasource"
 
 func main() {
-	pluginLogger.Debug("Running Zabbix backend datasource")
+	backend.SetupPluginEnvironment(ZABBIX_PLUGIN_ID)
 
-	plugin.Serve(&plugin.ServeConfig{
+	pluginLogger := log.New()
+	mux := http.NewServeMux()
+	ds := NewDatasource(pluginLogger, mux)
+	httpResourceHandler := httpadapter.New(mux)
 
-		HandshakeConfig: plugin.HandshakeConfig{
-			ProtocolVersion:  1,
-			MagicCookieKey:   "grafana_plugin_type",
-			MagicCookieValue: "datasource",
-		},
-		Plugins: map[string]plugin.Plugin{
-			"zabbix-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &ZabbixPlugin{
-				datasourceCache: NewCache(10*time.Minute, 10*time.Minute),
-				logger:          pluginLogger,
-			}},
-		},
+	pluginLogger.Debug("Starting Zabbix backend datasource")
 
-		// A non-nil value here enables gRPC serving for this plugin...
-		GRPCServer: plugin.DefaultGRPCServer,
+	err := backend.Serve(backend.ServeOpts{
+		CallResourceHandler: httpResourceHandler,
+		QueryDataHandler:    ds,
+		CheckHealthHandler:  ds,
 	})
+	if err != nil {
+		pluginLogger.Error(err.Error())
+	}
+
+	// plugin.Serve(&plugin.ServeConfig{
+
+	// 	HandshakeConfig: plugin.HandshakeConfig{
+	// 		ProtocolVersion:  1,
+	// 		MagicCookieKey:   "grafana_plugin_type",
+	// 		MagicCookieValue: "datasource",
+	// 	},
+	// 	Plugins: map[string]plugin.Plugin{
+	// 		"zabbix-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &ZabbixPlugin{
+	// 			datasourceCache: NewCache(10*time.Minute, 10*time.Minute),
+	// 			logger:          pluginLogger,
+	// 		}},
+	// 	},
+
+	// 	// A non-nil value here enables gRPC serving for this plugin...
+	// 	GRPCServer: plugin.DefaultGRPCServer,
+	// })
 }

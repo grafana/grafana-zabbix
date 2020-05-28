@@ -15,31 +15,31 @@ import (
 	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
-	"github.com/grafana/grafana_plugin_model/go/datasource"
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"golang.org/x/net/context/ctxhttp"
 )
 
-// ZabbixDatasource stores state about a specific datasource and provides methods to make
+// ZabbixDatasourceInstance stores state about a specific datasource and provides methods to make
 // requests to the Zabbix API
-type ZabbixDatasource struct {
+type ZabbixDatasourceInstance struct {
 	url        *url.URL
 	authToken  string
-	dsInfo     *datasource.DatasourceInfo
+	dsInfo     *backend.DataSourceInstanceSettings
 	queryCache *Cache
-	logger     hclog.Logger
 	httpClient *http.Client
+	logger     log.Logger
 }
 
 // newZabbixDatasource returns an initialized ZabbixDatasource
-func newZabbixDatasource(dsInfo *datasource.DatasourceInfo) (*ZabbixDatasource, error) {
-	zabbixURLStr := dsInfo.GetUrl()
+func newZabbixDatasource(dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDatasourceInstance, error) {
+	zabbixURLStr := dsInfo.URL
 	zabbixURL, err := url.Parse(zabbixURLStr)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ZabbixDatasource{
+	return &ZabbixDatasourceInstance{
 		url:        zabbixURL,
 		dsInfo:     dsInfo,
 		queryCache: NewCache(10*time.Minute, 10*time.Minute),
@@ -64,7 +64,7 @@ func newZabbixDatasource(dsInfo *datasource.DatasourceInfo) (*ZabbixDatasource, 
 }
 
 // ZabbixRequest checks authentication and makes a request to the Zabbix API
-func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, method string, params ZabbixAPIParams) (*simplejson.Json, error) {
+func (ds *ZabbixDatasourceInstance) ZabbixRequest(ctx context.Context, method string, params ZabbixAPIParams) (*simplejson.Json, error) {
 	var result *simplejson.Json
 	var err error
 
@@ -86,16 +86,16 @@ func (ds *ZabbixDatasource) ZabbixRequest(ctx context.Context, method string, pa
 	return result, err
 }
 
-func (ds *ZabbixDatasource) loginWithDs(ctx context.Context) error {
-	jsonDataStr := ds.dsInfo.GetJsonData()
-	jsonData, err := simplejson.NewJson([]byte(jsonDataStr))
+func (ds *ZabbixDatasourceInstance) loginWithDs(ctx context.Context) error {
+	jsonDataStr := ds.dsInfo.JSONData
+	jsonData, err := simplejson.NewJson(jsonDataStr)
 	if err != nil {
 		return err
 	}
 
 	zabbixLogin := jsonData.Get("username").MustString()
 	var zabbixPassword string
-	if securePassword, exists := ds.dsInfo.GetDecryptedSecureJsonData()["password"]; exists {
+	if securePassword, exists := ds.dsInfo.DecryptedSecureJSONData["password"]; exists {
 		zabbixPassword = securePassword
 	} else {
 		zabbixPassword = jsonData.Get("password").MustString()
@@ -113,10 +113,10 @@ func (ds *ZabbixDatasource) loginWithDs(ctx context.Context) error {
 	return nil
 }
 
-func (ds *ZabbixDatasource) login(ctx context.Context, username string, password string) (string, error) {
+func (ds *ZabbixDatasourceInstance) login(ctx context.Context, username string, password string) (string, error) {
 	params := ZabbixAPIParams{
-		User:     username,
-		Password: password,
+		"user":     username,
+		"password": password,
 	}
 	auth, err := ds.ZabbixAPIRequest(ctx, "user.login", params, "")
 	if err != nil {
@@ -126,7 +126,7 @@ func (ds *ZabbixDatasource) login(ctx context.Context, username string, password
 	return auth.MustString(), nil
 }
 
-func (ds *ZabbixDatasource) ZabbixAPIRequest(ctx context.Context, method string, params ZabbixAPIParams, auth string) (*simplejson.Json, error) {
+func (ds *ZabbixDatasourceInstance) ZabbixAPIRequest(ctx context.Context, method string, params ZabbixAPIParams, auth string) (*simplejson.Json, error) {
 	apiRequest := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"id":      2,

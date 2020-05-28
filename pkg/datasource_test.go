@@ -34,7 +34,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		name    string
 		cache   *cache.Cache
 		request *datasource.DatasourceRequest
-		want    *ZabbixDatasource
+		want    *ZabbixDatasourceInstance
 	}{
 		{
 			name: "Uncached Datasource (nothing in cache)",
@@ -46,7 +46,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		{
 			name: "Uncached Datasource (cache miss)",
 			cache: cache.NewFrom(cache.NoExpiration, cache.NoExpiration, map[string]cache.Item{
-				basicDatasourceInfoHash: cache.Item{Object: modifiedDatasource},
+				basicDatasourceInfoHash: {Object: modifiedDatasource},
 			}),
 			request: &datasource.DatasourceRequest{
 				Datasource: altDatasourceInfo,
@@ -56,8 +56,8 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		{
 			name: "Cached Datasource",
 			cache: cache.NewFrom(cache.NoExpiration, cache.NoExpiration, map[string]cache.Item{
-				altDatasourceInfoHash:   cache.Item{Object: basicDS},
-				basicDatasourceInfoHash: cache.Item{Object: modifiedDatasource},
+				altDatasourceInfoHash:   {Object: basicDS},
+				basicDatasourceInfoHash: {Object: modifiedDatasource},
 			}),
 			request: &datasource.DatasourceRequest{
 				Datasource: basicDatasourceInfo,
@@ -105,7 +105,7 @@ func TestBuildResponse(t *testing.T) {
 			responseData: jsonData,
 			want: &datasource.DatasourceResponse{
 				Results: []*datasource.QueryResult{
-					&datasource.QueryResult{
+					{
 						RefId:    "zabbixAPI",
 						MetaJson: `{"testing":[5,12,75]}`,
 					},
@@ -123,7 +123,7 @@ func TestBuildResponse(t *testing.T) {
 			},
 			want: &datasource.DatasourceResponse{
 				Results: []*datasource.QueryResult{
-					&datasource.QueryResult{
+					{
 						RefId:    "zabbixAPI",
 						MetaJson: `{"zabbixVersion":"2.4","dbConnectorStatus":{"dsType":"mysql","dsName":"MyDatabase"}}`,
 					},

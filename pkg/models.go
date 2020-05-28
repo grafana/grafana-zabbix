@@ -60,7 +60,9 @@ func (p *zabbixParamOutput) UnmarshalJSON(data []byte) error {
 
 }
 
-type ZabbixAPIParams struct {
+type ZabbixAPIParams = map[string]interface{}
+
+type ZabbixAPIParamsLegacy struct {
 	Output    *zabbixParamOutput     `json:"output,omitempty"`
 	SortField string                 `json:"sortfield,omitempty"`
 	SortOrder string                 `json:"sortorder,omitempty"`
@@ -100,4 +102,20 @@ type ZabbixAPIParams struct {
 	// History/Trends GET
 	TimeFrom int64 `json:"time_from,omitempty"`
 	TimeTill int64 `json:"time_till,omitempty"`
+}
+
+type ZabbixAPIResourceRequest struct {
+	DatasourceId int64                  `json:"datasourceId"`
+	Method       string                 `json:"method"`
+	Params       map[string]interface{} `json:"params,omitempty"`
+}
+
+type ZabbixAPIRequest struct {
+	Method string                 `json:"method"`
+	Params map[string]interface{} `json:"params,omitempty"`
+}
+
+func (r *ZabbixAPIRequest) String() string {
+	jsonRequest, _ := json.Marshal(r.Params)
+	return r.Method + string(jsonRequest)
 }
