@@ -17,7 +17,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   triggers: { minSeverity: string; acknowledged: boolean; count: number; };
   queryType: string;
   datasourceId: number;
-  functions: { name: string; params: any; def: { name: string; params: any; } }[];
+  functions: ZabbixMetricFunction[];
   options: any;
   textFilter: string;
   mode: number;
@@ -31,8 +31,11 @@ export interface ZabbixMetricsQuery extends DataQuery {
   itemFilter: string;
 }
 
-// export { TemplateSrv } from 'grafana/app/features/templating/template_srv';
-// export { DashboardSrv } from 'grafana/app/features/dashboard/dashboard_srv';
+export interface ZabbixMetricFunction {
+  name: string;
+  params: any;
+  def: { name: string; params: any; };
+}
 
 // The paths of these files have moved around in Grafana and they don't resolve properly
 // either. Safer not to bother trying to import them just for type hinting.
@@ -46,7 +49,7 @@ export interface TemplateSrv {
 }
 
 export interface DashboardSrv {
-  dash: any
+  dash: any;
 }
 
 // Grafana types from backend code
