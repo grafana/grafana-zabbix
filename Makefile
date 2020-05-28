@@ -16,6 +16,11 @@ build-backend:
 build-debug:
 	env GOOS=linux go build -mod=vendor -gcflags=all="-N -l" -o ./dist/zabbix-plugin_linux_amd64 ./pkg
 
+run-backend:
+	# Rebuilds plugin on changes and kill running instance which forces grafana to restart plugin
+	# See .bra.toml for bra configuration details
+	bra run
+
 dist: dist-frontend dist-backend
 dist-frontend:
 	yarn build
