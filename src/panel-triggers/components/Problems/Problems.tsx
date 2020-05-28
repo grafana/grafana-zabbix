@@ -1,26 +1,28 @@
 import React, { PureComponent } from 'react';
-import ReactTable from 'react-table';
+import ReactTable from 'react-table-6';
 import classNames from 'classnames';
 import _ from 'lodash';
 import moment from 'moment';
-import * as utils from '../../../datasource-zabbix/utils';
 import { isNewProblem } from '../../utils';
-import { ProblemsPanelOptions, ZBXTrigger, ZBXEvent, GFTimeRange, RTCell, ZBXTag, TriggerSeverity, RTResized, ZBXAlert } from '../../types';
 import EventTag from '../EventTag';
-import ProblemDetails from './ProblemDetails';
-import { AckProblemData } from '../Modal';
-import GFHeartIcon from '../GFHeartIcon';
+import { ProblemDetails } from './ProblemDetails';
+import { AckProblemData } from '../AckModal';
+import { GFHeartIcon, FAIcon } from '../../../components';
+import { ProblemsPanelOptions, GFTimeRange, RTCell, TriggerSeverity, RTResized } from '../../types';
+import { ProblemDTO, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
+import { AckCell } from './AckCell';
 
 export interface ProblemListProps {
-  problems: ZBXTrigger[];
+  problems: ProblemDTO[];
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
   timeRange?: GFTimeRange;
   pageSize?: number;
   fontSize?: number;
-  getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
-  getProblemAlerts: (problem: ZBXTrigger) => Promise<ZBXAlert[]>;
-  onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => void;
+  panelId?: number;
+  getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
+  getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
+  onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
   onColumnResize?: (newResized: RTResized) => void;
@@ -47,7 +49,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     this.rootRef = ref;
   }
 
-  handleProblemAck = (problem: ZBXTrigger, data: AckProblemData) => {
+  handleProblemAck = (problem: ProblemDTO, data: AckProblemData) => {
     return this.props.onProblemAck(problem, data);
   }
 
@@ -85,19 +87,21 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const result = [];
     const options = this.props.panelOptions;
     const highlightNewerThan = options.highlightNewEvents && options.highlightNewerThan;
-    const statusCell = props => StatusCell(props, options.okEventColor, DEFAULT_PROBLEM_COLOR, highlightNewerThan);
+    const statusCell = props => StatusCell(props, highlightNewerThan);
     const statusIconCell = props => StatusIconCell(props, highlightNewerThan);
+    const hostNameCell = props => <HostCell name={props.original.host} maintenance={props.original.maintenance} />;
+    const hostTechNameCell = props => <HostCell name={props.original.hostTechName} maintenance={props.original.maintenance} />;
 
     const columns = [
-      { Header: 'Host', accessor: 'host', show: options.hostField },
-      { Header: 'Host (Technical Name)', accessor: 'hostTechName', show: options.hostTechNameField },
+      { Header: 'Host', id: 'host', show: options.hostField, Cell: hostNameCell },
+      { Header: 'Host (Technical Name)', id: 'hostTechName', show: options.hostTechNameField, Cell: hostTechNameCell },
       { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
       { Header: 'Proxy', accessor: 'proxy', show: options.hostProxy },
       {
         Header: 'Severity', show: options.severityField, className: 'problem-severity', width: 120,
         accessor: problem => problem.priority,
         id: 'severity',
-        Cell: props => SeverityCell(props, options.triggerSeverity, options.markAckEvents, options.ackEventColor),
+        Cell: props => SeverityCell(props, options.triggerSeverity, options.markAckEvents, options.ackEventColor, options.okEventColor),
       },
       {
         Header: '', id: 'statusIcon', show: options.statusIcon, className: 'problem-status-icon', width: 50,
@@ -107,16 +111,20 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell},
       {
+        Header: 'Ack', id: 'ack', show: options.ackField, width: 70,
+        Cell: props => <AckCell {...props} />
+      },
+      {
         Header: 'Tags', accessor: 'tags', show: options.showTags, className: 'problem-tags',
         Cell: props => <TagCell {...props} onTagClick={this.handleTagClick} />
       },
       {
-        Header: 'Age', className: 'problem-age', width: 100, show: options.ageField, accessor: 'lastchangeUnix',
+        Header: 'Age', className: 'problem-age', width: 100, show: options.ageField, accessor: 'timestamp',
         id: 'age',
         Cell: AgeCell,
       },
       {
-        Header: 'Time', className: 'last-change', width: 150, accessor: 'lastchangeUnix',
+        Header: 'Time', className: 'last-change', width: 150, accessor: 'timestamp',
         id: 'lastchange',
         Cell: props => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
       },
@@ -159,10 +167,12 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
               rootWidth={this.rootWidth}
               timeRange={this.props.timeRange}
               showTimeline={panelOptions.problemTimeline}
+              panelId={this.props.panelId}
               getProblemEvents={this.props.getProblemEvents}
               getProblemAlerts={this.props.getProblemAlerts}
               onProblemAck={this.handleProblemAck}
               onTagClick={this.handleTagClick}
+              subRows={false}
             />
           }
           expanded={this.getExpandedPage(this.state.page)}
@@ -176,14 +186,41 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
   }
 }
 
-function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSeverity[], markAckEvents?: boolean, ackEventColor?: string) {
+interface HostCellProps {
+  name: string;
+  maintenance: boolean;
+}
+
+const HostCell: React.FC<HostCellProps> = ({ name, maintenance }) => {
+  return (
+    <div>
+      <span style={{ paddingRight: '0.4rem' }}>{name}</span>
+      {maintenance && <FAIcon customClass="fired" icon="wrench" />}
+    </div>
+  );
+};
+
+function SeverityCell(
+  props: RTCell<ProblemDTO>,
+  problemSeverityDesc: TriggerSeverity[],
+  markAckEvents?: boolean,
+  ackEventColor?: string,
+  okColor = DEFAULT_OK_COLOR
+  ) {
   const problem = props.original;
   let color: string;
-  const severityDesc = _.find(problemSeverityDesc, s => s.priority === Number(props.original.priority));
-  color = severityDesc.color;
+
+  let severityDesc: TriggerSeverity;
+  const severity = Number(problem.severity);
+  severityDesc = _.find(problemSeverityDesc, s => s.priority === severity);
+  if (problem.severity && problem.value === '1') {
+    severityDesc = _.find(problemSeverityDesc, s => s.priority === severity);
+  }
+
+  color = problem.value === '0' ? okColor : severityDesc.color;
 
   // Mark acknowledged triggers with different color
-  if (markAckEvents && problem.lastEvent.acknowledged === "1") {
+  if (markAckEvents && problem.acknowledged === "1") {
     color = ackEventColor;
   }
 
@@ -197,9 +234,9 @@ function SeverityCell(props: RTCell<ZBXTrigger>, problemSeverityDesc: TriggerSev
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
 
-function StatusCell(props: RTCell<ZBXTrigger>, okColor = DEFAULT_OK_COLOR, problemColor = DEFAULT_PROBLEM_COLOR, highlightNewerThan?: string) {
+function StatusCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {
   const status = props.value === '0' ? 'RESOLVED' : 'PROBLEM';
-  const color = props.value === '0' ? okColor : problemColor;
+  const color = props.value === '0' ? DEFAULT_OK_COLOR : DEFAULT_PROBLEM_COLOR;
   let newProblem = false;
   if (highlightNewerThan) {
     newProblem = isNewProblem(props.original, highlightNewerThan);
@@ -209,7 +246,7 @@ function StatusCell(props: RTCell<ZBXTrigger>, okColor = DEFAULT_OK_COLOR, probl
   );
 }
 
-function StatusIconCell(props: RTCell<ZBXTrigger>, highlightNewerThan?: string) {
+function StatusIconCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {
   const status = props.value === '0' ? 'ok' : 'problem';
   let newProblem = false;
   if (highlightNewerThan) {
@@ -223,7 +260,7 @@ function StatusIconCell(props: RTCell<ZBXTrigger>, highlightNewerThan?: string) 
   return <GFHeartIcon status={status} className={className} />;
 }
 
-function GroupCell(props: RTCell<ZBXTrigger>) {
+function GroupCell(props: RTCell<ProblemDTO>) {
   let groups = "";
   if (props.value && props.value.length) {
     groups = props.value.map(g => g.name).join(', ');
@@ -233,7 +270,7 @@ function GroupCell(props: RTCell<ZBXTrigger>) {
   );
 }
 
-function ProblemCell(props: RTCell<ZBXTrigger>) {
+function ProblemCell(props: RTCell<ProblemDTO>) {
   const comments = props.original.comments;
   return (
     <div>
@@ -243,23 +280,23 @@ function ProblemCell(props: RTCell<ZBXTrigger>) {
   );
 }
 
-function AgeCell(props: RTCell<ZBXTrigger>) {
+function AgeCell(props: RTCell<ProblemDTO>) {
   const problem = props.original;
-  const timestamp = moment.unix(problem.lastchangeUnix);
+  const timestamp = moment.unix(problem.timestamp);
   const age = timestamp.fromNow(true);
   return <span>{age}</span>;
 }
 
-function LastChangeCell(props: RTCell<ZBXTrigger>, customFormat?: string) {
+function LastChangeCell(props: RTCell<ProblemDTO>, customFormat?: string) {
   const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
   const problem = props.original;
-  const timestamp = moment.unix(problem.lastchangeUnix);
+  const timestamp = moment.unix(problem.timestamp);
   const format = customFormat || DEFAULT_TIME_FORMAT;
   const lastchange = timestamp.format(format);
   return <span>{lastchange}</span>;
 }
 
-interface TagCellProps extends RTCell<ZBXTrigger> {
+interface TagCellProps extends RTCell<ProblemDTO> {
   onTagClick: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 

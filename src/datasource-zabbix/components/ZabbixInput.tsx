@@ -1,17 +1,20 @@
 import React, { FC } from 'react';
 import { css, cx } from 'emotion';
-import { withTheme, Input, EventsWithValidation, ValidationEvents, Themeable } from '@grafana/ui';
+import { EventsWithValidation, ValidationEvents, useTheme } from '@grafana/ui';
 import { GrafanaTheme } from '@grafana/data';
 import { isRegex, variableRegex } from '../utils';
+
+import * as grafanaUi from '@grafana/ui';
+const Input = (grafanaUi as any).LegacyForms?.Input || (grafanaUi as any).Input;
 
 const variablePattern = RegExp(`^${variableRegex.source}`);
 
 const getStyles = (theme: GrafanaTheme) => ({
   inputRegex: css`
-    color: ${theme.colors.orange}
+    color: ${theme.colors.orange || (theme as any).palette.orange}
   `,
   inputVariable: css`
-    color: ${theme.colors.variable}
+    color: ${theme.colors.variable || (theme as any).palette.variable}
   `,
 });
 
@@ -43,17 +46,14 @@ const zabbixInputValidationEvents: ValidationEvents = {
   ],
 };
 
-interface Props extends React.ComponentProps<typeof Input>, Themeable {
-}
-
-const UnthemedZabbixInput: FC<Props> = ({ theme, value, ref, validationEvents, ...restProps }) => {
+export const ZabbixInput: FC<any> = ({ value, ref, validationEvents, ...restProps }) => {
+  const theme = useTheme();
   const styles = getStyles(theme);
 
-  let inputClass;
+  let inputClass = styles.inputRegex;
   if (variablePattern.test(value as string)) {
     inputClass = styles.inputVariable;
-  }
-  if (isRegex(value)) {
+  } else if (isRegex(value)) {
     inputClass = styles.inputRegex;
   }
 
@@ -66,5 +66,3 @@ const UnthemedZabbixInput: FC<Props> = ({ theme, value, ref, validationEvents, .
     />
   );
 };
-
-export const ZabbixInput = withTheme(UnthemedZabbixInput);

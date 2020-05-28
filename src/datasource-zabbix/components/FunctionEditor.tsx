@@ -39,7 +39,6 @@ class FunctionEditor extends React.PureComponent<FunctionEditorProps, FunctionEd
         <div style={{ overflow: 'auto', maxHeight: '30rem', textAlign: 'left', fontWeight: 'normal' }}>
           <h4 style={{ color: 'white' }}> {name} </h4>
           <div>{description}</div>
-          />
         </div>
       );
     }

@@ -7,6 +7,11 @@
     i {
       width: 1rem;
     }
+
+    &.fired {
+      color: $problem-statusbar-fired;
+      text-shadow: 0px 0px 10px rgba($problem-statusbar-fired, 0.5);
+    }
   }
 
   // <ReactTable /> styles
@@ -246,10 +251,30 @@
         flex-direction: column;
       }
 
-      .description-label {
-        font-weight: 500;
-        font-style: italic;
-        color: $text-muted;
+      .problem-description-row {
+
+        .problem-description {
+          position: relative;
+          height: 4.5rem;
+          overflow: hidden;
+
+          &:after {
+            content: "";
+            text-align: right;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 70%;
+            height: 1.5rem;
+            background: linear-gradient(to right, rgba($problem-details-background, 0), rgba($problem-details-background, 1) 50%);
+          }
+        }
+
+        .description-label {
+          font-weight: 500;
+          font-style: italic;
+          color: $text-muted;
+        }
       }
 
       .problem-age {
@@ -314,24 +339,8 @@
         margin-left: 1.6rem;
       }
 
-      .problem-action-button {
-        &.btn {
-          width: 3rem;
-          height: 2rem;
-
-          background-image: none;
-          background-color: $action-button-color;
-          border: 1px solid darken($action-button-color, 6%);
-          border-radius: 1px;
-
-          span {
-            color: $action-button-text-color;
-          }
-
-          &:hover {
-            background-color: darken($action-button-color, 4%);
-          }
-        }
+      .problem-actions-left {
+        margin-right: 1.6rem;
       }
 
       .problem-details-middle {
@@ -546,9 +555,19 @@
 }
 
 .zbx-ack-modal {
-  .gf-form-input.zbx-ack-error {
+  .zbx-ack-error {
     border-color: $btn-danger-bg;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 5px $btn-danger-bg;
+    // box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 5px $btn-danger-bg;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #141619, 0 0 0px 4px $btn-danger-bg;
+  }
+
+  .ack-request-error {
+    padding-top: 1.2rem;
+  }
+
+  .ack-error-message {
+    color: $error-text-color;
   }
 
   .gf-form .gf-form-hint {
@@ -558,7 +577,6 @@
 
       &.ack-error-message {
         float: left;
-        color: $error-text-color;
       }
     }
   }

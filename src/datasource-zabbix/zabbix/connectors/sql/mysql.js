@@ -3,26 +3,24 @@
  */
 
 function historyQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
-  let time_expression = `clock DIV ${intervalSec} * ${intervalSec}`;
   let query = `
-    SELECT CAST(itemid AS CHAR) AS metric, ${time_expression} AS time_sec, ${aggFunction}(value) AS value
+    SELECT CAST(itemid AS CHAR) AS metric, MIN(clock) AS time_sec, ${aggFunction}(value) AS value
     FROM ${table}
     WHERE itemid IN (${itemids})
       AND clock > ${timeFrom} AND clock < ${timeTill}
-    GROUP BY ${time_expression}, metric
+    GROUP BY (clock-${timeFrom}) DIV ${intervalSec}, metric
     ORDER BY time_sec ASC
   `;
   return query;
 }
 
 function trendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
-  let time_expression = `clock DIV ${intervalSec} * ${intervalSec}`;
   let query = `
-    SELECT CAST(itemid AS CHAR) AS metric, ${time_expression} AS time_sec, ${aggFunction}(${valueColumn}) AS value
+    SELECT CAST(itemid AS CHAR) AS metric, MIN(clock) AS time_sec, ${aggFunction}(${valueColumn}) AS value
     FROM ${table}
     WHERE itemid IN (${itemids})
       AND clock > ${timeFrom} AND clock < ${timeTill}
-    GROUP BY ${time_expression}, metric
+    GROUP BY (clock-${timeFrom}) DIV ${intervalSec}, metric
     ORDER BY time_sec ASC
   `;
   return query;

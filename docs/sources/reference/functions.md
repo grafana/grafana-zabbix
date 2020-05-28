@@ -269,6 +269,20 @@ timeShift(+1d)  - shift metric forward in 1 day
 
 ## Alias
 
+Following template variables available for using in `setAlias()` and `replaceAlias()` functions:
+
+- `$__zbx_item`, `$__zbx_item_name` - item name
+- `$__zbx_item_key` - item key
+- `$__zbx_host_name` - visible name of the host
+- `$__zbx_host` - technical name of the host
+
+Examples:
+```
+setAlias($__zbx_host_name: $__zbx_item) -> backend01: CPU user time
+setAlias(Item key: $__zbx_item_key) -> Item key: system.cpu.load[percpu,avg1]
+setAlias($__zbx_host_name) -> backend01
+```
+
 ### _setAlias_
 ```
 setAlias(alias)
@@ -310,7 +324,7 @@ Replace metric name using pattern. Pattern is regex or regular string. If regex 
 |$'	| Inserts the portion of the string that follows the matched substring. |
 |$n	| Where n is a non-negative integer less than 100, inserts the nth parenthesized submatch string, provided the first argument was a RegExp object. |
 
-For more detais see [String.prototype.replace()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace) function.
+For more details see [String.prototype.replace()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace) function.
 
 Examples:
 ```

@@ -29,10 +29,13 @@ class TriggerPanelOptionsCtrl {
       'unacknowledged',
       'acknowledged'
     ];
-    this.sortByFields = [
-      { text: 'last change', value: 'lastchange' },
-      { text: 'severity',    value: 'priority' }
+
+    this.sortingOptions = [
+      { text: 'Default', value: 'default' },
+      { text: 'Last change', value: 'lastchange' },
+      { text: 'Severity',    value: 'priority' },
     ];
+
     this.showEventsFields = [
       { text: 'All',      value: [0,1] },
       { text: 'OK',       value: [0] },

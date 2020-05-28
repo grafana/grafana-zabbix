@@ -1,9 +1,27 @@
 import _ from 'lodash';
 import { getNextRefIdChar } from './utils';
-import { getDefaultTarget } from './triggers_panel_ctrl';
+import { ShowProblemTypes } from '../datasource-zabbix/types';
 
 // Actual schema version
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
+
+export const getDefaultTarget = (targets?) => {
+  return {
+    group: {filter: ""},
+    host: {filter: ""},
+    application: {filter: ""},
+    trigger: {filter: ""},
+    tags: {filter: ""},
+    proxy: {filter: ""},
+    refId: getNextRefIdChar(targets),
+  };
+};
+
+export function getDefaultTargetOptions() {
+  return {
+    hostsInMaintenance: true,
+  };
+}
 
 export function migratePanelSchema(panel) {
   if (isEmptyPanel(panel)) {
@@ -12,7 +30,7 @@ export function migratePanelSchema(panel) {
   }
 
   const schemaVersion = getSchemaVersion(panel);
-  panel.schemaVersion = CURRENT_SCHEMA_VERSION;
+  // panel.schemaVersion = CURRENT_SCHEMA_VERSION;
 
   if (schemaVersion < 2) {
     panel.datasources = [panel.datasource];
@@ -66,7 +84,68 @@ export function migratePanelSchema(panel) {
     delete panel.datasources;
   }
 
+  if (schemaVersion < 8) {
+    if (panel.targets.length === 1) {
+      if (panel.targets[0].datasource) {
+        panel.datasource = panel.targets[0].datasource;
+        delete panel.targets[0].datasource;
+      }
+    } else if (panel.targets.length > 1) {
+      // Mixed data sources
+      panel.datasource = '-- Mixed --';
+    }
+    for (const target of panel.targets) {
+      // set queryType to PROBLEMS
+      target.queryType = 5;
+      target.showProblems = migrateShowEvents(panel);
+      target.options = migrateOptions(panel);
+
+      _.defaults(target.options, getDefaultTargetOptions());
+      _.defaults(target, { tags: { filter: "" } });
+    }
+
+    panel.sortProblems = panel.sortTriggersBy?.value === 'priority' ? 'priority' : 'lastchange';
+
+    delete panel.showEvents;
+    delete panel.showTriggers;
+    delete panel.hostsInMaintenance;
+    delete panel.sortTriggersBy;
+  }
+
   return panel;
+}
+
+function migrateOptions(panel) {
+  let acknowledged = 2;
+  if (panel.showTriggers === 'acknowledged') {
+    acknowledged = 1;
+  } else if (panel.showTriggers === 'unacknowledged') {
+    acknowledged = 0;
+  }
+
+  // Default limit in Zabbix
+  let limit = 1001;
+  if (panel.limit && panel.limit !== 100) {
+    limit = panel.limit;
+  }
+
+  return {
+    hostsInMaintenance: panel.hostsInMaintenance,
+    sortProblems: panel.sortTriggersBy?.value === 'priority' ? 'priority' : 'default',
+    minSeverity: 0,
+    acknowledged: acknowledged,
+    limit: limit,
+  };
+}
+
+function migrateShowEvents(panel) {
+  if (panel.showEvents?.value === 1) {
+    return ShowProblemTypes.Problems;
+  } else if (panel.showEvents?.value === 0 || panel.showEvents?.value?.length > 1) {
+    return ShowProblemTypes.History;
+  } else {
+    return ShowProblemTypes.Problems;
+  }
 }
 
 function getSchemaVersion(panel) {

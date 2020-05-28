@@ -4,6 +4,12 @@ import { Datasource } from "../module";
 import { zabbixTemplateFormat } from "../datasource";
 import { dateMath } from '@grafana/data';
 
+jest.mock('@grafana/runtime', () => ({
+  getBackendSrv: () => ({
+    datasourceRequest: jest.fn().mockResolvedValue({data: {result: ''}}),
+  }),
+}), {virtual: true});
+
 describe('ZabbixDatasource', () => {
   let ctx = {};
 
@@ -21,11 +27,11 @@ describe('ZabbixDatasource', () => {
     };
 
     ctx.templateSrv = mocks.templateSrvMock;
-    ctx.backendSrv = mocks.backendSrvMock;
+    // ctx.backendSrv = mocks.backendSrvMock;
     ctx.datasourceSrv = mocks.datasourceSrvMock;
     ctx.zabbixAlertingSrv = mocks.zabbixAlertingSrvMock;
 
-    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.backendSrv, ctx.datasourceSrv, ctx.zabbixAlertingSrv);
+    ctx.ds = new Datasource(ctx.instanceSettings, ctx.templateSrv, ctx.zabbixAlertingSrv);
   });
 
   describe('When querying data', () => {
@@ -119,7 +125,7 @@ describe('ZabbixDatasource', () => {
         item: {filter: "System information"},
         textFilter: "",
         useCaptureGroups: true,
-        mode: 2,
+        queryType: 2,
         resultFormat: "table",
         options: {
           skipEmptyValues: false

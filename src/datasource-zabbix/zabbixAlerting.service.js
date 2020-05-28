@@ -16,8 +16,11 @@ export class ZabbixAlertingService {
   }
 
   setPanelAlertState(panelId, alertState) {
-    let panelIndex;
+    if (!alertState) {
+      return;
+    }
 
+    let panelIndex;
     let panelContainers = _.filter($('.panel-container'), elem => {
       return elem.clientHeight && elem.clientWidth;
     });
@@ -32,8 +35,7 @@ export class ZabbixAlertingService {
       });
     }
 
-    // Don't apply alert styles to .panel-container--absolute (it rewrites position from absolute to relative)
-    if (panelIndex >= 0 && !panelContainers[panelIndex].className.includes('panel-container--absolute')) {
+    if (panelIndex >= 0) {
       let alertClass = "panel-has-alert panel-alert-state--ok panel-alert-state--alerting";
       $(panelContainers[panelIndex]).removeClass(alertClass);
 

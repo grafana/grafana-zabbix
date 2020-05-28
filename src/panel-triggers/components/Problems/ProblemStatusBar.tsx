@@ -1,6 +1,6 @@
 import React from 'react';
-import FAIcon from '../FAIcon';
-import Tooltip from '../Tooltip/Tooltip';
+import FAIcon from '../../../components/FAIcon/FAIcon';
+import Tooltip from '../../../components/Tooltip/Tooltip';
 import { ZBXTrigger, ZBXAlert } from '../../types';
 
 export interface ProblemStatusBarProps {

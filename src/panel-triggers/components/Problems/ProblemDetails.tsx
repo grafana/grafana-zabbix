@@ -1,22 +1,23 @@
 import React, { PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
-import { ZBXTrigger, ZBXItem, ZBXAcknowledge, ZBXHost, ZBXGroup, ZBXEvent, GFTimeRange, RTRow, ZBXTag, ZBXAlert } from '../../types';
-import { Modal, AckProblemData } from '../Modal';
+import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
+import { ZBXItem, GFTimeRange, RTRow } from '../../types';
+import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
-import Tooltip from '../Tooltip/Tooltip';
 import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import FAIcon from '../FAIcon';
+import { FAIcon, ExploreButton, AckButton, Tooltip, ModalController } from '../../../components';
 
-interface ProblemDetailsProps extends RTRow<ZBXTrigger> {
+interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
   timeRange: GFTimeRange;
   showTimeline?: boolean;
-  getProblemEvents: (problem: ZBXTrigger) => Promise<ZBXEvent[]>;
-  getProblemAlerts: (problem: ZBXTrigger) => Promise<ZBXAlert[]>;
-  onProblemAck?: (problem: ZBXTrigger, data: AckProblemData) => Promise<any> | any;
+  panelId?: number;
+  getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
+  getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
+  onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
@@ -24,17 +25,15 @@ interface ProblemDetailsState {
   events: ZBXEvent[];
   alerts: ZBXAlert[];
   show: boolean;
-  showAckDialog: boolean;
 }
 
-export default class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDetailsState> {
+export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDetailsState> {
   constructor(props) {
     super(props);
     this.state = {
       events: [],
       alerts: [],
       show: false,
-      showAckDialog: false,
     };
   }
 
@@ -71,32 +70,20 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
   }
 
   ackProblem = (data: AckProblemData) => {
-    const problem = this.props.original as ZBXTrigger;
-    return this.props.onProblemAck(problem, data).then(result => {
-      this.closeAckDialog();
-    }).catch(err => {
-      console.log(err);
-      this.closeAckDialog();
-    });
-  }
-
-  showAckDialog = () => {
-    this.setState({ showAckDialog: true });
-  }
-
-  closeAckDialog = () => {
-    this.setState({ showAckDialog: false });
+    const problem = this.props.original as ProblemDTO;
+    return this.props.onProblemAck(problem, data);
   }
 
   render() {
-    const problem = this.props.original as ZBXTrigger;
+    const problem = this.props.original as ProblemDTO;
     const alerts = this.state.alerts;
     const rootWidth = this.props.rootWidth;
     const displayClass = this.state.show ? 'show' : '';
     const wideLayout = rootWidth > 1200;
     const compactStatusBar = rootWidth < 800 || problem.acknowledges && wideLayout && rootWidth < 1400;
-    const age = moment.unix(problem.lastchangeUnix).fromNow(true);
+    const age = moment.unix(problem.timestamp).fromNow(true);
     const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
+    const problemSeverity = Number(problem.severity);
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
@@ -109,20 +96,36 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
               </div>
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
+            <div className="problem-actions-left">
+              <ExploreButton problem={problem} panelId={this.props.panelId} />
+            </div>
             <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
             {problem.showAckButton &&
               <div className="problem-actions">
-                <ProblemActionButton className="navbar-button navbar-button--settings"
-                  icon="reply-all"
-                  tooltip="Acknowledge problem"
-                  onClick={this.showAckDialog} />
+                <ModalController>
+                  {({ showModal, hideModal }) => (
+                    <AckButton
+                      className="navbar-button navbar-button--settings"
+                      onClick={() => {
+                        showModal(AckModal, {
+                          canClose: problem.manual_close === '1',
+                          severity: problemSeverity,
+                          onSubmit: this.ackProblem,
+                          onDismiss: hideModal,
+                        });
+                      }}
+                    />
+                  )}
+                </ModalController>
               </div>
             }
           </div>
           {problem.comments &&
-            <div className="problem-description">
-              <span className="description-label">Description:&nbsp;</span>
-              <span>{problem.comments}</span>
+            <div className="problem-description-row">
+              <div className="problem-description">
+                <span className="description-label">Description:&nbsp;</span>
+                <span>{problem.comments}</span>
+              </div>
             </div>
           }
           {problem.tags && problem.tags.length > 0 &&
@@ -169,10 +172,6 @@ export default class ProblemDetails extends PureComponent<ProblemDetailsProps, P
           {problem.groups && <ProblemGroups groups={problem.groups} className="problem-details-right-item" />}
           {problem.hosts && <ProblemHosts hosts={problem.hosts} className="problem-details-right-item" />}
         </div>
-        <Modal withBackdrop={true}
-          isOpen={this.state.showAckDialog}
-          onSubmit={this.ackProblem}
-          onClose={this.closeAckDialog} />
       </div>
     );
   }
@@ -240,35 +239,5 @@ class ProblemHosts extends PureComponent<ProblemHostsProps> {
         <span>{h.name}</span>
       </div>
     ));
-  }
-}
-
-interface ProblemActionButtonProps {
-  icon: string;
-  tooltip?: string;
-  className?: string;
-  onClick?: (event?) => void;
-}
-
-class ProblemActionButton extends PureComponent<ProblemActionButtonProps> {
-  handleClick = (event) => {
-    this.props.onClick(event);
-  }
-
-  render() {
-    const { icon, tooltip, className } = this.props;
-    let button = (
-      <button className={`btn problem-action-button ${className || ''}`} onClick={this.handleClick}>
-        <FAIcon icon={icon} />
-      </button>
-    );
-    if (tooltip) {
-      button = (
-        <Tooltip placement="bottom" content={tooltip}>
-          {button}
-        </Tooltip>
-      );
-    }
-    return button;
   }
 }

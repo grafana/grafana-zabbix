@@ -1,9 +1,14 @@
 import React, { PureComponent } from 'react';
 import { parseLegacyVariableQuery } from '../utils';
-import { Select, Input, AsyncSelect, FormLabel } from '@grafana/ui';
 import { SelectableValue } from '@grafana/data';
 import { VariableQuery, VariableQueryTypes, VariableQueryProps, VariableQueryData } from '../types';
 import { ZabbixInput } from './ZabbixInput';
+
+// FormLabel was renamed to InlineFormLabel in Grafana 7.0
+import * as grafanaUi from '@grafana/ui';
+const FormLabel = grafanaUi.FormLabel || (grafanaUi as any).InlineFormLabel;
+const Select = (grafanaUi as any).LegacyForms?.Select || (grafanaUi as any).Select;
+const Input = (grafanaUi as any).LegacyForms?.Input || (grafanaUi as any).Input;
 
 export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryData> {
   queryTypes: Array<SelectableValue<VariableQueryTypes>> = [
@@ -11,6 +16,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     { value: VariableQueryTypes.Host, label: 'Host' },
     { value: VariableQueryTypes.Application, label: 'Application' },
     { value: VariableQueryTypes.Item, label: 'Item' },
+    { value: VariableQueryTypes.ItemValues, label: 'Item values' },
   ];
 
   defaults: VariableQueryData = {
@@ -119,7 +125,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           }
         </div>
         {(selectedQueryType.value === VariableQueryTypes.Application ||
-          selectedQueryType.value === VariableQueryTypes.Item) &&
+          selectedQueryType.value === VariableQueryTypes.Item ||
+          selectedQueryType.value === VariableQueryTypes.ItemValues) &&
           <div className="gf-form-inline">
             <div className="gf-form max-width-30">
               <FormLabel width={10}>Application</FormLabel>
@@ -129,7 +136,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
                 onBlur={this.handleQueryChange}
               />
             </div>
-            {selectedQueryType.value === VariableQueryTypes.Item &&
+            {(selectedQueryType.value === VariableQueryTypes.Item ||
+              selectedQueryType.value === VariableQueryTypes.ItemValues) &&
               <div className="gf-form max-width-30">
                 <FormLabel width={10}>Item</FormLabel>
                 <ZabbixInput

@@ -15,8 +15,8 @@ module.exports = {
   target: 'node',
   context: resolve('src'),
   entry: {
-    './module': './module.js',
-    'components/config': './components/config.js',
+    'module': './module.js',
+    'app_config_ctrl/config': './app_config_ctrl/config.js',
     'datasource-zabbix/module': './datasource-zabbix/module.ts',
     'panel-triggers/module': './panel-triggers/module.js',
   },
@@ -42,6 +42,7 @@ module.exports = {
     new CopyWebpackPlugin([
       { from: '**/plugin.json' },
       { from: '**/*.html' },
+      { from: '**/*.md' },
       { from: 'dashboards/*' },
       { from: '../README.md' },
       { from: '**/img/*' },

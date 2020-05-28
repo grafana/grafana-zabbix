@@ -4,6 +4,58 @@ import * as c from './constants';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
+import { ShowProblemTypes } from './types';
+
+function getTargetDefaults() {
+  return {
+    queryType: c.MODE_METRICS,
+    group: { 'filter': "" },
+    host: { 'filter': "" },
+    application: { 'filter': "" },
+    item: { 'filter': "" },
+    functions: [],
+    triggers: {
+      'count': true,
+      'minSeverity': 3,
+      'acknowledged': 2
+    },
+    trigger: {filter: ""},
+    tags: {filter: ""},
+    proxy: {filter: ""},
+    options: {
+      showDisabledItems: false,
+      skipEmptyValues: false,
+    },
+    table: {
+      'skipEmptyValues': false
+    },
+  };
+}
+
+function getSLATargetDefaults() {
+  return {
+    slaProperty: { name: "SLA", property: "sla" },
+    slaInterval: 'none',
+  };
+}
+
+function getProblemsTargetDefaults() {
+  return {
+    showProblems: ShowProblemTypes.Problems,
+    options: {
+      minSeverity: 0,
+      sortProblems: 'default',
+      acknowledged: 2,
+      hostsInMaintenance: false,
+      hostProxy: false,
+      limit: c.DEFAULT_ZABBIX_PROBLEMS_LIMIT,
+    },
+  };
+}
+
+function getSeverityOptions() {
+  return c.TRIGGER_SEVERITY;
+}
 
 export class ZabbixQueryController extends QueryCtrl {
 
@@ -17,11 +69,12 @@ export class ZabbixQueryController extends QueryCtrl {
     this.templateSrv = templateSrv;
 
     this.editorModes = [
-      {value: 'num',       text: 'Metrics',     mode: c.MODE_METRICS},
-      {value: 'text',      text: 'Text',        mode: c.MODE_TEXT},
-      {value: 'itservice', text: 'IT Services', mode: c.MODE_ITSERVICE},
-      {value: 'itemid',    text: 'Item ID',     mode: c.MODE_ITEMID},
-      {value: 'triggers',  text: 'Triggers',    mode: c.MODE_TRIGGERS}
+      {value: 'num',       text: 'Metrics',     queryType: c.MODE_METRICS},
+      {value: 'text',      text: 'Text',        queryType: c.MODE_TEXT},
+      {value: 'itservice', text: 'IT Services', queryType: c.MODE_ITSERVICE},
+      {value: 'itemid',    text: 'Item ID',     queryType: c.MODE_ITEMID},
+      {value: 'triggers',  text: 'Triggers',    queryType: c.MODE_TRIGGERS},
+      {value: 'problems',  text: 'Problems',    queryType: c.MODE_PROBLEMS},
     ];
 
     this.$scope.editorMode = {
@@ -29,7 +82,8 @@ export class ZabbixQueryController extends QueryCtrl {
       TEXT: c.MODE_TEXT,
       ITSERVICE: c.MODE_ITSERVICE,
       ITEMID: c.MODE_ITEMID,
-      TRIGGERS: c.MODE_TRIGGERS
+      TRIGGERS: c.MODE_TRIGGERS,
+      PROBLEMS: c.MODE_PROBLEMS,
     };
 
     this.slaPropertyList = [
@@ -40,15 +94,49 @@ export class ZabbixQueryController extends QueryCtrl {
       {name: "Down time", property: "downtimeTime"}
     ];
 
+    this.slaIntervals = [
+      { text: 'No interval', value: 'none' },
+      { text: 'Auto', value: 'auto' },
+      { text: '1 hour', value: '1h' },
+      { text: '12 hours', value: '12h' },
+      { text: '24 hours', value: '1d' },
+      { text: '1 week', value: '1w' },
+      { text: '1 month', value: '1M' },
+    ];
+
     this.ackFilters = [
       {text: 'all triggers', value: 2},
       {text: 'unacknowledged', value: 0},
       {text: 'acknowledged', value: 1},
     ];
 
+    this.problemAckFilters = [
+      'all triggers',
+      'unacknowledged',
+      'acknowledged'
+    ];
+
+    this.sortByFields = [
+      { text: 'Default', value: 'default' },
+      { text: 'Last change', value: 'lastchange' },
+      { text: 'Severity',    value: 'priority' },
+    ];
+
+    this.showEventsFields = [
+      { text: 'All',      value: [0,1] },
+      { text: 'OK',       value: [0] },
+      { text: 'Problems', value: 1 }
+    ];
+
+    this.showProblemsOptions = [
+      { text: 'Problems', value: 'problems' },
+      { text: 'Recent problems', value: 'recent' },
+      { text: 'History', value: 'history' },
+    ];
+
     this.resultFormats = [{ text: 'Time series', value: 'time_series' }, { text: 'Table', value: 'table' }];
 
-    this.triggerSeverity = c.TRIGGER_SEVERITY;
+    this.severityOptions = getSeverityOptions();
 
     // Map functions for bs-typeahead
     this.getGroupNames = _.bind(this.getMetricNames, this, 'groupList');
@@ -56,6 +144,7 @@ export class ZabbixQueryController extends QueryCtrl {
     this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
     this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
     this.getITServices = _.bind(this.getMetricNames, this, 'itServiceList');
+    this.getProxyNames = _.bind(this.getMetricNames, this, 'proxyList');
     this.getVariables = _.bind(this.getTemplateVariables, this);
 
     // Update metric suggestion when template variable was changed
@@ -80,40 +169,32 @@ export class ZabbixQueryController extends QueryCtrl {
       _.defaults(this, scopeDefaults);
 
       // Load default values
-      var targetDefaults = {
-        'mode': c.MODE_METRICS,
-        'group': { 'filter': "" },
-        'host': { 'filter': "" },
-        'application': { 'filter': "" },
-        'item': { 'filter': "" },
-        'functions': [],
-        'triggers': {
-          'count': true,
-          'minSeverity': 3,
-          'acknowledged': 2
-        },
-        'options': {
-          'showDisabledItems': false,
-          'skipEmptyValues': false
-        },
-        'table': {
-          'skipEmptyValues': false
-        }
-      };
-      _.defaults(target, targetDefaults);
+      const targetDefaults = getTargetDefaults();
+      _.defaultsDeep(target, targetDefaults);
+
+      if (this.panel.type === c.ZABBIX_PROBLEMS_PANEL_ID) {
+        target.queryType = c.MODE_PROBLEMS;
+      }
 
       // Create function instances from saved JSON
       target.functions = _.map(target.functions, function(func) {
         return metricFunctions.createFuncInstance(func.def, func.params);
       });
 
-      if (target.mode === c.MODE_METRICS ||
-          target.mode === c.MODE_TEXT ||
-          target.mode === c.MODE_TRIGGERS) {
-        this.initFilters();
+      if (target.queryType === c.MODE_ITSERVICE) {
+        _.defaultsDeep(target, getSLATargetDefaults());
       }
-      else if (target.mode === c.MODE_ITSERVICE) {
-        _.defaults(target, {slaProperty: {name: "SLA", property: "sla"}});
+
+      if (target.queryType === c.MODE_PROBLEMS) {
+        _.defaultsDeep(target, getProblemsTargetDefaults());
+      }
+
+      if (target.queryType === c.MODE_METRICS ||
+          target.queryType === c.MODE_TEXT ||
+          target.queryType === c.MODE_TRIGGERS ||
+          target.queryType === c.MODE_PROBLEMS) {
+        this.initFilters();
+      } else if (target.queryType === c.MODE_ITSERVICE) {
         this.suggestITServices();
       }
     };
@@ -123,14 +204,20 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   initFilters() {
-    let itemtype = _.find(this.editorModes, {'mode': this.target.mode});
+    let itemtype = _.find(this.editorModes, {'queryType': this.target.queryType});
     itemtype = itemtype ? itemtype.value : null;
-    return Promise.all([
+    const promises = [
       this.suggestGroups(),
       this.suggestHosts(),
       this.suggestApps(),
-      this.suggestItems(itemtype)
-    ]);
+      this.suggestItems(itemtype),
+    ];
+
+    if (this.target.queryType === c.MODE_PROBLEMS) {
+      promises.push(this.suggestProxies());
+    }
+
+    return Promise.all(promises);
   }
 
   // Get list of metric names for bs-typeahead directive
@@ -204,6 +291,15 @@ export class ZabbixQueryController extends QueryCtrl {
     .then(itservices => {
       this.metric.itServiceList = itservices;
       return itservices;
+    });
+  }
+
+  suggestProxies() {
+    return this.zabbix.getProxies()
+    .then(response => {
+      const proxies = _.map(response, 'host');
+      this.metric.proxyList = proxies;
+      return proxies;
     });
   }
 
@@ -302,19 +398,42 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   renderQueryOptionsText() {
-    var optionsMap = {
+    const metricOptionsMap = {
       showDisabledItems: "Show disabled items",
-      skipEmptyValues: "Skip empty values"
     };
-    var options = [];
+
+    const problemsOptionsMap = {
+      sortProblems: "Sort problems",
+      acknowledged: "Acknowledged",
+      skipEmptyValues: "Skip empty values",
+      hostsInMaintenance: "Show hosts in maintenance",
+      limit: "Limit problems",
+      hostProxy: "Show proxy",
+    };
+
+    let optionsMap = {};
+
+    if (this.target.queryType === c.MODE_METRICS) {
+      optionsMap = metricOptionsMap;
+    } else if (this.target.queryType === c.MODE_PROBLEMS || this.target.queryType === c.MODE_TRIGGERS) {
+      optionsMap = problemsOptionsMap;
+    }
+
+    const options = [];
     _.forOwn(this.target.options, (value, key) => {
-      if (value) {
+      if (value && optionsMap[key]) {
         if (value === true) {
           // Show only option name (if enabled) for boolean options
           options.push(optionsMap[key]);
         } else {
           // Show "option = value" for another options
-          options.push(optionsMap[key] + " = " + value);
+          let optionValue = value;
+          if (value && value.text) {
+            optionValue = value.text;
+          } else if (value && value.value) {
+            optionValue = value.value;
+          }
+          options.push(optionsMap[key] + " = " + optionValue);
         }
       }
     });
@@ -329,7 +448,8 @@ export class ZabbixQueryController extends QueryCtrl {
    *  2 - Text metrics
    */
   switchEditorMode(mode) {
-    this.target.mode = mode;
+    this.target.queryType = mode;
+    this.queryOptionsText = this.renderQueryOptionsText();
     this.init();
     this.targetChanged();
   }

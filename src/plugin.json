@@ -11,8 +11,8 @@
     },
     "keywords": ["zabbix"],
     "logos": {
-      "small": "img/zabbix_app_logo.svg",
-      "large": "img/zabbix_app_logo.svg"
+      "small": "img/icn-zabbix-app.svg",
+      "large": "img/icn-zabbix-app.svg"
     },
     "links": [
       {"name": "GitHub", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
@@ -27,17 +27,17 @@
       {"name": "Triggers", "path": "img/screenshot-triggers.png"}
     ],
     "version": "4.0.0-alpha",
-    "updated": "2020-01-14"
+    "updated": "2020-05-28"
   },
 
   "includes": [
     {
       "type": "datasource",
-      "name": "Zabbix Datasource"
+      "name": "Zabbix data source"
     },
     {
       "type": "panel",
-      "name": "Triggers Panel"
+      "name": "Problems panel"
     }
   ],
 

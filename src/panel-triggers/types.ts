@@ -11,6 +11,7 @@ export interface ProblemsPanelOptions {
   statusField?: boolean;
   statusIcon?: boolean;
   severityField?: boolean;
+  ackField?: boolean;
   ageField?: boolean;
   descriptionField?: boolean;
   descriptionAtNewLine?: boolean;
@@ -140,6 +141,7 @@ export interface ZBXEvent {
   object?: string;
   objectid?: string;
   acknowledged?: string;
+  severity?: string;
   hosts?: ZBXHost[];
   acknowledges?: ZBXAcknowledge[];
 }
