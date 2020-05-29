@@ -472,7 +472,8 @@ func convertHistory(history zabbix.History, items zabbix.Items) *data.Frame {
 			} else {
 				item := items[columnIndex-1]
 				if point.ItemID == item.ID {
-					field.Append(&point.Value)
+					value := point.Value
+					field.Append(&value)
 				} else {
 					field.Append(nil)
 				}
@@ -480,6 +481,11 @@ func convertHistory(history zabbix.History, items zabbix.Items) *data.Frame {
 		}
 	}
 
+	// TODO: convert to wide format
+	wideFrame, err := data.LongToWide(frame, &data.FillMissing{Mode: data.FillModeNull})
+	if err == nil {
+		return wideFrame
+	}
 	return frame
 }
 
