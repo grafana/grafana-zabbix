@@ -402,7 +402,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
   moveFunction(func, offset) {
     const index = this.target.functions.indexOf(func);
-    (_ as any).move(this.target.functions, index, index + offset);
+    // @ts-ignore
+    _.move(this.target.functions, index, index + offset);
     this.targetChanged();
   }
 
