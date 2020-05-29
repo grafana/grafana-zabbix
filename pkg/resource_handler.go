@@ -32,16 +32,17 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	var reqData ZabbixAPIResourceRequest
 	err = json.Unmarshal(body, &reqData)
 	if err != nil {
+		ds.logger.Error("Cannot unmarshal request", "error", err.Error())
 		WriteError(rw, http.StatusInternalServerError, err)
 		return
 	}
 
 	pluginCxt := httpadapter.PluginConfigFromContext(req.Context())
-	ds.logger.Debug("Received Zabbix API call", "ds", pluginCxt.DataSourceInstanceSettings.Name)
 
 	dsInstance, err := ds.GetDatasource(pluginCxt.OrgID, pluginCxt.DataSourceInstanceSettings)
 	ds.logger.Debug("Data source found", "ds", dsInstance.dsInfo.Name)
 
+	ds.logger.Debug("Invoke Zabbix API call", "ds", pluginCxt.DataSourceInstanceSettings.Name, "method", reqData.Method)
 	apiReq := &ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
 	result, err := dsInstance.ZabbixAPIQuery(req.Context(), apiReq)
 	if err != nil {
@@ -52,7 +53,7 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	WriteResponse(rw, result)
 }
 
-func WriteResponse(rw http.ResponseWriter, result *interface{}) {
+func WriteResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {
 	resultJson, err := json.Marshal(*result)
 	if err != nil {
 		WriteError(rw, http.StatusInternalServerError, err)

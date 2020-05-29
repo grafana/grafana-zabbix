@@ -29,7 +29,7 @@ const REQUESTS_TO_CACHE = [
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'getVersion', 'login', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
+  'getAcknowledges', 'getITService', 'getVersion', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
   'getExtendedEventData'
 ];
 
@@ -55,13 +55,9 @@ export class Zabbix implements ZabbixConnector {
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
   getVersion: () => Promise<string>;
-  login: () => Promise<any>;
 
   constructor(options) {
     const {
-      url,
-      username,
-      password,
       basicAuth,
       withCredentials,
       cacheTTL,
@@ -81,7 +77,7 @@ export class Zabbix implements ZabbixConnector {
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(url, username, password, basicAuth, withCredentials, datasourceId);
+    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, datasourceId);
 
     this.proxyfyRequests();
     this.cacheRequests();

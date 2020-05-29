@@ -2,10 +2,9 @@ import _ from 'lodash';
 import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
-import { ZabbixAPICore } from './zabbixAPICore';
-import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
+import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
 import { ShowProblemTypes, ZBXProblem } from '../../../types';
-import { JSONRPCRequestParams } from './types';
+import { GFHTTPRequest, JSONRPCError } from './types';
 import { getBackendSrv } from '@grafana/runtime';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
@@ -16,38 +15,21 @@ const DEFAULT_ZABBIX_VERSION = '3.0.0';
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-  url: string;
-  username: string;
-  password: string;
-  auth: string;
+  backendAPIUrl: string;
   requestOptions: { basicAuth: any; withCredentials: boolean; };
-  loginPromise: Promise<string>;
-  loginErrorCount: number;
-  maxLoginAttempts: number;
-  zabbixAPICore: ZabbixAPICore;
   getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
   version: string;
   getVersionPromise: Promise<string>;
   datasourceId: number;
 
-  constructor(api_url: string, username: string, password: string, basicAuth: any, withCredentials: boolean, datasourceId: number) {
-    this.url              = api_url;
-    this.username         = username;
-    this.password         = password;
-    this.auth             = '';
+  constructor(basicAuth: any, withCredentials: boolean, datasourceId: number) {
+    this.datasourceId = datasourceId;
+    this.backendAPIUrl = `/api/datasources/${this.datasourceId}/resources/zabbix-api`;
 
     this.requestOptions = {
       basicAuth: basicAuth,
       withCredentials: withCredentials
     };
-
-    this.datasourceId = datasourceId;
-
-    this.loginPromise = null;
-    this.loginErrorCount = 0;
-    this.maxLoginAttempts = 3;
-
-    this.zabbixAPICore = new ZabbixAPICore();
 
     this.getTrend = this.getTrend_ZBXNEXT1193;
     //getTrend = getTrend_30;
@@ -59,113 +41,42 @@ export class ZabbixAPIConnector {
   // Core method wrappers //
   //////////////////////////
 
-  request(method, params) {
-    return this.tsdbRequest(method, params).then(response => {
-      // const result = this.handleTsdbResponse(response);
-      const result = this.handleZabbixAPIResourceResponse(response);
-
-      return result;
+  request(method: string, params?: any) {
+    return this.backendAPIRequest(method, params).then(response => {
+      return response?.data?.result;
     });
   }
 
-  tsdbRequest(method, params) {
-    const tsdbRequestData = {
-      queries: [{
-        datasourceId: this.datasourceId,
-        queryType: 'zabbixAPI',
-        target: {
-          method,
-          params,
-        },
-      }],
-    };
-
-    return getBackendSrv().datasourceRequest({
-      url: `/api/datasources/${this.datasourceId}/resources/zabbix-api`,
+  backendAPIRequest(method: string, params: any = {}) {
+    const requestOptions: GFHTTPRequest = {
+      url: this.backendAPIUrl,
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       data: {
         datasourceId: this.datasourceId,
         method,
         params,
       },
-    });
+    };
 
-    // return getBackendSrv().datasourceRequest({
-    //   url: '/api/tsdb/query',
-    //   method: 'POST',
-    //   data: tsdbRequestData
-    // });
-  }
-
-  _request(method: string, params: JSONRPCRequestParams): Promise<any> {
-    if (!this.version) {
-      return this.initVersion().then(() => this.request(method, params));
+    // Set request options for basic auth
+    if (this.requestOptions.basicAuth || this.requestOptions.withCredentials) {
+      requestOptions.withCredentials = true;
+    }
+    if (this.requestOptions.basicAuth) {
+      requestOptions.headers.Authorization = this.requestOptions.basicAuth;
     }
 
-    return this.zabbixAPICore.request(this.url, method, params, this.requestOptions, this.auth)
-    .catch(error => {
-      if (isNotInitialized(error.data)) {
-        // If API not initialized yet (auth is empty), login first
-        return this.loginOnce()
-        .then(() => this.request(method, params));
-      } else if (isNotAuthorized(error.data)) {
-        // Handle auth errors
-        this.loginErrorCount++;
-        if (this.loginErrorCount > this.maxLoginAttempts) {
-          this.loginErrorCount = 0;
-          return Promise.resolve();
-        } else {
-          return this.loginOnce()
-          .then(() => this.request(method, params));
-        }
-      } else {
-        return Promise.reject(error);
-      }
-    });
-  }
-
-  handleTsdbResponse(response) {
-    if (!response || !response.data || !response.data.results) {
-      return [];
-    }
-
-    return response.data.results['zabbixAPI'].meta;
-  }
-
-  handleZabbixAPIResourceResponse(response) {
-    return response?.data;
-  }
-
-  /**
-   * When API unauthenticated or auth token expired each request produce login()
-   * call. But auth token is common to all requests. This function wraps login() method
-   * and call it once. If login() already called just wait for it (return its promise).
-   */
-  loginOnce(): Promise<string> {
-    if (!this.loginPromise) {
-      this.loginPromise = Promise.resolve(
-        this.login().then(auth => {
-          this.auth = auth;
-          this.loginPromise = null;
-          return auth;
-        })
-      );
-    }
-    return this.loginPromise;
-  }
-
-  /**
-   * Get authentication token.
-   */
-  login(): Promise<string> {
-    return this.zabbixAPICore.login(this.url, this.username, this.password, this.requestOptions);
+    return getBackendSrv().datasourceRequest(requestOptions);
   }
 
   /**
    * Get Zabbix API version
    */
   getVersion() {
-    return this.zabbixAPICore.getVersion(this.url, this.requestOptions);
+    return this.request('apiinfo.version');
   }
 
   initVersion(): Promise<string> {
@@ -730,18 +641,6 @@ function filterTriggersByAcknowledge(triggers, acknowledged) {
   }
 }
 
-function isNotAuthorized(message) {
-  return (
-    message === "Session terminated, re-login, please." ||
-    message === "Not authorised." ||
-    message === "Not authorized."
-  );
-}
-
-function isNotInitialized(message) {
-  return message === "Not initialized";
-}
-
 function getSLAInterval(intervalMs) {
   // Too many intervals may cause significant load on the database, so decrease number of resulting points
   const resolutionRatio = 100;
@@ -766,4 +665,23 @@ function buildSLAIntervals(timeRange, interval) {
   }
 
   return intervals;
+}
+
+// Define zabbix API exception type
+export class ZabbixAPIError {
+  code: number;
+  name: string;
+  data: string;
+  message: string;
+
+  constructor(error: JSONRPCError) {
+    this.code = error.code || null;
+    this.name = error.message || "";
+    this.data = error.data || "";
+    this.message = "Zabbix API Error: " + this.name + " " + this.data;
+  }
+
+  toString() {
+    return this.name + " " + this.data;
+  }
 }

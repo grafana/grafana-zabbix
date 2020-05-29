@@ -115,6 +115,10 @@ type ZabbixAPIRequest struct {
 	Params map[string]interface{} `json:"params,omitempty"`
 }
 
+type ZabbixAPIResourceResponse struct {
+	Result interface{} `json:"result,omitempty"`
+}
+
 func (r *ZabbixAPIRequest) String() string {
 	jsonRequest, _ := json.Marshal(r.Params)
 	return r.Method + string(jsonRequest)

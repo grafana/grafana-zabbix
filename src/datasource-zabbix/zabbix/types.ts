@@ -13,7 +13,6 @@ export interface ZabbixConnector {
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
   getVersion: () => Promise<string>;
-  login: () => Promise<any>;
 
   getGroups: (groupFilter?) => any;
   getHosts: (groupFilter?, hostFilter?) => any;

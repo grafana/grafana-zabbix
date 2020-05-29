@@ -170,6 +170,12 @@ func GetQueryType(tsdbReq *datasource.DatasourceRequest) (string, error) {
 // 	}, nil
 // }
 
+func BuildAPIResponse(responseData *interface{}) (*ZabbixAPIResourceResponse, error) {
+	return &ZabbixAPIResourceResponse{
+		Result: *responseData,
+	}, nil
+}
+
 // BuildResponse transforms a Zabbix API response to a DatasourceResponse
 func BuildResponse(responseData interface{}) (*datasource.DatasourceResponse, error) {
 	jsonBytes, err := json.Marshal(responseData)

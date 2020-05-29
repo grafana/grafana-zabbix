@@ -25,7 +25,7 @@ type FunctionCategories struct {
 }
 
 // ZabbixAPIQuery handles query requests to Zabbix
-func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*interface{}, error) {
+func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*ZabbixAPIResourceResponse, error) {
 	var result interface{}
 	var err error
 	var queryExistInCache bool
@@ -41,8 +41,7 @@ func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, 
 		}
 	}
 
-	// return BuildResponse(result)
-	return &result, nil
+	return BuildAPIResponse(&result)
 }
 
 func (ds *ZabbixDatasourceInstance) ZabbixAPIQueryOld(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {

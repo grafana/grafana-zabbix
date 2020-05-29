@@ -68,6 +68,11 @@ func (ds *ZabbixDatasourceInstance) ZabbixRequest(ctx context.Context, method st
 	var result *simplejson.Json
 	var err error
 
+	// Skip auth for methods that are not required it
+	if method == "apiinfo.version" {
+		return ds.ZabbixAPIRequest(ctx, method, params, ds.authToken)
+	}
+
 	for attempt := 0; attempt <= 3; attempt++ {
 		if ds.authToken == "" {
 			// Authenticate

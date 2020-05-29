@@ -10,19 +10,16 @@ import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
-import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPICore';
+import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { VariableQueryTypes, ShowProblemTypes } from './types';
 import { getBackendSrv } from '@grafana/runtime';
 import { DataSourceApi, DataSourceInstanceSettings } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi {
   name: string;
-  url: string;
   basicAuth: any;
   withCredentials: any;
 
-  username: string;
-  password: string;
   trends: boolean;
   trendsFrom: string;
   trendsRange: string;
@@ -56,15 +53,10 @@ export class ZabbixDatasource extends DataSourceApi {
     // General data source settings
     this.datasourceId     = instanceSettings.id;
     this.name             = instanceSettings.name;
-    this.url              = instanceSettings.url;
     this.basicAuth        = instanceSettings.basicAuth;
     this.withCredentials  = instanceSettings.withCredentials;
 
     const jsonData = migrations.migrateDSConfig(instanceSettings.jsonData);
-
-    // Zabbix API credentials
-    this.username         = jsonData.username;
-    this.password         = jsonData.password;
 
     // Use trends instead history since specified time
     this.trends           = jsonData.trends;
@@ -90,9 +82,6 @@ export class ZabbixDatasource extends DataSourceApi {
     this.dbConnectionRetentionPolicy = jsonData.dbConnectionRetentionPolicy;
 
     const zabbixOptions = {
-      url: this.url,
-      username: this.username,
-      password: this.password,
       basicAuth: this.basicAuth,
       withCredentials: this.withCredentials,
       cacheTTL: this.cacheTTL,
