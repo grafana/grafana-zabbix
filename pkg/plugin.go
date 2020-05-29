@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -15,7 +17,7 @@ func main() {
 
 	pluginLogger := log.New()
 	mux := http.NewServeMux()
-	ds := NewDatasource(pluginLogger, mux)
+	ds := Init(pluginLogger, mux)
 	httpResourceHandler := httpadapter.New(mux)
 
 	pluginLogger.Debug("Starting Zabbix backend datasource")
@@ -28,22 +30,25 @@ func main() {
 	if err != nil {
 		pluginLogger.Error(err.Error())
 	}
+}
 
-	// plugin.Serve(&plugin.ServeConfig{
+func Init(logger log.Logger, mux *http.ServeMux) *ZabbixDatasource {
+	variableName := "GFX_ZABBIX_DATA_PATH"
+	path, exist := os.LookupEnv(variableName)
+	if !exist {
+		logger.Error("could not read environment variable", variableName)
+	} else {
+		logger.Debug("environment variable for storage found", "variable", variableName, "value", path)
+	}
 
-	// 	HandshakeConfig: plugin.HandshakeConfig{
-	// 		ProtocolVersion:  1,
-	// 		MagicCookieKey:   "grafana_plugin_type",
-	// 		MagicCookieValue: "datasource",
-	// 	},
-	// 	Plugins: map[string]plugin.Plugin{
-	// 		"zabbix-backend-datasource": &datasource.DatasourcePluginImpl{Plugin: &ZabbixPlugin{
-	// 			datasourceCache: NewCache(10*time.Minute, 10*time.Minute),
-	// 			logger:          pluginLogger,
-	// 		}},
-	// 	},
+	ds := &ZabbixDatasource{
+		logger:          logger,
+		datasourceCache: NewCache(10*time.Minute, 10*time.Minute),
+	}
 
-	// 	// A non-nil value here enables gRPC serving for this plugin...
-	// 	GRPCServer: plugin.DefaultGRPCServer,
-	// })
+	mux.HandleFunc("/", ds.rootHandler)
+	mux.HandleFunc("/zabbix-api", ds.zabbixAPIHandler)
+	// mux.Handle("/scenarios", getScenariosHandler(logger))
+
+	return ds
 }

@@ -39,7 +39,7 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 
 	pluginCxt := httpadapter.PluginConfigFromContext(req.Context())
 
-	dsInstance, err := ds.GetDatasource(pluginCxt.OrgID, pluginCxt.DataSourceInstanceSettings)
+	dsInstance, err := ds.GetDatasource(pluginCxt)
 	ds.logger.Debug("Data source found", "ds", dsInstance.dsInfo.Name)
 
 	ds.logger.Debug("Invoke Zabbix API call", "ds", pluginCxt.DataSourceInstanceSettings.Name, "method", reqData.Method)

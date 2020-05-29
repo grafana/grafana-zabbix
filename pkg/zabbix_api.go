@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"regexp"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	simplejson "github.com/bitly/go-simplejson"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
 	"golang.org/x/net/context"
 )
@@ -99,28 +100,13 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context, tsdbReq 
 	return BuildResponse(testResponse)
 }
 
-func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) (*data.Frame, error) {
 	tStart := time.Now()
-	jsonQueries := make([]*simplejson.Json, 0)
-	for _, query := range tsdbReq.Queries {
-		json, err := simplejson.NewJson([]byte(query.ModelJson))
-		if err != nil {
-			return nil, err
-		}
 
-		jsonQueries = append(jsonQueries, json)
-	}
-
-	if len(jsonQueries) == 0 {
-		return nil, errors.New("At least one query should be provided")
-	}
-
-	firstQuery := jsonQueries[0]
-
-	groupFilter := firstQuery.GetPath("group", "filter").MustString()
-	hostFilter := firstQuery.GetPath("host", "filter").MustString()
-	appFilter := firstQuery.GetPath("application", "filter").MustString()
-	itemFilter := firstQuery.GetPath("item", "filter").MustString()
+	groupFilter := query.Group.Filter
+	hostFilter := query.Host.Filter
+	appFilter := query.Application.Filter
+	itemFilter := query.Item.Filter
 
 	ds.logger.Debug("queryNumericItems",
 		"func", "ds.getItems",
@@ -128,25 +114,25 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, tsdbR
 		"hostFilter", hostFilter,
 		"appFilter", appFilter,
 		"itemFilter", itemFilter)
-	items, err := ds.getItems(ctx, tsdbReq.GetDatasource(), groupFilter, hostFilter, appFilter, itemFilter, "num")
+	items, err := ds.getItems(ctx, groupFilter, hostFilter, appFilter, itemFilter, "num")
 	if err != nil {
 		return nil, err
 	}
 	ds.logger.Debug("queryNumericItems", "finished", "ds.getItems", "timeElapsed", time.Now().Sub(tStart))
 
-	metrics, err := ds.queryNumericDataForItems(ctx, tsdbReq, items, jsonQueries, isUseTrend(tsdbReq.GetTimeRange()))
+	frames, err := ds.queryNumericDataForItems(ctx, query, items)
 	if err != nil {
 		return nil, err
 	}
 	ds.logger.Debug("queryNumericItems", "finished", "queryNumericDataForItems", "timeElapsed", time.Now().Sub(tStart))
 
-	return BuildMetricsResponse(metrics)
+	return frames, nil
 }
 
-func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (zabbix.Items, error) {
+func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (zabbix.Items, error) {
 	tStart := time.Now()
 
-	hosts, err := ds.getHosts(ctx, dsInfo, groupFilter, hostFilter)
+	hosts, err := ds.getHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +142,7 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, dsInfo *dataso
 	}
 	ds.logger.Debug("getItems", "finished", "getHosts", "timeElapsed", time.Now().Sub(tStart))
 
-	apps, err := ds.getApps(ctx, dsInfo, groupFilter, hostFilter, appFilter)
+	apps, err := ds.getApps(ctx, groupFilter, hostFilter, appFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -169,10 +155,10 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, dsInfo *dataso
 	var allItems *simplejson.Json
 	if len(hostids) > 0 {
 		ds.logger.Debug("getAllItems", "with", "hostFilter")
-		allItems, err = ds.getAllItems(ctx, dsInfo, hostids, nil, itemType)
+		allItems, err = ds.getAllItems(ctx, hostids, nil, itemType)
 	} else if len(appids) > 0 {
 		ds.logger.Debug("getAllItems", "with", "appFilter")
-		allItems, err = ds.getAllItems(ctx, dsInfo, nil, appids, itemType)
+		allItems, err = ds.getAllItems(ctx, nil, appids, itemType)
 	}
 	ds.logger.Debug("getItems", "finished", "getAllItems", "timeElapsed", time.Now().Sub(tStart))
 
@@ -199,12 +185,13 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, dsInfo *dataso
 
 	filteredItems := zabbix.Items{}
 	for _, item := range items {
+		itemName := item.ExpandItem()
 		if item.Status == "0" {
 			if re != nil {
-				if re.MatchString(item.Name) {
+				if re.MatchString(itemName) {
 					filteredItems = append(filteredItems, item)
 				}
-			} else if item.Name == itemFilter {
+			} else if itemName == itemFilter {
 				filteredItems = append(filteredItems, item)
 			}
 		}
@@ -214,8 +201,8 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, dsInfo *dataso
 	return filteredItems, nil
 }
 
-func (ds *ZabbixDatasourceInstance) getApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string, appFilter string) ([]map[string]interface{}, error) {
-	hosts, err := ds.getHosts(ctx, dsInfo, groupFilter, hostFilter)
+func (ds *ZabbixDatasourceInstance) getApps(ctx context.Context, groupFilter string, hostFilter string, appFilter string) ([]map[string]interface{}, error) {
+	hosts, err := ds.getHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +210,7 @@ func (ds *ZabbixDatasourceInstance) getApps(ctx context.Context, dsInfo *datasou
 	for _, k := range hosts {
 		hostids = append(hostids, k["hostid"].(string))
 	}
-	allApps, err := ds.getAllApps(ctx, dsInfo, hostids)
+	allApps, err := ds.getAllApps(ctx, hostids)
 	if err != nil {
 		return nil, err
 	}
@@ -248,8 +235,8 @@ func (ds *ZabbixDatasourceInstance) getApps(ctx context.Context, dsInfo *datasou
 	return apps, nil
 }
 
-func (ds *ZabbixDatasourceInstance) getHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string, hostFilter string) ([]map[string]interface{}, error) {
-	groups, err := ds.getGroups(ctx, dsInfo, groupFilter)
+func (ds *ZabbixDatasourceInstance) getHosts(ctx context.Context, groupFilter string, hostFilter string) ([]map[string]interface{}, error) {
+	groups, err := ds.getGroups(ctx, groupFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +244,7 @@ func (ds *ZabbixDatasourceInstance) getHosts(ctx context.Context, dsInfo *dataso
 	for _, k := range groups {
 		groupids = append(groupids, k["groupid"].(string))
 	}
-	allHosts, err := ds.getAllHosts(ctx, dsInfo, groupids)
+	allHosts, err := ds.getAllHosts(ctx, groupids)
 	if err != nil {
 		return nil, err
 	}
@@ -283,8 +270,8 @@ func (ds *ZabbixDatasourceInstance) getHosts(ctx context.Context, dsInfo *dataso
 	return hosts, nil
 }
 
-func (ds *ZabbixDatasourceInstance) getGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupFilter string) ([]map[string]interface{}, error) {
-	allGroups, err := ds.getAllGroups(ctx, dsInfo)
+func (ds *ZabbixDatasourceInstance) getGroups(ctx context.Context, groupFilter string) ([]map[string]interface{}, error) {
+	allGroups, err := ds.getAllGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -307,15 +294,15 @@ func (ds *ZabbixDatasourceInstance) getGroups(ctx context.Context, dsInfo *datas
 	return groups, nil
 }
 
-func (ds *ZabbixDatasourceInstance) getAllItems(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string, appids []string, itemtype string) (*simplejson.Json, error) {
+func (ds *ZabbixDatasourceInstance) getAllItems(ctx context.Context, hostids []string, appids []string, itemtype string) (*simplejson.Json, error) {
 	params := ZabbixAPIParams{
-		"output":      &zabbixParamOutput{Fields: []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"}},
-		"sortField":   "name",
-		"webItems":    true,
-		"filter":      map[string]interface{}{},
-		"selectHosts": []string{"hostid", "name"},
-		"hostIDs":     hostids,
-		"appIDs":      appids,
+		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"},
+		"sortfield":      "name",
+		"webitems":       true,
+		"filter":         map[string]interface{}{},
+		"selectHosts":    []string{"hostid", "name"},
+		"hostids":        hostids,
+		"applicationids": appids,
 	}
 
 	filter := params["filter"].(map[string]interface{})
@@ -328,81 +315,80 @@ func (ds *ZabbixDatasourceInstance) getAllItems(ctx context.Context, dsInfo *dat
 	return ds.ZabbixRequest(ctx, "item.get", params)
 }
 
-func (ds *ZabbixDatasourceInstance) getAllApps(ctx context.Context, dsInfo *datasource.DatasourceInfo, hostids []string) (*simplejson.Json, error) {
-	params := ZabbixAPIParams{"output": &zabbixParamOutput{Mode: "extend"}, "hostIDs": hostids}
+func (ds *ZabbixDatasourceInstance) getAllApps(ctx context.Context, hostids []string) (*simplejson.Json, error) {
+	params := ZabbixAPIParams{
+		"output":  "extend",
+		"hostids": hostids,
+	}
 
 	return ds.ZabbixRequest(ctx, "application.get", params)
 }
 
-func (ds *ZabbixDatasourceInstance) getAllHosts(ctx context.Context, dsInfo *datasource.DatasourceInfo, groupids []string) (*simplejson.Json, error) {
-	params := ZabbixAPIParams{"output": &zabbixParamOutput{Fields: []string{"name", "host"}}, "sortField": "name", "groupIDs": groupids}
+func (ds *ZabbixDatasourceInstance) getAllHosts(ctx context.Context, groupids []string) (*simplejson.Json, error) {
+	params := ZabbixAPIParams{
+		"output":    []string{"name", "host"},
+		"sortfield": "name",
+		"groupids":  groupids,
+	}
 
 	return ds.ZabbixRequest(ctx, "host.get", params)
 }
 
-func (ds *ZabbixDatasourceInstance) getAllGroups(ctx context.Context, dsInfo *datasource.DatasourceInfo) (*simplejson.Json, error) {
-	params := ZabbixAPIParams{"output": &zabbixParamOutput{Fields: []string{"name"}}, "sortField": "name", "realHosts": true}
+func (ds *ZabbixDatasourceInstance) getAllGroups(ctx context.Context) (*simplejson.Json, error) {
+	params := ZabbixAPIParams{
+		"output":     []string{"name"},
+		"sortfield":  "name",
+		"real_hosts": true,
+	}
 
 	return ds.ZabbixRequest(ctx, "hostgroup.get", params)
 }
 
-func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, jsonQueries []*simplejson.Json, useTrend bool) ([]*datasource.TimeSeries, error) {
-	valueType := ds.getTrendValueType(jsonQueries)
-	consolidateBy := ds.getConsolidateBy(jsonQueries)
+func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items zabbix.Items) (*data.Frame, error) {
+	valueType := ds.getTrendValueType(query)
+	consolidateBy := ds.getConsolidateBy(query)
 
 	if consolidateBy == "" {
 		consolidateBy = valueType
 	}
 
-	history, err := ds.getHistotyOrTrend(ctx, tsdbReq, items, useTrend)
+	history, err := ds.getHistotyOrTrend(ctx, query, items)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertHistory(history, items)
+	ds.logger.Debug("Got history", "len", len(history), "items", len(items))
+	return convertHistory(history, items), nil
 }
 
-func (ds *ZabbixDatasourceInstance) getTrendValueType(jsonQueries []*simplejson.Json) string {
-	var trendFunctions []string
-	var trendValueFunc string
+func (ds *ZabbixDatasourceInstance) getTrendValueType(query *QueryModel) string {
+	trendValue := "avg"
 
-	// TODO: loop over populated categories
-	for _, j := range new(FunctionCategories).Trends {
-		trendFunctions = append(trendFunctions, j["name"].(string))
-	}
-	for _, k := range jsonQueries[0].Get("functions").MustArray() {
-		for _, j := range trendFunctions {
-			if j == k.(map[string]interface{})["def"].(map[string]interface{})["name"] {
-				trendValueFunc = j
-			}
+	for _, fn := range query.Functions {
+		if fn.Def.Name == "trendValue" && len(fn.Params) > 0 {
+			trendValue = fn.Params[0]
 		}
 	}
 
-	if trendValueFunc == "" {
-		trendValueFunc = "avg"
-	}
-
-	return trendValueFunc
+	return trendValue
 }
 
-func (ds *ZabbixDatasourceInstance) getConsolidateBy(jsonQueries []*simplejson.Json) string {
-	var consolidateBy string
+func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
+	consolidateBy := "avg"
 
-	for _, k := range jsonQueries[0].Get("functions").MustArray() {
-		if k.(map[string]interface{})["def"].(map[string]interface{})["name"] == "consolidateBy" {
-			defParams := k.(map[string]interface{})["def"].(map[string]interface{})["params"].([]interface{})
-			if len(defParams) > 0 {
-				consolidateBy = defParams[0].(string)
-			}
+	for _, fn := range query.Functions {
+		if fn.Def.Name == "consolidateBy" && len(fn.Params) > 0 {
+			consolidateBy = fn.Params[0]
 		}
 	}
 	return consolidateBy
 }
 
-func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, tsdbReq *datasource.DatasourceRequest, items zabbix.Items, useTrend bool) (zabbix.History, error) {
+func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items zabbix.Items) (zabbix.History, error) {
+	timeRange := query.TimeRange
+	useTrend := isUseTrend(timeRange)
 	allHistory := zabbix.History{}
 
-	timeRange := tsdbReq.GetTimeRange()
 	groupedItems := map[int]zabbix.Items{}
 
 	for _, j := range items {
@@ -416,12 +402,12 @@ func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, tsdbR
 		}
 
 		params := ZabbixAPIParams{
-			"output":    &zabbixParamOutput{Mode: "extend"},
-			"sortField": "clock",
-			"sortOrder": "ASC",
-			"itemIDs":   itemids,
-			"timeFrom":  timeRange.GetFromEpochMs() / 1000,
-			"timeTill":  timeRange.GetToEpochMs() / 1000,
+			"output":    "extend",
+			"sortfield": "clock",
+			"sortorder": "ASC",
+			"itemids":   itemids,
+			"time_from": timeRange.From.Unix(),
+			"time_till": timeRange.To.Unix(),
 		}
 
 		var response *simplejson.Json
@@ -453,9 +439,9 @@ func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, tsdbR
 	return allHistory, nil
 }
 
-func isUseTrend(timeRange *datasource.TimeRange) bool {
-	fromSec := timeRange.GetFromEpochMs() / 1000
-	toSec := timeRange.GetToEpochMs() / 1000
+func isUseTrend(timeRange backend.TimeRange) bool {
+	fromSec := timeRange.From.Unix()
+	toSec := timeRange.To.Unix()
 	if (fromSec < time.Now().Add(time.Hour*-7*24).Unix()) ||
 		(toSec-fromSec > (4 * 24 * time.Hour).Milliseconds()) {
 		return true
@@ -463,28 +449,38 @@ func isUseTrend(timeRange *datasource.TimeRange) bool {
 	return false
 }
 
-func convertHistory(history zabbix.History, items zabbix.Items) ([]*datasource.TimeSeries, error) {
-	seriesMap := map[string]*datasource.TimeSeries{}
+func convertHistory(history zabbix.History, items zabbix.Items) *data.Frame {
+	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
+	timeFileld.Name = "time"
+	frame := data.NewFrame("History", timeFileld)
 
 	for _, item := range items {
-		seriesMap[item.ID] = &datasource.TimeSeries{
-			Name:   fmt.Sprintf("%s %s", item.Hosts[0].Name, item.Name),
-			Points: []*datasource.Point{},
+		field := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
+		if len(item.Hosts) > 0 {
+			field.Name = fmt.Sprintf("%s: %s", item.Hosts[0].Name, item.ExpandItem())
+		} else {
+			field.Name = item.ExpandItem()
 		}
+		frame.Fields = append(frame.Fields, field)
 	}
 
 	for _, point := range history {
-		seriesMap[point.ItemID].Points = append(seriesMap[point.ItemID].Points, &datasource.Point{
-			Timestamp: point.Clock*1000 + int64(math.Round(float64(point.NS)/1000000)),
-			Value:     point.Value,
-		})
+		for columnIndex, field := range frame.Fields {
+			if columnIndex == 0 {
+				ts := time.Unix(point.Clock, point.NS)
+				field.Append(ts)
+			} else {
+				item := items[columnIndex-1]
+				if point.ItemID == item.ID {
+					field.Append(&point.Value)
+				} else {
+					field.Append(nil)
+				}
+			}
+		}
 	}
 
-	seriesList := []*datasource.TimeSeries{}
-	for _, series := range seriesMap {
-		seriesList = append(seriesList, series)
-	}
-	return seriesList, nil
+	return frame
 }
 
 func parseFilter(filter string) (*regexp.Regexp, error) {

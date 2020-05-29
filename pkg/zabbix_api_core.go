@@ -70,7 +70,7 @@ func (ds *ZabbixDatasourceInstance) ZabbixRequest(ctx context.Context, method st
 
 	// Skip auth for methods that are not required it
 	if method == "apiinfo.version" {
-		return ds.ZabbixAPIRequest(ctx, method, params, ds.authToken)
+		return ds.ZabbixAPIRequest(ctx, method, params, "")
 	}
 
 	for attempt := 0; attempt <= 3; attempt++ {
@@ -171,7 +171,7 @@ func (ds *ZabbixDatasourceInstance) ZabbixAPIRequest(ctx context.Context, method
 	}
 
 	requestTime := time.Now().Sub(tStart)
-	ds.logger.Debug("Response from Zabbix Request", "method", method, "requestTime", requestTime)
+	ds.logger.Debug("Response from Zabbix Request", "method", method, "params", params, "duration", requestTime)
 
 	return handleAPIResult(response)
 }

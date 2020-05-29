@@ -3,7 +3,79 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
+
+type ZabbixAPIResourceRequest struct {
+	DatasourceId int64                  `json:"datasourceId"`
+	Method       string                 `json:"method"`
+	Params       map[string]interface{} `json:"params,omitempty"`
+}
+
+type ZabbixAPIRequest struct {
+	Method string                 `json:"method"`
+	Params map[string]interface{} `json:"params,omitempty"`
+}
+
+type ZabbixAPIResourceResponse struct {
+	Result interface{} `json:"result,omitempty"`
+}
+
+func (r *ZabbixAPIRequest) String() string {
+	jsonRequest, _ := json.Marshal(r.Params)
+	return r.Method + string(jsonRequest)
+}
+
+// QueryModel model
+type QueryModel struct {
+	Mode        int64           `json:"mode"`
+	Group       QueryFilter     `json:"group"`
+	Host        QueryFilter     `json:"host"`
+	Application QueryFilter     `json:"application"`
+	Item        QueryFilter     `json:"item"`
+	Functions   []QueryFunction `json:"functions,omitempty"`
+	Options     QueryOptions    `json:"options"`
+
+	// Direct from the gRPC interfaces
+	TimeRange backend.TimeRange `json:"-"`
+}
+
+// QueryOptions model
+type QueryFilter struct {
+	Filter string `json:"filter"`
+}
+
+// QueryOptions model
+type QueryOptions struct {
+	ShowDisabledItems bool `json:"showDisabledItems"`
+}
+
+// QueryOptions model
+type QueryFunction struct {
+	Def    QueryFunctionDef `json:"def"`
+	Params []string         `json:"params"`
+	Text   string           `json:"text"`
+}
+
+// QueryOptions model
+type QueryFunctionDef struct {
+	Name     string `json:"name"`
+	Category string `json:"category"`
+}
+
+// ReadQuery will read and validate Settings from the DataSourceConfg
+func ReadQuery(query backend.DataQuery) (QueryModel, error) {
+	model := QueryModel{}
+	if err := json.Unmarshal(query.JSON, &model); err != nil {
+		return model, fmt.Errorf("could not read query: %w", err)
+	}
+
+	model.TimeRange = query.TimeRange
+	return model, nil
+}
+
+// Old models
 
 type connectionTestResponse struct {
 	ZabbixVersion     string              `json:"zabbixVersion"`
@@ -102,24 +174,4 @@ type ZabbixAPIParamsLegacy struct {
 	// History/Trends GET
 	TimeFrom int64 `json:"time_from,omitempty"`
 	TimeTill int64 `json:"time_till,omitempty"`
-}
-
-type ZabbixAPIResourceRequest struct {
-	DatasourceId int64                  `json:"datasourceId"`
-	Method       string                 `json:"method"`
-	Params       map[string]interface{} `json:"params,omitempty"`
-}
-
-type ZabbixAPIRequest struct {
-	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params,omitempty"`
-}
-
-type ZabbixAPIResourceResponse struct {
-	Result interface{} `json:"result,omitempty"`
-}
-
-func (r *ZabbixAPIRequest) String() string {
-	jsonRequest, _ := json.Marshal(r.Params)
-	return r.Method + string(jsonRequest)
 }

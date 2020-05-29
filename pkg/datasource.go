@@ -3,10 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"net/http"
-	"os"
-	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
@@ -15,6 +13,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // ZabbixPlugin implements the Grafana backend interface and forwards queries to the ZabbixDatasourceInstance
@@ -27,27 +26,6 @@ type ZabbixPlugin struct {
 type ZabbixDatasource struct {
 	datasourceCache *Cache
 	logger          log.Logger
-}
-
-func NewDatasource(logger log.Logger, mux *http.ServeMux) *ZabbixDatasource {
-	variableName := "GFX_ZABBIX_DATA_PATH"
-	path, exist := os.LookupEnv(variableName)
-	if !exist {
-		logger.Error("could not read environment variable", variableName)
-	} else {
-		logger.Debug("environment variable for storage found", "variable", variableName, "value", path)
-	}
-
-	ds := &ZabbixDatasource{
-		logger:          logger,
-		datasourceCache: NewCache(10*time.Minute, 10*time.Minute),
-	}
-
-	mux.HandleFunc("/", ds.rootHandler)
-	mux.HandleFunc("/zabbix-api", ds.zabbixAPIHandler)
-	// mux.Handle("/scenarios", getScenariosHandler(logger))
-
-	return ds
 }
 
 // CheckHealth checks if the plugin is running properly
@@ -67,11 +45,34 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 	return res, nil
 }
 
-func (gds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	qdr := backend.NewQueryDataResponse()
+
+	zabbixDS, err := ds.GetDatasource(req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, q := range req.Queries {
 		res := backend.DataResponse{}
+		query, err := ReadQuery(q)
+		ds.logger.Debug("DS query", "query", q)
+		ds.logger.Debug("DS query parsed", "query", query)
+		if err != nil {
+			res.Error = err
+		} else if len(query.Functions) > 0 {
+			res.Error = errors.New("Zabbix queries with functions are not supported")
+		} else if query.Mode != 0 {
+			res.Error = errors.New("Non-metrics queries are not supported")
+		} else {
+			frame, err := zabbixDS.queryNumericItems(ctx, &query)
+			ds.logger.Debug("DS got frame", "frame", frame)
+			if err != nil {
+				res.Error = err
+			} else {
+				res.Frames = []*data.Frame{frame}
+			}
+		}
 		qdr.Responses[q.RefID] = res
 	}
 
@@ -120,8 +121,9 @@ func (ds *ZabbixDatasource) NewZabbixDatasource(dsInfo *backend.DataSourceInstan
 // }
 
 // GetDatasource Returns cached datasource or creates new one
-func (ds *ZabbixDatasource) GetDatasource(orgID int64, dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDatasourceInstance, error) {
-	dsInfoHash := HashDatasourceInfo(dsInfo)
+func (ds *ZabbixDatasource) GetDatasource(pluginContext backend.PluginContext) (*ZabbixDatasourceInstance, error) {
+	dsSettings := pluginContext.DataSourceInstanceSettings
+	dsInfoHash := HashDatasourceInfo(dsSettings)
 
 	if cachedData, ok := ds.datasourceCache.Get(dsInfoHash); ok {
 		if cachedDS, ok := cachedData.(*ZabbixDatasourceInstance); ok {
@@ -129,9 +131,9 @@ func (ds *ZabbixDatasource) GetDatasource(orgID int64, dsInfo *backend.DataSourc
 		}
 	}
 
-	ds.logger.Debug(fmt.Sprintf("Datasource cache miss (Org %d Id %d '%s' %s)", orgID, dsInfo.ID, dsInfo.Name, dsInfoHash))
+	ds.logger.Debug(fmt.Sprintf("Datasource cache miss (Org %d Id %d '%s' %s)", pluginContext.OrgID, dsSettings.ID, dsSettings.Name, dsInfoHash))
 
-	dsInstance, err := ds.NewZabbixDatasource(dsInfo)
+	dsInstance, err := ds.NewZabbixDatasource(pluginContext.DataSourceInstanceSettings)
 	if err != nil {
 		return nil, err
 	}
