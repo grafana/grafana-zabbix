@@ -37,7 +37,7 @@ func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, 
 		dsInstance.queryCache.Set(HashString(apiReq.String()), result)
 		if err != nil {
 			dsInstance.logger.Debug("ZabbixAPIQuery", "error", err)
-			return nil, errors.New("ZabbixAPIQuery is not implemented yet")
+			return nil, err
 		}
 	}
 
