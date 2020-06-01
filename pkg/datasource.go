@@ -164,6 +164,16 @@ func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		return nil, err
 	}
 
+	if zabbixSettingsDTO.TrendsFrom == "" {
+		zabbixSettingsDTO.TrendsFrom = "7d"
+	}
+	if zabbixSettingsDTO.TrendsRange == "" {
+		zabbixSettingsDTO.TrendsRange = "4d"
+	}
+	if zabbixSettingsDTO.CacheTTL == "" {
+		zabbixSettingsDTO.CacheTTL = "1h"
+	}
+
 	trendsFrom, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsFrom)
 	if err != nil {
 		return nil, err
@@ -202,6 +212,7 @@ func (ds *ZabbixDatasource) GetDatasource(pluginContext backend.PluginContext) (
 
 	ds.logger.Debug(fmt.Sprintf("Datasource cache miss (Org %d Id %d '%s' %s)", pluginContext.OrgID, dsSettings.ID, dsSettings.Name, dsInfoHash))
 
+	ds.logger.Debug("DS config", "settings", pluginContext.DataSourceInstanceSettings)
 	dsInstance, err := ds.NewZabbixDatasource(pluginContext.DataSourceInstanceSettings)
 	if err != nil {
 		ds.logger.Error("Error initializing datasource", "error", err)

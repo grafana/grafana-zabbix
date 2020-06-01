@@ -37,6 +37,11 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 
 	pluginCxt := httpadapter.PluginConfigFromContext(req.Context())
 	dsInstance, err := ds.GetDatasource(pluginCxt)
+	if err != nil {
+		ds.logger.Error("Error loading datasource", "error", err)
+		WriteError(rw, http.StatusInternalServerError, err)
+		return
+	}
 
 	apiReq := &ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
 

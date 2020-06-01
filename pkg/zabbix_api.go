@@ -29,13 +29,13 @@ func (ds *ZabbixDatasourceInstance) ZabbixQuery(ctx context.Context, apiReq *Zab
 	cachedResult, queryExistInCache := ds.queryCache.Get(requestHash)
 	if !queryExistInCache {
 		resultJson, err = ds.ZabbixRequest(ctx, apiReq.Method, apiReq.Params)
+		if err != nil {
+			return nil, err
+		}
 
 		if _, ok := NotCachedMethods[apiReq.Method]; !ok {
 			ds.logger.Debug("Write result to cache", "method", apiReq.Method)
 			ds.queryCache.Set(requestHash, resultJson)
-		}
-		if err != nil {
-			return nil, err
 		}
 	} else {
 		var ok bool
