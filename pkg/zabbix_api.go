@@ -16,6 +16,8 @@ import (
 var NotCachedMethods = map[string]bool{
 	"history.get": true,
 	"trend.get":   true,
+	"problem.get": true,
+	"trigger.get": true,
 }
 
 // ZabbixQuery handles query requests to Zabbix
@@ -36,7 +38,11 @@ func (ds *ZabbixDatasourceInstance) ZabbixQuery(ctx context.Context, apiReq *Zab
 			return nil, err
 		}
 	} else {
-		resultJson = cachedResult.(*simplejson.Json)
+		var ok bool
+		resultJson, ok = cachedResult.(*simplejson.Json)
+		if !ok {
+			resultJson = simplejson.New()
+		}
 	}
 
 	return resultJson, nil

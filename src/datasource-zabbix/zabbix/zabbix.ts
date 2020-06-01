@@ -138,37 +138,34 @@ export class Zabbix implements ZabbixConnector {
    *    }
    * ```
    */
-  // testDataSource() {
-  //   let zabbixVersion;
-  //   let dbConnectorStatus;
-  //   return this.getVersion()
-  //   .then(version => {
-  //     zabbixVersion = version;
-  //     return this.login();
-  //   })
-  //   .then(() => {
-  //     if (this.enableDirectDBConnection) {
-  //       return this.dbConnector.testDataSource();
-  //     } else {
-  //       return Promise.resolve();
-  //     }
-  //   })
-  //   .catch(error => {
-  //     if (error instanceof ZabbixNotImplemented) {
-  //       return Promise.resolve();
-  //     }
-  //     return Promise.reject(error);
-  //   })
-  //   .then(testResult => {
-  //     if (testResult) {
-  //       dbConnectorStatus = {
-  //         dsType: this.dbConnector.datasourceTypeName,
-  //         dsName: this.dbConnector.datasourceName
-  //       };
-  //     }
-  //     return { zabbixVersion, dbConnectorStatus };
-  //   });
-  // }
+  testDataSource() {
+    let zabbixVersion;
+    let dbConnectorStatus;
+    return this.getVersion()
+    .then(version => {
+      zabbixVersion = version;
+      return this.getAllGroups();
+    })
+    .then(() => {
+      if (this.enableDirectDBConnection) {
+        return this.dbConnector.testDataSource();
+      } else {
+        return Promise.resolve();
+      }
+    })
+    .catch(error => {
+      return Promise.reject(error);
+    })
+    .then(testResult => {
+      if (testResult) {
+        dbConnectorStatus = {
+          dsType: this.dbConnector.datasourceTypeName,
+          dsName: this.dbConnector.datasourceName
+        };
+      }
+      return { zabbixVersion, dbConnectorStatus };
+    });
+  }
 
   getItemsFromTarget(target, options) {
     const parts = ['group', 'host', 'application', 'item'];

@@ -1,4 +1,22 @@
-import { SelectableValue, DataQuery } from "@grafana/data";
+import { SelectableValue, DataQuery, DataSourceJsonData } from "@grafana/data";
+
+export interface ZabbixDSOptions extends DataSourceJsonData {
+  username: string;
+  password?: string;
+  trends: boolean;
+  trendsFrom: string;
+  trendsRange: string;
+  cacheTTL: string;
+  dbConnectionEnable: boolean;
+  dbConnectionDatasourceId?: number;
+  dbConnectionDatasourceName?: string;
+  dbConnectionRetentionPolicy?: string;
+  disableReadOnlyUsersAck: boolean;
+}
+
+export interface ZabbixSecureJSONData {
+  password?: string;
+}
 
 export interface ZabbixConnectionInfo {
   zabbixVersion: string;

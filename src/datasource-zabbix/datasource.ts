@@ -11,11 +11,11 @@ import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
-import { VariableQueryTypes, ShowProblemTypes } from './types';
+import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes } from './types';
 import { getBackendSrv } from '@grafana/runtime';
 import { DataSourceApi, DataSourceInstanceSettings } from '@grafana/data';
 
-export class ZabbixDatasource extends DataSourceApi {
+export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
   basicAuth: any;
   withCredentials: any;
@@ -39,7 +39,7 @@ export class ZabbixDatasource extends DataSourceApi {
   replaceTemplateVars: (target: any, scopedVars?: any) => any;
 
   /** @ngInject */
-  constructor(instanceSettings: DataSourceInstanceSettings, private templateSrv, private zabbixAlertingSrv) {
+  constructor(instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>, private templateSrv, private zabbixAlertingSrv) {
     super(instanceSettings);
 
     this.templateSrv = templateSrv;
@@ -503,11 +503,7 @@ export class ZabbixDatasource extends DataSourceApi {
    */
   async testDatasource() {
     try {
-      const result = await this.doTSDBConnectionTest();
-      /**
-       * @type {ZabbixConnectionInfo}
-       */
-      const { zabbixVersion, dbConnectorStatus } = result.results["zabbixAPI"].meta;
+      const { zabbixVersion, dbConnectorStatus } = await this.zabbix.testDataSource();
       let message = `Zabbix API version: ${zabbixVersion}`;
       if (dbConnectorStatus) {
         message += `, DB connector type: ${dbConnectorStatus.dsType}`;
