@@ -16,6 +16,7 @@ import (
 
 // ZabbixRequest checks authentication and makes a request to the Zabbix API
 func (ds *ZabbixDatasourceInstance) ZabbixRequest(ctx context.Context, method string, params ZabbixAPIParams) (*simplejson.Json, error) {
+	ds.logger.Debug("Invoke Zabbix API request", "ds", ds.dsInfo.Name, "method", method)
 	var result *simplejson.Json
 	var err error
 

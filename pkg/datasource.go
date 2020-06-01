@@ -131,7 +131,7 @@ func newZabbixDatasource(dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDat
 		url:        zabbixURL,
 		dsInfo:     dsInfo,
 		Settings:   zabbixSettings,
-		queryCache: NewCache(10*time.Minute, 10*time.Minute),
+		queryCache: NewCache(zabbixSettings.CacheTTL, 10*time.Minute),
 		httpClient: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
