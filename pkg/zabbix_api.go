@@ -78,26 +78,21 @@ func (ds *ZabbixDatasourceInstance) ZabbixAPIQueryOld(ctx context.Context, tsdbR
 }
 
 // TestConnection checks authentication and version of the Zabbix API and returns that info
-func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	err := ds.loginWithDs(ctx)
+func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string, error) {
+	_, err := ds.getAllGroups(ctx)
 	if err != nil {
-		return BuildErrorResponse(fmt.Errorf("Authentication failed: %s", err)), nil
+		return "", err
 	}
 
 	response, err := ds.ZabbixAPIRequest(ctx, "apiinfo.version", ZabbixAPIParams{}, "")
 	if err != nil {
-		ds.logger.Debug("TestConnection", "error", err)
-		return BuildErrorResponse(fmt.Errorf("Version check failed: %s", err)), nil
+		return "", err
 	}
 
 	resultByte, _ := response.MarshalJSON()
 	ds.logger.Debug("TestConnection", "result", string(resultByte))
 
-	testResponse := connectionTestResponse{
-		ZabbixVersion: response.MustString(),
-	}
-
-	return BuildResponse(testResponse)
+	return string(resultByte), nil
 }
 
 func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) (*data.Frame, error) {

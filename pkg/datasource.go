@@ -50,16 +50,24 @@ type ZabbixDatasourceInstance struct {
 func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
 
-	// Just checking that the plugin exe is alive and running
-	if req.PluginContext.DataSourceInstanceSettings == nil {
-		res.Status = backend.HealthStatusOk
-		res.Message = "Plugin is running"
+	dsInstance, err := ds.GetDatasource(req.PluginContext)
+	if err != nil {
+		res.Status = backend.HealthStatusError
+		res.Message = "Error getting datasource instance"
+		ds.logger.Error("Error getting datasource instance", "err", err)
 		return res, nil
 	}
 
-	// TODO?  actually check datasource settings?
+	message, err := dsInstance.TestConnection(ctx)
+	if err != nil {
+		res.Status = backend.HealthStatusError
+		res.Message = err.Error()
+		ds.logger.Error("Error connecting zabbix", "err", err)
+		return res, nil
+	}
+
 	res.Status = backend.HealthStatusOk
-	res.Message = "Success"
+	res.Message = message
 	return res, nil
 }
 
