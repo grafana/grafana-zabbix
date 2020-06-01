@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
-	simplejson "github.com/bitly/go-simplejson"
-	"github.com/grafana/grafana_plugin_model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 
@@ -34,8 +32,8 @@ type ZabbixDatasource struct {
 	logger          log.Logger
 }
 
-// ZabbixDatasourceInstance stores state about a specific datasource and provides methods to make
-// requests to the Zabbix API
+// ZabbixDatasourceInstance stores state about a specific datasource
+// and provides methods to make requests to the Zabbix API
 type ZabbixDatasourceInstance struct {
 	url        *url.URL
 	authToken  string
@@ -193,34 +191,6 @@ func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 	return zabbixSettings, nil
 }
 
-// Query receives requests from the Grafana backend. Requests are filtered by query type and sent to the
-// applicable ZabbixDatasource.
-// func (p *ZabbixPlugin) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (resp *datasource.DatasourceResponse, err error) {
-// 	zabbixDS, err := p.GetDatasource(tsdbReq)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	queryType, err := GetQueryType(tsdbReq)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	switch queryType {
-// 	case "zabbixAPI":
-// 		resp, err = zabbixDS.ZabbixAPIQuery(ctx, tsdbReq)
-// 	case "query":
-// 		resp, err = zabbixDS.queryNumericItems(ctx, tsdbReq)
-// 	case "connectionTest":
-// 		resp, err = zabbixDS.TestConnection(ctx, tsdbReq)
-// 	default:
-// 		err = errors.New("Query not implemented")
-// 		return BuildErrorResponse(err), nil
-// 	}
-
-// 	return
-// }
-
 // GetDatasource Returns cached datasource or creates new one
 func (ds *ZabbixDatasource) GetDatasource(pluginContext backend.PluginContext) (*ZabbixDatasourceInstance, error) {
 	dsSettings := pluginContext.DataSourceInstanceSettings
@@ -244,79 +214,8 @@ func (ds *ZabbixDatasource) GetDatasource(pluginContext backend.PluginContext) (
 	return dsInstance, nil
 }
 
-// GetQueryType determines the query type from a query or list of queries
-func GetQueryType(tsdbReq *datasource.DatasourceRequest) (string, error) {
-	queryType := "query"
-	if len(tsdbReq.Queries) > 0 {
-		firstQuery := tsdbReq.Queries[0]
-		queryJSON, err := simplejson.NewJson([]byte(firstQuery.ModelJson))
-		if err != nil {
-			return "", err
-		}
-		queryType = queryJSON.Get("queryType").MustString("query")
-	}
-	return queryType, nil
-}
-
-// // BuildDataResponse transforms a Zabbix API response to the QueryDataResponse
-// func BuildDataResponse(responseData interface{}) (*backend.QueryDataResponse, error) {
-// 	jsonBytes, err := json.Marshal(responseData)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return &backend.QueryDataResponse{
-// 		Responses: map[string]backend.DataResponse{
-// 			"zabbixAPI": {
-// 				Frames: ,
-// 			}
-// 		},
-// 	}, nil
-// }
-
 func BuildAPIResponse(responseData *interface{}) (*ZabbixAPIResourceResponse, error) {
 	return &ZabbixAPIResourceResponse{
 		Result: *responseData,
-	}, nil
-}
-
-// BuildResponse transforms a Zabbix API response to a DatasourceResponse
-func BuildResponse(responseData interface{}) (*datasource.DatasourceResponse, error) {
-	jsonBytes, err := json.Marshal(responseData)
-	if err != nil {
-		return nil, err
-	}
-
-	return &datasource.DatasourceResponse{
-		Results: []*datasource.QueryResult{
-			{
-				RefId:    "zabbixAPI",
-				MetaJson: string(jsonBytes),
-			},
-		},
-	}, nil
-}
-
-// BuildErrorResponse creates a QueryResult that forwards an error to the front-end
-func BuildErrorResponse(err error) *datasource.DatasourceResponse {
-	return &datasource.DatasourceResponse{
-		Results: []*datasource.QueryResult{
-			{
-				RefId: "zabbixAPI",
-				Error: err.Error(),
-			},
-		},
-	}
-}
-
-// BuildMetricsResponse builds a response object using a given TimeSeries array
-func BuildMetricsResponse(metrics []*datasource.TimeSeries) (*datasource.DatasourceResponse, error) {
-	return &datasource.DatasourceResponse{
-		Results: []*datasource.QueryResult{
-			{
-				RefId:  "zabbixMetrics",
-				Series: metrics,
-			},
-		},
 	}, nil
 }

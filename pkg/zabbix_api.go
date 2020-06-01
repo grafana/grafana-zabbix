@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -11,19 +10,8 @@ import (
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana_plugin_model/go/datasource"
 	"golang.org/x/net/context"
 )
-
-type FunctionCategories struct {
-	Transform []map[string]interface{}
-	Aggregate []map[string]interface{}
-	Filter    []map[string]interface{}
-	Trends    []map[string]interface{}
-	Time      []map[string]interface{}
-	Alias     []map[string]interface{}
-	Special   []map[string]interface{}
-}
 
 // ZabbixAPIQuery handles query requests to Zabbix
 func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*ZabbixAPIResourceResponse, error) {
@@ -43,38 +31,6 @@ func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, 
 	}
 
 	return BuildAPIResponse(&result)
-}
-
-func (ds *ZabbixDatasourceInstance) ZabbixAPIQueryOld(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
-	result, queryExistInCache := ds.queryCache.Get(HashString(tsdbReq.String()))
-
-	if !queryExistInCache {
-		queries := []requestModel{}
-		for _, query := range tsdbReq.Queries {
-			req := requestModel{}
-			err := json.Unmarshal([]byte(query.GetModelJson()), &req)
-
-			if err != nil {
-				return nil, err
-			}
-			queries = append(queries, req)
-		}
-
-		if len(queries) == 0 {
-			return nil, errors.New("At least one query should be provided")
-		}
-
-		query := queries[0].Target
-		var err error
-		result, err = ds.ZabbixRequest(ctx, query.Method, query.Params)
-		ds.queryCache.Set(HashString(tsdbReq.String()), result)
-		if err != nil {
-			ds.logger.Debug("ZabbixAPIQuery", "error", err)
-			return nil, errors.New("ZabbixAPIQuery is not implemented yet")
-		}
-	}
-
-	return BuildResponse(result)
 }
 
 // TestConnection checks authentication and version of the Zabbix API and returns that info
