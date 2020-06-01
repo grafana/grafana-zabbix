@@ -3,9 +3,30 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
+
+// ZabbixDatasourceSettingsDTO model
+type ZabbixDatasourceSettingsDTO struct {
+	Trends      bool   `json:"trends"`
+	TrendsFrom  string `json:"trendsFrom"`
+	TrendsRange string `json:"trendsRange"`
+	CacheTTL    string `json:"cacheTTL"`
+
+	DisableReadOnlyUsersAck bool `json:"disableReadOnlyUsersAck"`
+}
+
+// ZabbixDatasourceSettings model
+type ZabbixDatasourceSettings struct {
+	Trends      bool
+	TrendsFrom  time.Duration
+	TrendsRange time.Duration
+	CacheTTL    time.Duration
+
+	DisableReadOnlyUsersAck bool `json:"disableReadOnlyUsersAck"`
+}
 
 type ZabbixAPIResourceRequest struct {
 	DatasourceId int64                  `json:"datasourceId"`

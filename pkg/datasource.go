@@ -2,10 +2,16 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
+	"net/url"
+	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana_plugin_model/go/datasource"
 	hclog "github.com/hashicorp/go-hclog"
@@ -26,6 +32,18 @@ type ZabbixPlugin struct {
 type ZabbixDatasource struct {
 	datasourceCache *Cache
 	logger          log.Logger
+}
+
+// ZabbixDatasourceInstance stores state about a specific datasource and provides methods to make
+// requests to the Zabbix API
+type ZabbixDatasourceInstance struct {
+	url        *url.URL
+	authToken  string
+	dsInfo     *backend.DataSourceInstanceSettings
+	Settings   *ZabbixDatasourceSettings
+	queryCache *Cache
+	httpClient *http.Client
+	logger     log.Logger
 }
 
 // CheckHealth checks if the plugin is running properly
@@ -92,6 +110,81 @@ func (ds *ZabbixDatasource) NewZabbixDatasource(dsInfo *backend.DataSourceInstan
 	return dsInstance, nil
 }
 
+// newZabbixDatasource returns an initialized ZabbixDatasource
+func newZabbixDatasource(dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDatasourceInstance, error) {
+	zabbixURLStr := dsInfo.URL
+	zabbixURL, err := url.Parse(zabbixURLStr)
+	if err != nil {
+		return nil, err
+	}
+
+	zabbixSettings, err := readZabbixSettings(dsInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ZabbixDatasourceInstance{
+		url:        zabbixURL,
+		dsInfo:     dsInfo,
+		Settings:   zabbixSettings,
+		queryCache: NewCache(10*time.Minute, 10*time.Minute),
+		httpClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					Renegotiation: tls.RenegotiateFreelyAsClient,
+				},
+				Proxy: http.ProxyFromEnvironment,
+				Dial: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).Dial,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				MaxIdleConns:          100,
+				IdleConnTimeout:       90 * time.Second,
+			},
+			Timeout: time.Duration(time.Second * 30),
+		},
+	}, nil
+}
+
+func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) (*ZabbixDatasourceSettings, error) {
+	zabbixSettingsDTO := &ZabbixDatasourceSettingsDTO{
+		TrendsFrom:  "7d",
+		TrendsRange: "4d",
+		CacheTTL:    "1h",
+	}
+
+	err := json.Unmarshal(dsInstanceSettings.JSONData, &zabbixSettingsDTO)
+	if err != nil {
+		return nil, err
+	}
+
+	trendsFrom, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsFrom)
+	if err != nil {
+		return nil, err
+	}
+
+	trendsRange, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsRange)
+	if err != nil {
+		return nil, err
+	}
+
+	cacheTTL, err := gtime.ParseInterval(zabbixSettingsDTO.CacheTTL)
+	if err != nil {
+		return nil, err
+	}
+
+	zabbixSettings := &ZabbixDatasourceSettings{
+		Trends:      zabbixSettingsDTO.Trends,
+		TrendsFrom:  trendsFrom,
+		TrendsRange: trendsRange,
+		CacheTTL:    cacheTTL,
+	}
+
+	return zabbixSettings, nil
+}
+
 // Query receives requests from the Grafana backend. Requests are filtered by query type and sent to the
 // applicable ZabbixDatasource.
 // func (p *ZabbixPlugin) Query(ctx context.Context, tsdbReq *datasource.DatasourceRequest) (resp *datasource.DatasourceResponse, err error) {
@@ -135,6 +228,7 @@ func (ds *ZabbixDatasource) GetDatasource(pluginContext backend.PluginContext) (
 
 	dsInstance, err := ds.NewZabbixDatasource(pluginContext.DataSourceInstanceSettings)
 	if err != nil {
+		ds.logger.Error("Error initializing datasource", "error", err)
 		return nil, err
 	}
 

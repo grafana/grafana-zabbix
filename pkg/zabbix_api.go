@@ -34,7 +34,7 @@ func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, 
 
 	if !queryExistInCache {
 		result, err = dsInstance.ZabbixRequest(ctx, apiReq.Method, apiReq.Params)
-		dsInstance.logger.Debug("ZabbixAPIQuery", "result", result)
+		// dsInstance.logger.Debug("ZabbixAPIQuery", "result", result)
 		dsInstance.queryCache.Set(HashString(apiReq.String()), result)
 		if err != nil {
 			dsInstance.logger.Debug("ZabbixAPIQuery", "error", err)
@@ -386,7 +386,8 @@ func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
 
 func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items zabbix.Items) (zabbix.History, error) {
 	timeRange := query.TimeRange
-	useTrend := isUseTrend(timeRange)
+	useTrend := ds.isUseTrend(timeRange)
+	ds.logger.Debug("Use trends", "use", useTrend)
 	allHistory := zabbix.History{}
 
 	groupedItems := map[int]zabbix.Items{}
@@ -439,11 +440,18 @@ func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query
 	return allHistory, nil
 }
 
-func isUseTrend(timeRange backend.TimeRange) bool {
+func (ds *ZabbixDatasourceInstance) isUseTrend(timeRange backend.TimeRange) bool {
+	if !ds.Settings.Trends {
+		return false
+	}
+
+	trendsFrom := ds.Settings.TrendsFrom
+	trendsRange := ds.Settings.TrendsRange
 	fromSec := timeRange.From.Unix()
 	toSec := timeRange.To.Unix()
-	if (fromSec < time.Now().Add(time.Hour*-7*24).Unix()) ||
-		(toSec-fromSec > (4 * 24 * time.Hour).Milliseconds()) {
+	rangeSec := float64(toSec - fromSec)
+
+	if (fromSec < time.Now().Add(-trendsFrom).Unix()) || (rangeSec > trendsRange.Seconds()) {
 		return true
 	}
 	return false
