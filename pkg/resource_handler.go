@@ -16,8 +16,6 @@ func (ds *ZabbixDatasource) rootHandler(rw http.ResponseWriter, req *http.Reques
 }
 
 func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.Request) {
-	ds.logger.Debug("Received resource call", "url", req.URL.String(), "method", req.Method)
-
 	if req.Method != http.MethodPost {
 		return
 	}
@@ -38,14 +36,14 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	}
 
 	pluginCxt := httpadapter.PluginConfigFromContext(req.Context())
-
 	dsInstance, err := ds.GetDatasource(pluginCxt)
-	ds.logger.Debug("Data source found", "ds", dsInstance.dsInfo.Name)
 
 	ds.logger.Debug("Invoke Zabbix API call", "ds", pluginCxt.DataSourceInstanceSettings.Name, "method", reqData.Method)
 	apiReq := &ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
+
 	result, err := dsInstance.ZabbixAPIQuery(req.Context(), apiReq)
 	if err != nil {
+		ds.logger.Error("Zabbix API request error", "error", err)
 		WriteError(rw, http.StatusInternalServerError, err)
 		return
 	}

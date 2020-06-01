@@ -81,7 +81,6 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		res := backend.DataResponse{}
 		query, err := ReadQuery(q)
 		ds.logger.Debug("DS query", "query", q)
-		ds.logger.Debug("DS query parsed", "query", query)
 		if err != nil {
 			res.Error = err
 		} else if len(query.Functions) > 0 {
@@ -90,7 +89,6 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 			res.Error = errors.New("Non-metrics queries are not supported")
 		} else {
 			frame, err := zabbixDS.queryNumericItems(ctx, &query)
-			ds.logger.Debug("DS got frame", "frame", frame)
 			if err != nil {
 				res.Error = err
 			} else {

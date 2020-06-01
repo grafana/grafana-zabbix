@@ -9,7 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	simplejson "github.com/bitly/go-simplejson"
 	"golang.org/x/net/context/ctxhttp"
@@ -116,14 +115,10 @@ func (ds *ZabbixDatasourceInstance) ZabbixAPIRequest(ctx context.Context, method
 		Body: rc,
 	}
 
-	tStart := time.Now()
 	response, err := makeHTTPRequest(ctx, ds.httpClient, req)
 	if err != nil {
 		return nil, err
 	}
-
-	requestTime := time.Now().Sub(tStart)
-	ds.logger.Debug("Response from Zabbix Request", "method", method, "params", params, "duration", requestTime)
 
 	return handleAPIResult(response)
 }

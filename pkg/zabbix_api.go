@@ -14,18 +14,16 @@ import (
 )
 
 // ZabbixAPIQuery handles query requests to Zabbix
-func (dsInstance *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*ZabbixAPIResourceResponse, error) {
+func (ds *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*ZabbixAPIResourceResponse, error) {
 	var result interface{}
 	var err error
 	var queryExistInCache bool
-	result, queryExistInCache = dsInstance.queryCache.Get(HashString(apiReq.String()))
+	result, queryExistInCache = ds.queryCache.Get(HashString(apiReq.String()))
 
 	if !queryExistInCache {
-		result, err = dsInstance.ZabbixRequest(ctx, apiReq.Method, apiReq.Params)
-		// dsInstance.logger.Debug("ZabbixAPIQuery", "result", result)
-		dsInstance.queryCache.Set(HashString(apiReq.String()), result)
+		result, err = ds.ZabbixRequest(ctx, apiReq.Method, apiReq.Params)
+		ds.queryCache.Set(HashString(apiReq.String()), result)
 		if err != nil {
-			dsInstance.logger.Debug("ZabbixAPIQuery", "error", err)
 			return nil, err
 		}
 	}
@@ -52,37 +50,25 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string,
 }
 
 func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) (*data.Frame, error) {
-	tStart := time.Now()
-
 	groupFilter := query.Group.Filter
 	hostFilter := query.Host.Filter
 	appFilter := query.Application.Filter
 	itemFilter := query.Item.Filter
 
-	ds.logger.Debug("queryNumericItems",
-		"func", "ds.getItems",
-		"groupFilter", groupFilter,
-		"hostFilter", hostFilter,
-		"appFilter", appFilter,
-		"itemFilter", itemFilter)
 	items, err := ds.getItems(ctx, groupFilter, hostFilter, appFilter, itemFilter, "num")
 	if err != nil {
 		return nil, err
 	}
-	ds.logger.Debug("queryNumericItems", "finished", "ds.getItems", "timeElapsed", time.Now().Sub(tStart))
 
 	frames, err := ds.queryNumericDataForItems(ctx, query, items)
 	if err != nil {
 		return nil, err
 	}
-	ds.logger.Debug("queryNumericItems", "finished", "queryNumericDataForItems", "timeElapsed", time.Now().Sub(tStart))
 
 	return frames, nil
 }
 
 func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (zabbix.Items, error) {
-	tStart := time.Now()
-
 	hosts, err := ds.getHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -91,7 +77,6 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter st
 	for _, k := range hosts {
 		hostids = append(hostids, k["hostid"].(string))
 	}
-	ds.logger.Debug("getItems", "finished", "getHosts", "timeElapsed", time.Now().Sub(tStart))
 
 	apps, err := ds.getApps(ctx, groupFilter, hostFilter, appFilter)
 	if err != nil {
@@ -101,17 +86,13 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter st
 	for _, l := range apps {
 		appids = append(appids, l["applicationid"].(string))
 	}
-	ds.logger.Debug("getItems", "finished", "getApps", "timeElapsed", time.Now().Sub(tStart))
 
 	var allItems *simplejson.Json
 	if len(hostids) > 0 {
-		ds.logger.Debug("getAllItems", "with", "hostFilter")
 		allItems, err = ds.getAllItems(ctx, hostids, nil, itemType)
 	} else if len(appids) > 0 {
-		ds.logger.Debug("getAllItems", "with", "appFilter")
 		allItems, err = ds.getAllItems(ctx, nil, appids, itemType)
 	}
-	ds.logger.Debug("getItems", "finished", "getAllItems", "timeElapsed", time.Now().Sub(tStart))
 
 	var items zabbix.Items
 
@@ -147,8 +128,6 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter st
 			}
 		}
 	}
-	ds.logger.Debug("getItems", "found", len(items), "matches", len(filteredItems))
-	ds.logger.Debug("getItems", "totalTimeTaken", time.Now().Sub(tStart))
 	return filteredItems, nil
 }
 
@@ -182,7 +161,6 @@ func (ds *ZabbixDatasourceInstance) getApps(ctx context.Context, groupFilter str
 			apps = append(apps, i.(map[string]interface{}))
 		}
 	}
-	ds.logger.Debug("getapps", "found", len(allApps.MustArray()), "matches", len(apps))
 	return apps, nil
 }
 
@@ -217,7 +195,7 @@ func (ds *ZabbixDatasourceInstance) getHosts(ctx context.Context, groupFilter st
 		}
 
 	}
-	ds.logger.Debug("getHosts", "found", len(allHosts.MustArray()), "matches", len(hosts))
+
 	return hosts, nil
 }
 
@@ -308,7 +286,6 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		return nil, err
 	}
 
-	ds.logger.Debug("Got history", "len", len(history), "items", len(items))
 	return convertHistory(history, items), nil
 }
 
@@ -338,7 +315,6 @@ func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
 func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items zabbix.Items) (zabbix.History, error) {
 	timeRange := query.TimeRange
 	useTrend := ds.isUseTrend(timeRange)
-	ds.logger.Debug("Use trends", "use", useTrend)
 	allHistory := zabbix.History{}
 
 	groupedItems := map[int]zabbix.Items{}
