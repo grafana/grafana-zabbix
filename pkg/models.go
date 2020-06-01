@@ -35,9 +35,11 @@ type ZabbixAPIResourceRequest struct {
 }
 
 type ZabbixAPIRequest struct {
-	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params,omitempty"`
+	Method string          `json:"method"`
+	Params ZabbixAPIParams `json:"params,omitempty"`
 }
+
+type ZabbixAPIParams = map[string]interface{}
 
 type ZabbixAPIResourceResponse struct {
 	Result interface{} `json:"result,omitempty"`
@@ -152,8 +154,6 @@ func (p *zabbixParamOutput) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("Unsupported type: %w", err)
 
 }
-
-type ZabbixAPIParams = map[string]interface{}
 
 type ZabbixAPIParamsLegacy struct {
 	Output    *zabbixParamOutput     `json:"output,omitempty"`

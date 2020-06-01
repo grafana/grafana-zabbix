@@ -18,26 +18,37 @@ var NotCachedMethods = map[string]bool{
 	"trend.get":   true,
 }
 
-// ZabbixAPIQuery handles query requests to Zabbix
-func (ds *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*ZabbixAPIResourceResponse, error) {
-	var result interface{}
+// ZabbixQuery handles query requests to Zabbix
+func (ds *ZabbixDatasourceInstance) ZabbixQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*simplejson.Json, error) {
+	var resultJson *simplejson.Json
 	var err error
-	var queryExistInCache bool
 	requestHash := HashString(apiReq.String())
-	result, queryExistInCache = ds.queryCache.Get(requestHash)
 
+	cachedResult, queryExistInCache := ds.queryCache.Get(requestHash)
 	if !queryExistInCache {
-		result, err = ds.ZabbixRequest(ctx, apiReq.Method, apiReq.Params)
+		resultJson, err = ds.ZabbixRequest(ctx, apiReq.Method, apiReq.Params)
 
 		if _, ok := NotCachedMethods[apiReq.Method]; !ok {
 			ds.logger.Debug("Write result to cache", "method", apiReq.Method)
-			ds.queryCache.Set(HashString(apiReq.String()), result)
+			ds.queryCache.Set(requestHash, resultJson)
 		}
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		resultJson = cachedResult.(*simplejson.Json)
 	}
 
+	return resultJson, nil
+}
+
+// ZabbixAPIQuery handles query requests to Zabbix
+func (ds *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*ZabbixAPIResourceResponse, error) {
+	resultJson, err := ds.ZabbixQuery(ctx, apiReq)
+	if err != nil {
+		return nil, err
+	}
+	result := resultJson.Interface()
 	return BuildAPIResponse(&result)
 }
 
@@ -251,7 +262,7 @@ func (ds *ZabbixDatasourceInstance) getAllItems(ctx context.Context, hostids []s
 		filter["value_type"] = []int{1, 2, 4}
 	}
 
-	return ds.ZabbixRequest(ctx, "item.get", params)
+	return ds.ZabbixQuery(ctx, &ZabbixAPIRequest{Method: "item.get", Params: params})
 }
 
 func (ds *ZabbixDatasourceInstance) getAllApps(ctx context.Context, hostids []string) (*simplejson.Json, error) {
@@ -260,7 +271,7 @@ func (ds *ZabbixDatasourceInstance) getAllApps(ctx context.Context, hostids []st
 		"hostids": hostids,
 	}
 
-	return ds.ZabbixRequest(ctx, "application.get", params)
+	return ds.ZabbixQuery(ctx, &ZabbixAPIRequest{Method: "application.get", Params: params})
 }
 
 func (ds *ZabbixDatasourceInstance) getAllHosts(ctx context.Context, groupids []string) (*simplejson.Json, error) {
@@ -270,7 +281,7 @@ func (ds *ZabbixDatasourceInstance) getAllHosts(ctx context.Context, groupids []
 		"groupids":  groupids,
 	}
 
-	return ds.ZabbixRequest(ctx, "host.get", params)
+	return ds.ZabbixQuery(ctx, &ZabbixAPIRequest{Method: "host.get", Params: params})
 }
 
 func (ds *ZabbixDatasourceInstance) getAllGroups(ctx context.Context) (*simplejson.Json, error) {
@@ -280,7 +291,7 @@ func (ds *ZabbixDatasourceInstance) getAllGroups(ctx context.Context) (*simplejs
 		"real_hosts": true,
 	}
 
-	return ds.ZabbixRequest(ctx, "hostgroup.get", params)
+	return ds.ZabbixQuery(ctx, &ZabbixAPIRequest{Method: "hostgroup.get", Params: params})
 }
 
 func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items zabbix.Items) (*data.Frame, error) {
@@ -351,10 +362,10 @@ func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query
 		var response *simplejson.Json
 		var err error
 		if useTrend {
-			response, err = ds.ZabbixRequest(ctx, "trend.get", params)
+			response, err = ds.ZabbixQuery(ctx, &ZabbixAPIRequest{Method: "trend.get", Params: params})
 		} else {
 			params["history"] = &k
-			response, err = ds.ZabbixRequest(ctx, "history.get", params)
+			response, err = ds.ZabbixQuery(ctx, &ZabbixAPIRequest{Method: "history.get", Params: params})
 		}
 
 		if err != nil {
