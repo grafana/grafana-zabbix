@@ -20,6 +20,9 @@ export const ConfigEditor = (props: Props) => {
       ...options,
       jsonData: {
         trends: true,
+        trendsFrom: '',
+        trendsRange: '',
+        cacheTTL: '',
         ...options.jsonData,
       },
     });
@@ -198,7 +201,7 @@ const jsonDataChangeHandler = (
     ...value,
     jsonData: {
       ...value.jsonData,
-      [key]: event.currentTarget.value || (event.target as HTMLInputElement).checked,
+      [key]: event.currentTarget.value,
     },
   });
 };
