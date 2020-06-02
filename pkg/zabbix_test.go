@@ -123,7 +123,7 @@ func TestLoginError(t *testing.T) {
 
 func TestLoginWithDs(t *testing.T) {
 	zabbixDatasource := mockZabbixDataSource(`{"result":"sampleResult"}`, 200)
-	err := zabbixDatasource.loginWithDs(context.Background())
+	err := zabbixDatasource.login(context.Background())
 
 	assert.Equal(t, "sampleResult", zabbixDatasource.authToken)
 	assert.Nil(t, err)
@@ -132,7 +132,7 @@ func TestLoginWithDs(t *testing.T) {
 func TestLoginWithDsError(t *testing.T) {
 	errResponse := `{"error":{"code":-32500,"message":"Application error.","data":"Login name or password is incorrect."}}`
 	zabbixDatasource := mockZabbixDataSource(errResponse, 200)
-	err := zabbixDatasource.loginWithDs(context.Background())
+	err := zabbixDatasource.login(context.Background())
 
 	assert.Equal(t, "", zabbixDatasource.authToken)
 	assert.NotNil(t, err)

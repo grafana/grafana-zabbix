@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -14,10 +15,11 @@ import (
 )
 
 var NotCachedMethods = map[string]bool{
-	"history.get": true,
-	"trend.get":   true,
-	"problem.get": true,
-	"trigger.get": true,
+	"history.get":     true,
+	"trend.get":       true,
+	"problem.get":     true,
+	"trigger.get":     true,
+	"apiinfo.version": true,
 }
 
 // ZabbixQuery handles query requests to Zabbix
@@ -48,7 +50,7 @@ func (ds *ZabbixDatasourceInstance) ZabbixQuery(ctx context.Context, apiReq *Zab
 	return resultJson, nil
 }
 
-// ZabbixAPIQuery handles query requests to Zabbix
+// ZabbixAPIQuery handles query requests to Zabbix API
 func (ds *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*ZabbixAPIResourceResponse, error) {
 	resultJson, err := ds.ZabbixQuery(ctx, apiReq)
 	if err != nil {
@@ -65,7 +67,7 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string,
 		return "", err
 	}
 
-	response, err := ds.ZabbixAPIRequest(ctx, "apiinfo.version", ZabbixAPIParams{}, "")
+	response, err := ds.ZabbixRequest(ctx, "apiinfo.version", ZabbixAPIParams{})
 	if err != nil {
 		return "", err
 	}
@@ -74,6 +76,56 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string,
 	ds.logger.Debug("TestConnection", "result", string(resultByte))
 
 	return string(resultByte), nil
+}
+
+// ZabbixRequest checks authentication and makes a request to the Zabbix API
+func (ds *ZabbixDatasourceInstance) ZabbixRequest(ctx context.Context, method string, params ZabbixAPIParams) (*simplejson.Json, error) {
+	ds.logger.Debug("Invoke Zabbix API request", "ds", ds.dsInfo.Name, "method", method)
+	var result *simplejson.Json
+	var err error
+
+	// Skip auth for methods that are not required it
+	if method == "apiinfo.version" {
+		return ds.zabbixAPI.RequestUnauthenticated(ctx, method, params)
+	}
+
+	result, err = ds.zabbixAPI.Request(ctx, method, params)
+	if err == zabbixapi.ErrNotAuthenticated {
+		err = ds.login(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return ds.ZabbixRequest(ctx, method, params)
+	} else if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func (ds *ZabbixDatasourceInstance) login(ctx context.Context) error {
+	jsonData, err := simplejson.NewJson(ds.dsInfo.JSONData)
+	if err != nil {
+		return err
+	}
+
+	zabbixLogin := jsonData.Get("username").MustString()
+	var zabbixPassword string
+	if securePassword, exists := ds.dsInfo.DecryptedSecureJSONData["password"]; exists {
+		zabbixPassword = securePassword
+	} else {
+		// Fallback
+		zabbixPassword = jsonData.Get("password").MustString()
+	}
+
+	err = ds.zabbixAPI.Authenticate(ctx, zabbixLogin, zabbixPassword)
+	if err != nil {
+		ds.logger.Error("Zabbix authentication error", "error", err)
+		return err
+	}
+	ds.logger.Debug("Successfully authenticated", "url", ds.zabbixAPI.GetUrl().String(), "user", zabbixLogin)
+
+	return nil
 }
 
 func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) (*data.Frame, error) {

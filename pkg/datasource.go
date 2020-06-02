@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 
@@ -37,11 +38,23 @@ type ZabbixDatasource struct {
 type ZabbixDatasourceInstance struct {
 	url        *url.URL
 	authToken  string
+	zabbixAPI  *zabbixapi.ZabbixAPI
 	dsInfo     *backend.DataSourceInstanceSettings
 	Settings   *ZabbixDatasourceSettings
 	queryCache *Cache
 	httpClient *http.Client
 	logger     log.Logger
+}
+
+// NewZabbixDatasource returns new datasource instance.
+func (ds *ZabbixDatasource) NewZabbixDatasource(dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDatasourceInstance, error) {
+	dsInstance, err := newZabbixDatasource(dsInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	dsInstance.logger = ds.logger
+	return dsInstance, nil
 }
 
 // CheckHealth checks if the plugin is running properly
@@ -104,20 +117,15 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 // func (p *ZabbixPlugin) GetDatasourceById(datasourceId int64) (*ZabbixDatasourceInstance, error) {
 // }
 
-func (ds *ZabbixDatasource) NewZabbixDatasource(dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDatasourceInstance, error) {
-	dsInstance, err := newZabbixDatasource(dsInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	dsInstance.logger = ds.logger
-	return dsInstance, nil
-}
-
 // newZabbixDatasource returns an initialized ZabbixDatasource
 func newZabbixDatasource(dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDatasourceInstance, error) {
 	zabbixURLStr := dsInfo.URL
 	zabbixURL, err := url.Parse(zabbixURLStr)
+	if err != nil {
+		return nil, err
+	}
+
+	zabbixAPI, err := zabbixapi.New(dsInfo.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -128,6 +136,7 @@ func newZabbixDatasource(dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDat
 	}
 
 	return &ZabbixDatasourceInstance{
+		zabbixAPI:  zabbixAPI,
 		url:        zabbixURL,
 		dsInfo:     dsInfo,
 		Settings:   zabbixSettings,
