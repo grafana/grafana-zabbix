@@ -16,6 +16,17 @@ export const ConfigEditor = (props: Props) => {
 
   // Apply some defaults on initial render
   useEffect(() => {
+    const { jsonData, secureJsonFields } = options;
+
+    // Set secureJsonFields.password to password and then remove it from config
+    const { password, ...restJsonData } = jsonData;
+    if (!secureJsonFields?.password) {
+      if (!options.secureJsonData) {
+        options.secureJsonData = {};
+      }
+      options.secureJsonData.password = password;
+    }
+
     onOptionsChange({
       ...options,
       jsonData: {
@@ -23,7 +34,7 @@ export const ConfigEditor = (props: Props) => {
         trendsFrom: '',
         trendsRange: '',
         cacheTTL: '',
-        ...options.jsonData,
+        ...restJsonData,
       },
     });
 
@@ -231,10 +242,6 @@ const secureJsonDataChangeHandler = (
 ) => {
   onChange({
     ...value,
-    jsonData: {
-      ...value.jsonData,
-      password: '',
-    },
     secureJsonData: {
       ...value.secureJsonData,
       [key]: event.currentTarget.value,
