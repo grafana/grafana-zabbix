@@ -4,7 +4,7 @@ import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
 import { ShowProblemTypes, ZBXProblem } from '../../../types';
-import { GFHTTPRequest, JSONRPCError } from './types';
+import { GFHTTPRequest, JSONRPCError, ZBXScript, APIExecuteScriptResponse } from './types';
 import { getBackendSrv } from '@grafana/runtime';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
@@ -628,6 +628,24 @@ export class ZabbixAPIConnector {
     };
 
     return this.request('proxy.get', params);
+  }
+
+  getScripts(hostids: string[], options?: any): Promise<ZBXScript[]> {
+    const params: any = {
+      output: 'extend',
+      hostids,
+    };
+
+    return this.request('script.get', params).then(utils.mustArray);
+  }
+
+  executeScript(hostid: string, scriptid: string): Promise<APIExecuteScriptResponse> {
+    const params: any = {
+      hostid,
+      scriptid,
+    };
+
+    return this.request('script.execute', params);
   }
 }
 

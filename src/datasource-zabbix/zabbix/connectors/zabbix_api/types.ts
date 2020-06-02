@@ -37,6 +37,24 @@ export interface ZabbixRequestResponse {
   data?: JSONRPCResponse<any>;
 }
 
-export type ZabbixAPIResponse<T> = T;
+export type ZabbixAPIResponse<T> = Promise<T>;
 
 export type APILoginResponse = string;
+
+export interface ZBXScript {
+  scriptid: string;
+  name?: string;
+  command?: string;
+  host_access?: string;
+  usrgrpid?: string;
+  groupid?: string;
+  description?: string;
+  confirmation?: string;
+  type?: string;
+  execute_on?: string;
+}
+
+export interface APIExecuteScriptResponse {
+  response: 'success' | 'failed';
+  value?: string;
+}

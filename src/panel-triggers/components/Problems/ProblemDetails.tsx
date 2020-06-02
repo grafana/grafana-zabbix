@@ -2,13 +2,15 @@ import React, { PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
 import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
+import { ZBXScript, APIExecuteScriptResponse } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import { ZBXItem, GFTimeRange, RTRow } from '../../types';
 import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
 import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import { FAIcon, ExploreButton, AckButton, Tooltip, ModalController } from '../../../components';
+import { FAIcon, ExploreButton, AckButton, Tooltip, ModalController, ExecScriptButton } from '../../../components';
+import { ExecScriptModal, ExecScriptData } from '../ExecScriptModal';
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
@@ -17,6 +19,8 @@ interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   panelId?: number;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
+  getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
+  onExecuteScript(problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse>;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
@@ -74,6 +78,16 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
     return this.props.onProblemAck(problem, data);
   }
 
+  getScripts = () => {
+    const problem = this.props.original as ProblemDTO;
+    return this.props.getScripts(problem);
+  }
+
+  onExecuteScript = (data: ExecScriptData) => {
+    const problem = this.props.original as ProblemDTO;
+    return this.props.onExecuteScript(problem, data.scriptid);
+  }
+
   render() {
     const problem = this.props.original as ProblemDTO;
     const alerts = this.state.alerts;
@@ -102,6 +116,20 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
             <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
             {problem.showAckButton &&
               <div className="problem-actions">
+                <ModalController>
+                  {({ showModal, hideModal }) => (
+                    <ExecScriptButton
+                      className="navbar-button navbar-button--settings"
+                      onClick={() => {
+                        showModal(ExecScriptModal, {
+                          getScripts: this.getScripts,
+                          onSubmit: this.onExecuteScript,
+                          onDismiss: hideModal,
+                        });
+                      }}
+                    />
+                  )}
+                </ModalController>
                 <ModalController>
                   {({ showModal, hideModal }) => (
                     <AckButton
