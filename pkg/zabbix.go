@@ -60,6 +60,12 @@ func (ds *ZabbixDatasourceInstance) ZabbixAPIQuery(ctx context.Context, apiReq *
 	return BuildAPIResponse(&result)
 }
 
+func BuildAPIResponse(responseData *interface{}) (*ZabbixAPIResourceResponse, error) {
+	return &ZabbixAPIResourceResponse{
+		Result: *responseData,
+	}, nil
+}
+
 // TestConnection checks authentication and version of the Zabbix API and returns that info
 func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string, error) {
 	_, err := ds.getAllGroups(ctx)
