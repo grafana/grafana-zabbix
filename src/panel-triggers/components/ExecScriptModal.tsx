@@ -1,13 +1,9 @@
 import React, { PureComponent } from 'react';
 import { cx, css } from 'emotion';
-import { ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_CHANGE_SEVERITY, ZBX_ACK_ACTION_CLOSE } from '../../datasource-zabbix/constants';
-import { ZBXScript, APIExecuteScriptResponse } from '../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
-import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable } from '@grafana/ui';
 import { GrafanaTheme, SelectableValue } from '@grafana/data';
+import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable } from '@grafana/ui';
+import { ZBXScript, APIExecuteScriptResponse } from '../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import { FAIcon } from '../../components';
-
-const KEYBOARD_ENTER_KEY = 13;
-const KEYBOARD_ESCAPE_KEY = 27;
 
 interface Props extends Themeable {
   getScripts(): Promise<ZBXScript[]>;
@@ -172,7 +168,7 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
 }
 
 const getStyles = stylesFactory((theme: GrafanaTheme) => {
-  const red = theme.colors.red || (theme as any).palette.red;
+  const red = theme.palette.red;
   return {
     modal: css`
       width: 600px;
@@ -187,7 +183,7 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
       border-color: ${red};
       border-radius: 2px;
       outline-offset: 2px;
-      box-shadow: 0 0 0 2px ${theme.colors.pageBg || (theme as any).colors.bg1}, 0 0 0px 4px ${red};
+      box-shadow: 0 0 0 2px ${theme.colors.bg1}, 0 0 0px 4px ${red};
     `,
     scriptCommandContainer: css`
       margin-bottom: ${theme.spacing.md};
