@@ -135,8 +135,9 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     this.props.onSubmit(ackData).then(() => {
       this.dismiss();
     }).catch(err => {
+      const errorMessage = err.data?.message || err.data?.error || err.data || err.statusText || '';
       this.setState({
-        ackError: err.message || err.data,
+        ackError: errorMessage,
         loading: false,
       });
     });

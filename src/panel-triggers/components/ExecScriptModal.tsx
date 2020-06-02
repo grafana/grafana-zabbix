@@ -93,7 +93,7 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
         this.setState({ error: true, errorMessage: message, loading: false });
       }
     }).catch(err => {
-      let errorMessage = err.message || err.data || '';
+      let errorMessage = err.data?.message || err.data?.error || err.data || err.statusText || '';
       errorMessage = this.formatResult(errorMessage);
       this.setState({
         error: true,
