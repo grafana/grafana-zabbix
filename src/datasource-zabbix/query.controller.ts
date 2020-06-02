@@ -58,6 +58,32 @@ function getSeverityOptions() {
 }
 
 export class ZabbixQueryController extends QueryCtrl {
+  static templateUrl: string;
+
+  zabbix: any;
+  replaceTemplateVars: any;
+  templateSrv: any;
+  editorModes: Array<{ value: string; text: string; queryType: number; }>;
+  slaPropertyList: Array<{ name: string; property: string; }>;
+  slaIntervals: Array<{ text: string; value: string; }>;
+  ackFilters: Array<{ text: string; value: number; }>;
+  problemAckFilters: string[];
+  sortByFields: Array<{ text: string; value: string; }>;
+  showEventsFields: Array<{ text: string; value: number[]; } | { text: string; value: number; }>;
+  showProblemsOptions: Array<{ text: string; value: string; }>;
+  resultFormats: Array<{ text: string; value: string; }>;
+  severityOptions: Array<{ val: number; text: string; }>;
+  getGroupNames: (...args: any[]) => any;
+  getHostNames: (...args: any[]) => any;
+  getApplicationNames: (...args: any[]) => any;
+  getItemNames: (...args: any[]) => any;
+  getITServices: (...args: any[]) => any;
+  getProxyNames: (...args: any[]) => any;
+  getVariables: (...args: any[]) => any;
+  init: () => void;
+  queryOptionsText: string;
+  metric: any;
+  showQueryOptions: boolean;
 
   /** @ngInject */
   constructor($scope, $injector, $rootScope, $sce, templateSrv) {
@@ -156,12 +182,12 @@ export class ZabbixQueryController extends QueryCtrl {
     });
 
     this.init = function() {
-      var target = this.target;
+      let target = this.target;
 
       // Migrate old targets
       target = migrations.migrate(target);
 
-      var scopeDefaults = {
+      const scopeDefaults = {
         metric: {},
         oldTarget: _.cloneDeep(this.target),
         queryOptionsText: this.renderQueryOptionsText()
@@ -177,7 +203,7 @@ export class ZabbixQueryController extends QueryCtrl {
       }
 
       // Create function instances from saved JSON
-      target.functions = _.map(target.functions, function(func) {
+      target.functions = _.map(target.functions, func => {
         return metricFunctions.createFuncInstance(func.def, func.params);
       });
 
@@ -204,8 +230,8 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   initFilters() {
-    let itemtype = _.find(this.editorModes, {'queryType': this.target.queryType});
-    itemtype = itemtype ? itemtype.value : null;
+    const mode = _.find(this.editorModes, {'queryType': this.target.queryType});
+    const itemtype = mode ? mode.value : null;
     const promises = [
       this.suggestGroups(),
       this.suggestHosts(),
@@ -222,7 +248,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
   // Get list of metric names for bs-typeahead directive
   getMetricNames(metricList, addAllValue) {
-    let metrics = _.uniq(_.map(this.metric[metricList], 'name'));
+    const metrics = _.uniq(_.map(this.metric[metricList], 'name'));
 
     // Add template variables
     _.forEach(this.templateSrv.variables, variable => {
@@ -251,7 +277,7 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   suggestHosts() {
-    let groupFilter = this.replaceTemplateVars(this.target.group.filter);
+    const groupFilter = this.replaceTemplateVars(this.target.group.filter);
     return this.zabbix.getAllHosts(groupFilter)
     .then(hosts => {
       this.metric.hostList = hosts;
@@ -260,8 +286,8 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   suggestApps() {
-    let groupFilter = this.replaceTemplateVars(this.target.group.filter);
-    let hostFilter = this.replaceTemplateVars(this.target.host.filter);
+    const groupFilter = this.replaceTemplateVars(this.target.group.filter);
+    const hostFilter = this.replaceTemplateVars(this.target.host.filter);
     return this.zabbix.getAllApps(groupFilter, hostFilter)
     .then(apps => {
       this.metric.appList = apps;
@@ -270,10 +296,10 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   suggestItems(itemtype = 'num') {
-    let groupFilter = this.replaceTemplateVars(this.target.group.filter);
-    let hostFilter = this.replaceTemplateVars(this.target.host.filter);
-    let appFilter = this.replaceTemplateVars(this.target.application.filter);
-    let options = {
+    const groupFilter = this.replaceTemplateVars(this.target.group.filter);
+    const hostFilter = this.replaceTemplateVars(this.target.host.filter);
+    const appFilter = this.replaceTemplateVars(this.target.application.filter);
+    const options = {
       itemtype: itemtype,
       showDisabledItems: this.target.options.showDisabledItems
     };
@@ -312,11 +338,14 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   onTargetBlur() {
-    var newTarget = _.cloneDeep(this.target);
+    const newTarget = _.cloneDeep(this.target);
     if (!_.isEqual(this.oldTarget, this.target)) {
       this.oldTarget = newTarget;
       this.targetChanged();
     }
+  }
+  oldTarget(oldTarget: any, target: any) {
+    throw new Error("Method not implemented.");
   }
 
   onVariableChange() {
@@ -354,7 +383,7 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   addFunction(funcDef) {
-    var newFunc = metricFunctions.createFuncInstance(funcDef);
+    const newFunc = metricFunctions.createFuncInstance(funcDef);
     newFunc.added = true;
     this.target.functions.push(newFunc);
 
@@ -373,12 +402,12 @@ export class ZabbixQueryController extends QueryCtrl {
 
   moveFunction(func, offset) {
     const index = this.target.functions.indexOf(func);
-    _.move(this.target.functions, index, index + offset);
+    (_ as any).move(this.target.functions, index, index + offset);
     this.targetChanged();
   }
 
   moveAliasFuncLast() {
-    var aliasFunc = _.find(this.target.functions, func => {
+    const aliasFunc = _.find(this.target.functions, func => {
       return func.def.category === 'Alias';
     });
 
