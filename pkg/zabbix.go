@@ -14,12 +14,14 @@ import (
 	"golang.org/x/net/context"
 )
 
-var NotCachedMethods = map[string]bool{
-	"history.get":     true,
-	"trend.get":       true,
-	"problem.get":     true,
-	"trigger.get":     true,
-	"apiinfo.version": true,
+var CachedMethods = map[string]bool{
+	"hostgroup.get":   true,
+	"host.get":        true,
+	"application.get": true,
+	"item.get":        true,
+	"service.get":     true,
+	"usermacro.get":   true,
+	"proxy.get":       true,
 }
 
 // ZabbixQuery handles query requests to Zabbix
@@ -35,7 +37,7 @@ func (ds *ZabbixDatasourceInstance) ZabbixQuery(ctx context.Context, apiReq *Zab
 			return nil, err
 		}
 
-		if _, ok := NotCachedMethods[apiReq.Method]; !ok {
+		if _, ok := CachedMethods[apiReq.Method]; ok {
 			ds.logger.Debug("Write result to cache", "method", apiReq.Method)
 			ds.queryCache.Set(requestHash, resultJson)
 		}
