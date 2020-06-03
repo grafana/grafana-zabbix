@@ -3,38 +3,72 @@ package cache
 import (
 	"testing"
 
-	"github.com/grafana/grafana_plugin_model/go/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"gotest.tools/assert"
 )
 
 func TestHashDatasourceInfo(t *testing.T) {
 	tests := []struct {
-		name   string
-		dsInfo *datasource.DatasourceInfo
-		want   string
+		name         string
+		dsInfoBefore *backend.DataSourceInstanceSettings
+		dsInfoAfter  *backend.DataSourceInstanceSettings
+		equal        bool
 	}{
 		{
-			name: "Normal Datasource Info",
-			dsInfo: &datasource.DatasourceInfo{
-				Id:       1,
-				OrgId:    1,
+			name: "Same datasource settings",
+			dsInfoBefore: &backend.DataSourceInstanceSettings{
+				ID:       1,
 				Name:     "Zabbix",
-				Type:     "alexanderzobnin-zabbix-datasource",
-				Url:      "https://localhost:3306/zabbix/api_jsonrpc.php",
-				JsonData: "{}",
-				DecryptedSecureJsonData: map[string]string{
+				URL:      "https://localhost:3306/zabbix/api_jsonrpc.php",
+				JSONData: []byte("{}"),
+				DecryptedSecureJSONData: map[string]string{
 					"username": "grafanaZabbixUser",
 					"password": "$uper$ecr3t!!!",
 				},
 			},
-			want: "ed161f89179c46d9a578e4d7e92ff95444222e0a",
+			dsInfoAfter: &backend.DataSourceInstanceSettings{
+				ID:       1,
+				Name:     "Zabbix",
+				URL:      "https://localhost:3306/zabbix/api_jsonrpc.php",
+				JSONData: []byte("{}"),
+				DecryptedSecureJSONData: map[string]string{
+					"username": "grafanaZabbixUser",
+					"password": "$uper$ecr3t!!!",
+				},
+			},
+			equal: true,
 		},
-		// Can't find a case where the input causes the encoder to fail
+		{
+			name: "Password changed",
+			dsInfoBefore: &backend.DataSourceInstanceSettings{
+				ID:       1,
+				Name:     "Zabbix",
+				URL:      "https://localhost:3306/zabbix/api_jsonrpc.php",
+				JSONData: []byte("{}"),
+				DecryptedSecureJSONData: map[string]string{
+					"username": "grafanaZabbixUser",
+					"password": "$uper$ecr3t!!!",
+				},
+			},
+			dsInfoAfter: &backend.DataSourceInstanceSettings{
+				ID:       1,
+				Name:     "Zabbix",
+				URL:      "https://localhost:3306/zabbix/api_jsonrpc.php",
+				JSONData: []byte("{}"),
+				DecryptedSecureJSONData: map[string]string{
+					"username": "grafanaZabbixUser",
+					"password": "new$uper$ecr3t!!!",
+				},
+			},
+			equal: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := HashDatasourceInfo(tt.dsInfo)
-			assert.Equal(t, tt.want, got)
+			before := HashDatasourceInfo(tt.dsInfoBefore)
+			after := HashDatasourceInfo(tt.dsInfoAfter)
+			got := before == after
+			assert.Equal(t, tt.equal, got)
 		})
 	}
 }
@@ -42,18 +76,16 @@ func TestHashDatasourceInfo(t *testing.T) {
 func BenchmarkHashDatasourceInfo(b *testing.B) {
 	benches := []struct {
 		name   string
-		dsInfo *datasource.DatasourceInfo
+		dsInfo *backend.DataSourceInstanceSettings
 	}{
 		{
 			"Normal Datasource Info",
-			&datasource.DatasourceInfo{
-				Id:       4,
-				OrgId:    6,
+			&backend.DataSourceInstanceSettings{
+				ID:       4,
 				Name:     "MyZabbixDatasource",
-				Type:     "alexanderzobnin-zabbix-datasource",
-				Url:      "https://localhost:3306/zabbix/api_jsonrpc.php",
-				JsonData: `{ "addThresholds": true, "disableReadOnlyUsersAck": true }`,
-				DecryptedSecureJsonData: map[string]string{
+				URL:      "https://localhost:3306/zabbix/api_jsonrpc.php",
+				JSONData: []byte(`{ "addThresholds": true, "disableReadOnlyUsersAck": true }`),
+				DecryptedSecureJSONData: map[string]string{
 					"username": "grafanaZabbixUser",
 					"password": "$uper$ecr3t!!!",
 				},
