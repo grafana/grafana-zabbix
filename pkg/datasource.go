@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 
@@ -16,7 +17,7 @@ import (
 )
 
 type ZabbixDatasource struct {
-	datasourceCache *Cache
+	datasourceCache *cache.Cache
 	logger          log.Logger
 }
 
@@ -26,7 +27,7 @@ type ZabbixDatasourceInstance struct {
 	zabbixAPI  *zabbixapi.ZabbixAPI
 	dsInfo     *backend.DataSourceInstanceSettings
 	Settings   *ZabbixDatasourceSettings
-	queryCache *Cache
+	queryCache *cache.Cache
 	logger     log.Logger
 }
 
@@ -46,7 +47,7 @@ func NewZabbixDatasourceInstance(dsInfo *backend.DataSourceInstanceSettings) (*Z
 		dsInfo:     dsInfo,
 		zabbixAPI:  zabbixAPI,
 		Settings:   zabbixSettings,
-		queryCache: NewCache(zabbixSettings.CacheTTL, 10*time.Minute),
+		queryCache: cache.NewCache(zabbixSettings.CacheTTL, 10*time.Minute),
 		logger:     log.New(),
 	}, nil
 }
@@ -113,11 +114,11 @@ func (ds *ZabbixDatasource) GetDatasource(pluginContext backend.PluginContext) (
 	dsSettings := pluginContext.DataSourceInstanceSettings
 	dsKey := fmt.Sprintf("%d-%d", pluginContext.OrgID, dsSettings.ID)
 	// Get hash to check if settings changed
-	dsInfoHash := HashDatasourceInfo(dsSettings)
+	dsInfoHash := cache.HashDatasourceInfo(dsSettings)
 
 	if cachedData, ok := ds.datasourceCache.Get(dsKey); ok {
 		if cachedDS, ok := cachedData.(*ZabbixDatasourceInstance); ok {
-			cachedDSHash := HashDatasourceInfo(cachedDS.dsInfo)
+			cachedDSHash := cache.HashDatasourceInfo(cachedDS.dsInfo)
 			if cachedDSHash == dsInfoHash {
 				return cachedDS, nil
 			}

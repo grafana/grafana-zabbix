@@ -9,7 +9,7 @@ require (
 	github.com/grafana/grafana-plugin-sdk-go v0.65.0
 	github.com/grafana/grafana_plugin_model v0.0.0-20180518082423-84176c64269d
 	github.com/hashicorp/go-hclog v0.9.2
-	github.com/hashicorp/go-plugin v1.2.2
+	github.com/hashicorp/go-plugin v1.2.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1 // indirect

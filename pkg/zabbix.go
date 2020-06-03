@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 	simplejson "github.com/bitly/go-simplejson"
@@ -28,7 +29,7 @@ var CachedMethods = map[string]bool{
 func (ds *ZabbixDatasourceInstance) ZabbixQuery(ctx context.Context, apiReq *ZabbixAPIRequest) (*simplejson.Json, error) {
 	var resultJson *simplejson.Json
 	var err error
-	requestHash := HashString(apiReq.String())
+	requestHash := cache.HashString(apiReq.String())
 
 	cachedResult, queryExistInCache := ds.queryCache.Get(requestHash)
 	if !queryExistInCache {

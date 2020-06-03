@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
@@ -43,7 +44,7 @@ func Init(logger log.Logger, mux *http.ServeMux) *ZabbixDatasource {
 
 	ds := &ZabbixDatasource{
 		logger:          logger,
-		datasourceCache: NewCache(10*time.Minute, 10*time.Minute),
+		datasourceCache: cache.NewCache(10*time.Minute, 10*time.Minute),
 	}
 
 	mux.HandleFunc("/", ds.rootHandler)
