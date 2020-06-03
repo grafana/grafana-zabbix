@@ -10,6 +10,15 @@ import (
 	cache "github.com/patrickmn/go-cache"
 )
 
+const (
+	// For use with functions that take an expiration time.
+	NoExpiration time.Duration = -1
+	// For use with functions that take an expiration time. Equivalent to
+	// passing in the same expiration duration as was given to New() or
+	// NewFrom() when the cache was created (e.g. 5 minutes.)
+	DefaultExpiration time.Duration = 0
+)
+
 // Cache is a abstraction over go-cache.
 type Cache struct {
 	cache *cache.Cache
