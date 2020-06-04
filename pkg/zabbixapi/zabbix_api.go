@@ -30,6 +30,8 @@ type ZabbixAPI struct {
 	auth       string
 }
 
+type ZabbixAPIParams = map[string]interface{}
+
 func newHttpClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
