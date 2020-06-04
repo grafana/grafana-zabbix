@@ -1,5 +1,23 @@
 # Change Log
 
+## [4.0.0-alpha1] - 2020-06-04
+
+### 4.0 Feature highlights
+Grafana-Zabbix 4.0 comes with a bunch of changes under the hood. The most important thing introduced is a backend, which brings a number of benefits:
+
+- Alerting support (limited, data processing functions are not supported yet).
+- Fixed security issues related to exposing data source credentials to the Grafana frontend and storing password as a plain text in database.
+- Improved performance (plugin can cache queries and process data on the backend).
+- With improved security it makes easier to add actions (execute scripts, close problems, etc).
+
+### Security 
+- Zabbix credentials available for everyone who can see dashboard, [#380](https://github.com/alexanderzobnin/grafana-zabbix/issues/380)
+- Store password encrypted, [#800](https://github.com/alexanderzobnin/grafana-zabbix/issues/800)
+
+### Added
+- Alerting support (limited, data processing functions are not supported yet), [#801](https://github.com/alexanderzobnin/grafana-zabbix/issues/801)
+- Problems: execute scripts, [#978](https://github.com/alexanderzobnin/grafana-zabbix/issues/978)
+
 ## [3.12.2] - 2020-05-28
 ### Fixed
 - Annotations feature doesn't work, [#964](https://github.com/alexanderzobnin/grafana-zabbix/issues/964)
