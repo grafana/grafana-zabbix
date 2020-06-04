@@ -81,7 +81,7 @@ async function main() {
 
   try {
     await publishAssets(
-      `./grafana-zabbix-${releaseVersion}.zip`,
+      `grafana-zabbix-${releaseVersion}.zip`,
       `https://uploads.github.com/repos/${GRAFANA_ZABBIX_OWNER}/${GRAFANA_ZABBIX_REPO}/releases/${releaseId}/assets`
     );
   } catch (reason) {
