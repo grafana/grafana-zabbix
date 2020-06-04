@@ -197,7 +197,7 @@ jobs:
     steps:
     - checkout
     - run: sudo pip install codespell
-    - run: codespell -S './.git*, ./src/img*, ./go.sum, ./yarn.lock' -L que --ignore-words=./.codespell_ignore
+    - run: codespell -S './.git*,./src/img*,./go.sum,./yarn.lock' -L que --ignore-words=./.codespell_ignore
 
 workflows:
   version: 2
