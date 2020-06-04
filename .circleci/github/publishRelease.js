@@ -24,6 +24,7 @@ async function main() {
   try {
     const latestRelease = await github.client.get(`releases/tags/v${releaseVersion}`);
     releaseId = latestRelease.data.id;
+    console.log('Release found', releaseId);
   } catch (reason) {
     if (reason.response.status !== 404) {
       // 404 just means no release found. Not an error. Anything else though, re throw the error
@@ -59,24 +60,29 @@ async function main() {
         prerelease: preRelease,
       });
 
+      console.log('Release published with id', releaseId);
       releaseId = newReleaseResponse.data.id;
+    } catch (reason) {
+      throw reason;
+    }
+  } else {
+    try {
+      github.client.patch(`releases/${releaseId}`, {
+        tag_name: `v${releaseVersion}`,
+        name: `${releaseVersion}`,
+        body: `Grafana-Zabbix ${releaseVersion}`,
+        draft: false,
+        prerelease: preRelease,
+      });
     } catch (reason) {
       throw reason;
     }
   }
 
   try {
-    const updateReleaseResponse = await github.client.put(`releases/${releaseId}`, {
-      tag_name: `v${releaseVersion}`,
-      name: `${releaseVersion}`,
-      body: `Grafana-Zabbix ${releaseVersion}`,
-      draft: false,
-      prerelease: preRelease,
-    });
-
     await publishAssets(
       `./grafana-zabbix-${releaseVersion}.zip`,
-      `https://uploads.github.com/repos/${GRAFANA_ZABBIX_OWNER}/${GRAFANA_ZABBIX_REPO}/releases/${updateReleaseResponse.data.id}/assets`
+      `https://uploads.github.com/repos/${GRAFANA_ZABBIX_OWNER}/${GRAFANA_ZABBIX_REPO}/releases/${releaseId}/assets`
     );
   } catch (reason) {
     console.error(reason.data || reason.response || reason);
