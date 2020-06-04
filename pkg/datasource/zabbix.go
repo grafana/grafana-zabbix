@@ -97,7 +97,11 @@ func (ds *ZabbixDatasourceInstance) ZabbixRequest(ctx context.Context, method st
 	}
 
 	result, err = ds.zabbixAPI.Request(ctx, method, params)
-	if err == zabbixapi.ErrNotAuthenticated || isNotAuthorized(err) {
+	notAuthorized := isNotAuthorized(err)
+	if err == zabbixapi.ErrNotAuthenticated || notAuthorized {
+		if notAuthorized {
+			ds.logger.Debug("Authentication token expired, performing re-login")
+		}
 		err = ds.login(ctx)
 		if err != nil {
 			return nil, err
