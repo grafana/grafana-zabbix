@@ -157,9 +157,9 @@ jobs:
           command: './.circleci/make-package.sh'
           no_output_timeout: 15m
       - run:
-        name: Publish release
-        command: 'node ./.circleci/github/publishRelease.js'
-        no_output_timeout: 15m
+          name: Publish release
+          command: 'node ./.circleci/github/publishRelease.js'
+          no_output_timeout: 15m
 
   make-release:
     working_directory: ~/alexanderzobnin/grafana-zabbix
