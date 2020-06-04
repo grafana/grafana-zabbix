@@ -18,6 +18,7 @@ async function main() {
   const releaseVersion = tag.slice(1);
   console.log('Release version', releaseVersion);
 
+  const releaseNotes = `# Grafana-Zabbix ${releaseVersion}`;
   const preRelease = /(alpha|beta)/.test(releaseVersion);
 
   let releaseId;
@@ -55,7 +56,7 @@ async function main() {
         tag_name: `v${releaseVersion}`,
         target_commitish: releaseCommitHash,
         name: `${releaseVersion}`,
-        body: `Grafana-Zabbix ${releaseVersion}`,
+        body: releaseNotes,
         draft: false,
         prerelease: preRelease,
       });
@@ -70,7 +71,7 @@ async function main() {
       github.client.patch(`releases/${releaseId}`, {
         tag_name: `v${releaseVersion}`,
         name: `${releaseVersion}`,
-        body: `Grafana-Zabbix ${releaseVersion}`,
+        body: releaseNotes,
         draft: false,
         prerelease: preRelease,
       });
