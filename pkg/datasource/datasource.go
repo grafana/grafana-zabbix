@@ -16,6 +16,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+var (
+	ErrFunctionsNotSupported      = errors.New("zabbix queries with functions are not supported")
+	ErrNonMetricQueryNotSupported = errors.New("non-metrics queries are not supported")
+)
+
 type ZabbixDatasource struct {
 	datasourceCache *cache.Cache
 	logger          log.Logger
@@ -99,9 +104,9 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		if err != nil {
 			res.Error = err
 		} else if len(query.Functions) > 0 {
-			res.Error = errors.New("Zabbix queries with functions are not supported")
+			res.Error = ErrFunctionsNotSupported
 		} else if query.Mode != 0 {
-			res.Error = errors.New("Non-metrics queries are not supported")
+			res.Error = ErrNonMetricQueryNotSupported
 		} else {
 			frame, err := zabbixDS.queryNumericItems(ctx, &query)
 			if err != nil {
