@@ -18,6 +18,8 @@ async function main() {
   const releaseVersion = tag.slice(1);
   console.log('Release version', releaseVersion);
 
+  const preRelease = /(alpha|beta)/.test(releaseVersion);
+
   let releaseId;
   try {
     const latestRelease = await github.client.get(`releases/tags/v${releaseVersion}`);
@@ -54,7 +56,7 @@ async function main() {
         name: `${releaseVersion}`,
         body: `Grafana-Zabbix ${releaseVersion}`,
         draft: false,
-        prerelease: false,
+        prerelease: preRelease,
       });
 
       releaseId = newReleaseResponse.data.id;
@@ -69,7 +71,7 @@ async function main() {
       name: `${releaseVersion}`,
       body: `Grafana-Zabbix ${releaseVersion}`,
       draft: false,
-      prerelease: false,
+      prerelease: preRelease,
     });
 
     await publishAssets(
