@@ -1,12 +1,8 @@
 package cache
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
-	"encoding/json"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	cache "github.com/patrickmn/go-cache"
 )
 
@@ -18,6 +14,8 @@ const (
 	// NewFrom() when the cache was created (e.g. 5 minutes.)
 	DefaultExpiration time.Duration = 0
 )
+
+// TODO: since all methods moved to datasource_cache, this can be removed and replaced by go-cache
 
 // Cache is a abstraction over go-cache.
 type Cache struct {
@@ -39,20 +37,4 @@ func (c *Cache) Set(request string, response interface{}) {
 // Get the value associated with request from the cache
 func (c *Cache) Get(request string) (interface{}, bool) {
 	return c.cache.Get(request)
-}
-
-// HashString converts the given text string to hash string
-func HashString(text string) string {
-	hash := sha1.New()
-	hash.Write([]byte(text))
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
-// HashDatasourceInfo converts the given datasource info to hash string
-func HashDatasourceInfo(dsInfo *backend.DataSourceInstanceSettings) string {
-	digester := sha1.New()
-	if err := json.NewEncoder(digester).Encode(dsInfo); err != nil {
-		panic(err) // This shouldn't be possible but just in case DatasourceInfo changes
-	}
-	return hex.EncodeToString(digester.Sum(nil))
 }

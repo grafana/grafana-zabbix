@@ -50,7 +50,7 @@ func MockZabbixDataSource(body string, statusCode int) *ZabbixDatasourceInstance
 		dsInfo:     basicDatasourceInfo,
 		zabbixAPI:  zabbixAPI,
 		Settings:   zabbixSettings,
-		queryCache: cache.NewCache(cache.NoExpiration, 10*time.Minute),
+		queryCache: NewDatasourceCache(cache.NoExpiration, 10*time.Minute),
 		logger:     log.New(),
 	}
 }

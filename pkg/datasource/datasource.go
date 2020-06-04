@@ -27,7 +27,7 @@ type ZabbixDatasourceInstance struct {
 	zabbixAPI  *zabbixapi.ZabbixAPI
 	dsInfo     *backend.DataSourceInstanceSettings
 	Settings   *ZabbixDatasourceSettings
-	queryCache *cache.Cache
+	queryCache *DatasourceCache
 	logger     log.Logger
 }
 
@@ -54,7 +54,7 @@ func NewZabbixDatasourceInstance(dsInfo *backend.DataSourceInstanceSettings) (*Z
 		dsInfo:     dsInfo,
 		zabbixAPI:  zabbixAPI,
 		Settings:   zabbixSettings,
-		queryCache: cache.NewCache(zabbixSettings.CacheTTL, 10*time.Minute),
+		queryCache: NewDatasourceCache(zabbixSettings.CacheTTL, 10*time.Minute),
 		logger:     log.New(),
 	}, nil
 }
@@ -121,11 +121,11 @@ func (ds *ZabbixDatasource) GetDatasource(pluginContext backend.PluginContext) (
 	dsSettings := pluginContext.DataSourceInstanceSettings
 	dsKey := fmt.Sprintf("%d-%d", pluginContext.OrgID, dsSettings.ID)
 	// Get hash to check if settings changed
-	dsInfoHash := cache.HashDatasourceInfo(dsSettings)
+	dsInfoHash := HashDatasourceInfo(dsSettings)
 
 	if cachedData, ok := ds.datasourceCache.Get(dsKey); ok {
 		if cachedDS, ok := cachedData.(*ZabbixDatasourceInstance); ok {
-			cachedDSHash := cache.HashDatasourceInfo(cachedDS.dsInfo)
+			cachedDSHash := HashDatasourceInfo(cachedDS.dsInfo)
 			if cachedDSHash == dsInfoHash {
 				return cachedDS, nil
 			}
