@@ -32,7 +32,7 @@ run-backend:
 	bra run
 
 # Build plugin for all platforms (ready for distribution)
-dist: install dist-frontend dist-backend
+dist: dist-frontend dist-backend
 dist-frontend:
 	yarn build
 dist-backend: dist-backend-linux dist-backend-darwin dist-backend-windows

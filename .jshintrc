@@ -43,6 +43,7 @@
     "module": true,
     "beforeEach": true,
     "inject": true,
-    "__dirname": true
+    "__dirname": true,
+    "process": true
   }
 }
