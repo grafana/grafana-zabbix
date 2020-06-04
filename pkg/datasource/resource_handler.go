@@ -8,6 +8,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
+// Resource handler describes handlers for the resources populated by plugin in plugin.go, like:
+// mux.HandleFunc("/", ds.RootHandler)
+// mux.HandleFunc("/zabbix-api", ds.ZabbixAPIHandler)
+
 func (ds *ZabbixDatasource) RootHandler(rw http.ResponseWriter, req *http.Request) {
 	ds.logger.Debug("Received resource call", "url", req.URL.String(), "method", req.Method)
 
