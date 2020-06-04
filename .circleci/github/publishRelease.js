@@ -16,6 +16,7 @@ async function main() {
   }
 
   const releaseVersion = tag.slice(1);
+  console.log('Release version', releaseVersion);
 
   let releaseId;
   try {
@@ -25,9 +26,40 @@ async function main() {
     if (reason.response.status !== 404) {
       // 404 just means no release found. Not an error. Anything else though, re throw the error
       throw reason;
-    } else {
-      console.error(`No release found`);
-      process.exit(1);
+    }
+  }
+
+  if (!releaseId) {
+    console.log('No release exist, finding a tag');
+    let releaseCommitHash;
+    try {
+      const tags = await github.client.get(`tags`);
+      const releaseTag = tags.data.find(t => t.name === `v${releaseVersion}`);
+      releaseCommitHash = releaseTag.commit.sha;
+      console.log('Tag found', releaseTag.name, releaseCommitHash);
+    } catch (reason) {
+      if (reason.response.status !== 404) {
+        // 404 just means no release found. Not an error. Anything else though, re throw the error
+        throw reason;
+      } else {
+        console.error('No release tag found');
+        process.exit(1);
+      }
+    }
+
+    try {
+      const newReleaseResponse = await github.client.post('releases', {
+        tag_name: `v${releaseVersion}`,
+        target_commitish: releaseCommitHash,
+        name: `${releaseVersion}`,
+        body: `Grafana-Zabbix ${releaseVersion}`,
+        draft: false,
+        prerelease: false,
+      });
+
+      releaseId = newReleaseResponse.data.id;
+    } catch (reason) {
+      throw reason;
     }
   }
 
