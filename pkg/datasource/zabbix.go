@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
@@ -96,7 +97,7 @@ func (ds *ZabbixDatasourceInstance) ZabbixRequest(ctx context.Context, method st
 	}
 
 	result, err = ds.zabbixAPI.Request(ctx, method, params)
-	if err == zabbixapi.ErrNotAuthenticated {
+	if err == zabbixapi.ErrNotAuthenticated || isNotAuthorized(err) {
 		err = ds.login(ctx)
 		if err != nil {
 			return nil, err
@@ -529,4 +530,15 @@ func parseFilter(filter string) (*regexp.Regexp, error) {
 	pattern += matches[1]
 
 	return regexp.Compile(pattern)
+}
+
+func isNotAuthorized(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	message := err.Error()
+	return strings.Contains(message, "Session terminated, re-login, please.") ||
+		strings.Contains(message, "Not authorised.") ||
+		strings.Contains(message, "Not authorized.")
 }
