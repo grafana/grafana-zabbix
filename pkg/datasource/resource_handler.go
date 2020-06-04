@@ -1,4 +1,4 @@
-package main
+package datasource
 
 import (
 	"encoding/json"
@@ -8,14 +8,14 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
-func (ds *ZabbixDatasource) rootHandler(rw http.ResponseWriter, req *http.Request) {
+func (ds *ZabbixDatasource) RootHandler(rw http.ResponseWriter, req *http.Request) {
 	ds.logger.Debug("Received resource call", "url", req.URL.String(), "method", req.Method)
 
 	rw.Write([]byte("Hello from Zabbix data source!"))
 	rw.WriteHeader(http.StatusOK)
 }
 
-func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.Request) {
+func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		return
 	}
@@ -23,7 +23,7 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	body, err := ioutil.ReadAll(req.Body)
 	defer req.Body.Close()
 	if err != nil || len(body) == 0 {
-		WriteError(rw, http.StatusBadRequest, err)
+		writeError(rw, http.StatusBadRequest, err)
 		return
 	}
 
@@ -31,7 +31,7 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	err = json.Unmarshal(body, &reqData)
 	if err != nil {
 		ds.logger.Error("Cannot unmarshal request", "error", err.Error())
-		WriteError(rw, http.StatusInternalServerError, err)
+		writeError(rw, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	dsInstance, err := ds.GetDatasource(pluginCxt)
 	if err != nil {
 		ds.logger.Error("Error loading datasource", "error", err)
-		WriteError(rw, http.StatusInternalServerError, err)
+		writeError(rw, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -48,17 +48,17 @@ func (ds *ZabbixDatasource) zabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	result, err := dsInstance.ZabbixAPIQuery(req.Context(), apiReq)
 	if err != nil {
 		ds.logger.Error("Zabbix API request error", "error", err)
-		WriteError(rw, http.StatusInternalServerError, err)
+		writeError(rw, http.StatusInternalServerError, err)
 		return
 	}
 
-	WriteResponse(rw, result)
+	writeResponse(rw, result)
 }
 
-func WriteResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {
+func writeResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {
 	resultJson, err := json.Marshal(*result)
 	if err != nil {
-		WriteError(rw, http.StatusInternalServerError, err)
+		writeError(rw, http.StatusInternalServerError, err)
 	}
 
 	rw.Header().Add("Content-Type", "application/json")
@@ -66,7 +66,7 @@ func WriteResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {
 	rw.Write(resultJson)
 }
 
-func WriteError(rw http.ResponseWriter, statusCode int, err error) {
+func writeError(rw http.ResponseWriter, statusCode int, err error) {
 	data := make(map[string]interface{})
 
 	data["error"] = "Internal Server Error"

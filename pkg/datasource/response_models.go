@@ -1,4 +1,4 @@
-package zabbix
+package datasource
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package main
+package datasource
 
 import (
 	"context"
@@ -29,6 +29,13 @@ type ZabbixDatasourceInstance struct {
 	Settings   *ZabbixDatasourceSettings
 	queryCache *cache.Cache
 	logger     log.Logger
+}
+
+func NewZabbixDatasource() *ZabbixDatasource {
+	return &ZabbixDatasource{
+		datasourceCache: cache.NewCache(10*time.Minute, 10*time.Minute),
+		logger:          log.New(),
+	}
 }
 
 // NewZabbixDatasourceInstance returns an initialized zabbix datasource instance

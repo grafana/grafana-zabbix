@@ -1,4 +1,4 @@
-package main
+package datasource
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -156,7 +155,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	return frames, nil
 }
 
-func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (zabbix.Items, error) {
+func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) (Items, error) {
 	hosts, err := ds.getHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -182,10 +181,10 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter st
 		allItems, err = ds.getAllItems(ctx, nil, appids, itemType)
 	}
 
-	var items zabbix.Items
+	var items Items
 
 	if allItems == nil {
-		items = zabbix.Items{}
+		items = Items{}
 	} else {
 		itemsJSON, err := allItems.MarshalJSON()
 		if err != nil {
@@ -203,7 +202,7 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter st
 		return nil, err
 	}
 
-	filteredItems := zabbix.Items{}
+	filteredItems := Items{}
 	for _, item := range items {
 		itemName := item.ExpandItem()
 		if item.Status == "0" {
@@ -361,7 +360,7 @@ func (ds *ZabbixDatasourceInstance) getAllGroups(ctx context.Context) (*simplejs
 	return ds.ZabbixQuery(ctx, &ZabbixAPIRequest{Method: "hostgroup.get", Params: params})
 }
 
-func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items zabbix.Items) (*data.Frame, error) {
+func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items Items) (*data.Frame, error) {
 	valueType := ds.getTrendValueType(query)
 	consolidateBy := ds.getConsolidateBy(query)
 
@@ -400,12 +399,12 @@ func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
 	return consolidateBy
 }
 
-func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items zabbix.Items) (zabbix.History, error) {
+func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items Items) (History, error) {
 	timeRange := query.TimeRange
 	useTrend := ds.isUseTrend(timeRange)
-	allHistory := zabbix.History{}
+	allHistory := History{}
 
-	groupedItems := map[int]zabbix.Items{}
+	groupedItems := map[int]Items{}
 
 	for _, j := range items {
 		groupedItems[j.ValueType] = append(groupedItems[j.ValueType], j)
@@ -444,7 +443,7 @@ func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query
 			return nil, fmt.Errorf("Internal error parsing response JSON: %w", err)
 		}
 
-		history := zabbix.History{}
+		history := History{}
 		err = json.Unmarshal(pointJSON, &history)
 		if err != nil {
 			ds.logger.Warn(fmt.Sprintf("Could not map Zabbix response to History: %s", err.Error()))
@@ -472,7 +471,7 @@ func (ds *ZabbixDatasourceInstance) isUseTrend(timeRange backend.TimeRange) bool
 	return false
 }
 
-func convertHistory(history zabbix.History, items zabbix.Items) *data.Frame {
+func convertHistory(history History, items Items) *data.Frame {
 	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
 	timeFileld.Name = "time"
 	frame := data.NewFrame("History", timeFileld)

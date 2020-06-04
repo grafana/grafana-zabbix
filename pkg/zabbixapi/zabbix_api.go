@@ -81,6 +81,11 @@ func (api *ZabbixAPI) SetUrl(api_url string) error {
 	return nil
 }
 
+// GetAuth returns API authentication token
+func (api *ZabbixAPI) GetAuth() string {
+	return api.auth
+}
+
 // SetAuth sets API authentication token
 func (api *ZabbixAPI) SetAuth(auth string) {
 	api.auth = auth

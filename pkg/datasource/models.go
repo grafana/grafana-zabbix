@@ -1,4 +1,4 @@
-package main
+package datasource
 
 import (
 	"encoding/json"
@@ -39,15 +39,15 @@ type ZabbixAPIRequest struct {
 	Params ZabbixAPIParams `json:"params,omitempty"`
 }
 
+func (r *ZabbixAPIRequest) String() string {
+	jsonRequest, _ := json.Marshal(r.Params)
+	return r.Method + string(jsonRequest)
+}
+
 type ZabbixAPIParams = map[string]interface{}
 
 type ZabbixAPIResourceResponse struct {
 	Result interface{} `json:"result,omitempty"`
-}
-
-func (r *ZabbixAPIRequest) String() string {
-	jsonRequest, _ := json.Marshal(r.Params)
-	return r.Method + string(jsonRequest)
 }
 
 // QueryModel model

@@ -3,9 +3,8 @@ package main
 import (
 	"net/http"
 	"os"
-	"time"
 
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
@@ -33,7 +32,7 @@ func main() {
 	}
 }
 
-func Init(logger log.Logger, mux *http.ServeMux) *ZabbixDatasource {
+func Init(logger log.Logger, mux *http.ServeMux) *datasource.ZabbixDatasource {
 	variableName := "GFX_ZABBIX_DATA_PATH"
 	path, exist := os.LookupEnv(variableName)
 	if !exist {
@@ -42,13 +41,10 @@ func Init(logger log.Logger, mux *http.ServeMux) *ZabbixDatasource {
 		logger.Debug("environment variable for storage found", "variable", variableName, "value", path)
 	}
 
-	ds := &ZabbixDatasource{
-		logger:          logger,
-		datasourceCache: cache.NewCache(10*time.Minute, 10*time.Minute),
-	}
+	ds := datasource.NewZabbixDatasource()
 
-	mux.HandleFunc("/", ds.rootHandler)
-	mux.HandleFunc("/zabbix-api", ds.zabbixAPIHandler)
+	mux.HandleFunc("/", ds.RootHandler)
+	mux.HandleFunc("/zabbix-api", ds.ZabbixAPIHandler)
 	// mux.Handle("/scenarios", getScenariosHandler(logger))
 
 	return ds
