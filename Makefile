@@ -46,7 +46,7 @@ test: test-frontend test-backend
 test-frontend:
 	yarn test
 test-backend:
-	go test -v -mod=vendor ./pkg/...
+	go test -mod=vendor ./pkg/...
 test-ci:
 	yarn ci-test
 	mkdir -p tmp/coverage/golang/
