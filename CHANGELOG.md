@@ -10,6 +10,22 @@ Grafana-Zabbix 4.0 comes with a bunch of changes under the hood. The most import
 - Improved performance (plugin can cache queries and process data on the backend).
 - With improved security it makes easier to add actions (execute scripts, close problems, etc).
 
+### Installation
+
+**Prerequisites**: plugin requires Grafana 7.0 to run.
+
+Version 4.0 is currently in alpha state and not published at grafana.com. In order to install it, follow these steps:
+1. Go to the [GitHub releases](https://github.com/alexanderzobnin/grafana-zabbix/releases) and find latest `4.0.0` release. 
+1. Download `.zip` package with plugin from release assets (asset name is `grafana-zabbix-4.0.0-<alphaX|betaX>.zip`).
+1. Unpack it and put into grafana plugins folder.
+1. Unsigned plugins are not loading by default, so allow it in config:
+    ```sh
+    allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
+    ```
+1. restart Grafana server
+
+Refer to [`allow_loading_unsigned_plugins`](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins) option description for more information.
+
 ### Security 
 - Zabbix credentials available for everyone who can see dashboard, [#380](https://github.com/alexanderzobnin/grafana-zabbix/issues/380)
 - Store password encrypted, [#800](https://github.com/alexanderzobnin/grafana-zabbix/issues/800)
