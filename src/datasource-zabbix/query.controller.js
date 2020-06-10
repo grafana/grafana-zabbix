@@ -5,6 +5,8 @@ import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
 import { ShowProblemTypes } from './types';
+import { CURRENT_SCHEMA_VERSION } from '../panel-triggers/migrations';
+
 
 function getTargetDefaults() {
   return {
@@ -198,6 +200,11 @@ export class ZabbixQueryController extends QueryCtrl {
         this.suggestITServices();
       }
     };
+
+    // Update panel schema version to prevent unnecessary migrations
+    if (this.panel.type === c.ZABBIX_PROBLEMS_PANEL_ID) {
+      this.panel.schemaVersion = CURRENT_SCHEMA_VERSION;
+    }
 
     this.init();
     this.queryOptionsText = this.renderQueryOptionsText();
