@@ -59,6 +59,20 @@ function getSeverityOptions() {
   return c.TRIGGER_SEVERITY;
 }
 
+function mapSeverityOptionsFromPanel(severityOptions: any[]) {
+  if (!severityOptions) {
+    return [0, 1, 2, 3, 4, 5];
+  }
+
+  const severities = [];
+  for (const sevOption of severityOptions) {
+    if (sevOption.show) {
+      severities.push(sevOption.priority);
+    }
+  }
+  return severities;
+}
+
 export class ZabbixQueryController extends QueryCtrl {
   static templateUrl: string;
 
@@ -202,6 +216,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
       if (this.panel.type === c.ZABBIX_PROBLEMS_PANEL_ID) {
         target.queryType = c.MODE_PROBLEMS;
+        target.options.severities = mapSeverityOptionsFromPanel(this.panel.triggerSeverity);
       }
 
       // Create function instances from saved JSON
