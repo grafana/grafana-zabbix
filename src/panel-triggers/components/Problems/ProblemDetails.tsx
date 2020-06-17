@@ -214,13 +214,13 @@ function ProblemItem(props: ProblemItemProps) {
   const { item, showName } = props;
   const itemName = utils.expandItemName(item.name, item.key_);
   return (
-    <Tooltip placement="bottom" content={itemName}>
-      <div className="problem-item">
-        <FAIcon icon="thermometer-three-quarters" />
-        {showName && <span className="problem-item-name">{item.name}: </span>}
+    <div className="problem-item">
+      <FAIcon icon="thermometer-three-quarters" />
+      {showName && <span className="problem-item-name">{item.name}: </span>}
+      <Tooltip placement="bottom" content={itemName}>
         <span className="problem-item-value">{item.lastvalue}</span>
-      </div>
-    </Tooltip>
+      </Tooltip>
+    </div>
   );
 }
 
