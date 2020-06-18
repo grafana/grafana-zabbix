@@ -4,7 +4,6 @@ import { ZabbixDatasource } from './datasource';
 import { ZabbixQueryController } from './query.controller';
 import { ZabbixVariableQueryEditor } from './components/VariableQueryEditor';
 import { ConfigEditor } from './components/ConfigEditor';
-import './zabbixAlerting.service.js';
 import './add-metric-function.directive';
 import './metric-function-editor.directive';
 

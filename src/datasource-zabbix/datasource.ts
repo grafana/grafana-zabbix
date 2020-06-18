@@ -24,9 +24,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   trendsFrom: string;
   trendsRange: string;
   cacheTTL: any;
-  alertingEnabled: boolean;
-  addThresholds: boolean;
-  alertingMinSeverity: string;
   disableReadOnlyUsersAck: boolean;
   enableDirectDBConnection: boolean;
   dbConnectionDatasourceId: number;
@@ -39,12 +36,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   replaceTemplateVars: (target: any, scopedVars?: any) => any;
 
   /** @ngInject */
-  constructor(instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>, private templateSrv, private zabbixAlertingSrv) {
+  constructor(instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>, private templateSrv) {
     super(instanceSettings);
 
     this.templateSrv = templateSrv;
-    this.zabbixAlertingSrv = zabbixAlertingSrv;
-
     this.enableDebugLog = config.buildInfo.env === 'development';
 
     // Use custom format for template variables
@@ -66,11 +61,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     // Set cache update interval
     const ttl = jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
-
-    // Alerting options
-    this.alertingEnabled =     jsonData.alerting;
-    this.addThresholds =       jsonData.addThresholds;
-    this.alertingMinSeverity = jsonData.alertingMinSeverity || c.SEV_WARNING;
 
     // Other options
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
@@ -105,23 +95,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(options) {
-    // console.log('invoking doTsdbRequest()');
-    // this.doTsdbRequest(options);
-
-    // Get alerts for current panel
-    if (this.alertingEnabled) {
-      this.alertQuery(options).then(alert => {
-        this.zabbixAlertingSrv.setPanelAlertState(options.panelId, alert.state);
-
-        this.zabbixAlertingSrv.removeZabbixThreshold(options.panelId);
-        if (this.addThresholds) {
-          _.forEach(alert.thresholds, threshold => {
-            this.zabbixAlertingSrv.setPanelThreshold(options.panelId, threshold);
-          });
-        }
-      });
-    }
-
     // Create request for each target
     const promises = _.map(options.targets, t => {
       // Don't request for hidden targets
@@ -671,58 +644,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     });
   }
 
-  /**
-   * Get triggers and its details for panel's targets
-   * Returns alert state ('ok' if no fired triggers, or 'alerting' if at least 1 trigger is fired)
-   * or empty object if no related triggers are finded.
-   */
-  alertQuery(options) {
-    const enabled_targets = filterEnabledTargets(options.targets);
-    const getPanelItems = _.map(enabled_targets, t => {
-      let target = _.cloneDeep(t);
-      target = migrations.migrate(target);
-      this.replaceTargetVariables(target, options);
-      return this.zabbix.getItemsFromTarget(target, {itemtype: 'num'});
-    });
-
-    return Promise.all(getPanelItems)
-    .then(results => {
-      const items = _.flatten(results);
-      const itemids = _.map(items, 'itemid');
-
-      if (itemids.length === 0) {
-        return [];
-      }
-      return this.zabbix.getAlerts(itemids);
-    })
-    .then(triggers => {
-      triggers = _.filter(triggers, trigger => {
-        return trigger.priority >= this.alertingMinSeverity;
-      });
-
-      if (!triggers || triggers.length === 0) {
-        return {};
-      }
-
-      let state = 'ok';
-
-      const firedTriggers = _.filter(triggers, {value: '1'});
-      if (firedTriggers.length) {
-        state = 'alerting';
-      }
-
-      const thresholds = _.map(triggers, trigger => {
-        return getTriggerThreshold(trigger.expression);
-      });
-
-      return {
-        panelId: options.panelId,
-        state: state,
-        thresholds: thresholds
-      };
-    });
-  }
-
   // Replace template variables
   replaceTargetVariables(target, options) {
     const parts = ['group', 'host', 'application', 'item'];
@@ -844,16 +765,4 @@ function filterEnabledTargets(targets) {
   return _.filter(targets, target => {
     return !(target.hide || !target.group || !target.host || !target.item);
   });
-}
-
-function getTriggerThreshold(expression) {
-  const thresholdPattern = /.*[<>=]{1,2}([\d\.]+)/;
-  const finded_thresholds = expression.match(thresholdPattern);
-  if (finded_thresholds && finded_thresholds.length >= 2) {
-    let threshold = finded_thresholds[1];
-    threshold = Number(threshold);
-    return threshold;
-  } else {
-    return null;
-  }
 }
