@@ -1,5 +1,17 @@
 # Change Log
 
+## [4.0.0-alpha2] - 2020-06-18
+
+### Fixed
+- Problems: panel migrations when panel options is not opened (options not saved after reload)
+- Problems: item value tooltip placement
+
+### Added
+- Problems: use severity filter from panel options
+
+### Removed
+- Old alerting feature (show heart icon on the panel), replaced by Grafana alerting
+
 ## [4.0.0-alpha1] - 2020-06-04
 
 ### 4.0 Feature highlights
