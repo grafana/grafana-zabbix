@@ -29,9 +29,8 @@ describe('ZabbixDatasource', () => {
 
     ctx.templateSrv = mocks.templateSrvMock;
     ctx.datasourceSrv = mocks.datasourceSrvMock;
-    ctx.zabbixAlertingSrv = mocks.zabbixAlertingSrvMock;
 
-    ctx.ds = new ZabbixDatasource(ctx.instanceSettings, ctx.templateSrv, ctx.zabbixAlertingSrv);
+    ctx.ds = new ZabbixDatasource(ctx.instanceSettings, ctx.templateSrv);
   });
 
   describe('When querying data', () => {
@@ -328,109 +327,6 @@ describe('ZabbixDatasource', () => {
       ctx.ds.metricFindQuery(query);
       expect(ctx.ds.zabbix.getHosts).toBeCalledWith('/.*/', '/.*/');
       done();
-    });
-  });
-
-  describe('When querying alerts', () => {
-    let options = {};
-
-    beforeEach(() => {
-      ctx.ds.replaceTemplateVars = (str) => str;
-
-      let targetItems = [{
-        "itemid": "1",
-        "name": "test item",
-        "key_": "test.key",
-        "value_type": "3",
-        "hostid": "10631",
-        "status": "0",
-        "state": "0",
-        "hosts": [{"hostid": "10631", "name": "Test host"}],
-        "item": "Test item"
-      }];
-      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve(targetItems));
-
-      options = {
-        "panelId": 10,
-        "targets": [{
-          "application": {"filter": ""},
-          "group": {"filter": "Test group"},
-          "host": {"filter": "Test host"},
-          "item": {"filter": "Test item"},
-        }]
-      };
-    });
-
-    it('should return threshold when comparative symbol is `less than`', () => {
-
-      let itemTriggers = [{
-        "triggerid": "15383",
-        "priority": "4",
-        "expression": "{15915}<100",
-      }];
-
-      ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
-
-      return ctx.ds.alertQuery(options)
-        .then(resp => {
-          expect(resp.thresholds).toHaveLength(1);
-          expect(resp.thresholds[0]).toBe(100);
-          return resp;
-        });
-    });
-
-    it('should return threshold when comparative symbol is `less than or equal`', () => {
-
-      let itemTriggers = [{
-        "triggerid": "15383",
-        "priority": "4",
-        "expression": "{15915}<=100",
-      }];
-
-      ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
-
-      return ctx.ds.alertQuery(options)
-        .then(resp => {
-          expect(resp.thresholds.length).toBe(1);
-          expect(resp.thresholds[0]).toBe(100);
-          return resp;
-        });
-    });
-
-    it('should return threshold when comparative symbol is `greater than or equal`', () => {
-
-      let itemTriggers = [{
-        "triggerid": "15383",
-        "priority": "4",
-        "expression": "{15915}>=30",
-      }];
-
-      ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
-
-      return ctx.ds.alertQuery(options)
-        .then(resp => {
-          expect(resp.thresholds.length).toBe(1);
-          expect(resp.thresholds[0]).toBe(30);
-          return resp;
-        });
-    });
-
-    it('should return threshold when comparative symbol is `equal`', () => {
-
-      let itemTriggers = [{
-        "triggerid": "15383",
-        "priority": "4",
-        "expression": "{15915}=50",
-      }];
-
-      ctx.ds.zabbix.getAlerts = jest.fn().mockReturnValue(Promise.resolve(itemTriggers));
-
-      return ctx.ds.alertQuery(options)
-        .then(resp => {
-          expect(resp.thresholds.length).toBe(1);
-          expect(resp.thresholds[0]).toBe(50);
-          return resp;
-        });
     });
   });
 });
