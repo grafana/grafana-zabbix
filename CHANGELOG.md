@@ -1,7 +1,10 @@
 # Change Log
 
-## [4.0.0-alpha2] - 2020-06-18
+## [4.0.0-alpha3] - 2020-07-17
+### Fixed
+- Problems: empty problem list, [#955](https://github.com/alexanderzobnin/grafana-zabbix/issues/955)
 
+## [4.0.0-alpha2] - 2020-06-18
 ### Fixed
 - Problems: panel migrations when panel options is not opened (options not saved after reload)
 - Problems: item value tooltip placement
@@ -13,7 +16,6 @@
 - Old alerting feature (show heart icon on the panel), replaced by Grafana alerting
 
 ## [4.0.0-alpha1] - 2020-06-04
-
 ### 4.0 Feature highlights
 Grafana-Zabbix 4.0 comes with a bunch of changes under the hood. The most important thing introduced is a backend, which brings a number of benefits:
 
