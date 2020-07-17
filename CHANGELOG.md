@@ -1,5 +1,9 @@
 # Change Log
 
+## [3.12.3] - 2020-07-17
+### Fixed
+- Problems: empty problem list, [#955](https://github.com/alexanderzobnin/grafana-zabbix/issues/955)
+
 ## [3.12.2] - 2020-05-28
 ### Fixed
 - Annotations feature doesn't work, [#964](https://github.com/alexanderzobnin/grafana-zabbix/issues/964)
