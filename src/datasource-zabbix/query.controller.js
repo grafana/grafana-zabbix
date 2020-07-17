@@ -7,7 +7,6 @@ import * as migrations from './migrations';
 import { ShowProblemTypes } from './types';
 import { CURRENT_SCHEMA_VERSION } from '../panel-triggers/migrations';
 
-
 function getTargetDefaults() {
   return {
     queryType: c.MODE_METRICS,
