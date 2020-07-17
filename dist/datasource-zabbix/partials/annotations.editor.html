@@ -1,0 +1,69 @@
+<div class="gf-form-group">
+  <div class="gf-form-inline">
+    <div class="gf-form">
+      <span class="gf-form-label width-10">Group</span>
+      <input type="text"
+             class="gf-form-input max-width-16"
+             ng-model="ctrl.annotation.group">
+      </input>
+    </div>
+
+    <div class="gf-form">
+      <span class="gf-form-label width-10">Host</span>
+      <input type="text"
+             class="gf-form-input max-width-16"
+             ng-model="ctrl.annotation.host">
+      </input>
+    </div>
+  </div>
+  <div class="gf-form-inline">
+    <div class="gf-form">
+      <span class="gf-form-label width-10">Application</span>
+      <input type="text"
+             class="gf-form-input max-width-16"
+             ng-model="ctrl.annotation.application">
+      </input>
+    </div>
+
+    <div class="gf-form">
+      <span class="gf-form-label width-10">Trigger</span>
+      <input type="text"
+             class="gf-form-input max-width-16"
+             ng-model="ctrl.annotation.trigger">
+      </input>
+    </div>
+  </div>
+</div>
+<div class="gf-form-group">
+  <h6>Options</h6>
+  <div class="gf-form">
+    <span class="gf-form-label width-12">Minimum severity</span>
+    <div class="gf-form-select-wrapper">
+      <select class="gf-form-input gf-size-auto"
+              ng-init='ctrl.annotation.minseverity = ctrl.annotation.minseverity || 0'
+              ng-model='ctrl.annotation.minseverity'
+              ng-options="v as k for (k, v) in {
+                'Not classified': 0,
+                'Information': 1,
+                'Warning': 2,
+                'Average': 3,
+                'High': 4,
+                'Disaster': 5
+              }"
+              ng-change="render()">
+      </select>
+    </div>
+  </div>
+  <gf-form-switch class="gf-form" label-class="width-12"
+    label="Show OK events"
+    checked="ctrl.annotation.showOkEvents">
+  </gf-form-switch>
+  <gf-form-switch class="gf-form" label-class="width-12"
+    label="Hide acknowledged events"
+    checked="ctrl.annotation.hideAcknowledged">
+  </gf-form-switch>
+  <gf-form-switch class="gf-form" label-class="width-12"
+    label="Show hostname"
+    checked="ctrl.annotation.showHostname">
+  </gf-form-switch>
+</div>
