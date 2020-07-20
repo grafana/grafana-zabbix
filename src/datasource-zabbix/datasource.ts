@@ -427,11 +427,23 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       tags: { filter: tagsFilter },
     };
 
+    // replaceTemplateVars() builds regex-like string, so we should trim it.
+    const tagsFilterStr = tagsFilter.replace('/^', '').replace('$/', '');
+    const tags = utils.parseTags(tagsFilterStr);
+    tags.forEach(tag => {
+      // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
+      tag.operator = 1;
+    });
+
     const problemsOptions: any = {
       recent: showProblems === ShowProblemTypes.Recent,
       minSeverity: target.options?.minSeverity,
       limit: target.options?.limit,
     };
+
+    if (tags && tags.length) {
+      problemsOptions.tags = tags;
+    }
 
     if (target.options?.acknowledged === 0 || target.options?.acknowledged === 1) {
       problemsOptions.acknowledged = target.options?.acknowledged ? true : false;
