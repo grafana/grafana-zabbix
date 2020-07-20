@@ -137,19 +137,6 @@ export function filterTriggersPre(triggerList, replacedTarget) {
     triggerList = filterTriggers(triggerList, triggerFilter);
   }
 
-  // Filter by tags
-  if (replacedTarget.tags.filter) {
-    let tagsFilter = replacedTarget.tags.filter;
-    // replaceTemplateVars() builds regex-like string, so we should trim it.
-    tagsFilter = tagsFilter.replace('/^', '').replace('$/', '');
-    const tags = utils.parseTags(tagsFilter);
-    triggerList = _.filter(triggerList, trigger => {
-      return _.every(tags, tag => {
-        return _.find(trigger.tags, t => t.tag === tag.tag && (!tag.value || t.value === tag.value));
-      });
-    });
-  }
-
   // Filter by maintenance status
   if (!replacedTarget.options.hostsInMaintenance) {
     triggerList = _.filter(triggerList, (trigger) => !trigger.maintenance);
