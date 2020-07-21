@@ -258,8 +258,11 @@ export class ZabbixQueryController extends QueryCtrl {
       this.suggestGroups(),
       this.suggestHosts(),
       this.suggestApps(),
-      this.suggestItems(itemtype),
     ];
+
+    if (this.target.queryType === c.MODE_METRICS || this.target.queryType === c.MODE_TEXT) {
+      promises.push(this.suggestItems(itemtype));
+    }
 
     if (this.target.queryType === c.MODE_PROBLEMS) {
       promises.push(this.suggestProxies());
