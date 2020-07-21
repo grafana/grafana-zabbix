@@ -322,7 +322,7 @@ export class Zabbix implements ZabbixConnector {
       if (appFilter) {
         query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
       }
-      if (hostFilter) {
+      if (hostFilter && hostFilter !== '/.*/') {
         query.hostids = _.map(filteredHosts, 'hostid');
       }
       if (groupFilter) {
