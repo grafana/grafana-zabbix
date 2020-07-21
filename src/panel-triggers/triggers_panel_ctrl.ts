@@ -214,9 +214,9 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   sortTriggers(triggerList) {
     if (this.panel.sortProblems === 'priority') {
-      triggerList = _.orderBy(triggerList, ['priority', 'lastchangeUnix', 'triggerid'], ['desc', 'desc', 'desc']);
+      triggerList = _.orderBy(triggerList, ['priority', 'timestamp', 'eventid'], ['desc', 'desc', 'desc']);
     } else if (this.panel.sortProblems === 'lastchange') {
-      triggerList = _.orderBy(triggerList, ['lastchangeUnix', 'priority', 'triggerid'], ['desc', 'desc', 'desc']);
+      triggerList = _.orderBy(triggerList, ['timestamp', 'priority', 'eventid'], ['desc', 'desc', 'desc']);
     }
     return triggerList;
   }
