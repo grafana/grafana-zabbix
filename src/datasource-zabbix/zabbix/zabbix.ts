@@ -340,8 +340,8 @@ export class Zabbix implements ZabbixConnector {
       ]);
     })
     .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
-    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter))
-    .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
+    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter));
+    // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
   getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {
@@ -376,8 +376,8 @@ export class Zabbix implements ZabbixConnector {
       return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
     })
     .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
-    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter))
-    .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
+    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter));
+    // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
   filterTriggersByProxy(triggers, proxyFilter) {
