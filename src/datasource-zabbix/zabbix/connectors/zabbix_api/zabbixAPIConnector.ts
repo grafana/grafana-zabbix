@@ -364,7 +364,7 @@ export class ZabbixAPIConnector {
       source: '0',
       object: '0',
       sortfield: ['eventid'],
-      sortorder: 'ASC',
+      sortorder: 'DESC',
       evaltype: '0',
       // preservekeys: '1',
       groupids,
