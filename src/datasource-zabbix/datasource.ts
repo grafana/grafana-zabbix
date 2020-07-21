@@ -11,7 +11,7 @@ import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
-import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes } from './types';
+import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
 import { getBackendSrv } from '@grafana/runtime';
 import { DataSourceApi, DataSourceInstanceSettings } from '@grafana/data';
 
@@ -457,14 +457,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       problemsOptions.severities = severities;
     }
 
+    let getProblemsPromise: Promise<ProblemDTO[]>;
     if (showProblems === ShowProblemTypes.History) {
       problemsOptions.timeFrom = timeFrom;
       problemsOptions.timeTo = timeTo;
+      getProblemsPromise = this.zabbix.getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);
+    } else {
+      getProblemsPromise = this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);
     }
-
-    const getProblemsPromise = showProblems === ShowProblemTypes.History ?
-      this.zabbix.getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions) :
-      this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);
 
     const problemsPromises = Promise.all([
       getProblemsPromise,

@@ -307,7 +307,7 @@ export class Zabbix implements ZabbixConnector {
     .then(itServices => findByFilter(itServices, itServiceFilter));
   }
 
-  getProblems(groupFilter, hostFilter, appFilter, proxyFilter?, options?) {
+  getProblems(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {
     const promises = [
       this.getGroups(groupFilter),
       this.getHosts(groupFilter, hostFilter),

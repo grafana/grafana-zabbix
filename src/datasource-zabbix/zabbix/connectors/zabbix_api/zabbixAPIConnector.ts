@@ -491,7 +491,7 @@ export class ZabbixAPIConnector {
       object: '0',
       evaltype: '0',
       sortfield: ['eventid'],
-      sortorder: 'ASC',
+      sortorder: 'DESC',
       select_acknowledges: 'extend',
       selectTags: 'extend',
       selectSuppressionData: ['maintenanceid', 'suppress_until'],
