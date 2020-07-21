@@ -11,6 +11,7 @@ import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
 import { FAIcon, ExploreButton, AckButton, Tooltip, ModalController, ExecScriptButton } from '../../../components';
 import { ExecScriptModal, ExecScriptData } from '../ExecScriptModal';
+import { Icon } from '@grafana/ui';
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
@@ -151,7 +152,9 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
           {problem.comments &&
             <div className="problem-description-row">
               <div className="problem-description">
-                <span className="description-label">Description:&nbsp;</span>
+                <Tooltip placement="right" content={problem.comments}>
+                  <span className="description-label">Description:&nbsp;</span>
+                </Tooltip>
                 <span>{problem.comments}</span>
               </div>
             </div>
