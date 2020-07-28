@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.12.4] - 2020-07-28
+### Fixed
+- Problems: filtering by tags, [#979](https://github.com/alexanderzobnin/grafana-zabbix/issues/979)
+- Problems: sorting order, [#973](https://github.com/alexanderzobnin/grafana-zabbix/issues/973)
+- Problems: performance improvements (remove unnecessary queries)
+
 ## [3.12.3] - 2020-07-17
 ### Fixed
 - Problems: empty problem list, [#955](https://github.com/alexanderzobnin/grafana-zabbix/issues/955)
