@@ -65,6 +65,9 @@ function callOnce(func, promiseKeeper, funcScope) {
         .then(result => {
           promiseKeeper[hash] = null;
           return result;
+        }).catch(err => {
+          promiseKeeper[hash] = null;
+          throw err;
         })
       );
     }

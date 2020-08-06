@@ -302,6 +302,9 @@ export function callOnce(func, promiseKeeper) {
         .then(result => {
           promiseKeeper = null;
           return result;
+        }).catch(err => {
+          promiseKeeper = null;
+          throw err;
         })
       );
     }
