@@ -212,13 +212,13 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     return problemsList;
   }
 
-  sortTriggers(triggerList) {
+  sortTriggers(problems: ProblemDTO[]) {
     if (this.panel.sortProblems === 'priority') {
-      triggerList = _.orderBy(triggerList, ['priority', 'timestamp', 'eventid'], ['desc', 'desc', 'desc']);
+      problems = _.orderBy(problems, ['severity', 'timestamp', 'eventid'], ['desc', 'desc', 'desc']);
     } else if (this.panel.sortProblems === 'lastchange') {
-      triggerList = _.orderBy(triggerList, ['timestamp', 'priority', 'eventid'], ['desc', 'desc', 'desc']);
+      problems = _.orderBy(problems, ['timestamp', 'severity', 'eventid'], ['desc', 'desc', 'desc']);
     }
-    return triggerList;
+    return problems;
   }
 
   formatTrigger(zabbixTrigger) {

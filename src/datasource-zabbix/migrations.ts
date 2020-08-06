@@ -57,6 +57,12 @@ function migrateSLA(target) {
   }
 }
 
+function migrateProblemSort(target) {
+  if (target.options?.sortProblems === 'priority') {
+    target.options.sortProblems = 'severity';
+  }
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -66,6 +72,7 @@ export function migrate(target) {
   migratePercentileAgg(target);
   migrateQueryType(target);
   migrateSLA(target);
+  migrateProblemSort(target);
   return target;
 }
 

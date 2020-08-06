@@ -477,6 +477,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     .then(problems => problemsHandler.setMaintenanceStatus(problems))
     .then(problems => problemsHandler.setAckButtonStatus(problems, showAckButton))
     .then(problems => problemsHandler.filterTriggersPre(problems, replacedTarget))
+    .then(problems => problemsHandler.sortProblems(problems, target))
     .then(problems => problemsHandler.addTriggerDataSource(problems, target))
     .then(problems => problemsHandler.addTriggerHostProxy(problems, proxies));
 

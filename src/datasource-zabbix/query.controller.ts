@@ -161,7 +161,7 @@ export class ZabbixQueryController extends QueryCtrl {
     this.sortByFields = [
       { text: 'Default', value: 'default' },
       { text: 'Last change', value: 'lastchange' },
-      { text: 'Severity',    value: 'priority' },
+      { text: 'Severity',    value: 'severity' },
     ];
 
     this.showEventsFields = [

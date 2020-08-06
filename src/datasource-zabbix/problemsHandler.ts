@@ -157,6 +157,15 @@ function filterTriggers(triggers, triggerFilter) {
   }
 }
 
+export function sortProblems(problems: ProblemDTO[], target) {
+  if (target.options?.sortProblems === 'severity') {
+    problems = _.orderBy(problems, ['severity', 'eventid'], ['desc', 'desc']);
+  } else if (target.options?.sortProblems === 'lastchange') {
+    problems = _.orderBy(problems, ['timestamp', 'eventid'], ['desc', 'desc']);
+  }
+  return problems;
+}
+
 export function toDataFrame(problems: any[]): DataFrame {
   const problemsField: Field<any> = {
     name: 'Problems',
@@ -180,6 +189,7 @@ const problemsHandler = {
   setMaintenanceStatus,
   setAckButtonStatus,
   filterTriggersPre,
+  sortProblems,
   toDataFrame,
   joinTriggersWithProblems,
   joinTriggersWithEvents,
