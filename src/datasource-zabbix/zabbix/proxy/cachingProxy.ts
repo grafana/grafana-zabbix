@@ -28,7 +28,7 @@ export class CachingProxy {
   /**
    * Wrap request to prevent multiple calls with same params when request is waiting for response.
    */
-  proxyfy(func, funcName, funcScope) {
+  proxify(func, funcName, funcScope) {
     if (!this.promises[funcName]) {
       this.promises[funcName] = {};
     }
@@ -36,9 +36,9 @@ export class CachingProxy {
     return callOnce(func, promiseKeeper, funcScope);
   }
 
-  proxyfyWithCache(func, funcName, funcScope) {
-    const proxyfied = this.proxyfy(func, funcName, funcScope);
-    return this.cacheRequest(proxyfied, funcName, funcScope);
+  proxifyWithCache(func, funcName, funcScope) {
+    const proxified = this.proxify(func, funcName, funcScope);
+    return this.cacheRequest(proxified, funcName, funcScope);
   }
 
   _isExpired(cacheObject) {

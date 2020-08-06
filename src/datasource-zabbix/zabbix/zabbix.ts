@@ -79,7 +79,7 @@ export class Zabbix implements ZabbixConnector {
 
     this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, datasourceId);
 
-    this.proxyfyRequests();
+    this.proxifyRequests();
     this.cacheRequests();
     this.bindRequests();
 
@@ -87,8 +87,8 @@ export class Zabbix implements ZabbixConnector {
       const connectorOptions: any = { dbConnectionRetentionPolicy };
       this.initDBConnector(dbConnectionDatasourceId, dbConnectionDatasourceName, connectorOptions)
       .then(() => {
-        this.getHistoryDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
-        this.getTrendsDB = this.cachingProxy.proxyfyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
+        this.getHistoryDB = this.cachingProxy.proxifyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
+        this.getTrendsDB = this.cachingProxy.proxifyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
       });
     }
   }
@@ -107,9 +107,9 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  proxyfyRequests() {
+  proxifyRequests() {
     for (const request of REQUESTS_TO_PROXYFY) {
-      this.zabbixAPI[request] = this.cachingProxy.proxyfy(this.zabbixAPI[request], request, this.zabbixAPI);
+      this.zabbixAPI[request] = this.cachingProxy.proxify(this.zabbixAPI[request], request, this.zabbixAPI);
     }
   }
 
