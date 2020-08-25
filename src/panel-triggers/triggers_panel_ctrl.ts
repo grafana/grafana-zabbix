@@ -391,6 +391,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     ctrl.events.on(PanelEvents.render, (renderData) => {
       renderData = renderData || this.renderData;
       renderPanel(renderData);
+      ctrl.renderingCompleted();
     });
 
     function renderPanel(problems) {
