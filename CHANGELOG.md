@@ -1,5 +1,53 @@
 # Change Log
 
+## [4.0.0] - 2020-08-25
+### 4.0 Feature highlights
+Grafana-Zabbix 4.0 comes with a bunch of changes under the hood. The most important thing introduced is a backend, which brings a number of benefits:
+
+- Alerting support (limited, data processing functions are not supported yet).
+- Fixed security issues related to exposing data source credentials to the Grafana frontend and storing password as a plain text in database.
+- Improved performance (plugin can cache queries and process data on the backend).
+- With improved security it makes easier to add actions (execute scripts, close problems, etc).
+
+### Installation
+
+**Prerequisites**: plugin requires Grafana 7.0 to run.
+
+Use the grafana-cli tool to install Zabbix from the commandline:
+
+1. `grafana-cli plugins install alexanderzobnin-zabbix-app`
+1. Unsigned plugins are not loading by default, so allow it in the Grafana config file:
+    ```sh
+    allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
+    ```
+1. restart Grafana server
+
+Refer to [`allow_loading_unsigned_plugins`](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins) option description for more information.
+
+### Security 
+- Zabbix credentials available for everyone who can see dashboard, [#380](https://github.com/alexanderzobnin/grafana-zabbix/issues/380)
+- Store password encrypted, [#800](https://github.com/alexanderzobnin/grafana-zabbix/issues/800)
+
+### Added
+- Alerting support (limited, data processing functions are not supported yet), [#801](https://github.com/alexanderzobnin/grafana-zabbix/issues/801)
+- Problems: execute scripts, [#978](https://github.com/alexanderzobnin/grafana-zabbix/issues/978)
+- Problems: tooltip with problem description
+- Problems: use severity filter from panel options
+
+### Fixed
+- Problems: problems history
+- Problems: sorting by severity, [#921](https://github.com/alexanderzobnin/grafana-zabbix/issues/921)
+- Datasource: reconnecting on request error
+- Problems: filtering by tags
+- Problems: sorting order
+- Problems: performance improvements (remove unnecessary queries)
+- Problems: empty problem list, [#955](https://github.com/alexanderzobnin/grafana-zabbix/issues/955)
+- Problems: panel migrations when panel options is not opened (options not saved after reload)
+- Problems: item value tooltip placement
+
+### Removed
+- Old alerting feature (show heart icon on the panel), replaced by Grafana alerting
+
 ## [4.0.0-alpha4] - 2020-07-21
 ### Fixed
 - Problems: filtering by tags
