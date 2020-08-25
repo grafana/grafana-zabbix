@@ -161,7 +161,7 @@ jobs:
           command: 'node ./.circleci/github/publishRelease.js'
           no_output_timeout: 15m
 
-  make-release:
+  make-release-commit:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
       - image: circleci/golang:1.13-node
@@ -275,6 +275,13 @@ workflows:
       - test:
           filters: *filter-only-release
       - make-github-release:
+          requires:
+            - build
+            - codespell
+            - lint
+            - test
+          filters: *filter-only-release
+      - make-release-commit:
           requires:
             - build
             - codespell
