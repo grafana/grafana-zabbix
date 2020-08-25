@@ -37,7 +37,7 @@ func (ds *ZabbixDatasourceInstance) ZabbixQuery(ctx context.Context, apiReq *Zab
 		}
 
 		if _, ok := CachedMethods[apiReq.Method]; ok {
-			ds.logger.Debug("Write result to cache", "method", apiReq.Method)
+			ds.logger.Debug("Writing result to cache", "method", apiReq.Method)
 			ds.queryCache.SetAPIRequest(apiReq, resultJson)
 		}
 	} else {
@@ -80,14 +80,12 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string,
 	}
 
 	resultByte, _ := response.MarshalJSON()
-	ds.logger.Debug("TestConnection", "result", string(resultByte))
-
 	return string(resultByte), nil
 }
 
 // ZabbixRequest checks authentication and makes a request to the Zabbix API
 func (ds *ZabbixDatasourceInstance) ZabbixRequest(ctx context.Context, method string, params ZabbixAPIParams) (*simplejson.Json, error) {
-	ds.logger.Debug("Invoke Zabbix API request", "ds", ds.dsInfo.Name, "method", method)
+	ds.logger.Debug("Zabbix API request", "datasource", ds.dsInfo.Name, "method", method)
 	var result *simplejson.Json
 	var err error
 
@@ -449,7 +447,7 @@ func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query
 		history := History{}
 		err = json.Unmarshal(pointJSON, &history)
 		if err != nil {
-			ds.logger.Warn(fmt.Sprintf("Could not map Zabbix response to History: %s", err.Error()))
+			ds.logger.Error("Error handling history response", "error", err.Error())
 		} else {
 			allHistory = append(allHistory, history...)
 		}

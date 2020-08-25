@@ -80,7 +80,7 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 	if err != nil {
 		res.Status = backend.HealthStatusError
 		res.Message = err.Error()
-		ds.logger.Error("Error connecting zabbix", "err", err)
+		ds.logger.Error("Error connecting Zabbix server", "err", err)
 		return res, nil
 	}
 

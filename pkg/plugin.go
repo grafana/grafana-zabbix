@@ -20,7 +20,7 @@ func main() {
 	ds := Init(pluginLogger, mux)
 	httpResourceHandler := httpadapter.New(mux)
 
-	pluginLogger.Debug("Starting Zabbix backend datasource")
+	pluginLogger.Debug("Starting Zabbix datasource")
 
 	err := backend.Serve(backend.ServeOpts{
 		CallResourceHandler: httpResourceHandler,
@@ -28,7 +28,7 @@ func main() {
 		CheckHealthHandler:  ds,
 	})
 	if err != nil {
-		pluginLogger.Error(err.Error())
+		pluginLogger.Error("Error starting Zabbix datasource", "error", err.Error())
 	}
 }
 
@@ -36,9 +36,9 @@ func Init(logger log.Logger, mux *http.ServeMux) *datasource.ZabbixDatasource {
 	variableName := "GFX_ZABBIX_DATA_PATH"
 	path, exist := os.LookupEnv(variableName)
 	if !exist {
-		logger.Error("could not read environment variable", variableName)
+		logger.Debug("Could not read environment variable", variableName)
 	} else {
-		logger.Debug("environment variable for storage found", "variable", variableName, "value", path)
+		logger.Debug("Environment variable for storage found", "variable", variableName, "value", path)
 	}
 
 	ds := datasource.NewZabbixDatasource()
