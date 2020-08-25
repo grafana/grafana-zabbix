@@ -43,10 +43,10 @@ describe('TriggerPanelCtrl', () => {
     ctx.panelCtrl = createPanelCtrl();
 
     ctx.dataFramesReceived = generateDataFramesResponse([
-      {id: "1", timestamp: "1510000010", priority: 5},
-      {id: "2", timestamp: "1510000040", priority: 3},
-      {id: "3", timestamp: "1510000020", priority: 4},
-      {id: "4", timestamp: "1510000030", priority: 2},
+      {id: "1", timestamp: "1510000010", severity: 5},
+      {id: "2", timestamp: "1510000040", severity: 3},
+      {id: "3", timestamp: "1510000020", severity: 4},
+      {id: "4", timestamp: "1510000030", severity: 2},
     ]);
   });
 
@@ -153,7 +153,7 @@ const defaultProblem: any = {
   "lastchange": "1440259530",
   "maintenance": true,
   "manual_close": "0",
-  "priority": "2",
+  "severity": "2",
   "recovery_expression": "",
   "recovery_mode": "0",
   "showAckButton": true,
@@ -168,7 +168,7 @@ const defaultProblem: any = {
 };
 
 function generateDataFramesResponse(problemDescs: any[] = [{id: 1}]): any {
-  const problems = problemDescs.map(problem => generateProblem(problem.id, problem.timestamp, problem.priority));
+  const problems = problemDescs.map(problem => generateProblem(problem.id, problem.timestamp, problem.severity));
 
   return [
     {
@@ -195,7 +195,7 @@ function generateProblem(id, timestamp?, severity?): any {
   problem.triggerid = id.toString();
   problem.eventid = id.toString();
   if (severity) {
-    problem.priority = severity.toString();
+    problem.severity = severity.toString();
   }
   if (timestamp) {
     problem.lastchange = timestamp;
