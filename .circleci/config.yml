@@ -281,6 +281,13 @@ workflows:
             - lint
             - test
           filters: *filter-only-release
+      - make-release-commit:
+          requires:
+            - build
+            - codespell
+            - lint
+            - test
+          filters: *filter-only-release
 
   build-docs:
     jobs:
