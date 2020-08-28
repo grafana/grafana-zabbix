@@ -49,7 +49,7 @@ func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (i
 	logger := log.New()
 	logger.Debug("Initializing new data source instance")
 
-	zabbixAPI, err := zabbixapi.New(settings.URL)
+	zabbixAPI, err := zabbixapi.New(settings.URL, &settings)
 	if err != nil {
 		logger.Error("Error initializing Zabbix API", "error", err)
 		return nil, err
