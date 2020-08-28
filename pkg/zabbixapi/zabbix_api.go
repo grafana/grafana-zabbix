@@ -3,17 +3,15 @@ package zabbixapi
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
-	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"golang.org/x/net/context/ctxhttp"
@@ -32,26 +30,6 @@ type ZabbixAPI struct {
 
 type ZabbixAPIParams = map[string]interface{}
 
-func newHttpClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Renegotiation: tls.RenegotiateFreelyAsClient,
-			},
-			Proxy: http.ProxyFromEnvironment,
-			Dial: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).Dial,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-			MaxIdleConns:          100,
-			IdleConnTimeout:       90 * time.Second,
-		},
-		Timeout: time.Duration(time.Second * 30),
-	}
-}
-
 // New returns new ZabbixAPI instance initialized with given URL or error.
 func New(api_url string) (*ZabbixAPI, error) {
 	apiLogger := log.New()
@@ -63,7 +41,7 @@ func New(api_url string) (*ZabbixAPI, error) {
 	return &ZabbixAPI{
 		url:        zabbixURL,
 		logger:     apiLogger,
-		httpClient: newHttpClient(),
+		httpClient: httpclient.NewHttpClient(),
 	}, nil
 }
 
