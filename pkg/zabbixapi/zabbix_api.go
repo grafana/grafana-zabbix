@@ -170,7 +170,7 @@ func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Req
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid status code. status: %v", res.Status)
+		return nil, fmt.Errorf("request failed, status: %v", res.Status)
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
