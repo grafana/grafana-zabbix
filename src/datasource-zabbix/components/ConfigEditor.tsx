@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { DataSourcePluginOptionsEditorProps, DataSourceSettings, SelectableValue } from '@grafana/data';
-import { DataSourceHttpSettings, LegacyForms, Field, Input, Button, InlineFormLabel } from '@grafana/ui';
-const { Select, FormField, Switch } = LegacyForms;
+import { DataSourceHttpSettings, LegacyForms, Field, Input, Button, InlineFormLabel, Select } from '@grafana/ui';
+const { FormField, Switch } = LegacyForms;
 import { ZabbixDSOptions, ZabbixSecureJSONData } from '../types';
 
 const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
@@ -67,7 +67,7 @@ export const ConfigEditor = (props: Props) => {
   return (
     <>
       <DataSourceHttpSettings
-        defaultUrl={'http://localhost:9200'}
+        defaultUrl={'http://localhost/zabbix/api_jsonrpc.php'}
         dataSourceConfig={options}
         showAccessOptions={true}
         onChange={onOptionsChange}
@@ -168,7 +168,12 @@ export const ConfigEditor = (props: Props) => {
           <>
             <div className="gf-form">
               <InlineFormLabel width={9}>Data Source</InlineFormLabel>
-              <Select width={16} options={getDirectDBDSOptions()} value={selectedDBDatasource} />
+              <Select
+                width={32}
+                options={getDirectDBDSOptions()}
+                value={selectedDBDatasource}
+                onChange={directDBDatasourceChanegeHandler(options, onOptionsChange, setSelectedDBDatasource, setCurrentDSType)}
+              />
             </div>
             {currentDSType === 'influxdb' &&
               <div className="gf-form">
@@ -265,6 +270,26 @@ const resetSecureJsonField = (
   });
 };
 
+const directDBDatasourceChanegeHandler = (
+  options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
+  onChange: Props['onOptionsChange'],
+  setSelectedDS: React.Dispatch<any>,
+  setSelectedDSType: React.Dispatch<any>,
+) => (
+  value: SelectableValue<number>
+) => {
+  const selectedDs = getDirectDBDatasources().find(dsOption => dsOption.id === value.value);
+  setSelectedDS({ label: selectedDs.name, value: selectedDs.id });
+  setSelectedDSType(selectedDs.type);
+  onChange({
+    ...options,
+    jsonData: {
+      ...options.jsonData,
+      dbConnectionDatasourceId: value.value
+    },
+  });
+};
+
 const getDirectDBDatasources = () => {
   let dsList = (getDataSourceSrv() as any).getAll();
   dsList = dsList.filter(ds => SUPPORTED_SQL_DS.includes(ds.type));
@@ -273,6 +298,6 @@ const getDirectDBDatasources = () => {
 
 const getDirectDBDSOptions = () => {
   const dsList = getDirectDBDatasources();
-  const dsOpts: Array<SelectableValue<number>> = dsList.map(ds => ({ label: ds.name, value: ds.id }));
+  const dsOpts: Array<SelectableValue<number>> = dsList.map(ds => ({ label: ds.name, value: ds.id, description: ds.type }));
   return dsOpts;
 };
