@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
@@ -22,8 +22,8 @@ var (
 )
 
 type ZabbixDatasource struct {
-	datasourceCache *cache.Cache
-	logger          log.Logger
+	im     instancemgmt.InstanceManager
+	logger log.Logger
 }
 
 // ZabbixDatasourceInstance stores state about a specific datasource
@@ -37,30 +37,36 @@ type ZabbixDatasourceInstance struct {
 }
 
 func NewZabbixDatasource() *ZabbixDatasource {
+	im := datasource.NewInstanceManager(newZabbixDatasourceInstance)
 	return &ZabbixDatasource{
-		datasourceCache: cache.NewCache(10*time.Minute, 10*time.Minute),
-		logger:          log.New(),
+		im:     im,
+		logger: log.New(),
 	}
 }
 
-// NewZabbixDatasourceInstance returns an initialized zabbix datasource instance
-func NewZabbixDatasourceInstance(dsInfo *backend.DataSourceInstanceSettings) (*ZabbixDatasourceInstance, error) {
-	zabbixAPI, err := zabbixapi.New(dsInfo.URL)
+// newZabbixDatasourceInstance returns an initialized zabbix datasource instance
+func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	logger := log.New()
+	logger.Debug("Initializing new data source instance")
+
+	zabbixAPI, err := zabbixapi.New(settings.URL)
 	if err != nil {
+		logger.Error("Error initializing Zabbix API", "error", err)
 		return nil, err
 	}
 
-	zabbixSettings, err := readZabbixSettings(dsInfo)
+	zabbixSettings, err := readZabbixSettings(&settings)
 	if err != nil {
+		logger.Error("Error parsing Zabbix settings", "error", err)
 		return nil, err
 	}
 
 	return &ZabbixDatasourceInstance{
-		dsInfo:     dsInfo,
+		dsInfo:     &settings,
 		zabbixAPI:  zabbixAPI,
 		Settings:   zabbixSettings,
 		queryCache: NewDatasourceCache(zabbixSettings.CacheTTL, 10*time.Minute),
-		logger:     log.New(),
+		logger:     logger,
 	}, nil
 }
 
@@ -68,7 +74,7 @@ func NewZabbixDatasourceInstance(dsInfo *backend.DataSourceInstanceSettings) (*Z
 func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
 
-	dsInstance, err := ds.GetDatasource(req.PluginContext)
+	dsInstance, err := ds.getDSInstance(req.PluginContext)
 	if err != nil {
 		res.Status = backend.HealthStatusError
 		res.Message = "Error getting datasource instance"
@@ -92,7 +98,7 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	qdr := backend.NewQueryDataResponse()
 
-	zabbixDS, err := ds.GetDatasource(req.PluginContext)
+	zabbixDS, err := ds.getDSInstance(req.PluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -121,32 +127,13 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 	return qdr, nil
 }
 
-// GetDatasource Returns cached datasource or creates new one
-func (ds *ZabbixDatasource) GetDatasource(pluginContext backend.PluginContext) (*ZabbixDatasourceInstance, error) {
-	dsSettings := pluginContext.DataSourceInstanceSettings
-	dsKey := fmt.Sprintf("%d-%d", pluginContext.OrgID, dsSettings.ID)
-	// Get hash to check if settings changed
-	dsInfoHash := HashDatasourceInfo(dsSettings)
-
-	if cachedData, ok := ds.datasourceCache.Get(dsKey); ok {
-		if cachedDS, ok := cachedData.(*ZabbixDatasourceInstance); ok {
-			cachedDSHash := HashDatasourceInfo(cachedDS.dsInfo)
-			if cachedDSHash == dsInfoHash {
-				return cachedDS, nil
-			}
-			ds.logger.Debug("Data source settings changed", "org", pluginContext.OrgID, "id", dsSettings.ID, "name", dsSettings.Name)
-		}
-	}
-
-	ds.logger.Debug("Initializing data source", "org", pluginContext.OrgID, "id", dsSettings.ID, "name", dsSettings.Name)
-	dsInstance, err := NewZabbixDatasourceInstance(pluginContext.DataSourceInstanceSettings)
+// getDSInstance Returns cached datasource or creates new one
+func (ds *ZabbixDatasource) getDSInstance(pluginContext backend.PluginContext) (*ZabbixDatasourceInstance, error) {
+	instance, err := ds.im.Get(pluginContext)
 	if err != nil {
-		ds.logger.Error("Error initializing datasource", "error", err)
 		return nil, err
 	}
-
-	ds.datasourceCache.Set(dsKey, dsInstance)
-	return dsInstance, nil
+	return instance.(*ZabbixDatasourceInstance), nil
 }
 
 func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) (*ZabbixDatasourceSettings, error) {
