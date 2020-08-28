@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -108,21 +107,13 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		return nil, err
 	}
 
-	var body io.Reader
-	body = bytes.NewReader(reqBodyJSON)
-	rc, ok := body.(io.ReadCloser)
-	if !ok && body != nil {
-		rc = ioutil.NopCloser(body)
+	req, err := http.NewRequest(http.MethodPost, api.url.String(), bytes.NewBuffer(reqBodyJSON))
+	if err != nil {
+		return nil, err
 	}
 
-	req := &http.Request{
-		Method: "POST",
-		URL:    api.url,
-		Header: map[string][]string{
-			"Content-Type": {"application/json"},
-		},
-		Body: rc,
-	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
 
 	response, err := makeHTTPRequest(ctx, api.httpClient, req)
 	if err != nil {
