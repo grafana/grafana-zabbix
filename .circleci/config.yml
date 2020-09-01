@@ -134,13 +134,13 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
-  package-plugin:
-    executor: e2e_exec
+  get-plugin:
     working_directory: ~/alexanderzobnin/grafana-zabbix
+    docker:
+      - image: circleci/golang:1.14-node
+    environment:
+      YARN_NO_PROGRESS: "true"
     steps:
-      # - add_ssh_keys:
-      #     fingerprints:
-      #       - ${GITHUB_SSH_FINGERPRINT}
       - checkout
       - restore_cache:
           keys:
@@ -161,6 +161,18 @@ jobs:
           paths:
           - ./vendor
           - /go/pkg/mod
+      - persist_to_workspace:
+          root: ~/alexanderzobnin/
+          paths:
+            - grafana-zabbix
+
+  package-plugin:
+    executor: e2e_exec
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - ${GITHUB_SSH_FINGERPRINT}
       - run:
           name: Build plugin for all platforms
           command: 'make dist'
@@ -348,9 +360,13 @@ workflows:
     jobs:
       - build:
           filters: *filter-relase-test
-      - package-plugin:
+      - get-plugin:
           requires:
             - build
+          filters: *filter-relase-test
+      - package-plugin:
+          requires:
+            - get-plugin
           filters: *filter-relase-test
 
   build-docs:
