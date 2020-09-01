@@ -138,9 +138,9 @@ jobs:
     executor: e2e_exec
     working_directory: ~/alexanderzobnin/grafana-zabbix
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - ${GITHUB_SSH_FINGERPRINT}
+      # - add_ssh_keys:
+      #     fingerprints:
+      #       - ${GITHUB_SSH_FINGERPRINT}
       - checkout
       - restore_cache:
           keys:
