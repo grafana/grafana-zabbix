@@ -1,3 +1,5 @@
+version: 2.1
+
 aliases:
   # Workflow filters
   - &filter-not-release-or-master
@@ -20,8 +22,19 @@ aliases:
   - &filter-docs
     branches:
       only: docs
+  - &filter-relase-test
+    branches:
+      only: release-test
 
-version: 2
+executors:
+  default_exec:
+    docker:
+      - image: srclosson/grafana-plugin-ci-alpine:latest
+  e2e_exec:
+    docker:
+      - image: srclosson/grafana-plugin-ci-e2e:latest
+
+
 jobs:
   build:
     working_directory: ~/alexanderzobnin/grafana-zabbix
@@ -120,13 +133,54 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
+  package-plugin:
+    executor: e2e_exec
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - ${GITHUB_SSH_FINGERPRINT}
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-npm-{{ checksum "yarn.lock" }}
+      - restore_cache:
+          keys:
+            - dependency-cache-go-{{ checksum "go.sum" }}
+      - run:
+          name: Install Dependencies
+          command: 'make install'
+          no_output_timeout: 15m
+      - save_cache:
+          key: dependency-cache-npm-{{ checksum "yarn.lock" }}
+          paths:
+          - ./node_modules
+      - save_cache:
+          key: dependency-cache-go-{{ checksum "go.sum" }}
+          paths:
+          - ./vendor
+          - /go/pkg/mod
+      - run:
+          name: Build plugin for all platforms
+          command: 'make dist'
+          no_output_timeout: 15m
+      - run:
+          name: Prepare plugin for packaging
+          command: |
+            mkdir -p ci/jobs/build_plugin
+            mv dist/ ci/jobs/build_plugin
+      - run:
+          name: Package and sign plugin
+          command: yarn grafana-toolkit plugin:ci-package
+          no_output_timeout: 15m
+      - store_artifacts:
+          path: ci/packages
+
   make-github-release:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
       - image: circleci/golang:1.13-node
     environment:
-      CI_GIT_USER: CircleCI
-      CI_GIT_EMAIL: ci@grafana.com
     steps:
       - checkout
       - restore_cache:
@@ -171,7 +225,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
+            - ${GITHUB_PROJECT_SSH_KEY_FINGERPRINT}
       - checkout
       - restore_cache:
           keys:
@@ -225,7 +279,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
+            - ${GITHUB_PROJECT_SSH_KEY_FINGERPRINT}
       - checkout
       - attach_workspace:
           at: ../gh-pages
@@ -288,6 +342,15 @@ workflows:
             - lint
             - test
           filters: *filter-only-release
+
+  build-test-release:
+    jobs:
+      - build:
+          filters: *filter-relase-test
+      - package-plugin:
+          requires:
+            - build
+          filters: *filter-relase-test
 
   build-docs:
     jobs:
