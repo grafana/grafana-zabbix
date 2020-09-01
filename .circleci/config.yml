@@ -174,7 +174,7 @@ jobs:
           fingerprints:
             - ${GITHUB_SSH_FINGERPRINT}
       - attach_workspace:
-          at: .
+          at: ~/alexanderzobnin
       - run:
           name: Build plugin for all platforms
           command: 'make dist'
