@@ -173,6 +173,8 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - ${GITHUB_SSH_FINGERPRINT}
+      - attach_workspace:
+          at: .
       - run:
           name: Build plugin for all platforms
           command: 'make dist'
