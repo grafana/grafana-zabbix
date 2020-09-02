@@ -203,16 +203,34 @@ jobs:
   make-release-commit:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.14-node
+      - image: circleci/golang:1.13-node
     environment:
       CI_GIT_USER: CircleCI
       CI_GIT_EMAIL: ci@grafana.com
     steps:
       - add_ssh_keys:
           fingerprints:
-            - dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29
-      - attach_workspace:
-          at: ~/alexanderzobnin
+            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-npm-{{ checksum "yarn.lock" }}
+      - restore_cache:
+          keys:
+            - dependency-cache-go-{{ checksum "go.sum" }}
+      - run:
+          name: Install Dependencies
+          command: 'make install'
+          no_output_timeout: 15m
+      - save_cache:
+          key: dependency-cache-npm-{{ checksum "yarn.lock" }}
+          paths:
+          - ./node_modules
+      - save_cache:
+          key: dependency-cache-go-{{ checksum "go.sum" }}
+          paths:
+          - ./vendor
+          - /go/pkg/mod
       - run: ./.circleci/make-release.sh
 
   build-docs:
@@ -246,7 +264,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29
+            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
       - checkout
       - attach_workspace:
           at: ../gh-pages
@@ -312,7 +330,7 @@ workflows:
           filters: *filter-only-release
       - make-release-commit:
           requires:
-            - package-plugin
+            - get-plugin
           filters: *filter-only-release
 
   build-docs:
