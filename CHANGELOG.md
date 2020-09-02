@@ -1,5 +1,13 @@
 # Change Log
 
+## [4.0.1] - 2020-09-02
+### Fixed
+- Plugin is not signed, [#1038](https://github.com/alexanderzobnin/grafana-zabbix/issues/1038)
+- Datasource: "Parse error Invalid JSON. An error occurred on the server while parsing the JSON text", [#1004](https://github.com/alexanderzobnin/grafana-zabbix/issues/1004)
+- Datasource: Skip TLS Verify button does not work, [#1029](https://github.com/alexanderzobnin/grafana-zabbix/issues/1029)
+- Config: can't select Direct DB Connection in Grafana 7.1.5, [#1027](https://github.com/alexanderzobnin/grafana-zabbix/issues/1027)
+- Problems: trigger dependencies not resolved, [#1024](https://github.com/alexanderzobnin/grafana-zabbix/issues/1024)
+
 ## [4.0.0] - 2020-08-25
 ### 4.0 Feature highlights
 Grafana-Zabbix 4.0 comes with a bunch of changes under the hood. The most important thing introduced is a backend, which brings a number of benefits:
