@@ -214,26 +214,8 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - ${GITHUB_PROJECT_SSH_KEY_FINGERPRINT}
-      - checkout
-      - restore_cache:
-          keys:
-            - dependency-cache-npm-{{ checksum "yarn.lock" }}
-      - restore_cache:
-          keys:
-            - dependency-cache-go-{{ checksum "go.sum" }}
-      - run:
-          name: Install Dependencies
-          command: 'make install'
-          no_output_timeout: 15m
-      - save_cache:
-          key: dependency-cache-npm-{{ checksum "yarn.lock" }}
-          paths:
-          - ./node_modules
-      - save_cache:
-          key: dependency-cache-go-{{ checksum "go.sum" }}
-          paths:
-          - ./vendor
-          - /go/pkg/mod
+      - attach_workspace:
+          at: ~/alexanderzobnin
       - run: ./.circleci/make-release.sh
 
   build-docs:
@@ -328,6 +310,10 @@ workflows:
             - get-plugin
           filters: *filter-only-release
       - make-github-release:
+          requires:
+            - package-plugin
+          filters: *filter-only-release
+      - make-release-commit:
           requires:
             - package-plugin
           filters: *filter-only-release

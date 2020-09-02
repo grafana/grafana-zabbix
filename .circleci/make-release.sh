@@ -34,11 +34,11 @@ git checkout -b "$RELEASE_BRANCH"
 # make clean install dist
 
 # Commit release
-# git add --force dist/
-# git commit -m "release $RELEASE_VER"
+git add --force dist/
+git commit -m "release $RELEASE_VER"
 
-# RELEASE_COMMIT_HASH=$(git log -n 1 | grep -Po "(?<=commit )[0-9a-z]{40}")
-# echo "$RELEASE_COMMIT_HASH"
+RELEASE_COMMIT_HASH=$(git log -n 1 | grep -Po "(?<=commit )[0-9a-z]{40}")
+echo "$RELEASE_COMMIT_HASH"
 
 # Push release branch
 git push origin "$RELEASE_BRANCH"
