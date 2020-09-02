@@ -181,9 +181,9 @@ jobs:
           command: yarn grafana-toolkit plugin:ci-package
           no_output_timeout: 15m
       - persist_to_workspace:
-          root: ~/alexanderzobnin/
+          root: ~/alexanderzobnin/grafana-zabbix
           paths:
-            - grafana-zabbix
+            - ci/packages
       - store_artifacts:
           path: ci/packages
 
@@ -194,7 +194,7 @@ jobs:
     environment:
     steps:
       - attach_workspace:
-          at: ~/alexanderzobnin
+          at: ~/alexanderzobnin/grafana-zabbix
       - run:
           name: Prepare assets
           command: mv ci/packages/* ./
