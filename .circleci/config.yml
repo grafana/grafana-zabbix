@@ -162,9 +162,6 @@ jobs:
     executor: e2e_exec
     working_directory: ~/alexanderzobnin/grafana-zabbix
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - ${GITHUB_SSH_FINGERPRINT}
       - attach_workspace:
           at: ~/alexanderzobnin
       - run:
@@ -213,7 +210,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - ${GITHUB_PROJECT_SSH_KEY_FINGERPRINT}
+            - dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29
       - attach_workspace:
           at: ~/alexanderzobnin
       - run: ./.circleci/make-release.sh
@@ -249,7 +246,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - ${GITHUB_PROJECT_SSH_KEY_FINGERPRINT}
+            - dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29
       - checkout
       - attach_workspace:
           at: ../gh-pages
