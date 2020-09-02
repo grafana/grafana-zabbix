@@ -11,7 +11,6 @@ aliases:
         - /^release-[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)$/
         - docs
         - gh-pages
-        - release-test
   - &filter-only-master
     branches:
       only: master
@@ -23,24 +22,17 @@ aliases:
   - &filter-docs
     branches:
       only: docs
-  - &filter-relase-test
-    branches:
-      only: release-test
 
 executors:
-  default_exec:
-    docker:
-      - image: srclosson/grafana-plugin-ci-alpine:latest
   e2e_exec:
     docker:
       - image: srclosson/grafana-plugin-ci-e2e:latest
-
 
 jobs:
   build:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     environment:
       YARN_NO_PROGRESS: "true"
     steps:
@@ -69,7 +61,7 @@ jobs:
   lint:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     steps:
       - checkout
       - restore_cache:
@@ -99,7 +91,7 @@ jobs:
       CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
       CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     steps:
       - checkout
       # Prepare for artifact and test results collection equivalent to how it was done on 1.0.
@@ -198,7 +190,7 @@ jobs:
   make-github-release:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     environment:
     steps:
       - attach_workspace:
@@ -214,7 +206,7 @@ jobs:
   make-release-commit:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     environment:
       CI_GIT_USER: CircleCI
       CI_GIT_EMAIL: ci@grafana.com
@@ -267,7 +259,7 @@ jobs:
   deploy-docs:
     working_directory: ~/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     environment:
       GH_PAGES_BRANCH: gh-pages
       CI_GIT_USER: CircleCI
@@ -335,19 +327,6 @@ workflows:
           requires:
             - get-plugin
           filters: *filter-only-release
-
-  build-test-release:
-    jobs:
-      - build:
-          filters: *filter-relase-test
-      - get-plugin:
-          requires:
-            - build
-          filters: *filter-relase-test
-      - package-plugin:
-          requires:
-            - get-plugin
-          filters: *filter-relase-test
 
   build-docs:
     jobs:
