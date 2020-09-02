@@ -29,9 +29,7 @@ RELEASE_BRANCH=release-$RELEASE_VER
 
 # Build plugin
 git checkout -b "$RELEASE_BRANCH"
-
-# Skip since moved to publishing plugin assets from github releases
-# make clean install dist
+make clean install dist
 
 # Commit release
 git add --force dist/
