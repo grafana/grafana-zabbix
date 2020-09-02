@@ -1,3 +1,5 @@
+version: 2.1
+
 aliases:
   # Workflow filters
   - &filter-not-release-or-master
@@ -21,12 +23,16 @@ aliases:
     branches:
       only: docs
 
-version: 2
+executors:
+  e2e_exec:
+    docker:
+      - image: srclosson/grafana-plugin-ci-e2e:latest
+
 jobs:
   build:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     environment:
       YARN_NO_PROGRESS: "true"
     steps:
@@ -55,7 +61,7 @@ jobs:
   lint:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     steps:
       - checkout
       - restore_cache:
@@ -85,7 +91,7 @@ jobs:
       CIRCLE_ARTIFACTS: /tmp/circleci-artifacts
       CIRCLE_TEST_REPORTS: /tmp/circleci-test-results
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     steps:
       - checkout
       # Prepare for artifact and test results collection equivalent to how it was done on 1.0.
@@ -120,13 +126,12 @@ jobs:
       - store_artifacts:
           path: /tmp/circleci-test-results
 
-  make-github-release:
+  get-plugin:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     environment:
-      CI_GIT_USER: CircleCI
-      CI_GIT_EMAIL: ci@grafana.com
+      YARN_NO_PROGRESS: "true"
     steps:
       - checkout
       - restore_cache:
@@ -148,14 +153,51 @@ jobs:
           paths:
           - ./vendor
           - /go/pkg/mod
+      - persist_to_workspace:
+          root: ~/alexanderzobnin/
+          paths:
+            - grafana-zabbix
+
+  package-plugin:
+    executor: e2e_exec
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - ${GITHUB_SSH_FINGERPRINT}
+      - attach_workspace:
+          at: ~/alexanderzobnin
       - run:
           name: Build plugin for all platforms
           command: 'make dist'
           no_output_timeout: 15m
       - run:
-          name: Package plugin
-          command: './.circleci/make-package.sh'
+          name: Prepare plugin for packaging
+          command: |
+            mkdir -p ci/jobs/build_plugin
+            mv dist/ ci/jobs/build_plugin
+      - run:
+          name: Package and sign plugin
+          command: yarn grafana-toolkit plugin:ci-package
           no_output_timeout: 15m
+      - persist_to_workspace:
+          root: ~/alexanderzobnin/
+          paths:
+            - grafana-zabbix
+      - store_artifacts:
+          path: ci/packages
+
+  make-github-release:
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    docker:
+      - image: circleci/golang:1.14-node
+    environment:
+    steps:
+      - attach_workspace:
+          at: ~/alexanderzobnin
+      - run:
+          name: Prepare assets
+          command: mv ci/packages/* ./
       - run:
           name: Publish release
           command: 'node ./.circleci/github/publishRelease.js'
@@ -164,14 +206,14 @@ jobs:
   make-release-commit:
     working_directory: ~/alexanderzobnin/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     environment:
       CI_GIT_USER: CircleCI
       CI_GIT_EMAIL: ci@grafana.com
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
+            - ${GITHUB_PROJECT_SSH_KEY_FINGERPRINT}
       - checkout
       - restore_cache:
           keys:
@@ -217,7 +259,7 @@ jobs:
   deploy-docs:
     working_directory: ~/grafana-zabbix
     docker:
-      - image: circleci/golang:1.13-node
+      - image: circleci/golang:1.14-node
     environment:
       GH_PAGES_BRANCH: gh-pages
       CI_GIT_USER: CircleCI
@@ -225,7 +267,7 @@ jobs:
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "dc:7e:54:e0:aa:56:4d:e5:60:7b:f3:51:24:2d:d3:29"
+            - ${GITHUB_PROJECT_SSH_KEY_FINGERPRINT}
       - checkout
       - attach_workspace:
           at: ../gh-pages
@@ -274,19 +316,16 @@ workflows:
           filters: *filter-only-release
       - test:
           filters: *filter-only-release
-      - make-github-release:
+      - get-plugin:
           requires:
             - build
             - codespell
             - lint
             - test
           filters: *filter-only-release
-      - make-release-commit:
+      - make-github-release:
           requires:
-            - build
-            - codespell
-            - lint
-            - test
+            - get-plugin
           filters: *filter-only-release
 
   build-docs:
