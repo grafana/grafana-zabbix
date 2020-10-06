@@ -3,6 +3,7 @@ package httpclient
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net"
@@ -87,6 +88,13 @@ func getHttpTransport(ds *backend.DataSourceInstanceSettings) (*dataSourceTransp
 		IdleConnTimeout:       90 * time.Second,
 	}
 
+	if ds.BasicAuthEnabled {
+		user := ds.BasicAuthUser
+		password := ds.DecryptedSecureJSONData["basicAuthPassword"]
+		basicAuthHeader := getBasicAuthHeader(user, password)
+		customHeaders["Authorization"] = basicAuthHeader
+	}
+
 	dsTransport := &dataSourceTransport{
 		headers:   customHeaders,
 		transport: transport,
@@ -168,4 +176,10 @@ func getCustomHeaders(ds *backend.DataSourceInstanceSettings) map[string]string 
 	}
 
 	return headers
+}
+
+// getBasicAuthHeader returns a base64 encoded string from user and password.
+func getBasicAuthHeader(user string, password string) string {
+	var userAndPass = user + ":" + password
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(userAndPass))
 }
