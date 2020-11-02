@@ -225,7 +225,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       if (this.enableDebugLog) {
         console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
       }
-      const dataFrames = result.map(responseHandler.seriesToDataFrame);
+      const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s));
       return dataFrames;
     });
   }
@@ -326,7 +326,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       return this.zabbix.getHistoryText(items, timeRange, target);
     })
     .then(result => {
-      const dataFrames = result.map(responseHandler.seriesToDataFrame, FieldType.string);
+      const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, FieldType.string));
       return dataFrames;
     });
   }
@@ -378,7 +378,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       return this.zabbix.getSLA(itservices, timeRange, target, options);})
     .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target))
     .then(result => {
-      const dataFrames = result.map(responseHandler.seriesToDataFrame);
+      const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s));
       return dataFrames;
     });
   }
