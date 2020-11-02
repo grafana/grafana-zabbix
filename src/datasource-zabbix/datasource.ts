@@ -376,7 +376,11 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         itservices = _.filter(itservices, {'serviceid': target.itservice?.serviceid});
       }
       return this.zabbix.getSLA(itservices, timeRange, target, options);})
-    .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target));
+    .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target))
+    .then(result => {
+      const dataFrames = result.map(responseHandler.seriesToDataFrame);
+      return dataFrames;
+    });
   }
 
   queryTriggersData(target, timeRange) {
