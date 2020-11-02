@@ -57,7 +57,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
-export function seriesToDataFrame(timeseries): DataFrame {
+export function seriesToDataFrame(timeseries, fieldType = FieldType.number): DataFrame {
   const datapoints = timeseries.datapoints;
 
   const timeFiled: Field = {
@@ -67,11 +67,18 @@ export function seriesToDataFrame(timeseries): DataFrame {
     values: new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_TS])),
   };
 
+  let values: ArrayVector<any>;
+  if (fieldType === FieldType.string) {
+    values = new ArrayVector<string>(datapoints.map(p => p[c.DATAPOINT_VALUE]));
+  } else {
+    values = new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_VALUE]));
+  }
+
   const valueFiled: Field = {
     name: TIME_SERIES_VALUE_FIELD_NAME,
-    type: FieldType.number,
+    type: fieldType,
     config: {},
-    values: new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_VALUE])),
+    values,
   };
 
   const fields: Field[] = [ timeFiled, valueFiled ];

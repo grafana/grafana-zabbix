@@ -13,7 +13,7 @@ import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
 import { getBackendSrv } from '@grafana/runtime';
-import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, LoadingState } from '@grafana/data';
+import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, LoadingState } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -324,6 +324,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return this.zabbix.getItemsFromTarget(target, options)
     .then(items => {
       return this.zabbix.getHistoryText(items, timeRange, target);
+    })
+    .then(result => {
+      const dataFrames = result.map(responseHandler.seriesToDataFrame, FieldType.string);
+      return dataFrames;
     });
   }
 
@@ -670,7 +674,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
       }
     });
-    target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
+
+    if (target.textFilter) {
+      target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
+    }
 
     _.forEach(target.functions, func => {
       func.params = _.map(func.params, param => {
