@@ -13,7 +13,7 @@ import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
 import { getBackendSrv } from '@grafana/runtime';
-import { DataSourceApi, DataSourceInstanceSettings } from '@grafana/data';
+import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, LoadingState } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -94,7 +94,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @param  {Object} options   Contains time range, targets and other info.
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
-  query(options) {
+  query(options: DataQueryRequest<any>): Promise<DataQueryResponse> {
     // Create request for each target
     const promises = _.map(options.targets, t => {
       // Don't request for hidden targets
@@ -164,7 +164,11 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(data => {
-        return { data: data };
+        return {
+          data,
+          state: LoadingState.Done,
+          key: options.requestId,
+        };
       });
   }
 
@@ -207,7 +211,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Query target data for Metrics
    */
-  queryNumericData(target, timeRange, useTrends, options) {
+  queryNumericData(target, timeRange, useTrends, options): Promise<DataFrame[]> {
     let queryStart, queryEnd;
     const getItemOptions = {
       itemtype: 'num'
@@ -221,7 +225,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       if (this.enableDebugLog) {
         console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
       }
-      return result;
+      const dataFrames = result.map(responseHandler.seriesToDataFrame);
+      return dataFrames;
     });
   }
 

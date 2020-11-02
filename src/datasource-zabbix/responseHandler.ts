@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
+import { ArrayVector, DataFrame, Field, FieldType, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -54,6 +55,34 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
       scopedVars,
     };
   });
+}
+
+export function seriesToDataFrame(timeseries): DataFrame {
+  const datapoints = timeseries.datapoints;
+
+  const timeFiled: Field = {
+    name: TIME_SERIES_TIME_FIELD_NAME,
+    type: FieldType.time,
+    config: {},
+    values: new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_TS])),
+  };
+
+  const valueFiled: Field = {
+    name: TIME_SERIES_VALUE_FIELD_NAME,
+    type: FieldType.number,
+    config: {},
+    values: new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_VALUE])),
+  };
+
+  const fields: Field[] = [ timeFiled, valueFiled ];
+
+  const frame: DataFrame = {
+    name: timeseries.target,
+    fields,
+    length: datapoints.length,
+  };
+
+  return frame;
 }
 
 function sortTimeseries(timeseries) {
@@ -256,5 +285,6 @@ export default {
   handleHistoryAsTable,
   handleSLAResponse,
   handleTriggersResponse,
-  sortTimeseries
+  sortTimeseries,
+  seriesToDataFrame
 };
