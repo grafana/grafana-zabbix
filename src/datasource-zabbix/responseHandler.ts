@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
-import { ArrayVector, DataFrame, Field, FieldType, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
+import { ArrayVector, DataFrame, DataQuery, Field, FieldType, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -57,7 +57,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
-export function seriesToDataFrame(timeseries, fieldType?: FieldType): DataFrame {
+export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: FieldType): DataFrame {
   const datapoints = timeseries.datapoints;
 
   const timeFiled: Field = {
@@ -85,6 +85,7 @@ export function seriesToDataFrame(timeseries, fieldType?: FieldType): DataFrame 
 
   const frame: DataFrame = {
     name: timeseries.target,
+    refId: target.refId,
     fields,
     length: datapoints.length,
   };
