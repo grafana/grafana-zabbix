@@ -331,8 +331,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       return this.zabbix.getHistoryText(items, timeRange, target);
     })
     .then(result => {
-      const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, FieldType.string));
-      return dataFrames;
+      if (target.resultFormat !== 'table') {
+        return result.map(s => responseHandler.seriesToDataFrame(s, FieldType.string));
+      }
+      return result;
     });
   }
 
