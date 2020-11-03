@@ -164,6 +164,11 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(data => {
+        if (responseHandler.isConvertibleToWide(data)) {
+          console.log('Converting response to the wide format');
+          data = responseHandler.convertToWide(data);
+        }
+
         return {
           data,
           state: LoadingState.Done,
@@ -346,6 +351,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return this.zabbix.getItemsByIDs(itemids)
     .then(items => {
       return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    })
+    .then(result => {
+      return result.map(s => responseHandler.seriesToDataFrame(s));
     });
   }
 

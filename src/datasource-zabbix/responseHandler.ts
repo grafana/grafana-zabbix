@@ -92,6 +92,59 @@ export function seriesToDataFrame(timeseries, fieldType?: FieldType): DataFrame 
   return frame;
 }
 
+export function isConvertibleToWide(data: DataFrame[]): boolean {
+  if (!data || data.length < 2) {
+    return false;
+  }
+
+  const first = data[0].fields.find(f => f.type === FieldType.time);
+  if (!first) {
+    return false;
+  }
+
+  for (let i = 1; i < data.length; i++) {
+    const timeField = data[i].fields.find(f => f.type === FieldType.time);
+    if (!timeField || timeField.values.length !== first.values.length) {
+      return false;
+    }
+
+    for (let j = 0; j < Math.min(data.length, 2); j++) {
+      if (timeField.values.get(j) !== first.values.get(j)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+export function convertToWide(data: DataFrame[]): DataFrame[] {
+  const timeField = data[0].fields.find(f => f.type === FieldType.time);
+  if (!timeField) {
+    return [];
+  }
+
+  const fields: Field[] = [ timeField ];
+
+  for (let i = 0; i < data.length; i++) {
+    const valueField = data[i].fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    if (!valueField) {
+      continue;
+    }
+
+    valueField.name = data[i].name;
+    fields.push(valueField);
+  }
+
+  const frame: DataFrame = {
+    name: "wide",
+    fields,
+    length: timeField.values.length,
+  };
+
+  return [frame];
+}
+
 function sortTimeseries(timeseries) {
   // Sort trend data, issue #202
   _.forEach(timeseries, series => {
@@ -293,5 +346,7 @@ export default {
   handleSLAResponse,
   handleTriggersResponse,
   sortTimeseries,
-  seriesToDataFrame
+  seriesToDataFrame,
+  isConvertibleToWide,
+  convertToWide,
 };
