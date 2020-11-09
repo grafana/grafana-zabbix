@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, { FC, PureComponent } from 'react';
 import moment from 'moment';
 import * as utils from '../../../datasource-zabbix/utils';
 import { ProblemDTO, ZBXHost, ZBXGroup, ZBXEvent, ZBXTag, ZBXAlert } from '../../../datasource-zabbix/types';
@@ -220,7 +220,7 @@ function ProblemItem(props: ProblemItemProps) {
     <div className="problem-item">
       <FAIcon icon="thermometer-three-quarters" />
       {showName && <span className="problem-item-name">{item.name}: </span>}
-      <Tooltip placement="bottom" content={itemName}>
+      <Tooltip placement="top-start" content={itemName}>
         <span className="problem-item-value">{item.lastvalue}</span>
       </Tooltip>
     </div>
@@ -231,7 +231,7 @@ interface ProblemItemsProps {
   items: ZBXItem[];
 }
 
-class ProblemItems extends PureComponent<ProblemItemsProps> {
+class ProblemItems_ extends PureComponent<ProblemItemsProps> {
   render() {
     const { items } = this.props;
     return (items.length > 1 ?
@@ -240,6 +240,17 @@ class ProblemItems extends PureComponent<ProblemItemsProps> {
     );
   }
 }
+
+const ProblemItems: FC<ProblemItemsProps> = ({ items }) => {
+  return (
+    <div className="problem-items-row">
+      {items.length > 1 ?
+        items.map(item => <ProblemItem item={item} key={item.itemid} showName={true} />) :
+        <ProblemItem item={items[0]} />
+      }
+    </div>
+  );
+};
 
 interface ProblemGroupsProps {
   groups: ZBXGroup[];

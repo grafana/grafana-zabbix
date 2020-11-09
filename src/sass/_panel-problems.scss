@@ -288,7 +288,26 @@
         margin-top: auto;
       }
 
+      .problem-items-row {
+        position: relative;
+        height: 1.5rem;
+        overflow: hidden;
+
+        &:after {
+          content: "";
+          text-align: right;
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 70%;
+          height: 1.5rem;
+          background: linear-gradient(to right, rgba($problem-details-background, 0), rgba($problem-details-background, 1) 50%);
+        }
+      }
+
       .problem-item {
+        display: flex;
+
         .problem-item-name {
           color: $text-muted;
         }
@@ -337,6 +356,7 @@
       }
 
       .problem-actions {
+        display: flex;
         margin-left: 1.6rem;
       }
 
