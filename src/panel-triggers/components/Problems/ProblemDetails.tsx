@@ -231,16 +231,6 @@ interface ProblemItemsProps {
   items: ZBXItem[];
 }
 
-class ProblemItems_ extends PureComponent<ProblemItemsProps> {
-  render() {
-    const { items } = this.props;
-    return (items.length > 1 ?
-      items.map(item => <ProblemItem item={item} key={item.itemid} showName={true} />) :
-      <ProblemItem item={items[0]} />
-    );
-  }
-}
-
 const ProblemItems: FC<ProblemItemsProps> = ({ items }) => {
   return (
     <div className="problem-items-row">
