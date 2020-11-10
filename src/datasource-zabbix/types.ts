@@ -7,6 +7,7 @@ export interface ZabbixDSOptions extends DataSourceJsonData {
   trendsFrom: string;
   trendsRange: string;
   cacheTTL: string;
+  timeout?: string;
   dbConnectionEnable: boolean;
   dbConnectionDatasourceId?: number;
   dbConnectionDatasourceName?: string;

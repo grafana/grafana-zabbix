@@ -14,6 +14,7 @@ type ZabbixDatasourceSettingsDTO struct {
 	TrendsFrom  string `json:"trendsFrom"`
 	TrendsRange string `json:"trendsRange"`
 	CacheTTL    string `json:"cacheTTL"`
+	Timeout     string `json:"timeout"`
 
 	DisableReadOnlyUsersAck bool `json:"disableReadOnlyUsersAck"`
 }
@@ -24,6 +25,7 @@ type ZabbixDatasourceSettings struct {
 	TrendsFrom  time.Duration
 	TrendsRange time.Duration
 	CacheTTL    time.Duration
+	Timeout     time.Duration
 
 	DisableReadOnlyUsersAck bool `json:"disableReadOnlyUsersAck"`
 }

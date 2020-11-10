@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/bitly/go-simplejson"
@@ -31,14 +32,14 @@ type ZabbixAPI struct {
 type ZabbixAPIParams = map[string]interface{}
 
 // New returns new ZabbixAPI instance initialized with given URL or error.
-func New(api_url string, dsInfo *backend.DataSourceInstanceSettings) (*ZabbixAPI, error) {
+func New(dsInfo *backend.DataSourceInstanceSettings, timeout time.Duration) (*ZabbixAPI, error) {
 	apiLogger := log.New()
-	zabbixURL, err := url.Parse(api_url)
+	zabbixURL, err := url.Parse(dsInfo.URL)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := httpclient.GetHttpClient(dsInfo)
+	client, err := httpclient.GetHttpClient(dsInfo, timeout)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
@@ -49,15 +50,15 @@ func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (i
 	logger := log.New()
 	logger.Debug("Initializing new data source instance")
 
-	zabbixAPI, err := zabbixapi.New(settings.URL, &settings)
-	if err != nil {
-		logger.Error("Error initializing Zabbix API", "error", err)
-		return nil, err
-	}
-
 	zabbixSettings, err := readZabbixSettings(&settings)
 	if err != nil {
 		logger.Error("Error parsing Zabbix settings", "error", err)
+		return nil, err
+	}
+
+	zabbixAPI, err := zabbixapi.New(&settings, zabbixSettings.Timeout)
+	if err != nil {
+		logger.Error("Error initializing Zabbix API", "error", err)
 		return nil, err
 	}
 
@@ -154,6 +155,10 @@ func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		zabbixSettingsDTO.CacheTTL = "1h"
 	}
 
+	if zabbixSettingsDTO.Timeout == "" {
+		zabbixSettingsDTO.Timeout = "30"
+	}
+
 	trendsFrom, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsFrom)
 	if err != nil {
 		return nil, err
@@ -169,11 +174,17 @@ func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		return nil, err
 	}
 
+	timeout, err := strconv.Atoi(zabbixSettingsDTO.Timeout)
+	if err != nil {
+		return nil, errors.New("failed to parse timeout: " + err.Error())
+	}
+
 	zabbixSettings := &ZabbixDatasourceSettings{
 		Trends:      zabbixSettingsDTO.Trends,
 		TrendsFrom:  trendsFrom,
 		TrendsRange: trendsRange,
 		CacheTTL:    cacheTTL,
+		Timeout:     time.Duration(timeout) * time.Second,
 	}
 
 	return zabbixSettings, nil

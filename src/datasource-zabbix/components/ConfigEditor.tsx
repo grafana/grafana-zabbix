@@ -154,6 +154,17 @@ export const ConfigEditor = (props: Props) => {
             tooltip="Zabbix data source caches metric names in memory. Specify how often data will be updated."
           />
         </div>
+        <div className="gf-form">
+          <FormField
+            labelWidth={7}
+            inputWidth={4}
+            label="Timeout"
+            value={options.jsonData.timeout || ''}
+            placeholder="30"
+            onChange={jsonDataChangeHandler('timeout', options, onOptionsChange)}
+            tooltip="Zabbix API connection timeout in seconds. Default is 30."
+          />
+        </div>
       </div>
 
       <div className="gf-form-group">

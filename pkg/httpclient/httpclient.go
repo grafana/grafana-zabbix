@@ -13,6 +13,7 @@ import (
 
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 type proxyTransportCache struct {
@@ -46,14 +47,16 @@ var ptc = proxyTransportCache{
 }
 
 // GetHttpClient returns new http.Client. Transport either initialized or got from cache.
-func GetHttpClient(ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
+func GetHttpClient(ds *backend.DataSourceInstanceSettings, timeout time.Duration) (*http.Client, error) {
 	transport, err := getHttpTransport(ds)
 	if err != nil {
 		return nil, err
 	}
 
+	log.DefaultLogger.Debug("Initializing new HTTP client", "timeout", timeout.Seconds())
+
 	return &http.Client{
-		Timeout:   time.Duration(time.Second * 30),
+		Timeout:   timeout,
 		Transport: transport,
 	}, nil
 }
