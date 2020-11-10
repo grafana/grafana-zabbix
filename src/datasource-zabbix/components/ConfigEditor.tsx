@@ -34,6 +34,7 @@ export const ConfigEditor = (props: Props) => {
         trendsFrom: '',
         trendsRange: '',
         cacheTTL: '',
+        timeout: '',
         ...restJsonData,
       },
     });
