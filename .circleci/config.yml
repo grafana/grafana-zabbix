@@ -140,6 +140,17 @@ jobs:
       - restore_cache:
           keys:
             - dependency-cache-go-{{ checksum "go.sum" }}
+      - persist_to_workspace:
+          root: ~/alexanderzobnin/
+          paths:
+            - grafana-zabbix
+
+  package-plugin:
+    executor: e2e_exec
+    working_directory: ~/alexanderzobnin/grafana-zabbix
+    steps:
+      - attach_workspace:
+          at: ~/alexanderzobnin
       - run:
           name: Install Dependencies
           command: 'make install'
@@ -153,17 +164,6 @@ jobs:
           paths:
           - ./vendor
           - /go/pkg/mod
-      - persist_to_workspace:
-          root: ~/alexanderzobnin/
-          paths:
-            - grafana-zabbix
-
-  package-plugin:
-    executor: e2e_exec
-    working_directory: ~/alexanderzobnin/grafana-zabbix
-    steps:
-      - attach_workspace:
-          at: ~/alexanderzobnin
       - run:
           name: Build plugin for all platforms
           command: 'make dist'
