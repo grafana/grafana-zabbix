@@ -1,5 +1,13 @@
 # Change Log
 
+## [4.0.2] - 2020-11-13
+### Fixed
+- Query mode Text returns no data for last value, , [#1062](https://github.com/alexanderzobnin/grafana-zabbix/issues/1062)
+- Able to configure API request timeout, [#1046](https://github.com/alexanderzobnin/grafana-zabbix/issues/1046)
+- Support basic auth for backend requests, [#1048](https://github.com/alexanderzobnin/grafana-zabbix/issues/1048)
+- Problems: fix empty problems list when null value used as a filter
+- Problems: fix long item values displaying
+
 ## [4.0.1] - 2020-09-02
 ### Fixed
 - Plugin is not signed, [#1038](https://github.com/alexanderzobnin/grafana-zabbix/issues/1038)
