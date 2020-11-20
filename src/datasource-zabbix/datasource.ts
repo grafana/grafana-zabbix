@@ -6,6 +6,7 @@ import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
 import * as c from './constants';
+import { align } from './timeseries';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
@@ -13,7 +14,7 @@ import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
 import { getBackendSrv } from '@grafana/runtime';
-import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, LoadingState } from '@grafana/data';
+import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, LoadingState, TimeSeries } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -250,6 +251,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     return getHistoryPromise
+    .then(timeseries => this.alignTimeSeriesData(timeseries, target))
     .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
     .then(timeseries => downsampleSeries(timeseries, options));
   }
@@ -261,6 +263,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       return _.includes(trendFunctions, func.def.name);
     });
     return trendValueFunc ? trendValueFunc.params[0] : "avg";
+  }
+
+  alignTimeSeriesData(timeseries: TimeSeries[], target) {
+    for (const ts of timeseries) {
+      ts.datapoints = align(ts.datapoints);
+    }
+    return timeseries;
   }
 
   applyDataProcessingFunctions(timeseries_data, target) {

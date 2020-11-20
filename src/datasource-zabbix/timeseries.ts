@@ -12,6 +12,7 @@
 import _ from 'lodash';
 import * as utils from './utils';
 import * as c from './constants';
+import { TimeSeriesPoints, TimeSeriesValue } from '@grafana/data';
 
 const POINT_VALUE = 0;
 const POINT_TIMESTAMP = 1;
@@ -60,6 +61,46 @@ function downsample(datapoints, time_to, ms_interval, func) {
     }
   }
   return downsampledSeries.reverse();
+}
+
+/**
+ * Detects interval between data points and aligns time series.
+ */
+export function align(datapoints: TimeSeriesPoints): TimeSeriesPoints {
+  const interval = detectSeriesInterval(datapoints);
+  if (interval <= 0 || datapoints.length <= 1) {
+    return datapoints;
+  }
+
+  let point_frame_ts = getPointTimeFrame(datapoints[0][POINT_TIMESTAMP], interval);
+  let point: TimeSeriesValue[];
+  for (let i = 0; i < datapoints.length; i++) {
+    point = datapoints[i];
+    point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], interval);
+    point[POINT_TIMESTAMP] = point_frame_ts;
+  }
+  return datapoints;
+}
+
+/**
+ * Detects interval between data points in milliseconds.
+ */
+function detectSeriesInterval(datapoints: TimeSeriesPoints): number {
+  if (datapoints.length < 2) {
+    return -1;
+  }
+
+  let deltas = [];
+  for (let i = 1; i < datapoints.length; i++) {
+    // Get deltas (in seconds)
+    const d = (datapoints[i][POINT_TIMESTAMP] - datapoints[i - 1][POINT_TIMESTAMP]) / 1000;
+    deltas.push(Math.round(d));
+  }
+
+  // Use 50th percentile (median) as an interval
+  deltas = _.sortBy(deltas);
+  const intervalSec = deltas[Math.floor(deltas.length * 0.5)];
+  return intervalSec * 1000;
 }
 
 /**
@@ -526,6 +567,7 @@ const exportedFunctions = {
   PERCENTILE,
   sortByTime,
   flattenDatapoints,
+  align,
 };
 
 export default exportedFunctions;
