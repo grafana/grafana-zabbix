@@ -239,7 +239,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Query history for numeric items
    */
-  queryNumericDataForItems(items, target, timeRange, useTrends, options) {
+  queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, options) {
     let getHistoryPromise;
     options.valueType = this.getTrendValueType(target);
     options.consolidateBy = getConsolidateBy(target) || options.valueType;
@@ -247,11 +247,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     if (useTrends) {
       getHistoryPromise = this.zabbix.getTrends(items, timeRange, options);
     } else {
-      getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options);
+      getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options)
+      .then(timeseries => {
+        console.log(target);
+        return !target.options?.disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
+      });
     }
 
     return getHistoryPromise
-    .then(timeseries => this.alignTimeSeriesData(timeseries, target))
     .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
     .then(timeseries => downsampleSeries(timeseries, options));
   }
@@ -265,7 +268,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return trendValueFunc ? trendValueFunc.params[0] : "avg";
   }
 
-  alignTimeSeriesData(timeseries: TimeSeries[], target) {
+  alignTimeSeriesData(timeseries: TimeSeries[]) {
     for (const ts of timeseries) {
       ts.datapoints = align(ts.datapoints);
     }

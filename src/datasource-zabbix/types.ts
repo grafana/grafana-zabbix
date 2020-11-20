@@ -37,7 +37,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   queryType: string;
   datasourceId: number;
   functions: ZabbixMetricFunction[];
-  options: any;
+  options: ZabbixQueryOptions;
   textFilter: string;
   mode: number;
   itemids: number[];
@@ -48,6 +48,19 @@ export interface ZabbixMetricsQuery extends DataQuery {
   application: { filter: string; name: string; };
   item: { filter: string; name: string; };
   itemFilter: string;
+}
+
+export interface ZabbixQueryOptions {
+  showDisabledItems?: boolean;
+  skipEmptyValues?: boolean;
+  disableDataAlignment?: boolean;
+  // Problems options
+  minSeverity?: number;
+  sortProblems?: string;
+  acknowledged?: number;
+  hostsInMaintenance?: boolean;
+  hostProxy?: boolean;
+  limit?: number;
 }
 
 export interface ZabbixMetricFunction {
