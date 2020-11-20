@@ -64,7 +64,7 @@ function downsample(datapoints, time_to, ms_interval, func) {
 }
 
 /**
- * Detects interval between data points and aligns time series.
+ * Detects interval between data points and aligns time series. If there's no value in the interval, puts null as a value.
  */
 export function align(datapoints: TimeSeriesPoints): TimeSeriesPoints {
   const interval = detectSeriesInterval(datapoints);
@@ -72,14 +72,26 @@ export function align(datapoints: TimeSeriesPoints): TimeSeriesPoints {
     return datapoints;
   }
 
-  let point_frame_ts = getPointTimeFrame(datapoints[0][POINT_TIMESTAMP], interval);
+  const aligned_ts: TimeSeriesPoints = [];
+  let frame_ts = getPointTimeFrame(datapoints[0][POINT_TIMESTAMP], interval);
+  let point_frame_ts = frame_ts;
   let point: TimeSeriesValue[];
   for (let i = 0; i < datapoints.length; i++) {
     point = datapoints[i];
     point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], interval);
-    point[POINT_TIMESTAMP] = point_frame_ts;
+
+    if (point_frame_ts > frame_ts) {
+      // Move frame window to next non-empty interval and fill empty by null
+      while (frame_ts < point_frame_ts) {
+        aligned_ts.push([null, frame_ts]);
+        frame_ts += interval;
+      }
+    }
+
+    aligned_ts.push([point[POINT_VALUE], point_frame_ts]);
+    frame_ts += interval;
   }
-  return datapoints;
+  return aligned_ts;
 }
 
 /**
