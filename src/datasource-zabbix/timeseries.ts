@@ -308,7 +308,10 @@ function rate(datapoints) {
   return newSeries;
 }
 
-function simpleMovingAverage(datapoints, n) {
+function simpleMovingAverage(datapoints: TimeSeriesPoints, n: number): TimeSeriesPoints {
+  // It's not possible to calculate MA if n greater than number of points
+  n = Math.min(n, datapoints.length);
+
   const sma = [];
   let w_sum;
   let w_avg = null;
@@ -351,7 +354,10 @@ function simpleMovingAverage(datapoints, n) {
   return sma;
 }
 
-function expMovingAverage(datapoints, n) {
+function expMovingAverage(datapoints: TimeSeriesPoints, n: number): TimeSeriesPoints {
+  // It's not possible to calculate MA if n greater than number of points
+  n = Math.min(n, datapoints.length);
+
   let ema = [datapoints[0]];
   let ema_prev = datapoints[0][POINT_VALUE];
   let ema_cur;
