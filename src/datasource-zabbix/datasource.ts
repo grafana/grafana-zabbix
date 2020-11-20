@@ -249,7 +249,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     } else {
       getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options)
       .then(timeseries => {
-        console.log(target);
         return !target.options?.disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
       });
     }
