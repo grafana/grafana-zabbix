@@ -59,7 +59,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
-export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: FieldType): DataFrame {
+export function seriesToDataFrame(timeseries, target: DataQuery, valueMappings?: any[], fieldType?: FieldType): DataFrame {
   const { datapoints, scopedVars, target: seriesName, item } = timeseries;
 
   const timeFiled: Field = {
@@ -76,7 +76,17 @@ export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: Fie
     values = new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_VALUE]));
   }
 
+  // Try to use unit configured in Zabbix
   const unit = utils.unitConverter(item.units);
+  if (unit) {
+    console.log(`Datasource: unit detected: ${unit}`);
+  }
+
+  // Try to use value mapping from Zabbix
+  const mappings = utils.getValueMapping(item, valueMappings);
+  if (mappings) {
+    console.log(`Datasource: value mapping detected`);
+  }
 
   const valueFiled: Field = {
     name: TIME_SERIES_VALUE_FIELD_NAME,
@@ -89,6 +99,7 @@ export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: Fie
     config: {
       displayName: seriesName,
       displayNameFromDS: seriesName,
+      mappings,
       unit,
     },
     values,

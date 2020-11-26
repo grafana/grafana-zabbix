@@ -167,7 +167,8 @@ export class ZabbixAPIConnector {
         'hostid',
         'status',
         'state',
-        'units'
+        'units',
+        'valuemapid'
       ],
       sortfield: 'name',
       webitems: true,
@@ -652,6 +653,15 @@ export class ZabbixAPIConnector {
     };
 
     return this.request('script.execute', params);
+  }
+
+  getValueMappings() {
+    const params = {
+      output: 'extend',
+      selectMappings: "extend",
+    };
+
+    return this.request('valuemap.get', params);
   }
 }
 

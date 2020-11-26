@@ -3,6 +3,7 @@ import moment from 'moment';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as c from './constants';
 import { VariableQuery, VariableQueryTypes } from './types';
+import { MappingType, ValueMap, ValueMapping } from '@grafana/data';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier
@@ -401,4 +402,22 @@ const getUnitsMap = () => ({
 export function unitConverter(zabbixUnit: string): string {
   const unitsMap = getUnitsMap();
   return unitsMap[zabbixUnit];
+}
+
+export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | null {
+  const { valuemapid } = item;
+  const mapping = valueMappings.find(m => m.valuemapid === valuemapid);
+  if (!mapping) {
+    return null;
+  }
+
+  return (mapping.mappings as any[]).map((m, i) => {
+    const valueMapping: ValueMapping = {
+      id: i,
+      type: MappingType.ValueToText,
+      value: m.value,
+      text: m.newvalue,
+    };
+    return valueMapping;
+  });
 }

@@ -217,23 +217,25 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Query target data for Metrics
    */
-  queryNumericData(target, timeRange, useTrends, options): Promise<DataFrame[]> {
-    let queryStart, queryEnd;
+  async queryNumericData(target, timeRange, useTrends, options): Promise<DataFrame[]> {
     const getItemOptions = {
       itemtype: 'num'
     };
-    return this.zabbix.getItemsFromTarget(target, getItemOptions)
-    .then(items => {
-      queryStart = new Date().getTime();
-      return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
-    }).then(result => {
-      queryEnd = new Date().getTime();
-      if (this.enableDebugLog) {
-        console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
-      }
-      const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, target));
-      return dataFrames;
-    });
+
+    const items = await this.zabbix.getItemsFromTarget(target, getItemOptions);
+
+    const queryStart = new Date().getTime();
+    const result = await this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    const queryEnd = new Date().getTime();
+
+    if (this.enableDebugLog) {
+      console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
+    }
+
+    const valueMappings = await this.zabbix.getValueMappings();
+
+    const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, target, valueMappings));
+    return dataFrames;
   }
 
   /**
@@ -343,7 +345,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     })
     .then(result => {
       if (target.resultFormat !== 'table') {
-        return result.map(s => responseHandler.seriesToDataFrame(s, target, FieldType.string));
+        return result.map(s => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
       }
       return result;
     });
