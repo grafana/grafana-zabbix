@@ -76,6 +76,8 @@ export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: Fie
     values = new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_VALUE]));
   }
 
+  const unit = utils.unitConverter(item.units);
+
   const valueFiled: Field = {
     name: TIME_SERIES_VALUE_FIELD_NAME,
     type: fieldType ?? FieldType.number,
@@ -87,10 +89,15 @@ export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: Fie
     config: {
       displayName: seriesName,
       displayNameFromDS: seriesName,
-      unit: utils.unitConverter(item.units),
+      unit,
     },
     values,
   };
+
+  if (unit === 'percent') {
+    valueFiled.config.min = 0;
+    valueFiled.config.max = 100;
+  }
 
   const fields: Field[] = [ timeFiled, valueFiled ];
 
