@@ -58,7 +58,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
 }
 
 export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: FieldType): DataFrame {
-  const datapoints = timeseries.datapoints;
+  const { datapoints, scopedVars, target: seriesName } = timeseries;
 
   const timeFiled: Field = {
     name: TIME_SERIES_TIME_FIELD_NAME,
@@ -77,14 +77,22 @@ export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: Fie
   const valueFiled: Field = {
     name: TIME_SERIES_VALUE_FIELD_NAME,
     type: fieldType ?? FieldType.number,
-    config: {},
+    labels: {
+      host: scopedVars['__zbx_host_name'].value,
+      item: scopedVars['__zbx_item'].value,
+      item_key: scopedVars['__zbx_item_key'].value,
+    },
+    config: {
+      displayName: seriesName,
+      displayNameFromDS: seriesName,
+    },
     values,
   };
 
   const fields: Field[] = [ timeFiled, valueFiled ];
 
   const frame: DataFrame = {
-    name: timeseries.target,
+    name: seriesName,
     refId: target.refId,
     fields,
     length: datapoints.length,
