@@ -399,7 +399,7 @@ const getUnitsMap = () => ({
   'uptime': 'dtdhms',
 });
 
-export function unitConverter(zabbixUnit: string): string {
+export function convertZabbixUnit(zabbixUnit: string): string {
   const unitsMap = getUnitsMap();
   return unitsMap[zabbixUnit];
 }

@@ -77,7 +77,7 @@ export function seriesToDataFrame(timeseries, target: DataQuery, valueMappings?:
   }
 
   // Try to use unit configured in Zabbix
-  const unit = utils.unitConverter(item.units);
+  const unit = utils.convertZabbixUnit(item.units);
   if (unit) {
     console.log(`Datasource: unit detected: ${unit}`);
   }
