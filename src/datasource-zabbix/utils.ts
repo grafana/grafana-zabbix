@@ -387,3 +387,18 @@ export function parseTags(tagStr: string): any[] {
 export function mustArray(result: any): any[] {
   return result || [];
 }
+
+const getUnitsMap = () => ({
+  '%': 'percent',
+  'b': 'decbits', // bits(SI)
+  'bps': 'bps', // bits/sec(SI)
+  'B': 'bytes', // bytes(IEC)
+  'Bps': 'binBps', // bytes/sec(IEC)
+  // 'unixtime': 'dateTimeAsSystem',
+  'uptime': 'dtdhms',
+});
+
+export function unitConverter(zabbixUnit: string): string {
+  const unitsMap = getUnitsMap();
+  return unitsMap[zabbixUnit];
+}

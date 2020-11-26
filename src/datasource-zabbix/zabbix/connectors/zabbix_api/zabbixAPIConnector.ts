@@ -161,11 +161,13 @@ export class ZabbixAPIConnector {
   getItems(hostids, appids, itemtype) {
     const params: any = {
       output: [
-        'name', 'key_',
+        'name',
+        'key_',
         'value_type',
         'hostid',
         'status',
-        'state'
+        'state',
+        'units'
       ],
       sortfield: 'name',
       webitems: true,

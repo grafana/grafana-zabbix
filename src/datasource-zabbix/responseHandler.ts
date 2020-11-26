@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
+import * as utils from './utils';
 import { ArrayVector, DataFrame, DataQuery, Field, FieldType, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
 
 /**
@@ -53,12 +54,13 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
       target: alias,
       datapoints: _.map(hist, convertPointCallback),
       scopedVars,
+      item
     };
   });
 }
 
 export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: FieldType): DataFrame {
-  const { datapoints, scopedVars, target: seriesName } = timeseries;
+  const { datapoints, scopedVars, target: seriesName, item } = timeseries;
 
   const timeFiled: Field = {
     name: TIME_SERIES_TIME_FIELD_NAME,
@@ -85,6 +87,7 @@ export function seriesToDataFrame(timeseries, target: DataQuery, fieldType?: Fie
     config: {
       displayName: seriesName,
       displayNameFromDS: seriesName,
+      unit: utils.unitConverter(item.units),
     },
     values,
   };
