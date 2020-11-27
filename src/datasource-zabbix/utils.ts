@@ -397,6 +397,13 @@ const getUnitsMap = () => ({
   'Bps': 'binBps', // bytes/sec(IEC)
   // 'unixtime': 'dateTimeAsSystem',
   'uptime': 'dtdhms',
+  'qps': 'qps', // requests/sec (rps)
+  'iops': 'iops', // I/O ops/sec (iops)
+  'Hz': 'hertz', // Hertz (1/s)
+  'V': 'volt', // Volt (V)
+  'C': 'celsius', // Celsius (°C)
+  'RPM': 'rotrpm', // Revolutions per minute (rpm)
+  'dBm': 'dBm', // Decibel-milliwatt (dBm)
 });
 
 export function convertZabbixUnit(zabbixUnit: string): string {
