@@ -168,7 +168,8 @@ export class ZabbixAPIConnector {
         'status',
         'state',
         'units',
-        'valuemapid'
+        'valuemapid',
+        'delay'
       ],
       sortfield: 'name',
       webitems: true,

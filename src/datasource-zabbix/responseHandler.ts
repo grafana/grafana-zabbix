@@ -2,7 +2,7 @@ import _ from 'lodash';
 import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
 import * as utils from './utils';
-import { ArrayVector, DataFrame, DataQuery, Field, FieldType, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
+import { ArrayVector, DataFrame, DataQuery, Field, FieldType, MutableDataFrame, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -37,6 +37,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
       '__zbx_item': { value: item.name },
       '__zbx_item_name': { value: item.name },
       '__zbx_item_key': { value: item.key_ },
+      '__zbx_item_interval': { value: item.delay },
     };
 
     if (_.keys(hosts).length > 0) {
@@ -65,7 +66,11 @@ export function seriesToDataFrame(timeseries, target: DataQuery, valueMappings?:
   const timeFiled: Field = {
     name: TIME_SERIES_TIME_FIELD_NAME,
     type: FieldType.time,
-    config: {},
+    config: {
+      custom: {
+        itemInterval: scopedVars['__zbx_item_interval'].value,
+      }
+    },
     values: new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_TS])),
   };
 
@@ -101,6 +106,9 @@ export function seriesToDataFrame(timeseries, target: DataQuery, valueMappings?:
       displayNameFromDS: seriesName,
       mappings,
       unit,
+      custom: {
+        itemInterval: scopedVars['__zbx_item_interval'].value,
+      }
     },
     values,
   };
@@ -134,9 +142,6 @@ export function isConvertibleToWide(data: DataFrame[]): boolean {
 
   for (let i = 1; i < data.length; i++) {
     const timeField = data[i].fields.find(f => f.type === FieldType.time);
-    if (!timeField || timeField.values.length !== first.values.length) {
-      return false;
-    }
 
     for (let j = 0; j < Math.min(data.length, 2); j++) {
       if (timeField.values.get(j) !== first.values.get(j)) {
@@ -146,6 +151,49 @@ export function isConvertibleToWide(data: DataFrame[]): boolean {
   }
 
   return true;
+}
+
+export function alignFrames(data: DataFrame[]): DataFrame[] {
+  if (!data || data.length === 0) {
+    return data;
+  }
+
+  // Get oldest time stamp for all frames
+  let minTimestamp = data[0].fields.find(f => f.name === TIME_SERIES_TIME_FIELD_NAME).values.get(0);
+  for (let i = 0; i < data.length; i++) {
+    const timeField = data[i].fields.find(f => f.name === TIME_SERIES_TIME_FIELD_NAME);
+    const firstTs = timeField.values.get(0);
+    if (firstTs < minTimestamp) {
+      minTimestamp = firstTs;
+    }
+  }
+
+  for (let i = 0; i < data.length; i++) {
+    const frame = data[i];
+    const timeField = frame.fields.find(f => f.name === TIME_SERIES_TIME_FIELD_NAME);
+    const valueField = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    const firstTs = timeField.values.get(0);
+
+    if (firstTs > minTimestamp) {
+      console.log('Data frames: adding missing points');
+      let timestamps = timeField.values.toArray();
+      let values = valueField.values.toArray();
+      const missingTimestamps = [];
+      const missingValues = [];
+      const frameInterval: number = timeField.config.custom?.itemInterval;
+      for (let j = minTimestamp; j < firstTs; j+=frameInterval) {
+        missingTimestamps.push(j);
+        missingValues.push(null);
+      }
+
+      timestamps = missingTimestamps.concat(timestamps);
+      values = missingValues.concat(values);
+      timeField.values = new ArrayVector(timestamps);
+      valueField.values = new ArrayVector(values);
+    }
+  }
+
+  return data;
 }
 
 export function convertToWide(data: DataFrame[]): DataFrame[] {
@@ -379,4 +427,5 @@ export default {
   seriesToDataFrame,
   isConvertibleToWide,
   convertToWide,
+  alignFrames,
 };

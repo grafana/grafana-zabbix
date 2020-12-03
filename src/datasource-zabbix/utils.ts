@@ -236,6 +236,26 @@ export function escapeRegex(value) {
   return value.replace(/[\\^$*+?.()|[\]{}\/]/g, '\\$&');
 }
 
+/**
+ * Parses Zabbix item update interval. Returns 0 in case of custom intervals.
+ */
+export function parseItemInterval(interval: string): number {
+  const normalizedInterval = normalizeZabbixInterval(interval);
+  if (normalizedInterval) {
+    return parseInterval(normalizedInterval);
+  }
+  return 0;
+}
+
+export function normalizeZabbixInterval(interval: string): string {
+  const intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)?/g;
+  const parsedInterval = intervalPattern.exec(interval);
+  if (!parsedInterval) {
+    return '';
+  }
+  return parsedInterval[1] + (parsedInterval.length > 2 ? parsedInterval[2] : 's');
+}
+
 export function parseInterval(interval: string): number {
   const intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)/g;
   const momentInterval: any[] = intervalPattern.exec(interval);

@@ -165,6 +165,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(data => {
+        data = responseHandler.alignFrames(data);
         if (responseHandler.isConvertibleToWide(data)) {
           console.log('Converting response to the wide format');
           data = responseHandler.convertToWide(data);
@@ -269,9 +270,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return trendValueFunc ? trendValueFunc.params[0] : "avg";
   }
 
-  alignTimeSeriesData(timeseries: TimeSeries[]) {
+  alignTimeSeriesData(timeseries: any[]) {
     for (const ts of timeseries) {
-      ts.datapoints = align(ts.datapoints);
+      const interval = utils.parseItemInterval(ts.scopedVars['__zbx_item_interval'].value);
+      ts.datapoints = align(ts.datapoints, interval);
     }
     return timeseries;
   }
