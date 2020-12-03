@@ -3,7 +3,7 @@ import moment from 'moment';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as c from './constants';
 import { VariableQuery, VariableQueryTypes } from './types';
-import { MappingType, ValueMap, ValueMapping } from '@grafana/data';
+import { arrowTableToDataFrame, isTableData, MappingType, ValueMap, ValueMapping } from '@grafana/data';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier

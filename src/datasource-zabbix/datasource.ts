@@ -14,7 +14,7 @@ import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
 import { getBackendSrv } from '@grafana/runtime';
-import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, LoadingState, TimeSeries } from '@grafana/data';
+import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -165,12 +165,15 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(data => {
-        data = responseHandler.alignFrames(data);
-        if (responseHandler.isConvertibleToWide(data)) {
-          console.log('Converting response to the wide format');
-          data = responseHandler.convertToWide(data);
+        if (data && data.length > 0 && isDataFrame(data[0])) {
+          data = responseHandler.alignFrames(data);
+          if (responseHandler.isConvertibleToWide(data)) {
+            console.log('Converting response to the wide format');
+            data = responseHandler.convertToWide(data);
+          }
         }
-
+        return data;
+      }).then(data => {
         return {
           data,
           state: LoadingState.Done,
