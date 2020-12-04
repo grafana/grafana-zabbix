@@ -435,7 +435,6 @@ const getKnownGrafanaUnits = () => {
       units[unit] = unit;
     }
   }
-  console.log(units);
   return units;
 };
 
