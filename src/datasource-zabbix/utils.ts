@@ -3,7 +3,7 @@ import moment from 'moment';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as c from './constants';
 import { VariableQuery, VariableQueryTypes } from './types';
-import { arrowTableToDataFrame, isTableData, MappingType, ValueMap, ValueMapping } from '@grafana/data';
+import { arrowTableToDataFrame, isTableData, MappingType, ValueMap, ValueMapping, getValueFormats } from '@grafana/data';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier
@@ -426,9 +426,28 @@ const getUnitsMap = () => ({
   'dBm': 'dBm', // Decibel-milliwatt (dBm)
 });
 
+const getKnownGrafanaUnits = () => {
+  const units = {};
+  const categories = getValueFormats();
+  for (const category of categories) {
+    for (const unitDesc of category.submenu) {
+      const unit = unitDesc.value;
+      units[unit] = unit;
+    }
+  }
+  console.log(units);
+  return units;
+};
+
+const unitsMap = getUnitsMap();
+const knownGrafanaUnits = getKnownGrafanaUnits();
+
 export function convertZabbixUnit(zabbixUnit: string): string {
-  const unitsMap = getUnitsMap();
-  return unitsMap[zabbixUnit];
+  let unit = unitsMap[zabbixUnit];
+  if (!unit) {
+    unit = knownGrafanaUnits[zabbixUnit];
+  }
+  return unit;
 }
 
 export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | null {
