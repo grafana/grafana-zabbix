@@ -67,9 +67,7 @@ export function seriesToDataFrame(timeseries, target: DataQuery, valueMappings?:
     name: TIME_SERIES_TIME_FIELD_NAME,
     type: FieldType.time,
     config: {
-      custom: {
-        itemInterval: scopedVars['__zbx_item_interval'].value,
-      }
+      custom: {}
     },
     values: new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_TS])),
   };
@@ -81,41 +79,53 @@ export function seriesToDataFrame(timeseries, target: DataQuery, valueMappings?:
     values = new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_VALUE]));
   }
 
-  // Try to use unit configured in Zabbix
-  const unit = utils.convertZabbixUnit(item.units);
-  if (unit) {
-    console.log(`Datasource: unit detected: ${unit}`);
-  }
-
-  // Try to use value mapping from Zabbix
-  const mappings = utils.getValueMapping(item, valueMappings);
-  if (mappings) {
-    console.log(`Datasource: value mapping detected`);
-  }
-
   const valueFiled: Field = {
     name: TIME_SERIES_VALUE_FIELD_NAME,
     type: fieldType ?? FieldType.number,
-    labels: {
-      host: scopedVars['__zbx_host_name'].value,
-      item: scopedVars['__zbx_item'].value,
-      item_key: scopedVars['__zbx_item_key'].value,
-    },
+    labels: {},
     config: {
       displayName: seriesName,
       displayNameFromDS: seriesName,
-      mappings,
-      unit,
-      custom: {
-        itemInterval: scopedVars['__zbx_item_interval'].value,
-      }
+      custom: {}
     },
     values,
   };
 
-  if (unit === 'percent') {
-    valueFiled.config.min = 0;
-    valueFiled.config.max = 100;
+  if (scopedVars) {
+    timeFiled.config.custom = {
+      itemInterval: scopedVars['__zbx_item_interval']?.value,
+    };
+
+    valueFiled.labels = {
+      host: scopedVars['__zbx_host_name']?.value,
+      item: scopedVars['__zbx_item']?.value,
+      item_key: scopedVars['__zbx_item_key']?.value,
+    };
+
+    valueFiled.config.custom = {
+      itemInterval: scopedVars['__zbx_item_interval']?.value,
+    };
+  }
+
+  if (item) {
+    // Try to use unit configured in Zabbix
+    const unit = utils.convertZabbixUnit(item.units);
+    if (unit) {
+      console.log(`Datasource: unit detected: ${unit}`);
+      valueFiled.config.unit = unit;
+
+      if (unit === 'percent') {
+        valueFiled.config.min = 0;
+        valueFiled.config.max = 100;
+      }
+    }
+
+    // Try to use value mapping from Zabbix
+    const mappings = utils.getValueMapping(item, valueMappings);
+    if (mappings) {
+      console.log(`Datasource: value mapping detected`);
+      valueFiled.config.mappings = mappings;
+    }
   }
 
   const fields: Field[] = [ timeFiled, valueFiled ];

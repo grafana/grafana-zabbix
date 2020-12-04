@@ -275,7 +275,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
   alignTimeSeriesData(timeseries: any[]) {
     for (const ts of timeseries) {
-      const interval = utils.parseItemInterval(ts.scopedVars['__zbx_item_interval'].value);
+      const interval = utils.parseItemInterval(ts.scopedVars['__zbx_item_interval']?.value);
       ts.datapoints = align(ts.datapoints, interval);
     }
     return timeseries;
