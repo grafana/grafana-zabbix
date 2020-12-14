@@ -26,6 +26,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   trendsRange: string;
   cacheTTL: any;
   disableReadOnlyUsersAck: boolean;
+  disableDataAlignment: boolean;
   enableDirectDBConnection: boolean;
   dbConnectionDatasourceId: number;
   dbConnectionDatasourceName: string;
@@ -65,6 +66,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     // Other options
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
+    this.disableDataAlignment = jsonData.disableDataAlignment;
 
     // Direct DB Connection options
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
@@ -255,7 +257,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     } else {
       getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options)
       .then(timeseries => {
-        return !target.options?.disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
+        const disableDataAlignment = this.disableDataAlignment || target.options?.disableDataAlignment;
+        return !disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
       });
     }
 

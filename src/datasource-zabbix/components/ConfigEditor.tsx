@@ -35,6 +35,7 @@ export const ConfigEditor = (props: Props) => {
         trendsRange: '',
         cacheTTL: '',
         timeout: '',
+        disableDataAlignment: false,
         ...restJsonData,
       },
     });
@@ -209,9 +210,15 @@ export const ConfigEditor = (props: Props) => {
         <h3 className="page-heading">Other</h3>
         <Switch
           label="Disable acknowledges for read-only users"
-          labelClass="width-20"
+          labelClass="width-16"
           checked={options.jsonData.disableReadOnlyUsersAck}
           onChange={jsonDataSwitchHandler('disableReadOnlyUsersAck', options, onOptionsChange)}
+        />
+        <Switch
+          label="Disable data alignment"
+          labelClass="width-16"
+          checked={!!options.jsonData.disableDataAlignment}
+          onChange={jsonDataSwitchHandler('disableDataAlignment', options, onOptionsChange)}
         />
       </div>
     </>
