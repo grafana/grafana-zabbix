@@ -70,7 +70,7 @@ Read [how to configure](./direct_db_datasource) SQL data source in Grafana.
 
 ### Other
 
-- **Disable data alignment**: disable time series data alignment. This feature aligns points based on item update interval. For instance, if value collected once per minute, then timestamp of the each point will be set to the start of corresponding minute. This alignment required for proper work of the stacked graphs. If you don't need stacked graphs and want to get exactly the same timestamps as in Zabbix, then you can toggle this feature.
+- **Disable data alignment**: disable time series data alignment. This feature aligns points based on item update interval. For instance, if value collected once per minute, then timestamp of the each point will be set to the start of corresponding minute. This alignment required for proper work of the stacked graphs. If you don't need stacked graphs and want to get exactly the same timestamps as in Zabbix, then you can disable this feature. Also, data alignment can be toggled for each query individually, in the query options.
 
 Then click _Add_ - datasource will be added and you can check connection using 
 _Test Connection_ button. This feature can help to find some mistakes like invalid user name 
