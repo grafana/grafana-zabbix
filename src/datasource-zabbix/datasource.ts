@@ -165,7 +165,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(data => {
-        if (data && data.length > 0 && isDataFrame(data[0])) {
+        if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
           data = responseHandler.alignFrames(data);
           if (responseHandler.isConvertibleToWide(data)) {
             console.log('Converting response to the wide format');

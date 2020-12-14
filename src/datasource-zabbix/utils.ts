@@ -3,7 +3,7 @@ import moment from 'moment';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as c from './constants';
 import { VariableQuery, VariableQueryTypes } from './types';
-import { arrowTableToDataFrame, isTableData, MappingType, ValueMap, ValueMapping, getValueFormats } from '@grafana/data';
+import { arrowTableToDataFrame, isTableData, MappingType, ValueMap, ValueMapping, getValueFormats, DataFrame, FieldType } from '@grafana/data';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier
@@ -465,4 +465,8 @@ export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | nu
     };
     return valueMapping;
   });
+}
+
+export function isProblemsDataFrame(data: DataFrame): boolean {
+  return data.fields.length && data.fields[0].type === FieldType.other && data.fields[0].config.custom['type'] === 'problems';
 }

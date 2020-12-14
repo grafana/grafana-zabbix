@@ -171,7 +171,11 @@ export function toDataFrame(problems: any[]): DataFrame {
     name: 'Problems',
     type: FieldType.other,
     values: new ArrayVector(problems),
-    config: {},
+    config: {
+      custom: {
+        type: 'problems',
+      },
+    },
   };
 
   const response: DataFrame = {
