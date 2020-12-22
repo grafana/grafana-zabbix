@@ -36,7 +36,7 @@ dist: dist-frontend dist-backend
 dist-frontend:
 	yarn build
 
-dist-backend: dist-backend-linux dist-backend-darwin dist-backend-windows
+dist-backend: dist-backend-linux dist-backend-darwin dist-backend-windows dist-arm
 dist-backend-windows: extension = .exe
 dist-backend-%:
 	$(eval filename = zabbix-plugin_$*_amd64$(extension))
