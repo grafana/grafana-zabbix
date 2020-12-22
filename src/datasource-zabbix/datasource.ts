@@ -6,7 +6,7 @@ import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
 import * as c from './constants';
-import { align } from './timeseries';
+import { align, fillTrendsWithNulls } from './timeseries';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
@@ -251,13 +251,16 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     let getHistoryPromise;
     options.valueType = this.getTrendValueType(target);
     options.consolidateBy = getConsolidateBy(target) || options.valueType;
+    const disableDataAlignment = this.disableDataAlignment || target.options?.disableDataAlignment;
 
     if (useTrends) {
-      getHistoryPromise = this.zabbix.getTrends(items, timeRange, options);
+      getHistoryPromise = this.zabbix.getTrends(items, timeRange, options)
+      .then(timeseries => {
+        return !disableDataAlignment ? this.fillTrendTimeSeriesWithNulls(timeseries) : timeseries;
+      });
     } else {
       getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options)
       .then(timeseries => {
-        const disableDataAlignment = this.disableDataAlignment || target.options?.disableDataAlignment;
         return !disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
       });
     }
@@ -280,6 +283,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     for (const ts of timeseries) {
       const interval = utils.parseItemInterval(ts.scopedVars['__zbx_item_interval']?.value);
       ts.datapoints = align(ts.datapoints, interval);
+    }
+    return timeseries;
+  }
+
+  fillTrendTimeSeriesWithNulls(timeseries: any[]) {
+    for (const ts of timeseries) {
+      ts.datapoints = fillTrendsWithNulls(ts.datapoints);
     }
     return timeseries;
   }

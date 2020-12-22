@@ -17,6 +17,8 @@ import { TimeSeriesPoints, TimeSeriesValue } from '@grafana/data';
 const POINT_VALUE = 0;
 const POINT_TIMESTAMP = 1;
 
+const HOUR_MS = 3600 * 1000;
+
 /**
  * Downsample time series by using given function (avg, min, max).
  */
@@ -116,6 +118,34 @@ function detectSeriesInterval(datapoints: TimeSeriesPoints): number {
   deltas = _.sortBy(deltas);
   const intervalSec = deltas[Math.floor(deltas.length * 0.5)];
   return intervalSec * 1000;
+}
+
+export function fillTrendsWithNulls(datapoints: TimeSeriesPoints): TimeSeriesPoints {
+  if (datapoints.length <= 1) {
+    return datapoints;
+  }
+
+  const interval = HOUR_MS;
+  const filled_ts: TimeSeriesPoints = [];
+  let frame_ts = datapoints[0][POINT_TIMESTAMP];
+  let point_frame_ts = frame_ts;
+  let point: TimeSeriesValue[];
+  for (let i = 0; i < datapoints.length; i++) {
+    point = datapoints[i];
+    point_frame_ts = point[POINT_TIMESTAMP];
+
+    if (point_frame_ts > frame_ts) {
+      // Move frame window to next non-empty interval and fill empty by null
+      while (frame_ts < point_frame_ts) {
+        filled_ts.push([null, frame_ts]);
+        frame_ts += interval;
+      }
+    }
+
+    filled_ts.push(point);
+    frame_ts += interval;
+  }
+  return filled_ts;
 }
 
 /**
