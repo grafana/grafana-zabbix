@@ -37,21 +37,23 @@ export interface ZabbixMetricsQuery extends DataQuery {
   triggers: { minSeverity: string; acknowledged: boolean; count: number; };
   queryType: string;
   datasourceId: number;
-  functions: ZabbixMetricFunction[];
-  options: ZabbixQueryOptions;
+  group: { filter: string; name: string; };
+  host: { filter: string; name: string; };
+  application: { filter: string; name: string; };
+  item: { filter: string; name: string; };
   textFilter: string;
   mode: number;
   itemids: number[];
   useCaptureGroups: boolean;
-  group: { filter: string; name: string; };
-  host: { filter: string; name: string; };
-  hostFilter: string;
-  application: { filter: string; name: string; };
-  item: { filter: string; name: string; };
-  itemFilter: string;
   proxy?: { filter: string; };
   trigger?: { filter: string; };
   itServiceFilter?: string;
+  tags?: { filter: string; }
+  functions: ZabbixMetricFunction[];
+  options: ZabbixQueryOptions;
+  // Deprecated
+  hostFilter?: string;
+  itemFilter?: string;
 }
 
 export interface ZabbixQueryOptions {
