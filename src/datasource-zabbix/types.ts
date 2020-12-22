@@ -49,6 +49,9 @@ export interface ZabbixMetricsQuery extends DataQuery {
   application: { filter: string; name: string; };
   item: { filter: string; name: string; };
   itemFilter: string;
+  proxy?: { filter: string; };
+  trigger?: { filter: string; };
+  itServiceFilter?: string;
 }
 
 export interface ZabbixQueryOptions {

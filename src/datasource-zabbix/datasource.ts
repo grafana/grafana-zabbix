@@ -13,7 +13,7 @@ import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
-import { getBackendSrv } from '@grafana/runtime';
+import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
@@ -641,6 +641,20 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return resultPromise.then(metrics => {
       return _.map(metrics, formatMetric);
     });
+  }
+
+  targetContainsTemplate(target: ZabbixMetricsQuery): boolean {
+    const templateSrv = getTemplateSrv() as any;
+    return (
+      templateSrv.variableExists(target.group?.filter) ||
+      templateSrv.variableExists(target.host?.filter) ||
+      templateSrv.variableExists(target.application?.filter) ||
+      templateSrv.variableExists(target.item?.filter) ||
+      templateSrv.variableExists(target.proxy?.filter) ||
+      templateSrv.variableExists(target.trigger?.filter) ||
+      templateSrv.variableExists(target.textFilter) ||
+      templateSrv.variableExists(target.itServiceFilter)
+    );
   }
 
   /////////////////
