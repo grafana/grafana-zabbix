@@ -35,6 +35,7 @@ export const ConfigEditor = (props: Props) => {
         trendsRange: '',
         cacheTTL: '',
         timeout: '',
+        disableDataAlignment: false,
         ...restJsonData,
       },
     });
@@ -209,9 +210,19 @@ export const ConfigEditor = (props: Props) => {
         <h3 className="page-heading">Other</h3>
         <Switch
           label="Disable acknowledges for read-only users"
-          labelClass="width-20"
+          labelClass="width-16"
           checked={options.jsonData.disableReadOnlyUsersAck}
           onChange={jsonDataSwitchHandler('disableReadOnlyUsersAck', options, onOptionsChange)}
+        />
+        <Switch
+          label="Disable data alignment"
+          labelClass="width-16"
+          checked={!!options.jsonData.disableDataAlignment}
+          onChange={jsonDataSwitchHandler('disableDataAlignment', options, onOptionsChange)}
+          tooltip="Data alignment feature aligns points based on item update interval.
+            For instance, if value collected once per minute, then timestamp of the each point will be set to the start of corresponding minute.
+            This alignment required for proper work of the stacked graphs.
+            If you don't need stacked graphs and want to get exactly the same timestamps as in Zabbix, then you can disable this feature."
         />
       </div>
     </>

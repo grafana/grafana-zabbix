@@ -20,17 +20,17 @@ interface AppsResponse extends Array<any> {
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
   'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'getProxies',
-  'getEventAlerts', 'getExtendedEventData', 'getProblems', 'getEventsHistory', 'getTriggersByIds', 'getScripts'
+  'getEventAlerts', 'getExtendedEventData', 'getProblems', 'getEventsHistory', 'getTriggersByIds', 'getScripts', 'getValueMappings'
 ];
 
 const REQUESTS_TO_CACHE = [
-  'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs', 'getITService', 'getProxies'
+  'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs', 'getITService', 'getProxies', 'getValueMappings'
 ];
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
   'getAcknowledges', 'getITService', 'getVersion', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
-  'getExtendedEventData', 'getScripts', 'executeScript',
+  'getExtendedEventData', 'getScripts', 'executeScript', 'getValueMappings'
 ];
 
 export class Zabbix implements ZabbixConnector {
@@ -55,6 +55,7 @@ export class Zabbix implements ZabbixConnector {
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
   getVersion: () => Promise<string>;
+  getValueMappings: () => Promise<any>;
 
   constructor(options) {
     const {

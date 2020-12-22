@@ -6,6 +6,7 @@ import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
 import * as c from './constants';
+import { align } from './timeseries';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
@@ -13,7 +14,7 @@ import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
 import { getBackendSrv } from '@grafana/runtime';
-import { DataSourceApi, DataSourceInstanceSettings } from '@grafana/data';
+import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -25,6 +26,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   trendsRange: string;
   cacheTTL: any;
   disableReadOnlyUsersAck: boolean;
+  disableDataAlignment: boolean;
   enableDirectDBConnection: boolean;
   dbConnectionDatasourceId: number;
   dbConnectionDatasourceName: string;
@@ -64,6 +66,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     // Other options
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
+    this.disableDataAlignment = jsonData.disableDataAlignment;
 
     // Direct DB Connection options
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
@@ -94,7 +97,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @param  {Object} options   Contains time range, targets and other info.
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
-  query(options) {
+  query(options: DataQueryRequest<any>): Promise<DataQueryResponse> {
     // Create request for each target
     const promises = _.map(options.targets, t => {
       // Don't request for hidden targets
@@ -164,7 +167,20 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(data => {
-        return { data: data };
+        if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
+          data = responseHandler.alignFrames(data);
+          if (responseHandler.isConvertibleToWide(data)) {
+            console.log('Converting response to the wide format');
+            data = responseHandler.convertToWide(data);
+          }
+        }
+        return data;
+      }).then(data => {
+        return {
+          data,
+          state: LoadingState.Done,
+          key: options.requestId,
+        };
       });
   }
 
@@ -207,28 +223,31 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Query target data for Metrics
    */
-  queryNumericData(target, timeRange, useTrends, options) {
-    let queryStart, queryEnd;
+  async queryNumericData(target, timeRange, useTrends, options): Promise<DataFrame[]> {
     const getItemOptions = {
       itemtype: 'num'
     };
-    return this.zabbix.getItemsFromTarget(target, getItemOptions)
-    .then(items => {
-      queryStart = new Date().getTime();
-      return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
-    }).then(result => {
-      queryEnd = new Date().getTime();
-      if (this.enableDebugLog) {
-        console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
-      }
-      return result;
-    });
+
+    const items = await this.zabbix.getItemsFromTarget(target, getItemOptions);
+
+    const queryStart = new Date().getTime();
+    const result = await this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    const queryEnd = new Date().getTime();
+
+    if (this.enableDebugLog) {
+      console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
+    }
+
+    const valueMappings = await this.zabbix.getValueMappings();
+
+    const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, target, valueMappings));
+    return dataFrames;
   }
 
   /**
    * Query history for numeric items
    */
-  queryNumericDataForItems(items, target, timeRange, useTrends, options) {
+  queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, options) {
     let getHistoryPromise;
     options.valueType = this.getTrendValueType(target);
     options.consolidateBy = getConsolidateBy(target) || options.valueType;
@@ -236,7 +255,11 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     if (useTrends) {
       getHistoryPromise = this.zabbix.getTrends(items, timeRange, options);
     } else {
-      getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options);
+      getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options)
+      .then(timeseries => {
+        const disableDataAlignment = this.disableDataAlignment || target.options?.disableDataAlignment;
+        return !disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
+      });
     }
 
     return getHistoryPromise
@@ -251,6 +274,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       return _.includes(trendFunctions, func.def.name);
     });
     return trendValueFunc ? trendValueFunc.params[0] : "avg";
+  }
+
+  alignTimeSeriesData(timeseries: any[]) {
+    for (const ts of timeseries) {
+      const interval = utils.parseItemInterval(ts.scopedVars['__zbx_item_interval']?.value);
+      ts.datapoints = align(ts.datapoints, interval);
+    }
+    return timeseries;
   }
 
   applyDataProcessingFunctions(timeseries_data, target) {
@@ -319,6 +350,12 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return this.zabbix.getItemsFromTarget(target, options)
     .then(items => {
       return this.zabbix.getHistoryText(items, timeRange, target);
+    })
+    .then(result => {
+      if (target.resultFormat !== 'table') {
+        return result.map(s => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
+      }
+      return result;
     });
   }
 
@@ -337,6 +374,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return this.zabbix.getItemsByIDs(itemids)
     .then(items => {
       return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    })
+    .then(result => {
+      return result.map(s => responseHandler.seriesToDataFrame(s, target));
     });
   }
 
@@ -367,7 +407,11 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         itservices = _.filter(itservices, {'serviceid': target.itservice?.serviceid});
       }
       return this.zabbix.getSLA(itservices, timeRange, target, options);})
-    .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target));
+    .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target))
+    .then(result => {
+      const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, target));
+      return dataFrames;
+    });
   }
 
   queryTriggersData(target, timeRange) {
@@ -665,7 +709,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
       }
     });
-    target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
+
+    if (target.textFilter) {
+      target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
+    }
 
     _.forEach(target.functions, func => {
       func.params = _.map(func.params, param => {

@@ -68,12 +68,9 @@ Read [how to configure](./direct_db_datasource) SQL data source in Grafana.
 
 **MySQL**, **PostgreSQL**, **InfluxDB** are supported as sources of historical data for the plugin.
 
-### Alerting
+### Other
 
-- **Enable alerting**: enable limited alerting support.
-- **Add thresholds**: get thresholds info from zabbix triggers and add it to graphs.
-    For example, if you have trigger `{Zabbix server:system.cpu.util[,iowait].avg(5m)}>20`, threshold will be set to 20.
-- **Min severity**: minimum trigger severity for showing alert info (OK/Problem).
+- **Disable data alignment**: disable time series data alignment. This feature aligns points based on item update interval. For instance, if value collected once per minute, then timestamp of the each point will be set to the start of corresponding minute. This alignment required for proper work of the stacked graphs. If you don't need stacked graphs and want to get exactly the same timestamps as in Zabbix, then you can disable this feature. Also, data alignment can be toggled for each query individually, in the query options.
 
 Then click _Add_ - datasource will be added and you can check connection using 
 _Test Connection_ button. This feature can help to find some mistakes like invalid user name 

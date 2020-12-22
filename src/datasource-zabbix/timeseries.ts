@@ -12,6 +12,7 @@
 import _ from 'lodash';
 import * as utils from './utils';
 import * as c from './constants';
+import { TimeSeriesPoints, TimeSeriesValue } from '@grafana/data';
 
 const POINT_VALUE = 0;
 const POINT_TIMESTAMP = 1;
@@ -60,6 +61,61 @@ function downsample(datapoints, time_to, ms_interval, func) {
     }
   }
   return downsampledSeries.reverse();
+}
+
+/**
+ * Detects interval between data points and aligns time series. If there's no value in the interval, puts null as a value.
+ */
+export function align(datapoints: TimeSeriesPoints, interval?: number): TimeSeriesPoints {
+  if (interval) {
+    interval = detectSeriesInterval(datapoints);
+  }
+
+  if (interval <= 0 || datapoints.length <= 1) {
+    return datapoints;
+  }
+
+  const aligned_ts: TimeSeriesPoints = [];
+  let frame_ts = getPointTimeFrame(datapoints[0][POINT_TIMESTAMP], interval);
+  let point_frame_ts = frame_ts;
+  let point: TimeSeriesValue[];
+  for (let i = 0; i < datapoints.length; i++) {
+    point = datapoints[i];
+    point_frame_ts = getPointTimeFrame(point[POINT_TIMESTAMP], interval);
+
+    if (point_frame_ts > frame_ts) {
+      // Move frame window to next non-empty interval and fill empty by null
+      while (frame_ts < point_frame_ts) {
+        aligned_ts.push([null, frame_ts]);
+        frame_ts += interval;
+      }
+    }
+
+    aligned_ts.push([point[POINT_VALUE], point_frame_ts]);
+    frame_ts += interval;
+  }
+  return aligned_ts;
+}
+
+/**
+ * Detects interval between data points in milliseconds.
+ */
+function detectSeriesInterval(datapoints: TimeSeriesPoints): number {
+  if (datapoints.length < 2) {
+    return -1;
+  }
+
+  let deltas = [];
+  for (let i = 1; i < datapoints.length; i++) {
+    // Get deltas (in seconds)
+    const d = (datapoints[i][POINT_TIMESTAMP] - datapoints[i - 1][POINT_TIMESTAMP]) / 1000;
+    deltas.push(Math.round(d));
+  }
+
+  // Use 50th percentile (median) as an interval
+  deltas = _.sortBy(deltas);
+  const intervalSec = deltas[Math.floor(deltas.length * 0.5)];
+  return intervalSec * 1000;
 }
 
 /**
@@ -255,7 +311,10 @@ function rate(datapoints) {
   return newSeries;
 }
 
-function simpleMovingAverage(datapoints, n) {
+function simpleMovingAverage(datapoints: TimeSeriesPoints, n: number): TimeSeriesPoints {
+  // It's not possible to calculate MA if n greater than number of points
+  n = Math.min(n, datapoints.length);
+
   const sma = [];
   let w_sum;
   let w_avg = null;
@@ -298,7 +357,10 @@ function simpleMovingAverage(datapoints, n) {
   return sma;
 }
 
-function expMovingAverage(datapoints, n) {
+function expMovingAverage(datapoints: TimeSeriesPoints, n: number): TimeSeriesPoints {
+  // It's not possible to calculate MA if n greater than number of points
+  n = Math.min(n, datapoints.length);
+
   let ema = [datapoints[0]];
   let ema_prev = datapoints[0][POINT_VALUE];
   let ema_cur;
@@ -526,6 +588,7 @@ const exportedFunctions = {
   PERCENTILE,
   sortByTime,
   flattenDatapoints,
+  align,
 };
 
 export default exportedFunctions;

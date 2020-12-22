@@ -161,11 +161,15 @@ export class ZabbixAPIConnector {
   getItems(hostids, appids, itemtype) {
     const params: any = {
       output: [
-        'name', 'key_',
+        'name',
+        'key_',
         'value_type',
         'hostid',
         'status',
-        'state'
+        'state',
+        'units',
+        'valuemapid',
+        'delay'
       ],
       sortfield: 'name',
       webitems: true,
@@ -650,6 +654,15 @@ export class ZabbixAPIConnector {
     };
 
     return this.request('script.execute', params);
+  }
+
+  getValueMappings() {
+    const params = {
+      output: 'extend',
+      selectMappings: "extend",
+    };
+
+    return this.request('valuemap.get', params);
   }
 }
 

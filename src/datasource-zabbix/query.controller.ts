@@ -27,6 +27,7 @@ function getTargetDefaults() {
     options: {
       showDisabledItems: false,
       skipEmptyValues: false,
+      disableDataAlignment: false,
     },
     table: {
       'skipEmptyValues': false
@@ -455,6 +456,7 @@ export class ZabbixQueryController extends QueryCtrl {
   renderQueryOptionsText() {
     const metricOptionsMap = {
       showDisabledItems: "Show disabled items",
+      disableDataAlignment: "Disable data alignment",
     };
 
     const problemsOptionsMap = {
