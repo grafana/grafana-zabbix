@@ -48,7 +48,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   proxy?: { filter: string; };
   trigger?: { filter: string; };
   itServiceFilter?: string;
-  tags?: { filter: string; }
+  tags?: { filter: string; };
   functions: ZabbixMetricFunction[];
   options: ZabbixQueryOptions;
   // Deprecated
