@@ -453,7 +453,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     });
   }
 
-  queryProblems(target, timeRange, options) {
+  queryProblems(target: ZabbixMetricsQuery, timeRange, options) {
     const [timeFrom, timeTo] = timeRange;
     const userIsEditor = contextSrv.isEditor || contextSrv.isGrafanaAdmin;
 
@@ -512,7 +512,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     let getProblemsPromise: Promise<ProblemDTO[]>;
-    if (showProblems === ShowProblemTypes.History) {
+    if (showProblems === ShowProblemTypes.History || target.options?.useTimeRange) {
       problemsOptions.timeFrom = timeFrom;
       problemsOptions.timeTo = timeTo;
       getProblemsPromise = this.zabbix.getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);

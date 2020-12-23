@@ -51,6 +51,8 @@ export interface ZabbixMetricsQuery extends DataQuery {
   tags?: { filter: string; };
   functions: ZabbixMetricFunction[];
   options: ZabbixQueryOptions;
+  // Problems
+  showProblems?: ShowProblemTypes;
   // Deprecated
   hostFilter?: string;
   itemFilter?: string;
@@ -67,6 +69,8 @@ export interface ZabbixQueryOptions {
   hostsInMaintenance?: boolean;
   hostProxy?: boolean;
   limit?: number;
+  useTimeRange?: boolean;
+  severities?: number[];
 }
 
 export interface ZabbixMetricFunction {

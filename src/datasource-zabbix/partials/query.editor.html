@@ -336,6 +336,12 @@
         </div>
         <gf-form-switch class="gf-form"
           label-class="width-9"
+          label="Use time range"
+          checked="ctrl.target.options.useTimeRange"
+          on-change="ctrl.onQueryOptionChange()">
+        </gf-form-switch>
+        <gf-form-switch class="gf-form"
+          label-class="width-9"
           label="Hosts in maintenance"
           checked="ctrl.target.options.hostsInMaintenance"
           on-change="ctrl.onQueryOptionChange()">

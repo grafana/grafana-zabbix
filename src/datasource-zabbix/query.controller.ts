@@ -101,6 +101,7 @@ export class ZabbixQueryController extends QueryCtrl {
   queryOptionsText: string;
   metric: any;
   showQueryOptions: boolean;
+  oldTarget: any;
 
   /** @ngInject */
   constructor($scope, $injector, $rootScope, $sce, templateSrv) {
@@ -370,9 +371,6 @@ export class ZabbixQueryController extends QueryCtrl {
       this.targetChanged();
     }
   }
-  oldTarget(oldTarget: any, target: any) {
-    throw new Error("Method not implemented.");
-  }
 
   onVariableChange() {
     if (this.isContainsVariables()) {
@@ -405,7 +403,7 @@ export class ZabbixQueryController extends QueryCtrl {
   targetChanged() {
     this.initFilters();
     this.parseTarget();
-    this.panelCtrl.refresh();
+    this.refresh();
   }
 
   addFunction(funcDef) {
@@ -466,6 +464,7 @@ export class ZabbixQueryController extends QueryCtrl {
       hostsInMaintenance: "Show hosts in maintenance",
       limit: "Limit problems",
       hostProxy: "Show proxy",
+      useTimeRange: "Use time range",
     };
 
     let optionsMap = {};
