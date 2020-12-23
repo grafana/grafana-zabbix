@@ -19,14 +19,6 @@ export interface JSONRPCError {
   data?: string;
 }
 
-export interface GFHTTPRequest {
-  method: HTTPMethod;
-  url: string;
-  data?: any;
-  headers?: {[key: string]: string};
-  withCredentials?: boolean;
-}
-
 export type JSONRPCRequestParams = {[key: string]: any};
 
 export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'CONNECT' | 'OPTIONS' | 'TRACE';
