@@ -114,7 +114,7 @@ export class ZabbixAPIConnector {
       action: action
     };
 
-    if (severity) {
+    if (severity !== undefined) {
       params.severity = severity;
     }
 
