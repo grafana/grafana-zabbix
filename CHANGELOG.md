@@ -1,8 +1,25 @@
 # Change Log
 
+## [4.1.0] - 2020-12-28
+### Added
+- [Data Frames](https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/) support, [#10820](https://github.com/alexanderzobnin/grafana-zabbix/issues/10820). This solves various issues below:
+- Use units configured in Zabbix if possible
+- Use value mappings from Zabbix
+- Align points in each series to prevent stacking graph issues
+- Fill missing points with null values, [#1109](https://github.com/alexanderzobnin/grafana-zabbix/issues/1109)
+- Problems: filter problems by time range, [#1094](https://github.com/alexanderzobnin/grafana-zabbix/issues/1094)
+- ARM build (ARM64 and ARM v6), [#1028](https://github.com/alexanderzobnin/grafana-zabbix/issues/1028)
+
+### Fixed
+- Grafana doesn't prevent from saving alerts with template variables, [#1100](https://github.com/alexanderzobnin/grafana-zabbix/issues/1100)
+- Query inspector is not working, [#1097](https://github.com/alexanderzobnin/grafana-zabbix/issues/1097)
+- Problems panel query editor issues, [#988](https://github.com/alexanderzobnin/grafana-zabbix/issues/988)
+- Problems: unable to change severity to Not Classified, [#1104](https://github.com/alexanderzobnin/grafana-zabbix/issues/1104)
+- Problems: ack message limited to 64 characters, [#1122](https://github.com/alexanderzobnin/grafana-zabbix/issues/1122)
+
 ## [4.0.2] - 2020-11-13
 ### Fixed
-- Query mode Text returns no data for last value, , [#1062](https://github.com/alexanderzobnin/grafana-zabbix/issues/1062)
+- Query mode Text returns no data for last value, [#1062](https://github.com/alexanderzobnin/grafana-zabbix/issues/1062)
 - Able to configure API request timeout, [#1046](https://github.com/alexanderzobnin/grafana-zabbix/issues/1046)
 - Support basic auth for backend requests, [#1048](https://github.com/alexanderzobnin/grafana-zabbix/issues/1048)
 - Problems: fix empty problems list when null value used as a filter
