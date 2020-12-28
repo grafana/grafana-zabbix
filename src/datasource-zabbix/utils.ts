@@ -250,7 +250,7 @@ export function parseItemInterval(interval: string): number {
 export function normalizeZabbixInterval(interval: string): string {
   const intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)?/g;
   const parsedInterval = intervalPattern.exec(interval);
-  if (!parsedInterval) {
+  if (!parsedInterval || !interval || (parsedInterval.length > 2 && !parsedInterval[2])) {
     return '';
   }
   return parsedInterval[1] + (parsedInterval.length > 2 ? parsedInterval[2] : 's');
