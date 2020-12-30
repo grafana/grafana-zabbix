@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.1.1] - 2020-12-30
+### Fixed
+- Graphs with dependent items failed to render, [#1123](https://github.com/alexanderzobnin/grafana-zabbix/issues/1123)
+
 ## [4.1.0] - 2020-12-28
 ### Added
 - [Data Frames](https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/) support, [#10820](https://github.com/alexanderzobnin/grafana-zabbix/issues/10820). This solves various issues below:
