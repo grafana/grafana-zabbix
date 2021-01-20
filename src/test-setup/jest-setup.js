@@ -68,13 +68,6 @@ jest.mock('grafana/app/core/utils/datemath', () => {
   };
 }, {virtual: true});
 
-jest.mock('grafana/app/core/utils/kbn', () => {
-  return {
-    round_interval: n => n,
-    secondsToHms: n => n + 'ms'
-  };
-}, {virtual: true});
-
 jest.mock('grafana/app/core/table_model', () => {
   return class TableModel {
     constructor() {

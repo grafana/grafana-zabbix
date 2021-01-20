@@ -1,9 +1,8 @@
 import _ from 'lodash';
 import moment from 'moment';
-import kbn from 'grafana/app/core/utils/kbn';
 import * as c from './constants';
 import { VariableQuery, VariableQueryTypes } from './types';
-import { arrowTableToDataFrame, isTableData, MappingType, ValueMap, ValueMapping, getValueFormats, DataFrame, FieldType } from '@grafana/data';
+import { MappingType, ValueMapping, getValueFormats, DataFrame, FieldType, rangeUtil } from '@grafana/data';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier
@@ -214,7 +213,7 @@ export function isTemplateVariable(str, templateVariables) {
 export function getRangeScopedVars(range) {
   const msRange = range.to.diff(range.from);
   const sRange = Math.round(msRange / 1000);
-  const regularRange = kbn.secondsToHms(msRange / 1000);
+  const regularRange = rangeUtil.secondsToHms(msRange / 1000);
   return {
     __range_ms: { text: msRange, value: msRange },
     __range_s: { text: sRange, value: sRange },
