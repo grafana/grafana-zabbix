@@ -6,6 +6,7 @@ import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
 import { ShowProblemTypes } from './types';
 import { CURRENT_SCHEMA_VERSION } from '../panel-triggers/migrations';
+import { getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 
 
 function getTargetDefaults() {
@@ -79,7 +80,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
   zabbix: any;
   replaceTemplateVars: any;
-  templateSrv: any;
+  templateSrv: TemplateSrv;
   editorModes: Array<{ value: string; text: string; queryType: number; }>;
   slaPropertyList: Array<{ name: string; property: string; }>;
   slaIntervals: Array<{ text: string; value: string; }>;
@@ -104,13 +105,13 @@ export class ZabbixQueryController extends QueryCtrl {
   oldTarget: any;
 
   /** @ngInject */
-  constructor($scope, $injector, $rootScope, $sce, templateSrv) {
+  constructor($scope, $injector, $rootScope) {
     super($scope, $injector);
     this.zabbix = this.datasource.zabbix;
 
     // Use custom format for template variables
     this.replaceTemplateVars = this.datasource.replaceTemplateVars;
-    this.templateSrv = templateSrv;
+    this.templateSrv = getTemplateSrv();
 
     this.editorModes = [
       {value: 'num',       text: 'Metrics',     queryType: c.MODE_METRICS},
@@ -278,7 +279,7 @@ export class ZabbixQueryController extends QueryCtrl {
     const metrics = _.uniq(_.map(this.metric[metricList], 'name'));
 
     // Add template variables
-    _.forEach(this.templateSrv.variables, variable => {
+    _.forEach(this.templateSrv.getVariables(), variable => {
       metrics.unshift('$' + variable.name);
     });
 
@@ -290,7 +291,7 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   getTemplateVariables() {
-    return _.map(this.templateSrv.variables, variable => {
+    return _.map(this.templateSrv.getVariables(), variable => {
       return '$' + variable.name;
     });
   }
@@ -361,7 +362,7 @@ export class ZabbixQueryController extends QueryCtrl {
   }
 
   isVariable(str) {
-    return utils.isTemplateVariable(str, this.templateSrv.variables);
+    return utils.isTemplateVariable(str, this.templateSrv.getVariables());
   }
 
   onTargetBlur() {
@@ -384,7 +385,7 @@ export class ZabbixQueryController extends QueryCtrl {
   isContainsVariables() {
     return _.some(['group', 'host', 'application'], field => {
       if (this.target[field] && this.target[field].filter) {
-        return utils.isTemplateVariable(this.target[field].filter, this.templateSrv.variables);
+        return utils.isTemplateVariable(this.target[field].filter, this.templateSrv.getVariables());
       } else {
         return false;
       }
