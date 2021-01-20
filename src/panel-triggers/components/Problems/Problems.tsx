@@ -33,6 +33,7 @@ export interface ProblemListProps {
 
 interface ProblemListState {
   expanded: any;
+  expandedProblems: any;
   page: number;
 }
 
@@ -44,6 +45,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     super(props);
     this.state = {
       expanded: {},
+      expandedProblems: {},
       page: 0,
     };
   }
@@ -71,11 +73,31 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     }
   }
 
-  handleExpandedChange = expanded => {
+  handleExpandedChange = (expanded: any, event: any) => {
+    const { problems, pageSize } = this.props;
+    const { page } = this.state;
+    const expandedProblems = {};
+
+    for (const row in expanded) {
+      const rowId = Number(row);
+      const problemIndex = pageSize * page + rowId;
+      if (expanded[row] && problemIndex < problems.length) {
+        const expandedProblem = problems[problemIndex].eventid;
+        if (expandedProblem) {
+          expandedProblems[expandedProblem] = true;
+        }
+      }
+    }
+
     const nextExpanded = { ...this.state.expanded };
-    nextExpanded[this.state.page] = expanded;
+    nextExpanded[page] = expanded;
+
+    const nextExpandedProblems = { ...this.state.expandedProblems };
+    nextExpandedProblems[page] = expandedProblems;
+
     this.setState({
-      expanded: nextExpanded
+      expanded: nextExpanded,
+      expandedProblems: nextExpandedProblems,
     });
   }
 
@@ -86,7 +108,22 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
   }
 
   getExpandedPage = (page: number) => {
-    return this.state.expanded[page] || {};
+    const { problems, pageSize } = this.props;
+    const { expandedProblems } = this.state;
+    const expandedProblemsPage = expandedProblems[page] || {};
+    const expandedPage = {};
+
+    // Go through the page and search for expanded problems
+    const startIndex = pageSize * page;
+    const endIndex = Math.min(startIndex + pageSize, problems.length);
+    for (let i = startIndex; i < endIndex; i++) {
+      const problem = problems[i];
+      if (expandedProblemsPage[problem.eventid]) {
+        expandedPage[i - startIndex] = {};
+      }
+    }
+
+    return expandedPage;
   }
 
   buildColumns() {
