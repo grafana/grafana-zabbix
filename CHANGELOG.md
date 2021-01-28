@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.1.2] - 2021-01-28
+### Fixed
+- Item ID query mode doesn't work, [#1148](https://github.com/alexanderzobnin/grafana-zabbix/issues/1148)
+- IT Services: a.round_interval is not a function, [#1142](https://github.com/alexanderzobnin/grafana-zabbix/issues/1142)
+- Problems: Text overlap between the tooltip and description boxes, [#1138](https://github.com/alexanderzobnin/grafana-zabbix/issues/1138)
+- Problems: expanded row overwritten on refresh, [#1143](https://github.com/alexanderzobnin/grafana-zabbix/issues/1143)
+
 ## [4.1.1] - 2020-12-30
 ### Fixed
 - Graphs with dependent items failed to render, [#1123](https://github.com/alexanderzobnin/grafana-zabbix/issues/1123)
