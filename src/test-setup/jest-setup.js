@@ -94,6 +94,13 @@ jest.mock('grafana/app/core/config', () => {
 
 jest.mock('jquery', () => 'module not found', {virtual: true});
 
+jest.mock('grafana/app/core/utils/kbn', () => {
+  return {
+    round_interval: n => n,
+    secondsToHms: n => n + 'ms'
+  };
+}, {virtual: true});
+
 // jest.mock('@grafana/ui', () => {
 //   return {};
 // }, {virtual: true});
