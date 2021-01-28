@@ -204,11 +204,15 @@ export class ZabbixAPIConnector {
     const params = {
       itemids: itemids,
       output: [
-        'name', 'key_',
+        'name',
+        'key_',
         'value_type',
         'hostid',
         'status',
-        'state'
+        'state',
+        'units',
+        'valuemapid',
+        'delay'
       ],
       webitems: true,
       selectHosts: ['hostid', 'name']

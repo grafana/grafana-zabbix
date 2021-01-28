@@ -450,7 +450,7 @@ export function convertZabbixUnit(zabbixUnit: string): string {
 
 export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | null {
   const { valuemapid } = item;
-  const mapping = valueMappings.find(m => m.valuemapid === valuemapid);
+  const mapping = valueMappings?.find(m => m.valuemapid === valuemapid);
   if (!mapping) {
     return null;
   }

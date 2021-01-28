@@ -69,7 +69,7 @@ function downsample(datapoints, time_to, ms_interval, func) {
  * Detects interval between data points and aligns time series. If there's no value in the interval, puts null as a value.
  */
 export function align(datapoints: TimeSeriesPoints, interval?: number): TimeSeriesPoints {
-  if (interval) {
+  if (!interval) {
     interval = detectSeriesInterval(datapoints);
   }
 
