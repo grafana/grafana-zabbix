@@ -216,11 +216,13 @@ interface ProblemItemProps {
 function ProblemItem(props: ProblemItemProps) {
   const { item, showName } = props;
   const itemName = utils.expandItemName(item.name, item.key_);
+  const tooltipContent = () => <>{itemName}<br/>{item.lastvalue}</>;
+
   return (
     <div className="problem-item">
       <FAIcon icon="thermometer-three-quarters" />
       {showName && <span className="problem-item-name">{item.name}: </span>}
-      <Tooltip placement="top-start" content={itemName}>
+      <Tooltip placement="top-start" content={tooltipContent}>
         <span className="problem-item-value">{item.lastvalue}</span>
       </Tooltip>
     </div>
