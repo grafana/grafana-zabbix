@@ -2,7 +2,8 @@ import _ from 'lodash';
 import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
 import * as utils from './utils';
-import { ArrayVector, DataFrame, DataQuery, Field, FieldType, MutableDataFrame, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
+import { ArrayVector, DataFrame, Field, FieldType, MutableDataFrame, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
+import { ZabbixMetricsQuery } from './types';
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -60,7 +61,8 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
-export function seriesToDataFrame(timeseries, target: DataQuery, valueMappings?: any[], fieldType?: FieldType): DataFrame {
+export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueMappings?: any[], fieldType?: FieldType): DataFrame {
+  console.log(target);
   const { datapoints, scopedVars, target: seriesName, item } = timeseries;
 
   const timeFiled: Field = {
@@ -122,8 +124,8 @@ export function seriesToDataFrame(timeseries, target: DataQuery, valueMappings?:
 
     // Try to use value mapping from Zabbix
     const mappings = utils.getValueMapping(item, valueMappings);
-    if (mappings) {
-      console.log(`Datasource: value mapping detected`);
+    if (mappings && target.options?.useZabbixValueMapping) {
+      console.log(`Datasource: using Zabbix value mapping`);
       valueFiled.config.mappings = mappings;
     }
   }

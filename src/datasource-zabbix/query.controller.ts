@@ -4,7 +4,7 @@ import * as c from './constants';
 import * as utils from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
-import { ShowProblemTypes } from './types';
+import { ShowProblemTypes, ZabbixMetricsQuery } from './types';
 import { CURRENT_SCHEMA_VERSION } from '../panel-triggers/migrations';
 import { getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 
@@ -29,6 +29,7 @@ function getTargetDefaults() {
       showDisabledItems: false,
       skipEmptyValues: false,
       disableDataAlignment: false,
+      useZabbixValueMapping: false,
     },
     table: {
       'skipEmptyValues': false
@@ -456,6 +457,7 @@ export class ZabbixQueryController extends QueryCtrl {
     const metricOptionsMap = {
       showDisabledItems: "Show disabled items",
       disableDataAlignment: "Disable data alignment",
+      useZabbixValueMapping: "Use Zabbix value mapping",
     };
 
     const problemsOptionsMap = {

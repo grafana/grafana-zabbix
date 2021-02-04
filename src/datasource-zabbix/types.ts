@@ -37,10 +37,10 @@ export interface ZabbixMetricsQuery extends DataQuery {
   triggers: { minSeverity: string; acknowledged: boolean; count: number; };
   queryType: string;
   datasourceId: number;
-  group: { filter: string; name: string; };
-  host: { filter: string; name: string; };
-  application: { filter: string; name: string; };
-  item: { filter: string; name: string; };
+  group: { filter: string; name?: string; };
+  host: { filter: string; name?: string; };
+  application: { filter: string; name?: string; };
+  item: { filter: string; name?: string; };
   textFilter: string;
   mode: number;
   itemids: number[];
@@ -62,6 +62,7 @@ export interface ZabbixQueryOptions {
   showDisabledItems?: boolean;
   skipEmptyValues?: boolean;
   disableDataAlignment?: boolean;
+  useZabbixValueMapping?: boolean;
   // Problems options
   minSeverity?: number;
   sortProblems?: string;

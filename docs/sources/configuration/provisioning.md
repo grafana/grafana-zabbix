@@ -41,6 +41,8 @@ datasources:
     disableReadOnlyUsersAck: true
     # Disable time series data alignment
     disableDataAlignment: false
+    # Use value mapping from Zabbix
+    useZabbixValueMapping: true
   version: 1
   editable: false
 
