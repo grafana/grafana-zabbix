@@ -62,7 +62,6 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
 }
 
 export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueMappings?: any[], fieldType?: FieldType): DataFrame {
-  console.log(target);
   const { datapoints, scopedVars, target: seriesName, item } = timeseries;
 
   const timeFiled: Field = {
