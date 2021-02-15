@@ -2,7 +2,7 @@ import _ from 'lodash';
 import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
 import * as utils from './utils';
-import { ArrayVector, DataFrame, Field, FieldType, MutableDataFrame, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
+import { ArrayVector, DataFrame, Field, FieldType, MutableDataFrame, MutableField, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
 import { ZabbixMetricsQuery } from './types';
 
 /**
@@ -61,7 +61,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
-export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueMappings?: any[], fieldType?: FieldType): DataFrame {
+export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueMappings?: any[], fieldType?: FieldType): MutableDataFrame {
   const { datapoints, scopedVars, target: seriesName, item } = timeseries;
 
   const timeFiled: Field = {
@@ -138,7 +138,8 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
     length: datapoints.length,
   };
 
-  return frame;
+  const mutableFrame = new MutableDataFrame(frame);
+  return mutableFrame;
 }
 
 export function isConvertibleToWide(data: DataFrame[]): boolean {
@@ -164,7 +165,7 @@ export function isConvertibleToWide(data: DataFrame[]): boolean {
   return true;
 }
 
-export function alignFrames(data: DataFrame[]): DataFrame[] {
+export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
   if (!data || data.length === 0) {
     return data;
   }
@@ -207,13 +208,13 @@ export function alignFrames(data: DataFrame[]): DataFrame[] {
   return data;
 }
 
-export function convertToWide(data: DataFrame[]): DataFrame[] {
+export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
   const timeField = data[0].fields.find(f => f.type === FieldType.time);
   if (!timeField) {
     return [];
   }
 
-  const fields: Field[] = [ timeField ];
+  const fields: MutableField[] = [ timeField ];
 
   for (let i = 0; i < data.length; i++) {
     const valueField = data[i].fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
@@ -222,6 +223,11 @@ export function convertToWide(data: DataFrame[]): DataFrame[] {
     }
 
     valueField.name = data[i].name;
+
+    // Add null value to the end if series is shifted by 1 time frame
+    if (timeField.values.length - valueField.values.length === 1) {
+      valueField.values.add(null);
+    }
     fields.push(valueField);
   }
 
