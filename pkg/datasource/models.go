@@ -85,8 +85,15 @@ type QueryFunction struct {
 
 // QueryOptions model
 type QueryFunctionDef struct {
-	Name     string `json:"name"`
-	Category string `json:"category"`
+	Name          string                  `json:"name"`
+	Category      string                  `json:"category"`
+	Params        []QueryFunctionParamDef `json:"params"`
+	DefaultParams []string                `json:"defaultParams"`
+}
+
+type QueryFunctionParamDef struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 // ReadQuery will read and validate Settings from the DataSourceConfg
