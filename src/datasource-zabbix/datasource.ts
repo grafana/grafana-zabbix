@@ -1,4 +1,6 @@
 import _ from 'lodash';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import config from 'grafana/app/core/config';
 import { contextSrv } from 'grafana/app/core/core';
 import * as dateMath from 'grafana/app/core/utils/datemath';
@@ -13,7 +15,7 @@ import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
-import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { getBackendSrv, getTemplateSrv, toDataQueryResponse } from '@grafana/runtime';
 import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
@@ -97,7 +99,15 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @param  {Object} options   Contains time range, targets and other info.
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
-  query(options: DataQueryRequest<any>): Promise<DataQueryResponse> {
+  query(options: DataQueryRequest<any>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
+    console.log(options);
+
+    const isMetricQuery = options.targets.every(q => q.queryType === c.MODE_METRICS ||q.mode === c.MODE_METRICS);
+    console.log(isMetricQuery);
+    if (isMetricQuery) {
+      return this.backendQuery(options);
+    }
+
     // Create request for each target
     const promises = _.map(options.targets, t => {
       // Don't request for hidden targets
@@ -184,6 +194,73 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       });
   }
 
+  backendQuery(request: DataQueryRequest<any>): Observable<DataQueryResponse> {
+    const { intervalMs, maxDataPoints, range, requestId } = request;
+    const targets = request.targets;
+
+    const queries = _.compact(targets.map((q) => {
+      const datasourceId = this.id;
+
+      // Don't request for hidden targets
+      if (q.hide) {
+        return null;
+      }
+
+      // Add range variables
+      request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
+
+      // Prevent changes of original object
+      let target = _.cloneDeep(q);
+
+      // Migrate old targets
+      target = migrations.migrate(target);
+      this.replaceTargetVariables(target, request);
+
+      if (target.queryType !== c.MODE_METRICS) {
+        return null;
+      }
+
+      return {
+        ...target,
+        datasourceId,
+        intervalMs,
+        maxDataPoints,
+      };
+    }));
+
+    // Return early if no queries exist
+    if (!queries.length) {
+      return of({ data: [] });
+    }
+
+    const body: any = { queries };
+
+    if (range) {
+      body.range = range;
+      body.from = range.from.valueOf().toString();
+      body.to = range.to.valueOf().toString();
+    }
+
+    console.log(body);
+    return getBackendSrv()
+      .fetch({
+        url: '/api/ds/query',
+        method: 'POST',
+        data: body,
+        requestId,
+      })
+      .pipe(
+        map((rsp: any) => {
+          const resp = toDataQueryResponse(rsp);
+          console.log(resp);
+          return resp;
+        }),
+        catchError((err) => {
+          return of(toDataQueryResponse(err));
+        })
+      );
+  }
+
   doTsdbRequest(options) {
     const tsdbRequestData: any = {
       queries: options.targets.map(target => {
@@ -198,7 +275,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       tsdbRequestData.to = options.range.to.valueOf().toString();
     }
 
-    return getBackendSrv().post('/api/tsdb/query', tsdbRequestData);
+    return getBackendSrv().post('/api/ds/query', tsdbRequestData);
   }
 
   /**
@@ -849,4 +926,12 @@ function filterEnabledTargets(targets) {
   return _.filter(targets, target => {
     return !(target.hide || !target.group || !target.host || !target.item);
   });
+}
+
+export function base64StringToArrowTable(text: string) {
+  const b64 = atob(text);
+  const arr = Uint8Array.from(b64, (c) => {
+    return c.charCodeAt(0);
+  });
+  return arr;
 }

@@ -88,7 +88,7 @@ type QueryFunctionDef struct {
 	Name          string                  `json:"name"`
 	Category      string                  `json:"category"`
 	Params        []QueryFunctionParamDef `json:"params"`
-	DefaultParams []string                `json:"defaultParams"`
+	DefaultParams []interface{}           `json:"defaultParams"`
 }
 
 type QueryFunctionParamDef struct {

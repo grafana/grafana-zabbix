@@ -14,7 +14,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 var (
@@ -97,6 +96,7 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 }
 
 func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	ds.logger.Debug("QueryData()")
 	qdr := backend.NewQueryDataResponse()
 
 	zabbixDS, err := ds.getDSInstance(req.PluginContext)
@@ -119,7 +119,7 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 			if err != nil {
 				res.Error = err
 			} else {
-				res.Frames = []*data.Frame{frame}
+				res.Frames = append(res.Frames, frame)
 			}
 		}
 		qdr.Responses[q.RefID] = res
