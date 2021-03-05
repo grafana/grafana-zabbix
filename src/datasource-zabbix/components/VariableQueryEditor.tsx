@@ -149,6 +149,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           <div className="gf-form">
             <InlineFormLabel width={10} tooltip="Original query string, read-only">Legacy Query</InlineFormLabel>
             <Input
+              css=""
               value={legacyQuery}
               readOnly={true}
             />

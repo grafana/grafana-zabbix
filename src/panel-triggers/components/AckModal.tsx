@@ -147,8 +147,9 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     const { canClose } = this.props;
 
     const actions = [
-      <Checkbox key="ack" label="Acknowledge" value={this.state.acknowledge} onChange={this.onAcknowledgeToggle} />,
+      <Checkbox css="" key="ack" label="Acknowledge" value={this.state.acknowledge} onChange={this.onAcknowledgeToggle} />,
       <Checkbox
+        css=""
         key="change-severity"
         label="Change severity"
         description=""
@@ -164,7 +165,14 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
           onChange={this.onChangeSelectedSeverity}
         />,
       canClose &&
-        <Checkbox key="close" label="Close problem" disabled={!canClose} value={this.state.closeProblem} onChange={this.onCloseProblemToggle} />,
+        <Checkbox
+          css=""
+          key="close"
+          label="Close problem"
+          disabled={!canClose}
+          value={this.state.closeProblem}
+          onChange={this.onCloseProblemToggle}
+        />,
     ];
 
     // <VerticalGroup /> doesn't handle empty elements properly, so don't return it
@@ -197,6 +205,7 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
         <div className={inputGroupClass}>
           <label className="gf-form-hint">
             <TextArea className={inputClass}
+              css=""
               type="text"
               name="message"
               placeholder="Message"

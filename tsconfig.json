@@ -19,6 +19,7 @@
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "baseUrl": "./src",
-    "strictFunctionTypes": false
+    "strictFunctionTypes": false,
+    "skipLibCheck": true
   }
 }
