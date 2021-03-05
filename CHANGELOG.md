@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.1.3] - 2021-03-05
+### Fixed
+- Explore: Error "Unexpected field length", [#1150](https://github.com/alexanderzobnin/grafana-zabbix/issues/1150)
+- Problems: item last value truncated text, [#1145](https://github.com/alexanderzobnin/grafana-zabbix/issues/1145)
+- Problems: minor UI bug, [#1149](https://github.com/alexanderzobnin/grafana-zabbix/issues/1149)
+- Option to disable zabbix value mapping translation in query, [#1128](https://github.com/alexanderzobnin/grafana-zabbix/issues/1128)
+
 ## [4.1.2] - 2021-01-28
 ### Fixed
 - Item ID query mode doesn't work, [#1148](https://github.com/alexanderzobnin/grafana-zabbix/issues/1148)
