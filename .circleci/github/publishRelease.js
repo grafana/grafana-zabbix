@@ -85,6 +85,11 @@ async function main() {
       `alexanderzobnin-zabbix-app-${releaseVersion}.zip`,
       `https://uploads.github.com/repos/${GRAFANA_ZABBIX_OWNER}/${GRAFANA_ZABBIX_REPO}/releases/${releaseId}/assets`
     );
+    // Upload package info with md5 checksum
+    await publishAssets(
+      `info.json`,
+      `https://uploads.github.com/repos/${GRAFANA_ZABBIX_OWNER}/${GRAFANA_ZABBIX_REPO}/releases/${releaseId}/assets`
+    );
   } catch (reason) {
     console.error(reason.data || reason.response || reason);
     // Rethrow the error so that we can trigger a non-zero exit code to circle-ci
