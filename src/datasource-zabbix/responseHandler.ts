@@ -81,11 +81,10 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
   }
 
   const valueFiled: Field = {
-    name: TIME_SERIES_VALUE_FIELD_NAME,
+    name: seriesName,
     type: fieldType ?? FieldType.number,
     labels: {},
     config: {
-      displayName: seriesName,
       displayNameFromDS: seriesName,
       custom: {}
     },
