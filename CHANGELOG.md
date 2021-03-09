@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.1.4] - 2021-03-09
+### Fixed
+- `Field/Standard options/Display name` stopped working in 4.1 release, [#1130](https://github.com/alexanderzobnin/grafana-zabbix/issues/1130)
+- Functions: trendsValue(sum) is not working, [#935](https://github.com/alexanderzobnin/grafana-zabbix/issues/935)
+
 ## [4.1.3] - 2021-03-05
 ### Fixed
 - Explore: Error "Unexpected field length", [#1150](https://github.com/alexanderzobnin/grafana-zabbix/issues/1150)
