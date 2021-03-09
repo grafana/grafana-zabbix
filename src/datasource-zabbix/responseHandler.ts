@@ -81,7 +81,7 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
   }
 
   const valueFiled: Field = {
-    name: seriesName,
+    name: TIME_SERIES_VALUE_FIELD_NAME,
     type: fieldType ?? FieldType.number,
     labels: {},
     config: {
