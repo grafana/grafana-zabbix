@@ -374,7 +374,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		return nil, err
 	}
 
-	frame := convertHistory(history, items)
+	frame := convertHistoryToDataFrame(history, items)
 	return frame, nil
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-func convertHistory(history History, items Items) *data.Frame {
+func convertHistoryToDataFrame(history History, items Items) *data.Frame {
 	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
 	timeFileld.Name = "time"
 	frame := data.NewFrame("History", timeFileld)
