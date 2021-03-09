@@ -416,10 +416,10 @@ function convertTrendPoint(valueType, point) {
       value = point.value_avg;
       break;
     case "sum":
-      value = point.value_sum;
+      value = point.value_avg * point.num;
       break;
     case "count":
-      value = point.value_count;
+      value = point.num;
       break;
     default:
       value = point.value_avg;
