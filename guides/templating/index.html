@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Templating - Grafana-Zabbix Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  <link href="../../css/custom.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Templating";
+    var mkdocs_page_input_path = "guides/templating.md";
+    var mkdocs_page_url = "/grafana-zabbix/guides/templating/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/sql.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Grafana-Zabbix Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Project</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../..">About Grafana-Zabbix</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../features/">Feature Highlights</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Installation</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../installation/">Installation</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../installation/run_from_master/">Building from sources</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../installation/upgrade/">Upgrade</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Configuration</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../configuration/">Configuration</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../configuration/direct_db_datasource/">Direct DB Connection Configuration</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../configuration/provisioning/">Provisioning</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../configuration/troubleshooting/">Troubleshooting</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">User Guides</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../gettingstarted/">Getting Started</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Templating</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#templating-guide">Templating Guide</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l4" href="#creating-variable">Creating Variable</a></li>
+        
+            <li><a class="toctree-l4" href="#query-format">Query Format</a></li>
+        
+            <li><a class="toctree-l4" href="#variables-usage">Variables Usage</a></li>
+        
+        </ul>
+    
+
+    </ul>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Reference</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../reference/datasource-zabbix/">Zabbix Datasource</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../reference/panel-triggers/">Triggers Panel</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../reference/functions/">Functions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../reference/alerting/">Alerting</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../reference/direct-db-connection/">Direct DB Connection</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Grafana-Zabbix Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>User Guides &raquo;</li>
+        
+      
+    
+    <li>Templating</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/alexanderzobnin/grafana-zabbix/blob/docs/docs/sources/guides/templating.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="templating-guide">Templating Guide</h1>
+<p>You can use template variables for creating highly reusable and interactive dashboards. General idea of templating is allow Grafana to get different metrics from data source and provide a way to change it on the fly without modifying dashboard. In case of Zabbix it means that you can get list of Host Groups, Hosts, Applications or Items and add it as a variables.</p>
+<h2 id="creating-variable">Creating Variable</h2>
+<p>To create template variable click the cog icon on the top navigation bar and choose <em>Templating</em>.</p>
+<p><img alt="Templating menu" src="../../img/templating-menu.png" /></p>
+<p>When you click <em>New</em> button, you'll see template variable editor. It contains these sections:</p>
+<p><img alt="Variable editor" src="../../img/templating-variable_editor.png" /></p>
+<h3 id="variable">Variable</h3>
+<p><strong>Name</strong><br />
+Name of the variable. You should use this name in queries.</p>
+<p><strong>Label</strong><br />
+Visible label for variable. Use when you want to display different name on dashboard. For instance, <em>Host Group</em> instead <em>host_group</em>.</p>
+<p><strong>Type</strong><br />
+By default <em>Query</em> type is selected. It means that Grafana asks data source for values of variable. But there are some other types: <em>Interval</em> (just a time interval), <em>Data source</em> (You can switch data source, for example, if you have more than one Zabbix instance and each added into Grafana as data source), <em>Custom</em> (you can set any predefined values for variable) and <em>Constant</em>.</p>
+<h3 id="query-options">Query Options</h3>
+<p><strong>Data source</strong><br />
+Data source used for querying variable values.</p>
+<p><strong>Refresh</strong><br />
+When to update the values of this variable.</p>
+<p><strong>Query</strong><br />
+Query string.</p>
+<p><strong>Regex</strong><br />
+Use regex if you need to filter values or extract a part of value.</p>
+<h3 id="selection-options">Selection Options</h3>
+<p><strong>Multi-value</strong><br />
+Enable, if you want to select multiple values at the same time.</p>
+<h3 id="value-groupstags-experimental-feature">Value groups/tags (Experimental feature)</h3>
+<h2 id="query-format">Query Format</h2>
+<p>Template variable query in Zabbix data source is a string which contains 4 parts wrapped in braces (<code>{}</code>). You still can
+use a period (<code>.</code>), but it's deprecated and will be removed in future.</p>
+<pre><code>{host group}{host}{application}{item name}
+</code></pre>
+
+<p>For example, </p>
+<pre><code>{Zabbix servers}{Zabbix server}{CPU}{*}
+{Frontend}{web01.mydomain.com}{*}{*}
+</code></pre>
+
+<p>Each part can be a name of corresponding metric or <code>*</code>, which means <em>all metrics</em>.</p>
+<p>Examples:</p>
+<ul>
+<li><code>{*}</code> returns list of all available Host Groups</li>
+<li><code>{*}{*}</code> all hosts in Zabbix</li>
+<li><code>{Network}{*}</code> returns all hosts in group Network</li>
+<li><code>{Linux servers}{*}{*}</code> returns all applications from hosts in Linux servers group</li>
+<li><code>{Linux servers}{backend01}{CPU}{*}</code> returns all items from backend01 belonging to CPU application.</li>
+</ul>
+<p>You can use another variable as a part of query. For instance, you have variable <em>group</em>, which returns list of 
+host groups and want to use it for querying hosts in selected group only. Here's a query for this case:</p>
+<pre><code>{$group}{*}
+</code></pre>
+
+<h2 id="variables-usage">Variables Usage</h2>
+<p>When you create a variable, you can use it as a part of data source query. Grafana also supports variables in different places like panel's and row's titles, Text panel's content, etc.</p>
+<p><img alt="Query with variables" src="../../img/templating-query_with_variables.png" /></p>
+<blockquote>
+<p>Note, that you should add <code>$</code> sign before variable's name (<strong>$host</strong> for <em>host</em> variable).</p>
+</blockquote>
+<p>See more about templating in <a href="http://docs.grafana.org/reference/templating">Grafana docs</a></p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../../reference/datasource-zabbix/" class="btn btn-neutral float-right" title="Zabbix Datasource">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../gettingstarted/" class="btn btn-neutral" title="Getting Started"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>Copyright &copy; 2015-2020, Alexander Zobnin</p>
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/alexanderzobnin/grafana-zabbix/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../gettingstarted/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../../reference/datasource-zabbix/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+
+</body>
+</html>

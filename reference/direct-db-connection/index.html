@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Direct DB Connection - Grafana-Zabbix Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  <link href="../../css/custom.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Direct DB Connection";
+    var mkdocs_page_input_path = "reference/direct-db-connection.md";
+    var mkdocs_page_url = "/grafana-zabbix/reference/direct-db-connection/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/sql.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Grafana-Zabbix Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Project</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../..">About Grafana-Zabbix</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../features/">Feature Highlights</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Installation</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../installation/">Installation</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../installation/run_from_master/">Building from sources</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../installation/upgrade/">Upgrade</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Configuration</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../configuration/">Configuration</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../configuration/direct_db_datasource/">Direct DB Connection Configuration</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../configuration/provisioning/">Provisioning</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../configuration/troubleshooting/">Troubleshooting</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">User Guides</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../guides/gettingstarted/">Getting Started</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../guides/templating/">Templating</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Reference</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../datasource-zabbix/">Zabbix Datasource</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../panel-triggers/">Triggers Panel</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../functions/">Functions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../alerting/">Alerting</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Direct DB Connection</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#direct-db-connection">Direct DB Connection</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l4" href="#data-flow">Data Flow</a></li>
+        
+            <li><a class="toctree-l4" href="#query-structure">Query structure</a></li>
+        
+            <li><a class="toctree-l4" href="#influxdb">InfluxDB</a></li>
+        
+            <li><a class="toctree-l4" href="#functions-usage-with-direct-db-connection">Functions usage with Direct DB Connection</a></li>
+        
+        </ul>
+    
+
+    </ul>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Grafana-Zabbix Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Reference &raquo;</li>
+        
+      
+    
+    <li>Direct DB Connection</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/alexanderzobnin/grafana-zabbix/blob/docs/docs/sources/reference/direct-db-connection.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="direct-db-connection">Direct DB Connection</h1>
+<p>Since version 4.3 Grafana can use MySQL as a native data source. The idea of Direct DB Connection is that Grafana-Zabbix plugin can use this data source for querying data directly from a Zabbix database.</p>
+<p>One of the most resource intensive queries for Zabbix API is the history query. For long time intervals <code>history.get</code>
+returns a huge amount of data. In order to display it, the plugin should adjust time series resolution
+by using <a href="../functions/#consolidateby">consolidateBy</a>. Ultimately, Grafana displays this reduced
+time series, but that data should be loaded and processed on the client side first. Direct DB Connection solves these two problems by moving consolidation to the server side. Thus, the client gets a 'ready-to-use' dataset which is much smaller. This allows the data to load faster and the client doesn't spend time processing the data.</p>
+<p>Also, many users see better performance from direct database queries versus API calls. This could be the result of several reasons,
+such as the additional PHP layer and additional SQL queries (user permissions checks).</p>
+<p>Direct DB Connection feature allows using database transparently for querying historical data. Now Grafana-Zabbix plugin supports few databases for history queries: MySQL, PostgreSQL and InfluxDB. Regardless of the database type, idea and data flow remain the same.</p>
+<h2 id="data-flow">Data Flow</h2>
+<p>This chart illustrates how the plugin uses both Zabbix API and the MySQL data source for querying different types
+of data from Zabbix. MySQL data source is used only for pulling history and trend data instead of <code>history.get</code>
+and <code>trend.get</code> API calls.</p>
+<p><a href="../../img/reference-direct-db-connection.svg"><img alt="Direct DB Connection" src="../../img/reference-direct-db-connection.svg" /></a></p>
+<h2 id="query-structure">Query structure</h2>
+<p>Below is an example query for getting history in the Grafana-Zabbix Plugin:</p>
+<p><strong>MySQL</strong>:</p>
+<pre><code class="sql">SELECT itemid AS metric, clock AS time_sec, {aggFunc}(value) as value
+FROM {historyTable}
+WHERE itemid IN ({itemids})
+  AND clock &gt; {timeFrom} AND clock &lt; {timeTill}
+GROUP BY time_sec DIV {intervalSec}, metric
+ORDER BY time_sec ASC
+</code></pre>
+
+<p><strong>PostgreSQL</strong>:</p>
+<pre><code class="sql">SELECT to_char(itemid, 'FM99999999999999999999') AS metric, 
+  clock / {intervalSec} * {intervalSec} AS time, 
+  {aggFunc}(value) AS value
+FROM {historyTable}
+WHERE itemid IN ({itemids})
+  AND clock &gt; {timeFrom} AND clock &lt; {timeTill}
+GROUP BY 1, 2
+ORDER BY time ASC
+</code></pre>
+
+<p>where <code>{aggFunc}</code> is one of <code>[AVG, MIN, MAX, SUM, COUNT]</code> aggregation functions, <code>{historyTable}</code> is a history table,
+<code>{intervalSec}</code> - consolidation interval in seconds.</p>
+<p>When getting trends, the plugin additionally queries a particular value column (<code>value_avg</code>, <code>value_min</code> or <code>value_max</code>) which
+depends on <code>consolidateBy</code> function value:</p>
+<p><strong>MySQL</strong>:</p>
+<pre><code class="sql">SELECT itemid AS metric, clock AS time_sec, {aggFunc}({valueColumn}) as value
+FROM {trendsTable}
+WHERE itemid IN ({itemids})
+  AND clock &gt; {timeFrom} AND clock &lt; {timeTill}
+GROUP BY time_sec DIV {intervalSec}, metric
+ORDER BY time_sec ASC
+</code></pre>
+
+<p><strong>PostgreSQL</strong>:</p>
+<pre><code class="sql">SELECT to_char(itemid, 'FM99999999999999999999') AS metric, 
+  clock / {intervalSec} * {intervalSec} AS time, 
+  {aggFunc}({valueColumn}) AS value
+FROM {trendsTable}
+WHERE itemid IN ({itemids})
+  AND clock &gt; {timeFrom} AND clock &lt; {timeTill}
+GROUP BY 1, 2
+ORDER BY time ASC
+</code></pre>
+
+<p><strong>Note</strong>: these queries may be changed in future, so look into sources for actual query structure.</p>
+<p>As you can see, the Grafana-Zabbix plugin uses aggregation by a given time interval. This interval is provided by Grafana and depends on the panel width in pixels. Thus, Grafana displays the data in the proper resolution.</p>
+<h2 id="influxdb">InfluxDB</h2>
+<p>Zabbix supports loadable modules which makes possible to write history data into an external database. There's a <a href="https://github.com/i-ky/effluence">module</a> for InfluxDB written by <a href="https://github.com/i-ky">Gleb Ivanovsky</a> which can export history into InfluxDB in real-time.</p>
+<h4 id="influxdb-retention-policy">InfluxDB retention policy</h4>
+<p>In order to keep database size under control, you should use InfluxDB retention policy mechanism. It's possible to create retention policy for long-term data and write aggregated data in the same manner as Zabbix does (trends). Then this retention policy can be used in plugin for getting data after a certain period (<a href="../../configuration/#direct-db-connection">Retention Policy</a> option in data source config). Read more about how to configure retention policy for using with plugin in effluence module <a href="https://github.com/i-ky/effluence#database-sizing">docs</a>.</p>
+<h4 id="influxdb-query">InfluxDB Query</h4>
+<p>Eventually, plugin generates InfluxDB query similar to this:</p>
+<pre><code class="sql">SELECT MEAN(&quot;value&quot;)
+FROM &quot;history&quot;
+WHERE (&quot;itemid&quot; = '10073' OR &quot;itemid&quot; = '10074')
+  AND &quot;time&quot; &gt;= 1540000000000s AND &quot;time&quot; &lt;= 1540000000060s
+GROUP BY time(10s), &quot;itemid&quot; fill(none)
+</code></pre>
+
+<h2 id="functions-usage-with-direct-db-connection">Functions usage with Direct DB Connection</h2>
+<p>There's only one function that directly affects the backend data. This function is <code>consolidateBy</code>. Other functions work on the client side and transform data that comes from the backend. So you should clearly understand that this is pre-aggregated data (by AVG, MAX, MIN, etc). </p>
+<p>For example, say you want to group values by 1 hour interval and <code>max</code> function. If you just apply <code>groupBy(10m, max)</code> function, your result will be wrong, because you would transform data aggregated by default <code>AVG</code> function. You should use <code>consolidateBy(max)</code> coupled with <code>groupBy(10m, max)</code> in order to get a precise result.</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="../alerting/" class="btn btn-neutral" title="Alerting"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>Copyright &copy; 2015-2020, Alexander Zobnin</p>
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/alexanderzobnin/grafana-zabbix/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../alerting/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+    </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>Configuration - Grafana-Zabbix Documentation</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  <link href="../css/custom.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Configuration";
+    var mkdocs_page_input_path = "configuration/index.md";
+    var mkdocs_page_url = "/grafana-zabbix/configuration/";
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/sql.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> Grafana-Zabbix Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Project</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="..">About Grafana-Zabbix</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../features/">Feature Highlights</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Installation</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../installation/">Installation</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../installation/run_from_master/">Building from sources</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../installation/upgrade/">Upgrade</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Configuration</span>
+    <ul class="subnav">
+                <li class=" current">
+                    
+    <a class="current" href="./">Configuration</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#configuration">Configuration</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l4" href="#enable-plugin">Enable plugin</a></li>
+        
+            <li><a class="toctree-l4" href="#configure-zabbix-data-source">Configure Zabbix data source</a></li>
+        
+            <li><a class="toctree-l4" href="#import-example-dashboards">Import example dashboards</a></li>
+        
+            <li><a class="toctree-l4" href="#note-about-browser-cache">Note about Browser Cache</a></li>
+        
+        </ul>
+    
+
+    </ul>
+                </li>
+                <li class="">
+                    
+    <a class="" href="direct_db_datasource/">Direct DB Connection Configuration</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="provisioning/">Provisioning</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="troubleshooting/">Troubleshooting</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">User Guides</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../guides/gettingstarted/">Getting Started</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../guides/templating/">Templating</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Reference</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../reference/datasource-zabbix/">Zabbix Datasource</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../reference/panel-triggers/">Triggers Panel</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../reference/functions/">Functions</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../reference/alerting/">Alerting</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../reference/direct-db-connection/">Direct DB Connection</a>
+                </li>
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">Grafana-Zabbix Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Configuration &raquo;</li>
+        
+      
+    
+    <li>Configuration</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/alexanderzobnin/grafana-zabbix/blob/docs/docs/sources/configuration/index.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="configuration">Configuration</h1>
+<h2 id="enable-plugin">Enable plugin</h2>
+<p>Go to the plugins in Grafana side panel, select <em>Apps</em> tab, then select <em>Zabbix</em>, open <em>Config</em>
+tab and enable plugin.</p>
+<p><img alt="Enable Zabbix App" src="../img/installation-enable_app.png" /></p>
+<h2 id="configure-zabbix-data-source">Configure Zabbix data source</h2>
+<p>After enabling plugin you can add Zabbix data source.</p>
+<p>To add new Zabbix data source open <em>Data Sources</em> in side panel, click <em>Add data source</em> and select <em>Zabbix</em> from dropdown list.</p>
+<p><img alt="Configure Zabbix data source" src="../img/installation-datasource_config.png" /></p>
+<h3 id="http-settings">HTTP settings</h3>
+<ul>
+<li><strong>URL</strong>: set Zabbix API url (full path with <code>api_jsonrpc.php</code>).</li>
+<li><strong>Access</strong>: Set to <code>Server (default)</code>.</li>
+<li><strong>Http Auth</strong>: configure if you use proxy authentication.</li>
+<li><strong>Basic Auth</strong>:</li>
+<li><strong>With Credentials</strong>:</li>
+</ul>
+<h3 id="zabbix-api-details">Zabbix API details</h3>
+<ul>
+<li><strong>Username</strong> and <strong>Password</strong>: setup login for access to Zabbix API. Also check user's permissions
+    in Zabbix if you cannot get any groups and hosts in Grafana.</li>
+<li><strong>Trends</strong>: enable if you use Zabbix 3.x or newer. This option is
+    strictly recommended for displaying long time periods (more than few days, depending of your item's
+    updating interval in Zabbix), because few days of item history contains tons of points. Using trends
+    will increase Grafana performance.</li>
+<li><strong>After</strong>: time after which trends will be used.
+        Best practice is to set this value to your history storage period (7d, 30d, etc). Default is <strong>7d</strong> (7 days).
+        You can set the time in Grafana format. Valid time specificators are:<ul>
+<li><strong>h</strong> - hours</li>
+<li><strong>d</strong> - days</li>
+<li><strong>M</strong> - months</li>
+</ul>
+</li>
+<li><strong>Range</strong>: Time range width after which trends will be used instead of history.
+        It's better to set this value in range of 4 to 7 days to prevent loading large amount of history data.
+        Default is 4 days.</li>
+<li><strong>Cache TTL</strong>: plugin caches some api requests for increasing performance. Set this
+    value to desired cache lifetime (this option affect data like items list).</li>
+<li><strong>Timeout</strong>: Zabbix connection timeout in seconds. Default is 30.</li>
+</ul>
+<h3 id="direct-db-connection">Direct DB Connection</h3>
+<p>Direct DB Connection allows plugin to use existing SQL data source for querying history data directly from Zabbix
+database. This way usually faster than pulling data from Zabbix API, especially on the wide time ranges, and reduces
+amount of data transferred.</p>
+<p>Read <a href="./direct_db_datasource">how to configure</a> SQL data source in Grafana.</p>
+<ul>
+<li><strong>Enable</strong>: enable Direct DB Connection.</li>
+<li><strong>Data Source</strong>: Select Data Source for Zabbix history database.</li>
+<li><strong>Retention Policy</strong> (InfluxDB only): Specify retention policy name for fetching long-term stored data. Grafana will fetch data from this retention policy if query time range suitable for trends query. Leave it blank if only default retention policy used.</li>
+</ul>
+<h4 id="supported-databases">Supported databases</h4>
+<p><strong>MySQL</strong>, <strong>PostgreSQL</strong>, <strong>InfluxDB</strong> are supported as sources of historical data for the plugin.</p>
+<h3 id="other">Other</h3>
+<ul>
+<li>
+<p><strong>Disable acknowledges for read-only users</strong>: disable ability to acknowledge problems from Grafana for non-editors.</p>
+</li>
+<li>
+<p><strong>Disable data alignment</strong>: disable time series data alignment. This feature aligns points based on item update interval. For instance, if value collected once per minute, then timestamp of the each point will be set to the start of corresponding minute. This alignment required for proper work of the stacked graphs. If you don't need stacked graphs and want to get exactly the same timestamps as in Zabbix, then you can disable this feature. Also, data alignment can be toggled for each query individually, in the query options.</p>
+</li>
+</ul>
+<p>Then click <em>Add</em> - data source will be added and you can check connection using <em>Test Connection</em> button. This feature can help to find some mistakes like invalid user name or password, wrong api url.</p>
+<h2 id="import-example-dashboards">Import example dashboards</h2>
+<p>You can import dashboard examples from <em>Dashboards</em> tab in the data source config.</p>
+<p><img alt="Import dashboards" src="../img/installation-plugin-dashboards.png" /></p>
+<h2 id="note-about-browser-cache">Note about Browser Cache</h2>
+<p>After updating plugin, clear browser cache and reload application page. See details
+for <a href="https://support.google.com/chrome/answer/95582">Chrome</a>,
+<a href="https://support.mozilla.org/en-US/kb/how-clear-firefox-cache">Firefox</a>. You need to clear cache
+only, not cookies, history and other data.</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="direct_db_datasource/" class="btn btn-neutral float-right" title="Direct DB Connection Configuration">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../installation/upgrade/" class="btn btn-neutral" title="Upgrade"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>Copyright &copy; 2015-2020, Alexander Zobnin</p>
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/alexanderzobnin/grafana-zabbix/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../installation/upgrade/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="direct_db_datasource/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+
+</body>
+</html>
