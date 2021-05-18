@@ -122,6 +122,7 @@
       <label class="gf-form-label query-keyword width-7">Application</label>
       <input type="text"
         ng-model="ctrl.target.application.filter"
+        ng-disabled="ctrl.appFilterDisabled()"
         bs-typeahead="ctrl.getApplicationNames"
         ng-blur="ctrl.onTargetBlur()"
         data-min-length=0
