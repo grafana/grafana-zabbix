@@ -46,12 +46,14 @@ export class ZabbixAPIConnector {
   //////////////////////////
 
   request(method: string, params?: any) {
-    return this.backendAPIRequest(method, params).then(response => {
-      return response?.data?.result;
-    });
+    if (!this.version) {
+      return this.initVersion().then(() => this.request(method, params));
+    }
+
+    return this.backendAPIRequest(method, params);
   }
 
-  backendAPIRequest(method: string, params: any = {}) {
+  async backendAPIRequest(method: string, params: any = {}) {
     const requestOptions: BackendSrvRequest = {
       url: this.backendAPIUrl,
       method: 'POST',
@@ -74,14 +76,15 @@ export class ZabbixAPIConnector {
       requestOptions.headers.Authorization = this.requestOptions.basicAuth;
     }
 
-    return getBackendSrv().datasourceRequest(requestOptions);
+    const response = await getBackendSrv().datasourceRequest(requestOptions);
+    return response?.data?.result;
   }
 
   /**
    * Get Zabbix API version
    */
   getVersion() {
-    return this.request('apiinfo.version');
+    return this.backendAPIRequest('apiinfo.version');
   }
 
   initVersion(): Promise<string> {
@@ -147,7 +150,11 @@ export class ZabbixAPIConnector {
     return this.request('host.get', params);
   }
 
-  getApps(hostids): Promise<any[]> {
+  async getApps(hostids): Promise<any[]> {
+    if (semver.gte(this.version, '5.4.0')) {
+      return [];
+    }
+
     const params = {
       output: 'extend',
       hostids: hostids
