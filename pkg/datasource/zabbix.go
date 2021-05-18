@@ -167,7 +167,10 @@ func (ds *ZabbixDatasourceInstance) getItems(ctx context.Context, groupFilter st
 	}
 
 	apps, err := ds.getApps(ctx, groupFilter, hostFilter, appFilter)
-	if err != nil {
+	// Apps not supported in Zabbix 5.4 and higher
+	if isAppMethodNotFoundError(err) {
+		apps = []map[string]interface{}{}
+	} else if err != nil {
 		return nil, err
 	}
 	var appids []string
@@ -504,4 +507,13 @@ func isNotAuthorized(err error) bool {
 	return strings.Contains(message, "Session terminated, re-login, please.") ||
 		strings.Contains(message, "Not authorised.") ||
 		strings.Contains(message, "Not authorized.")
+}
+
+func isAppMethodNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	message := err.Error()
+	return message == `Method not found. Incorrect API "application".`
 }
