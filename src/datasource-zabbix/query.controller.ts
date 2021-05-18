@@ -512,4 +512,8 @@ export class ZabbixQueryController extends QueryCtrl {
     this.init();
     this.targetChanged();
   }
+
+  appFilterDisabled() {
+    return !this.zabbix.supportsApplications();
+  }
 }
