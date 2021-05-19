@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.1.5] - 2021-05-18
+### Fixed
+- Fix compatibility with Zabbix 5.4, [#1188](https://github.com/alexanderzobnin/grafana-zabbix/issues/1188)
+
 ## [4.1.4] - 2021-03-09
 ### Fixed
 - `Field/Standard options/Display name` stopped working in 4.1 release, [#1130](https://github.com/alexanderzobnin/grafana-zabbix/issues/1130)

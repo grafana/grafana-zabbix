@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import moment from 'moment';
+import semver from 'semver';
 import * as utils from '../utils';
 import responseHandler from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
@@ -29,7 +30,7 @@ const REQUESTS_TO_CACHE = [
 
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'getVersion', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
+  'getAcknowledges', 'getITService', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
   'getExtendedEventData', 'getScripts', 'executeScript', 'getValueMappings'
 ];
 
@@ -40,6 +41,7 @@ export class Zabbix implements ZabbixConnector {
   getHistoryDB: any;
   dbConnector: any;
   getTrendsDB: any;
+  version: string;
 
   getHistory: (items, timeFrom, timeTill) => Promise<any>;
   getTrend: (items, timeFrom, timeTill) => Promise<any>;
@@ -54,7 +56,6 @@ export class Zabbix implements ZabbixConnector {
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
-  getVersion: () => Promise<string>;
   getValueMappings: () => Promise<any>;
 
   constructor(options) {
@@ -168,6 +169,17 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
+  async getVersion() {
+    if (!this.version) {
+      this.version = await this.zabbixAPI.initVersion();
+    }
+    return this.version;
+  }
+
+  supportsApplications() {
+    return this.version ? semver.lt(this.version, '5.4.0') : true;
+  }
+
   getItemsFromTarget(target, options) {
     const parts = ['group', 'host', 'application', 'item'];
     const filters = _.map(parts, p => target[p].filter);
@@ -218,7 +230,12 @@ export class Zabbix implements ZabbixConnector {
   /**
    * Get list of applications belonging to given groups and hosts.
    */
-  getAllApps(groupFilter, hostFilter) {
+  async getAllApps(groupFilter, hostFilter) {
+    await this.getVersion();
+    if (!this.supportsApplications()) {
+      return [];
+    }
+
     return this.getHosts(groupFilter, hostFilter)
     .then(hosts => {
       const hostids = _.map(hosts, 'hostid');
@@ -226,11 +243,14 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getApps(groupFilter?, hostFilter?, appFilter?): Promise<AppsResponse> {
+  async getApps(groupFilter?, hostFilter?, appFilter?): Promise<AppsResponse> {
+    await this.getVersion();
+    const skipAppFilter = !this.supportsApplications();
+
     return this.getHosts(groupFilter, hostFilter)
     .then(hosts => {
       const hostids = _.map(hosts, 'hostid');
-      if (appFilter) {
+      if (appFilter && !skipAppFilter) {
         return this.zabbixAPI.getApps(hostids)
         .then(apps => filterByQuery(apps, appFilter));
       } else {
