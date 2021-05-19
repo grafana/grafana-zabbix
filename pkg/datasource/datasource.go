@@ -57,7 +57,7 @@ func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (i
 		return nil, err
 	}
 
-	client, err := httpclient.NewHttpClient(&settings, zabbixSettings.Timeout)
+	client, err := httpclient.New(&settings, zabbixSettings.Timeout)
 	if err != nil {
 		logger.Error("Error initializing HTTP client", "error", err)
 		return nil, err
