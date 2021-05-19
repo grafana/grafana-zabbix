@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -55,7 +56,12 @@ func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (i
 		return nil, err
 	}
 
-	zabbixAPI, err := zabbixapi.New(&settings, zabbixSettings.Timeout)
+	client, err := httpclient.NewHttpClient(&settings, zabbixSettings.Timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	zabbixAPI, err := zabbixapi.New(settings.URL, client)
 	if err != nil {
 		logger.Error("Error initializing Zabbix API", "error", err)
 		return nil, err

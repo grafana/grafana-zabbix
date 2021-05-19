@@ -46,9 +46,9 @@ var ptc = proxyTransportCache{
 	cache: make(map[int64]cachedTransport),
 }
 
-// GetHttpClient returns new http.Client. Transport either initialized or got from cache.
-func GetHttpClient(ds *backend.DataSourceInstanceSettings, timeout time.Duration) (*http.Client, error) {
-	transport, err := getHttpTransport(ds)
+// NewHttpClient returns new http.Client. Transport either initialized or got from cache.
+func NewHttpClient(ds *backend.DataSourceInstanceSettings, timeout time.Duration) (*http.Client, error) {
+	transport, err := newHttpTransport(ds)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func GetHttpClient(ds *backend.DataSourceInstanceSettings, timeout time.Duration
 	}, nil
 }
 
-func getHttpTransport(ds *backend.DataSourceInstanceSettings) (*dataSourceTransport, error) {
+func newHttpTransport(ds *backend.DataSourceInstanceSettings) (*dataSourceTransport, error) {
 	ptc.Lock()
 	defer ptc.Unlock()
 
