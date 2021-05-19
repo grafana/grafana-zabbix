@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/stretchr/testify/assert"
@@ -32,23 +32,23 @@ var basicDatasourceInfo = &backend.DataSourceInstanceSettings{
 	ID:       1,
 	Name:     "TestDatasource",
 	URL:      "http://zabbix.org/zabbix",
-	JSONData: []byte(`{"username":"username", "password":"password"}}`),
+	JSONData: []byte(`{"username":"username", "password":"password", "cacheTTL":"10m"}`),
 }
 
-func mockZabbixQuery(method string, params ZabbixAPIParams) *ZabbixAPIRequest {
-	return &ZabbixAPIRequest{
+func mockZabbixQuery(method string, params ZabbixAPIParams) *zabbix.ZabbixAPIRequest {
+	return &zabbix.ZabbixAPIRequest{
 		Method: method,
 		Params: params,
 	}
 }
 
 func MockZabbixDataSource(body string, statusCode int) *ZabbixDatasourceInstance {
-	zabbixAPI, _ := zabbixapi.MockZabbixAPI(body, statusCode)
 	zabbixSettings, _ := readZabbixSettings(basicDatasourceInfo)
+	zabbixClient, _ := zabbix.MockZabbixClient(basicDatasourceInfo, body, statusCode)
 
 	return &ZabbixDatasourceInstance{
 		dsInfo:     basicDatasourceInfo,
-		zabbixAPI:  zabbixAPI,
+		zabbix:     zabbixClient,
 		Settings:   zabbixSettings,
 		queryCache: NewDatasourceCache(cache.NoExpiration, 10*time.Minute),
 		logger:     log.New(),
@@ -56,26 +56,26 @@ func MockZabbixDataSource(body string, statusCode int) *ZabbixDatasourceInstance
 }
 
 func MockZabbixDataSourceResponse(dsInstance *ZabbixDatasourceInstance, body string, statusCode int) *ZabbixDatasourceInstance {
-	zabbixAPI, _ := zabbixapi.MockZabbixAPI(body, statusCode)
-	dsInstance.zabbixAPI = zabbixAPI
+	zabbixClient, _ := zabbix.MockZabbixAPI(dsInstance.zabbix, body, statusCode)
+	dsInstance.zabbix = zabbixClient
 
 	return dsInstance
 }
 
 func TestLogin(t *testing.T) {
 	dsInstance := MockZabbixDataSource(`{"result":"secretauth"}`, 200)
-	err := dsInstance.login(context.Background())
+	err := dsInstance.zabbix.Login(context.Background())
 
 	assert.Nil(t, err)
-	assert.Equal(t, "secretauth", dsInstance.zabbixAPI.GetAuth())
+	assert.Equal(t, "secretauth", dsInstance.zabbix.GetAPI().GetAuth())
 }
 
 func TestLoginError(t *testing.T) {
 	dsInstance := MockZabbixDataSource(`{"result":""}`, 500)
-	err := dsInstance.login(context.Background())
+	err := dsInstance.zabbix.Login(context.Background())
 
 	assert.NotNil(t, err)
-	assert.Equal(t, "", dsInstance.zabbixAPI.GetAuth())
+	assert.Equal(t, "", dsInstance.zabbix.GetAPI().GetAuth())
 }
 
 func TestZabbixAPIQuery(t *testing.T) {

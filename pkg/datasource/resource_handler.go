@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
@@ -47,7 +48,7 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 		return
 	}
 
-	apiReq := &ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
+	apiReq := &zabbix.ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
 
 	result, err := dsInstance.ZabbixAPIQuery(req.Context(), apiReq)
 	if err != nil {

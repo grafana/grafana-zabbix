@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-func convertHistoryToDataFrame(history History, items Items) *data.Frame {
+func convertHistoryToDataFrame(history History, items zabbix.Items) *data.Frame {
 	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
 	timeFileld.Name = "time"
 	frame := data.NewFrame("History", timeFileld)

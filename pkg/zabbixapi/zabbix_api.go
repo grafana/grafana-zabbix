@@ -19,6 +19,7 @@ var (
 	ErrNotAuthenticated = errors.New("zabbix api: not authenticated")
 )
 
+// ZabbixAPI is a simple client responsible for making request to Zabbix API
 type ZabbixAPI struct {
 	url        *url.URL
 	httpClient *http.Client

@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -30,7 +31,7 @@ type ZabbixDatasource struct {
 // ZabbixDatasourceInstance stores state about a specific datasource
 // and provides methods to make requests to the Zabbix API
 type ZabbixDatasourceInstance struct {
-	zabbixAPI  *zabbixapi.ZabbixAPI
+	zabbix     *zabbix.Zabbix
 	dsInfo     *backend.DataSourceInstanceSettings
 	Settings   *ZabbixDatasourceSettings
 	queryCache *DatasourceCache
@@ -58,6 +59,7 @@ func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (i
 
 	client, err := httpclient.NewHttpClient(&settings, zabbixSettings.Timeout)
 	if err != nil {
+		logger.Error("Error initializing HTTP client", "error", err)
 		return nil, err
 	}
 
@@ -67,9 +69,15 @@ func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (i
 		return nil, err
 	}
 
+	zabbixClient, err := zabbix.New(&settings, zabbixAPI)
+	if err != nil {
+		logger.Error("Error initializing Zabbix client", "error", err)
+		return nil, err
+	}
+
 	return &ZabbixDatasourceInstance{
 		dsInfo:     &settings,
-		zabbixAPI:  zabbixAPI,
+		zabbix:     zabbixClient,
 		Settings:   zabbixSettings,
 		queryCache: NewDatasourceCache(zabbixSettings.CacheTTL, 10*time.Minute),
 		logger:     logger,
