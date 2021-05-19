@@ -47,9 +47,6 @@ module.exports = {
       { from: '../README.md' },
       { from: '**/img/*' },
     ]),
-    new CleanWebpackPlugin(['dist'], {
-      root: resolve('.')
-    }),
     ExtractTextPluginLight,
     ExtractTextPluginDark,
   ],
