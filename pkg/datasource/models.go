@@ -36,18 +36,6 @@ type ZabbixAPIResourceRequest struct {
 	Params       map[string]interface{} `json:"params,omitempty"`
 }
 
-type ZabbixAPIRequest struct {
-	Method string          `json:"method"`
-	Params ZabbixAPIParams `json:"params,omitempty"`
-}
-
-func (r *ZabbixAPIRequest) String() string {
-	jsonRequest, _ := json.Marshal(r.Params)
-	return r.Method + string(jsonRequest)
-}
-
-type ZabbixAPIParams = map[string]interface{}
-
 type ZabbixAPIResourceResponse struct {
 	Result interface{} `json:"result,omitempty"`
 }

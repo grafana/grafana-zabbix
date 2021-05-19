@@ -31,11 +31,10 @@ type ZabbixDatasource struct {
 // ZabbixDatasourceInstance stores state about a specific datasource
 // and provides methods to make requests to the Zabbix API
 type ZabbixDatasourceInstance struct {
-	zabbix     *zabbix.Zabbix
-	dsInfo     *backend.DataSourceInstanceSettings
-	Settings   *ZabbixDatasourceSettings
-	queryCache *DatasourceCache
-	logger     log.Logger
+	zabbix   *zabbix.Zabbix
+	dsInfo   *backend.DataSourceInstanceSettings
+	Settings *ZabbixDatasourceSettings
+	logger   log.Logger
 }
 
 func NewZabbixDatasource() *ZabbixDatasource {
@@ -76,11 +75,10 @@ func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (i
 	}
 
 	return &ZabbixDatasourceInstance{
-		dsInfo:     &settings,
-		zabbix:     zabbixClient,
-		Settings:   zabbixSettings,
-		queryCache: NewDatasourceCache(zabbixSettings.CacheTTL, 10*time.Minute),
-		logger:     logger,
+		dsInfo:   &settings,
+		zabbix:   zabbixClient,
+		Settings: zabbixSettings,
+		logger:   logger,
 	}, nil
 }
 

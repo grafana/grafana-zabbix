@@ -1,9 +1,6 @@
 package datasource
 
 import (
-	"time"
-
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -18,7 +15,7 @@ var basicDatasourceInfo = &backend.DataSourceInstanceSettings{
 	JSONData: []byte(`{"username":"username", "password":"password", "cacheTTL":"10m"}`),
 }
 
-func mockZabbixQuery(method string, params ZabbixAPIParams) *zabbix.ZabbixAPIRequest {
+func mockZabbixQuery(method string, params zabbix.ZabbixAPIParams) *zabbix.ZabbixAPIRequest {
 	return &zabbix.ZabbixAPIRequest{
 		Method: method,
 		Params: params,
@@ -30,11 +27,10 @@ func MockZabbixDataSource(body string, statusCode int) *ZabbixDatasourceInstance
 	zabbixClient, _ := zabbix.MockZabbixClient(basicDatasourceInfo, body, statusCode)
 
 	return &ZabbixDatasourceInstance{
-		dsInfo:     basicDatasourceInfo,
-		zabbix:     zabbixClient,
-		Settings:   zabbixSettings,
-		queryCache: NewDatasourceCache(cache.NoExpiration, 10*time.Minute),
-		logger:     log.New(),
+		dsInfo:   basicDatasourceInfo,
+		zabbix:   zabbixClient,
+		Settings: zabbixSettings,
+		logger:   log.New(),
 	}
 }
 

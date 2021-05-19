@@ -120,7 +120,7 @@ func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query
 			itemids = append(itemids, m.ID)
 		}
 
-		params := ZabbixAPIParams{
+		params := zabbix.ZabbixAPIParams{
 			"output":    "extend",
 			"sortfield": "clock",
 			"sortorder": "ASC",
