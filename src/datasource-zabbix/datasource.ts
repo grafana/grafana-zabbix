@@ -18,6 +18,8 @@ import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTyp
 import { getBackendSrv, getTemplateSrv, toDataQueryResponse } from '@grafana/runtime';
 import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
 
+const ENABLE_BACKEND_QUERIES = false;
+
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
   basicAuth: any;
@@ -104,7 +106,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     const isMetricQuery = options.targets.every(q => q.queryType === c.MODE_METRICS ||q.mode === c.MODE_METRICS);
     console.log(isMetricQuery);
-    if (isMetricQuery) {
+    if (isMetricQuery && ENABLE_BACKEND_QUERIES) {
       return this.backendQuery(options);
     }
 
