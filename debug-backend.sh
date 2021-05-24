@@ -7,6 +7,13 @@ fi
 PORT="${2:-3222}"
 PLUGIN_NAME="${1:-zabbix-plugin_}"
 
+# Build optimized for debug
+make build-debug
+
+# Reload plugin
+pkill ${PLUGIN_NAME}
+sleep 2
+
 if [ "$OSTYPE" == "linux-gnu" ]; then
   ptrace_scope=`cat /proc/sys/kernel/yama/ptrace_scope`
   if [ "$ptrace_scope" != 0 ]; then
