@@ -2,7 +2,81 @@ package zabbix
 
 import (
 	"context"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
+
+func (ds *Zabbix) GetHistory(ctx context.Context, items []Item, timeRange backend.TimeRange) (History, error) {
+	history := History{}
+	// Zabbix stores history in different tables and `history` param required for query. So in one query it's only
+	// possible to get history for items with one type. In order to get history for items with multple types (numeric unsigned and numeric float),
+	// items should be grouped by the `value_type` field.
+	groupedItemids := make(map[int][]string, 0)
+	for _, item := range items {
+		groupedItemids[item.ValueType] = append(groupedItemids[item.ValueType], item.ID)
+	}
+
+	for historyType, itemids := range groupedItemids {
+		result, err := ds.getHistory(ctx, itemids, historyType, timeRange)
+		if err != nil {
+			return nil, err
+		}
+
+		history = append(history, result...)
+	}
+
+	return history, nil
+}
+
+func (ds *Zabbix) getHistory(ctx context.Context, itemids []string, historyType int, timeRange backend.TimeRange) (History, error) {
+	params := ZabbixAPIParams{
+		"output":    "extend",
+		"itemids":   itemids,
+		"history":   historyType,
+		"time_from": timeRange.From.Unix(),
+		"time_till": timeRange.To.Unix(),
+		"sortfield": "clock",
+		"sortorder": "ASC",
+	}
+
+	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "history.get", Params: params})
+	if err != nil {
+		return nil, err
+	}
+
+	var history History
+	err = convertTo(result, &history)
+	return history, err
+}
+
+func (ds *Zabbix) GetTrend(ctx context.Context, items []Item, timeRange backend.TimeRange) (Trend, error) {
+	itemids := make([]string, 0)
+	for _, item := range items {
+		itemids = append(itemids, item.ID)
+	}
+
+	return ds.getTrend(ctx, itemids, timeRange)
+}
+
+func (ds *Zabbix) getTrend(ctx context.Context, itemids []string, timeRange backend.TimeRange) (Trend, error) {
+	params := ZabbixAPIParams{
+		"output":    "extend",
+		"itemids":   itemids,
+		"time_from": timeRange.From.Unix(),
+		"time_till": timeRange.To.Unix(),
+		"sortfield": "clock",
+		"sortorder": "ASC",
+	}
+
+	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "trend.get", Params: params})
+	if err != nil {
+		return nil, err
+	}
+
+	var trend Trend
+	err = convertTo(result, &trend)
+	return trend, err
+}
 
 func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) ([]Item, error) {
 	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)

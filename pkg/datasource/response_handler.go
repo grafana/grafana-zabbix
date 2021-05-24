@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
@@ -9,7 +10,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-func convertHistoryToDataFrame(history History, items zabbix.Items) *data.Frame {
+func convertHistoryToDataFrame(history zabbix.History, items zabbix.Items) *data.Frame {
 	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
 	timeFileld.Name = "time"
 	frame := data.NewFrame("History", timeFileld)
@@ -47,4 +48,30 @@ func convertHistoryToDataFrame(history History, items zabbix.Items) *data.Frame 
 		return frame
 	}
 	return wideFrame
+}
+
+func convertTrendToHistory(trend zabbix.Trend, valueType string) (zabbix.History, error) {
+	history := make([]zabbix.HistoryPoint, 0)
+	for _, point := range trend {
+		valueStr := point.ValueAvg
+		switch valueType {
+		case "min":
+			valueStr = point.ValueMin
+		case "max":
+			valueStr = point.ValueMax
+		}
+
+		value, err := strconv.ParseFloat(valueStr, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing trend value: %s", err)
+		}
+
+		history = append(history, zabbix.HistoryPoint{
+			ItemID: point.ItemID,
+			Clock:  point.Clock,
+			Value:  value,
+		})
+	}
+
+	return history, nil
 }

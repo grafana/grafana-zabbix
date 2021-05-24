@@ -1,12 +1,9 @@
 package datasource
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
-	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"golang.org/x/net/context"
@@ -71,7 +68,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		consolidateBy = valueType
 	}
 
-	history, err := ds.getHistotyOrTrend(ctx, query, items)
+	history, err := ds.getHistotyOrTrend(ctx, query, items, valueType)
 	if err != nil {
 		return nil, err
 	}
@@ -103,59 +100,19 @@ func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
 	return consolidateBy
 }
 
-func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items zabbix.Items) (History, error) {
+func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items zabbix.Items, trendValueType string) (zabbix.History, error) {
 	timeRange := query.TimeRange
 	useTrend := ds.isUseTrend(timeRange)
-	allHistory := History{}
 
-	groupedItems := map[int]zabbix.Items{}
-
-	for _, j := range items {
-		groupedItems[j.ValueType] = append(groupedItems[j.ValueType], j)
-	}
-
-	for k, l := range groupedItems {
-		var itemids []string
-		for _, m := range l {
-			itemids = append(itemids, m.ID)
-		}
-
-		params := zabbix.ZabbixAPIParams{
-			"output":    "extend",
-			"sortfield": "clock",
-			"sortorder": "ASC",
-			"itemids":   itemids,
-			"time_from": timeRange.From.Unix(),
-			"time_till": timeRange.To.Unix(),
-		}
-
-		var response *simplejson.Json
-		var err error
-		if useTrend {
-			response, err = ds.zabbix.Request(ctx, &zabbix.ZabbixAPIRequest{Method: "trend.get", Params: params})
-		} else {
-			params["history"] = &k
-			response, err = ds.zabbix.Request(ctx, &zabbix.ZabbixAPIRequest{Method: "history.get", Params: params})
-		}
-
+	if useTrend {
+		result, err := ds.zabbix.GetTrend(ctx, items, timeRange)
 		if err != nil {
 			return nil, err
 		}
-
-		pointJSON, err := response.MarshalJSON()
-		if err != nil {
-			return nil, fmt.Errorf("Internal error parsing response JSON: %w", err)
-		}
-
-		history := History{}
-		err = json.Unmarshal(pointJSON, &history)
-		if err != nil {
-			ds.logger.Error("Error handling history response", "error", err.Error())
-		} else {
-			allHistory = append(allHistory, history...)
-		}
+		return convertTrendToHistory(result, trendValueType)
 	}
-	return allHistory, nil
+
+	return ds.zabbix.GetHistory(ctx, items, timeRange)
 }
 
 func (ds *ZabbixDatasourceInstance) isUseTrend(timeRange backend.TimeRange) bool {
