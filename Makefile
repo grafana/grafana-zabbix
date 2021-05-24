@@ -17,7 +17,7 @@ build-frontend:
 build-backend:
 	env GOOS=linux go build -o ./dist/zabbix-plugin_linux_amd64 ./pkg
 build-debug:
-	env GOOS=linux go build -gcflags=all="-N -l" -o ./dist/zabbix-plugin_linux_amd64 ./pkg
+	env GOOS=linux go build -gcflags="all=-N -l" -o ./dist/zabbix-plugin_linux_amd64 ./pkg
 
 # Build for specific platform
 build-backend-windows: extension = .exe

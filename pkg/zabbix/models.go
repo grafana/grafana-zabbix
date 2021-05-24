@@ -74,3 +74,19 @@ type HistoryPoint struct {
 	Value  float64 `json:"value,omitempty,string"`
 	NS     int64   `json:"ns,omitempty,string"`
 }
+
+type Group struct {
+	Name string `json:"name"`
+	ID   string `json:"groupid"`
+}
+
+type Host struct {
+	Name string `json:"name"`
+	Host string `json:"host"`
+	ID   string `json:"hostid"`
+}
+
+type Application struct {
+	Name string `json:"name"`
+	ID   string `json:"applicationid"`
+}

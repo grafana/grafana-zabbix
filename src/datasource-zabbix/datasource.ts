@@ -18,7 +18,7 @@ import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTyp
 import { getBackendSrv, getTemplateSrv, toDataQueryResponse } from '@grafana/runtime';
 import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
 
-const ENABLE_BACKEND_QUERIES = false;
+const ENABLE_BACKEND_QUERIES = true;
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
