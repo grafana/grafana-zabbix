@@ -30,6 +30,10 @@ func (tsd *TimeSeriesData) Add(point TimePoint) *TimeSeriesData {
 	return tsd
 }
 
+func (ts TimeSeries) GroupBy(interval time.Duration, agg string) TimeSeries {
+	return ts
+}
+
 // Aligns point's time stamps according to provided interval.
 func (ts TimeSeries) Align(interval time.Duration) TimeSeries {
 	if interval <= 0 || ts.Len() < 2 {

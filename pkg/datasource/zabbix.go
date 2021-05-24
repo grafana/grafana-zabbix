@@ -75,6 +75,10 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 
 	series := convertHistoryToTimeSeries(history, items)
 	// TODO: handle time series functions
+	series, err = applyFunctions(series, query.Functions)
+	if err != nil {
+		return nil, err
+	}
 
 	frame := convertTimeSeriesToDataFrame(series)
 

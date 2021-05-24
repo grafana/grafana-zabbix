@@ -122,8 +122,6 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		ds.logger.Debug("DS query", "query", q)
 		if err != nil {
 			res.Error = err
-		} else if len(query.Functions) > 0 {
-			res.Error = ErrFunctionsNotSupported
 		} else if query.Mode != 0 {
 			res.Error = ErrNonMetricQueryNotSupported
 		} else {
