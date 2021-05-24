@@ -191,7 +191,12 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 	}
 
 	var items []Item
-	err = convertTo(result, items)
+	err = convertTo(result, &items)
+	if err != nil {
+		return nil, err
+	}
+
+	items = expandItems(items)
 	return items, err
 }
 
@@ -207,7 +212,7 @@ func (ds *Zabbix) GetAllApps(ctx context.Context, hostids []string) ([]Applicati
 	}
 
 	var apps []Application
-	err = convertTo(result, apps)
+	err = convertTo(result, &apps)
 	return apps, err
 }
 
@@ -224,7 +229,7 @@ func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string) ([]Host, e
 	}
 
 	var hosts []Host
-	err = convertTo(result, hosts)
+	err = convertTo(result, &hosts)
 	return hosts, err
 }
 
@@ -241,7 +246,7 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	}
 
 	var groups []Group
-	err = convertTo(result, groups)
+	err = convertTo(result, &groups)
 	return groups, err
 }
 

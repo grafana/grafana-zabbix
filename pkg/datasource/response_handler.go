@@ -17,9 +17,9 @@ func convertHistoryToDataFrame(history History, items zabbix.Items) *data.Frame 
 	for _, item := range items {
 		field := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
 		if len(item.Hosts) > 0 {
-			field.Name = fmt.Sprintf("%s: %s", item.Hosts[0].Name, item.ExpandItem())
+			field.Name = fmt.Sprintf("%s: %s", item.Hosts[0].Name, item.ExpandItemName())
 		} else {
-			field.Name = item.ExpandItem()
+			field.Name = item.ExpandItemName()
 		}
 		frame.Fields = append(frame.Fields, field)
 	}

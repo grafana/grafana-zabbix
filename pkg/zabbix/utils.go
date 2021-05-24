@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (item *Item) ExpandItem() string {
+func (item *Item) ExpandItemName() string {
 	name := item.Name
 	key := item.Key
 
@@ -23,6 +23,13 @@ func (item *Item) ExpandItem() string {
 	}
 
 	return name
+}
+
+func expandItems(items []Item) []Item {
+	for i := 0; i < len(items); i++ {
+		items[i].Name = items[i].ExpandItemName()
+	}
+	return items
 }
 
 func splitKeyParams(paramStr string) []string {
