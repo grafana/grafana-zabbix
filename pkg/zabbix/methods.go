@@ -6,7 +6,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-func (ds *Zabbix) GetHistory(ctx context.Context, items []Item, timeRange backend.TimeRange) (History, error) {
+func (ds *Zabbix) GetHistory(ctx context.Context, items []*Item, timeRange backend.TimeRange) (History, error) {
 	history := History{}
 	// Zabbix stores history in different tables and `history` param required for query. So in one query it's only
 	// possible to get history for items with one type. In order to get history for items with multple types (numeric unsigned and numeric float),
@@ -49,7 +49,7 @@ func (ds *Zabbix) getHistory(ctx context.Context, itemids []string, historyType 
 	return history, err
 }
 
-func (ds *Zabbix) GetTrend(ctx context.Context, items []Item, timeRange backend.TimeRange) (Trend, error) {
+func (ds *Zabbix) GetTrend(ctx context.Context, items []*Item, timeRange backend.TimeRange) (Trend, error) {
 	itemids := make([]string, 0)
 	for _, item := range items {
 		itemids = append(itemids, item.ID)
@@ -78,7 +78,7 @@ func (ds *Zabbix) getTrend(ctx context.Context, itemids []string, timeRange back
 	return trend, err
 }
 
-func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) ([]Item, error) {
+func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) ([]*Item, error) {
 	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 		appids = append(appids, app.ID)
 	}
 
-	var allItems []Item
+	var allItems []*Item
 	if len(hostids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType)
 	} else if len(appids) > 0 {
@@ -110,13 +110,13 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 	return filterItemsByQuery(allItems, itemFilter)
 }
 
-func filterItemsByQuery(items []Item, filter string) ([]Item, error) {
+func filterItemsByQuery(items []*Item, filter string) ([]*Item, error) {
 	re, err := parseFilter(filter)
 	if err != nil {
 		return nil, err
 	}
 
-	var filteredItems []Item
+	var filteredItems []*Item
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
@@ -241,7 +241,7 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string) ([]Item, error) {
+func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string) ([]*Item, error) {
 	params := ZabbixAPIParams{
 		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"},
 		"sortfield":      "name",
@@ -264,7 +264,7 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 		return nil, err
 	}
 
-	var items []Item
+	var items []*Item
 	err = convertTo(result, &items)
 	if err != nil {
 		return nil, err

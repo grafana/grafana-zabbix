@@ -60,7 +60,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	return frames, nil
 }
 
-func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items zabbix.Items) (*data.Frame, error) {
+func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items []*zabbix.Item) (*data.Frame, error) {
 	valueType := ds.getTrendValueType(query)
 	consolidateBy := ds.getConsolidateBy(query)
 
@@ -73,7 +73,12 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		return nil, err
 	}
 
-	frame := convertHistoryToDataFrame(history, items)
+	series := convertHistoryToTimeSeries(history, items)
+	// TODO: handle time series functions
+
+	frame := convertTimeSeriesToDataFrame(series)
+
+	// frame := convertHistoryToDataFrame(history, items)
 	return frame, nil
 }
 
@@ -100,7 +105,7 @@ func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
 	return consolidateBy
 }
 
-func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items zabbix.Items, trendValueType string) (zabbix.History, error) {
+func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items []*zabbix.Item, trendValueType string) (zabbix.History, error) {
 	timeRange := query.TimeRange
 	useTrend := ds.isUseTrend(timeRange)
 

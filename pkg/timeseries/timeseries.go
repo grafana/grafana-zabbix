@@ -10,6 +10,26 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+func NewTimeSeriesData() *TimeSeriesData {
+	return &TimeSeriesData{
+		TS:   NewTimeSeries(),
+		Meta: TimeSeriesMeta{},
+	}
+}
+
+func (tsd *TimeSeriesData) Len() int {
+	return len(tsd.TS)
+}
+
+func (tsd *TimeSeriesData) Add(point TimePoint) *TimeSeriesData {
+	if tsd.TS == nil {
+		tsd.TS = NewTimeSeries()
+	}
+
+	tsd.TS = append(tsd.TS, point)
+	return tsd
+}
+
 // Aligns point's time stamps according to provided interval.
 func (ts TimeSeries) Align(interval time.Duration) TimeSeries {
 	if interval <= 0 || ts.Len() < 2 {

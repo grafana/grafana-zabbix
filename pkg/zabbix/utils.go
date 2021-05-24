@@ -25,7 +25,7 @@ func (item *Item) ExpandItemName() string {
 	return name
 }
 
-func expandItems(items []Item) []Item {
+func expandItems(items []*Item) []*Item {
 	for i := 0; i < len(items); i++ {
 		items[i].Name = items[i].ExpandItemName()
 	}
