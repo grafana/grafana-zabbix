@@ -31,3 +31,5 @@ type TimeSeriesMeta struct {
 }
 
 type AggFunc = func(points []TimePoint) *float64
+
+type TransformFunc = func(point TimePoint) TimePoint

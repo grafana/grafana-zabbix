@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
@@ -18,6 +19,8 @@ var funcMap map[string]DataProcessingFunc
 func init() {
 	funcMap = map[string]DataProcessingFunc{
 		"groupBy": applyGroupBy,
+		"scale":   applyScale,
+		"offset":  applyOffset,
 	}
 
 }
@@ -51,6 +54,28 @@ func applyGroupBy(series timeseries.TimeSeries, params ...string) (timeseries.Ti
 	aggFunc := getAggFunc(pAgg)
 	s := series.GroupBy(interval, aggFunc)
 	return s, nil
+}
+
+func applyScale(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error) {
+	pFactor := params[0]
+	factor, err := strconv.ParseFloat(pFactor, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	transformFunc := timeseries.TransformScale(factor)
+	return series.Transform(transformFunc), nil
+}
+
+func applyOffset(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error) {
+	pOffset := params[0]
+	offset, err := strconv.ParseFloat(pOffset, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	transformFunc := timeseries.TransformOffset(offset)
+	return series.Transform(transformFunc), nil
 }
 
 func getAggFunc(agg string) timeseries.AggFunc {
