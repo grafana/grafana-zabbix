@@ -75,14 +75,19 @@ func (ts TimeSeries) GroupBy(interval time.Duration, aggFunc AggFunc) TimeSeries
 }
 
 func AggAvg(points []TimePoint) *float64 {
+	sum := AggSum(points)
+	avg := *sum / float64(len(points))
+	return &avg
+}
+
+func AggSum(points []TimePoint) *float64 {
 	var sum float64 = 0
 	for _, p := range points {
 		if p.Value != nil {
 			sum += *p.Value
 		}
 	}
-	avg := sum / float64(len(points))
-	return &avg
+	return &sum
 }
 
 func AggMax(points []TimePoint) *float64 {
@@ -113,12 +118,34 @@ func AggMin(points []TimePoint) *float64 {
 	return min
 }
 
+func AggCount(points []TimePoint) *float64 {
+	count := float64(len(points))
+	return &count
+}
+
 func AggFirst(points []TimePoint) *float64 {
 	return points[0].Value
 }
 
 func AggLast(points []TimePoint) *float64 {
 	return points[len(points)-1].Value
+}
+
+func AggMedian(points []TimePoint) *float64 {
+	values := make([]float64, 0)
+	for _, p := range points {
+		if p.Value != nil {
+			values = append(values, *p.Value)
+		}
+	}
+	if len(values) == 0 {
+		return nil
+	}
+
+	values = sort.Float64Slice(values)
+	medianIndex := int(math.Floor(float64(len(values)) / 2))
+	median := values[medianIndex]
+	return &median
 }
 
 // Aligns point's time stamps according to provided interval.

@@ -61,6 +61,12 @@ func getAggFunc(agg string) timeseries.AggFunc {
 		return timeseries.AggMax
 	case "min":
 		return timeseries.AggMin
+	case "sum":
+		return timeseries.AggSum
+	case "median":
+		return timeseries.AggMedian
+	case "count":
+		return timeseries.AggCount
 	case "first":
 		return timeseries.AggFirst
 	case "last":
