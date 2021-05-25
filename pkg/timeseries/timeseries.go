@@ -81,7 +81,8 @@ func AggAvg(points []TimePoint) *float64 {
 			sum += *p.Value
 		}
 	}
-	return &sum
+	avg := sum / float64(len(points))
+	return &avg
 }
 
 func AggMax(points []TimePoint) *float64 {
