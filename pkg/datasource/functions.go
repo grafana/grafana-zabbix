@@ -12,6 +12,10 @@ var errFunctionNotSupported = func(name string) error {
 	return fmt.Errorf("function not supported: %s", name)
 }
 
+var errParsingFunctionParam = func(err error) error {
+	return fmt.Errorf("failed to parse function param: %s", err)
+}
+
 type DataProcessingFunc = func(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error)
 
 var funcMap map[string]DataProcessingFunc
@@ -48,7 +52,7 @@ func applyGroupBy(series timeseries.TimeSeries, params ...string) (timeseries.Ti
 	pAgg := params[1]
 	interval, err := gtime.ParseInterval(pInterval)
 	if err != nil {
-		return nil, err
+		return nil, errParsingFunctionParam(err)
 	}
 
 	aggFunc := getAggFunc(pAgg)
@@ -60,7 +64,7 @@ func applyScale(series timeseries.TimeSeries, params ...string) (timeseries.Time
 	pFactor := params[0]
 	factor, err := strconv.ParseFloat(pFactor, 64)
 	if err != nil {
-		return nil, err
+		return nil, errParsingFunctionParam(err)
 	}
 
 	transformFunc := timeseries.TransformScale(factor)
@@ -71,7 +75,7 @@ func applyOffset(series timeseries.TimeSeries, params ...string) (timeseries.Tim
 	pOffset := params[0]
 	offset, err := strconv.ParseFloat(pOffset, 64)
 	if err != nil {
-		return nil, err
+		return nil, errParsingFunctionParam(err)
 	}
 
 	transformFunc := timeseries.TransformOffset(offset)
