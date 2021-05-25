@@ -17,7 +17,7 @@ func NewTimeSeriesData() *TimeSeriesData {
 	}
 }
 
-func (tsd *TimeSeriesData) Len() int {
+func (tsd TimeSeriesData) Len() int {
 	return len(tsd.TS)
 }
 
@@ -30,8 +30,94 @@ func (tsd *TimeSeriesData) Add(point TimePoint) *TimeSeriesData {
 	return tsd
 }
 
-func (ts TimeSeries) GroupBy(interval time.Duration, agg string) TimeSeries {
-	return ts
+func (ts TimeSeries) GroupBy(interval time.Duration, aggFunc AggFunc) TimeSeries {
+	if ts.Len() == 0 {
+		return ts
+	}
+
+	groupedSeries := NewTimeSeries()
+	frame := make([]TimePoint, 0)
+	frameTS := ts[0].GetTimeFrame(interval)
+	var pointFrameTs time.Time
+
+	for _, point := range ts {
+		pointFrameTs = point.GetTimeFrame(interval)
+
+		// Iterate over points and push it into the frame if point time stamp fit the frame
+		if pointFrameTs == frameTS {
+			frame = append(frame, point)
+		} else if pointFrameTs.After(frameTS) {
+			// If point outside frame, then we've done with current frame
+			groupedSeries = append(groupedSeries, TimePoint{
+				Time:  frameTS,
+				Value: aggFunc(frame),
+			})
+
+			// Move frame window to next non-empty interval and fill empty by null
+			frameTS = frameTS.Add(interval)
+			for frameTS.Before(pointFrameTs) {
+				groupedSeries = append(groupedSeries, TimePoint{
+					Time:  frameTS,
+					Value: nil,
+				})
+				frameTS = frameTS.Add(interval)
+			}
+			frame = []TimePoint{point}
+		}
+	}
+
+	groupedSeries = append(groupedSeries, TimePoint{
+		Time:  frameTS,
+		Value: aggFunc(frame),
+	})
+
+	return groupedSeries
+}
+
+func AggAvg(points []TimePoint) *float64 {
+	var sum float64 = 0
+	for _, p := range points {
+		if p.Value != nil {
+			sum += *p.Value
+		}
+	}
+	return &sum
+}
+
+func AggMax(points []TimePoint) *float64 {
+	var max *float64 = nil
+	for _, p := range points {
+		if p.Value != nil {
+			if max == nil {
+				max = p.Value
+			} else if *p.Value > *max {
+				max = p.Value
+			}
+		}
+	}
+	return max
+}
+
+func AggMin(points []TimePoint) *float64 {
+	var min *float64 = nil
+	for _, p := range points {
+		if p.Value != nil {
+			if min == nil {
+				min = p.Value
+			} else if *p.Value < *min {
+				min = p.Value
+			}
+		}
+	}
+	return min
+}
+
+func AggFirst(points []TimePoint) *float64 {
+	return points[0].Value
+}
+
+func AggLast(points []TimePoint) *float64 {
+	return points[len(points)-1].Value
 }
 
 // Aligns point's time stamps according to provided interval.

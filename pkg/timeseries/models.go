@@ -29,3 +29,5 @@ type TimeSeriesData struct {
 type TimeSeriesMeta struct {
 	Item *zabbix.Item
 }
+
+type AggFunc = func(points []TimePoint) *float64
