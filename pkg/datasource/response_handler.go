@@ -26,7 +26,13 @@ func convertHistoryToTimeSeries(history zabbix.History, items []*zabbix.Item) []
 		}
 		pointSeries := seriesMap[point.ItemID]
 		if pointSeries.Meta.Item == nil {
+			itemName := pointItem.ExpandItemName()
 			pointSeries.Meta.Item = pointItem
+			pointSeries.Meta.Item.Name = itemName
+			pointSeries.Meta.Name = itemName
+			if len(pointItem.Hosts) > 0 {
+				pointSeries.Meta.Name = fmt.Sprintf("%s: %s", pointItem.Hosts[0].Name, itemName)
+			}
 		}
 
 		value := point.Value
@@ -51,12 +57,7 @@ func convertTimeSeriesToDataFrame(series []*timeseries.TimeSeriesData) *data.Fra
 
 	for _, s := range series {
 		field := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
-		item := s.Meta.Item
-		if len(item.Hosts) > 0 {
-			field.Name = fmt.Sprintf("%s: %s", item.Hosts[0].Name, item.ExpandItemName())
-		} else {
-			field.Name = item.ExpandItemName()
-		}
+		field.Name = s.Meta.Name
 
 		frame.Fields = append(frame.Fields, field)
 	}

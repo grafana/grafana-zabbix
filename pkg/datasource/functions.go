@@ -18,7 +18,13 @@ var errParsingFunctionParam = func(err error) error {
 
 type DataProcessingFunc = func(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error)
 
+type MetaDataProcessingFunc = func(series *timeseries.TimeSeriesData, params ...string) (*timeseries.TimeSeriesData, error)
+
 var funcMap map[string]DataProcessingFunc
+
+var metaFuncMap map[string]MetaDataProcessingFunc
+
+var frontendFuncMap map[string]bool
 
 func init() {
 	funcMap = map[string]DataProcessingFunc{
@@ -27,6 +33,12 @@ func init() {
 		"offset":  applyOffset,
 	}
 
+	// Functions processing on the frontend
+	frontendFuncMap = map[string]bool{
+		"setAlias":        true,
+		"replaceAlias":    true,
+		"setAliasByRegex": true,
+	}
 }
 
 func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFunction) ([]*timeseries.TimeSeriesData, error) {
@@ -39,6 +51,8 @@ func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFuncti
 				}
 				s.TS = result
 			}
+		} else if _, ok := frontendFuncMap[f.Def.Name]; ok {
+			continue
 		} else {
 			err := errFunctionNotSupported(f.Def.Name)
 			return series, err

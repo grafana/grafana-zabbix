@@ -27,6 +27,7 @@ type TimeSeriesData struct {
 }
 
 type TimeSeriesMeta struct {
+	Name string
 	Item *zabbix.Item
 }
 
