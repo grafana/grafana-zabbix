@@ -3,6 +3,8 @@ import _ from 'lodash';
 // import { getTemplateSrv } from '@grafana/runtime';
 import * as utils from './utils';
 import ts, { groupBy_perf as groupBy } from './timeseries';
+import { getTemplateSrv } from '@grafana/runtime';
+import { DataFrame, Field } from '@grafana/data';
 
 const SUM = ts.SUM;
 const COUNT = ts.COUNT;
@@ -72,38 +74,40 @@ function sortSeries(direction, timeseries: any[]) {
   }], direction);
 }
 
-function setAlias(alias, timeseries) {
-  // TODO: use getTemplateSrv() when available (since 7.0)
-  if (this.templateSrv && timeseries && timeseries.scopedVars) {
-    alias = this.templateSrv.replace(alias, timeseries.scopedVars);
+function setAlias(alias: string, field: Field) {
+  if (field?.state?.scopedVars) {
+    alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
   }
-  timeseries.target = alias;
-  return timeseries;
+  field.name = alias;
+  return field;
 }
 
-function replaceAlias(regexp, newAlias, timeseries) {
-  let pattern;
+function replaceAlias(regexp: string, newAlias: string, field: Field) {
+  let pattern: string | RegExp;
   if (utils.isRegex(regexp)) {
     pattern = utils.buildRegex(regexp);
   } else {
     pattern = regexp;
   }
 
-  let alias = timeseries.target.replace(pattern, newAlias);
-  // TODO: use getTemplateSrv() when available (since 7.0)
-  if (this.templateSrv && timeseries && timeseries.scopedVars) {
-    alias = this.templateSrv.replace(alias, timeseries.scopedVars);
+  let alias = field.name.replace(pattern, newAlias);
+  if (field?.state?.scopedVars) {
+    alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
   }
-  timeseries.target = alias;
-  return timeseries;
+  field.name = alias;
+  return field;
 }
 
-function setAliasByRegex(alias, timeseries) {
-  timeseries.target = extractText(timeseries.target, alias);
-  return timeseries;
+function setAliasByRegex(alias: string, field: Field) {
+  try {
+    field.name = extractText(field.name, alias);
+  } catch (error) {
+    console.error('Failed to apply RegExp:', error?.message || error);
+  }
+  return field;
 }
 
-function extractText(str, pattern) {
+function extractText(str: string, pattern: string) {
   const extractPattern = new RegExp(pattern);
   const extractedValue = extractPattern.exec(str);
   return extractedValue[0];

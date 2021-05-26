@@ -102,10 +102,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(options: DataQueryRequest<any>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
-    console.log(options);
-
     const isMetricQuery = options.targets.every(q => q.queryType === c.MODE_METRICS ||q.mode === c.MODE_METRICS);
-    console.log(isMetricQuery);
     if (isMetricQuery && ENABLE_BACKEND_QUERIES) {
       return this.backendQuery(options);
     }
@@ -200,19 +197,19 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const { intervalMs, maxDataPoints, range, requestId } = request;
     const targets = request.targets;
 
-    const queries = _.compact(targets.map((q) => {
+    // Add range variables
+    request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
+
+    const queries = _.compact(targets.map((query) => {
       const datasourceId = this.id;
 
       // Don't request for hidden targets
-      if (q.hide) {
+      if (query.hide) {
         return null;
       }
 
-      // Add range variables
-      request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
-
       // Prevent changes of original object
-      let target = _.cloneDeep(q);
+      let target = _.cloneDeep(query);
 
       // Migrate old targets
       target = migrations.migrate(target);
@@ -243,7 +240,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       body.to = range.to.valueOf().toString();
     }
 
-    console.log(body);
     return getBackendSrv()
       .fetch({
         url: '/api/ds/query',
@@ -254,7 +250,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       .pipe(
         map((rsp: any) => {
           const resp = toDataQueryResponse(rsp);
-          console.log(resp);
+          this.applyFrontendFunctions(resp, request);
           return resp;
         }),
         catchError((err) => {
@@ -371,6 +367,23 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       ts.datapoints = fillTrendsWithNulls(ts.datapoints);
     }
     return timeseries;
+  }
+
+  applyFrontendFunctions(response: DataQueryResponse, request: DataQueryRequest<any>) {
+    for (let i = 0; i < response.data.length; i++) {
+      const frame: DataFrame = response.data[i];
+      const target = getRequestTarget(request, frame.refId);
+
+      // Apply alias functions
+      const aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
+      for (let fieldIndex = 0; fieldIndex < frame.fields.length; fieldIndex++) {
+        const field = frame.fields[fieldIndex];
+        if (field.type !== FieldType.time) {
+          utils.sequence(aliasFunctions)(field);
+        }
+      }
+    }
+    return response;
   }
 
   applyDataProcessingFunctions(timeseries_data, target) {
@@ -936,4 +949,14 @@ export function base64StringToArrowTable(text: string) {
     return c.charCodeAt(0);
   });
   return arr;
+}
+
+function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
+  for (let i = 0; i < request.targets.length; i++) {
+    const target = request.targets[i];
+    if (target.refId === refId) {
+      return target;
+    }
+  }
+  return null;
 }
