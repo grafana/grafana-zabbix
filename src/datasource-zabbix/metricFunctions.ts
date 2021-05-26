@@ -30,7 +30,7 @@ addFuncDef({
   category: 'Transform',
   params: [
     { name: 'interval', type: 'string'},
-    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }
+    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
   ],
   defaultParams: ['1m', 'avg'],
 });
