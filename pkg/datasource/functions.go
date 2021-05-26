@@ -8,6 +8,8 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 )
 
+const RANGE_VARIABLE_VALUE = "range_series"
+
 var errFunctionNotSupported = func(name string) error {
 	return fmt.Errorf("function not supported: %s", name)
 }
@@ -75,12 +77,18 @@ func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFuncti
 func applyGroupBy(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error) {
 	pInterval := params[0]
 	pAgg := params[1]
+	aggFunc := getAggFunc(pAgg)
+
+	if pInterval == RANGE_VARIABLE_VALUE {
+		s := series.GroupByRange(aggFunc)
+		return s, nil
+	}
+
 	interval, err := gtime.ParseInterval(pInterval)
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
 	}
 
-	aggFunc := getAggFunc(pAgg)
 	s := series.GroupBy(interval, aggFunc)
 	return s, nil
 }

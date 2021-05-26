@@ -75,6 +75,18 @@ func (ts TimeSeries) GroupBy(interval time.Duration, aggFunc AggFunc) TimeSeries
 	return groupedSeries
 }
 
+func (ts TimeSeries) GroupByRange(aggFunc AggFunc) TimeSeries {
+	if ts.Len() == 0 {
+		return ts
+	}
+
+	value := aggFunc(ts)
+	return []TimePoint{
+		{Time: ts[0].Time, Value: value},
+		{Time: ts[ts.Len()-1].Time, Value: value},
+	}
+}
+
 func (ts TimeSeries) Transform(transformFunc TransformFunc) TimeSeries {
 	for i, p := range ts {
 		ts[i] = transformFunc(p)
