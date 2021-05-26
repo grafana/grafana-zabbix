@@ -75,6 +75,13 @@ func (ts TimeSeries) GroupBy(interval time.Duration, aggFunc AggFunc) TimeSeries
 	return groupedSeries
 }
 
+func (ts TimeSeries) Transform(transformFunc TransformFunc) TimeSeries {
+	for i, p := range ts {
+		ts[i] = transformFunc(p)
+	}
+	return ts
+}
+
 func AggregateBy(series []*TimeSeriesData, interval time.Duration, aggFunc AggFunc) *TimeSeriesData {
 	aggregatedSeries := NewTimeSeries()
 
@@ -93,16 +100,127 @@ func AggregateBy(series []*TimeSeriesData, interval time.Duration, aggFunc AggFu
 }
 
 func (ts TimeSeries) Sort() {
-	sort.Slice(ts, func(i, j int) bool {
-		return ts[i].Time.Before(ts[j].Time)
-	})
+	sorted := sort.SliceIsSorted(ts, ts.less())
+	if !sorted {
+		sort.Slice(ts, ts.less())
+	}
 }
 
-func (ts TimeSeries) Transform(transformFunc TransformFunc) TimeSeries {
-	for i, p := range ts {
-		ts[i] = transformFunc(p)
+// Implements less() function for sorting slice
+func (ts TimeSeries) less() func(i, j int) bool {
+	return func(i, j int) bool {
+		return ts[i].Time.Before(ts[j].Time)
 	}
-	return ts
+}
+
+func SumSeries(series []*TimeSeriesData) *TimeSeriesData {
+	// Build unique set of time stamps from all series
+	interpolatedTimeStampsMap := make(map[time.Time]time.Time)
+	for _, s := range series {
+		for _, p := range s.TS {
+			interpolatedTimeStampsMap[p.Time] = p.Time
+		}
+	}
+
+	// Convert to slice and sort
+	interpolatedTimeStamps := make([]time.Time, 0)
+	for _, ts := range interpolatedTimeStampsMap {
+		interpolatedTimeStamps = append(interpolatedTimeStamps, ts)
+	}
+	sort.Slice(interpolatedTimeStamps, func(i, j int) bool {
+		return interpolatedTimeStamps[i].Before(interpolatedTimeStamps[j])
+	})
+
+	interpolatedSeries := make([]TimeSeries, 0)
+
+	for _, s := range series {
+		if s.Len() == 0 {
+			continue
+		}
+
+		pointsToInterpolate := make([]TimePoint, 0)
+
+		currentPointIndex := 0
+		for _, its := range interpolatedTimeStamps {
+			currentPoint := s.TS[currentPointIndex]
+			if its.Equal(currentPoint.Time) {
+				if currentPointIndex < s.Len()-1 {
+					currentPointIndex++
+				}
+			} else {
+				pointsToInterpolate = append(pointsToInterpolate, TimePoint{Time: its, Value: nil})
+			}
+		}
+
+		s.TS = append(s.TS, pointsToInterpolate...)
+		s.TS.Sort()
+		s.TS = interpolateSeries(s.TS)
+		interpolatedSeries = append(interpolatedSeries, s.TS)
+	}
+
+	sumSeries := NewTimeSeriesData()
+	for i := 0; i < len(interpolatedTimeStamps); i++ {
+		var sum float64 = 0
+		for _, s := range interpolatedSeries {
+			if s[i].Value != nil {
+				sum += *s[i].Value
+			}
+		}
+		sumSeries.TS = append(sumSeries.TS, TimePoint{Time: interpolatedTimeStamps[i], Value: &sum})
+	}
+
+	return sumSeries
+}
+
+func interpolateSeries(series TimeSeries) TimeSeries {
+	for i := series.Len() - 1; i >= 0; i-- {
+		point := series[i]
+		if point.Value == nil {
+			left := findNearestLeft(series, i)
+			right := findNearestRight(series, i)
+
+			if left == nil && right == nil {
+				continue
+			}
+			if left == nil {
+				left = right
+			}
+			if right == nil {
+				right = left
+			}
+
+			pointValue := linearInterpolation(point.Time, *left, *right)
+			point.Value = &pointValue
+			series[i] = point
+		}
+	}
+	return series
+}
+
+func linearInterpolation(ts time.Time, left, right TimePoint) float64 {
+	if left.Time.Equal(right.Time) {
+		return (*left.Value + *right.Value) / 2
+	} else {
+		return *left.Value + (*right.Value-*left.Value)/float64((right.Time.UnixNano()-left.Time.UnixNano()))*float64((ts.UnixNano()-left.Time.UnixNano()))
+	}
+}
+
+func findNearestRight(series TimeSeries, pointIndex int) *TimePoint {
+	for i := pointIndex; i < series.Len(); i++ {
+		if series[i].Value != nil {
+			return &series[i]
+		}
+	}
+	return nil
+}
+
+func findNearestLeft(series TimeSeries, pointIndex int) *TimePoint {
+	for i := pointIndex; i > 0; i-- {
+		if series[i].Value != nil {
+			return &series[i]
+		}
+	}
+	return nil
 }
 
 // Aligns point's time stamps according to provided interval.

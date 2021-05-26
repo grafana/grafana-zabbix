@@ -35,6 +35,7 @@ func init() {
 
 	aggFuncMap = map[string]AggDataProcessingFunc{
 		"aggregateBy": applyAggregateBy,
+		"sumSeries":   applySumSeries,
 	}
 
 	// Functions processing on the frontend
@@ -84,21 +85,6 @@ func applyGroupBy(series timeseries.TimeSeries, params ...string) (timeseries.Ti
 	return s, nil
 }
 
-func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...string) ([]*timeseries.TimeSeriesData, error) {
-	pInterval := params[0]
-	pAgg := params[1]
-	interval, err := gtime.ParseInterval(pInterval)
-	if err != nil {
-		return nil, errParsingFunctionParam(err)
-	}
-
-	aggFunc := getAggFunc(pAgg)
-	aggregatedSeries := timeseries.AggregateBy(series, interval, aggFunc)
-	aggregatedSeries.Meta.Name = fmt.Sprintf("aggregateBy(%s, %s)", pInterval, pAgg)
-
-	return []*timeseries.TimeSeriesData{aggregatedSeries}, nil
-}
-
 func applyScale(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error) {
 	pFactor := params[0]
 	factor, err := strconv.ParseFloat(pFactor, 64)
@@ -119,6 +105,27 @@ func applyOffset(series timeseries.TimeSeries, params ...string) (timeseries.Tim
 
 	transformFunc := timeseries.TransformOffset(offset)
 	return series.Transform(transformFunc), nil
+}
+
+func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...string) ([]*timeseries.TimeSeriesData, error) {
+	pInterval := params[0]
+	pAgg := params[1]
+	interval, err := gtime.ParseInterval(pInterval)
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	aggFunc := getAggFunc(pAgg)
+	aggregatedSeries := timeseries.AggregateBy(series, interval, aggFunc)
+	aggregatedSeries.Meta.Name = fmt.Sprintf("aggregateBy(%s, %s)", pInterval, pAgg)
+
+	return []*timeseries.TimeSeriesData{aggregatedSeries}, nil
+}
+
+func applySumSeries(series []*timeseries.TimeSeriesData, params ...string) ([]*timeseries.TimeSeriesData, error) {
+	sum := timeseries.SumSeries(series)
+	sum.Meta.Name = "sumSeries()"
+	return []*timeseries.TimeSeriesData{sum}, nil
 }
 
 func getAggFunc(agg string) timeseries.AggFunc {
