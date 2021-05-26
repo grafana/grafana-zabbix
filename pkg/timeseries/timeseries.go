@@ -30,6 +30,7 @@ func (tsd *TimeSeriesData) Add(point TimePoint) *TimeSeriesData {
 	return tsd
 }
 
+// GroupBy groups points in given interval by applying provided `aggFunc`. Source time series should be sorted by time.
 func (ts TimeSeries) GroupBy(interval time.Duration, aggFunc AggFunc) TimeSeries {
 	if ts.Len() == 0 {
 		return ts
@@ -72,6 +73,29 @@ func (ts TimeSeries) GroupBy(interval time.Duration, aggFunc AggFunc) TimeSeries
 	})
 
 	return groupedSeries
+}
+
+func AggregateBy(series []*TimeSeriesData, interval time.Duration, aggFunc AggFunc) *TimeSeriesData {
+	aggregatedSeries := NewTimeSeries()
+
+	// Combine all points into one time series
+	for _, s := range series {
+		aggregatedSeries = append(aggregatedSeries, s.TS...)
+	}
+
+	// GroupBy works correctly only with sorted time series
+	aggregatedSeries.Sort()
+
+	aggregatedSeries = aggregatedSeries.GroupBy(interval, aggFunc)
+	aggregatedSeriesData := NewTimeSeriesData()
+	aggregatedSeriesData.TS = aggregatedSeries
+	return aggregatedSeriesData
+}
+
+func (ts TimeSeries) Sort() {
+	sort.Slice(ts, func(i, j int) bool {
+		return ts[i].Time.Before(ts[j].Time)
+	})
 }
 
 func (ts TimeSeries) Transform(transformFunc TransformFunc) TimeSeries {

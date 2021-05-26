@@ -18,19 +18,23 @@ var errParsingFunctionParam = func(err error) error {
 
 type DataProcessingFunc = func(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error)
 
-type MetaDataProcessingFunc = func(series *timeseries.TimeSeriesData, params ...string) (*timeseries.TimeSeriesData, error)
+type AggDataProcessingFunc = func(series []*timeseries.TimeSeriesData, params ...string) ([]*timeseries.TimeSeriesData, error)
 
-var funcMap map[string]DataProcessingFunc
+var seriesFuncMap map[string]DataProcessingFunc
 
-var metaFuncMap map[string]MetaDataProcessingFunc
+var aggFuncMap map[string]AggDataProcessingFunc
 
 var frontendFuncMap map[string]bool
 
 func init() {
-	funcMap = map[string]DataProcessingFunc{
+	seriesFuncMap = map[string]DataProcessingFunc{
 		"groupBy": applyGroupBy,
 		"scale":   applyScale,
 		"offset":  applyOffset,
+	}
+
+	aggFuncMap = map[string]AggDataProcessingFunc{
+		"aggregateBy": applyAggregateBy,
 	}
 
 	// Functions processing on the frontend
@@ -43,7 +47,7 @@ func init() {
 
 func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFunction) ([]*timeseries.TimeSeriesData, error) {
 	for _, f := range functions {
-		if applyFunc, ok := funcMap[f.Def.Name]; ok {
+		if applyFunc, ok := seriesFuncMap[f.Def.Name]; ok {
 			for _, s := range series {
 				result, err := applyFunc(s.TS, f.Params...)
 				if err != nil {
@@ -51,6 +55,12 @@ func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFuncti
 				}
 				s.TS = result
 			}
+		} else if applyAggFunc, ok := aggFuncMap[f.Def.Name]; ok {
+			result, err := applyAggFunc(series, f.Params...)
+			if err != nil {
+				return nil, err
+			}
+			series = result
 		} else if _, ok := frontendFuncMap[f.Def.Name]; ok {
 			continue
 		} else {
@@ -72,6 +82,21 @@ func applyGroupBy(series timeseries.TimeSeries, params ...string) (timeseries.Ti
 	aggFunc := getAggFunc(pAgg)
 	s := series.GroupBy(interval, aggFunc)
 	return s, nil
+}
+
+func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...string) ([]*timeseries.TimeSeriesData, error) {
+	pInterval := params[0]
+	pAgg := params[1]
+	interval, err := gtime.ParseInterval(pInterval)
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	aggFunc := getAggFunc(pAgg)
+	aggregatedSeries := timeseries.AggregateBy(series, interval, aggFunc)
+	aggregatedSeries.Meta.Name = fmt.Sprintf("aggregateBy(%s, %s)", pInterval, pAgg)
+
+	return []*timeseries.TimeSeriesData{aggregatedSeries}, nil
 }
 
 func applyScale(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error) {
