@@ -45,6 +45,8 @@ var seriesFuncMap map[string]DataProcessingFunc
 
 var aggFuncMap map[string]AggDataProcessingFunc
 
+var filterFuncMap map[string]AggDataProcessingFunc
+
 var frontendFuncMap map[string]bool
 
 func init() {
@@ -59,6 +61,11 @@ func init() {
 		"aggregateBy":   applyAggregateBy,
 		"sumSeries":     applySumSeries,
 		"percentileAgg": applyPercentileAgg,
+	}
+
+	filterFuncMap = map[string]AggDataProcessingFunc{
+		"top":    applyTop,
+		"bottom": applyBottom,
 	}
 
 	// Functions processing on the frontend
@@ -81,6 +88,12 @@ func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFuncti
 			}
 		} else if applyAggFunc, ok := aggFuncMap[f.Def.Name]; ok {
 			result, err := applyAggFunc(series, f.Params...)
+			if err != nil {
+				return nil, err
+			}
+			series = result
+		} else if applyFilterFunc, ok := filterFuncMap[f.Def.Name]; ok {
+			result, err := applyFilterFunc(series, f.Params...)
 			if err != nil {
 				return nil, err
 			}
@@ -205,6 +218,30 @@ func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface
 	aggregatedSeries.Meta.Name = fmt.Sprintf("percentileAgg(%s, %v)", pInterval, percentile)
 
 	return []*timeseries.TimeSeriesData{aggregatedSeries}, nil
+}
+
+func applyTop(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
+	n, err := MustFloat64(params[0])
+	pAgg, err := MustString(params[1])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	aggFunc := getAggFunc(pAgg)
+	filteredSeries := timeseries.Filter(series, int(n), "top", aggFunc)
+	return filteredSeries, nil
+}
+
+func applyBottom(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
+	n, err := MustFloat64(params[0])
+	pAgg, err := MustString(params[1])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	aggFunc := getAggFunc(pAgg)
+	filteredSeries := timeseries.Filter(series, int(n), "bottom", aggFunc)
+	return filteredSeries, nil
 }
 
 func getAggFunc(agg string) timeseries.AggFunc {

@@ -94,6 +94,34 @@ func (ts TimeSeries) Transform(transformFunc TransformFunc) TimeSeries {
 	return ts
 }
 
+func Filter(series []*TimeSeriesData, n int, order string, aggFunc AggFunc) []*TimeSeriesData {
+	aggregatedSeries := make([]TimeSeries, len(series))
+	for i, s := range series {
+		aggregatedSeries[i] = s.TS.GroupByRange(aggFunc)
+	}
+
+	// Sort by aggregated value
+	sort.Slice(series, func(i, j int) bool {
+		if len(aggregatedSeries[i]) > 0 && len(aggregatedSeries[j]) > 0 {
+			return *aggregatedSeries[i][0].Value < *aggregatedSeries[j][0].Value
+		} else if len(aggregatedSeries[j]) > 0 {
+			return true
+		}
+		return false
+	})
+
+	filteredSeries := make([]*TimeSeriesData, n)
+	for i := 0; i < n; i++ {
+		if order == "top" {
+			filteredSeries[i] = series[len(aggregatedSeries)-1-i]
+		} else if order == "bottom" {
+			filteredSeries[i] = series[i]
+		}
+	}
+
+	return filteredSeries
+}
+
 func AggregateBy(series []*TimeSeriesData, interval time.Duration, aggFunc AggFunc) *TimeSeriesData {
 	aggregatedSeries := NewTimeSeries()
 
