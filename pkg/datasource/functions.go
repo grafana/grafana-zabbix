@@ -62,6 +62,7 @@ func init() {
 		"offset":           applyOffset,
 		"delta":            applyDelta,
 		"rate":             applyRate,
+		"movingAverage":    applyMovingAverage,
 		"removeAboveValue": applyRemoveAboveValue,
 		"removeBelowValue": applyRemoveBelowValue,
 		"transformNull":    applyTransformNull,
@@ -243,6 +244,16 @@ func applyTransformNull(series timeseries.TimeSeries, params ...interface{}) (ti
 
 	transformFunc := timeseries.TransformNull(nullValue)
 	return series.Transform(transformFunc), nil
+}
+
+func applyMovingAverage(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	nFloat, err := MustFloat64(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+	n := int(nFloat)
+
+	return series.SimpleMovingAverage(n), nil
 }
 
 func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
