@@ -49,9 +49,10 @@ var frontendFuncMap map[string]bool
 
 func init() {
 	seriesFuncMap = map[string]DataProcessingFunc{
-		"groupBy": applyGroupBy,
-		"scale":   applyScale,
-		"offset":  applyOffset,
+		"groupBy":    applyGroupBy,
+		"scale":      applyScale,
+		"offset":     applyOffset,
+		"percentile": applyPercentile,
 	}
 
 	aggFuncMap = map[string]AggDataProcessingFunc{
@@ -102,6 +103,28 @@ func applyGroupBy(series timeseries.TimeSeries, params ...interface{}) (timeseri
 	}
 
 	aggFunc := getAggFunc(pAgg)
+	if pInterval == RANGE_VARIABLE_VALUE {
+		s := series.GroupByRange(aggFunc)
+		return s, nil
+	}
+
+	interval, err := gtime.ParseInterval(pInterval)
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	s := series.GroupBy(interval, aggFunc)
+	return s, nil
+}
+
+func applyPercentile(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	pInterval, err := MustString(params[0])
+	percentile, err := MustFloat64(params[1])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	aggFunc := timeseries.AggPercentile(percentile)
 	if pInterval == RANGE_VARIABLE_VALUE {
 		s := series.GroupByRange(aggFunc)
 		return s, nil
