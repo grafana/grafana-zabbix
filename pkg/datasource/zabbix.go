@@ -68,6 +68,11 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		consolidateBy = valueType
 	}
 
+	err := applyFunctionsPre(query, items)
+	if err != nil {
+		return nil, err
+	}
+
 	history, err := ds.getHistotyOrTrend(ctx, query, items, valueType)
 	if err != nil {
 		return nil, err

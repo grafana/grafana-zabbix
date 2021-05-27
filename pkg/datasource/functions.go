@@ -3,9 +3,11 @@ package datasource
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 )
 
 const RANGE_VARIABLE_VALUE = "range_series"
@@ -41,11 +43,15 @@ type DataProcessingFunc = func(series timeseries.TimeSeries, params ...interface
 
 type AggDataProcessingFunc = func(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error)
 
+type PreProcessingFunc = func(query *QueryModel, items []*zabbix.Item, params ...interface{}) error
+
 var seriesFuncMap map[string]DataProcessingFunc
 
 var aggFuncMap map[string]AggDataProcessingFunc
 
 var filterFuncMap map[string]AggDataProcessingFunc
+
+var timeFuncMap map[string]PreProcessingFunc
 
 var frontendFuncMap map[string]bool
 
@@ -55,6 +61,7 @@ func init() {
 		"scale":      applyScale,
 		"offset":     applyOffset,
 		"percentile": applyPercentile,
+		"timeShift":  applyTimeShiftPost,
 	}
 
 	aggFuncMap = map[string]AggDataProcessingFunc{
@@ -67,6 +74,10 @@ func init() {
 		"top":        applyTop,
 		"bottom":     applyBottom,
 		"sortSeries": applySortSeries,
+	}
+
+	timeFuncMap = map[string]PreProcessingFunc{
+		"timeShift": applyTimeShiftPre,
 	}
 
 	// Functions processing on the frontend
@@ -107,6 +118,20 @@ func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFuncti
 		}
 	}
 	return series, nil
+}
+
+// applyFunctionsPre applies functions requires pre-processing, like timeShift() (it needs to change original time range)
+func applyFunctionsPre(query *QueryModel, items []*zabbix.Item) error {
+	for _, f := range query.Functions {
+		if applyFunc, ok := timeFuncMap[f.Def.Name]; ok {
+			err := applyFunc(query, items, f.Params...)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func applyGroupBy(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
@@ -254,6 +279,58 @@ func applySortSeries(series []*timeseries.TimeSeriesData, params ...interface{})
 	aggFunc := timeseries.AggAvg
 	sorted := timeseries.SortBy(series, order, aggFunc)
 	return sorted, nil
+}
+
+func applyTimeShiftPre(query *QueryModel, items []*zabbix.Item, params ...interface{}) error {
+	pInterval, err := MustString(params[0])
+	if err != nil {
+		return errParsingFunctionParam(err)
+	}
+	shiftForward := false
+	pInterval = strings.TrimPrefix(pInterval, "-")
+	if strings.Index(pInterval, "+") == 0 {
+		pInterval = strings.TrimPrefix(pInterval, "+")
+		shiftForward = true
+	}
+
+	interval, err := gtime.ParseInterval(pInterval)
+	if err != nil {
+		return errParsingFunctionParam(err)
+	}
+
+	if shiftForward {
+		query.TimeRange.From = query.TimeRange.From.Add(interval)
+		query.TimeRange.To = query.TimeRange.To.Add(interval)
+	} else {
+		query.TimeRange.From = query.TimeRange.From.Add(-interval)
+		query.TimeRange.To = query.TimeRange.To.Add(-interval)
+	}
+
+	return nil
+}
+
+func applyTimeShiftPost(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	pInterval, err := MustString(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+	shiftForward := false
+	pInterval = strings.TrimPrefix(pInterval, "-")
+	if strings.Index(pInterval, "+") == 0 {
+		pInterval = strings.TrimPrefix(pInterval, "+")
+		shiftForward = true
+	}
+
+	interval, err := gtime.ParseInterval(pInterval)
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+	if shiftForward == true {
+		interval = -interval
+	}
+
+	transformFunc := timeseries.TransformShiftTime(interval)
+	return series.Transform(transformFunc), nil
 }
 
 func getAggFunc(agg string) timeseries.AggFunc {
