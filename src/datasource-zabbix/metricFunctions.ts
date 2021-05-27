@@ -125,28 +125,20 @@ addFuncDef({
 // Aggregate
 
 addFuncDef({
+  name: 'aggregateBy',
+  category: 'Aggregate',
+  params: [
+    { name: 'interval', type: 'string' },
+    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
+  ],
+  defaultParams: ['1m', 'avg'],
+});
+
+addFuncDef({
   name: 'sumSeries',
   category: 'Aggregate',
   params: [],
   defaultParams: [],
-});
-
-addFuncDef({
-  name: 'median',
-  category: 'Aggregate',
-  params: [
-    { name: 'interval', type: 'string'}
-  ],
-  defaultParams: ['1m'],
-});
-
-addFuncDef({
-  name: 'average',
-  category: 'Aggregate',
-  params: [
-    { name: 'interval', type: 'string' }
-  ],
-  defaultParams: ['1m'],
 });
 
 addFuncDef({
@@ -157,52 +149,6 @@ addFuncDef({
     { name: 'percent', type: 'float', options: [25, 50, 75, 90, 95, 99, 99.9] }
   ],
   defaultParams: ['1m', 95],
-});
-
-addFuncDef({
-  name: 'min',
-  category: 'Aggregate',
-  params: [
-    { name: 'interval', type: 'string' }
-  ],
-  defaultParams: ['1m'],
-});
-
-addFuncDef({
-  name: 'max',
-  category: 'Aggregate',
-  params: [
-    { name: 'interval', type: 'string' }
-  ],
-  defaultParams: ['1m'],
-});
-
-addFuncDef({
-  name: 'sum',
-  category: 'Aggregate',
-  params: [
-    { name: 'interval', type: 'string' }
-  ],
-  defaultParams: ['1m'],
-});
-
-addFuncDef({
-  name: 'count',
-  category: 'Aggregate',
-  params: [
-    { name: 'interval', type: 'string' }
-  ],
-  defaultParams: ['1m'],
-});
-
-addFuncDef({
-  name: 'aggregateBy',
-  category: 'Aggregate',
-  params: [
-    { name: 'interval', type: 'string' },
-    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
-  ],
-  defaultParams: ['1m', 'avg'],
 });
 
 // Filter
