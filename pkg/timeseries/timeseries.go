@@ -95,6 +95,21 @@ func (ts TimeSeries) Transform(transformFunc TransformFunc) TimeSeries {
 }
 
 func Filter(series []*TimeSeriesData, n int, order string, aggFunc AggFunc) []*TimeSeriesData {
+	SortBy(series, "asc", aggFunc)
+
+	filteredSeries := make([]*TimeSeriesData, n)
+	for i := 0; i < n; i++ {
+		if order == "top" {
+			filteredSeries[i] = series[len(series)-1-i]
+		} else if order == "bottom" {
+			filteredSeries[i] = series[i]
+		}
+	}
+
+	return filteredSeries
+}
+
+func SortBy(series []*TimeSeriesData, order string, aggFunc AggFunc) []*TimeSeriesData {
 	aggregatedSeries := make([]TimeSeries, len(series))
 	for i, s := range series {
 		aggregatedSeries[i] = s.TS.GroupByRange(aggFunc)
@@ -110,16 +125,15 @@ func Filter(series []*TimeSeriesData, n int, order string, aggFunc AggFunc) []*T
 		return false
 	})
 
-	filteredSeries := make([]*TimeSeriesData, n)
-	for i := 0; i < n; i++ {
-		if order == "top" {
-			filteredSeries[i] = series[len(aggregatedSeries)-1-i]
-		} else if order == "bottom" {
-			filteredSeries[i] = series[i]
+	if order == "desc" {
+		reverseSeries := make([]*TimeSeriesData, len(series))
+		for i := 0; i < len(series); i++ {
+			reverseSeries[i] = series[len(series)-1-i]
 		}
+		series = reverseSeries
 	}
 
-	return filteredSeries
+	return series
 }
 
 func AggregateBy(series []*TimeSeriesData, interval time.Duration, aggFunc AggFunc) *TimeSeriesData {

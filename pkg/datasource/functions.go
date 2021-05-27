@@ -64,8 +64,9 @@ func init() {
 	}
 
 	filterFuncMap = map[string]AggDataProcessingFunc{
-		"top":    applyTop,
-		"bottom": applyBottom,
+		"top":        applyTop,
+		"bottom":     applyBottom,
+		"sortSeries": applySortSeries,
 	}
 
 	// Functions processing on the frontend
@@ -244,6 +245,17 @@ func applyBottom(series []*timeseries.TimeSeriesData, params ...interface{}) ([]
 	return filteredSeries, nil
 }
 
+func applySortSeries(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
+	order, err := MustString(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	aggFunc := timeseries.AggAvg
+	sorted := timeseries.SortBy(series, order, aggFunc)
+	return sorted, nil
+}
+
 func getAggFunc(agg string) timeseries.AggFunc {
 	switch agg {
 	case "avg":
@@ -264,5 +276,11 @@ func getAggFunc(agg string) timeseries.AggFunc {
 		return timeseries.AggLast
 	default:
 		return timeseries.AggAvg
+	}
+}
+
+func sortSeriesPoints(series []*timeseries.TimeSeriesData) {
+	for _, s := range series {
+		s.TS.Sort()
 	}
 }
