@@ -4,53 +4,55 @@ import "time"
 
 func TransformScale(factor float64) TransformFunc {
 	return func(point TimePoint) TimePoint {
-		return transformScale(point, factor)
+		if point.Value != nil {
+			newValue := *point.Value * factor
+			point.Value = &newValue
+		}
+		return point
 	}
 }
 
 func TransformOffset(offset float64) TransformFunc {
 	return func(point TimePoint) TimePoint {
-		return transformOffset(point, offset)
+		if point.Value != nil {
+			newValue := *point.Value + offset
+			point.Value = &newValue
+		}
+		return point
 	}
 }
 
 func TransformNull(nullValue float64) TransformFunc {
 	return func(point TimePoint) TimePoint {
-		return transformNull(point, nullValue)
+		if point.Value == nil {
+			point.Value = &nullValue
+		}
+		return point
+	}
+}
+
+func TransformRemoveAboveValue(threshold float64) TransformFunc {
+	return func(point TimePoint) TimePoint {
+		if *point.Value > threshold {
+			point.Value = nil
+		}
+		return point
+	}
+}
+
+func TransformRemoveBelowValue(threshold float64) TransformFunc {
+	return func(point TimePoint) TimePoint {
+		if *point.Value < threshold {
+			point.Value = nil
+		}
+		return point
 	}
 }
 
 func TransformShiftTime(interval time.Duration) TransformFunc {
 	return func(point TimePoint) TimePoint {
-		return transformShiftTime(point, interval)
+		shiftedTime := point.Time.Add(interval)
+		point.Time = shiftedTime
+		return point
 	}
-}
-
-func transformScale(point TimePoint, factor float64) TimePoint {
-	if point.Value != nil {
-		newValue := *point.Value * factor
-		point.Value = &newValue
-	}
-	return point
-}
-
-func transformOffset(point TimePoint, offset float64) TimePoint {
-	if point.Value != nil {
-		newValue := *point.Value + offset
-		point.Value = &newValue
-	}
-	return point
-}
-
-func transformShiftTime(point TimePoint, interval time.Duration) TimePoint {
-	shiftedTime := point.Time.Add(interval)
-	point.Time = shiftedTime
-	return point
-}
-
-func transformNull(point TimePoint, nullValue float64) TimePoint {
-	if point.Value == nil {
-		point.Value = &nullValue
-	}
-	return point
 }
