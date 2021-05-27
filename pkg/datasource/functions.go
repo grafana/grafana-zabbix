@@ -10,17 +10,36 @@ import (
 
 const RANGE_VARIABLE_VALUE = "range_series"
 
-var errFunctionNotSupported = func(name string) error {
-	return fmt.Errorf("function not supported: %s", name)
+var (
+	errFunctionNotSupported = func(name string) error {
+		return fmt.Errorf("function not supported: %s", name)
+	}
+	errParsingFunctionParam = func(err error) error {
+		return fmt.Errorf("failed to parse function param: %s", err)
+	}
+)
+
+func MustString(p QueryFunctionParam) (string, error) {
+	if pStr, ok := p.(string); ok {
+		return pStr, nil
+	}
+	return "", fmt.Errorf("failed to convert value to string: %v", p)
 }
 
-var errParsingFunctionParam = func(err error) error {
-	return fmt.Errorf("failed to parse function param: %s", err)
+func MustFloat64(p QueryFunctionParam) (float64, error) {
+	if pFloat, ok := p.(float64); ok {
+		return pFloat, nil
+	} else if pStr, ok := p.(string); ok {
+		if pFloat, err := strconv.ParseFloat(pStr, 64); err == nil {
+			return pFloat, nil
+		}
+	}
+	return 0, fmt.Errorf("failed to convert value to float: %v", p)
 }
 
-type DataProcessingFunc = func(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error)
+type DataProcessingFunc = func(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error)
 
-type AggDataProcessingFunc = func(series []*timeseries.TimeSeriesData, params ...string) ([]*timeseries.TimeSeriesData, error)
+type AggDataProcessingFunc = func(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error)
 
 var seriesFuncMap map[string]DataProcessingFunc
 
@@ -36,8 +55,9 @@ func init() {
 	}
 
 	aggFuncMap = map[string]AggDataProcessingFunc{
-		"aggregateBy": applyAggregateBy,
-		"sumSeries":   applySumSeries,
+		"aggregateBy":   applyAggregateBy,
+		"sumSeries":     applySumSeries,
+		"percentileAgg": applyPercentileAgg,
 	}
 
 	// Functions processing on the frontend
@@ -74,11 +94,14 @@ func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFuncti
 	return series, nil
 }
 
-func applyGroupBy(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error) {
-	pInterval := params[0]
-	pAgg := params[1]
-	aggFunc := getAggFunc(pAgg)
+func applyGroupBy(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	pInterval, err := MustString(params[0])
+	pAgg, err := MustString(params[1])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
 
+	aggFunc := getAggFunc(pAgg)
 	if pInterval == RANGE_VARIABLE_VALUE {
 		s := series.GroupByRange(aggFunc)
 		return s, nil
@@ -93,8 +116,11 @@ func applyGroupBy(series timeseries.TimeSeries, params ...string) (timeseries.Ti
 	return s, nil
 }
 
-func applyScale(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error) {
-	pFactor := params[0]
+func applyScale(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	pFactor, err := MustString(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
 	factor, err := strconv.ParseFloat(pFactor, 64)
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
@@ -104,9 +130,8 @@ func applyScale(series timeseries.TimeSeries, params ...string) (timeseries.Time
 	return series.Transform(transformFunc), nil
 }
 
-func applyOffset(series timeseries.TimeSeries, params ...string) (timeseries.TimeSeries, error) {
-	pOffset := params[0]
-	offset, err := strconv.ParseFloat(pOffset, 64)
+func applyOffset(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	offset, err := MustFloat64(params[0])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
 	}
@@ -115,9 +140,13 @@ func applyOffset(series timeseries.TimeSeries, params ...string) (timeseries.Tim
 	return series.Transform(transformFunc), nil
 }
 
-func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...string) ([]*timeseries.TimeSeriesData, error) {
-	pInterval := params[0]
-	pAgg := params[1]
+func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
+	pInterval, err := MustString(params[0])
+	pAgg, err := MustString(params[1])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
 	interval, err := gtime.ParseInterval(pInterval)
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
@@ -130,10 +159,29 @@ func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...string) ([]
 	return []*timeseries.TimeSeriesData{aggregatedSeries}, nil
 }
 
-func applySumSeries(series []*timeseries.TimeSeriesData, params ...string) ([]*timeseries.TimeSeriesData, error) {
+func applySumSeries(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
 	sum := timeseries.SumSeries(series)
 	sum.Meta.Name = "sumSeries()"
 	return []*timeseries.TimeSeriesData{sum}, nil
+}
+
+func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
+	pInterval, err := MustString(params[0])
+	percentile, err := MustFloat64(params[1])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	interval, err := gtime.ParseInterval(pInterval)
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	aggFunc := timeseries.AggPercentile(percentile)
+	aggregatedSeries := timeseries.AggregateBy(series, interval, aggFunc)
+	aggregatedSeries.Meta.Name = fmt.Sprintf("percentileAgg(%s, %v)", pInterval, percentile)
+
+	return []*timeseries.TimeSeriesData{aggregatedSeries}, nil
 }
 
 func getAggFunc(agg string) timeseries.AggFunc {

@@ -66,9 +66,9 @@ type QueryOptions struct {
 
 // QueryOptions model
 type QueryFunction struct {
-	Def    QueryFunctionDef `json:"def"`
-	Params []string         `json:"params"`
-	Text   string           `json:"text"`
+	Def    QueryFunctionDef     `json:"def"`
+	Params []QueryFunctionParam `json:"params"`
+	Text   string               `json:"text"`
 }
 
 // QueryOptions model
@@ -76,13 +76,15 @@ type QueryFunctionDef struct {
 	Name          string                  `json:"name"`
 	Category      string                  `json:"category"`
 	Params        []QueryFunctionParamDef `json:"params"`
-	DefaultParams []interface{}           `json:"defaultParams"`
+	DefaultParams []QueryFunctionParam    `json:"defaultParams"`
 }
 
 type QueryFunctionParamDef struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
 }
+
+type QueryFunctionParam = interface{}
 
 // ReadQuery will read and validate Settings from the DataSourceConfg
 func ReadQuery(query backend.DataQuery) (QueryModel, error) {

@@ -91,7 +91,7 @@ func (ds *ZabbixDatasourceInstance) getTrendValueType(query *QueryModel) string 
 
 	for _, fn := range query.Functions {
 		if fn.Def.Name == "trendValue" && len(fn.Params) > 0 {
-			trendValue = fn.Params[0]
+			trendValue = fn.Params[0].(string)
 		}
 	}
 
@@ -103,7 +103,7 @@ func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
 
 	for _, fn := range query.Functions {
 		if fn.Def.Name == "consolidateBy" && len(fn.Params) > 0 {
-			consolidateBy = fn.Params[0]
+			consolidateBy = fn.Params[0].(string)
 		}
 	}
 	return consolidateBy
