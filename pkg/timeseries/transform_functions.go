@@ -14,6 +14,12 @@ func TransformOffset(offset float64) TransformFunc {
 	}
 }
 
+func TransformNull(nullValue float64) TransformFunc {
+	return func(point TimePoint) TimePoint {
+		return transformNull(point, nullValue)
+	}
+}
+
 func TransformShiftTime(interval time.Duration) TransformFunc {
 	return func(point TimePoint) TimePoint {
 		return transformShiftTime(point, interval)
@@ -39,5 +45,12 @@ func transformOffset(point TimePoint, offset float64) TimePoint {
 func transformShiftTime(point TimePoint, interval time.Duration) TimePoint {
 	shiftedTime := point.Time.Add(interval)
 	point.Time = shiftedTime
+	return point
+}
+
+func transformNull(point TimePoint, nullValue float64) TimePoint {
+	if point.Value == nil {
+		point.Value = &nullValue
+	}
 	return point
 }

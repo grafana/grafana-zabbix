@@ -57,11 +57,12 @@ var frontendFuncMap map[string]bool
 
 func init() {
 	seriesFuncMap = map[string]DataProcessingFunc{
-		"groupBy":    applyGroupBy,
-		"scale":      applyScale,
-		"offset":     applyOffset,
-		"percentile": applyPercentile,
-		"timeShift":  applyTimeShiftPost,
+		"groupBy":       applyGroupBy,
+		"scale":         applyScale,
+		"offset":        applyOffset,
+		"transformNull": applyTransformNull,
+		"percentile":    applyPercentile,
+		"timeShift":     applyTimeShiftPost,
 	}
 
 	aggFuncMap = map[string]AggDataProcessingFunc{
@@ -199,6 +200,16 @@ func applyOffset(series timeseries.TimeSeries, params ...interface{}) (timeserie
 	}
 
 	transformFunc := timeseries.TransformOffset(offset)
+	return series.Transform(transformFunc), nil
+}
+
+func applyTransformNull(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	nullValue, err := MustFloat64(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	transformFunc := timeseries.TransformNull(nullValue)
 	return series.Transform(transformFunc), nil
 }
 
