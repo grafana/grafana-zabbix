@@ -41,7 +41,7 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string,
 	return string(resultByte), nil
 }
 
-func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) (*data.Frame, error) {
+func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) ([]*data.Frame, error) {
 	groupFilter := query.Group.Filter
 	hostFilter := query.Host.Filter
 	appFilter := query.Application.Filter
@@ -60,7 +60,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	return frames, nil
 }
 
-func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items []*zabbix.Item) (*data.Frame, error) {
+func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items []*zabbix.Item) ([]*data.Frame, error) {
 	valueType := ds.getTrendValueType(query)
 	consolidateBy := ds.getConsolidateBy(query)
 
@@ -79,10 +79,8 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		return nil, err
 	}
 
-	frame := convertTimeSeriesToDataFrame(series)
-
-	// frame := convertHistoryToDataFrame(history, items)
-	return frame, nil
+	frames := convertTimeSeriesToDataFrames(series)
+	return frames, nil
 }
 
 func (ds *ZabbixDatasourceInstance) getTrendValueType(query *QueryModel) string {

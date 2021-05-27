@@ -55,6 +55,10 @@ func convertTimeSeriesToDataFrame(series []*timeseries.TimeSeriesData) *data.Fra
 	timeFileld.Name = "time"
 	frame := data.NewFrame("History", timeFileld)
 
+	if len(series) == 0 {
+		return frame
+	}
+
 	for _, s := range series {
 		field := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
 		field.Name = s.Meta.Name
@@ -82,6 +86,32 @@ func convertTimeSeriesToDataFrame(series []*timeseries.TimeSeriesData) *data.Fra
 		return frame
 	}
 	return wideFrame
+}
+
+func convertTimeSeriesToDataFrames(series []*timeseries.TimeSeriesData) []*data.Frame {
+	frames := make([]*data.Frame, 0)
+
+	for _, s := range series {
+		frames = append(frames, seriesToDataFrame(s))
+	}
+
+	return frames
+}
+
+func seriesToDataFrame(series *timeseries.TimeSeriesData) *data.Frame {
+	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
+	timeFileld.Name = "time"
+	seriesName := series.Meta.Name
+	valueField := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
+	valueField.Name = seriesName
+	frame := data.NewFrame(seriesName, timeFileld, valueField)
+
+	for _, point := range series.TS {
+		timeFileld.Append(point.Time)
+		valueField.Append(point.Value)
+	}
+
+	return frame
 }
 
 func convertHistoryToDataFrame(history zabbix.History, items []*zabbix.Item) *data.Frame {

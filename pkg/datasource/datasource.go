@@ -125,11 +125,11 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		} else if query.Mode != 0 {
 			res.Error = ErrNonMetricQueryNotSupported
 		} else {
-			frame, err := zabbixDS.queryNumericItems(ctx, &query)
+			frames, err := zabbixDS.queryNumericItems(ctx, &query)
 			if err != nil {
 				res.Error = err
 			} else {
-				res.Frames = append(res.Frames, frame)
+				res.Frames = append(res.Frames, frames...)
 			}
 		}
 		qdr.Responses[q.RefID] = res
