@@ -212,7 +212,7 @@ addFuncDef({
   category: 'Filter',
   params: [
     { name: 'number', type: 'int' },
-    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }
+    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
   ],
   defaultParams: [5, 'avg'],
 });
@@ -222,7 +222,7 @@ addFuncDef({
   category: 'Filter',
   params: [
     { name: 'number', type: 'int' },
-    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median'] }
+    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
   ],
   defaultParams: [5, 'avg'],
 });
