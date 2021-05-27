@@ -60,6 +60,8 @@ func init() {
 		"groupBy":          applyGroupBy,
 		"scale":            applyScale,
 		"offset":           applyOffset,
+		"delta":            applyDelta,
+		"rate":             applyRate,
 		"removeAboveValue": applyRemoveAboveValue,
 		"removeBelowValue": applyRemoveBelowValue,
 		"transformNull":    applyTransformNull,
@@ -203,6 +205,14 @@ func applyOffset(series timeseries.TimeSeries, params ...interface{}) (timeserie
 
 	transformFunc := timeseries.TransformOffset(offset)
 	return series.Transform(transformFunc), nil
+}
+
+func applyDelta(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	return series.Delta(), nil
+}
+
+func applyRate(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	return series.Rate(), nil
 }
 
 func applyRemoveAboveValue(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {

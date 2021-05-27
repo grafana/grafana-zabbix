@@ -87,6 +87,42 @@ func (ts TimeSeries) GroupByRange(aggFunc AggFunc) TimeSeries {
 	}
 }
 
+func (ts TimeSeries) Delta() TimeSeries {
+	deltaSeries := NewTimeSeries()
+	for i := 1; i < ts.Len(); i++ {
+		currentPoint := ts[i]
+		previousPoint := ts[i-1]
+		if currentPoint.Value != nil && previousPoint.Value != nil {
+			deltaValue := *currentPoint.Value - *previousPoint.Value
+			deltaSeries = append(deltaSeries, TimePoint{Time: ts[i].Time, Value: &deltaValue})
+		} else {
+			deltaSeries = append(deltaSeries, TimePoint{Time: ts[i].Time, Value: nil})
+		}
+	}
+
+	return deltaSeries
+}
+
+func (ts TimeSeries) Rate() TimeSeries {
+	rateSeries := NewTimeSeries()
+	var valueDelta float64 = 0
+	for i := 1; i < ts.Len(); i++ {
+		currentPoint := ts[i]
+		previousPoint := ts[i-1]
+		timeDelta := currentPoint.Time.Sub(previousPoint.Time)
+
+		// Handle counter reset - use previous value
+		if currentPoint.Value != nil && previousPoint.Value != nil && *currentPoint.Value >= *previousPoint.Value {
+			valueDelta = (*currentPoint.Value - *previousPoint.Value) / timeDelta.Seconds()
+		}
+
+		value := valueDelta
+		rateSeries = append(rateSeries, TimePoint{Time: ts[i].Time, Value: &value})
+	}
+
+	return rateSeries
+}
+
 func (ts TimeSeries) Transform(transformFunc TransformFunc) TimeSeries {
 	for i, p := range ts {
 		ts[i] = transformFunc(p)
