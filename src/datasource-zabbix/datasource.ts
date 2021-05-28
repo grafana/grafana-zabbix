@@ -252,6 +252,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
           const resp = toDataQueryResponse(rsp);
           this.sortByRefId(resp);
           this.applyFrontendFunctions(resp, request);
+          if (responseHandler.isConvertibleToWide(resp.data)) {
+            console.log('Converting response to the wide format');
+            resp.data = responseHandler.convertToWide(resp.data);
+          }
           return resp;
         }),
         catchError((err) => {
@@ -388,12 +392,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
       // Apply alias functions
       const aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
-      for (let fieldIndex = 0; fieldIndex < frame.fields.length; fieldIndex++) {
-        const field = frame.fields[fieldIndex];
-        if (field.type !== FieldType.time) {
-          utils.sequence(aliasFunctions)(field);
-        }
-      }
+      utils.sequence(aliasFunctions)(frame);
     }
     return response;
   }

@@ -103,8 +103,8 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData) *data.Frame {
 	timeFileld.Name = data.TimeSeriesTimeFieldName
 	seriesName := series.Meta.Name
 	valueField := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
-	valueField.Name = seriesName
-	frame := data.NewFrame("", timeFileld, valueField)
+	valueField.Name = data.TimeSeriesValueFieldName
+	frame := data.NewFrame(seriesName, timeFileld, valueField)
 
 	for _, point := range series.TS {
 		timeFileld.Append(point.Time)
