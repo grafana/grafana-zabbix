@@ -4,7 +4,7 @@ import _ from 'lodash';
 import * as utils from './utils';
 import ts, { groupBy_perf as groupBy } from './timeseries';
 import { getTemplateSrv } from '@grafana/runtime';
-import { DataFrame, Field } from '@grafana/data';
+import { DataFrame, Field, FieldType, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
 
 const SUM = ts.SUM;
 const COUNT = ts.COUNT;
@@ -74,15 +74,29 @@ function sortSeries(direction, timeseries: any[]) {
   }], direction);
 }
 
-function setAlias(alias: string, field: Field) {
-  if (field?.state?.scopedVars) {
-    alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
+function setAlias(alias: string, frame: DataFrame) {
+  if (frame.fields?.length <= 2) {
+    const valueFileld = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    if (valueFileld?.state?.scopedVars) {
+      alias = getTemplateSrv().replace(alias, valueFileld?.state?.scopedVars);
+    }
+    frame.name = alias;
+    return frame;
   }
-  field.name = alias;
-  return field;
+
+  for (let fieldIndex = 0; fieldIndex < frame.fields.length; fieldIndex++) {
+    const field = frame.fields[fieldIndex];
+    if (field.type !== FieldType.time) {
+      if (field?.state?.scopedVars) {
+        alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
+      }
+      field.name = alias;
+    }
+  }
+  return frame;
 }
 
-function replaceAlias(regexp: string, newAlias: string, field: Field) {
+function replaceAlias(regexp: string, newAlias: string, frame: DataFrame) {
   let pattern: string | RegExp;
   if (utils.isRegex(regexp)) {
     pattern = utils.buildRegex(regexp);
@@ -90,21 +104,49 @@ function replaceAlias(regexp: string, newAlias: string, field: Field) {
     pattern = regexp;
   }
 
-  let alias = field.name.replace(pattern, newAlias);
-  if (field?.state?.scopedVars) {
-    alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
+  if (frame.fields?.length <= 2) {
+    let alias = frame.name.replace(pattern, newAlias);
+    const valueFileld = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    if (valueFileld?.state?.scopedVars) {
+      alias = getTemplateSrv().replace(alias, valueFileld?.state?.scopedVars);
+    }
+    frame.name = alias;
+    return frame;
   }
-  field.name = alias;
-  return field;
+
+  for (const field of frame.fields) {
+    if (field.type !== FieldType.time) {
+      let alias = field.name.replace(pattern, newAlias);
+      if (field?.state?.scopedVars) {
+        alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
+      }
+      field.name = alias;
+    }
+  }
+  return frame;
 }
 
-function setAliasByRegex(alias: string, field: Field) {
-  try {
-    field.name = extractText(field.name, alias);
-  } catch (error) {
-    console.error('Failed to apply RegExp:', error?.message || error);
+function setAliasByRegex(alias: string, frame: DataFrame) {
+  if (frame.fields?.length <= 2) {
+    try {
+      frame.name = extractText(frame.name, alias);
+    } catch (error) {
+      console.error('Failed to apply RegExp:', error?.message || error);
+    }
+    return frame;
   }
-  return field;
+
+  for (const field of frame.fields) {
+    if (field.type !== FieldType.time) {
+      try {
+        field.name = extractText(field.name, alias);
+      } catch (error) {
+        console.error('Failed to apply RegExp:', error?.message || error);
+      }
+    }
+  }
+
+  return frame;
 }
 
 function extractText(str: string, pattern: string) {
