@@ -73,7 +73,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		return nil, err
 	}
 
-	history, err := ds.getHistotyOrTrend(ctx, query, items, valueType)
+	history, err := ds.getHistotyOrTrend(ctx, query, items, consolidateBy)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (ds *ZabbixDatasourceInstance) getTrendValueType(query *QueryModel) string 
 }
 
 func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
-	consolidateBy := "avg"
+	consolidateBy := ""
 
 	for _, fn := range query.Functions {
 		if fn.Def.Name == "consolidateBy" && len(fn.Params) > 0 {

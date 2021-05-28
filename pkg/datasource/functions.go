@@ -53,7 +53,7 @@ var filterFuncMap map[string]AggDataProcessingFunc
 
 var timeFuncMap map[string]PreProcessingFunc
 
-var frontendFuncMap map[string]bool
+var skippedFuncMap map[string]bool
 
 func init() {
 	seriesFuncMap = map[string]DataProcessingFunc{
@@ -87,11 +87,13 @@ func init() {
 		"timeShift": applyTimeShiftPre,
 	}
 
-	// Functions processing on the frontend
-	frontendFuncMap = map[string]bool{
+	// Functions not processing here or processing on the frontend, skip it
+	skippedFuncMap = map[string]bool{
 		"setAlias":        true,
 		"replaceAlias":    true,
 		"setAliasByRegex": true,
+		"trendValue":      true,
+		"consolidateBy":   true,
 	}
 }
 
@@ -117,7 +119,7 @@ func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFuncti
 				return nil, err
 			}
 			series = result
-		} else if _, ok := frontendFuncMap[f.Def.Name]; ok {
+		} else if _, ok := skippedFuncMap[f.Def.Name]; ok {
 			continue
 		} else {
 			err := errFunctionNotSupported(f.Def.Name)
