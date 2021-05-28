@@ -250,6 +250,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       .pipe(
         map((rsp: any) => {
           const resp = toDataQueryResponse(rsp);
+          this.sortByRefId(resp);
           this.applyFrontendFunctions(resp, request);
           return resp;
         }),
@@ -367,6 +368,17 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       ts.datapoints = fillTrendsWithNulls(ts.datapoints);
     }
     return timeseries;
+  }
+
+  sortByRefId(response: DataQueryResponse) {
+    response.data.sort((a, b) => {
+      if (a.refId < b.refId) {
+        return -1;
+      } else if (a.refId > b.refId) {
+        return 1;
+      }
+      return 0;
+    });
   }
 
   applyFrontendFunctions(response: DataQueryResponse, request: DataQueryRequest<any>) {
