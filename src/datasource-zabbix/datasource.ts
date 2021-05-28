@@ -18,8 +18,6 @@ import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTyp
 import { getBackendSrv, getTemplateSrv, toDataQueryResponse } from '@grafana/runtime';
 import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
 
-const ENABLE_BACKEND_QUERIES = true;
-
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
   basicAuth: any;
@@ -98,34 +96,34 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
   /**
    * Query panel data. Calls for each panel in dashboard.
-   * @param  {Object} options   Contains time range, targets and other info.
+   * @param  {Object} request   Contains time range, targets and other info.
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
-  query(options: DataQueryRequest<any>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
-    const isMetricQuery = options.targets.every(q => q.queryType === c.MODE_METRICS ||q.mode === c.MODE_METRICS);
-    if (isMetricQuery && ENABLE_BACKEND_QUERIES) {
-      return this.backendQuery(options);
+  query(request: DataQueryRequest<any>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
+    const isMetricQuery = request.targets.every(q => q.queryType === c.MODE_METRICS || q.mode === c.MODE_METRICS);
+    if (isMetricQuery) {
+      return this.backendQuery(request);
     }
 
     // Create request for each target
-    const promises = _.map(options.targets, t => {
+    const promises = _.map(request.targets, t => {
       // Don't request for hidden targets
       if (t.hide) {
         return [];
       }
 
-      let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
-      let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
+      let timeFrom = Math.ceil(dateMath.parse(request.range.from) / 1000);
+      let timeTo = Math.ceil(dateMath.parse(request.range.to) / 1000);
 
       // Add range variables
-      options.scopedVars = Object.assign({}, options.scopedVars, utils.getRangeScopedVars(options.range));
+      request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
 
       // Prevent changes of original object
       let target = _.cloneDeep(t);
 
       // Migrate old targets
       target = migrations.migrate(target);
-      this.replaceTargetVariables(target, options);
+      this.replaceTargetVariables(target, request);
 
       // Apply Time-related functions (timeShift(), etc)
       const timeFunctions = bindFunctionDefs(target.functions, 'Time');
@@ -146,7 +144,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         }
 
         if (!target.queryType || target.queryType === c.MODE_METRICS) {
-          return this.queryNumericData(target, timeRange, useTrends, options);
+          return this.queryNumericData(target, timeRange, useTrends, request);
         } else if (target.queryType === c.MODE_TEXT) {
           return this.queryTextData(target, timeRange);
         } else {
@@ -157,16 +155,16 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         if (!target.itemids) {
           return [];
         }
-        return this.queryItemIdData(target, timeRange, useTrends, options);
+        return this.queryItemIdData(target, timeRange, useTrends, request);
       } else if (target.queryType === c.MODE_ITSERVICE) {
         // IT services query
-        return this.queryITServiceData(target, timeRange, options);
+        return this.queryITServiceData(target, timeRange, request);
       } else if (target.queryType === c.MODE_TRIGGERS) {
         // Triggers query
         return this.queryTriggersData(target, timeRange);
       } else if (target.queryType === c.MODE_PROBLEMS) {
         // Problems query
-        return this.queryProblems(target, timeRange, options);
+        return this.queryProblems(target, timeRange, request);
       } else {
         return [];
       }
@@ -188,7 +186,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         return {
           data,
           state: LoadingState.Done,
-          key: options.requestId,
+          key: request.requestId,
         };
       });
   }
