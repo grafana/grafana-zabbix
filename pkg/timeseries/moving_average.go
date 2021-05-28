@@ -7,30 +7,57 @@ func (ts TimeSeries) SimpleMovingAverage(n int) TimeSeries {
 		return ts
 	}
 
-	sma := NewTimeSeries()
+	sma := []TimePoint{ts[0]}
 
 	// It's not possible to calculate MA if n greater than number of points
 	n = int(math.Min(float64(ts.Len()), float64(n)))
 
-	// It's not a most performant way to caclulate MA, but since it's most straightforward, it's easy to read.
-	// Should work fine on relatively small n, which is 90% of cases. Another way is caclulate window average, then add
-	// next point ( (window sum + point value) / (count + 1) ) and remove the first one.
-	for i := n; i < ts.Len(); i++ {
-		windowEdgeRight := i
-		windowCount := 0
-		var windowSum float64 = 0
-		for j := 0; j < n; j++ {
-			point := ts[i-j]
-			if point.Value != nil {
-				windowSum += *point.Value
-				windowCount++
+	// Initial window, use simple moving average
+	windowCount := 0
+	var windowSum float64 = 0
+	for i := n; i > 0; i-- {
+		point := ts[n-i]
+		if point.Value != nil {
+			windowSum += *point.Value
+			windowCount++
+		}
+	}
+	if windowCount > 0 {
+		windowAvg := windowSum / float64(windowCount)
+		// Actually, we should set timestamp from datapoints[n-1] and start calculation of SMA from n.
+		// But in order to start SMA from first point (not from Nth) we should expand time range and request N additional
+		// points outside left side of range. We can't do that, so this trick is used for pretty view of first N points.
+		// We calculate AVG for first N points, but then start from 2nd point, not from Nth. In general, it means we
+		// assume that previous N points (0-N, 0-(N-1), ..., 0-1) have the same average value as a first N points.
+		sma[0] = TimePoint{Time: ts[0].Time, Value: &windowAvg}
+	}
+
+	for i := 1; i < ts.Len(); i++ {
+		leftEdge := int(math.Max(0, float64(i-n)))
+		point := ts[i]
+		leftPoint := ts[leftEdge]
+
+		// Remove left value
+		if leftPoint.Value != nil {
+			if windowCount > 0 {
+				if i < n {
+					windowSum -= windowSum / float64(windowCount)
+				} else {
+					windowSum -= *leftPoint.Value
+				}
+				windowCount--
 			}
 		}
-		if windowCount > 0 {
+
+		// Insert next value
+		if point.Value != nil {
+			windowSum += *point.Value
+			windowCount++
 			windowAvg := windowSum / float64(windowCount)
-			sma = append(sma, TimePoint{Time: ts[windowEdgeRight].Time, Value: &windowAvg})
+			value := windowAvg
+			sma = append(sma, TimePoint{Time: point.Time, Value: &value})
 		} else {
-			sma = append(sma, TimePoint{Time: ts[windowEdgeRight].Time, Value: nil})
+			sma = append(sma, TimePoint{Time: point.Time, Value: nil})
 		}
 	}
 
