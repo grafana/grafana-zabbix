@@ -57,17 +57,18 @@ var frontendFuncMap map[string]bool
 
 func init() {
 	seriesFuncMap = map[string]DataProcessingFunc{
-		"groupBy":          applyGroupBy,
-		"scale":            applyScale,
-		"offset":           applyOffset,
-		"delta":            applyDelta,
-		"rate":             applyRate,
-		"movingAverage":    applyMovingAverage,
-		"removeAboveValue": applyRemoveAboveValue,
-		"removeBelowValue": applyRemoveBelowValue,
-		"transformNull":    applyTransformNull,
-		"percentile":       applyPercentile,
-		"timeShift":        applyTimeShiftPost,
+		"groupBy":                  applyGroupBy,
+		"scale":                    applyScale,
+		"offset":                   applyOffset,
+		"delta":                    applyDelta,
+		"rate":                     applyRate,
+		"movingAverage":            applyMovingAverage,
+		"exponentialMovingAverage": applyExponentialMovingAverage,
+		"removeAboveValue":         applyRemoveAboveValue,
+		"removeBelowValue":         applyRemoveBelowValue,
+		"transformNull":            applyTransformNull,
+		"percentile":               applyPercentile,
+		"timeShift":                applyTimeShiftPost,
 	}
 
 	aggFuncMap = map[string]AggDataProcessingFunc{
@@ -254,6 +255,15 @@ func applyMovingAverage(series timeseries.TimeSeries, params ...interface{}) (ti
 	n := int(nFloat)
 
 	return series.SimpleMovingAverage(n), nil
+}
+
+func applyExponentialMovingAverage(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
+	n, err := MustFloat64(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
+	return series.ExponentialMovingAverage(n), nil
 }
 
 func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
