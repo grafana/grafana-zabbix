@@ -157,17 +157,9 @@ func convertHistoryToDataFrame(history zabbix.History, items []*zabbix.Item) *da
 func convertTrendToHistory(trend zabbix.Trend, valueType string) (zabbix.History, error) {
 	history := make([]zabbix.HistoryPoint, 0)
 	for _, point := range trend {
-		valueStr := point.ValueAvg
-		switch valueType {
-		case "min":
-			valueStr = point.ValueMin
-		case "max":
-			valueStr = point.ValueMax
-		}
-
-		value, err := strconv.ParseFloat(valueStr, 64)
+		value, err := getTrendPointValue(point, valueType)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing trend value: %s", err)
+			return nil, err
 		}
 
 		history = append(history, zabbix.HistoryPoint{
@@ -178,4 +170,42 @@ func convertTrendToHistory(trend zabbix.Trend, valueType string) (zabbix.History
 	}
 
 	return history, nil
+}
+
+func getTrendPointValue(point zabbix.TrendPoint, valueType string) (float64, error) {
+	if valueType == "avg" || valueType == "min" || valueType == "max" || valueType == "count" {
+		valueStr := point.ValueAvg
+		switch valueType {
+		case "min":
+			valueStr = point.ValueMin
+		case "max":
+			valueStr = point.ValueMax
+		case "count":
+			valueStr = point.Num
+		}
+
+		value, err := strconv.ParseFloat(valueStr, 64)
+		if err != nil {
+			return 0, fmt.Errorf("error parsing trend value: %s", err)
+		}
+		return value, nil
+	} else if valueType == "sum" {
+		avgStr := point.ValueAvg
+		avg, err := strconv.ParseFloat(avgStr, 64)
+		if err != nil {
+			return 0, fmt.Errorf("error parsing trend value: %s", err)
+		}
+		countStr := point.Num
+		count, err := strconv.ParseFloat(countStr, 64)
+		if err != nil {
+			return 0, fmt.Errorf("error parsing trend value: %s", err)
+		}
+		if count > 0 {
+			return avg * count, nil
+		} else {
+			return 0, nil
+		}
+	}
+
+	return 0, fmt.Errorf("failed to get trend value, unknown value type: %s", valueType)
 }

@@ -61,11 +61,11 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 }
 
 func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context, query *QueryModel, items []*zabbix.Item) ([]*data.Frame, error) {
-	valueType := ds.getTrendValueType(query)
+	trendValueType := ds.getTrendValueType(query)
 	consolidateBy := ds.getConsolidateBy(query)
 
-	if consolidateBy == "" {
-		consolidateBy = valueType
+	if consolidateBy != "" {
+		trendValueType = consolidateBy
 	}
 
 	err := applyFunctionsPre(query, items)
@@ -73,7 +73,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		return nil, err
 	}
 
-	history, err := ds.getHistotyOrTrend(ctx, query, items, consolidateBy)
+	history, err := ds.getHistotyOrTrend(ctx, query, items, trendValueType)
 	if err != nil {
 		return nil, err
 	}
