@@ -2,9 +2,11 @@ package datasource
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -33,6 +35,7 @@ func convertHistoryToTimeSeries(history zabbix.History, items []*zabbix.Item) []
 			if len(pointItem.Hosts) > 0 {
 				pointSeries.Meta.Name = fmt.Sprintf("%s: %s", pointItem.Hosts[0].Name, itemName)
 			}
+			pointSeries.Meta.Interval = parseItemUpdateInterval(pointItem.Delay)
 		}
 
 		value := point.Value
@@ -208,4 +211,19 @@ func getTrendPointValue(point zabbix.TrendPoint, valueType string) (float64, err
 	}
 
 	return 0, fmt.Errorf("failed to get trend value, unknown value type: %s", valueType)
+}
+
+var fixedUpdateIntervalPattern = regexp.MustCompile(`^(\d+)([shd]?)$`)
+
+func parseItemUpdateInterval(delay string) *time.Duration {
+	if valid := fixedUpdateIntervalPattern.MatchString(delay); !valid {
+		return nil
+	}
+
+	interval, err := gtime.ParseInterval(delay)
+	if err != nil {
+		return nil
+	}
+
+	return &interval
 }

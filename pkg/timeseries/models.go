@@ -29,6 +29,9 @@ type TimeSeriesData struct {
 type TimeSeriesMeta struct {
 	Name string
 	Item *zabbix.Item
+
+	// Item update interval. nil means not supported intervals (flexible, schedule, etc)
+	Interval *time.Duration
 }
 
 type AggFunc = func(points []TimePoint) *float64

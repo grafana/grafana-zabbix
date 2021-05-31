@@ -79,6 +79,16 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 	}
 
 	series := convertHistoryToTimeSeries(history, items)
+
+	// Align time series data if possible
+	if query.Options.DisableDataAlignment == false && ds.Settings.DisableDataAlignment == false {
+		for _, s := range series {
+			if s.Meta.Interval != nil {
+				s.TS = s.TS.Align(*s.Meta.Interval)
+			}
+		}
+	}
+
 	series, err = applyFunctions(series, query.Functions)
 	if err != nil {
 		return nil, err

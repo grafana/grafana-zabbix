@@ -40,14 +40,17 @@ func (r *ZabbixAPIRequest) String() string {
 type Items []Item
 
 type Item struct {
-	ID        string     `json:"itemid,omitempty"`
-	Key       string     `json:"key_,omitempty"`
-	Name      string     `json:"name,omitempty"`
-	ValueType int        `json:"value_type,omitempty,string"`
-	HostID    string     `json:"hostid,omitempty"`
-	Hosts     []ItemHost `json:"hosts,omitempty"`
-	Status    string     `json:"status,omitempty"`
-	State     string     `json:"state,omitempty"`
+	ID         string     `json:"itemid,omitempty"`
+	Key        string     `json:"key_,omitempty"`
+	Name       string     `json:"name,omitempty"`
+	ValueType  int        `json:"value_type,omitempty,string"`
+	HostID     string     `json:"hostid,omitempty"`
+	Hosts      []ItemHost `json:"hosts,omitempty"`
+	Status     string     `json:"status,omitempty"`
+	State      string     `json:"state,omitempty"`
+	Delay      string     `json:"delay,omitempty"`
+	Units      string     `json:"units,omitempty"`
+	ValueMapID string     `json:"valuemapid,omitempty"`
 }
 
 type ItemHost struct {

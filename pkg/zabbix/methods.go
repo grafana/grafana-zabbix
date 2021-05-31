@@ -243,7 +243,7 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 
 func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string) ([]*Item, error) {
 	params := ZabbixAPIParams{
-		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state"},
+		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
 		"sortfield":      "name",
 		"webitems":       true,
 		"filter":         map[string]interface{}{},
