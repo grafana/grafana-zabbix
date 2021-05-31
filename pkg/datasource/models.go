@@ -53,7 +53,11 @@ type QueryModel struct {
 	Options     QueryOptions    `json:"options"`
 
 	// Direct from the gRPC interfaces
-	TimeRange backend.TimeRange `json:"-"`
+	RefID         string            `json:"-"`
+	QueryType     string            `json:"-"`
+	TimeRange     backend.TimeRange `json:"-"`
+	MaxDataPoints int64             `json:"-"`
+	Interval      time.Duration     `json:"-"`
 }
 
 // QueryOptions model
@@ -91,11 +95,16 @@ type QueryFunctionParam = interface{}
 
 // ReadQuery will read and validate Settings from the DataSourceConfg
 func ReadQuery(query backend.DataQuery) (QueryModel, error) {
-	model := QueryModel{}
+	model := QueryModel{
+		RefID:         query.RefID,
+		QueryType:     query.QueryType,
+		TimeRange:     query.TimeRange,
+		MaxDataPoints: query.MaxDataPoints,
+		Interval:      query.Interval,
+	}
 	if err := json.Unmarshal(query.JSON, &model); err != nil {
 		return model, fmt.Errorf("could not read query: %w", err)
 	}
 
-	model.TimeRange = query.TimeRange
 	return model, nil
 }

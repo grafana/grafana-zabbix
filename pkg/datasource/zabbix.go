@@ -94,6 +94,21 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 		return nil, err
 	}
 
+	for _, s := range series {
+		if int64(s.Len()) > query.MaxDataPoints && true {
+			downsampleFunc := consolidateBy
+			if downsampleFunc == "" {
+				downsampleFunc = "avg"
+			}
+			downsampled, err := applyGroupBy(s.TS, query.Interval.String(), downsampleFunc)
+			if err == nil {
+				s.TS = downsampled
+			} else {
+				ds.logger.Debug("Error downsampling series", "error", err)
+			}
+		}
+	}
+
 	frames := convertTimeSeriesToDataFrames(series)
 	return frames, nil
 }
