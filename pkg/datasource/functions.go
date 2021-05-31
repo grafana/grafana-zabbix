@@ -160,9 +160,11 @@ func applyGroupBy(series timeseries.TimeSeries, params ...interface{}) (timeseri
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
 	}
+	if interval == 0 {
+		return series, nil
+	}
 
-	s := series.GroupBy(interval, aggFunc)
-	return s, nil
+	return series.GroupBy(interval, aggFunc), nil
 }
 
 func applyPercentile(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
@@ -181,6 +183,9 @@ func applyPercentile(series timeseries.TimeSeries, params ...interface{}) (times
 	interval, err := gtime.ParseInterval(pInterval)
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
+	}
+	if interval == 0 {
+		return series, nil
 	}
 
 	s := series.GroupBy(interval, aggFunc)
@@ -279,6 +284,9 @@ func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...interface{}
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
 	}
+	if interval == 0 {
+		return series, nil
+	}
 
 	aggFunc := getAggFunc(pAgg)
 	aggregatedSeries := timeseries.AggregateBy(series, interval, aggFunc)
@@ -303,6 +311,9 @@ func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface
 	interval, err := gtime.ParseInterval(pInterval)
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
+	}
+	if interval == 0 {
+		return series, nil
 	}
 
 	aggFunc := timeseries.AggPercentile(percentile)
@@ -363,6 +374,9 @@ func applyTimeShiftPre(query *QueryModel, items []*zabbix.Item, params ...interf
 	if err != nil {
 		return errParsingFunctionParam(err)
 	}
+	if interval == 0 {
+		return fmt.Errorf("interval should be non-null value")
+	}
 
 	if shiftForward {
 		query.TimeRange.From = query.TimeRange.From.Add(interval)
@@ -390,6 +404,9 @@ func applyTimeShiftPost(series timeseries.TimeSeries, params ...interface{}) (ti
 	interval, err := gtime.ParseInterval(pInterval)
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
+	}
+	if interval == 0 {
+		return series, nil
 	}
 	if shiftForward == true {
 		interval = -interval

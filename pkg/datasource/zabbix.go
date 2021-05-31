@@ -95,7 +95,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 	}
 
 	for _, s := range series {
-		if int64(s.Len()) > query.MaxDataPoints && true {
+		if int64(s.Len()) > query.MaxDataPoints && query.Interval > 0 {
 			downsampleFunc := consolidateBy
 			if downsampleFunc == "" {
 				downsampleFunc = "avg"
