@@ -190,11 +190,13 @@ func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 	}
 
 	zabbixSettings := &ZabbixDatasourceSettings{
-		Trends:      zabbixSettingsDTO.Trends,
-		TrendsFrom:  trendsFrom,
-		TrendsRange: trendsRange,
-		CacheTTL:    cacheTTL,
-		Timeout:     time.Duration(timeout) * time.Second,
+		Trends:                  zabbixSettingsDTO.Trends,
+		TrendsFrom:              trendsFrom,
+		TrendsRange:             trendsRange,
+		CacheTTL:                cacheTTL,
+		Timeout:                 time.Duration(timeout) * time.Second,
+		DisableDataAlignment:    zabbixSettingsDTO.DisableDataAlignment,
+		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
 	}
 
 	return zabbixSettings, nil
