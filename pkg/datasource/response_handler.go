@@ -50,6 +50,7 @@ func convertHistoryToTimeSeries(history zabbix.History, items []*zabbix.Item) []
 		series = append(series, tsd)
 	}
 
+	timeseries.SortByItem(series)
 	return series
 }
 

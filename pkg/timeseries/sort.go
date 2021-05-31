@@ -2,6 +2,7 @@ package timeseries
 
 import (
 	"sort"
+	"strconv"
 )
 
 // SortBy sorts series by value calculated with provided aggFunc in given order
@@ -28,6 +29,24 @@ func SortBy(series []*TimeSeriesData, order string, aggFunc AggFunc) []*TimeSeri
 		}
 		series = reverseSeries
 	}
+
+	return series
+}
+
+func SortByItem(series []*TimeSeriesData) []*TimeSeriesData {
+	sort.Slice(series, func(i, j int) bool {
+		itemIDi, err := strconv.Atoi(series[i].Meta.Item.ID)
+		if err != nil {
+			return false
+		}
+
+		itemIDj, err := strconv.Atoi(series[j].Meta.Item.ID)
+		if err != nil {
+			return false
+		}
+
+		return itemIDi < itemIDj
+	})
 
 	return series
 }
