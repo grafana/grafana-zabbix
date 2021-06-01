@@ -33,7 +33,7 @@ func TransformNull(nullValue float64) TransformFunc {
 
 func TransformRemoveAboveValue(threshold float64) TransformFunc {
 	return func(point TimePoint) TimePoint {
-		if *point.Value > threshold {
+		if point.Value != nil && *point.Value > threshold {
 			point.Value = nil
 		}
 		return point
@@ -42,7 +42,7 @@ func TransformRemoveAboveValue(threshold float64) TransformFunc {
 
 func TransformRemoveBelowValue(threshold float64) TransformFunc {
 	return func(point TimePoint) TimePoint {
-		if *point.Value < threshold {
+		if point.Value != nil && *point.Value < threshold {
 			point.Value = nil
 		}
 		return point
