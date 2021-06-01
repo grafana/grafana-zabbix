@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"strings"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
@@ -48,6 +49,25 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	itemFilter := query.Item.Filter
 
 	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, appFilter, itemFilter, "num")
+	if err != nil {
+		return nil, err
+	}
+
+	frames, err := ds.queryNumericDataForItems(ctx, query, items)
+	if err != nil {
+		return nil, err
+	}
+
+	return frames, nil
+}
+
+func (ds *ZabbixDatasourceInstance) queryItemIdData(ctx context.Context, query *QueryModel) ([]*data.Frame, error) {
+	itemids := strings.Split(query.ItemIDs, ",")
+	for i, id := range itemids {
+		itemids[i] = strings.Trim(id, " ")
+	}
+
+	items, err := ds.zabbix.GetItemsByIDs(ctx, itemids)
 	if err != nil {
 		return nil, err
 	}

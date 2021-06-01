@@ -100,15 +100,21 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(request: DataQueryRequest<any>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
-    const isMetricQuery = request.targets.every(q => q.queryType === c.MODE_METRICS || q.mode === c.MODE_METRICS);
-    if (isMetricQuery) {
+    // Migrate old targets
+    request.targets = request.targets.map(t => {
+      // Prevent changes of original object
+      const target = _.cloneDeep(t);
+      return migrations.migrate(target);
+    });
+
+    if (isBackendQuery(request)) {
       return this.backendQuery(request);
     }
 
     // Create request for each target
-    const promises = _.map(request.targets, t => {
+    const promises = _.map(request.targets, target => {
       // Don't request for hidden targets
-      if (t.hide) {
+      if (target.hide) {
         return [];
       }
 
@@ -118,11 +124,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       // Add range variables
       request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
 
-      // Prevent changes of original object
-      let target = _.cloneDeep(t);
-
-      // Migrate old targets
-      target = migrations.migrate(target);
       this.replaceTargetVariables(target, request);
 
       // Apply Time-related functions (timeShift(), etc)
@@ -212,10 +213,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       // Migrate old targets
       target = migrations.migrate(target);
       this.replaceTargetVariables(target, request);
-
-      if (target.queryType !== c.MODE_METRICS) {
-        return null;
-      }
 
       return {
         ...target,
@@ -839,6 +836,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
     }
 
+    if (target.itemids) {
+      target.itemids = this.templateSrv.replace(target.itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
+    }
+
     _.forEach(target.functions, func => {
       func.params = _.map(func.params, param => {
         if (typeof param === 'number') {
@@ -968,4 +969,11 @@ function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
     }
   }
   return null;
+}
+
+function isBackendQuery(request: DataQueryRequest<any>): boolean {
+  return request.targets.every(q =>
+    q.queryType === c.MODE_METRICS ||
+    q.queryType === c.MODE_ITEMID
+  );
 }

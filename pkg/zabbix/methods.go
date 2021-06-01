@@ -274,6 +274,29 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 	return items, err
 }
 
+func (ds *Zabbix) GetItemsByIDs(ctx context.Context, itemids []string) ([]*Item, error) {
+	params := ZabbixAPIParams{
+		"itemids":     itemids,
+		"output":      []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
+		"webitems":    true,
+		"selectHosts": []string{"hostid", "name"},
+	}
+
+	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "item.get", Params: params})
+	if err != nil {
+		return nil, err
+	}
+
+	var items []*Item
+	err = convertTo(result, &items)
+	if err != nil {
+		return nil, err
+	}
+
+	items = expandItems(items)
+	return items, err
+}
+
 func (ds *Zabbix) GetAllApps(ctx context.Context, hostids []string) ([]Application, error) {
 	params := ZabbixAPIParams{
 		"output":  "extend",

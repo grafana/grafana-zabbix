@@ -82,7 +82,7 @@ export class ZabbixQueryController extends QueryCtrl {
   zabbix: any;
   replaceTemplateVars: any;
   templateSrv: TemplateSrv;
-  editorModes: Array<{ value: string; text: string; queryType: number; }>;
+  editorModes: Array<{ value: string; text: string; queryType: string; }>;
   slaPropertyList: Array<{ name: string; property: string; }>;
   slaIntervals: Array<{ text: string; value: string; }>;
   ackFilters: Array<{ text: string; value: number; }>;

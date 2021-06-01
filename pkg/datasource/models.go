@@ -8,6 +8,15 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
+const (
+	MODE_METRICS   = "0"
+	MODE_ITSERVICE = "1"
+	MODE_TEXT      = "2"
+	MODE_ITEMID    = "3"
+	MODE_TRIGGERS  = "4"
+	MODE_PROBLEMS  = "5"
+)
+
 // ZabbixDatasourceSettingsDTO model
 type ZabbixDatasourceSettingsDTO struct {
 	Trends      bool   `json:"trends"`
@@ -44,13 +53,19 @@ type ZabbixAPIResourceResponse struct {
 
 // QueryModel model
 type QueryModel struct {
-	Mode        int64           `json:"mode"`
-	Group       QueryFilter     `json:"group"`
-	Host        QueryFilter     `json:"host"`
-	Application QueryFilter     `json:"application"`
-	Item        QueryFilter     `json:"item"`
-	Functions   []QueryFunction `json:"functions,omitempty"`
-	Options     QueryOptions    `json:"options"`
+	// Deprecated `mode` field, use QueryType instead
+	Mode int64 `json:"mode"`
+
+	Group       QueryFilter `json:"group"`
+	Host        QueryFilter `json:"host"`
+	Application QueryFilter `json:"application"`
+	Item        QueryFilter `json:"item"`
+
+	// Item ID mode
+	ItemIDs string `json:"itemids,omitempty"`
+
+	Functions []QueryFunction `json:"functions,omitempty"`
+	Options   QueryOptions    `json:"options"`
 
 	// Direct from the gRPC interfaces
 	RefID         string            `json:"-"`
