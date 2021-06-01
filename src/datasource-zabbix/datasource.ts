@@ -15,7 +15,7 @@ import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
-import { getBackendSrv, getTemplateSrv, toDataQueryResponse } from '@grafana/runtime';
+import { getBackendSrv, getTemplateSrv, toDataQueryError, toDataQueryResponse } from '@grafana/runtime';
 import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
@@ -101,18 +101,19 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    */
   query(request: DataQueryRequest<any>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
     // Migrate old targets
-    request.targets = request.targets.map(t => {
+    const requestTargets = request.targets.map(t => {
       // Prevent changes of original object
       const target = _.cloneDeep(t);
       return migrations.migrate(target);
     });
 
-    if (isBackendQuery(request)) {
-      return this.backendQuery(request);
-    }
+    const backendResponsePromise = this.backendQuery({...request, targets: requestTargets});
+    // if (isBackendQuery(request)) {
+    // }
 
     // Create request for each target
-    const promises = _.map(request.targets, target => {
+    const frontendTargets = requestTargets.filter(t => !isBackendTarget(t));
+    const promises = _.map(frontendTargets, target => {
       // Don't request for hidden targets
       if (target.hide) {
         return [];
@@ -172,7 +173,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     });
 
     // Data for panel (all targets)
-    return Promise.all(_.flatten(promises))
+    const frontendResponsePromise: Promise<DataQueryResponse> = Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then(data => {
         if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
@@ -182,19 +183,28 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
             data = responseHandler.convertToWide(data);
           }
         }
-        return data;
-      }).then(data => {
+        return { data };
+      });
+
+    return Promise.all([backendResponsePromise, frontendResponsePromise])
+      .then(rsp => {
+        // Merge backend and frontend queries results
+        const [backendRes, frontendRes] = rsp;
+        if (frontendRes.data) {
+          backendRes.data = backendRes.data.concat(frontendRes.data);
+        }
+
         return {
-          data,
+          data: backendRes.data,
           state: LoadingState.Done,
           key: request.requestId,
         };
       });
   }
 
-  backendQuery(request: DataQueryRequest<any>): Observable<DataQueryResponse> {
+  async backendQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
     const { intervalMs, maxDataPoints, range, requestId } = request;
-    const targets = request.targets;
+    const targets = request.targets.filter(isBackendTarget);
 
     // Add range variables
     request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
@@ -224,7 +234,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     // Return early if no queries exist
     if (!queries.length) {
-      return of({ data: [] });
+      return Promise.resolve({ data: [] });
     }
 
     const body: any = { queries };
@@ -235,64 +245,27 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       body.to = range.to.valueOf().toString();
     }
 
-    return getBackendSrv()
-      .fetch({
+    let rsp: any;
+    try {
+      rsp = await getBackendSrv().fetch({
         url: '/api/ds/query',
         method: 'POST',
         data: body,
         requestId,
-      })
-      .pipe(
-        map((rsp: any) => {
-          const resp = toDataQueryResponse(rsp);
-          this.sortByRefId(resp);
-          this.applyFrontendFunctions(resp, request);
-          if (responseHandler.isConvertibleToWide(resp.data)) {
-            console.log('Converting response to the wide format');
-            resp.data = responseHandler.convertToWide(resp.data);
-          }
-          return resp;
-        }),
-        catchError((err) => {
-          return of(toDataQueryResponse(err));
-        })
-      );
-  }
-
-  doTsdbRequest(options) {
-    const tsdbRequestData: any = {
-      queries: options.targets.map(target => {
-        target.datasourceId = this.datasourceId;
-        target.queryType = 'zabbixAPI';
-        return target;
-      }),
-    };
-
-    if (options.range) {
-      tsdbRequestData.from = options.range.from.valueOf().toString();
-      tsdbRequestData.to = options.range.to.valueOf().toString();
+      }).toPromise();
+    } catch (err) {
+      return toDataQueryResponse(err);
     }
 
-    return getBackendSrv().post('/api/ds/query', tsdbRequestData);
-  }
+    const resp = toDataQueryResponse(rsp);
+    this.sortByRefId(resp);
+    this.applyFrontendFunctions(resp, request);
+    if (responseHandler.isConvertibleToWide(resp.data)) {
+      console.log('Converting response to the wide format');
+      resp.data = responseHandler.convertToWide(resp.data);
+    }
 
-  /**
-   * @returns {Promise<TSDBResponse>}
-   */
-  doTSDBConnectionTest() {
-    /**
-     * @type {{ queries: ZabbixConnectionTestQuery[] }}
-     */
-    const tsdbRequestData = {
-      queries: [
-        {
-          datasourceId: this.datasourceId,
-          queryType: 'connectionTest'
-        }
-      ]
-    };
-
-    return getBackendSrv().post('/api/tsdb/query', tsdbRequestData);
+    return resp;
   }
 
   /**
@@ -972,8 +945,10 @@ function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
 }
 
 function isBackendQuery(request: DataQueryRequest<any>): boolean {
-  return request.targets.every(q =>
-    q.queryType === c.MODE_METRICS ||
-    q.queryType === c.MODE_ITEMID
-  );
+  return request.targets.every(isBackendTarget);
+}
+
+function isBackendTarget(target: any): boolean {
+  return target.queryType === c.MODE_METRICS ||
+    target.queryType === c.MODE_ITEMID;
 }

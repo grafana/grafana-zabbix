@@ -51,7 +51,9 @@ function migrateQueryType(target) {
   }
 
   // queryType is a string in query model
-  target.queryType = (target.queryType as number).toString();
+  if (typeof target.queryType === 'number') {
+    target.queryType = (target.queryType as number)?.toString();
+  }
 }
 
 function migrateSLA(target) {
