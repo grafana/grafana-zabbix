@@ -3,9 +3,12 @@ package datasource
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 const (
@@ -119,6 +122,22 @@ func ReadQuery(query backend.DataQuery) (QueryModel, error) {
 	}
 	if err := json.Unmarshal(query.JSON, &model); err != nil {
 		return model, fmt.Errorf("could not read query: %w", err)
+	}
+
+	if model.QueryType == "" {
+		queryJSON, err := simplejson.NewJson(query.JSON)
+		if err != nil {
+			return model, fmt.Errorf("could not read query JSON: %w", err)
+		}
+
+		queryType, err := queryJSON.Get("queryType").Int64()
+		if err != nil {
+			log.DefaultLogger.Warn("could not read query type", "error", err)
+			log.DefaultLogger.Debug("setting query type to default value")
+			model.QueryType = "0"
+		} else {
+			model.QueryType = strconv.FormatInt(queryType, 10)
+		}
 	}
 
 	return model, nil
