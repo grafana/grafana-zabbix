@@ -77,8 +77,8 @@ function sortSeries(direction, timeseries: any[]) {
 function setAlias(alias: string, frame: DataFrame) {
   if (frame.fields?.length <= 2) {
     const valueFileld = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
-    if (valueFileld?.state?.scopedVars) {
-      alias = getTemplateSrv().replace(alias, valueFileld?.state?.scopedVars);
+    if (valueFileld?.config?.custom?.scopedVars) {
+      alias = getTemplateSrv().replace(alias, valueFileld?.config?.custom?.scopedVars);
     }
     frame.name = alias;
     return frame;
@@ -87,8 +87,8 @@ function setAlias(alias: string, frame: DataFrame) {
   for (let fieldIndex = 0; fieldIndex < frame.fields.length; fieldIndex++) {
     const field = frame.fields[fieldIndex];
     if (field.type !== FieldType.time) {
-      if (field?.state?.scopedVars) {
-        alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
+      if (field?.config?.custom?.scopedVars) {
+        alias = getTemplateSrv().replace(alias, field?.config?.custom?.scopedVars);
       }
       field.name = alias;
     }

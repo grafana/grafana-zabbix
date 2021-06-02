@@ -111,6 +111,11 @@ type QueryFunctionParamDef struct {
 
 type QueryFunctionParam = interface{}
 
+type ScopedVar struct {
+	Text  string `json:"text"`
+	Value string `json:"value"`
+}
+
 // ReadQuery will read and validate Settings from the DataSourceConfg
 func ReadQuery(query backend.DataQuery) (QueryModel, error) {
 	model := QueryModel{

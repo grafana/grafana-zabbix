@@ -105,9 +105,29 @@ func convertTimeSeriesToDataFrames(series []*timeseries.TimeSeriesData) []*data.
 func seriesToDataFrame(series *timeseries.TimeSeriesData) *data.Frame {
 	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
 	timeFileld.Name = data.TimeSeriesTimeFieldName
+
 	seriesName := series.Meta.Name
 	valueField := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
 	valueField.Name = data.TimeSeriesValueFieldName
+
+	item := series.Meta.Item
+	scopedVars := map[string]ScopedVar{
+		"__zbx_item":          {Value: item.Name},
+		"__zbx_item_name":     {Value: item.Name},
+		"__zbx_item_key":      {Value: item.Key},
+		"__zbx_item_interval": {Value: item.Delay},
+		"__zbx_host":          {Value: item.Delay},
+	}
+	if len(item.Hosts) > 0 {
+		scopedVars["__zbx_host"] = ScopedVar{Value: item.Hosts[0].Name}
+		scopedVars["__zbx_host_name"] = ScopedVar{Value: item.Hosts[0].Name}
+	}
+	valueField.Config = &data.FieldConfig{
+		Custom: map[string]interface{}{
+			"scopedVars": scopedVars,
+		},
+	}
+
 	frame := data.NewFrame(seriesName, timeFileld, valueField)
 
 	for _, point := range series.TS {
