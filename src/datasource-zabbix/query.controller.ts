@@ -201,11 +201,12 @@ export class ZabbixQueryController extends QueryCtrl {
       this.onTargetBlur();
     });
 
-    this.init = function() {
+    this.init = () => {
       let target = this.target;
 
       // Migrate old targets
       target = migrations.migrate(target);
+      this.refresh();
 
       const scopeDefaults = {
         metric: {},
