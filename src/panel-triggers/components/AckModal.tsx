@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { cx, css } from 'emotion';
+import { cx, css } from '@emotion/css';
 import { ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_CHANGE_SEVERITY, ZBX_ACK_ACTION_CLOSE } from '../../datasource-zabbix/constants';
 import { Button, VerticalGroup, Spinner, Modal, Input, Checkbox, RadioButtonGroup, stylesFactory, withTheme, Themeable, TextArea } from '@grafana/ui';
 import { FAIcon } from '../../components';

@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { cx, css } from 'emotion';
+import { cx, css } from '@emotion/css';
 import { GrafanaTheme, SelectableValue } from '@grafana/data';
 import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable } from '@grafana/ui';
 import { ZBXScript, APIExecuteScriptResponse } from '../../datasource-zabbix/zabbix/connectors/zabbix_api/types';

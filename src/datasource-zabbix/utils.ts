@@ -457,10 +457,12 @@ export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | nu
 
   return (mapping.mappings as any[]).map((m, i) => {
     const valueMapping: ValueMapping = {
-      id: i,
+      // id: i,
       type: MappingType.ValueToText,
-      value: m.value,
-      text: m.newvalue,
+      options: {
+        value: m.value,
+        text: m.newvalue,
+      }
     };
     return valueMapping;
   });

@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { cx, css } from 'emotion';
+import { cx, css } from '@emotion/css';
 import { Manager, Popper as ReactPopper, Reference } from 'react-popper';
 import Transition from 'react-transition-group/Transition';
 import { stylesFactory } from '@grafana/ui';

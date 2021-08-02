@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { cx, css } from 'emotion';
+import { cx, css } from '@emotion/css';
 import { stylesFactory, useTheme } from '@grafana/ui';
 import { GrafanaTheme, GrafanaThemeType } from '@grafana/data';
 import { FAIcon } from '../FAIcon/FAIcon';
