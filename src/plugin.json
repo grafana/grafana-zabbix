@@ -26,7 +26,7 @@
       {"name": "Metric Editor", "path": "img/screenshot-metric_editor.png"},
       {"name": "Triggers", "path": "img/screenshot-triggers.png"}
     ],
-    "version": "4.1.4",
+    "version": "4.2-pre",
     "updated": "2021-03-09"
   },
 
