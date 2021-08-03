@@ -228,7 +228,7 @@
       transition-property: opacity, max-height;
 
       &.show {
-        max-height: 23rem;
+        max-height: 32rem;
         opacity: 1;
         box-shadow: inset -3px 3px 10px $problem-container-shadow;
       }
