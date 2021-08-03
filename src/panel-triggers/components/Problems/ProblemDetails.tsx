@@ -102,106 +102,110 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
-        <div className="problem-details">
-          <div className="problem-details-row">
-            <div className="problem-value-container">
-              <div className="problem-age">
-                <FAIcon icon="clock-o" />
-                <span>{age}</span>
+        <div className="problem-details-head">
+          <div className="problem-actions-left">
+            <ExploreButton problem={problem} panelId={this.props.panelId} />
+          </div>
+          {problem.showAckButton &&
+            <div className="problem-actions">
+              <ModalController>
+                {({ showModal, hideModal }) => (
+                  <ExecScriptButton
+                    className="problem-action-button"
+                    onClick={() => {
+                      showModal(ExecScriptModal, {
+                        getScripts: this.getScripts,
+                        onSubmit: this.onExecuteScript,
+                        onDismiss: hideModal,
+                      });
+                    }}
+                  />
+                )}
+              </ModalController>
+              <ModalController>
+                {({ showModal, hideModal }) => (
+                  <AckButton
+                    className="problem-action-button"
+                    onClick={() => {
+                      showModal(AckModal, {
+                        canClose: problem.manual_close === '1',
+                        severity: problemSeverity,
+                        onSubmit: this.ackProblem,
+                        onDismiss: hideModal,
+                      });
+                    }}
+                  />
+                )}
+              </ModalController>
+            </div>
+          }
+          <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
+        </div>
+        <div className="problem-details-body">
+          <div className="problem-details">
+            <div className="problem-details-row">
+              <div className="problem-value-container">
+                <div className="problem-age">
+                  <FAIcon icon="clock-o" />
+                  <span>{age}</span>
+                </div>
+                {problem.items && <ProblemItems items={problem.items} />}
               </div>
-              {problem.items && <ProblemItems items={problem.items} />}
             </div>
-            <div className="problem-actions-left">
-              <ExploreButton problem={problem} panelId={this.props.panelId} />
-            </div>
-            <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
-            {problem.showAckButton &&
-              <div className="problem-actions">
-                <ModalController>
-                  {({ showModal, hideModal }) => (
-                    <ExecScriptButton
-                      className="navbar-button navbar-button--settings"
-                      onClick={() => {
-                        showModal(ExecScriptModal, {
-                          getScripts: this.getScripts,
-                          onSubmit: this.onExecuteScript,
-                          onDismiss: hideModal,
-                        });
-                      }}
-                    />
-                  )}
-                </ModalController>
-                <ModalController>
-                  {({ showModal, hideModal }) => (
-                    <AckButton
-                      className="navbar-button navbar-button--settings"
-                      onClick={() => {
-                        showModal(AckModal, {
-                          canClose: problem.manual_close === '1',
-                          severity: problemSeverity,
-                          onSubmit: this.ackProblem,
-                          onDismiss: hideModal,
-                        });
-                      }}
-                    />
-                  )}
-                </ModalController>
+            {problem.comments &&
+              <div className="problem-description-row">
+                <div className="problem-description">
+                  <Tooltip placement="right" content={problem.comments}>
+                    <span className="description-label">Description:&nbsp;</span>
+                  </Tooltip>
+                  <span>{problem.comments}</span>
+                </div>
+              </div>
+            }
+            {problem.tags && problem.tags.length > 0 &&
+              <div className="problem-tags">
+                {problem.tags && problem.tags.map(tag =>
+                  <EventTag
+                    key={tag.tag + tag.value}
+                    tag={tag}
+                    highlight={tag.tag === problem.correlation_tag}
+                    onClick={this.handleTagClick}
+                  />)
+                }
+              </div>
+            }
+            {this.props.showTimeline && this.state.events.length > 0 &&
+              <ProblemTimeline events={this.state.events} timeRange={this.props.timeRange} />
+            }
+            {showAcknowledges && !wideLayout &&
+              <div className="problem-ack-container">
+                <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
+                <AcknowledgesList acknowledges={problem.acknowledges} />
               </div>
             }
           </div>
-          {problem.comments &&
-            <div className="problem-description-row">
-              <div className="problem-description">
-                <Tooltip placement="right" content={problem.comments}>
-                  <span className="description-label">Description:&nbsp;</span>
-                </Tooltip>
-                <span>{problem.comments}</span>
+          {showAcknowledges && wideLayout &&
+            <div className="problem-details-middle">
+              <div className="problem-ack-container">
+                <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
+                <AcknowledgesList acknowledges={problem.acknowledges} />
               </div>
             </div>
           }
-          {problem.tags && problem.tags.length > 0 &&
-            <div className="problem-tags">
-              {problem.tags && problem.tags.map(tag =>
-                <EventTag
-                  key={tag.tag + tag.value}
-                  tag={tag}
-                  highlight={tag.tag === problem.correlation_tag}
-                  onClick={this.handleTagClick}
-                />)
-              }
-            </div>
-          }
-          {this.props.showTimeline && this.state.events.length > 0 &&
-            <ProblemTimeline events={this.state.events} timeRange={this.props.timeRange} />
-          }
-          {showAcknowledges && !wideLayout &&
-            <div className="problem-ack-container">
-              <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
-              <AcknowledgesList acknowledges={problem.acknowledges} />
-            </div>
-          }
-        </div>
-        {showAcknowledges && wideLayout &&
-          <div className="problem-details-middle">
-            <div className="problem-ack-container">
-              <h6><FAIcon icon="reply-all" /> Acknowledges</h6>
-              <AcknowledgesList acknowledges={problem.acknowledges} />
-            </div>
-          </div>
-        }
-        <div className="problem-details-right">
-          <div className="problem-details-right-item">
-            <FAIcon icon="database" />
-            <span>{problem.datasource}</span>
-          </div>
-          {problem.proxy &&
+          <div className="problem-details-right">
             <div className="problem-details-right-item">
-              <FAIcon icon="cloud" />
-              <span>{problem.proxy}</span>
+              <FAIcon icon="database" />
+              <span>{problem.datasource}</span>
             </div>
-          }
-          {problem.groups && <ProblemGroups groups={problem.groups} className="problem-details-right-item" />}
-          {problem.hosts && <ProblemHosts hosts={problem.hosts} className="problem-details-right-item" />}
+            {problem.proxy &&
+              <div className="problem-details-right-item">
+                <FAIcon icon="cloud" />
+                <span>{problem.proxy}</span>
+              </div>
+            }
+            {problem.groups && <ProblemGroups groups={problem.groups} className="problem-details-right-item" />}
+            {problem.hosts && <ProblemHosts hosts={problem.hosts} className="problem-details-right-item" />}
+          </div>
         </div>
       </div>
     );

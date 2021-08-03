@@ -215,6 +215,7 @@
 
     .problem-details-container {
       display: flex;
+      flex-direction: column;
       padding-top: 4px;
       background-color: $problem-details-background;
       border-bottom-width: 0px;
@@ -227,7 +228,7 @@
       transition-property: opacity, max-height;
 
       &.show {
-        max-height: 20rem;
+        max-height: 23rem;
         opacity: 1;
         box-shadow: inset -3px 3px 10px $problem-container-shadow;
       }
@@ -244,6 +245,15 @@
         }
       }
 
+      .problem-details-head {
+        display: flex;
+        padding: 0.5rem 1rem 0.5rem 1.2rem;
+      }
+
+      .problem-details-body {
+        display: flex;
+      }
+
       .problem-details {
         position: relative;
         flex: 10 1 auto;
@@ -256,7 +266,8 @@
 
         .problem-description {
           position: relative;
-          height: 4.5rem;
+          max-height: 4.5rem;
+          min-height: 3rem;
           overflow: hidden;
 
           &:after {
@@ -358,7 +369,11 @@
 
       .problem-actions {
         display: flex;
-        margin-left: 1.6rem;
+        margin-right: 1.6rem;
+      }
+
+      .problem-action-button {
+        margin-right: 0.2rem;
       }
 
       .problem-actions-left {
@@ -376,6 +391,7 @@
       }
 
       .problem-ack-container {
+        max-height: 8rem;
         margin-top: 0.6rem;
         margin-left: -0.6rem;
         padding: 1.2rem 0.6rem;
