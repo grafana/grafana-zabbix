@@ -108,11 +108,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     });
 
     const backendResponsePromise = this.backendQuery({...request, targets: requestTargets});
-    // if (isBackendQuery(request)) {
-    // }
 
     // Create request for each target
-    const frontendTargets = requestTargets.filter(t => !isBackendTarget(t));
+    const frontendTargets = requestTargets.filter(t => !this.isBackendTarget(t));
     const promises = _.map(frontendTargets, target => {
       // Don't request for hidden targets
       if (target.hide) {
@@ -204,7 +202,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
   async backendQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
     const { intervalMs, maxDataPoints, range, requestId } = request;
-    const targets = request.targets.filter(isBackendTarget);
+    const targets = request.targets.filter(this.isBackendTarget);
 
     // Add range variables
     request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
@@ -834,6 +832,15 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     );
     return useTrends;
   }
+
+  isBackendTarget = (target: any): boolean => {
+    if (this.enableDirectDBConnection) {
+      return false;
+    }
+
+    return target.queryType === c.MODE_METRICS ||
+      target.queryType === c.MODE_ITEMID;
+  }
 }
 
 function bindFunctionDefs(functionDefs, category) {
@@ -942,13 +949,4 @@ function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
     }
   }
   return null;
-}
-
-function isBackendQuery(request: DataQueryRequest<any>): boolean {
-  return request.targets.every(isBackendTarget);
-}
-
-function isBackendTarget(target: any): boolean {
-  return target.queryType === c.MODE_METRICS ||
-    target.queryType === c.MODE_ITEMID;
 }
