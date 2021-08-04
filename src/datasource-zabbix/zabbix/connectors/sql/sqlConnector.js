@@ -109,7 +109,7 @@ export class SQLConnector extends DBConnector {
     };
 
     return getBackendSrv().datasourceRequest({
-      url: '/api/tsdb/query',
+      url: '/api/ds/query',
       method: 'POST',
       data: {
         queries: [queryDef],
@@ -118,7 +118,7 @@ export class SQLConnector extends DBConnector {
     .then(response => {
       let results = response.data.results;
       if (results['A']) {
-        return results['A'].series;
+        return results['A'].frames;
       } else {
         return null;
       }

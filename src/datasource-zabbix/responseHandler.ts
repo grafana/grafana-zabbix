@@ -2,7 +2,19 @@ import _ from 'lodash';
 import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
 import * as utils from './utils';
-import { ArrayVector, DataFrame, Field, FieldType, MutableDataFrame, MutableField, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
+import {
+  ArrayVector,
+  DataFrame,
+  dataFrameFromJSON,
+  DataFrameJSON,
+  Field,
+  FieldType,
+  getTimeField,
+  MutableDataFrame,
+  MutableField,
+  TIME_SERIES_TIME_FIELD_NAME,
+  TIME_SERIES_VALUE_FIELD_NAME,
+} from '@grafana/data';
 import { ZabbixMetricsQuery } from './types';
 
 /**
@@ -139,6 +151,51 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
 
   const mutableFrame = new MutableDataFrame(frame);
   return mutableFrame;
+}
+
+export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
+  const series = [];
+  if (response.length === 0) {
+    return [];
+  }
+
+  for (const frameJSON of response) {
+    const frame = dataFrameFromJSON(frameJSON);
+    const { timeField, timeIndex } = getTimeField(frame);
+    for (let i = 0; i < frame.fields.length; i++) {
+      const field = frame.fields[i];
+      if (i === timeIndex || !field.values || !field.values.length) {
+        continue;
+      }
+
+      const s = [];
+      for (let j = 0; j < field.values.length; j++) {
+        const v = field.values.get(j);
+        if (v !== null) {
+          s.push({ time: timeField.values.get(j) / 1000, value: v });
+        }
+      }
+
+      const itemid = field.name;
+      const item = _.find(items, {'itemid': itemid});
+      let interval = utils.parseItemInterval(item.delay);
+      if (interval === 0) {
+        interval = null;
+      }
+      const timeSeriesData = {
+        ts: s,
+        meta: {
+          name: item.name,
+          item,
+          interval,
+        }
+      };
+
+      series.push(timeSeriesData);
+    }
+  }
+
+  return series;
 }
 
 export function isConvertibleToWide(data: DataFrame[]): boolean {
@@ -441,6 +498,7 @@ export default {
   handleTriggersResponse,
   sortTimeseries,
   seriesToDataFrame,
+  dataResponseToTimeSeries,
   isConvertibleToWide,
   convertToWide,
   alignFrames,

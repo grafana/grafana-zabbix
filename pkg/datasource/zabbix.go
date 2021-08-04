@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"strings"
 	"time"
 
@@ -111,6 +112,43 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 	}
 
 	series, err = applyFunctions(series, query.Functions)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, s := range series {
+		if int64(s.Len()) > query.MaxDataPoints && query.Interval > 0 {
+			downsampleFunc := consolidateBy
+			if downsampleFunc == "" {
+				downsampleFunc = "avg"
+			}
+			downsampled, err := applyGroupBy(s.TS, query.Interval.String(), downsampleFunc)
+			if err == nil {
+				s.TS = downsampled
+			} else {
+				ds.logger.Debug("Error downsampling series", "error", err)
+			}
+		}
+	}
+
+	frames := convertTimeSeriesToDataFrames(series)
+	return frames, nil
+}
+
+func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, query *QueryModel, series []*timeseries.TimeSeriesData) ([]*data.Frame, error) {
+	consolidateBy := ds.getConsolidateBy(query)
+
+	// Align time series data if possible
+	useTrend := ds.isUseTrend(query.TimeRange)
+	if !query.Options.DisableDataAlignment && !ds.Settings.DisableDataAlignment && !useTrend {
+		for _, s := range series {
+			if s.Meta.Interval != nil {
+				s.TS = s.TS.Align(*s.Meta.Interval)
+			}
+		}
+	}
+
+	series, err := applyFunctions(series, query.Functions)
 	if err != nil {
 		return nil, err
 	}

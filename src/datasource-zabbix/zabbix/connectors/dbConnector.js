@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { getDataSourceSrv } from '@grafana/runtime';
+import responseHandler from "../../responseHandler";
 
 export const DEFAULT_QUERY_LIMIT = 10000;
 export const HISTORY_TO_TABLE_MAP = {
@@ -92,10 +93,6 @@ export class DBConnector {
   getTrends() {
     throw new ZabbixNotImplemented('getTrends()');
   }
-
-  handleGrafanaTSResponse(history, items, addHostName = true) {
-    return convertGrafanaTSResponse(history, items, addHostName);
-  }
 }
 
 // Define Zabbix DB Connector exception type for non-implemented methods
@@ -111,6 +108,12 @@ export class ZabbixNotImplemented {
   }
 }
 
+export function handleDBDataSourceResponse(response, items) {
+  const series = responseHandler.dataResponseToTimeSeries(response, items);
+  // return convertGrafanaTSResponse(series, items, addHostName);
+  return series;
+}
+
 /**
  * Converts time series returned by the data source into format that Grafana expects
  * time_series is Array of series:
@@ -121,7 +124,11 @@ export class ZabbixNotImplemented {
  * }]
  * ```
  */
-function convertGrafanaTSResponse(time_series, items, addHostName) {
+export function convertGrafanaTSResponse(time_series, items, addHostName) {
+  if (time_series.length === 0) {
+    return [];
+  }
+
   //uniqBy is needed to deduplicate
   const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
   let grafanaSeries = _.map(_.compact(time_series), series => {

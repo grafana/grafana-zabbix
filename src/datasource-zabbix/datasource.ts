@@ -15,8 +15,18 @@ import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
-import { getBackendSrv, getTemplateSrv, toDataQueryError, toDataQueryResponse } from '@grafana/runtime';
-import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
+import {BackendSrvRequest, getBackendSrv, getTemplateSrv, toDataQueryError, toDataQueryResponse} from '@grafana/runtime';
+import {
+  DataFrame,
+  dataFrameFromJSON,
+  DataQueryRequest,
+  DataQueryResponse,
+  DataSourceApi,
+  DataSourceInstanceSettings,
+  FieldType,
+  isDataFrame,
+  LoadingState
+} from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -284,36 +294,58 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
     }
 
-    const valueMappings = await this.zabbix.getValueMappings();
-
-    const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, target, valueMappings));
-    return dataFrames;
+    const frames = [];
+    for (const frameJSON of result) {
+      const frame = dataFrameFromJSON(frameJSON);
+      frames.push(frame);
+    }
+    return frames;
+    // const valueMappings = await this.zabbix.getValueMappings();
+    //
+    // const dataFrames = (result as any).map(s => responseHandler.seriesToDataFrame(s, target, valueMappings));
+    // return dataFrames;
   }
 
   /**
    * Query history for numeric items
    */
-  queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, options) {
-    let getHistoryPromise;
+  async queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, options) {
+    let history;
     options.valueType = this.getTrendValueType(target);
     options.consolidateBy = getConsolidateBy(target) || options.valueType;
     const disableDataAlignment = this.disableDataAlignment || target.options?.disableDataAlignment;
 
     if (useTrends) {
-      getHistoryPromise = this.zabbix.getTrends(items, timeRange, options)
-      .then(timeseries => {
-        return !disableDataAlignment ? this.fillTrendTimeSeriesWithNulls(timeseries) : timeseries;
-      });
+      history = await this.zabbix.getTrends(items, timeRange, options);
+      // .then(timeseries => {
+      //   return !disableDataAlignment ? this.fillTrendTimeSeriesWithNulls(timeseries) : timeseries;
+      // });
     } else {
-      getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options)
-      .then(timeseries => {
-        return !disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
-      });
+      history = await this.zabbix.getHistoryTS(items, timeRange, options);
+      // .then(timeseries => {
+      //   return !disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
+      // });
     }
 
-    return getHistoryPromise
-    .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
-    .then(timeseries => downsampleSeries(timeseries, options));
+    const requestOptions: BackendSrvRequest = {
+      url: `/api/datasources/${this.datasourceId}/resources/db-connection-post`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      hideFromInspector: false,
+      data: {
+        query: target,
+        series: history,
+      },
+    };
+
+    const response: any = await getBackendSrv().fetch<any>(requestOptions).toPromise();
+    return response.data;
+
+    // return getHistoryPromise
+    // .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
+    // .then(timeseries => downsampleSeries(timeseries, options));
   }
 
   getTrendValueType(target) {
@@ -453,10 +485,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return this.zabbix.getItemsByIDs(itemids)
     .then(items => {
       return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
-    })
-    .then(result => {
-      return result.map(s => responseHandler.seriesToDataFrame(s, target));
     });
+    // .then(result => {
+    //   return (result as any).map(s => responseHandler.seriesToDataFrame(s, target));
+    // });
   }
 
   /**

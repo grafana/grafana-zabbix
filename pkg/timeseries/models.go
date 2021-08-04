@@ -1,6 +1,7 @@
 package timeseries
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
@@ -9,6 +10,22 @@ import (
 type TimePoint struct {
 	Time  time.Time
 	Value *float64
+}
+
+func (p *TimePoint) UnmarshalJSON(data []byte) error {
+	point := &struct {
+		Time  int64
+		Value *float64
+	}{}
+
+	if err := json.Unmarshal(data, &point); err != nil {
+		return err
+	}
+
+	p.Value = point.Value
+	p.Time = time.Unix(point.Time, 0)
+
+	return nil
 }
 
 type TimeSeries []TimePoint

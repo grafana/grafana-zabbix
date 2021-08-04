@@ -5,7 +5,7 @@ import * as utils from '../utils';
 import responseHandler from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
 // import { ZabbixNotImplemented } from './connectors/dbConnector';
-import { DBConnector } from './connectors/dbConnector';
+import { DBConnector, handleDBDataSourceResponse } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
@@ -432,7 +432,7 @@ export class Zabbix implements ZabbixConnector {
     const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
       return this.getHistoryDB(items, timeFrom, timeTo, options)
-      .then(history => this.dbConnector.handleGrafanaTSResponse(history, items));
+      .then(history => handleDBDataSourceResponse(history, items));
     } else {
       return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
       .then(history => responseHandler.handleHistory(history, items));
@@ -443,7 +443,7 @@ export class Zabbix implements ZabbixConnector {
     const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
       return this.getTrendsDB(items, timeFrom, timeTo, options)
-      .then(history => this.dbConnector.handleGrafanaTSResponse(history, items));
+      .then(history => handleDBDataSourceResponse(history, items));
     } else {
       const valueType = options.consolidateBy || options.valueType;
       return this.zabbixAPI.getTrend(items, timeFrom, timeTo)

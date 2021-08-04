@@ -3,6 +3,7 @@ package datasource
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"strconv"
 	"time"
 
@@ -42,6 +43,11 @@ type ZabbixDatasourceSettings struct {
 
 	DisableDataAlignment    bool `json:"disableDataAlignment"`
 	DisableReadOnlyUsersAck bool `json:"disableReadOnlyUsersAck"`
+}
+
+type DBConnectionPostProcessingRequest struct {
+	Query  QueryModel                   `json:"query"`
+	Series []*timeseries.TimeSeriesData `json:"series"`
 }
 
 type ZabbixAPIResourceRequest struct {
