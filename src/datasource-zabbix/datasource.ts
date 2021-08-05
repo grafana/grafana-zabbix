@@ -313,22 +313,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
     }
 
-    const frames = [];
-    for (const frameJSON of result) {
-      const frame = dataFrameFromJSON(frameJSON);
-      frame.refId = target.refId;
-      frames.push(frame);
-    }
-
-    const resp = { data: frames };
-    this.sortByRefId(resp);
-    this.applyFrontendFunctions(resp, request);
-    if (responseHandler.isConvertibleToWide(resp.data)) {
-      console.log('Converting response to the wide format');
-      resp.data = responseHandler.convertToWide(resp.data);
-    }
-
-    return resp.data;
+    return this.handleBackendPostProcessingResponse(result, request, target);
   }
 
   /**
@@ -345,6 +330,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       history = await this.zabbix.getHistoryTS(items, timeRange, options);
     }
 
+    return await this.invokeDataProcessingQuery(history, target);
+  }
+
+  async invokeDataProcessingQuery(timeSeriesData, query) {
     // Request backend for data processing
     const requestOptions: BackendSrvRequest = {
       url: `/api/datasources/${this.datasourceId}/resources/db-connection-post`,
@@ -354,13 +343,32 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       },
       hideFromInspector: false,
       data: {
-        query: target,
-        series: history,
+        series: timeSeriesData,
+        query,
       },
     };
 
     const response: any = await getBackendSrv().fetch<any>(requestOptions).toPromise();
     return response.data;
+  }
+
+  handleBackendPostProcessingResponse(response, request, target) {
+    const frames = [];
+    for (const frameJSON of response) {
+      const frame = dataFrameFromJSON(frameJSON);
+      frame.refId = target.refId;
+      frames.push(frame);
+    }
+
+    const resp = { data: frames };
+    this.sortByRefId(resp);
+    this.applyFrontendFunctions(resp, request);
+    if (responseHandler.isConvertibleToWide(resp.data)) {
+      console.log('Converting response to the wide format');
+      resp.data = responseHandler.convertToWide(resp.data);
+    }
+
+    return resp.data;
   }
 
   getTrendValueType(target) {
@@ -393,62 +401,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       utils.sequence(aliasFunctions)(frame);
     }
     return response;
-  }
-
-  applyDataProcessingFunctions(timeseries_data, target) {
-    const transformFunctions = bindFunctionDefs(target.functions, 'Transform');
-    const aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
-    const filterFunctions = bindFunctionDefs(target.functions, 'Filter');
-    const aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
-
-    // Apply transformation functions
-    timeseries_data = _.cloneDeep(_.map(timeseries_data, timeseries => {
-      timeseries.datapoints = utils.sequence(transformFunctions)(timeseries.datapoints);
-      return timeseries;
-    }));
-
-    // Apply filter functions
-    if (filterFunctions.length) {
-      timeseries_data = utils.sequence(filterFunctions)(timeseries_data);
-    }
-
-    // Apply aggregations
-    if (aggregationFunctions.length) {
-      let dp = _.map(timeseries_data, 'datapoints');
-      dp = utils.sequence(aggregationFunctions)(dp);
-
-      const aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
-      const lastAgg = _.findLast(target.functions, func => {
-        return _.includes(aggFuncNames, func.def.name);
-      });
-
-      timeseries_data = [{
-        target: lastAgg.text,
-        datapoints: dp
-      }];
-    }
-
-    // Apply alias functions
-    _.forEach(timeseries_data, utils.sequence(aliasFunctions).bind(this));
-
-    // Apply Time-related functions (timeShift(), etc)
-    // Find timeShift() function and get specified trend value
-    this.applyTimeShiftFunction(timeseries_data, target);
-
-    return timeseries_data;
-  }
-
-  applyTimeShiftFunction(timeseries_data, target) {
-    // Find timeShift() function and get specified interval
-    const timeShiftFunc = _.find(target.functions, (func) => {
-      return func.def.name === 'timeShift';
-    });
-    if (timeShiftFunc) {
-      const shift = timeShiftFunc.params[0];
-      _.forEach(timeseries_data, (series) => {
-        series.datapoints = dataProcessor.unShiftTimeSeries(shift, series.datapoints);
-      });
-    }
   }
 
   /**
@@ -491,33 +443,32 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Query target data for IT Services
    */
-  queryITServiceData(target, timeRange, options) {
+  async queryITServiceData(target, timeRange, request) {
     // Don't show undefined and hidden targets
     if (target.hide || (!target.itservice && !target.itServiceFilter) || !target.slaProperty) {
       return [];
     }
 
     let itServiceFilter;
-    options.isOldVersion = target.itservice && !target.itServiceFilter;
+    request.isOldVersion = target.itservice && !target.itServiceFilter;
 
-    if (options.isOldVersion) {
+    if (request.isOldVersion) {
       // Backward compatibility
       itServiceFilter = '/.*/';
     } else {
-      itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, options.scopedVars);
+      itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, request.scopedVars);
     }
 
-    options.slaInterval = target.slaInterval;
+    request.slaInterval = target.slaInterval;
 
-    return this.zabbix.getITServices(itServiceFilter)
-    .then(itservices => {
-      if (options.isOldVersion) {
-        itservices = _.filter(itservices, { 'serviceid': target.itservice?.serviceid });
-      }
-      return this.zabbix.getSLA(itservices, timeRange, target, options);
-    })
-    .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target))
-    .then(result => result.map(s => responseHandler.seriesToDataFrame(s, target)));
+    let itservices = await this.zabbix.getITServices(itServiceFilter);
+    if (request.isOldVersion) {
+      itservices = _.filter(itservices, { 'serviceid': target.itservice?.serviceid });
+    }
+    const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
+    const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
+    const processedResponse = await this.invokeDataProcessingQuery(backendRequest, target);
+    return this.handleBackendPostProcessingResponse(processedResponse, request, target);
   }
 
   queryTriggersData(target, timeRange) {
@@ -596,7 +547,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     if (target.options?.acknowledged === 0 || target.options?.acknowledged === 1) {
-      problemsOptions.acknowledged = target.options?.acknowledged ? true : false;
+      problemsOptions.acknowledged = !!target.options?.acknowledged;
     }
 
     if (target.options?.minSeverity) {
@@ -690,8 +641,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * Find metrics from templated request.
    *
    * @param  {string} query Query from Templating
+   * @param options
    * @return {string}       Metric name - group, host, app or item or list
-   *                        of metrics in "{metric1,metcic2,...,metricN}" format.
+   *                        of metrics in "{metric1, metric2,..., metricN}" format.
    */
   metricFindQuery(query, options) {
     let resultPromise;
@@ -945,12 +897,6 @@ function replaceTemplateVars(templateSrv, target, scopedVars) {
     replacedTarget = '/^' + replacedTarget + '$/';
   }
   return replacedTarget;
-}
-
-function filterEnabledTargets(targets) {
-  return _.filter(targets, target => {
-    return !(target.hide || !target.group || !target.host || !target.item);
-  });
 }
 
 export function base64StringToArrowTable(text: string) {

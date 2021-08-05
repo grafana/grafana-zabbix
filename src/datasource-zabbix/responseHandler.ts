@@ -153,6 +153,7 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
   return mutableFrame;
 }
 
+// Converts DataResponse to the format which backend works with (for data processing)
 export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
   const series = [];
   if (response.length === 0) {
@@ -193,6 +194,44 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
 
       series.push(timeSeriesData);
     }
+  }
+
+  return series;
+}
+
+export function itServiceResponseToTimeSeries(response: any, interval) {
+  const series = [];
+  if (response.length === 0) {
+    return [];
+  }
+
+  for (const s of response) {
+    const ts = [];
+
+    if (!s.datapoints) {
+      continue;
+    }
+
+    const dp = s.datapoints;
+    for (let i = 0; i < dp.length; i++) {
+      ts.push({ time: dp[i][1] / 1000, value: dp[i][0] });
+    }
+
+    let intervalS = utils.parseItemInterval(interval);
+    if (intervalS === 0) {
+      intervalS = null;
+    }
+
+    const timeSeriesData = {
+      ts: ts,
+      meta: {
+        name: s.target,
+        interval: intervalS,
+        item: {},
+      }
+    };
+
+    series.push(timeSeriesData);
   }
 
   return series;
@@ -499,6 +538,7 @@ export default {
   sortTimeseries,
   seriesToDataFrame,
   dataResponseToTimeSeries,
+  itServiceResponseToTimeSeries,
   isConvertibleToWide,
   convertToWide,
   alignFrames,
