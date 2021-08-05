@@ -37,12 +37,12 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
    *       ]
    */
 
-  // Group history by itemid
+    // Group history by itemid
   const grouped_history = _.groupBy(history, 'itemid');
   const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');  //uniqBy is needed to deduplicate
 
   return _.map(grouped_history, (hist, itemid) => {
-    const item = _.find(items, {'itemid': itemid}) as any;
+    const item = _.find(items, { 'itemid': itemid }) as any;
     let alias = item.name;
 
     // Add scopedVars for using in alias functions
@@ -54,7 +54,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
     };
 
     if (_.keys(hosts).length > 0) {
-      const host = _.find(hosts, {'hostid': item.hostid});
+      const host = _.find(hosts, { 'hostid': item.hostid });
       scopedVars['__zbx_host'] = { value: host.host };
       scopedVars['__zbx_host_name'] = { value: host.name };
 
@@ -140,7 +140,7 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
     }
   }
 
-  const fields: Field[] = [ timeFiled, valueFiled ];
+  const fields: Field[] = [timeFiled, valueFiled];
 
   const frame: DataFrame = {
     name: seriesName,
@@ -177,7 +177,7 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
       }
 
       const itemid = field.name;
-      const item = _.find(items, {'itemid': itemid});
+      const item = _.find(items, { 'itemid': itemid });
       let interval = utils.parseItemInterval(item.delay);
       if (interval === 0) {
         interval = null;
@@ -249,7 +249,7 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
       const missingTimestamps = [];
       const missingValues = [];
       const frameInterval: number = timeField.config.custom?.itemInterval;
-      for (let j = minTimestamp; j < firstTs; j+=frameInterval) {
+      for (let j = minTimestamp; j < firstTs; j += frameInterval) {
         missingTimestamps.push(j);
         missingValues.push(null);
       }
@@ -270,7 +270,7 @@ export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
     return [];
   }
 
-  const fields: MutableField[] = [ timeField ];
+  const fields: MutableField[] = [timeField];
 
   for (let i = 0; i < data.length; i++) {
     const valueField = data[i].fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
@@ -320,10 +320,10 @@ function handleText(history, items, target, addHostName = true) {
 
 function handleHistoryAsTable(history, items, target) {
   const table: any = new TableModel();
-  table.addColumn({text: 'Host'});
-  table.addColumn({text: 'Item'});
-  table.addColumn({text: 'Key'});
-  table.addColumn({text: 'Last value'});
+  table.addColumn({ text: 'Host' });
+  table.addColumn({ text: 'Item' });
+  table.addColumn({ text: 'Key' });
+  table.addColumn({ text: 'Last value' });
 
   const grouped_history = _.groupBy(history, 'itemid');
   _.each(items, (item) => {
@@ -422,9 +422,9 @@ function handleTriggersResponse(triggers, groups, timeRange) {
     const stats = getTriggerStats(triggers);
     const groupNames = _.map(groups, 'name');
     const table: any = new TableModel();
-    table.addColumn({text: 'Host group'});
+    table.addColumn({ text: 'Host group' });
     _.each(_.orderBy(c.TRIGGER_SEVERITY, ['val'], ['desc']), (severity) => {
-      table.addColumn({text: severity.text});
+      table.addColumn({ text: severity.text });
     });
     _.each(stats, (severity_stats, group) => {
       if (_.includes(groupNames, group)) {
@@ -442,7 +442,7 @@ function getTriggerStats(triggers) {
   // let severity = _.map(c.TRIGGER_SEVERITY, 'text');
   const stats = {};
   _.each(groups, (group) => {
-    stats[group] = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; // severity:count
+    stats[group] = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; // severity:count
   });
   _.each(triggers, (trigger) => {
     _.each(trigger.groups, (group) => {

@@ -4,7 +4,7 @@ import _ from 'lodash';
 import * as utils from './utils';
 import ts, { groupBy_perf as groupBy } from './timeseries';
 import { getTemplateSrv } from '@grafana/runtime';
-import { DataFrame, Field, FieldType, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
+import { DataFrame, FieldType, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
 
 const SUM = ts.SUM;
 const COUNT = ts.COUNT;
