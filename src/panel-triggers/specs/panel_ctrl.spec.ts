@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import { TriggerPanelCtrl } from '../triggers_panel_ctrl';
-import { PANEL_DEFAULTS, DEFAULT_TARGET } from '../triggers_panel_ctrl';
+import './matchMedia.mock';
+import { DEFAULT_TARGET, PANEL_DEFAULTS, TriggerPanelCtrl } from '../triggers_panel_ctrl';
 
 let datasourceSrvMock, zabbixDSMock;
 
@@ -8,19 +8,21 @@ jest.mock('@grafana/runtime', () => {
   return {
     getDataSourceSrv: () => datasourceSrvMock,
   };
-}, {virtual: true});
+}, { virtual: true });
 
 describe('TriggerPanelCtrl', () => {
   let ctx: any = {};
   let createPanelCtrl: () => any;
 
   beforeEach(() => {
-    ctx = { scope: {
-      panel: {
-        ...PANEL_DEFAULTS,
-        sortProblems: 'lastchange',
+    ctx = {
+      scope: {
+        panel: {
+          ...PANEL_DEFAULTS,
+          sortProblems: 'lastchange',
+        }
       }
-    }};
+    };
     ctx.scope.panel.targets = [{
       ...DEFAULT_TARGET,
       datasource: 'zabbix_default',
@@ -43,10 +45,10 @@ describe('TriggerPanelCtrl', () => {
     ctx.panelCtrl = createPanelCtrl();
 
     ctx.dataFramesReceived = generateDataFramesResponse([
-      {id: "1", timestamp: "1510000010", severity: 5},
-      {id: "2", timestamp: "1510000040", severity: 3},
-      {id: "3", timestamp: "1510000020", severity: 4},
-      {id: "4", timestamp: "1510000030", severity: 2},
+      { id: "1", timestamp: "1510000010", severity: 5 },
+      { id: "2", timestamp: "1510000040", severity: 3 },
+      { id: "3", timestamp: "1510000020", severity: 4 },
+      { id: "4", timestamp: "1510000030", severity: 2 },
     ]);
   });
 
@@ -68,7 +70,7 @@ describe('TriggerPanelCtrl', () => {
 
     it('should format triggers', (done) => {
       ctx.panelCtrl.onDataFramesReceived(ctx.dataFramesReceived).then(() => {
-        const formattedTrigger: any = _.find(ctx.panelCtrl.renderData, {triggerid: "1"});
+        const formattedTrigger: any = _.find(ctx.panelCtrl.renderData, { triggerid: "1" });
         expect(formattedTrigger.host).toBe('backend01');
         expect(formattedTrigger.hostTechName).toBe('backend01_tech');
         expect(formattedTrigger.datasource).toBe('zabbix_default');
@@ -167,7 +169,7 @@ const defaultProblem: any = {
   "value": "1"
 };
 
-function generateDataFramesResponse(problemDescs: any[] = [{id: 1}]): any {
+function generateDataFramesResponse(problemDescs: any[] = [{ id: 1 }]): any {
   const problems = problemDescs.map(problem => generateProblem(problem.id, problem.timestamp, problem.severity));
 
   return [
@@ -205,5 +207,5 @@ function generateProblem(id, timestamp?, severity?): any {
 }
 
 function getProblemById(id, ctx): any {
-  return _.find(ctx.panelCtrl.renderData, {triggerid: id.toString()});
+  return _.find(ctx.panelCtrl.renderData, { triggerid: id.toString() });
 }

@@ -1,25 +1,25 @@
 import _ from 'lodash';
-import mocks from '../../test-setup/mocks';
-import {TriggerPanelCtrl} from '../triggers_panel_ctrl';
-import { DEFAULT_TARGET, DEFAULT_SEVERITY, PANEL_DEFAULTS } from '../triggers_panel_ctrl';
+import './matchMedia.mock';
+import { DEFAULT_SEVERITY, DEFAULT_TARGET, PANEL_DEFAULTS, TriggerPanelCtrl } from '../triggers_panel_ctrl';
 import { CURRENT_SCHEMA_VERSION } from '../migrations';
 
 jest.mock('@grafana/runtime', () => {
   return {
     getDataSourceSrv: () => ({
       getMetricSources: () => {
-        return [{ meta: {id: 'alexanderzobnin-zabbix-datasource'}, value: {}, name: 'zabbix_default' }];
+        return [{ meta: { id: 'alexanderzobnin-zabbix-datasource' }, value: {}, name: 'zabbix_default' }];
       },
       get: () => Promise.resolve({})
     }),
   };
-}, {virtual: true});
+}, { virtual: true });
 
 describe('Triggers Panel schema migration', () => {
   let ctx: any = {};
   let updatePanelCtrl;
 
-  const timeoutMock = () => {};
+  const timeoutMock = () => {
+  };
 
   beforeEach(() => {
     ctx = {

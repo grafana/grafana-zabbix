@@ -82,7 +82,7 @@ export class InfluxDBConnector extends DBConnector {
                    WHERE ${where_clause}
                      AND "time" >= ${timeFrom}s
                      AND "time" <= ${timeTill}s
-                   GROUP BY time (${intervalSec}s), "itemid" fill(none)`;
+                   GROUP BY time(${intervalSec}s), "itemid" fill(none)`;
     return compactQuery(query);
   }
 
