@@ -9,7 +9,7 @@ import (
 func (ds *Zabbix) GetHistory(ctx context.Context, items []*Item, timeRange backend.TimeRange) (History, error) {
 	history := History{}
 	// Zabbix stores history in different tables and `history` param required for query. So in one query it's only
-	// possible to get history for items with one type. In order to get history for items with multple types (numeric unsigned and numeric float),
+	// possible to get history for items with one type. In order to get history for items with multiple types (numeric unsigned and numeric float),
 	// items should be grouped by the `value_type` field.
 	groupedItemids := make(map[int][]string, 0)
 	for _, item := range items {
