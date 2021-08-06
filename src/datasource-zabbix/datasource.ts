@@ -319,21 +319,25 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Query history for numeric items
    */
-  async queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, options) {
+  async queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, request) {
     let history;
-    options.valueType = this.getTrendValueType(target);
-    options.consolidateBy = getConsolidateBy(target) || options.valueType;
+    request.valueType = this.getTrendValueType(target);
+    request.consolidateBy = getConsolidateBy(target) || request.valueType;
 
     if (useTrends) {
-      history = await this.zabbix.getTrends(items, timeRange, options);
+      history = await this.zabbix.getTrends(items, timeRange, request);
     } else {
-      history = await this.zabbix.getHistoryTS(items, timeRange, options);
+      history = await this.zabbix.getHistoryTS(items, timeRange, request);
     }
 
-    return await this.invokeDataProcessingQuery(history, target);
+    const range = {
+      from: timeRange[0],
+      to: timeRange[1],
+    };
+    return await this.invokeDataProcessingQuery(history, target, range);
   }
 
-  async invokeDataProcessingQuery(timeSeriesData, query) {
+  async invokeDataProcessingQuery(timeSeriesData, query, timeRange) {
     // Request backend for data processing
     const requestOptions: BackendSrvRequest = {
       url: `/api/datasources/${this.datasourceId}/resources/db-connection-post`,
@@ -345,6 +349,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       data: {
         series: timeSeriesData,
         query,
+        timeRange,
       },
     };
 

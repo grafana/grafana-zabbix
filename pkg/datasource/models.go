@@ -46,8 +46,14 @@ type ZabbixDatasourceSettings struct {
 }
 
 type DBConnectionPostProcessingRequest struct {
-	Query  QueryModel                   `json:"query"`
-	Series []*timeseries.TimeSeriesData `json:"series"`
+	Query     QueryModel                     `json:"query"`
+	TimeRange TimeRangePostProcessingRequest `json:"timeRange"`
+	Series    []*timeseries.TimeSeriesData   `json:"series"`
+}
+
+type TimeRangePostProcessingRequest struct {
+	From int64
+	To   int64
 }
 
 type ZabbixAPIResourceRequest struct {

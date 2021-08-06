@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
@@ -87,6 +88,9 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 		writeError(rw, http.StatusInternalServerError, err)
 		return
 	}
+
+	reqData.Query.TimeRange.From = time.Unix(reqData.TimeRange.From, 0)
+	reqData.Query.TimeRange.To = time.Unix(reqData.TimeRange.To, 0)
 
 	frames, err := dsInstance.applyDataProcessing(req.Context(), &reqData.Query, reqData.Series)
 

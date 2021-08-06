@@ -179,10 +179,13 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
 
       const itemid = field.name;
       const item = _.find(items, { 'itemid': itemid });
-      let interval = utils.parseItemInterval(item.delay);
+
+      // Convert interval to nanoseconds in order to unmarshall it on the backend to time.Duration
+      let interval = utils.parseItemInterval(item.delay) * 1000000;
       if (interval === 0) {
         interval = null;
       }
+
       const timeSeriesData = {
         ts: s,
         meta: {
