@@ -472,7 +472,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
     const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
     const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
-    const processedResponse = await this.invokeDataProcessingQuery(backendRequest, target);
+    const processedResponse = await this.invokeDataProcessingQuery(backendRequest, target, {});
     return this.handleBackendPostProcessingResponse(processedResponse, request, target);
   }
 
