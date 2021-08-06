@@ -100,39 +100,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 	}
 
 	series := convertHistoryToTimeSeries(history, items)
-
-	// Align time series data if possible
-	useTrend := ds.isUseTrend(query.TimeRange)
-	if !query.Options.DisableDataAlignment && !ds.Settings.DisableDataAlignment && !useTrend {
-		for _, s := range series {
-			if s.Meta.Interval != nil {
-				s.TS = s.TS.Align(*s.Meta.Interval)
-			}
-		}
-	}
-
-	series, err = applyFunctions(series, query.Functions)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, s := range series {
-		if int64(s.Len()) > query.MaxDataPoints && query.Interval > 0 {
-			downsampleFunc := consolidateBy
-			if downsampleFunc == "" {
-				downsampleFunc = "avg"
-			}
-			downsampled, err := applyGroupBy(s.TS, query.Interval.String(), downsampleFunc)
-			if err == nil {
-				s.TS = downsampled
-			} else {
-				ds.logger.Debug("Error downsampling series", "error", err)
-			}
-		}
-	}
-
-	frames := convertTimeSeriesToDataFrames(series)
-	return frames, nil
+	return ds.applyDataProcessing(ctx, query, series)
 }
 
 func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, query *QueryModel, series []*timeseries.TimeSeriesData) ([]*data.Frame, error) {
@@ -140,10 +108,18 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 
 	// Align time series data if possible
 	useTrend := ds.isUseTrend(query.TimeRange)
-	if !query.Options.DisableDataAlignment && !ds.Settings.DisableDataAlignment && !useTrend {
-		for _, s := range series {
-			if s.Meta.Interval != nil {
-				s.TS = s.TS.Align(*s.Meta.Interval)
+	disableDataAlignment := query.Options.DisableDataAlignment || ds.Settings.DisableDataAlignment
+	if !disableDataAlignment {
+		if useTrend {
+			for _, s := range series {
+				// Trend data is already aligned (by 1 hour interval), but null values should be added
+				s.TS = s.TS.FillTrendWithNulls()
+			}
+		} else {
+			for _, s := range series {
+				if s.Meta.Interval != nil {
+					s.TS = s.TS.Align(*s.Meta.Interval)
+				}
 			}
 		}
 	}

@@ -234,7 +234,7 @@ func getTrendPointValue(point zabbix.TrendPoint, valueType string) (float64, err
 	return 0, fmt.Errorf("failed to get trend value, unknown value type: %s", valueType)
 }
 
-var fixedUpdateIntervalPattern = regexp.MustCompile(`^(\d+)([shd]?)$`)
+var fixedUpdateIntervalPattern = regexp.MustCompile(`^(\d+)([smhdw]?)$`)
 
 func parseItemUpdateInterval(delay string) *time.Duration {
 	if valid := fixedUpdateIntervalPattern.MatchString(delay); !valid {
