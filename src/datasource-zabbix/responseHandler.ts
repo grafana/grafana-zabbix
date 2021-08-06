@@ -220,16 +220,17 @@ export function itServiceResponseToTimeSeries(response: any, interval) {
       ts.push({ time: dp[i][1] / 1000, value: dp[i][0] });
     }
 
-    let intervalS = utils.parseItemInterval(interval);
-    if (intervalS === 0) {
-      intervalS = null;
+    // Convert interval to nanoseconds in order to unmarshall it on the backend to time.Duration
+    let intervalNS = utils.parseItemInterval(interval) * 1000000;
+    if (intervalNS === 0) {
+      intervalNS = null;
     }
 
     const timeSeriesData = {
       ts: ts,
       meta: {
         name: s.target,
-        interval: intervalS,
+        interval: null,
         item: {},
       }
     };

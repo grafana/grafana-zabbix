@@ -108,7 +108,7 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 
 	// Align time series data if possible
 	useTrend := ds.isUseTrend(query.TimeRange)
-	disableDataAlignment := query.Options.DisableDataAlignment || ds.Settings.DisableDataAlignment
+	disableDataAlignment := query.Options.DisableDataAlignment || ds.Settings.DisableDataAlignment || query.QueryType == MODE_ITSERVICE
 	if !disableDataAlignment {
 		if useTrend {
 			for _, s := range series {

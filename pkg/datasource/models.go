@@ -69,7 +69,8 @@ type ZabbixAPIResourceResponse struct {
 // QueryModel model
 type QueryModel struct {
 	// Deprecated `mode` field, use QueryType instead
-	Mode int64 `json:"mode"`
+	Mode      int64  `json:"mode"`
+	QueryType string `json:"queryType"`
 
 	Group       QueryFilter `json:"group"`
 	Host        QueryFilter `json:"host"`
@@ -84,7 +85,6 @@ type QueryModel struct {
 
 	// Direct from the gRPC interfaces
 	RefID         string            `json:"-"`
-	QueryType     string            `json:"-"`
 	TimeRange     backend.TimeRange `json:"-"`
 	MaxDataPoints int64             `json:"-"`
 	Interval      time.Duration     `json:"-"`
