@@ -5,8 +5,8 @@ const getAllMock = jest.fn().mockReturnValue([{ id: 42, name: 'foo', meta: {} }]
 
 jest.mock('@grafana/runtime', () => ({
   getDataSourceSrv: () => ({
-    loadDatasource: loadDatasourceMock,
-    getAll: getAllMock
+    get: loadDatasourceMock,
+    getList: getAllMock
   }),
 }));
 

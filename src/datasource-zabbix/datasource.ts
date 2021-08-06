@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { Observable } from 'rxjs';
 import config from 'grafana/app/core/config';
 import { contextSrv } from 'grafana/app/core/core';
 import * as dateMath from 'grafana/app/core/utils/datemath';
@@ -6,15 +7,24 @@ import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
 import * as c from './constants';
-import { align, fillTrendsWithNulls } from './timeseries';
 import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
-import { ZabbixMetricsQuery, ZabbixDSOptions, VariableQueryTypes, ShowProblemTypes, ProblemDTO } from './types';
-import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
-import { DataFrame, DataQueryRequest, DataQueryResponse, DataSourceApi, DataSourceInstanceSettings, FieldType, isDataFrame, LoadingState } from '@grafana/data';
+import { ProblemDTO, ShowProblemTypes, VariableQueryTypes, ZabbixDSOptions, ZabbixMetricsQuery } from './types';
+import { BackendSrvRequest, getBackendSrv, getTemplateSrv, toDataQueryResponse } from '@grafana/runtime';
+import {
+  DataFrame,
+  dataFrameFromJSON,
+  DataQueryRequest,
+  DataQueryResponse,
+  DataSourceApi,
+  DataSourceInstanceSettings,
+  FieldType,
+  isDataFrame,
+  LoadingState
+} from '@grafana/data';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -48,17 +58,17 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
 
     // General data source settings
-    this.datasourceId     = instanceSettings.id;
-    this.name             = instanceSettings.name;
-    this.basicAuth        = instanceSettings.basicAuth;
-    this.withCredentials  = instanceSettings.withCredentials;
+    this.datasourceId = instanceSettings.id;
+    this.name = instanceSettings.name;
+    this.basicAuth = instanceSettings.basicAuth;
+    this.withCredentials = instanceSettings.withCredentials;
 
     const jsonData = migrations.migrateDSConfig(instanceSettings.jsonData);
 
     // Use trends instead history since specified time
-    this.trends           = jsonData.trends;
-    this.trendsFrom       = jsonData.trendsFrom || '7d';
-    this.trendsRange      = jsonData.trendsRange || '4d';
+    this.trends = jsonData.trends;
+    this.trendsFrom = jsonData.trendsFrom || '7d';
+    this.trendsRange = jsonData.trendsRange || '4d';
 
     // Set cache update interval
     const ttl = jsonData.cacheTTL || '1h';
@@ -94,70 +104,128 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
   /**
    * Query panel data. Calls for each panel in dashboard.
-   * @param  {Object} options   Contains time range, targets and other info.
+   * @param  {Object} request   Contains time range, targets and other info.
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
-  query(options: DataQueryRequest<any>): Promise<DataQueryResponse> {
-    // Create request for each target
-    const promises = _.map(options.targets, t => {
+  query(request: DataQueryRequest<any>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
+    // Migrate old targets
+    const requestTargets = request.targets.map(t => {
+      // Prevent changes of original object
+      const target = _.cloneDeep(t);
+      return migrations.migrate(target);
+    });
+
+    const backendResponsePromise = this.backendQuery({ ...request, targets: requestTargets });
+    const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: requestTargets });
+    const frontendResponsePromise = this.frontendQuery({ ...request, targets: requestTargets });
+
+    return Promise.all([backendResponsePromise, dbConnectionResponsePromise, frontendResponsePromise])
+    .then(rsp => {
+      // Merge backend and frontend queries results
+      const [backendRes, dbConnectionRes, frontendRes] = rsp;
+      if (dbConnectionRes.data) {
+        backendRes.data = backendRes.data.concat(dbConnectionRes.data);
+      }
+      if (frontendRes.data) {
+        backendRes.data = backendRes.data.concat(frontendRes.data);
+      }
+
+      return {
+        data: backendRes.data,
+        state: LoadingState.Done,
+        key: request.requestId,
+      };
+    });
+  }
+
+  async backendQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
+    const { intervalMs, maxDataPoints, range, requestId } = request;
+    const targets = request.targets.filter(this.isBackendTarget);
+
+    // Add range variables
+    request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
+
+    const queries = _.compact(targets.map((query) => {
       // Don't request for hidden targets
-      if (t.hide) {
+      if (query.hide) {
+        return null;
+      }
+
+      this.replaceTargetVariables(query, request);
+
+      return {
+        ...query,
+        datasourceId: this.datasourceId,
+        intervalMs,
+        maxDataPoints,
+      };
+    }));
+
+    // Return early if no queries exist
+    if (!queries.length) {
+      return Promise.resolve({ data: [] });
+    }
+
+    const body: any = { queries };
+
+    if (range) {
+      body.range = range;
+      body.from = range.from.valueOf().toString();
+      body.to = range.to.valueOf().toString();
+    }
+
+    let rsp: any;
+    try {
+      rsp = await getBackendSrv().fetch({
+        url: '/api/ds/query',
+        method: 'POST',
+        data: body,
+        requestId,
+      }).toPromise();
+    } catch (err) {
+      return toDataQueryResponse(err);
+    }
+
+    const resp = toDataQueryResponse(rsp);
+    this.sortByRefId(resp);
+    this.applyFrontendFunctions(resp, request);
+    if (responseHandler.isConvertibleToWide(resp.data)) {
+      console.log('Converting response to the wide format');
+      resp.data = responseHandler.convertToWide(resp.data);
+    }
+
+    return resp;
+  }
+
+  async frontendQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
+    const frontendTargets = request.targets.filter(t => !(this.isBackendTarget(t) || this.isDBConnectionTarget(t)));
+    const promises = _.map(frontendTargets, target => {
+      // Don't request for hidden targets
+      if (target.hide) {
         return [];
       }
 
-      let timeFrom = Math.ceil(dateMath.parse(options.range.from) / 1000);
-      let timeTo = Math.ceil(dateMath.parse(options.range.to) / 1000);
-
       // Add range variables
-      options.scopedVars = Object.assign({}, options.scopedVars, utils.getRangeScopedVars(options.range));
+      request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
+      this.replaceTargetVariables(target, request);
+      const timeRange = this.buildTimeRange(request, target);
 
-      // Prevent changes of original object
-      let target = _.cloneDeep(t);
-
-      // Migrate old targets
-      target = migrations.migrate(target);
-      this.replaceTargetVariables(target, options);
-
-      // Apply Time-related functions (timeShift(), etc)
-      const timeFunctions = bindFunctionDefs(target.functions, 'Time');
-      if (timeFunctions.length) {
-        const [time_from, time_to] = utils.sequence(timeFunctions)([timeFrom, timeTo]);
-        timeFrom = time_from;
-        timeTo = time_to;
-      }
-      const timeRange = [timeFrom, timeTo];
-
-      const useTrends = this.isUseTrends(timeRange);
-
-      // Metrics or Text query
-      if (!target.queryType || target.queryType === c.MODE_METRICS || target.queryType === c.MODE_TEXT) {
+      if (target.queryType === c.MODE_TEXT) {
+        // Text query
         // Don't request undefined targets
         if (!target.group || !target.host || !target.item) {
           return [];
         }
-
-        if (!target.queryType || target.queryType === c.MODE_METRICS) {
-          return this.queryNumericData(target, timeRange, useTrends, options);
-        } else if (target.queryType === c.MODE_TEXT) {
-          return this.queryTextData(target, timeRange);
-        } else {
-          return [];
-        }
-      } else if (target.queryType === c.MODE_ITEMID) {
-        // Item ID query
-        if (!target.itemids) {
-          return [];
-        }
-        return this.queryItemIdData(target, timeRange, useTrends, options);
+        return this.queryTextData(target, timeRange);
       } else if (target.queryType === c.MODE_ITSERVICE) {
         // IT services query
-        return this.queryITServiceData(target, timeRange, options);
+        return this.queryITServiceData(target, timeRange, request);
       } else if (target.queryType === c.MODE_TRIGGERS) {
         // Triggers query
         return this.queryTriggersData(target, timeRange);
       } else if (target.queryType === c.MODE_PROBLEMS) {
         // Problems query
-        return this.queryProblems(target, timeRange, options);
+        return this.queryProblems(target, timeRange, request);
       } else {
         return [];
       }
@@ -165,65 +233,72 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     // Data for panel (all targets)
     return Promise.all(_.flatten(promises))
-      .then(_.flatten)
-      .then(data => {
-        if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
-          data = responseHandler.alignFrames(data);
-          if (responseHandler.isConvertibleToWide(data)) {
-            console.log('Converting response to the wide format');
-            data = responseHandler.convertToWide(data);
-          }
+    .then(_.flatten)
+    .then(data => {
+      if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
+        data = responseHandler.alignFrames(data);
+        if (responseHandler.isConvertibleToWide(data)) {
+          console.log('Converting response to the wide format');
+          data = responseHandler.convertToWide(data);
         }
-        return data;
-      }).then(data => {
-        return {
-          data,
-          state: LoadingState.Done,
-          key: options.requestId,
-        };
-      });
+      }
+      return { data };
+    });
   }
 
-  doTsdbRequest(options) {
-    const tsdbRequestData: any = {
-      queries: options.targets.map(target => {
-        target.datasourceId = this.datasourceId;
-        target.queryType = 'zabbixAPI';
-        return target;
-      }),
-    };
+  async dbConnectionQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
+    const targets = request.targets.filter(this.isDBConnectionTarget);
 
-    if (options.range) {
-      tsdbRequestData.from = options.range.from.valueOf().toString();
-      tsdbRequestData.to = options.range.to.valueOf().toString();
+    const queries = _.compact(targets.map((target) => {
+      // Don't request for hidden targets
+      if (target.hide) {
+        return [];
+      }
+
+      // Add range variables
+      request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
+      this.replaceTargetVariables(target, request);
+      const timeRange = this.buildTimeRange(request, target);
+      const useTrends = this.isUseTrends(timeRange);
+
+      if (!target.queryType || target.queryType === c.MODE_METRICS) {
+        return this.queryNumericData(target, timeRange, useTrends, request);
+      } else if (target.queryType === c.MODE_ITEMID) {
+        // Item ID query
+        if (!target.itemids) {
+          return [];
+        }
+        return this.queryItemIdData(target, timeRange, useTrends, request);
+      } else {
+        return [];
+      }
+    }));
+
+    const promises: Promise<DataQueryResponse> = Promise.all(queries)
+    .then(_.flatten)
+    .then(data => ({ data }));
+
+    return promises;
+  }
+
+  buildTimeRange(request, target) {
+    let timeFrom = Math.ceil(dateMath.parse(request.range.from) / 1000);
+    let timeTo = Math.ceil(dateMath.parse(request.range.to) / 1000);
+
+    // Apply Time-related functions (timeShift(), etc)
+    const timeFunctions = bindFunctionDefs(target.functions, 'Time');
+    if (timeFunctions.length) {
+      const [time_from, time_to] = utils.sequence(timeFunctions)([timeFrom, timeTo]);
+      timeFrom = time_from;
+      timeTo = time_to;
     }
-
-    return getBackendSrv().post('/api/tsdb/query', tsdbRequestData);
-  }
-
-  /**
-   * @returns {Promise<TSDBResponse>}
-   */
-  doTSDBConnectionTest() {
-    /**
-     * @type {{ queries: ZabbixConnectionTestQuery[] }}
-     */
-    const tsdbRequestData = {
-      queries: [
-        {
-          datasourceId: this.datasourceId,
-          queryType: 'connectionTest'
-        }
-      ]
-    };
-
-    return getBackendSrv().post('/api/tsdb/query', tsdbRequestData);
+    return [timeFrom, timeTo];
   }
 
   /**
    * Query target data for Metrics
    */
-  async queryNumericData(target, timeRange, useTrends, options): Promise<DataFrame[]> {
+  async queryNumericData(target, timeRange, useTrends, request): Promise<any> {
     const getItemOptions = {
       itemtype: 'num'
     };
@@ -231,43 +306,74 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const items = await this.zabbix.getItemsFromTarget(target, getItemOptions);
 
     const queryStart = new Date().getTime();
-    const result = await this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
+    const result = await this.queryNumericDataForItems(items, target, timeRange, useTrends, request);
     const queryEnd = new Date().getTime();
 
     if (this.enableDebugLog) {
       console.log(`Datasource::Performance Query Time (${this.name}): ${queryEnd - queryStart}`);
     }
 
-    const valueMappings = await this.zabbix.getValueMappings();
-
-    const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, target, valueMappings));
-    return dataFrames;
+    return this.handleBackendPostProcessingResponse(result, request, target);
   }
 
   /**
    * Query history for numeric items
    */
-  queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, options) {
-    let getHistoryPromise;
-    options.valueType = this.getTrendValueType(target);
-    options.consolidateBy = getConsolidateBy(target) || options.valueType;
-    const disableDataAlignment = this.disableDataAlignment || target.options?.disableDataAlignment;
+  async queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, request) {
+    let history;
+    request.valueType = this.getTrendValueType(target);
+    request.consolidateBy = getConsolidateBy(target) || request.valueType;
 
     if (useTrends) {
-      getHistoryPromise = this.zabbix.getTrends(items, timeRange, options)
-      .then(timeseries => {
-        return !disableDataAlignment ? this.fillTrendTimeSeriesWithNulls(timeseries) : timeseries;
-      });
+      history = await this.zabbix.getTrends(items, timeRange, request);
     } else {
-      getHistoryPromise = this.zabbix.getHistoryTS(items, timeRange, options)
-      .then(timeseries => {
-        return !disableDataAlignment ? this.alignTimeSeriesData(timeseries) : timeseries;
-      });
+      history = await this.zabbix.getHistoryTS(items, timeRange, request);
     }
 
-    return getHistoryPromise
-    .then(timeseries => this.applyDataProcessingFunctions(timeseries, target))
-    .then(timeseries => downsampleSeries(timeseries, options));
+    const range = {
+      from: timeRange[0],
+      to: timeRange[1],
+    };
+    return await this.invokeDataProcessingQuery(history, target, range);
+  }
+
+  async invokeDataProcessingQuery(timeSeriesData, query, timeRange) {
+    // Request backend for data processing
+    const requestOptions: BackendSrvRequest = {
+      url: `/api/datasources/${this.datasourceId}/resources/db-connection-post`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      hideFromInspector: false,
+      data: {
+        series: timeSeriesData,
+        query,
+        timeRange,
+      },
+    };
+
+    const response: any = await getBackendSrv().fetch<any>(requestOptions).toPromise();
+    return response.data;
+  }
+
+  handleBackendPostProcessingResponse(response, request, target) {
+    const frames = [];
+    for (const frameJSON of response) {
+      const frame = dataFrameFromJSON(frameJSON);
+      frame.refId = target.refId;
+      frames.push(frame);
+    }
+
+    const resp = { data: frames };
+    this.sortByRefId(resp);
+    this.applyFrontendFunctions(resp, request);
+    if (responseHandler.isConvertibleToWide(resp.data)) {
+      console.log('Converting response to the wide format');
+      resp.data = responseHandler.convertToWide(resp.data);
+    }
+
+    return resp.data;
   }
 
   getTrendValueType(target) {
@@ -279,75 +385,27 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return trendValueFunc ? trendValueFunc.params[0] : "avg";
   }
 
-  alignTimeSeriesData(timeseries: any[]) {
-    for (const ts of timeseries) {
-      const interval = utils.parseItemInterval(ts.scopedVars['__zbx_item_interval']?.value);
-      ts.datapoints = align(ts.datapoints, interval);
-    }
-    return timeseries;
-  }
-
-  fillTrendTimeSeriesWithNulls(timeseries: any[]) {
-    for (const ts of timeseries) {
-      ts.datapoints = fillTrendsWithNulls(ts.datapoints);
-    }
-    return timeseries;
-  }
-
-  applyDataProcessingFunctions(timeseries_data, target) {
-    const transformFunctions   = bindFunctionDefs(target.functions, 'Transform');
-    const aggregationFunctions = bindFunctionDefs(target.functions, 'Aggregate');
-    const filterFunctions      = bindFunctionDefs(target.functions, 'Filter');
-    const aliasFunctions       = bindFunctionDefs(target.functions, 'Alias');
-
-    // Apply transformation functions
-    timeseries_data = _.cloneDeep(_.map(timeseries_data, timeseries => {
-      timeseries.datapoints = utils.sequence(transformFunctions)(timeseries.datapoints);
-      return timeseries;
-    }));
-
-    // Apply filter functions
-    if (filterFunctions.length) {
-      timeseries_data = utils.sequence(filterFunctions)(timeseries_data);
-    }
-
-    // Apply aggregations
-    if (aggregationFunctions.length) {
-      let dp = _.map(timeseries_data, 'datapoints');
-      dp = utils.sequence(aggregationFunctions)(dp);
-
-      const aggFuncNames = _.map(metricFunctions.getCategories()['Aggregate'], 'name');
-      const lastAgg = _.findLast(target.functions, func => {
-        return _.includes(aggFuncNames, func.def.name);
-      });
-
-      timeseries_data = [{
-        target: lastAgg.text,
-        datapoints: dp
-      }];
-    }
-
-    // Apply alias functions
-    _.forEach(timeseries_data, utils.sequence(aliasFunctions).bind(this));
-
-    // Apply Time-related functions (timeShift(), etc)
-    // Find timeShift() function and get specified trend value
-    this.applyTimeShiftFunction(timeseries_data, target);
-
-    return timeseries_data;
-  }
-
-  applyTimeShiftFunction(timeseries_data, target) {
-    // Find timeShift() function and get specified interval
-    const timeShiftFunc = _.find(target.functions, (func) => {
-      return func.def.name === 'timeShift';
+  sortByRefId(response: DataQueryResponse) {
+    response.data.sort((a, b) => {
+      if (a.refId < b.refId) {
+        return -1;
+      } else if (a.refId > b.refId) {
+        return 1;
+      }
+      return 0;
     });
-    if (timeShiftFunc) {
-      const shift = timeShiftFunc.params[0];
-      _.forEach(timeseries_data, (series) => {
-        series.datapoints = dataProcessor.unShiftTimeSeries(shift, series.datapoints);
-      });
+  }
+
+  applyFrontendFunctions(response: DataQueryResponse, request: DataQueryRequest<any>) {
+    for (let i = 0; i < response.data.length; i++) {
+      const frame: DataFrame = response.data[i];
+      const target = getRequestTarget(request, frame.refId);
+
+      // Apply alias functions
+      const aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
+      utils.sequence(aliasFunctions)(frame);
     }
+    return response;
   }
 
   /**
@@ -384,44 +442,38 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return this.zabbix.getItemsByIDs(itemids)
     .then(items => {
       return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
-    })
-    .then(result => {
-      return result.map(s => responseHandler.seriesToDataFrame(s, target));
     });
   }
 
   /**
    * Query target data for IT Services
    */
-  queryITServiceData(target, timeRange, options) {
+  async queryITServiceData(target, timeRange, request) {
     // Don't show undefined and hidden targets
     if (target.hide || (!target.itservice && !target.itServiceFilter) || !target.slaProperty) {
       return [];
     }
 
     let itServiceFilter;
-    options.isOldVersion = target.itservice && !target.itServiceFilter;
+    request.isOldVersion = target.itservice && !target.itServiceFilter;
 
-    if (options.isOldVersion) {
+    if (request.isOldVersion) {
       // Backward compatibility
       itServiceFilter = '/.*/';
     } else {
-      itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, options.scopedVars);
+      itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, request.scopedVars);
     }
 
-    options.slaInterval = target.slaInterval;
+    request.slaInterval = target.slaInterval;
 
-    return this.zabbix.getITServices(itServiceFilter)
-    .then(itservices => {
-      if (options.isOldVersion) {
-        itservices = _.filter(itservices, {'serviceid': target.itservice?.serviceid});
-      }
-      return this.zabbix.getSLA(itservices, timeRange, target, options);})
-    .then(itservicesdp => this.applyDataProcessingFunctions(itservicesdp, target))
-    .then(result => {
-      const dataFrames = result.map(s => responseHandler.seriesToDataFrame(s, target));
-      return dataFrames;
-    });
+    let itservices = await this.zabbix.getITServices(itServiceFilter);
+    if (request.isOldVersion) {
+      itservices = _.filter(itservices, { 'serviceid': target.itservice?.serviceid });
+    }
+    const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
+    const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
+    const processedResponse = await this.invokeDataProcessingQuery(backendRequest, target, {});
+    return this.handleBackendPostProcessingResponse(processedResponse, request, target);
   }
 
   queryTriggersData(target, timeRange) {
@@ -500,7 +552,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     if (target.options?.acknowledged === 0 || target.options?.acknowledged === 1) {
-      problemsOptions.acknowledged = target.options?.acknowledged ? true : false;
+      problemsOptions.acknowledged = !!target.options?.acknowledged;
     }
 
     if (target.options?.minSeverity) {
@@ -594,8 +646,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * Find metrics from templated request.
    *
    * @param  {string} query Query from Templating
+   * @param options
    * @return {string}       Metric name - group, host, app or item or list
-   *                        of metrics in "{metric1,metcic2,...,metricN}" format.
+   *                        of metrics in "{metric1, metric2,..., metricN}" format.
    */
   metricFindQuery(query, options) {
     let resultPromise;
@@ -738,6 +791,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
     }
 
+    if (target.itemids) {
+      target.itemids = this.templateSrv.replace(target.itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
+    }
+
     _.forEach(target.functions, func => {
       func.params = _.map(func.params, param => {
         if (typeof param === 'number') {
@@ -759,6 +816,20 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     );
     return useTrends;
   }
+
+  isBackendTarget = (target: any): boolean => {
+    if (this.enableDirectDBConnection) {
+      return false;
+    }
+
+    return target.queryType === c.MODE_METRICS ||
+      target.queryType === c.MODE_ITEMID;
+  };
+
+  isDBConnectionTarget = (target: any): boolean => {
+    return this.enableDirectDBConnection &&
+      (target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID);
+  };
 }
 
 function bindFunctionDefs(functionDefs, category) {
@@ -782,18 +853,6 @@ function getConsolidateBy(target) {
     consolidateBy = funcDef.params[0];
   }
   return consolidateBy;
-}
-
-function downsampleSeries(timeseries_data, options) {
-  const defaultAgg = dataProcessor.aggregationFunctions['avg'];
-  const consolidateByFunc = dataProcessor.aggregationFunctions[options.consolidateBy] || defaultAgg;
-  return _.map(timeseries_data, timeseries => {
-    if (timeseries.datapoints.length > options.maxDataPoints) {
-      timeseries.datapoints = dataProcessor
-        .groupBy(options.interval, consolidateByFunc, timeseries.datapoints);
-    }
-    return timeseries;
-  });
 }
 
 function formatMetric(metricObj) {
@@ -845,8 +904,20 @@ function replaceTemplateVars(templateSrv, target, scopedVars) {
   return replacedTarget;
 }
 
-function filterEnabledTargets(targets) {
-  return _.filter(targets, target => {
-    return !(target.hide || !target.group || !target.host || !target.item);
+export function base64StringToArrowTable(text: string) {
+  const b64 = atob(text);
+  const arr = Uint8Array.from(b64, (c) => {
+    return c.charCodeAt(0);
   });
+  return arr;
+}
+
+function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
+  for (let i = 0; i < request.targets.length; i++) {
+    const target = request.targets[i];
+    if (target.refId === refId) {
+      return target;
+    }
+  }
+  return null;
 }

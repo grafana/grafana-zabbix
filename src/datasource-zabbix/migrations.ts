@@ -49,6 +49,11 @@ function migrateQueryType(target) {
       delete target.mode;
     }
   }
+
+  // queryType is a string in query model
+  if (typeof target.queryType === 'number') {
+    target.queryType = (target.queryType as number)?.toString();
+  }
 }
 
 function migrateSLA(target) {

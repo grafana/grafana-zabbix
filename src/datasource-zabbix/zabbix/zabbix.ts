@@ -4,13 +4,12 @@ import semver from 'semver';
 import * as utils from '../utils';
 import responseHandler from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
-// import { ZabbixNotImplemented } from './connectors/dbConnector';
 import { DBConnector } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
-import { joinTriggersWithProblems, joinTriggersWithEvents } from '../problemsHandler';
+import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
 import { ProblemDTO } from '../types';
 
 interface AppsResponse extends Array<any> {
@@ -274,7 +273,7 @@ export class Zabbix implements ZabbixConnector {
     })
     .then(items => {
       if (!options.showDisabledItems) {
-        items = _.filter(items, {'status': '0'});
+        items = _.filter(items, { 'status': '0' });
       }
 
       return items;
@@ -432,7 +431,7 @@ export class Zabbix implements ZabbixConnector {
     const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
       return this.getHistoryDB(items, timeFrom, timeTo, options)
-      .then(history => this.dbConnector.handleGrafanaTSResponse(history, items));
+      .then(history => responseHandler.dataResponseToTimeSeries(history, items));
     } else {
       return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
       .then(history => responseHandler.handleHistory(history, items));
@@ -443,7 +442,7 @@ export class Zabbix implements ZabbixConnector {
     const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
       return this.getTrendsDB(items, timeFrom, timeTo, options)
-      .then(history => this.dbConnector.handleGrafanaTSResponse(history, items));
+      .then(history => responseHandler.dataResponseToTimeSeries(history, items));
     } else {
       const valueType = options.consolidateBy || options.valueType;
       return this.zabbixAPI.getTrend(items, timeFrom, timeTo)
@@ -473,7 +472,7 @@ export class Zabbix implements ZabbixConnector {
     return this.zabbixAPI.getSLA(itServiceIds, timeRange, options)
     .then(slaResponse => {
       return _.map(itServiceIds, serviceid => {
-        const itservice = _.find(itservices, {'serviceid': serviceid});
+        const itservice = _.find(itservices, { 'serviceid': serviceid });
         return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
       });
     });
@@ -489,7 +488,7 @@ export class Zabbix implements ZabbixConnector {
  * @return      array with finded element or empty array
  */
 function findByName(list, name) {
-  const finded = _.find(list, {'name': name});
+  const finded = _.find(list, { 'name': name });
   if (finded) {
     return [finded];
   } else {
@@ -506,7 +505,7 @@ function findByName(list, name) {
  * @return {[type]}      array with finded element or empty array
  */
 function filterByName(list, name) {
-  const finded = _.filter(list, {'name': name});
+  const finded = _.filter(list, { 'name': name });
   if (finded) {
     return finded;
   } else {

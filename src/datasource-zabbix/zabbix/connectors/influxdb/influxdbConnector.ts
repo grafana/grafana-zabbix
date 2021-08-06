@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { compactQuery } from '../../../utils';
-import { DBConnector, HISTORY_TO_TABLE_MAP, consolidateByTrendColumns } from '../dbConnector';
+import { consolidateByTrendColumns, DBConnector, HISTORY_TO_TABLE_MAP } from '../dbConnector';
 
 const consolidateByFunc = {
   'avg': 'MEAN',
@@ -11,6 +11,9 @@ const consolidateByFunc = {
 };
 
 export class InfluxDBConnector extends DBConnector {
+  private retentionPolicy: any;
+  private influxDS: any;
+
   constructor(options) {
     super(options);
     this.retentionPolicy = options.retentionPolicy;
@@ -26,16 +29,19 @@ export class InfluxDBConnector extends DBConnector {
   testDataSource() {
     return this.influxDS.testDatasource().then(result => {
       if (result.status && result.status === 'error') {
-        return Promise.reject({ data: {
-          message: `InfluxDB connection error: ${result.message}`
-        }});
+        return Promise.reject({
+          data: {
+            message: `InfluxDB connection error: ${result.message}`
+          }
+        });
       }
       return result;
     });
   }
 
   getHistory(items, timeFrom, timeTill, options) {
-    let { intervalMs, consolidateBy, retentionPolicy } = options;
+    const { intervalMs, retentionPolicy } = options;
+    let { consolidateBy } = options;
     const intervalSec = Math.ceil(intervalMs / 1000);
 
     const range = { timeFrom, timeTill };
@@ -71,9 +77,12 @@ export class InfluxDBConnector extends DBConnector {
     }
     const aggregation = consolidateByFunc[aggFunction] || aggFunction;
     const where_clause = this.buildWhereClause(itemids);
-    const query = `SELECT ${aggregation}("${value}") FROM ${measurement}
-      WHERE ${where_clause} AND "time" >= ${timeFrom}s AND "time" <= ${timeTill}s
-      GROUP BY time(${intervalSec}s), "itemid" fill(none)`;
+    const query = `SELECT ${aggregation}("${value}")
+                   FROM ${measurement}
+                   WHERE ${where_clause}
+                     AND "time" >= ${timeFrom}s
+                     AND "time" <= ${timeTill}s
+                   GROUP BY time(${intervalSec}s), "itemid" fill(none)`;
     return compactQuery(query);
   }
 

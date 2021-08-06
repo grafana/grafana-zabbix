@@ -1,7 +1,7 @@
 import React from 'react';
 import { config, GrafanaBootConfig } from '@grafana/runtime';
-import { ThemeContext, getTheme } from '@grafana/ui';
-import { GrafanaThemeType } from '@grafana/data';
+import { ThemeContext } from '@grafana/ui';
+import { createTheme } from '@grafana/data';
 
 export const ConfigContext = React.createContext<GrafanaBootConfig>(config);
 export const ConfigConsumer = ConfigContext.Consumer;
@@ -14,10 +14,11 @@ export const provideConfig = (component: React.ComponentType<any>) => {
   return ConfigProvider;
 };
 
-export const getCurrentThemeName = () =>
-  config.bootData.user.lightTheme ? GrafanaThemeType.Light : GrafanaThemeType.Dark;
-
-export const getCurrentTheme = () => getTheme(getCurrentThemeName());
+export const getCurrentTheme = () => createTheme({
+  colors: {
+    mode: config.bootData.user.lightTheme ? 'light' : 'dark',
+  },
+});
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   return (

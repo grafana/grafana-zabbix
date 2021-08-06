@@ -8,13 +8,14 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 var (
@@ -30,11 +31,10 @@ type ZabbixDatasource struct {
 // ZabbixDatasourceInstance stores state about a specific datasource
 // and provides methods to make requests to the Zabbix API
 type ZabbixDatasourceInstance struct {
-	zabbixAPI  *zabbixapi.ZabbixAPI
-	dsInfo     *backend.DataSourceInstanceSettings
-	Settings   *ZabbixDatasourceSettings
-	queryCache *DatasourceCache
-	logger     log.Logger
+	zabbix   *zabbix.Zabbix
+	dsInfo   *backend.DataSourceInstanceSettings
+	Settings *ZabbixDatasourceSettings
+	logger   log.Logger
 }
 
 func NewZabbixDatasource() *ZabbixDatasource {
@@ -56,18 +56,29 @@ func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (i
 		return nil, err
 	}
 
-	zabbixAPI, err := zabbixapi.New(&settings, zabbixSettings.Timeout)
+	client, err := httpclient.New(&settings, zabbixSettings.Timeout)
+	if err != nil {
+		logger.Error("Error initializing HTTP client", "error", err)
+		return nil, err
+	}
+
+	zabbixAPI, err := zabbixapi.New(settings.URL, client)
 	if err != nil {
 		logger.Error("Error initializing Zabbix API", "error", err)
 		return nil, err
 	}
 
+	zabbixClient, err := zabbix.New(&settings, zabbixAPI)
+	if err != nil {
+		logger.Error("Error initializing Zabbix client", "error", err)
+		return nil, err
+	}
+
 	return &ZabbixDatasourceInstance{
-		dsInfo:     &settings,
-		zabbixAPI:  zabbixAPI,
-		Settings:   zabbixSettings,
-		queryCache: NewDatasourceCache(zabbixSettings.CacheTTL, 10*time.Minute),
-		logger:     logger,
+		dsInfo:   &settings,
+		zabbix:   zabbixClient,
+		Settings: zabbixSettings,
+		logger:   logger,
 	}, nil
 }
 
@@ -97,6 +108,7 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 }
 
 func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	ds.logger.Debug("QueryData()")
 	qdr := backend.NewQueryDataResponse()
 
 	zabbixDS, err := ds.getDSInstance(req.PluginContext)
@@ -110,17 +122,22 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		ds.logger.Debug("DS query", "query", q)
 		if err != nil {
 			res.Error = err
-		} else if len(query.Functions) > 0 {
-			res.Error = ErrFunctionsNotSupported
-		} else if query.Mode != 0 {
-			res.Error = ErrNonMetricQueryNotSupported
-		} else {
-			frame, err := zabbixDS.queryNumericItems(ctx, &query)
+		} else if query.QueryType == MODE_METRICS {
+			frames, err := zabbixDS.queryNumericItems(ctx, &query)
 			if err != nil {
 				res.Error = err
 			} else {
-				res.Frames = []*data.Frame{frame}
+				res.Frames = append(res.Frames, frames...)
 			}
+		} else if query.QueryType == MODE_ITEMID {
+			frames, err := zabbixDS.queryItemIdData(ctx, &query)
+			if err != nil {
+				res.Error = err
+			} else {
+				res.Frames = append(res.Frames, frames...)
+			}
+		} else {
+			res.Error = ErrNonMetricQueryNotSupported
 		}
 		qdr.Responses[q.RefID] = res
 	}
@@ -180,11 +197,13 @@ func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 	}
 
 	zabbixSettings := &ZabbixDatasourceSettings{
-		Trends:      zabbixSettingsDTO.Trends,
-		TrendsFrom:  trendsFrom,
-		TrendsRange: trendsRange,
-		CacheTTL:    cacheTTL,
-		Timeout:     time.Duration(timeout) * time.Second,
+		Trends:                  zabbixSettingsDTO.Trends,
+		TrendsFrom:              trendsFrom,
+		TrendsRange:             trendsRange,
+		CacheTTL:                cacheTTL,
+		Timeout:                 time.Duration(timeout) * time.Second,
+		DisableDataAlignment:    zabbixSettingsDTO.DisableDataAlignment,
+		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
 	}
 
 	return zabbixSettings, nil

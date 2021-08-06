@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { css, cx } from 'emotion';
+import { css, cx } from '@emotion/css';
 import { EventsWithValidation, ValidationEvents, useTheme } from '@grafana/ui';
 import { GrafanaTheme } from '@grafana/data';
 import { isRegex, variableRegex } from '../utils';

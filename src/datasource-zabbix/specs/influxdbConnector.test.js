@@ -3,7 +3,7 @@ import { compactQuery } from '../utils';
 
 jest.mock('@grafana/runtime', () => ({
   getDataSourceSrv: jest.fn(() => ({
-    loadDatasource: jest.fn().mockResolvedValue(
+    get: jest.fn().mockResolvedValue(
       { id: 42, name: 'InfluxDB DS', meta: {} }
     ),
   })),
@@ -29,8 +29,11 @@ describe('InfluxDBConnector', () => {
       const { itemids, range, intervalSec, table, aggFunction } = ctx.defaultQueryParams;
       const query = ctx.influxDBConnector.buildHistoryQuery(itemids, table, range, intervalSec, aggFunction);
       const expected = compactQuery(`SELECT MAX("value")
-        FROM "history" WHERE ("itemid" = '123' OR "itemid" = '234') AND "time" >= 15000s AND "time" <= 15100s
-        GROUP BY time(5s), "itemid" fill(none)
+                                     FROM "history"
+                                     WHERE ("itemid" = '123' OR "itemid" = '234')
+                                       AND "time" >= 15000s
+                                       AND "time" <= 15100s
+                                     GROUP BY time(5s), "itemid" fill(none)
       `);
       expect(query).toBe(expected);
     });
@@ -40,8 +43,11 @@ describe('InfluxDBConnector', () => {
       const aggFunction = 'avg';
       const query = ctx.influxDBConnector.buildHistoryQuery(itemids, table, range, intervalSec, aggFunction);
       const expected = compactQuery(`SELECT MEAN("value")
-        FROM "history" WHERE ("itemid" = '123' OR "itemid" = '234') AND "time" >= 15000s AND "time" <= 15100s
-        GROUP BY time(5s), "itemid" fill(none)
+                                     FROM "history"
+                                     WHERE ("itemid" = '123' OR "itemid" = '234')
+                                       AND "time" >= 15000s
+                                       AND "time" <= 15100s
+                                     GROUP BY time(5s), "itemid" fill(none)
       `);
       expect(query).toBe(expected);
     });
@@ -55,8 +61,11 @@ describe('InfluxDBConnector', () => {
         { itemid: '123', value_type: 3 }
       ];
       const expectedQuery = compactQuery(`SELECT MEAN("value")
-        FROM "history_uint" WHERE ("itemid" = '123') AND "time" >= 15000s AND "time" <= 15100s
-        GROUP BY time(5s), "itemid" fill(none)
+                                          FROM "history_uint"
+                                          WHERE ("itemid" = '123')
+                                            AND "time" >= 15000s
+                                            AND "time" <= 15100s
+                                          GROUP BY time(5s), "itemid" fill(none)
       `);
       ctx.influxDBConnector.getHistory(items, timeFrom, timeTill, options);
       expect(ctx.influxDBConnector.invokeInfluxDBQuery).toHaveBeenCalledWith(expectedQuery);
@@ -71,10 +80,12 @@ describe('InfluxDBConnector', () => {
       ];
       const sharedQueryPart = `AND "time" >= 15000s AND "time" <= 15100s GROUP BY time(5s), "itemid" fill(none)`;
       const expectedQueryFirst = compactQuery(`SELECT MEAN("value")
-        FROM "history" WHERE ("itemid" = '123') ${sharedQueryPart}
+                                               FROM "history"
+                                               WHERE ("itemid" = '123') ${sharedQueryPart}
       `);
       const expectedQuerySecond = compactQuery(`SELECT MEAN("value")
-        FROM "history_uint" WHERE ("itemid" = '234') ${sharedQueryPart}
+                                                FROM "history_uint"
+                                                WHERE ("itemid" = '234') ${sharedQueryPart}
       `);
       ctx.influxDBConnector.getHistory(items, timeFrom, timeTill, options);
       expect(ctx.influxDBConnector.invokeInfluxDBQuery).toHaveBeenCalledTimes(2);
@@ -90,8 +101,11 @@ describe('InfluxDBConnector', () => {
         { itemid: '123', value_type: 3 }
       ];
       const expectedQuery = compactQuery(`SELECT MEAN("value")
-        FROM "history_uint" WHERE ("itemid" = '123') AND "time" >= 15000s AND "time" <= 15100s
-        GROUP BY time(5s), "itemid" fill(none)
+                                          FROM "history_uint"
+                                          WHERE ("itemid" = '123')
+                                            AND "time" >= 15000s
+                                            AND "time" <= 15100s
+                                          GROUP BY time(5s), "itemid" fill(none)
       `);
       ctx.influxDBConnector.getTrends(items, timeFrom, timeTill, options);
       expect(ctx.influxDBConnector.invokeInfluxDBQuery).toHaveBeenCalledWith(expectedQuery);
@@ -104,8 +118,11 @@ describe('InfluxDBConnector', () => {
         { itemid: '123', value_type: 3 }
       ];
       const expectedQuery = compactQuery(`SELECT MEAN("value_avg")
-        FROM "longterm"."history_uint" WHERE ("itemid" = '123') AND "time" >= 15000s AND "time" <= 15100s
-        GROUP BY time(5s), "itemid" fill(none)
+                                          FROM "longterm"."history_uint"
+                                          WHERE ("itemid" = '123')
+                                            AND "time" >= 15000s
+                                            AND "time" <= 15100s
+                                          GROUP BY time(5s), "itemid" fill(none)
       `);
       ctx.influxDBConnector.getTrends(items, timeFrom, timeTill, options);
       expect(ctx.influxDBConnector.invokeInfluxDBQuery).toHaveBeenCalledWith(expectedQuery);
@@ -118,8 +135,11 @@ describe('InfluxDBConnector', () => {
         { itemid: '123', value_type: 3 }
       ];
       const expectedQuery = compactQuery(`SELECT MAX("value_max")
-        FROM "longterm"."history_uint" WHERE ("itemid" = '123') AND "time" >= 15000s AND "time" <= 15100s
-        GROUP BY time(5s), "itemid" fill(none)
+                                          FROM "longterm"."history_uint"
+                                          WHERE ("itemid" = '123')
+                                            AND "time" >= 15000s
+                                            AND "time" <= 15100s
+                                          GROUP BY time(5s), "itemid" fill(none)
       `);
       ctx.influxDBConnector.getTrends(items, timeFrom, timeTill, options);
       expect(ctx.influxDBConnector.invokeInfluxDBQuery).toHaveBeenCalledWith(expectedQuery);

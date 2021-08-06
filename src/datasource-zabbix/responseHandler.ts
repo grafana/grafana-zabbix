@@ -2,7 +2,19 @@ import _ from 'lodash';
 import TableModel from 'grafana/app/core/table_model';
 import * as c from './constants';
 import * as utils from './utils';
-import { ArrayVector, DataFrame, Field, FieldType, MutableDataFrame, MutableField, TIME_SERIES_TIME_FIELD_NAME, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/data';
+import {
+  ArrayVector,
+  DataFrame,
+  dataFrameFromJSON,
+  DataFrameJSON,
+  Field,
+  FieldType,
+  getTimeField,
+  MutableDataFrame,
+  MutableField,
+  TIME_SERIES_TIME_FIELD_NAME,
+  TIME_SERIES_VALUE_FIELD_NAME,
+} from '@grafana/data';
 import { ZabbixMetricsQuery } from './types';
 
 /**
@@ -25,12 +37,12 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
    *       ]
    */
 
-  // Group history by itemid
+    // Group history by itemid
   const grouped_history = _.groupBy(history, 'itemid');
   const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');  //uniqBy is needed to deduplicate
 
   return _.map(grouped_history, (hist, itemid) => {
-    const item = _.find(items, {'itemid': itemid}) as any;
+    const item = _.find(items, { 'itemid': itemid }) as any;
     let alias = item.name;
 
     // Add scopedVars for using in alias functions
@@ -42,7 +54,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
     };
 
     if (_.keys(hosts).length > 0) {
-      const host = _.find(hosts, {'hostid': item.hostid});
+      const host = _.find(hosts, { 'hostid': item.hostid });
       scopedVars['__zbx_host'] = { value: host.host };
       scopedVars['__zbx_host_name'] = { value: host.name };
 
@@ -128,7 +140,7 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
     }
   }
 
-  const fields: Field[] = [ timeFiled, valueFiled ];
+  const fields: Field[] = [timeFiled, valueFiled];
 
   const frame: DataFrame = {
     name: seriesName,
@@ -139,6 +151,94 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
 
   const mutableFrame = new MutableDataFrame(frame);
   return mutableFrame;
+}
+
+// Converts DataResponse to the format which backend works with (for data processing)
+export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
+  const series = [];
+  if (response.length === 0) {
+    return [];
+  }
+
+  for (const frameJSON of response) {
+    const frame = dataFrameFromJSON(frameJSON);
+    const { timeField, timeIndex } = getTimeField(frame);
+    for (let i = 0; i < frame.fields.length; i++) {
+      const field = frame.fields[i];
+      if (i === timeIndex || !field.values || !field.values.length) {
+        continue;
+      }
+
+      const s = [];
+      for (let j = 0; j < field.values.length; j++) {
+        const v = field.values.get(j);
+        if (v !== null) {
+          s.push({ time: timeField.values.get(j) / 1000, value: v });
+        }
+      }
+
+      const itemid = field.name;
+      const item = _.find(items, { 'itemid': itemid });
+
+      // Convert interval to nanoseconds in order to unmarshall it on the backend to time.Duration
+      let interval = utils.parseItemInterval(item.delay) * 1000000;
+      if (interval === 0) {
+        interval = null;
+      }
+
+      const timeSeriesData = {
+        ts: s,
+        meta: {
+          name: item.name,
+          item,
+          interval,
+        }
+      };
+
+      series.push(timeSeriesData);
+    }
+  }
+
+  return series;
+}
+
+export function itServiceResponseToTimeSeries(response: any, interval) {
+  const series = [];
+  if (response.length === 0) {
+    return [];
+  }
+
+  for (const s of response) {
+    const ts = [];
+
+    if (!s.datapoints) {
+      continue;
+    }
+
+    const dp = s.datapoints;
+    for (let i = 0; i < dp.length; i++) {
+      ts.push({ time: dp[i][1] / 1000, value: dp[i][0] });
+    }
+
+    // Convert interval to nanoseconds in order to unmarshall it on the backend to time.Duration
+    let intervalNS = utils.parseItemInterval(interval) * 1000000;
+    if (intervalNS === 0) {
+      intervalNS = null;
+    }
+
+    const timeSeriesData = {
+      ts: ts,
+      meta: {
+        name: s.target,
+        interval: null,
+        item: {},
+      }
+    };
+
+    series.push(timeSeriesData);
+  }
+
+  return series;
 }
 
 export function isConvertibleToWide(data: DataFrame[]): boolean {
@@ -192,7 +292,7 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
       const missingTimestamps = [];
       const missingValues = [];
       const frameInterval: number = timeField.config.custom?.itemInterval;
-      for (let j = minTimestamp; j < firstTs; j+=frameInterval) {
+      for (let j = minTimestamp; j < firstTs; j += frameInterval) {
         missingTimestamps.push(j);
         missingValues.push(null);
       }
@@ -213,7 +313,7 @@ export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
     return [];
   }
 
-  const fields: MutableField[] = [ timeField ];
+  const fields: MutableField[] = [timeField];
 
   for (let i = 0; i < data.length; i++) {
     const valueField = data[i].fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
@@ -263,10 +363,10 @@ function handleText(history, items, target, addHostName = true) {
 
 function handleHistoryAsTable(history, items, target) {
   const table: any = new TableModel();
-  table.addColumn({text: 'Host'});
-  table.addColumn({text: 'Item'});
-  table.addColumn({text: 'Key'});
-  table.addColumn({text: 'Last value'});
+  table.addColumn({ text: 'Host' });
+  table.addColumn({ text: 'Item' });
+  table.addColumn({ text: 'Key' });
+  table.addColumn({ text: 'Last value' });
 
   const grouped_history = _.groupBy(history, 'itemid');
   _.each(items, (item) => {
@@ -365,9 +465,9 @@ function handleTriggersResponse(triggers, groups, timeRange) {
     const stats = getTriggerStats(triggers);
     const groupNames = _.map(groups, 'name');
     const table: any = new TableModel();
-    table.addColumn({text: 'Host group'});
+    table.addColumn({ text: 'Host group' });
     _.each(_.orderBy(c.TRIGGER_SEVERITY, ['val'], ['desc']), (severity) => {
-      table.addColumn({text: severity.text});
+      table.addColumn({ text: severity.text });
     });
     _.each(stats, (severity_stats, group) => {
       if (_.includes(groupNames, group)) {
@@ -385,7 +485,7 @@ function getTriggerStats(triggers) {
   // let severity = _.map(c.TRIGGER_SEVERITY, 'text');
   const stats = {};
   _.each(groups, (group) => {
-    stats[group] = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}; // severity:count
+    stats[group] = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; // severity:count
   });
   _.each(triggers, (trigger) => {
     _.each(trigger.groups, (group) => {
@@ -441,6 +541,8 @@ export default {
   handleTriggersResponse,
   sortTimeseries,
   seriesToDataFrame,
+  dataResponseToTimeSeries,
+  itServiceResponseToTimeSeries,
   isConvertibleToWide,
   convertToWide,
   alignFrames,

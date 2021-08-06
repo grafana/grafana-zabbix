@@ -45,6 +45,7 @@ func Init(logger log.Logger, mux *http.ServeMux) *datasource.ZabbixDatasource {
 
 	mux.HandleFunc("/", ds.RootHandler)
 	mux.HandleFunc("/zabbix-api", ds.ZabbixAPIHandler)
+	mux.HandleFunc("/db-connection-post", ds.DBConnectionPostProcessingHandler)
 	// mux.Handle("/scenarios", getScenariosHandler(logger))
 
 	return ds

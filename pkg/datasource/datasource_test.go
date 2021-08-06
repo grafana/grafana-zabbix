@@ -61,7 +61,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 			got, _ := ds.getDSInstance(tt.pluginContext)
 
 			// Only checking the URL, being the easiest value to, and guarantee equality for
-			assert.Equal(t, tt.want.zabbixAPI.GetUrl().String(), got.zabbixAPI.GetUrl().String())
+			assert.Equal(t, tt.want.zabbix.GetAPI().GetUrl().String(), got.zabbix.GetAPI().GetUrl().String())
 		})
 	}
 }

@@ -1,7 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+// const CleanWebpackPlugin = require('clean-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 const ExtractTextPluginLight = new ExtractTextPlugin('./css/grafana-zabbix.light.css');
@@ -27,8 +27,29 @@ module.exports = {
   },
   externals: [
     // remove the line below if you don't want to use builtin versions
-    'jquery', 'lodash', 'moment', 'angular', 'emotion',
-    'react', 'react-dom', '@grafana/ui', '@grafana/data', '@grafana/runtime',
+    'lodash',
+    'jquery',
+    'moment',
+    'slate',
+    'emotion',
+    '@emotion/react',
+    '@emotion/css',
+    'prismjs',
+    'slate-plain-serializer',
+    '@grafana/slate-react',
+    'react',
+    'react-dom',
+    'react-redux',
+    'redux',
+    'rxjs',
+    'react-router-dom',
+    'd3',
+    'angular',
+    '@grafana/ui',
+    '@grafana/runtime',
+    '@grafana/data',
+    'monaco-editor',
+    'react-monaco-editor',
     function (context, request, callback) {
       var prefix = 'grafana/';
       if (request.indexOf(prefix) === 0) {
@@ -47,9 +68,6 @@ module.exports = {
       { from: '../README.md' },
       { from: '**/img/*' },
     ]),
-    new CleanWebpackPlugin(['dist'], {
-      root: resolve('.')
-    }),
     ExtractTextPluginLight,
     ExtractTextPluginDark,
   ],
@@ -59,21 +77,39 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js$/,
-        exclude: /(external)/,
-        use: {
-          loader: 'babel-loader',
-          query: {
-            presets: ['@babel/preset-env']
-          }
-        }
+        test: /\.tsx?$/,
+        loaders: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: [['@babel/preset-env', { modules: false }]],
+              plugins: ['angularjs-annotate'],
+              sourceMaps: true,
+            },
+          },
+          {
+            loader: 'ts-loader',
+            options: {
+              onlyCompileBundledFiles: true,
+              transpileOnly: true,
+            },
+          },
+        ],
+        exclude: /(node_modules)/,
       },
       {
-        test: /\.tsx?$/,
-        exclude: /node_modules|external/,
+        test: /\.jsx?$/,
         loaders: [
-          "ts-loader"
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: [['@babel/preset-env', { modules: false }]],
+              plugins: ['angularjs-annotate'],
+              sourceMaps: true,
+            },
+          },
         ],
+        exclude: /(node_modules)/,
       },
       {
         test: /\.html$/,

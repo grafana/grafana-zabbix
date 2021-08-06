@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
@@ -47,7 +49,7 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 		return
 	}
 
-	apiReq := &ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
+	apiReq := &zabbix.ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
 
 	result, err := dsInstance.ZabbixAPIQuery(req.Context(), apiReq)
 	if err != nil {
@@ -57,6 +59,50 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	}
 
 	writeResponse(rw, result)
+}
+
+func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		return
+	}
+
+	body, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
+	if err != nil || len(body) == 0 {
+		writeError(rw, http.StatusBadRequest, err)
+		return
+	}
+
+	var reqData DBConnectionPostProcessingRequest
+	err = json.Unmarshal(body, &reqData)
+	if err != nil {
+		ds.logger.Error("Cannot unmarshal request", "error", err.Error())
+		writeError(rw, http.StatusInternalServerError, err)
+		return
+	}
+
+	pluginCxt := httpadapter.PluginConfigFromContext(req.Context())
+	dsInstance, err := ds.getDSInstance(pluginCxt)
+	if err != nil {
+		ds.logger.Error("Error loading datasource", "error", err)
+		writeError(rw, http.StatusInternalServerError, err)
+		return
+	}
+
+	reqData.Query.TimeRange.From = time.Unix(reqData.TimeRange.From, 0)
+	reqData.Query.TimeRange.To = time.Unix(reqData.TimeRange.To, 0)
+
+	frames, err := dsInstance.applyDataProcessing(req.Context(), &reqData.Query, reqData.Series)
+
+	resultJson, err := json.Marshal(frames)
+	if err != nil {
+		writeError(rw, http.StatusInternalServerError, err)
+	}
+
+	rw.Header().Add("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusOK)
+	rw.Write(resultJson)
+
 }
 
 func writeResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {

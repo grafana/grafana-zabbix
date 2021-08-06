@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { cx, css } from 'emotion';
+import { cx, css } from '@emotion/css';
 import { GFHeartIcon } from '../../../components';
 import { ProblemDTO } from '../../../datasource-zabbix/types';
 

@@ -1,15 +1,17 @@
-import _ from 'lodash';
 import mocks from '../../test-setup/mocks';
-import { ZabbixDatasource } from "../datasource";
-import { zabbixTemplateFormat } from "../datasource";
+import { ZabbixDatasource, zabbixTemplateFormat } from "../datasource";
 import { dateMath } from '@grafana/data';
 
 jest.mock('@grafana/runtime', () => ({
   getBackendSrv: () => ({
-    datasourceRequest: jest.fn().mockResolvedValue({data: {result: ''}}),
+    datasourceRequest: jest.fn().mockResolvedValue({ data: { result: '' } }),
+    fetch: () => ({
+      toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } })
+    }),
   }),
-  loadPluginCss: () => {},
-}), {virtual: true});
+  loadPluginCss: () => {
+  },
+}), { virtual: true });
 
 describe('ZabbixDatasource', () => {
   let ctx = {};
@@ -27,24 +29,13 @@ describe('ZabbixDatasource', () => {
       }
     };
 
-    ctx.templateSrv = mocks.templateSrvMock;
-    ctx.datasourceSrv = mocks.datasourceSrvMock;
-
-    ctx.ds = new ZabbixDatasource(ctx.instanceSettings, ctx.templateSrv);
-  });
-
-  describe('When querying data', () => {
-    beforeEach(() => {
-      ctx.ds.replaceTemplateVars = (str) => str;
-    });
-
     ctx.options = {
       targets: [
         {
-          group: {filter: ""},
-          host: {filter: ""},
-          application: {filter: ""},
-          item: {filter: ""}
+          group: { filter: "" },
+          host: { filter: "" },
+          application: { filter: "" },
+          item: { filter: "" }
         }
       ],
       range: {
@@ -53,64 +44,24 @@ describe('ZabbixDatasource', () => {
       }
     };
 
-    it('should return an empty array when no targets are set', (done) => {
-      let options = {
-        targets: [],
-        range: {from: 'now-6h', to: 'now'}
-      };
-      ctx.ds.query(options).then(result => {
-        expect(result.data.length).toBe(0);
-        done();
-      });
-    });
+    ctx.templateSrv = mocks.templateSrvMock;
+    ctx.datasourceSrv = mocks.datasourceSrvMock;
 
-    it('should use trends if it enabled and time more than trendsFrom', (done) => {
-      let ranges = ['now-8d', 'now-169h', 'now-1M', 'now-1y'];
-
-      _.forEach(ranges, range => {
-        ctx.options.range.from = dateMath.parse(range);
-        ctx.ds.queryNumericData = jest.fn();
-        ctx.ds.query(ctx.options);
-
-        // Check that useTrends options is true
-        let callArgs = ctx.ds.queryNumericData.mock.calls[0];
-        expect(callArgs[2]).toBe(true);
-        ctx.ds.queryNumericData.mockClear();
-      });
-
-      done();
-    });
-
-    it('shouldnt use trends if it enabled and time less than trendsFrom', (done) => {
-      let ranges = ['now-7d', 'now-168h', 'now-1h', 'now-30m', 'now-30s'];
-
-      _.forEach(ranges, range => {
-        ctx.options.range.from = dateMath.parse(range);
-        ctx.ds.queryNumericData = jest.fn();
-        ctx.ds.query(ctx.options);
-
-        // Check that useTrends options is false
-        let callArgs = ctx.ds.queryNumericData.mock.calls[0];
-        expect(callArgs[2]).toBe(false);
-        ctx.ds.queryNumericData.mockClear();
-      });
-      done();
-    });
-
+    ctx.ds = new ZabbixDatasource(ctx.instanceSettings, ctx.templateSrv);
   });
 
   describe('When querying text data', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;
       ctx.ds.zabbix.zabbixAPI.getHistory = jest.fn().mockReturnValue(Promise.resolve([
-        {clock: "1500010200", itemid:"10100", ns:"900111000", value:"Linux first"},
-        {clock: "1500010300", itemid:"10100", ns:"900111000", value:"Linux 2nd"},
-        {clock: "1500010400", itemid:"10100", ns:"900111000", value:"Linux last"}
+        { clock: "1500010200", itemid: "10100", ns: "900111000", value: "Linux first" },
+        { clock: "1500010300", itemid: "10100", ns: "900111000", value: "Linux 2nd" },
+        { clock: "1500010400", itemid: "10100", ns: "900111000", value: "Linux last" }
       ]));
 
       ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve([
         {
-          hosts: [{hostid: "10001", name: "Zabbix server"}],
+          hosts: [{ hostid: "10001", name: "Zabbix server" }],
           itemid: "10100",
           name: "System information",
           key_: "system.uname",
@@ -118,10 +69,10 @@ describe('ZabbixDatasource', () => {
       ]));
 
       ctx.options.targets = [{
-        group: {filter: ""},
-        host: {filter: "Zabbix server"},
-        application: {filter: ""},
-        item: {filter: "System information"},
+        group: { filter: "" },
+        host: { filter: "Zabbix server" },
+        application: { filter: "" },
+        item: { filter: "System information" },
         textFilter: "",
         useCaptureGroups: true,
         queryType: 2,
@@ -138,7 +89,7 @@ describe('ZabbixDatasource', () => {
 
         let tableData = result.data[0];
         expect(tableData.columns).toEqual([
-          {text: 'Host'}, {text: 'Item'}, {text: 'Key'}, {text: 'Last value'}
+          { text: 'Host' }, { text: 'Item' }, { text: 'Key' }, { text: 'Last value' }
         ]);
         expect(tableData.rows).toEqual([
           ['Zabbix server', 'System information', 'system.uname', 'Linux last']
@@ -159,22 +110,22 @@ describe('ZabbixDatasource', () => {
     it('should skip item when last value is empty', () => {
       ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(Promise.resolve([
         {
-          hosts: [{hostid: "10001", name: "Zabbix server"}],
+          hosts: [{ hostid: "10001", name: "Zabbix server" }],
           itemid: "10100", name: "System information", key_: "system.uname"
         },
         {
-          hosts: [{hostid: "10002", name: "Server02"}],
+          hosts: [{ hostid: "10002", name: "Server02" }],
           itemid: "90109", name: "System information", key_: "system.uname"
         }
       ]));
 
       ctx.options.targets[0].options.skipEmptyValues = true;
       ctx.ds.zabbix.getHistory = jest.fn().mockReturnValue(Promise.resolve([
-          {clock: "1500010200", itemid:"10100", ns:"900111000", value:"Linux first"},
-          {clock: "1500010300", itemid:"10100", ns:"900111000", value:"Linux 2nd"},
-          {clock: "1500010400", itemid:"10100", ns:"900111000", value:"Linux last"},
-          {clock: "1500010200", itemid:"90109", ns:"900111000", value:"Non empty value"},
-          {clock: "1500010500", itemid:"90109", ns:"900111000", value:""}
+        { clock: "1500010200", itemid: "10100", ns: "900111000", value: "Linux first" },
+        { clock: "1500010300", itemid: "10100", ns: "900111000", value: "Linux 2nd" },
+        { clock: "1500010400", itemid: "10100", ns: "900111000", value: "Linux last" },
+        { clock: "1500010200", itemid: "90109", ns: "900111000", value: "Non empty value" },
+        { clock: "1500010500", itemid: "90109", ns: "900111000", value: "" }
       ]));
       return ctx.ds.query(ctx.options).then(result => {
         let tableData = result.data[0];
@@ -249,9 +200,9 @@ describe('ZabbixDatasource', () => {
 
     it('should return groups', (done) => {
       const tests = [
-        {query: '*',        expect: '/.*/'},
-        {query: 'Backend',  expect: 'Backend'},
-        {query: 'Back*',    expect: 'Back*'},
+        { query: '*', expect: '/.*/' },
+        { query: 'Backend', expect: 'Backend' },
+        { query: 'Back*', expect: 'Back*' },
       ];
 
       for (const test of tests) {
@@ -274,10 +225,10 @@ describe('ZabbixDatasource', () => {
 
     it('should return hosts', (done) => {
       const tests = [
-        {query: '*.*',       expect: ['/.*/', '/.*/']},
-        {query: '.',         expect: ['', '']},
-        {query: 'Backend.*', expect: ['Backend', '/.*/']},
-        {query: 'Back*.',    expect: ['Back*', '']},
+        { query: '*.*', expect: ['/.*/', '/.*/'] },
+        { query: '.', expect: ['', ''] },
+        { query: 'Backend.*', expect: ['Backend', '/.*/'] },
+        { query: 'Back*.', expect: ['Back*', ''] },
       ];
 
       for (const test of tests) {
@@ -290,10 +241,10 @@ describe('ZabbixDatasource', () => {
 
     it('should return applications', (done) => {
       const tests = [
-        {query: '*.*.*',               expect: ['/.*/', '/.*/', '/.*/']},
-        {query: '.*.',                 expect: ['', '/.*/', '']},
-        {query: 'Backend.backend01.*', expect: ['Backend', 'backend01', '/.*/']},
-        {query: 'Back*.*.',            expect: ['Back*', '/.*/', '']}
+        { query: '*.*.*', expect: ['/.*/', '/.*/', '/.*/'] },
+        { query: '.*.', expect: ['', '/.*/', ''] },
+        { query: 'Backend.backend01.*', expect: ['Backend', 'backend01', '/.*/'] },
+        { query: 'Back*.*.', expect: ['Back*', '/.*/', ''] }
       ];
 
       for (const test of tests) {
@@ -306,16 +257,16 @@ describe('ZabbixDatasource', () => {
 
     it('should return items', (done) => {
       const tests = [
-        {query: '*.*.*.*',               expect: ['/.*/', '/.*/', '', '/.*/']},
-        {query: '.*.*.*',                expect: ['', '/.*/', '', '/.*/']},
-        {query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', '/.*/']},
-        {query: 'Back*.*.cpu.*',         expect: ['Back*', '/.*/', 'cpu', '/.*/']}
+        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', '/.*/'] },
+        { query: '.*.*.*', expect: ['', '/.*/', '', '/.*/'] },
+        { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', '/.*/'] },
+        { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu', '/.*/'] }
       ];
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
         expect(ctx.ds.zabbix.getItems)
-          .toBeCalledWith(test.expect[0], test.expect[1], test.expect[2], test.expect[3]);
+        .toBeCalledWith(test.expect[0], test.expect[1], test.expect[2], test.expect[3]);
         ctx.ds.zabbix.getItems.mockClear();
       }
       done();

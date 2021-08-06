@@ -76,7 +76,7 @@ export class ZabbixAPIConnector {
       requestOptions.headers.Authorization = this.requestOptions.basicAuth;
     }
 
-    const response = await getBackendSrv().datasourceRequest(requestOptions);
+    const response = await getBackendSrv().fetch<any>(requestOptions).toPromise();
     return response?.data?.result;
   }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { css } from 'emotion';
+import { css } from '@emotion/css';
 import { RTCell } from '../../types';
 import { ProblemDTO } from '../../../datasource-zabbix/types';
 import { FAIcon } from '../../../components';
