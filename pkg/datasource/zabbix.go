@@ -47,9 +47,10 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	groupFilter := query.Group.Filter
 	hostFilter := query.Host.Filter
 	appFilter := query.Application.Filter
+	itemTagFilter := query.ItemTag.Filter
 	itemFilter := query.Item.Filter
 
-	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, appFilter, itemFilter, "num")
+	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, "num")
 	if err != nil {
 		return nil, err
 	}

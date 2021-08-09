@@ -14,10 +14,11 @@ import (
 // Zabbix is a wrapper for Zabbix API. It wraps Zabbix API queries and performs authentication, adds caching,
 // deduplication and other performance optimizations.
 type Zabbix struct {
-	api    *zabbixapi.ZabbixAPI
-	dsInfo *backend.DataSourceInstanceSettings
-	cache  *ZabbixCache
-	logger log.Logger
+	api     *zabbixapi.ZabbixAPI
+	dsInfo  *backend.DataSourceInstanceSettings
+	cache   *ZabbixCache
+	version int
+	logger  log.Logger
 }
 
 // New returns new instance of Zabbix client.
@@ -48,6 +49,16 @@ func (zabbix *Zabbix) GetAPI() *zabbixapi.ZabbixAPI {
 func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simplejson.Json, error) {
 	var resultJson *simplejson.Json
 	var err error
+
+	if ds.version == 0 {
+		version, err := ds.GetVersion(ctx)
+		if err != nil {
+			ds.logger.Error("Error querying Zabbix version", "error", err)
+		} else {
+			ds.logger.Debug("Got Zabbix version", "version", version)
+			ds.version = version
+		}
+	}
 
 	cachedResult, queryExistInCache := ds.cache.GetAPIRequest(apiReq)
 	if !queryExistInCache {

@@ -680,7 +680,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         resultPromise = this.zabbix.getApps(queryModel.group, queryModel.host, queryModel.application);
         break;
       case VariableQueryTypes.Item:
-        resultPromise = this.zabbix.getItems(queryModel.group, queryModel.host, queryModel.application, queryModel.item);
+        resultPromise = this.zabbix.getItems(queryModel.group, queryModel.host, queryModel.application, null, queryModel.item);
         break;
       case VariableQueryTypes.ItemValues:
         const range = options?.range;

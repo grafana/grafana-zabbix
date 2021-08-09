@@ -51,11 +51,17 @@ type Item struct {
 	Delay      string     `json:"delay,omitempty"`
 	Units      string     `json:"units,omitempty"`
 	ValueMapID string     `json:"valuemapid,omitempty"`
+	Tags       []ItemTag  `json:"tags,omitempty"`
 }
 
 type ItemHost struct {
 	ID   string `json:"hostid,omitempty"`
 	Name string `json:"name,omitempty"`
+}
+
+type ItemTag struct {
+	Tag   string `json:"tag,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 type Trend []TrendPoint

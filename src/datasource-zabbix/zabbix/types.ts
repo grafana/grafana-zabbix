@@ -17,7 +17,7 @@ export interface ZabbixConnector {
   getGroups: (groupFilter?) => any;
   getHosts: (groupFilter?, hostFilter?) => any;
   getApps: (groupFilter?, hostFilter?, appFilter?) => any;
-  getItems: (groupFilter?, hostFilter?, appFilter?, itemFilter?, options?) => any;
+  getItems: (groupFilter?, hostFilter?, appFilter?, itemTagFilter?, itemFilter?, options?) => any;
   getSLA: (itservices, timeRange, target, options?) => any;
 
   supportsApplications: () => boolean;

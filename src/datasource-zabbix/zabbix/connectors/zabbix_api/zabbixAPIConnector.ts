@@ -2,9 +2,9 @@ import _ from 'lodash';
 import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
-import { ZBX_ACK_ACTION_NONE, ZBX_ACK_ACTION_ADD_MESSAGE, MIN_SLA_INTERVAL } from '../../../constants';
+import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
 import { ShowProblemTypes, ZBXProblem } from '../../../types';
-import { JSONRPCError, ZBXScript, APIExecuteScriptResponse } from './types';
+import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
 
@@ -106,6 +106,10 @@ export class ZabbixAPIConnector {
     return this.getVersionPromise;
   }
 
+  isZabbix54OrHigher() {
+    return semver.gte(this.version, '5.4.0');
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
@@ -151,7 +155,7 @@ export class ZabbixAPIConnector {
   }
 
   async getApps(hostids): Promise<any[]> {
-    if (semver.gte(this.version, '5.4.0')) {
+    if (this.isZabbix54OrHigher()) {
       return [];
     }
 
@@ -203,12 +207,16 @@ export class ZabbixAPIConnector {
       params.filter.value_type = [1, 2, 4];
     }
 
+    if (this.isZabbix54OrHigher()) {
+      params.selectTags = 'extend';
+    }
+
     return this.request('item.get', params)
     .then(utils.expandItems);
   }
 
   getItemsByIDs(itemids) {
-    const params = {
+    const params: any = {
       itemids: itemids,
       output: [
         'name',
@@ -224,6 +232,10 @@ export class ZabbixAPIConnector {
       webitems: true,
       selectHosts: ['hostid', 'name']
     };
+
+    if (this.isZabbix54OrHigher()) {
+      params.selectTags = 'extend';
+    }
 
     return this.request('item.get', params)
     .then(items => utils.expandItems(items));
@@ -438,7 +450,7 @@ export class ZabbixAPIConnector {
   }
 
   getTriggers(groupids, hostids, applicationids, options) {
-    const {showTriggers, maintenance, timeFrom, timeTo} = options;
+    const { showTriggers, maintenance, timeFrom, timeTo } = options;
 
     const params: any = {
       output: 'extend',
@@ -605,7 +617,7 @@ export class ZabbixAPIConnector {
   }
 
   getHostAlerts(hostids, applicationids, options) {
-    const {minSeverity, acknowledged, count, timeFrom, timeTo} = options;
+    const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
     const params: any = {
       output: 'extend',
       hostids: hostids,
@@ -709,8 +721,8 @@ function buildSLAIntervals(timeRange, interval) {
 
   for (let i = timeFrom; i <= timeTo - interval; i += interval) {
     intervals.push({
-      from : i,
-      to : (i + interval)
+      from: i,
+      to: (i + interval)
     });
 
   }

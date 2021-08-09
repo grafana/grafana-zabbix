@@ -75,6 +75,7 @@ type QueryModel struct {
 	Group       QueryFilter `json:"group"`
 	Host        QueryFilter `json:"host"`
 	Application QueryFilter `json:"application"`
+	ItemTag     QueryFilter `json:"itemTag"`
 	Item        QueryFilter `json:"item"`
 
 	// Item ID mode

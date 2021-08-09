@@ -2,6 +2,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import semver from 'semver';
 import * as utils from '../utils';
+import { itemTagToString } from '../utils';
 import responseHandler from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
 import { DBConnector } from './connectors/dbConnector';
@@ -10,7 +11,7 @@ import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
-import { ProblemDTO } from '../types';
+import { ProblemDTO, ZBXItemTag } from '../types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -30,7 +31,7 @@ const REQUESTS_TO_CACHE = [
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
   'getAcknowledges', 'getITService', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
-  'getExtendedEventData', 'getScripts', 'executeScript', 'getValueMappings'
+  'getExtendedEventData', 'getScripts', 'executeScript', 'getValueMappings', 'isZabbix54OrHigher'
 ];
 
 export class Zabbix implements ZabbixConnector {
@@ -56,6 +57,7 @@ export class Zabbix implements ZabbixConnector {
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
   getValueMappings: () => Promise<any>;
+  isZabbix54OrHigher: () => boolean;
 
   constructor(options) {
     const {
@@ -180,7 +182,7 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getItemsFromTarget(target, options) {
-    const parts = ['group', 'host', 'application', 'item'];
+    const parts = ['group', 'host', 'application', 'itemTag', 'item'];
     const filters = _.map(parts, p => target[p].filter);
     return this.getItems(...filters, options);
   }
@@ -261,24 +263,36 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getAllItems(groupFilter, hostFilter, appFilter, options: any = {}) {
-    return this.getApps(groupFilter, hostFilter, appFilter)
-    .then(apps => {
+  async getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, options: any = {}) {
+    const apps = await this.getApps(groupFilter, hostFilter, appFilter);
+    let items: any[];
+
+    if (this.isZabbix54OrHigher()) {
+      items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
+      if (itemTagFilter) {
+        items = items.filter(item => {
+          if (item.tags) {
+            const tags: ZBXItemTag[] = item.tags.map(t => itemTagToString(t));
+            return tags.includes(itemTagFilter);
+          } else {
+            return false;
+          }
+        });
+      }
+    } else {
       if (apps.appFilterEmpty) {
-        return this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
+        items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
       } else {
         const appids = _.map(apps, 'applicationid');
-        return this.zabbixAPI.getItems(undefined, appids, options.itemtype);
+        items = await this.zabbixAPI.getItems(undefined, appids, options.itemtype);
       }
-    })
-    .then(items => {
-      if (!options.showDisabledItems) {
-        items = _.filter(items, { 'status': '0' });
-      }
+    }
 
-      return items;
-    })
-    .then(this.expandUserMacro.bind(this));
+    if (!options.showDisabledItems) {
+      items = _.filter(items, { 'status': '0' });
+    }
+
+    return await this.expandUserMacro(items, false);
   }
 
   expandUserMacro(items, isTriggerItem) {
@@ -298,13 +312,13 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getItems(groupFilter?, hostFilter?, appFilter?, itemFilter?, options = {}) {
-    return this.getAllItems(groupFilter, hostFilter, appFilter, options)
+  getItems(groupFilter?, hostFilter?, appFilter?, itemTagFilter?, itemFilter?, options = {}) {
+    return this.getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, options)
     .then(items => filterByQuery(items, itemFilter));
   }
 
   getItemValues(groupFilter?, hostFilter?, appFilter?, itemFilter?, options: any = {}) {
-    return this.getItems(groupFilter, hostFilter, appFilter, itemFilter, options).then(items => {
+    return this.getItems(groupFilter, hostFilter, appFilter, null, itemFilter, options).then(items => {
       let timeRange = [moment().subtract(2, 'h').unix(), moment().unix()];
       if (options.range) {
         timeRange = [options.range.from.unix(), options.range.to.unix()];

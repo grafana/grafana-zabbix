@@ -2,9 +2,10 @@ import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import _ from 'lodash';
 import * as c from './constants';
 import * as utils from './utils';
+import { itemTagToString } from './utils';
 import * as metricFunctions from './metricFunctions';
 import * as migrations from './migrations';
-import { ShowProblemTypes } from './types';
+import { ShowProblemTypes, ZBXItem, ZBXItemTag } from './types';
 import { CURRENT_SCHEMA_VERSION } from '../panel-triggers/migrations';
 import { getTemplateSrv, TemplateSrv } from '@grafana/runtime';
 
@@ -15,6 +16,7 @@ function getTargetDefaults() {
     group: { 'filter': "" },
     host: { 'filter': "" },
     application: { 'filter': "" },
+    itemTag: { 'filter': "" },
     item: { 'filter': "" },
     functions: [],
     triggers: {
@@ -274,7 +276,11 @@ export class ZabbixQueryController extends QueryCtrl {
       promises.push(this.suggestProxies());
     }
 
-    return Promise.all(promises);
+    return Promise.all(promises).then(() => {
+      if (this.zabbix.isZabbix54OrHigher()) {
+        this.suggestItemTags();
+      }
+    });
   }
 
   initDefaultQueryMode(target) {
@@ -304,10 +310,21 @@ export class ZabbixQueryController extends QueryCtrl {
     return metrics;
   }
 
+  getItemTags = () => {
+    if (!this.metric?.tagList) {
+      return [];
+    }
+    return this.metric.tagList.map(t => itemTagToString(t));
+  };
+
   getTemplateVariables() {
     return _.map(this.templateSrv.getVariables(), variable => {
       return '$' + variable.name;
     });
+  }
+
+  isZabbix54OrHigher() {
+    return this.zabbix.isZabbix54OrHigher();
   }
 
   suggestGroups() {
@@ -341,17 +358,32 @@ export class ZabbixQueryController extends QueryCtrl {
     const groupFilter = this.replaceTemplateVars(this.target.group.filter);
     const hostFilter = this.replaceTemplateVars(this.target.host.filter);
     const appFilter = this.replaceTemplateVars(this.target.application.filter);
+    const itemTagFilter = this.replaceTemplateVars(this.target.itemTag.filter);
     const options = {
       itemtype: itemtype,
       showDisabledItems: this.target.options.showDisabledItems
     };
 
     return this.zabbix
-    .getAllItems(groupFilter, hostFilter, appFilter, options)
+    .getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, options)
     .then(items => {
       this.metric.itemList = items;
       return items;
     });
+  }
+
+  async suggestItemTags() {
+    const groupFilter = this.replaceTemplateVars(this.target.group.filter);
+    const hostFilter = this.replaceTemplateVars(this.target.host.filter);
+    const items = await this.zabbix.getAllItems(groupFilter, hostFilter, null, null, {});
+    const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => {
+      if (item.tags) {
+        return item.tags;
+      } else {
+        return [];
+      }
+    }));
+    this.metric.tagList = _.uniqBy(tags, t => t.tag + t.value || '');
   }
 
   suggestITServices() {

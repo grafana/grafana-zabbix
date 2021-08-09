@@ -2,6 +2,8 @@ package zabbix
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -78,7 +80,7 @@ func (ds *Zabbix) getTrend(ctx context.Context, itemids []string, timeRange back
 	return trend, err
 }
 
-func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemFilter string, itemType string) ([]*Item, error) {
+func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemTagFilter string, itemFilter string, itemType string) ([]*Item, error) {
 	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -90,7 +92,8 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 
 	apps, err := ds.GetApps(ctx, groupFilter, hostFilter, appFilter)
 	// Apps not supported in Zabbix 5.4 and higher
-	if isAppMethodNotFoundError(err) {
+	isZabbix54orHigher := isAppMethodNotFoundError(err)
+	if isZabbix54orHigher {
 		apps = []Application{}
 	} else if err != nil {
 		return nil, err
@@ -107,7 +110,48 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType)
 	}
 
+	if isZabbix54orHigher && itemTagFilter != "" {
+		allItems, err = filterItemsByTag(allItems, itemTagFilter)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return filterItemsByQuery(allItems, itemFilter)
+}
+
+func filterItemsByTag(items []*Item, filter string) ([]*Item, error) {
+	re, err := parseFilter(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var filteredItems []*Item
+	for _, i := range items {
+		if len(i.Tags) == 0 && filter == "/.*/" {
+			filteredItems = append(filteredItems, i)
+		}
+
+		if len(i.Tags) > 0 {
+			var tags []string
+			for _, t := range i.Tags {
+				tags = append(tags, itemTagToString(t))
+			}
+			for _, t := range tags {
+				if re != nil {
+					if re.MatchString(t) {
+						filteredItems = append(filteredItems, i)
+						break
+					}
+				} else if t == filter {
+					filteredItems = append(filteredItems, i)
+					break
+				}
+			}
+		}
+	}
+
+	return filteredItems, nil
 }
 
 func filterItemsByQuery(items []*Item, filter string) ([]*Item, error) {
@@ -259,6 +303,10 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 		filter["value_type"] = []int{1, 2, 4}
 	}
 
+	if ds.version >= 54 {
+		params["selectTags"] = "extend"
+	}
+
 	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "item.get", Params: params})
 	if err != nil {
 		return nil, err
@@ -345,6 +393,23 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	var groups []Group
 	err = convertTo(result, &groups)
 	return groups, err
+}
+
+func (ds *Zabbix) GetVersion(ctx context.Context) (int, error) {
+	result, err := ds.request(ctx, "apiinfo.version", ZabbixAPIParams{})
+	if err != nil {
+		return 0, err
+	}
+
+	var version string
+	err = convertTo(result, &version)
+	if err != nil {
+		return 0, err
+	}
+
+	version = strings.Replace(version[0:3], ".", "", 1)
+	versionNum, err := strconv.Atoi(version)
+	return versionNum, err
 }
 
 func isAppMethodNotFoundError(err error) bool {

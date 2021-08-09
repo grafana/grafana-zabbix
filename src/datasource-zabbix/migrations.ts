@@ -11,7 +11,7 @@ export function isGrafana2target(target) {
   if (!target.mode || target.mode === 0 || target.mode === 2) {
     if ((target.hostFilter || target.itemFilter || target.downsampleFunction ||
         (target.host && target.host.host)) &&
-        (target.item.filter === undefined && target.host.filter === undefined)) {
+      (target.item.filter === undefined && target.host.filter === undefined)) {
       return true;
     } else {
       return false;
@@ -68,6 +68,15 @@ function migrateProblemSort(target) {
   }
 }
 
+function migrateApplications(target) {
+  if (!target.itemTag) {
+    target.itemTag = { filter: '' };
+    if (target.application?.filter) {
+      target.itemTag.filter = `Application: ${target.application?.filter}`;
+    }
+  }
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -78,6 +87,7 @@ export function migrate(target) {
   migrateQueryType(target);
   migrateSLA(target);
   migrateProblemSort(target);
+  migrateApplications(target);
   return target;
 }
 
@@ -97,6 +107,7 @@ function convertToRegex(str) {
 }
 
 export const DS_CONFIG_SCHEMA = 2;
+
 export function migrateDSConfig(jsonData) {
   if (!jsonData) {
     jsonData = {};

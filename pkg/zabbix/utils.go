@@ -85,3 +85,11 @@ func parseFilter(filter string) (*regexp.Regexp, error) {
 
 	return regexp.Compile(pattern)
 }
+
+func itemTagToString(tag ItemTag) string {
+	if tag.Value != "" {
+		return fmt.Sprintf("%s: %s", tag.Tag, tag.Value)
+	} else {
+		return tag.Tag
+	}
+}

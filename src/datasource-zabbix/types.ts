@@ -1,4 +1,4 @@
-import { SelectableValue, DataQuery, DataSourceJsonData } from "@grafana/data";
+import { DataQuery, DataSourceJsonData, SelectableValue } from "@grafana/data";
 
 export interface ZabbixDSOptions extends DataSourceJsonData {
   username: string;
@@ -40,6 +40,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   group: { filter: string; name?: string; };
   host: { filter: string; name?: string; };
   application: { filter: string; name?: string; };
+  itemTag: { filter: string; name?: string; };
   item: { filter: string; name?: string; };
   textFilter: string;
   mode: number;
@@ -87,7 +88,9 @@ export interface TemplateSrv {
   variables: {
     name: string;
   };
+
   highlightVariablesAsHtml(str: any): any;
+
   replace(target: any, scopedVars?: any, format?: any): any;
 }
 
@@ -293,6 +296,12 @@ export interface ZBXItem {
   name: string;
   key_: string;
   lastvalue?: string;
+  tags?: ZBXItemTag[];
+}
+
+export interface ZBXItemTag {
+  tag: string;
+  value?: string;
 }
 
 export interface ZBXEvent {

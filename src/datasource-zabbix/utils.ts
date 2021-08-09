@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import moment from 'moment';
 import * as c from './constants';
-import { VariableQuery, VariableQueryTypes } from './types';
+import { VariableQuery, VariableQueryTypes, ZBXItemTag } from './types';
 import { DataFrame, FieldType, getValueFormats, MappingType, rangeUtil, ValueMapping } from '@grafana/data';
 
 /*
@@ -403,6 +403,21 @@ export function parseTags(tagStr: string): any[] {
     return { tag: tagParts[0].trim(), value: tagParts[1].trim() };
   });
   return tags;
+}
+
+// Parses string representation of tag into the object
+export function parseItemTag(tagStr: string): ZBXItemTag {
+  const itemTag: ZBXItemTag = { tag: '', value: '' };
+  const tagParts = tagStr.split(': ');
+  itemTag.tag = tagParts[0];
+  if (tagParts[1]) {
+    itemTag.value = tagParts[1];
+  }
+  return itemTag;
+}
+
+export function itemTagToString(t: ZBXItemTag): string {
+  return t.value ? `${t.tag}: ${t.value}` : t.tag;
 }
 
 export function mustArray(result: any): any[] {
