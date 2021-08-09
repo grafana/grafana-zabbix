@@ -257,16 +257,16 @@ describe('ZabbixDatasource', () => {
 
     it('should return items', (done) => {
       const tests = [
-        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', '/.*/'] },
-        { query: '.*.*.*', expect: ['', '/.*/', '', '/.*/'] },
-        { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', '/.*/'] },
-        { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu', '/.*/'] }
+        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', null, '/.*/'] },
+        { query: '.*.*.*', expect: ['', '/.*/', '', null, '/.*/'] },
+        { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', null, '/.*/'] },
+        { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu', null, '/.*/'] }
       ];
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
         expect(ctx.ds.zabbix.getItems)
-        .toBeCalledWith(test.expect[0], test.expect[1], test.expect[2], test.expect[3]);
+        .toBeCalledWith(test.expect[0], test.expect[1], test.expect[2], test.expect[3], test.expect[4]);
         ctx.ds.zabbix.getItems.mockClear();
       }
       done();
