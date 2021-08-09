@@ -1,25 +1,26 @@
 import React, { FC } from 'react';
-import { getLocationSrv } from '@grafana/runtime';
-import { MODE_METRICS, MODE_ITEMID } from '../../datasource-zabbix/constants';
-import { renderUrl } from '../../panel-triggers/utils';
+import { locationService } from '@grafana/runtime';
+import { ExploreUrlState, TimeRange, urlUtil } from "@grafana/data";
+import { MODE_ITEMID, MODE_METRICS } from '../../datasource-zabbix/constants';
+import { ActionButton } from '../ActionButton/ActionButton';
 import { expandItemName } from '../../datasource-zabbix/utils';
 import { ProblemDTO } from '../../datasource-zabbix/types';
-import { ActionButton } from '../ActionButton/ActionButton';
 
 interface Props {
   problem: ProblemDTO;
+  range: TimeRange;
   panelId: number;
 }
 
-export const ExploreButton: FC<Props> = ({ problem, panelId }) => {
+export const ExploreButton: FC<Props> = ({ problem, panelId, range }) => {
   return (
-    <ActionButton icon="compass" width={6} onClick={() => openInExplore(problem, panelId)}>
+    <ActionButton icon="compass" width={6} onClick={() => openInExplore(problem, panelId, range)}>
       Explore
     </ActionButton>
   );
 };
 
-const openInExplore = (problem: ProblemDTO, panelId: number) => {
+const openInExplore = (problem: ProblemDTO, panelId: number, range: TimeRange) => {
   let query: any = {};
 
   if (problem.items?.length === 1 && problem.hosts?.length === 1) {
@@ -41,14 +42,16 @@ const openInExplore = (problem: ProblemDTO, panelId: number) => {
     };
   }
 
-  const state: any = {
+  const state: ExploreUrlState = {
     datasource: problem.datasource,
     context: 'explore',
     originPanelId: panelId,
+    range: range.raw,
     queries: [query],
   };
 
   const exploreState = JSON.stringify(state);
-  const url = renderUrl('/explore', { left: exploreState });
-  getLocationSrv().update({ path: url, query: {} });
+  const url = urlUtil.renderUrl('/explore', { left: exploreState });
+  locationService.push(url);
 };
+

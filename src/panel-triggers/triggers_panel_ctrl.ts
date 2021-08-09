@@ -4,10 +4,9 @@ import _ from 'lodash';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { PanelEvents } from '@grafana/data';
 import * as dateMath from 'grafana/app/core/utils/datemath';
-import * as utils from '../datasource-zabbix/utils';
 import { MetricsPanelCtrl } from 'grafana/app/plugins/sdk';
 import { triggerPanelOptionsTab } from './options_tab';
-import { migratePanelSchema, CURRENT_SCHEMA_VERSION } from './migrations';
+import { CURRENT_SCHEMA_VERSION, migratePanelSchema } from './migrations';
 import ProblemList from './components/Problems/Problems';
 import AlertList from './components/AlertList/AlertList';
 import { ProblemDTO } from 'datasource-zabbix/types';
@@ -15,22 +14,22 @@ import { ProblemDTO } from 'datasource-zabbix/types';
 const PROBLEM_EVENTS_LIMIT = 100;
 
 export const DEFAULT_TARGET = {
-  group: {filter: ""},
-  host: {filter: ""},
-  application: {filter: ""},
-  trigger: {filter: ""},
-  tags: {filter: ""},
-  proxy: {filter: ""},
+  group: { filter: "" },
+  host: { filter: "" },
+  application: { filter: "" },
+  trigger: { filter: "" },
+  tags: { filter: "" },
+  proxy: { filter: "" },
   showProblems: 'problems',
 };
 
 export const DEFAULT_SEVERITY = [
-  { priority: 0, severity: 'Not classified',  color: 'rgb(108, 108, 108)', show: true},
-  { priority: 1, severity: 'Information',     color: 'rgb(120, 158, 183)', show: true},
-  { priority: 2, severity: 'Warning',         color: 'rgb(175, 180, 36)', show: true},
-  { priority: 3, severity: 'Average',         color: 'rgb(255, 137, 30)', show: true},
-  { priority: 4, severity: 'High',            color: 'rgb(255, 101, 72)', show: true},
-  { priority: 5, severity: 'Disaster',        color: 'rgb(215, 0, 0)', show: true},
+  { priority: 0, severity: 'Not classified', color: 'rgb(108, 108, 108)', show: true },
+  { priority: 1, severity: 'Information', color: 'rgb(120, 158, 183)', show: true },
+  { priority: 2, severity: 'Warning', color: 'rgb(175, 180, 36)', show: true },
+  { priority: 3, severity: 'Average', color: 'rgb(255, 137, 30)', show: true },
+  { priority: 4, severity: 'High', color: 'rgb(255, 101, 72)', show: true },
+  { priority: 5, severity: 'Disaster', color: 'rgb(215, 0, 0)', show: true },
 ];
 
 export const getDefaultSeverity = () => DEFAULT_SEVERITY;
@@ -257,7 +256,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     let tags = _.map(tagStr.split(','), (tag) => tag.trim());
     tags = _.map(tags, (tag) => {
       const tagParts = tag.split(':');
-      return {tag: tagParts[0].trim(), value: tagParts[1].trim()};
+      return { tag: tagParts[0].trim(), value: tagParts[1].trim() };
     });
     return tags;
   }
@@ -271,7 +270,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
       if (target.datasource === datasource || this.panel.datasource === datasource) {
         const tagFilter = target.tags.filter;
         let targetTags = this.parseTags(tagFilter);
-        const newTag = {tag: tag.tag, value: tag.value};
+        const newTag = { tag: tag.tag, value: tag.value };
         targetTags.push(newTag);
         targetTags = _.uniqWith(targetTags, _.isEqual);
         const newFilter = this.tagsToString(targetTags);
@@ -347,12 +346,12 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
     .then((datasource: any) => {
       const userIsEditor = this.contextSrv.isEditor || this.contextSrv.isGrafanaAdmin;
       if (datasource.disableReadOnlyUsersAck && !userIsEditor) {
-        return Promise.reject({message: 'You have no permissions to acknowledge events.'});
+        return Promise.reject({ message: 'You have no permissions to acknowledge events.' });
       }
       if (eventid) {
         return datasource.zabbix.acknowledgeEvent(eventid, ack_message, action, severity);
       } else {
-        return Promise.reject({message: 'Trigger has no events. Nothing to acknowledge.'});
+        return Promise.reject({ message: 'Trigger has no events. Nothing to acknowledge.' });
       }
     })
     .then(this.refresh.bind(this))
@@ -413,6 +412,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
         problems,
         panelOptions,
         timeRange: { timeFrom, timeTo },
+        range: ctrl.range,
         loading,
         pageSize,
         fontSize: fontSizeProp,
