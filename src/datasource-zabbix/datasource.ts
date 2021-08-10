@@ -702,6 +702,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       templateSrv.variableExists(target.group?.filter) ||
       templateSrv.variableExists(target.host?.filter) ||
       templateSrv.variableExists(target.application?.filter) ||
+      templateSrv.variableExists(target.itemTag?.filter) ||
       templateSrv.variableExists(target.item?.filter) ||
       templateSrv.variableExists(target.proxy?.filter) ||
       templateSrv.variableExists(target.trigger?.filter) ||
