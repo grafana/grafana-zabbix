@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-type AgggregationFunc = func(points []TimePoint) *float64
+type AggregationFunc = func(points []TimePoint) *float64
 
 func AggAvg(points []TimePoint) *float64 {
 	sum := AggSum(points)
@@ -68,7 +68,7 @@ func AggMedian(points []TimePoint) *float64 {
 	return AggPercentile(50)(points)
 }
 
-func AggPercentile(n float64) AgggregationFunc {
+func AggPercentile(n float64) AggregationFunc {
 	return func(points []TimePoint) *float64 {
 		values := make([]float64, 0)
 		for _, p := range points {
@@ -80,7 +80,7 @@ func AggPercentile(n float64) AgggregationFunc {
 			return nil
 		}
 
-		values = sort.Float64Slice(values)
+		sort.Sort(sort.Float64Slice(values))
 		percentileIndex := int(math.Floor(float64(len(values)) * n / 100))
 		percentile := values[percentileIndex]
 		return &percentile
