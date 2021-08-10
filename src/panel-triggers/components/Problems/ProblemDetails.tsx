@@ -6,12 +6,12 @@ import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource-zabbix/
 import { GFTimeRange, RTRow, ZBXItem } from '../../types';
 import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
-import ProblemStatusBar from './ProblemStatusBar';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
 import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController, Tooltip } from '../../../components';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
 import { TimeRange } from "@grafana/data";
+import ProblemStatusBar from "./ProblemStatusBar";
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
@@ -105,47 +105,47 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
-        <div className="problem-details-head">
-          <div className="problem-actions-left">
-            <ExploreButton problem={problem} panelId={panelId} range={range}/>
-          </div>
-          {problem.showAckButton &&
-          <div className="problem-actions">
-            <ModalController>
-              {({ showModal, hideModal }) => (
-                <ExecScriptButton
-                  className="problem-action-button"
-                  onClick={() => {
-                    showModal(ExecScriptModal, {
-                      getScripts: this.getScripts,
-                      onSubmit: this.onExecuteScript,
-                      onDismiss: hideModal,
-                    });
-                  }}
-                />
-              )}
-            </ModalController>
-            <ModalController>
-              {({ showModal, hideModal }) => (
-                <AckButton
-                  className="problem-action-button"
-                  onClick={() => {
-                    showModal(AckModal, {
-                      canClose: problem.manual_close === '1',
-                      severity: problemSeverity,
-                      onSubmit: this.ackProblem,
-                      onDismiss: hideModal,
-                    });
-                  }}
-                />
-              )}
-            </ModalController>
-          </div>
-          }
-          <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'}/>
-        </div>
         <div className="problem-details-body">
           <div className="problem-details">
+            <div className="problem-details-head">
+              <div className="problem-actions-left">
+                <ExploreButton problem={problem} panelId={panelId} range={range}/>
+              </div>
+              {problem.showAckButton &&
+              <div className="problem-actions">
+                <ModalController>
+                  {({ showModal, hideModal }) => (
+                    <ExecScriptButton
+                      className="problem-action-button"
+                      onClick={() => {
+                        showModal(ExecScriptModal, {
+                          getScripts: this.getScripts,
+                          onSubmit: this.onExecuteScript,
+                          onDismiss: hideModal,
+                        });
+                      }}
+                    />
+                  )}
+                </ModalController>
+                <ModalController>
+                  {({ showModal, hideModal }) => (
+                    <AckButton
+                      className="problem-action-button"
+                      onClick={() => {
+                        showModal(AckModal, {
+                          canClose: problem.manual_close === '1',
+                          severity: problemSeverity,
+                          onSubmit: this.ackProblem,
+                          onDismiss: hideModal,
+                        });
+                      }}
+                    />
+                  )}
+                </ModalController>
+              </div>
+              }
+              <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'}/>
+            </div>
             <div className="problem-details-row">
               <div className="problem-value-container">
                 <div className="problem-age">

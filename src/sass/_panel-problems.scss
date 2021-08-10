@@ -4,6 +4,7 @@
   .fa-icon-container {
     padding-right: 0.4rem;
     color: $gray-2;
+
     i {
       width: 1rem;
     }
@@ -34,6 +35,7 @@
         &.-sort-desc {
           box-shadow: inset 0 -3px 0 0 $blue;
         }
+
         &.-sort-asc {
           box-shadow: inset 0 3px 0 0 $blue;
         }
@@ -108,6 +110,7 @@
 
           .-pageJump {
             margin: 0px 0.4rem;
+
             input {
               height: $footer-height;
             }
@@ -149,10 +152,12 @@
       &.custom-expander {
         text-align: center;
         padding: 0.6em 0 0 0;
+
         i {
           color: #676767;
           font-size: 1.2rem;
         }
+
         & .expanded {
           i {
             color: $problem-expander-expanded-color;
@@ -162,6 +167,7 @@
 
       &.custom-expander:hover {
         background-color: $problem-expander-highlighted-background;
+
         i {
           color: $problem-expander-highlighted-color;
         }
@@ -184,6 +190,7 @@
           &.zbx-problem {
             color: $problem-icon-problem-color;
           }
+
           &.zbx-ok {
             color: $problem-icon-ok-color;
           }
@@ -194,6 +201,7 @@
     .comments-icon {
       float: right;
       padding-right: 0.6rem;
+
       i {
         color: $gray-2;
       }
@@ -203,6 +211,7 @@
       &.rt-td {
         padding-left: 0.6rem;
       }
+
       .label-tag, .zbx-tag {
         cursor: pointer;
         margin-right: 0.6rem;
@@ -247,7 +256,6 @@
 
       .problem-details-head {
         display: flex;
-        padding: 0.5rem 1rem 0.5rem 1.2rem;
       }
 
       .problem-details-body {
@@ -357,8 +365,10 @@
               color: $problem-statusbar-muted;
             }
           }
+
           &.fired {
             box-shadow: $problem-statusbar-glow;
+
             .fa-icon-container {
               color: $problem-statusbar-fired;
               text-shadow: 0px 0px 10px rgba($problem-statusbar-fired, 0.5);
@@ -482,6 +492,7 @@
             &--ok {
               fill: $problem-event-ok-color;
             }
+
             &--problem {
               fill: $problem-event-problem-color;
             }
@@ -503,6 +514,7 @@
             &--ok .point-border {
               fill: $problem-event-ok-color;
             }
+
             &--problem .point-border {
               fill: $problem-event-problem-color;
             }
@@ -519,6 +531,7 @@
               stroke-width: 1;
               filter: url(#glowShadow);
             }
+
             .point-core {
               fill: $problem-event-core-highlighted;
             }
@@ -545,6 +558,7 @@
               stroke-width: 1;
               filter: url(#glowShadow);
             }
+
             .point-core {
               fill: $problem-event-core-highlighted;
             }
@@ -555,7 +569,9 @@
   }
 
   @for $i from 8 through 9 {
-    .item-#{$i} { width: 2em * $i; }
+    .item-#{$i} {
+      width: 2em * $i;
+    }
     &.font-size--#{$i * 10} .rt-table {
       font-size: 1% * $i * 10;
 
@@ -570,7 +586,9 @@
   }
 
   @for $i from 11 through 25 {
-    .item-#{$i} { width: 2em * $i; }
+    .item-#{$i} {
+      width: 2em * $i;
+    }
     &.font-size--#{$i * 10} {
       .rt-table {
         font-size: 1% * $i * 10;
