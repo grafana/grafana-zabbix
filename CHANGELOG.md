@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.2.1] - 2021-08-10
+
+### Fixed
+
+- No data on queries with aggregation function
+- Wrong percentile aggregation
+
 ## [4.2.0] - 2021-08-10
 
 ### Added
