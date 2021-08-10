@@ -16,6 +16,7 @@ var cachedMethods = map[string]bool{
 	"service.get":     true,
 	"usermacro.get":   true,
 	"proxy.get":       true,
+	"valuemap.get":    true,
 }
 
 func IsCachedRequest(method string) bool {
