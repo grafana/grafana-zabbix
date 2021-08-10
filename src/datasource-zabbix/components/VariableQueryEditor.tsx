@@ -1,15 +1,16 @@
 import React, { PureComponent } from 'react';
 import { parseLegacyVariableQuery } from '../utils';
 import { SelectableValue } from '@grafana/data';
-import { VariableQuery, VariableQueryTypes, VariableQueryProps, VariableQueryData } from '../types';
+import { VariableQuery, VariableQueryData, VariableQueryProps, VariableQueryTypes } from '../types';
 import { ZabbixInput } from './ZabbixInput';
-import { InlineFormLabel, Select, Input } from '@grafana/ui';
+import { InlineFormLabel, Input, Select } from '@grafana/ui';
 
 export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryData> {
   queryTypes: Array<SelectableValue<VariableQueryTypes>> = [
-    { value: VariableQueryTypes.Group, label: 'Group'},
+    { value: VariableQueryTypes.Group, label: 'Group' },
     { value: VariableQueryTypes.Host, label: 'Host' },
     { value: VariableQueryTypes.Application, label: 'Application' },
+    { value: VariableQueryTypes.ItemTag, label: 'Item tag' },
     { value: VariableQueryTypes.Item, label: 'Item' },
     { value: VariableQueryTypes.ItemValues, label: 'Item values' },
   ];
@@ -20,6 +21,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     group: '/.*/',
     host: '',
     application: '',
+    itemTag: '',
     item: '',
   };
 
@@ -64,13 +66,13 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
         ...newQuery,
       };
     });
-  }
+  };
 
   handleQueryChange = () => {
-    const { queryType, group, host, application, item } = this.state;
-    const queryModel = { queryType, group, host, application, item };
+    const { queryType, group, host, application, itemTag, item } = this.state;
+    const queryModel = { queryType, group, host, application, itemTag, item };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
-  }
+  };
 
   handleQueryTypeChange = (selectedItem: SelectableValue<VariableQueryTypes>) => {
     this.setState({
@@ -79,14 +81,16 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
       queryType: selectedItem.value,
     });
 
-    const { group, host, application, item } = this.state;
+    const { group, host, application, itemTag, item } = this.state;
     const queryType = selectedItem.value;
-    const queryModel = { queryType, group, host, application, item };
+    const queryModel = { queryType, group, host, application, itemTag, item };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
-  }
+  };
 
   render() {
-    const { selectedQueryType, legacyQuery, group, host, application, item } = this.state;
+    const { selectedQueryType, legacyQuery, group, host, application, itemTag, item } = this.state;
+    const { datasource } = this.props;
+    const supportsItemTags = datasource.zabbix.isZabbix54OrHigher();
 
     return (
       <>
@@ -109,20 +113,32 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
             />
           </div>
           {selectedQueryType.value !== VariableQueryTypes.Group &&
-            <div className="gf-form max-width-30">
-              <InlineFormLabel width={10}>Host</InlineFormLabel>
-              <ZabbixInput
-                value={host}
-                onChange={evt => this.handleQueryUpdate(evt, 'host')}
-                onBlur={this.handleQueryChange}
-              />
-            </div>
+          <div className="gf-form max-width-30">
+            <InlineFormLabel width={10}>Host</InlineFormLabel>
+            <ZabbixInput
+              value={host}
+              onChange={evt => this.handleQueryUpdate(evt, 'host')}
+              onBlur={this.handleQueryChange}
+            />
+          </div>
           }
         </div>
         {(selectedQueryType.value === VariableQueryTypes.Application ||
+          selectedQueryType.value === VariableQueryTypes.ItemTag ||
           selectedQueryType.value === VariableQueryTypes.Item ||
           selectedQueryType.value === VariableQueryTypes.ItemValues) &&
-          <div className="gf-form-inline">
+        <div className="gf-form-inline">
+          {supportsItemTags && (
+            <div className="gf-form max-width-30">
+              <InlineFormLabel width={10}>Item tag</InlineFormLabel>
+              <ZabbixInput
+                value={itemTag}
+                onChange={evt => this.handleQueryUpdate(evt, 'itemTag')}
+                onBlur={this.handleQueryChange}
+              />
+            </div>
+          )}
+          {!supportsItemTags && (
             <div className="gf-form max-width-30">
               <InlineFormLabel width={10}>Application</InlineFormLabel>
               <ZabbixInput
@@ -131,29 +147,30 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
                 onBlur={this.handleQueryChange}
               />
             </div>
-            {(selectedQueryType.value === VariableQueryTypes.Item ||
-              selectedQueryType.value === VariableQueryTypes.ItemValues) &&
-              <div className="gf-form max-width-30">
-                <InlineFormLabel width={10}>Item</InlineFormLabel>
-                <ZabbixInput
-                  value={item}
-                  onChange={evt => this.handleQueryUpdate(evt, 'item')}
-                  onBlur={this.handleQueryChange}
-                />
-              </div>
-            }
+          )}
+          {(selectedQueryType.value === VariableQueryTypes.Item ||
+            selectedQueryType.value === VariableQueryTypes.ItemValues) &&
+          <div className="gf-form max-width-30">
+            <InlineFormLabel width={10}>Item</InlineFormLabel>
+            <ZabbixInput
+              value={item}
+              onChange={evt => this.handleQueryUpdate(evt, 'item')}
+              onBlur={this.handleQueryChange}
+            />
           </div>
+          }
+        </div>
         }
 
         {legacyQuery &&
-          <div className="gf-form">
-            <InlineFormLabel width={10} tooltip="Original query string, read-only">Legacy Query</InlineFormLabel>
-            <Input
-              css=""
-              value={legacyQuery}
-              readOnly={true}
-            />
-          </div>
+        <div className="gf-form">
+          <InlineFormLabel width={10} tooltip="Original query string, read-only">Legacy Query</InlineFormLabel>
+          <Input
+            css=""
+            value={legacyQuery}
+            readOnly={true}
+          />
+        </div>
         }
       </>
     );

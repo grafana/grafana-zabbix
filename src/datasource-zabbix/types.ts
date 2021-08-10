@@ -150,6 +150,7 @@ export interface VariableQuery {
   group?: string;
   host?: string;
   application?: string;
+  itemTag?: string;
   item?: string;
 }
 
@@ -159,6 +160,7 @@ export enum VariableQueryTypes {
   Group = 'group',
   Host = 'host',
   Application = 'application',
+  ItemTag = 'itemTag',
   Item = 'item',
   ItemValues = 'itemValues',
 }

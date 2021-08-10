@@ -663,7 +663,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       queryModel = utils.parseLegacyVariableQuery(query);
     }
 
-    for (const prop of ['group', 'host', 'application', 'item']) {
+    for (const prop of ['group', 'host', 'application', 'itemTag', 'item']) {
       queryModel[prop] = this.replaceTemplateVars(queryModel[prop], {});
     }
 
@@ -678,6 +678,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         break;
       case VariableQueryTypes.Application:
         resultPromise = this.zabbix.getApps(queryModel.group, queryModel.host, queryModel.application);
+        break;
+      case VariableQueryTypes.ItemTag:
+        resultPromise = this.zabbix.getItemTags(queryModel.group, queryModel.host, queryModel.itemTag);
         break;
       case VariableQueryTypes.Item:
         resultPromise = this.zabbix.getItems(queryModel.group, queryModel.host, queryModel.application, null, queryModel.item);
@@ -781,7 +784,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
   // Replace template variables
   replaceTargetVariables(target, options) {
-    const parts = ['group', 'host', 'application', 'item'];
+    const parts = ['group', 'host', 'application', 'itemTag', 'item'];
     _.forEach(parts, p => {
       if (target[p] && target[p].filter) {
         target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);

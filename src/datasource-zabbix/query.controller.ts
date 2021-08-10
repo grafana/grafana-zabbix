@@ -315,7 +315,14 @@ export class ZabbixQueryController extends QueryCtrl {
     if (!this.metric?.tagList) {
       return [];
     }
-    return this.metric.tagList.map(t => itemTagToString(t));
+    const tags = this.metric.tagList.map(t => itemTagToString(t));
+
+    // Add template variables
+    _.forEach(this.templateSrv.getVariables(), variable => {
+      tags.unshift('$' + variable.name);
+    });
+
+    return tags;
   };
 
   getTemplateVariables() {

@@ -2,7 +2,6 @@ import _ from 'lodash';
 import moment from 'moment';
 import semver from 'semver';
 import * as utils from '../utils';
-import { itemTagToString } from '../utils';
 import responseHandler from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
 import { DBConnector } from './connectors/dbConnector';
@@ -11,7 +10,7 @@ import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
-import { ProblemDTO, ZBXItemTag } from '../types';
+import { ProblemDTO, ZBXItem, ZBXItemTag } from '../types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -20,7 +19,7 @@ interface AppsResponse extends Array<any> {
 
 const REQUESTS_TO_PROXYFY = [
   'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
-  'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getVersion', 'getProxies',
+  'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getProxies',
   'getEventAlerts', 'getExtendedEventData', 'getProblems', 'getEventsHistory', 'getTriggersByIds', 'getScripts', 'getValueMappings'
 ];
 
@@ -31,7 +30,7 @@ const REQUESTS_TO_CACHE = [
 const REQUESTS_TO_BIND = [
   'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
   'getAcknowledges', 'getITService', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
-  'getExtendedEventData', 'getScripts', 'executeScript', 'getValueMappings', 'isZabbix54OrHigher'
+  'getExtendedEventData', 'getScripts', 'executeScript', 'getValueMappings'
 ];
 
 export class Zabbix implements ZabbixConnector {
@@ -57,7 +56,6 @@ export class Zabbix implements ZabbixConnector {
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
   getValueMappings: () => Promise<any>;
-  isZabbix54OrHigher: () => boolean;
 
   constructor(options) {
     const {
@@ -172,13 +170,23 @@ export class Zabbix implements ZabbixConnector {
 
   async getVersion() {
     if (!this.version) {
-      this.version = await this.zabbixAPI.initVersion();
+      if (this.zabbixAPI.version) {
+        this.version = this.zabbixAPI.version;
+      } else {
+        this.version = await this.zabbixAPI.initVersion();
+      }
     }
     return this.version;
   }
 
   supportsApplications() {
-    return this.version ? semver.lt(this.version, '5.4.0') : true;
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.lt(version, '5.4.0') : true;
+  }
+
+  isZabbix54OrHigher() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '5.4.0') : false;
   }
 
   getItemsFromTarget(target, options) {
@@ -263,6 +271,20 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
+  async getItemTags(groupFilter?, hostFilter?, itemTagFilter?) {
+    const items = await this.getAllItems(groupFilter, hostFilter, null, null, {});
+    let tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => {
+      if (item.tags) {
+        return item.tags;
+      } else {
+        return [];
+      }
+    }));
+    tags = _.uniqBy(tags, t => t.tag + t.value || '');
+    const tagsStr = tags.map(t => ({ name: utils.itemTagToString(t) }));
+    return findByFilter(tagsStr, itemTagFilter);
+  }
+
   async getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, options: any = {}) {
     const apps = await this.getApps(groupFilter, hostFilter, appFilter);
     let items: any[];
@@ -272,7 +294,7 @@ export class Zabbix implements ZabbixConnector {
       if (itemTagFilter) {
         items = items.filter(item => {
           if (item.tags) {
-            const tags: ZBXItemTag[] = item.tags.map(t => itemTagToString(t));
+            const tags: ZBXItemTag[] = item.tags.map(t => utils.itemTagToString(t));
             return tags.includes(itemTagFilter);
           } else {
             return false;
