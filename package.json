@@ -13,8 +13,7 @@
     "jest": "jest --notify --watch",
     "codecov": "jest --coverage && codecov",
     "ci-test": "jest --coverage",
-    "lint": "jshint --reporter=node_modules/jshint-stylish src/ & jscs src/",
-    "benchmark": "webpack --config webpack/webpack.bench.conf.js && grunt bench"
+    "lint": "jshint --reporter=node_modules/jshint-stylish src/ & jscs src/"
   },
   "repository": {
     "type": "git",
@@ -57,10 +56,6 @@
     "copy-webpack-plugin": "^5.1.1",
     "css-loader": "3.4.2",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
-    "grunt": "1.0.4",
-    "grunt-benchmark": "^1.0.0",
-    "grunt-cli": "1.3.2",
-    "grunt-execute": "^0.2.2",
     "html-loader": "0.5.5",
     "jest": "24.8.0",
     "jest-environment-jsdom-fifteen": "^1.0.2",
@@ -68,7 +63,6 @@
     "jsdom": "~11.3.0",
     "jshint": "^2.9.6",
     "jshint-stylish": "^2.1.0",
-    "load-grunt-tasks": "~3.2.0",
     "lodash": "4.17.21",
     "memoize-one": "5.1.1",
     "moment": "2.24.0",
