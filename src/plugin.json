@@ -2,34 +2,58 @@
   "type": "app",
   "name": "Zabbix",
   "id": "alexanderzobnin-zabbix-app",
-
   "info": {
     "description": "Zabbix plugin for Grafana",
     "author": {
       "name": "Alexander Zobnin",
       "url": "https://github.com/alexanderzobnin"
     },
-    "keywords": ["zabbix"],
+    "keywords": [
+      "zabbix"
+    ],
     "logos": {
       "small": "img/icn-zabbix-app.svg",
       "large": "img/icn-zabbix-app.svg"
     },
     "links": [
-      {"name": "GitHub", "url": "https://github.com/alexanderzobnin/grafana-zabbix"},
-      {"name": "Docs", "url": "https://alexanderzobnin.github.io/grafana-zabbix"},
-      {"name": "License", "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE"}
+      {
+        "name": "GitHub",
+        "url": "https://github.com/alexanderzobnin/grafana-zabbix"
+      },
+      {
+        "name": "Docs",
+        "url": "https://alexanderzobnin.github.io/grafana-zabbix"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE"
+      }
     ],
     "screenshots": [
-      {"name": "Showcase", "path": "img/screenshot-showcase.png"},
-      {"name": "Dashboard", "path": "img/screenshot-dashboard01.png"},
-      {"name": "Annotations", "path": "img/screenshot-annotations.png"},
-      {"name": "Metric Editor", "path": "img/screenshot-metric_editor.png"},
-      {"name": "Triggers", "path": "img/screenshot-triggers.png"}
+      {
+        "name": "Showcase",
+        "path": "img/screenshot-showcase.png"
+      },
+      {
+        "name": "Dashboard",
+        "path": "img/screenshot-dashboard01.png"
+      },
+      {
+        "name": "Annotations",
+        "path": "img/screenshot-annotations.png"
+      },
+      {
+        "name": "Metric Editor",
+        "path": "img/screenshot-metric_editor.png"
+      },
+      {
+        "name": "Triggers",
+        "path": "img/screenshot-triggers.png"
+      }
     ],
-    "version": "4.2-pre",
-    "updated": "2021-03-09"
+    "version": "4.2.0",
+    "updated": "2021-08-10"
   },
-
   "includes": [
     {
       "type": "datasource",
@@ -40,10 +64,9 @@
       "name": "Problems panel"
     }
   ],
-
   "dependencies": {
-    "grafanaDependency": ">=7.3.0",
-    "grafanaVersion": "7.3",
+    "grafanaDependency": ">=8.0.0",
+    "grafanaVersion": "8.0",
     "plugins": []
   }
 }
