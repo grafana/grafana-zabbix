@@ -92,17 +92,17 @@ func convertTimeSeriesToDataFrame(series []*timeseries.TimeSeriesData) *data.Fra
 	return wideFrame
 }
 
-func convertTimeSeriesToDataFrames(series []*timeseries.TimeSeriesData) []*data.Frame {
+func convertTimeSeriesToDataFrames(series []*timeseries.TimeSeriesData, valuemaps []zabbix.ValueMap) []*data.Frame {
 	frames := make([]*data.Frame, 0)
 
 	for _, s := range series {
-		frames = append(frames, seriesToDataFrame(s))
+		frames = append(frames, seriesToDataFrame(s, valuemaps))
 	}
 
 	return frames
 }
 
-func seriesToDataFrame(series *timeseries.TimeSeriesData) *data.Frame {
+func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.ValueMap) *data.Frame {
 	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
 	timeFileld.Name = data.TimeSeriesTimeFieldName
 
@@ -126,6 +126,11 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData) *data.Frame {
 		Custom: map[string]interface{}{
 			"scopedVars": scopedVars,
 		},
+	}
+
+	if len(valuemaps) > 0 {
+		mappings := getValueMapping(*item, valuemaps)
+		valueField.Config.Mappings = mappings
 	}
 
 	frame := data.NewFrame(seriesName, timeFileld, valueField)
@@ -247,4 +252,29 @@ func parseItemUpdateInterval(delay string) *time.Duration {
 	}
 
 	return &interval
+}
+
+func getValueMapping(item zabbix.Item, valueMaps []zabbix.ValueMap) data.ValueMappings {
+	mappings := make([]data.ValueMapping, 0)
+	zabbixMap := zabbix.ValueMap{}
+
+	for _, vm := range valueMaps {
+		if vm.ID == item.ValueMapID {
+			zabbixMap = vm
+			break
+		}
+	}
+
+	if zabbixMap.ID == "" {
+		return mappings
+	}
+
+	for _, m := range zabbixMap.Mappings {
+		mappings = append(mappings, data.ValueMapper{
+			m.Value: {
+				Text: m.NewValue,
+			},
+		})
+	}
+	return mappings
 }

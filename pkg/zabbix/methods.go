@@ -397,6 +397,22 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	return groups, err
 }
 
+func (ds *Zabbix) GetValueMappings(ctx context.Context) ([]ValueMap, error) {
+	params := ZabbixAPIParams{
+		"output":         "extend",
+		"selectMappings": "extend",
+	}
+
+	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "valuemap.get", Params: params})
+	if err != nil {
+		return nil, err
+	}
+
+	var valuemaps []ValueMap
+	err = convertTo(result, &valuemaps)
+	return valuemaps, err
+}
+
 func (ds *Zabbix) GetVersion(ctx context.Context) (int, error) {
 	result, err := ds.request(ctx, "apiinfo.version", ZabbixAPIParams{})
 	if err != nil {

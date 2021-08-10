@@ -145,7 +145,15 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 		}
 	}
 
-	frames := convertTimeSeriesToDataFrames(series)
+	valueMaps := make([]zabbix.ValueMap, 0)
+	if query.Options.UseZabbixValueMapping {
+		valueMaps, err = ds.zabbix.GetValueMappings(ctx)
+		if err != nil {
+			ds.logger.Error("Error getting value maps", "error", err)
+			valueMaps = []zabbix.ValueMap{}
+		}
+	}
+	frames := convertTimeSeriesToDataFrames(series, valueMaps)
 	return frames, nil
 }
 

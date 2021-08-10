@@ -99,3 +99,14 @@ type Application struct {
 	Name string `json:"name"`
 	ID   string `json:"applicationid"`
 }
+
+type ValueMap struct {
+	ID       string         `json:"valuemapid"`
+	Name     string         `json:"name"`
+	Mappings []ValueMapping `json:"mappings"`
+}
+
+type ValueMapping struct {
+	Value    string `json:"value"`
+	NewValue string `json:"newvalue"`
+}
