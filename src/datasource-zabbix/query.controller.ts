@@ -278,7 +278,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
     return Promise.all(promises).then(() => {
       if (this.zabbix.isZabbix54OrHigher()) {
-        this.suggestItemTags();
+        this.suggestItemTags()
+        .then(() => this.$scope.$apply());
       }
     });
   }
