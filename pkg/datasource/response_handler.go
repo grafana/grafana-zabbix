@@ -111,12 +111,16 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 	valueField.Name = data.TimeSeriesValueFieldName
 
 	item := series.Meta.Item
+	if item == nil {
+		item = &zabbix.Item{
+			Name: seriesName,
+		}
+	}
 	scopedVars := map[string]ScopedVar{
 		"__zbx_item":          {Value: item.Name},
 		"__zbx_item_name":     {Value: item.Name},
 		"__zbx_item_key":      {Value: item.Key},
 		"__zbx_item_interval": {Value: item.Delay},
-		"__zbx_host":          {Value: item.Delay},
 	}
 	if len(item.Hosts) > 0 {
 		scopedVars["__zbx_host"] = ScopedVar{Value: item.Hosts[0].Name}
