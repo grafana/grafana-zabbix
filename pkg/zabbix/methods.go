@@ -93,6 +93,8 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 	apps, err := ds.GetApps(ctx, groupFilter, hostFilter, appFilter)
 	// Apps not supported in Zabbix 5.4 and higher
 	isZabbix54orHigher := isAppMethodNotFoundError(err)
+	ds.logger.Debug("isZabbix54orHigher", "value", isZabbix54orHigher)
+	ds.logger.Debug("apps", "apps", apps)
 	if isZabbix54orHigher {
 		apps = []Application{}
 	} else if err != nil {
@@ -104,10 +106,10 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 	}
 
 	var allItems []*Item
-	if len(hostids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType)
-	} else if len(appids) > 0 {
+	if len(appids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType)
+	} else if len(hostids) > 0 {
+		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType)
 	}
 
 	if isZabbix54orHigher && itemTagFilter != "" {
