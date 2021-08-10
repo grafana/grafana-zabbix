@@ -55,7 +55,7 @@ dist-arm-linux-arm-v7:
 	env GOOS=linux GOARCH=arm GOARM=7 go build -ldflags="-s -w" -o ./dist/zabbix-plugin_linux_arm ./pkg
 dist-arm-linux-arm64:
 	env GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o ./dist/zabbix-plugin_linux_arm64 ./pkg
-dist-arm-linux-arm64:
+dist-arm-darwin-arm64:
 	env GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o ./dist/zabbix-plugin_darwin_arm64 ./pkg
 
 .PHONY: test
