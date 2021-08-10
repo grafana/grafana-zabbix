@@ -29,7 +29,8 @@ async function main() {
   } catch (reason) {
     if (reason.response.status !== 404) {
       // 404 just means no release found. Not an error. Anything else though, re throw the error
-      throw reason;
+      console.error(reason);
+      process.exit(1);
     }
   }
 
@@ -44,7 +45,8 @@ async function main() {
     } catch (reason) {
       if (reason.response.status !== 404) {
         // 404 just means no release found. Not an error. Anything else though, re throw the error
-        throw reason;
+        console.error(reason);
+        process.exit(1);
       } else {
         console.error('No release tag found');
         process.exit(1);
@@ -64,7 +66,8 @@ async function main() {
       console.log('Release published with id', releaseId);
       releaseId = newReleaseResponse.data.id;
     } catch (reason) {
-      throw reason;
+      console.error(reason);
+      process.exit(1);
     }
   } else {
     try {
@@ -76,7 +79,8 @@ async function main() {
         prerelease: preRelease,
       });
     } catch (reason) {
-      throw reason;
+      console.error(reason);
+      process.exit(1);
     }
   }
 
@@ -91,9 +95,8 @@ async function main() {
       `https://uploads.github.com/repos/${GRAFANA_ZABBIX_OWNER}/${GRAFANA_ZABBIX_REPO}/releases/${releaseId}/assets`
     );
   } catch (reason) {
-    console.error(reason.data || reason.response || reason);
-    // Rethrow the error so that we can trigger a non-zero exit code to circle-ci
-    throw reason;
+    console.error(reason);
+    process.exit(1);
   }
 }
 
@@ -108,6 +111,7 @@ async function publishAssets(fileName, destUrl) {
       'Content-Length': fileStat.size,
     },
     maxContentLength: fileStat.size * 2 * 1024 * 1024,
+    maxBodyLength: fileStat.size * 2 * 1024 * 1024,
   });
 }
 
