@@ -48,7 +48,7 @@ dist-backend-%:
 	env GOOS=$* GOARCH=amd64 go build -ldflags="-s -w" -o ./dist/$(filename) ./pkg
 
 # ARM
-dist-arm: dist-arm-linux-arm-v6 dist-arm-linux-arm64
+dist-arm: dist-arm-linux-arm-v6 dist-arm-linux-arm64 dist-arm-darwin-arm64
 dist-arm-linux-arm-v6:
 	env GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="-s -w" -o ./dist/zabbix-plugin_linux_arm ./pkg
 dist-arm-linux-arm-v7:
