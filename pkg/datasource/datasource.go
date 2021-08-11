@@ -2,16 +2,11 @@ package datasource
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"strconv"
-	"time"
-
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
@@ -33,7 +28,7 @@ type ZabbixDatasource struct {
 type ZabbixDatasourceInstance struct {
 	zabbix   *zabbix.Zabbix
 	dsInfo   *backend.DataSourceInstanceSettings
-	Settings *ZabbixDatasourceSettings
+	Settings *settings.ZabbixDatasourceSettings
 	logger   log.Logger
 }
 
@@ -46,36 +41,36 @@ func NewZabbixDatasource() *ZabbixDatasource {
 }
 
 // newZabbixDatasourceInstance returns an initialized zabbix datasource instance
-func newZabbixDatasourceInstance(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func newZabbixDatasourceInstance(dsSettings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	logger := log.New()
 	logger.Debug("Initializing new data source instance")
 
-	zabbixSettings, err := readZabbixSettings(&settings)
+	zabbixSettings, err := settings.ReadZabbixSettings(&dsSettings)
 	if err != nil {
 		logger.Error("Error parsing Zabbix settings", "error", err)
 		return nil, err
 	}
 
-	client, err := httpclient.New(&settings, zabbixSettings.Timeout)
+	client, err := httpclient.New(&dsSettings, zabbixSettings.Timeout)
 	if err != nil {
 		logger.Error("Error initializing HTTP client", "error", err)
 		return nil, err
 	}
 
-	zabbixAPI, err := zabbixapi.New(settings.URL, client)
+	zabbixAPI, err := zabbixapi.New(dsSettings.URL, client)
 	if err != nil {
 		logger.Error("Error initializing Zabbix API", "error", err)
 		return nil, err
 	}
 
-	zabbixClient, err := zabbix.New(&settings, zabbixAPI)
+	zabbixClient, err := zabbix.New(&dsSettings, zabbixSettings, zabbixAPI)
 	if err != nil {
 		logger.Error("Error initializing Zabbix client", "error", err)
 		return nil, err
 	}
 
 	return &ZabbixDatasourceInstance{
-		dsInfo:   &settings,
+		dsInfo:   &dsSettings,
 		zabbix:   zabbixClient,
 		Settings: zabbixSettings,
 		logger:   logger,
@@ -152,59 +147,4 @@ func (ds *ZabbixDatasource) getDSInstance(pluginContext backend.PluginContext) (
 		return nil, err
 	}
 	return instance.(*ZabbixDatasourceInstance), nil
-}
-
-func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) (*ZabbixDatasourceSettings, error) {
-	zabbixSettingsDTO := &ZabbixDatasourceSettingsDTO{}
-
-	err := json.Unmarshal(dsInstanceSettings.JSONData, &zabbixSettingsDTO)
-	if err != nil {
-		return nil, err
-	}
-
-	if zabbixSettingsDTO.TrendsFrom == "" {
-		zabbixSettingsDTO.TrendsFrom = "7d"
-	}
-	if zabbixSettingsDTO.TrendsRange == "" {
-		zabbixSettingsDTO.TrendsRange = "4d"
-	}
-	if zabbixSettingsDTO.CacheTTL == "" {
-		zabbixSettingsDTO.CacheTTL = "1h"
-	}
-
-	if zabbixSettingsDTO.Timeout == "" {
-		zabbixSettingsDTO.Timeout = "30"
-	}
-
-	trendsFrom, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsFrom)
-	if err != nil {
-		return nil, err
-	}
-
-	trendsRange, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsRange)
-	if err != nil {
-		return nil, err
-	}
-
-	cacheTTL, err := gtime.ParseInterval(zabbixSettingsDTO.CacheTTL)
-	if err != nil {
-		return nil, err
-	}
-
-	timeout, err := strconv.Atoi(zabbixSettingsDTO.Timeout)
-	if err != nil {
-		return nil, errors.New("failed to parse timeout: " + err.Error())
-	}
-
-	zabbixSettings := &ZabbixDatasourceSettings{
-		Trends:                  zabbixSettingsDTO.Trends,
-		TrendsFrom:              trendsFrom,
-		TrendsRange:             trendsRange,
-		CacheTTL:                cacheTTL,
-		Timeout:                 time.Duration(timeout) * time.Second,
-		DisableDataAlignment:    zabbixSettingsDTO.DisableDataAlignment,
-		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
-	}
-
-	return zabbixSettings, nil
 }

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { DataSourcePluginOptionsEditorProps, DataSourceSettings, SelectableValue } from '@grafana/data';
-import { DataSourceHttpSettings, LegacyForms, Field, Input, Button, InlineFormLabel, Select } from '@grafana/ui';
-const { FormField, Switch } = LegacyForms;
+import { Button, DataSourceHttpSettings, InlineFormLabel, LegacyForms, Select } from '@grafana/ui';
 import { ZabbixDSOptions, ZabbixSecureJSONData } from '../types';
+
+const { FormField, Switch } = LegacyForms;
 
 const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
 
@@ -34,7 +35,7 @@ export const ConfigEditor = (props: Props) => {
         trendsFrom: '',
         trendsRange: '',
         cacheTTL: '',
-        timeout: '',
+        timeout: undefined,
         disableDataAlignment: false,
         ...restJsonData,
       },
@@ -99,7 +100,7 @@ export const ConfigEditor = (props: Props) => {
                 placeholder="Configured"
               />
               <Button onClick={resetSecureJsonField('password', options, onOptionsChange)}>Reset</Button>
-            </>:
+            </> :
             <FormField
               labelWidth={7}
               inputWidth={15}
@@ -118,32 +119,32 @@ export const ConfigEditor = (props: Props) => {
           onChange={jsonDataSwitchHandler('trends', options, onOptionsChange)}
         />
         {options.jsonData.trends &&
-          <>
-            <div className="gf-form">
-              <FormField
-                labelWidth={7}
-                inputWidth={4}
-                label="After"
-                value={options.jsonData.trendsFrom || ''}
-                placeholder="7d"
-                onChange={jsonDataChangeHandler('trendsFrom', options, onOptionsChange)}
-                tooltip="Time after which trends will be used.
+        <>
+          <div className="gf-form">
+            <FormField
+              labelWidth={7}
+              inputWidth={4}
+              label="After"
+              value={options.jsonData.trendsFrom || ''}
+              placeholder="7d"
+              onChange={jsonDataChangeHandler('trendsFrom', options, onOptionsChange)}
+              tooltip="Time after which trends will be used.
                   Best practice is to set this value to your history storage period (7d, 30d, etc)."
-              />
-            </div>
-            <div className="gf-form">
-              <FormField
-                labelWidth={7}
-                inputWidth={4}
-                label="Range"
-                value={options.jsonData.trendsRange || ''}
-                placeholder="4d"
-                onChange={jsonDataChangeHandler('trendsRange', options, onOptionsChange)}
-                tooltip="Time range width after which trends will be used instead of history.
+            />
+          </div>
+          <div className="gf-form">
+            <FormField
+              labelWidth={7}
+              inputWidth={4}
+              label="Range"
+              value={options.jsonData.trendsRange || ''}
+              placeholder="4d"
+              onChange={jsonDataChangeHandler('trendsRange', options, onOptionsChange)}
+              tooltip="Time range width after which trends will be used instead of history.
                   It's better to set this value in range of 4 to 7 days to prevent loading large amount of history data."
-              />
-            </div>
-          </>
+            />
+          </div>
+        </>
         }
         <div className="gf-form">
           <FormField
@@ -160,10 +161,15 @@ export const ConfigEditor = (props: Props) => {
           <FormField
             labelWidth={7}
             inputWidth={4}
+            type="number"
             label="Timeout"
-            value={options.jsonData.timeout || ''}
-            placeholder="30"
-            onChange={jsonDataChangeHandler('timeout', options, onOptionsChange)}
+            value={options.jsonData.timeout}
+            onChange={(event) => {
+              onOptionsChange({
+                ...options,
+                jsonData: { ...options.jsonData, timeout: parseInt(event.currentTarget.value, 10) },
+              });
+            }}
             tooltip="Zabbix API connection timeout in seconds. Default is 30."
           />
         </div>
@@ -178,31 +184,31 @@ export const ConfigEditor = (props: Props) => {
           onChange={jsonDataSwitchHandler('dbConnectionEnable', options, onOptionsChange)}
         />
         {options.jsonData.dbConnectionEnable &&
-          <>
-            <div className="gf-form">
-              <InlineFormLabel width={9}>Data Source</InlineFormLabel>
-              <Select
-                width={32}
-                options={getDirectDBDSOptions()}
-                value={selectedDBDatasource}
-                onChange={directDBDatasourceChanegeHandler(options, onOptionsChange, setSelectedDBDatasource, setCurrentDSType)}
-              />
-            </div>
-            {currentDSType === 'influxdb' &&
-              <div className="gf-form">
-                <FormField
-                  labelWidth={9}
-                  inputWidth={16}
-                  label="Retention Policy"
-                  value={options.jsonData.dbConnectionRetentionPolicy || ''}
-                  placeholder="Retention policy name"
-                  onChange={jsonDataChangeHandler('dbConnectionRetentionPolicy', options, onOptionsChange)}
-                  tooltip="Specify retention policy name for fetching long-term stored data (optional).
+        <>
+          <div className="gf-form">
+            <InlineFormLabel width={9}>Data Source</InlineFormLabel>
+            <Select
+              width={32}
+              options={getDirectDBDSOptions()}
+              value={selectedDBDatasource}
+              onChange={directDBDatasourceChanegeHandler(options, onOptionsChange, setSelectedDBDatasource, setCurrentDSType)}
+            />
+          </div>
+          {currentDSType === 'influxdb' &&
+          <div className="gf-form">
+            <FormField
+              labelWidth={9}
+              inputWidth={16}
+              label="Retention Policy"
+              value={options.jsonData.dbConnectionRetentionPolicy || ''}
+              placeholder="Retention policy name"
+              onChange={jsonDataChangeHandler('dbConnectionRetentionPolicy', options, onOptionsChange)}
+              tooltip="Specify retention policy name for fetching long-term stored data (optional).
                     Leave it blank if only default retention policy used."
-                />
-              </div>
-            }
-          </>
+            />
+          </div>
+          }
+        </>
         }
       </div>
 

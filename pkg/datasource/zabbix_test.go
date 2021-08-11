@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -23,7 +24,7 @@ func mockZabbixQuery(method string, params zabbix.ZabbixAPIParams) *zabbix.Zabbi
 }
 
 func MockZabbixDataSource(body string, statusCode int) *ZabbixDatasourceInstance {
-	zabbixSettings, _ := readZabbixSettings(basicDatasourceInfo)
+	zabbixSettings, _ := settings.ReadZabbixSettings(basicDatasourceInfo)
 	zabbixClient, _ := zabbix.MockZabbixClient(basicDatasourceInfo, body, statusCode)
 
 	return &ZabbixDatasourceInstance{

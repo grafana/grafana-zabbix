@@ -1,16 +1,15 @@
-package zabbix
+package settings
 
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
-	"time"
-
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"strconv"
+	"time"
 )
 
-func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) (*ZabbixDatasourceSettings, error) {
+func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) (*ZabbixDatasourceSettings, error) {
 	zabbixSettingsDTO := &ZabbixDatasourceSettingsDTO{}
 
 	err := json.Unmarshal(dsInstanceSettings.JSONData, &zabbixSettingsDTO)
@@ -28,9 +27,9 @@ func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		zabbixSettingsDTO.CacheTTL = "1h"
 	}
 
-	if zabbixSettingsDTO.Timeout == "" {
-		zabbixSettingsDTO.Timeout = "30"
-	}
+	//if zabbixSettingsDTO.Timeout == 0 {
+	//	zabbixSettingsDTO.Timeout = 30
+	//}
 
 	trendsFrom, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsFrom)
 	if err != nil {
@@ -47,17 +46,32 @@ func readZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		return nil, err
 	}
 
-	timeout, err := strconv.Atoi(zabbixSettingsDTO.Timeout)
-	if err != nil {
-		return nil, errors.New("failed to parse timeout: " + err.Error())
+	var timeout int64
+	switch t := zabbixSettingsDTO.Timeout.(type) {
+	case string:
+		if t == "" {
+			timeout = 30
+			break
+		}
+		timeoutInt, err := strconv.Atoi(t)
+		if err != nil {
+			return nil, errors.New("failed to parse timeout: " + err.Error())
+		}
+		timeout = int64(timeoutInt)
+	case float64:
+		timeout = int64(t)
+	default:
+		timeout = 30
 	}
 
 	zabbixSettings := &ZabbixDatasourceSettings{
-		Trends:      zabbixSettingsDTO.Trends,
-		TrendsFrom:  trendsFrom,
-		TrendsRange: trendsRange,
-		CacheTTL:    cacheTTL,
-		Timeout:     time.Duration(timeout) * time.Second,
+		Trends:                  zabbixSettingsDTO.Trends,
+		TrendsFrom:              trendsFrom,
+		TrendsRange:             trendsRange,
+		CacheTTL:                cacheTTL,
+		Timeout:                 time.Duration(timeout) * time.Second,
+		DisableDataAlignment:    zabbixSettingsDTO.DisableDataAlignment,
+		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
 	}
 
 	return zabbixSettings, nil

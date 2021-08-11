@@ -106,7 +106,7 @@ function convertToRegex(str) {
   }
 }
 
-export const DS_CONFIG_SCHEMA = 2;
+export const DS_CONFIG_SCHEMA = 3;
 
 export function migrateDSConfig(jsonData) {
   if (!jsonData) {
@@ -127,6 +127,10 @@ export function migrateDSConfig(jsonData) {
     delete jsonData.dbConnection;
   }
 
+  if (oldVersion < 3) {
+    jsonData.timeout = (jsonData.timeout as string) === "" ? null : Number(jsonData.timeout as string);
+  }
+
   return jsonData;
 }
 
@@ -134,7 +138,7 @@ function shouldMigrateDSConfig(jsonData): boolean {
   if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
     return true;
   }
-  if (jsonData.schema && jsonData.schema !== DS_CONFIG_SCHEMA) {
+  if (jsonData.schema && jsonData.schema < DS_CONFIG_SCHEMA) {
     return true;
   }
   return false;

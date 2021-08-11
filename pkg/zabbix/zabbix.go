@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -22,15 +23,8 @@ type Zabbix struct {
 }
 
 // New returns new instance of Zabbix client.
-func New(dsInfo *backend.DataSourceInstanceSettings, zabbixAPI *zabbixapi.ZabbixAPI) (*Zabbix, error) {
+func New(dsInfo *backend.DataSourceInstanceSettings, zabbixSettings *settings.ZabbixDatasourceSettings, zabbixAPI *zabbixapi.ZabbixAPI) (*Zabbix, error) {
 	logger := log.New()
-
-	zabbixSettings, err := readZabbixSettings(dsInfo)
-	if err != nil {
-		logger.Error("Error parsing Zabbix settings", "error", err)
-		return nil, err
-	}
-
 	zabbixCache := NewZabbixCache(zabbixSettings.CacheTTL, 10*time.Minute)
 
 	return &Zabbix{
