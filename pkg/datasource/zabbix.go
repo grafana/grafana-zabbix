@@ -1,9 +1,10 @@
 package datasource
 
 import (
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"strings"
 	"time"
+
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -122,6 +123,10 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 					s.TS = s.TS.Align(*s.Meta.Interval)
 				}
 			}
+		}
+
+		if len(series) > 1 {
+			series = timeseries.AlignSeriesIntervals(series)
 		}
 	}
 
