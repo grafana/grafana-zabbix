@@ -1,5 +1,16 @@
 # Change Log
 
+## [4.2.2] - 2021-08-25
+
+### Fixed
+
+- Different item intervals compatibility (stack graph issue), [#1211](https://github.com/alexanderzobnin/grafana-zabbix/issues/1211)
+- Random "Failed to call resource" errors and plugin restarts, [#1269](https://github.com/alexanderzobnin/grafana-zabbix/issues/1269)
+- Top function does not work if number of series less than provided N, [#1267](https://github.com/alexanderzobnin/grafana-zabbix/issues/1267)
+- Hostnames are not displayed on multiple selection (regular expression), [#1265](https://github.com/alexanderzobnin/grafana-zabbix/issues/1265)
+- Cannot unmarshal number into Go struct field ZabbixDatasourceSettingsDTO.timeout of type string, [#1254](https://github.com/alexanderzobnin/grafana-zabbix/issues/1254)
+- `sortSeries()` does not sort by series name, [#1274](https://github.com/alexanderzobnin/grafana-zabbix/issues/1274)
+
 ## [4.2.1] - 2021-08-10
 
 ### Fixed
