@@ -1,7 +1,7 @@
 {
   "name": "grafana-zabbix",
   "private": false,
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "scripts": {
