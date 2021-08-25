@@ -186,10 +186,15 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
         interval = null;
       }
 
+      let seriesName = item.name;
+      if (item.hosts?.length > 0) {
+        seriesName = `${item.hosts[0].name}: ${seriesName}`;
+      }
+
       const timeSeriesData = {
         ts: s,
         meta: {
-          name: item.name,
+          name: seriesName,
           item,
           interval,
         }
