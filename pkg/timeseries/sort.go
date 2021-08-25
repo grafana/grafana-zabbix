@@ -50,3 +50,15 @@ func SortByItem(series []*TimeSeriesData) []*TimeSeriesData {
 
 	return series
 }
+
+func SortByName(series []*TimeSeriesData, order string) []*TimeSeriesData {
+	sort.Slice(series, func(i, j int) bool {
+		if order == "desc" {
+			return series[i].Meta.Name > series[j].Meta.Name
+		} else {
+			return series[i].Meta.Name < series[j].Meta.Name
+		}
+	})
+
+	return series
+}

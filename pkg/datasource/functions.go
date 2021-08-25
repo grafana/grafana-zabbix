@@ -353,9 +353,8 @@ func applySortSeries(series []*timeseries.TimeSeriesData, params ...interface{})
 		return nil, errParsingFunctionParam(err)
 	}
 
-	aggFunc := timeseries.AggAvg
-	sorted := timeseries.SortBy(series, order, aggFunc)
-	return sorted, nil
+	timeseries.SortByName(series, order)
+	return series, nil
 }
 
 func applyTimeShiftPre(query *QueryModel, items []*zabbix.Item, params ...interface{}) error {
