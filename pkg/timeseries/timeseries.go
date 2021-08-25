@@ -1,6 +1,7 @@
 package timeseries
 
 import (
+	"math"
 	"sort"
 	"time"
 
@@ -130,8 +131,9 @@ func (ts TimeSeries) Transform(transformFunc TransformFunc) TimeSeries {
 func Filter(series []*TimeSeriesData, n int, order string, aggFunc AggFunc) []*TimeSeriesData {
 	SortBy(series, "asc", aggFunc)
 
-	filteredSeries := make([]*TimeSeriesData, n)
-	for i := 0; i < n; i++ {
+	maxN := int(math.Min(float64(n), float64(len(series))))
+	filteredSeries := make([]*TimeSeriesData, maxN)
+	for i := 0; i < maxN; i++ {
 		if order == "top" {
 			filteredSeries[i] = series[len(series)-1-i]
 		} else if order == "bottom" {
