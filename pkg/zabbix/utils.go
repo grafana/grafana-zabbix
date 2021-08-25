@@ -14,8 +14,7 @@ func (item *Item) ExpandItemName() string {
 		return name
 	}
 
-	keyRunes := []rune(item.Key)
-	keyParamsStr := string(keyRunes[strings.Index(key, "[")+1 : strings.LastIndex(key, "]")])
+	keyParamsStr := key[strings.Index(key, "[")+1 : strings.LastIndex(key, "]")]
 	keyParams := splitKeyParams(keyParamsStr)
 
 	for i := len(keyParams); i >= 1; i-- {
