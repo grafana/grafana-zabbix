@@ -90,7 +90,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   render() {
     const { selectedQueryType, legacyQuery, group, host, application, itemTag, item } = this.state;
     const { datasource } = this.props;
-    const supportsItemTags = datasource.zabbix.isZabbix54OrHigher();
+    const supportsItemTags = datasource?.zabbix?.isZabbix54OrHigher() || false;
 
     return (
       <>
