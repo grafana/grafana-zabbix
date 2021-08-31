@@ -87,6 +87,13 @@ func AlignSeriesIntervals(series []*TimeSeriesData) []*TimeSeriesData {
 		return series
 	}
 
+	// Skip if interval not defined
+	for _, s := range series {
+		if s.Meta.Interval == nil {
+			return series
+		}
+	}
+
 	minInterval := *series[0].Meta.Interval
 	for _, s := range series {
 		if *s.Meta.Interval < minInterval {
