@@ -292,14 +292,7 @@ export class Zabbix implements ZabbixConnector {
     if (this.isZabbix54OrHigher()) {
       items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
       if (itemTagFilter) {
-        items = items.filter(item => {
-          if (item.tags) {
-            const tags: ZBXItemTag[] = item.tags.map(t => utils.itemTagToString(t));
-            return tags.includes(itemTagFilter);
-          } else {
-            return false;
-          }
-        });
+        items = filterItemsByTag(items, itemTagFilter);
       }
     } else {
       if (apps.appFilterEmpty) {
@@ -577,4 +570,29 @@ function getHostIds(items) {
     return _.map(item.hosts, 'hostid');
   });
   return _.uniq(_.flatten(hostIds));
+}
+
+function filterItemsByTag(items: any[], itemTagFilter: string) {
+  if (utils.isRegex(itemTagFilter)) {
+    const filterPattern = utils.buildRegex(itemTagFilter);
+    return items.filter((item) => {
+      if (item.tags) {
+        const tags: string[] = item.tags.map(t => utils.itemTagToString(t));
+        return tags.some((tag) => {
+          return filterPattern.test(tag);
+        });
+      } else {
+        return false;
+      }
+    });
+  } else {
+    return items.filter(item => {
+      if (item.tags) {
+        const tags: string[] = item.tags.map(t => utils.itemTagToString(t));
+        return tags.includes(itemTagFilter);
+      } else {
+        return false;
+      }
+    });
+  }
 }
