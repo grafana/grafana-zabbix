@@ -157,6 +157,9 @@ func handleAPIResult(response []byte) (*simplejson.Json, error) {
 }
 
 func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Request) ([]byte, error) {
+	// Set to true to prevents re-use of TCP connections (this may cause random EOF error in some request)
+	req.Close = true
+
 	res, err := ctxhttp.Do(ctx, httpClient, req)
 	if err != nil {
 		return nil, err
