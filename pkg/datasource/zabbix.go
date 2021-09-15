@@ -107,9 +107,14 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 
 func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, query *QueryModel, series []*timeseries.TimeSeriesData) ([]*data.Frame, error) {
 	consolidateBy := ds.getConsolidateBy(query)
+	useTrend := ds.isUseTrend(query.TimeRange)
+
+	// Sort trend data (in some cases Zabbix API returns it unsorted)
+	if useTrend {
+		sortSeriesPoints(series)
+	}
 
 	// Align time series data if possible
-	useTrend := ds.isUseTrend(query.TimeRange)
 	disableDataAlignment := query.Options.DisableDataAlignment || ds.Settings.DisableDataAlignment || query.QueryType == MODE_ITSERVICE
 	if !disableDataAlignment {
 		if useTrend {
