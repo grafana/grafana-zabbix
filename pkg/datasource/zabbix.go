@@ -126,7 +126,7 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 		}
 
 		if len(series) > 1 {
-			series = timeseries.AlignSeriesIntervals(series)
+			series = timeseries.PrepareForStack(series)
 		}
 	}
 
