@@ -287,7 +287,7 @@ func findNearestLeft(series TimeSeries, pointIndex int) *TimePoint {
 
 // Gets point timestamp rounded according to provided interval.
 func (p *TimePoint) GetTimeFrame(interval time.Duration) time.Time {
-	return p.Time.Truncate(interval)
+	return p.Time.Round(interval)
 }
 
 func getPointTimeFrame(ts *time.Time, interval time.Duration) *time.Time {
