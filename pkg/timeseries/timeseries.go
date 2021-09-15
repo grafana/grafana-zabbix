@@ -28,6 +28,11 @@ func (tsd *TimeSeriesData) Add(point TimePoint) *TimeSeriesData {
 	return tsd
 }
 
+// Gets point timestamp rounded according to provided interval.
+func (p *TimePoint) GetTimeFrame(interval time.Duration) time.Time {
+	return p.Time.Round(interval)
+}
+
 // GroupBy groups points in given interval by applying provided `aggFunc`. Source time series should be sorted by time.
 func (ts TimeSeries) GroupBy(interval time.Duration, aggFunc AggFunc) TimeSeries {
 	if ts.Len() == 0 {
@@ -283,19 +288,6 @@ func findNearestLeft(series TimeSeries, pointIndex int) *TimePoint {
 		}
 	}
 	return nil
-}
-
-// Gets point timestamp rounded according to provided interval.
-func (p *TimePoint) GetTimeFrame(interval time.Duration) time.Time {
-	return p.Time.Round(interval)
-}
-
-func getPointTimeFrame(ts *time.Time, interval time.Duration) *time.Time {
-	if ts == nil {
-		return nil
-	}
-	timeFrame := ts.Truncate(interval)
-	return &timeFrame
 }
 
 func getTimeFieldIndex(frame *data.Frame) int {
