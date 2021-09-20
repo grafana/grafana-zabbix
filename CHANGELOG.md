@@ -1,10 +1,21 @@
 # Change Log
 
+## [4.2.3] - 2021-09-20
+
+### Fixed
+
+- Different collection intervals compatibility (stacked graph issue), [#1211](https://github.com/alexanderzobnin/grafana-zabbix/issues/1211)
+- Graph broken when trend data used, [#1300](https://github.com/alexanderzobnin/grafana-zabbix/issues/1300)
+- Zabbix API request error "EOF", [#1295](https://github.com/alexanderzobnin/grafana-zabbix/issues/1295)
+- Item tag does not accept variables, [#1283](https://github.com/alexanderzobnin/grafana-zabbix/issues/1283)
+- Failed to query data, rpc error, [#1262](https://github.com/alexanderzobnin/grafana-zabbix/issues/1262)
+- Error `Cannot read property 'isZabbix54OrHigher' of undefined` when creating a variable template query, [#1282](https://github.com/alexanderzobnin/grafana-zabbix/issues/1282)
+
 ## [4.2.2] - 2021-08-25
 
 ### Fixed
 
-- Different item intervals compatibility (stack graph issue), [#1211](https://github.com/alexanderzobnin/grafana-zabbix/issues/1211)
+- Different item intervals compatibility (stacked graph issue), [#1211](https://github.com/alexanderzobnin/grafana-zabbix/issues/1211)
 - Random "Failed to call resource" errors and plugin restarts, [#1269](https://github.com/alexanderzobnin/grafana-zabbix/issues/1269)
 - Top function does not work if number of series less than provided N, [#1267](https://github.com/alexanderzobnin/grafana-zabbix/issues/1267)
 - Hostnames are not displayed on multiple selection (regular expression), [#1265](https://github.com/alexanderzobnin/grafana-zabbix/issues/1265)
