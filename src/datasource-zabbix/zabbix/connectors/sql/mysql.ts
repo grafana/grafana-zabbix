@@ -3,29 +3,31 @@
  */
 
 function historyQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction) {
+  const time_expression = `clock DIV ${intervalSec} * ${intervalSec}`;
   return `
-      SELECT CAST(itemid AS CHAR) AS metric, MIN(clock) AS time_sec, ${aggFunction}(value) AS value
+      SELECT CAST(itemid AS CHAR) AS metric, ${time_expression} AS time_sec, ${aggFunction}(value) AS value
       FROM ${table}
       WHERE itemid IN (${itemids})
         AND clock
           > ${timeFrom}
         AND clock
           < ${timeTill}
-      GROUP BY (clock-${timeFrom}) DIV ${intervalSec}, metric
+      GROUP BY ${time_expression}, metric
       ORDER BY time_sec ASC
   `;
 }
 
 function trendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn) {
+  const time_expression = `clock DIV ${intervalSec} * ${intervalSec}`;
   return `
-      SELECT CAST(itemid AS CHAR) AS metric, MIN(clock) AS time_sec, ${aggFunction}(${valueColumn}) AS value
+      SELECT CAST(itemid AS CHAR) AS metric, ${time_expression} AS time_sec, ${aggFunction}(${valueColumn}) AS value
       FROM ${table}
       WHERE itemid IN (${itemids})
         AND clock
           > ${timeFrom}
         AND clock
           < ${timeTill}
-      GROUP BY (clock-${timeFrom}) DIV ${intervalSec}, metric
+      GROUP BY ${time_expression}, metric
       ORDER BY time_sec ASC
   `;
 }

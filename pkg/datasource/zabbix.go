@@ -102,10 +102,10 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 	}
 
 	series := convertHistoryToTimeSeries(history, items)
-	return ds.applyDataProcessing(ctx, query, series)
+	return ds.applyDataProcessing(ctx, query, series, false)
 }
 
-func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, query *QueryModel, series []*timeseries.TimeSeriesData) ([]*data.Frame, error) {
+func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, query *QueryModel, series []*timeseries.TimeSeriesData, DBPostProcessing bool) ([]*data.Frame, error) {
 	consolidateBy := ds.getConsolidateBy(query)
 	useTrend := ds.isUseTrend(query.TimeRange)
 
@@ -117,7 +117,7 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 	// Align time series data if possible
 	disableDataAlignment := query.Options.DisableDataAlignment || ds.Settings.DisableDataAlignment || query.QueryType == MODE_ITSERVICE
 	if !disableDataAlignment {
-		if useTrend {
+		if useTrend && !DBPostProcessing {
 			for _, s := range series {
 				// Trend data is already aligned (by 1 hour interval), but null values should be added
 				s.TS = s.TS.FillTrendWithNulls()

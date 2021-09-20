@@ -92,7 +92,7 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 	reqData.Query.TimeRange.From = time.Unix(reqData.TimeRange.From, 0)
 	reqData.Query.TimeRange.To = time.Unix(reqData.TimeRange.To, 0)
 
-	frames, err := dsInstance.applyDataProcessing(req.Context(), &reqData.Query, reqData.Series)
+	frames, err := dsInstance.applyDataProcessing(req.Context(), &reqData.Query, reqData.Series, true)
 
 	resultJson, err := json.Marshal(frames)
 	if err != nil {

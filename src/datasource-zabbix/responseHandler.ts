@@ -154,7 +154,7 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
 }
 
 // Converts DataResponse to the format which backend works with (for data processing)
-export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
+export function dataResponseToTimeSeries(response: DataFrameJSON[], items, request) {
   const series = [];
   if (response.length === 0) {
     return [];
@@ -181,7 +181,7 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items) {
       const item = _.find(items, { 'itemid': itemid });
 
       // Convert interval to nanoseconds in order to unmarshall it on the backend to time.Duration
-      let interval = utils.parseItemInterval(item.delay) * 1000000;
+      let interval = request.intervalMs * 1000000;
       if (interval === 0) {
         interval = null;
       }

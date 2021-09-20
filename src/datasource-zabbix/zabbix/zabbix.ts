@@ -456,24 +456,24 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getHistoryTS(items, timeRange, options) {
+  getHistoryTS(items, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
-      return this.getHistoryDB(items, timeFrom, timeTo, options)
-      .then(history => responseHandler.dataResponseToTimeSeries(history, items));
+      return this.getHistoryDB(items, timeFrom, timeTo, request)
+      .then(history => responseHandler.dataResponseToTimeSeries(history, items, request));
     } else {
       return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
       .then(history => responseHandler.handleHistory(history, items));
     }
   }
 
-  getTrends(items, timeRange, options) {
+  getTrends(items, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
-      return this.getTrendsDB(items, timeFrom, timeTo, options)
-      .then(history => responseHandler.dataResponseToTimeSeries(history, items));
+      return this.getTrendsDB(items, timeFrom, timeTo, request)
+      .then(history => responseHandler.dataResponseToTimeSeries(history, items, request));
     } else {
-      const valueType = options.consolidateBy || options.valueType;
+      const valueType = request.consolidateBy || request.valueType;
       return this.zabbixAPI.getTrend(items, timeFrom, timeTo)
       .then(history => responseHandler.handleTrends(history, items, valueType))
       .then(responseHandler.sortTimeseries); // Sort trend data, issue #202
