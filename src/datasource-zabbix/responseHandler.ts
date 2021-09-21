@@ -182,6 +182,9 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items, reque
 
       // Convert interval to nanoseconds in order to unmarshall it on the backend to time.Duration
       let interval = request.intervalMs * 1000000;
+      const itemInterval = utils.parseItemInterval(item.delay) * 1000000;
+      // Provided interval is using for the data alignment, so it shouldn't be less than item update interval
+      interval = Math.max(interval, itemInterval);
       if (interval === 0) {
         interval = null;
       }
