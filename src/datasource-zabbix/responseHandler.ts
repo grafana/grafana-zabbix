@@ -316,7 +316,8 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
 }
 
 export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
-  const timeField = data[0].fields.find(f => f.type === FieldType.time);
+  const maxLengthIndex = getLongestFrame(data);
+  const timeField = data[maxLengthIndex].fields.find(f => f.type === FieldType.time);
   if (!timeField) {
     return [];
   }
@@ -345,6 +346,20 @@ export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
   };
 
   return [frame];
+}
+
+function getLongestFrame(data: MutableDataFrame[]): number {
+  let maxLengthIndex = 0;
+  let maxLength = 0;
+  for (let i = 0; i < data.length; i++) {
+    const timeField = data[i].fields.find(f => f.type === FieldType.time);
+    if (timeField.values.length > maxLength) {
+      maxLength = timeField.values.length;
+      maxLengthIndex = i;
+    }
+  }
+
+  return maxLengthIndex;
 }
 
 function sortTimeseries(timeseries) {
