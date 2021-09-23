@@ -30,7 +30,7 @@ func (tsd *TimeSeriesData) Add(point TimePoint) *TimeSeriesData {
 
 // Gets point timestamp rounded according to provided interval.
 func (p *TimePoint) GetTimeFrame(interval time.Duration) time.Time {
-	return p.Time.Round(interval)
+	return p.Time.Truncate(interval)
 }
 
 // GroupBy groups points in given interval by applying provided `aggFunc`. Source time series should be sorted by time.
