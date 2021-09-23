@@ -124,7 +124,9 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 			}
 		} else {
 			for _, s := range series {
-				if s.Meta.Interval != nil {
+				// Skip unnecessary data alignment if item interval less than query interval
+				// because data will be downsampled in this case
+				if s.Meta.Interval != nil && *s.Meta.Interval > query.Interval {
 					s.TS = s.TS.Align(*s.Meta.Interval)
 				}
 			}
