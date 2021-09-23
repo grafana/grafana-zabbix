@@ -22,17 +22,19 @@ func (ts TimeSeries) Align(interval time.Duration) TimeSeries {
 		pointFrameTs = point.GetTimeFrame(interval)
 
 		if pointFrameTs.After(frameTs) {
-			pointsToAdd := make([]TimePoint, 0)
+			nullPointsToAdd := make([]TimePoint, 0)
 			for frameTs.Before(pointFrameTs) {
-				pointsToAdd = append(pointsToAdd, TimePoint{Time: frameTs, Value: nil})
+				nullPointsToAdd = append(nullPointsToAdd, TimePoint{Time: frameTs, Value: nil})
 				frameTs = frameTs.Add(interval)
 			}
-			if len(pointsToAdd) > 1 {
-				alignedTs = append(alignedTs, pointsToAdd...)
-			} else if len(pointsToAdd) == 1 && i < ts.Len()-1 {
+			if len(nullPointsToAdd) > 1 {
+				alignedTs = append(alignedTs, nullPointsToAdd...)
+			} else if len(nullPointsToAdd) == 1 && i < ts.Len()-1 {
 				// In case of 1 point gap, insert interpolated value to prevent unnecessary gaps
-				interpolatedPoint := pointsToAdd[0]
-				pointValue := linearInterpolation(interpolatedPoint.Time, ts[i], ts[i+1])
+				interpolatedPoint := nullPointsToAdd[0]
+				left := alignedTs[len(alignedTs)-1]
+				right := TimePoint{Time: pointFrameTs, Value: point.Value}
+				pointValue := linearInterpolation(interpolatedPoint.Time, left, right)
 				interpolatedPoint.Value = &pointValue
 				alignedTs = append(alignedTs, interpolatedPoint)
 			}
