@@ -7,16 +7,15 @@ import (
 
 // SortBy sorts series by value calculated with provided aggFunc in given order
 func SortBy(series []*TimeSeriesData, order string, aggFunc AggFunc) []*TimeSeriesData {
-	aggregatedSeries := make([]TimeSeries, len(series))
-	for i, s := range series {
-		aggregatedSeries[i] = s.TS.GroupByRange(aggFunc)
+	for _, s := range series {
+		s.Meta.AggValue = aggFunc(s.TS)
 	}
 
 	// Sort by aggregated value
 	sort.Slice(series, func(i, j int) bool {
-		if len(aggregatedSeries[i]) > 0 && len(aggregatedSeries[j]) > 0 {
-			return *aggregatedSeries[i][0].Value < *aggregatedSeries[j][0].Value
-		} else if len(aggregatedSeries[j]) > 0 {
+		if series[i].Meta.AggValue != nil && series[j].Meta.AggValue != nil {
+			return *series[i].Meta.AggValue < *series[j].Meta.AggValue
+		} else if series[j].Meta.AggValue != nil {
 			return true
 		}
 		return false

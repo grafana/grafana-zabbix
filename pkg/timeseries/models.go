@@ -49,6 +49,9 @@ type TimeSeriesMeta struct {
 
 	// Item update interval. nil means not supported intervals (flexible, schedule, etc)
 	Interval *time.Duration
+
+	// AggValue is using for sorting purposes
+	AggValue *float64
 }
 
 type AggFunc = func(points []TimePoint) *float64
