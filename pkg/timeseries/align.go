@@ -40,7 +40,12 @@ func (ts TimeSeries) Align(interval time.Duration) TimeSeries {
 			}
 		}
 
-		alignedTs = append(alignedTs, TimePoint{Time: pointFrameTs, Value: point.Value})
+		if len(alignedTs) > 0 && alignedTs[len(alignedTs)-1].Time == pointFrameTs {
+			// Do not append points with the same timestamp
+			alignedTs[len(alignedTs)-1] = TimePoint{Time: pointFrameTs, Value: point.Value}
+		} else {
+			alignedTs = append(alignedTs, TimePoint{Time: pointFrameTs, Value: point.Value})
+		}
 		frameTs = frameTs.Add(interval)
 	}
 
