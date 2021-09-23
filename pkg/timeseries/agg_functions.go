@@ -9,16 +9,32 @@ type AggregationFunc = func(points []TimePoint) *float64
 
 func AggAvg(points []TimePoint) *float64 {
 	sum := AggSum(points)
-	avg := *sum / float64(len(points))
+	// Do not include nulls in the average
+	nonNullLength := 0
+	for _, p := range points {
+		if p.Value != nil {
+			nonNullLength++
+		}
+	}
+	if sum == nil || nonNullLength == 0 {
+		return nil
+	}
+	avg := *sum / float64(nonNullLength)
 	return &avg
 }
 
 func AggSum(points []TimePoint) *float64 {
 	var sum float64 = 0
+	isNil := true
 	for _, p := range points {
 		if p.Value != nil {
+			isNil = false
 			sum += *p.Value
 		}
+	}
+	// Skip empty frames
+	if isNil {
+		return nil
 	}
 	return &sum
 }
