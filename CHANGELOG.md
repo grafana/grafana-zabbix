@@ -1,5 +1,14 @@
 # Change Log
 
+## [4.2.4] - 2021-09-27
+
+### Fixed
+
+- Time series is cut on certain conditions, [#1309](https://github.com/alexanderzobnin/grafana-zabbix/issues/1309)
+- groupBy/aggregateBy handles interval improperly, [#1310](https://github.com/alexanderzobnin/grafana-zabbix/issues/1310)
+- `top()` function returns incorrect set of series, [#1313](https://github.com/alexanderzobnin/grafana-zabbix/issues/1313)
+- Some data alignment/stacking issues
+
 ## [4.2.3] - 2021-09-21
 
 ### Fixed
