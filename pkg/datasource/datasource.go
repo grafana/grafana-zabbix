@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 	"errors"
+
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
@@ -103,7 +104,6 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 }
 
 func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	ds.logger.Debug("QueryData()")
 	qdr := backend.NewQueryDataResponse()
 
 	zabbixDS, err := ds.getDSInstance(req.PluginContext)
