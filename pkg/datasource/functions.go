@@ -430,7 +430,7 @@ func applyTimeShiftPost(series timeseries.TimeSeries, params ...interface{}) (ti
 	if interval == 0 {
 		return series, nil
 	}
-	if shiftForward == true {
+	if shiftForward {
 		interval = -interval
 	}
 

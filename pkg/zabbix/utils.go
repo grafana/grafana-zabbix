@@ -10,7 +10,7 @@ func (item *Item) ExpandItemName() string {
 	name := item.Name
 	key := item.Key
 
-	if strings.Index(key, "[") == -1 {
+	if !strings.Contains(key, "[") {
 		return name
 	}
 
