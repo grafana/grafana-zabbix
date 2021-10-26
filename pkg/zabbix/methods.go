@@ -106,8 +106,14 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 	var allItems []*Item
 	if len(appids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType)
+		if err != nil {
+			return nil, err
+		}
 	} else if len(hostids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if isZabbix54orHigher && itemTagFilter != "" {
