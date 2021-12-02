@@ -46,6 +46,8 @@ func (ds *Zabbix) getHistory(ctx context.Context, itemids []string, historyType 
 		return nil, err
 	}
 
+	ds.logger.Debug("History", "history", result)
+
 	var history History
 	err = convertTo(result, &history)
 	return history, err

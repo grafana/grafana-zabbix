@@ -114,6 +114,8 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		return nil, err
 	}
 
+	api.logger.Debug("API response", "response", string(response))
+
 	return handleAPIResult(response)
 }
 
