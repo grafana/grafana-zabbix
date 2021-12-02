@@ -327,6 +327,28 @@ workflows:
             - package-plugin
           filters: *filter-only-release
 
+  build-test-package:
+    jobs:
+      - build:
+          filters: *filter-test-build
+      - codespell:
+          filters: *filter-test-build
+      - lint:
+          filters: *filter-test-build
+      - test:
+          filters: *filter-test-build
+      - get-plugin:
+          requires:
+            - build
+            - codespell
+            - lint
+            - test
+          filters: *filter-test-build
+      - package-plugin:
+          requires:
+            - get-plugin
+          filters: *filter-test-build
+
   build-docs:
     jobs:
       - build-docs:
