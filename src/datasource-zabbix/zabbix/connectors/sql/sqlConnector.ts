@@ -119,7 +119,7 @@ function getAggFunc(timeFrom, timeTill, options) {
   // the resulting first and last data points will yield invalid values in the
   // calculated average value in downsampleSeries - when using consolidateBy(avg)
   const numOfIntervals = Math.ceil((timeTill - timeFrom) / intervalSec);
-  intervalSec = (timeTill - timeFrom) / numOfIntervals;
+  intervalSec = Math.ceil((timeTill - timeFrom) / numOfIntervals);
 
   consolidateBy = consolidateBy || 'avg';
   const aggFunction = dbConnector.consolidateByFunc[consolidateBy];
