@@ -19,6 +19,9 @@ aliases:
       ignore: /.*/
     tags:
       only: /^v[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)$/
+  - &filter-nightly-build
+    branches:
+      only: /^nightly-build$/
   - &filter-docs
     branches:
       only: docs
@@ -323,6 +326,28 @@ workflows:
           requires:
             - package-plugin
           filters: *filter-only-release
+
+  build-nightly:
+    jobs:
+      - build:
+          filters: *nightly-build
+      - codespell:
+          filters: *nightly-build
+      - lint:
+          filters: *nightly-build
+      - test:
+          filters: *nightly-build
+      - get-plugin:
+          requires:
+            - build
+            - codespell
+            - lint
+            - test
+          filters: *nightly-build
+      - package-plugin:
+          requires:
+            - get-plugin
+          filters: *nightly-build
 
   build-docs:
     jobs:
