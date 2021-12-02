@@ -330,24 +330,24 @@ workflows:
   build-nightly:
     jobs:
       - build:
-          filters: *nightly-build
+          filters: *filter-nightly-build
       - codespell:
-          filters: *nightly-build
+          filters: *filter-nightly-build
       - lint:
-          filters: *nightly-build
+          filters: *filter-nightly-build
       - test:
-          filters: *nightly-build
+          filters: *filter-nightly-build
       - get-plugin:
           requires:
             - build
             - codespell
             - lint
             - test
-          filters: *nightly-build
+          filters: *filter-nightly-build
       - package-plugin:
           requires:
             - get-plugin
-          filters: *nightly-build
+          filters: *filter-nightly-build
 
   build-docs:
     jobs:
