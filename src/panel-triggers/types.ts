@@ -1,3 +1,5 @@
+import { DataSourceRef } from "@grafana/data";
+
 export interface ProblemsPanelOptions {
   schemaVersion: number;
   datasources: any[];
@@ -84,7 +86,7 @@ export interface ZBXTrigger {
   comments?: string;
   correlation_mode?: string;
   correlation_tag?: string;
-  datasource?: string;
+  datasource?: DataSourceRef | string;
   description?: string;
   error?: string;
   expression?: string;

@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { ZBXTag } from '../types';
 import Tooltip from '../../components/Tooltip/Tooltip';
+import { DataSourceRef } from '@grafana/data';
 
 const TAG_COLORS = [
   '#E24D42',
@@ -87,14 +88,16 @@ function djb2(str) {
 
 interface EventTagProps {
   tag: ZBXTag;
+  datasource: DataSourceRef | string;
   highlight?: boolean;
-  onClick?: (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => void;
+  onClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 export default class EventTag extends PureComponent<EventTagProps> {
   handleClick = (event) => {
     if (this.props.onClick) {
-      this.props.onClick(this.props.tag, event.ctrlKey, event.shiftKey);
+      const { tag, datasource} = this.props;
+      this.props.onClick(tag, datasource, event.ctrlKey, event.shiftKey);
     }
   }
 

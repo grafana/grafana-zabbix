@@ -267,7 +267,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   addTagFilter(tag, datasource) {
     for (const target of this.panel.targets) {
-      if (target.datasource === datasource || this.panel.datasource === datasource) {
+      if (target.datasource?.uid === datasource?.uid || target.datasource === datasource || this.panel.datasource === datasource) {
         const tagFilter = target.tags.filter;
         let targetTags = this.parseTags(tagFilter);
         const newTag = { tag: tag.tag, value: tag.value };
@@ -283,7 +283,7 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
   removeTagFilter(tag, datasource) {
     const matchTag = t => t.tag === tag.tag && t.value === tag.value;
     for (const target of this.panel.targets) {
-      if (target.datasource === datasource || this.panel.datasource === datasource) {
+      if (target.datasource?.uid === datasource?.uid || target.datasource === datasource || this.panel.datasource === datasource) {
         const tagFilter = target.tags.filter;
         let targetTags = this.parseTags(tagFilter);
         _.remove(targetTags, matchTag);

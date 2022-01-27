@@ -1,5 +1,7 @@
 import React, { FC, PureComponent } from 'react';
 import moment from 'moment';
+import { TimeRange, DataSourceRef } from "@grafana/data";
+import { getDataSourceSrv } from '@grafana/runtime';
 import * as utils from '../../../datasource-zabbix/utils';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXHost, ZBXTag } from '../../../datasource-zabbix/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
@@ -10,7 +12,6 @@ import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
 import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController, Tooltip } from '../../../components';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
-import { TimeRange } from "@grafana/data";
 import ProblemStatusBar from "./ProblemStatusBar";
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
@@ -26,7 +27,7 @@ interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   onExecuteScript(problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse>;
 
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
-  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
+  onTagClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 interface ProblemDetailsState {
@@ -55,9 +56,9 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
     });
   }
 
-  handleTagClick = (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => {
+  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, this.props.original.datasource, ctrlKey, shiftKey);
+      this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
   };
 
@@ -102,6 +103,12 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
     const age = moment.unix(problem.timestamp).fromNow(true);
     const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
     const problemSeverity = Number(problem.severity);
+
+    let dsName: string = (this.props.original.datasource as string);
+    if ((this.props.original.datasource as DataSourceRef)?.uid) {
+      const dsInstance = getDataSourceSrv().getInstanceSettings((this.props.original.datasource as DataSourceRef).uid);
+      dsName = dsInstance.name;
+    }
 
     return (
       <div className={`problem-details-container ${displayClass}`}>
@@ -171,6 +178,7 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
                 <EventTag
                   key={tag.tag + tag.value}
                   tag={tag}
+                  datasource={problem.datasource}
                   highlight={tag.tag === problem.correlation_tag}
                   onClick={this.handleTagClick}
                 />)
@@ -198,7 +206,7 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
           <div className="problem-details-right">
             <div className="problem-details-right-item">
               <FAIcon icon="database"/>
-              <span>{problem.datasource}</span>
+              <span>{dsName}</span>
             </div>
             {problem.proxy &&
             <div className="problem-details-right-item">

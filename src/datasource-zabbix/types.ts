@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData, SelectableValue } from "@grafana/data";
+import { DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from "@grafana/data";
 
 export interface ZabbixDSOptions extends DataSourceJsonData {
   username: string;
@@ -185,7 +185,7 @@ export interface ProblemDTO {
   /** Whether the trigger is in OK or problem state. */
   value?: string;
 
-  datasource?: string;
+  datasource?: DataSourceRef | string;
   comments?: string;
   host?: string;
   hostTechName?: string;
