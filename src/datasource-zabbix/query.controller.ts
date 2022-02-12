@@ -517,7 +517,7 @@ export class ZabbixQueryController extends QueryCtrl {
       sortProblems: "Sort problems",
       acknowledged: "Acknowledged",
       skipEmptyValues: "Skip empty values",
-      hostsInMaintenance: "Show hosts in maintenance",
+      hostsInMaintenance: "Show problems in maintenance",
       limit: "Limit problems",
       hostProxy: "Show proxy",
       useTimeRange: "Use time range",

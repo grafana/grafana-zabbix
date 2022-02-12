@@ -96,10 +96,10 @@ export function joinTriggersWithEvents(events: ZBXEvent[], triggers: ZBXTrigger[
 }
 
 export function setMaintenanceStatus(triggers) {
-  _.each(triggers, (trigger) => {
-    const maintenance_status = _.some(trigger.hosts, (host) => host.maintenance_status === '1');
-    trigger.maintenance = maintenance_status;
-  });
+    _.each(triggers, (trigger) => {
+        trigger.maintenance = false;
+        if (trigger.suppressed == 1) { trigger.maintenance = true; }
+    });
   return triggers;
 }
 
