@@ -9,8 +9,9 @@ import EventTag from '../EventTag';
 import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
 import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
-import { ModalController, Tooltip } from '../../../components';
+import { ModalController } from '../../../components';
 import { DataSourceRef } from '@grafana/data';
+import { Tooltip } from '@grafana/ui';
 
 interface AlertCardProps {
   problem: ProblemDTO;
@@ -260,7 +261,7 @@ class AlertAcknowledgesButton extends PureComponent<AlertAcknowledgesButtonProps
     let content = null;
     if (problem.acknowledges && problem.acknowledges.length) {
       content = (
-        <Tooltip placement="bottom" popperClassName="ack-tooltip" content={this.renderTooltipContent}>
+        <Tooltip placement="bottom" content={this.renderTooltipContent}>
           <span><i className="fa fa-comments"></i></span>
         </Tooltip>
       );

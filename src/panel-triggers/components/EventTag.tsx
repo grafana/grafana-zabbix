@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import { ZBXTag } from '../types';
-import Tooltip from '../../components/Tooltip/Tooltip';
 import { DataSourceRef } from '@grafana/data';
+import { Tooltip } from '@grafana/ui';
 
 const TAG_COLORS = [
   '#E24D42',

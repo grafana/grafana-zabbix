@@ -1,6 +1,7 @@
 import React, { FC, PureComponent } from 'react';
 import moment from 'moment';
 import { TimeRange, DataSourceRef } from "@grafana/data";
+import { Tooltip } from '@grafana/ui';
 import { getDataSourceSrv } from '@grafana/runtime';
 import * as utils from '../../../datasource-zabbix/utils';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXHost, ZBXTag } from '../../../datasource-zabbix/types';
@@ -10,7 +11,7 @@ import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController, Tooltip } from '../../../components';
+import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController } from '../../../components';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
 import ProblemStatusBar from "./ProblemStatusBar";
 
