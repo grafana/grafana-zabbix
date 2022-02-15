@@ -42,7 +42,7 @@ const openInExplore = (problem: ProblemDTO, panelId: number, range: TimeRange) =
     };
   }
 
-  const state: ExploreUrlState = {
+  const state: ExploreUrlState | any = {
     datasource: problem.datasource,
     context: 'explore',
     originPanelId: panelId,

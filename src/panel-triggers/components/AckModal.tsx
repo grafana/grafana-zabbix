@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import { cx, css } from '@emotion/css';
 import { ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_CHANGE_SEVERITY, ZBX_ACK_ACTION_CLOSE } from '../../datasource-zabbix/constants';
-import { Button, VerticalGroup, Spinner, Modal, Input, Checkbox, RadioButtonGroup, stylesFactory, withTheme, Themeable, TextArea } from '@grafana/ui';
+import { Button, VerticalGroup, Spinner, Modal, Checkbox, RadioButtonGroup, stylesFactory, withTheme, Themeable, TextArea } from '@grafana/ui';
 import { FAIcon } from '../../components';
 import { GrafanaTheme } from '@grafana/data';
 
@@ -147,9 +147,9 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     const { canClose } = this.props;
 
     const actions = [
-      <Checkbox css="" key="ack" label="Acknowledge" value={this.state.acknowledge} onChange={this.onAcknowledgeToggle} />,
+      <Checkbox translate="" key="ack" label="Acknowledge" value={this.state.acknowledge} onChange={this.onAcknowledgeToggle} />,
       <Checkbox
-        css=""
+        translate=""
         key="change-severity"
         label="Change severity"
         description=""
@@ -166,7 +166,7 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
         />,
       canClose &&
         <Checkbox
-          css=""
+          translate=""
           key="close"
           label="Close problem"
           disabled={!canClose}
@@ -205,7 +205,7 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
         <div className={inputGroupClass}>
           <label className="gf-form-hint">
             <TextArea className={inputClass}
-              css=""
+              translate=""
               type="text"
               name="message"
               placeholder="Message"

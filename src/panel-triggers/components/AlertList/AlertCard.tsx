@@ -10,21 +10,21 @@ import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
 import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
 import { ModalController, Tooltip } from '../../../components';
+import { DataSourceRef } from '@grafana/data';
 
 interface AlertCardProps {
   problem: ProblemDTO;
   panelOptions: ProblemsPanelOptions;
-  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
+  onTagClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
 }
 
 export default class AlertCard extends PureComponent<AlertCardProps> {
-
-  handleTagClick = (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => {
+  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, this.props.problem.datasource, ctrlKey, shiftKey);
+      this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
-  }
+  };
 
   ackProblem = (data: AckProblemData) => {
     const problem = this.props.problem;
@@ -86,6 +86,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
                     <EventTag
                       key={tag.tag + tag.value}
                       tag={tag}
+                      datasource={problem.datasource}
                       highlight={tag.tag === problem.correlation_tag}
                       onClick={this.handleTagClick}
                     />
