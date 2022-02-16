@@ -64,7 +64,7 @@ func splitKeyParams(paramStr string) []string {
 }
 
 func parseFilter(filter string) (*regexp.Regexp, error) {
-	regex := regexp.MustCompile(`^/(.+)/(.*)$`)
+	regex := regexp.MustCompile(`^/(.+)/([imsU]*)$`)
 	flagRE := regexp.MustCompile("[imsU]+")
 
 	matches := regex.FindStringSubmatch(filter)
