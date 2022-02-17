@@ -12,7 +12,7 @@ import { GFTimeRange, ProblemsPanelOptions, RTCell, RTResized, TriggerSeverity }
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource-zabbix/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
-import { TimeRange } from "@grafana/data";
+import { DataSourceRef, TimeRange } from "@grafana/data";
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -345,20 +345,20 @@ function LastChangeCell(props: RTCell<ProblemDTO>, customFormat?: string) {
 }
 
 interface TagCellProps extends RTCell<ProblemDTO> {
-  onTagClick: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
+  onTagClick: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 class TagCell extends PureComponent<TagCellProps> {
-  handleTagClick = (tag: ZBXTag, ctrlKey?: boolean, shiftKey?: boolean) => {
+  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
-      this.props.onTagClick(tag, this.props.original.datasource, ctrlKey, shiftKey);
+      this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
   };
 
   render() {
     const tags = this.props.value || [];
     return [
-      tags.map(tag => <EventTag key={tag.tag + tag.value} tag={tag} onClick={this.handleTagClick}/>)
+      tags.map(tag => <EventTag key={tag.tag + tag.value} tag={tag} datasource={this.props.original.datasource} onClick={this.handleTagClick}/>)
     ];
   }
 }

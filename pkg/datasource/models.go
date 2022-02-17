@@ -3,9 +3,10 @@ package datasource
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"strconv"
 	"time"
+
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -46,7 +47,7 @@ type ZabbixAPIResourceResponse struct {
 type QueryModel struct {
 	// Deprecated `mode` field, use QueryType instead
 	Mode      int64  `json:"mode"`
-	QueryType string `json:"queryType"`
+	QueryType string `json:"-"`
 
 	Group       QueryFilter `json:"group"`
 	Host        QueryFilter `json:"host"`

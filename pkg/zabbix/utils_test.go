@@ -1,8 +1,9 @@
 package zabbix
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExpandItemName(t *testing.T) {
@@ -52,6 +53,41 @@ func TestExpandItemName(t *testing.T) {
 			}
 			expandedName := item.ExpandItemName()
 			assert.Equal(t, tt.expected, expandedName)
+		})
+	}
+}
+
+func TestParseFilter(t *testing.T) {
+	tests := []struct {
+		name          string
+		filter        string
+		expectNoError bool
+		expectedError string
+	}{
+		{
+			name:          "Simple regexp",
+			filter:        "/.*/",
+			expectNoError: true,
+			expectedError: "",
+		},
+		{
+			name:          "Not a regex",
+			filter:        "/var/lib/mysql: Total space",
+			expectNoError: true,
+			expectedError: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseFilter(tt.filter)
+			if tt.expectNoError {
+				assert.NoError(t, err)
+			}
+			if tt.expectedError != "" {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tt.expectedError)
+			}
 		})
 	}
 }

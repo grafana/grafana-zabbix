@@ -4,6 +4,12 @@ jest.mock('@grafana/runtime', () => ({
   getBackendSrv: () => ({
     datasourceRequest: jest.fn().mockResolvedValue({data: {result: ''}}),
   }),
+  getBackendSrv: () => ({
+    datasourceRequest: jest.fn().mockResolvedValue({ data: { result: '' } }),
+    fetch: () => ({
+      toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } })
+    }),
+  }),
 }), {virtual: true});
 
 describe('Zabbix', () => {

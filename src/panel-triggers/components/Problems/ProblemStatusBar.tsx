@@ -1,6 +1,6 @@
 import React from 'react';
+import { Tooltip } from '@grafana/ui';
 import FAIcon from '../../../components/FAIcon/FAIcon';
-import Tooltip from '../../../components/Tooltip/Tooltip';
 import { ZBXTrigger, ZBXAlert } from '../../types';
 
 export interface ProblemStatusBarProps {

@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import { Observable } from 'rxjs';
 import config from 'grafana/app/core/config';
 import { contextSrv } from 'grafana/app/core/core';
 import * as dateMath from 'grafana/app/core/utils/datemath';
@@ -107,7 +106,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @param  {Object} request   Contains time range, targets and other info.
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
-  query(request: DataQueryRequest<any>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
+  query(request: DataQueryRequest<ZabbixMetricsQuery>) {
     // Migrate old targets
     const requestTargets = request.targets.map(t => {
       // Prevent changes of original object
