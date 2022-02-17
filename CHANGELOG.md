@@ -1,5 +1,15 @@
 # Change Log
 
+## [4.2.5] - 2022-02-17
+
+### Fixed
+
+- Problems panel: error when attempting to click on info button, [#1357](https://github.com/alexanderzobnin/grafana-zabbix/issues/1357)
+- Error parsing regexp: invalid or unsupported Perl syntax, [#1318](https://github.com/alexanderzobnin/grafana-zabbix/issues/1318)
+- json: cannot unmarshal number into Go struct field TimeSeriesData.series.TS of type int64, [#1320](https://github.com/alexanderzobnin/grafana-zabbix/issues/1320)
+- json: cannot unmarshal number into Go struct field QueryModel.queryType of type string, [#1342](https://github.com/alexanderzobnin/grafana-zabbix/issues/1342)
+- Grafana does not get units from Zabbix in 4.2, [#1321](https://github.com/alexanderzobnin/grafana-zabbix/issues/1321)
+
 ## [4.2.4] - 2021-09-27
 
 ### Fixed
