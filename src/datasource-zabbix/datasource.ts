@@ -188,6 +188,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const resp = toDataQueryResponse(rsp);
     this.sortByRefId(resp);
     this.applyFrontendFunctions(resp, request);
+    responseHandler.convertZabbixUnits(resp);
     if (responseHandler.isConvertibleToWide(resp.data)) {
       console.log('Converting response to the wide format');
       resp.data = responseHandler.convertToWide(resp.data);

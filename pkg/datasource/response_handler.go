@@ -129,6 +129,7 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 	valueField.Config = &data.FieldConfig{
 		Custom: map[string]interface{}{
 			"scopedVars": scopedVars,
+			"units":      item.Units,
 		},
 	}
 
