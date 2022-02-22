@@ -7,6 +7,7 @@ import {
   DataFrame,
   dataFrameFromJSON,
   DataFrameJSON,
+  DataQueryResponse,
   Field,
   FieldType,
   getTimeField,
@@ -208,6 +209,28 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items, reque
   }
 
   return series;
+}
+
+// Get units from Zabbix
+export function convertZabbixUnits(response: DataQueryResponse) {
+  for (let i = 0; i < response.data.length; i++) {
+    const frame: DataFrame = response.data[i];
+    for (const field of frame.fields) {
+      const zabbixUnits = field.config.custom?.units;
+      if (zabbixUnits) {
+        const unit = utils.convertZabbixUnit(zabbixUnits);
+        if (unit) {
+          field.config.unit = unit;
+
+          if (unit === 'percent') {
+            field.config.min = 0;
+            field.config.max = 100;
+          }
+        }
+      }
+    }
+  }
+  return response;
 }
 
 export function itServiceResponseToTimeSeries(response: any, interval) {
@@ -569,4 +592,5 @@ export default {
   isConvertibleToWide,
   convertToWide,
   alignFrames,
+  convertZabbixUnits,
 };
