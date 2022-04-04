@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.2.6] - 2022-04-04
+
+- Fixes incorrect problem name when PROBLEM event generation mode set to multiple, [#1403](https://github.com/alexanderzobnin/grafana-zabbix/issues/1403)
+
 ## [4.2.5] - 2022-02-17
 
 ### Fixed
