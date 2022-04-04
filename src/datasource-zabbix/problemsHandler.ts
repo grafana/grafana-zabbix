@@ -23,7 +23,7 @@ export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTr
         tags: p.tags,
         suppressed: p.suppressed,
         suppression_data: p.suppression_data,
-        description: t.description,
+        description: p.name || t.description,
         comments: t.comments,
         value: t.value,
         groups: t.groups,
