@@ -12,6 +12,7 @@ import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
 import { ModalController } from '../../../components';
 import { DataSourceRef } from '@grafana/data';
 import { Tooltip } from '@grafana/ui';
+import { getDataSourceSrv } from '@grafana/runtime';
 
 interface AlertCardProps {
   problem: ProblemDTO;
@@ -47,6 +48,12 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
 
     const lastchange = formatLastChange(problem.timestamp, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat);
     const age = moment.unix(problem.timestamp).fromNow(true);
+
+    let dsName: string = (problem.datasource as string);
+    if ((problem.datasource as DataSourceRef)?.uid) {
+      const dsInstance = getDataSourceSrv().getInstanceSettings((problem.datasource as DataSourceRef).uid);
+      dsName = dsInstance.name;
+    }
 
     let newProblem = false;
     if (panelOptions.highlightNewerThan) {
@@ -87,7 +94,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
                     <EventTag
                       key={tag.tag + tag.value}
                       tag={tag}
-                      datasource={problem.datasource}
+                      datasource={dsName}
                       highlight={tag.tag === problem.correlation_tag}
                       onClick={this.handleTagClick}
                     />
@@ -125,7 +132,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
           <div className="alert-rule-item__time zabbix-trigger-source">
             <span>
               <i className="fa fa-database"></i>
-              {problem.datasource}
+              {dsName}
             </span>
           </div>
         )}
