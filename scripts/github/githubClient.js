@@ -12,7 +12,7 @@ class GithubClient {
       timeout: 10000,
     };
 
-    if (required && !username && !token) {
+    if (required && (!username || !token)) {
       throw new Error('operation needs a GITHUB_USERNAME and GITHUB_ACCESS_TOKEN environment variables');
     }
 
