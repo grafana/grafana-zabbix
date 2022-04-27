@@ -181,7 +181,7 @@ func (ds *Zabbix) GetApps(ctx context.Context, groupFilter string, hostFilter st
 	if err != nil {
 		return nil, err
 	}
-	var hostids []string
+	hostids := make([]string, 0)
 	for _, host := range hosts {
 		hostids = append(hostids, host.ID)
 	}
