@@ -307,6 +307,13 @@ func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
 	}
+	aggFunc := timeseries.AggPercentile(percentile)
+
+	if pInterval == RANGE_VARIABLE_VALUE {
+		aggregatedSeries := timeseries.AggregateByRange(series, aggFunc)
+		aggregatedSeries.Meta.Name = fmt.Sprintf("percentileAgg(%s, %v)", pInterval, percentile)
+		return []*timeseries.TimeSeriesData{aggregatedSeries}, nil
+	}
 
 	interval, err := gtime.ParseInterval(pInterval)
 	if err != nil {
@@ -316,7 +323,6 @@ func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface
 		return series, nil
 	}
 
-	aggFunc := timeseries.AggPercentile(percentile)
 	aggregatedSeries := timeseries.AggregateBy(series, interval, aggFunc)
 	aggregatedSeries.Meta.Name = fmt.Sprintf("percentileAgg(%s, %v)", pInterval, percentile)
 

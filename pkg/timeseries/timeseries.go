@@ -166,6 +166,24 @@ func AggregateBy(series []*TimeSeriesData, interval time.Duration, aggFunc AggFu
 	return aggregatedSeriesData
 }
 
+func AggregateByRange(series []*TimeSeriesData, aggFunc AggFunc) *TimeSeriesData {
+	aggregatedSeries := NewTimeSeries()
+
+	// Combine all points into one time series
+	for _, s := range series {
+		aggregatedSeries = append(aggregatedSeries, s.TS...)
+	}
+
+	value := aggFunc(aggregatedSeries)
+	aggregatedSeriesData := NewTimeSeriesData()
+	aggregatedSeriesData.TS = []TimePoint{
+		{Time: aggregatedSeries[0].Time, Value: value},
+		{Time: aggregatedSeries[aggregatedSeries.Len()-1].Time, Value: value},
+	}
+
+	return aggregatedSeriesData
+}
+
 func (ts TimeSeries) Sort() {
 	sorted := sort.SliceIsSorted(ts, ts.less())
 	if !sorted {
