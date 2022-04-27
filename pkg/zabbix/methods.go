@@ -85,7 +85,7 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 	if err != nil {
 		return nil, err
 	}
-	var hostids []string
+	hostids := make([]string, 0)
 	for _, host := range hosts {
 		hostids = append(hostids, host.ID)
 	}
@@ -98,7 +98,7 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 	} else if err != nil {
 		return nil, err
 	}
-	var appids []string
+	appids := make([]string, 0)
 	for _, app := range apps {
 		appids = append(appids, app.ID)
 	}
@@ -126,14 +126,14 @@ func filterItemsByTag(items []*Item, filter string) ([]*Item, error) {
 		return nil, err
 	}
 
-	var filteredItems []*Item
+	filteredItems := make([]*Item, 0)
 	for _, i := range items {
 		if len(i.Tags) == 0 && filter == "/.*/" {
 			filteredItems = append(filteredItems, i)
 		}
 
 		if len(i.Tags) > 0 {
-			var tags []string
+			tags := make([]string, 0)
 			for _, t := range i.Tags {
 				tags = append(tags, itemTagToString(t))
 			}
@@ -160,7 +160,7 @@ func filterItemsByQuery(items []*Item, filter string) ([]*Item, error) {
 		return nil, err
 	}
 
-	var filteredItems []*Item
+	filteredItems := make([]*Item, 0)
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
@@ -199,7 +199,7 @@ func filterAppsByQuery(items []Application, filter string) ([]Application, error
 		return nil, err
 	}
 
-	var filteredItems []Application
+	filteredItems := make([]Application, 0)
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
@@ -220,7 +220,7 @@ func (ds *Zabbix) GetHosts(ctx context.Context, groupFilter string, hostFilter s
 	if err != nil {
 		return nil, err
 	}
-	var groupids []string
+	groupids := make([]string, 0)
 	for _, group := range groups {
 		groupids = append(groupids, group.ID)
 	}
@@ -238,7 +238,7 @@ func filterHostsByQuery(items []Host, filter string) ([]Host, error) {
 		return nil, err
 	}
 
-	var filteredItems []Host
+	filteredItems := make([]Host, 0)
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
@@ -269,7 +269,7 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 		return nil, err
 	}
 
-	var filteredItems []Group
+	filteredItems := make([]Group, 0)
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
