@@ -400,7 +400,7 @@ export function parseTags(tagStr: string): any[] {
   let tags: any[] = _.map(tagStr.split(','), (tag) => tag.trim());
   tags = _.map(tags, (tag) => {
     const tagParts = tag.split(':');
-    return { tag: tagParts[0].trim(), value: tagParts[1].trim() };
+    return { tag: tagParts[0]?.trim(), value: tagParts[1]?.trim() };
   });
   return tags;
 }
