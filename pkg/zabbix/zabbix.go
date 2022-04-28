@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 	"github.com/bitly/go-simplejson"
@@ -67,6 +68,7 @@ func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simpl
 			ds.cache.SetAPIRequest(apiReq, resultJson)
 		}
 	} else {
+		metrics.CacheHitTotal.WithLabelValues(apiReq.Method).Inc()
 		var ok bool
 		resultJson, ok = cachedResult.(*simplejson.Json)
 		if !ok {

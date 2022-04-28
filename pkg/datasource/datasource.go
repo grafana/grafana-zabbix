@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
@@ -104,6 +105,7 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 }
 
 func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	metrics.DataSourceQueryTotal.WithLabelValues("metrics").Inc()
 	qdr := backend.NewQueryDataResponse()
 
 	zabbixDS, err := ds.getDSInstance(req.PluginContext)
