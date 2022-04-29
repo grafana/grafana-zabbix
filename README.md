@@ -1,12 +1,10 @@
 # Zabbix plugin for Grafana
 
-[![CircleCI](https://circleci.com/gh/alexanderzobnin/grafana-zabbix.svg?style=svg)](https://circleci.com/gh/alexanderzobnin/grafana-zabbix)
 [![Version](https://badge.fury.io/gh/alexanderzobnin%2Fgrafana-zabbix.svg)](https://github.com/alexanderzobnin/grafana-zabbix/releases)
 [![codecov](https://codecov.io/gh/alexanderzobnin/grafana-zabbix/branch/master/graph/badge.svg)](https://codecov.io/gh/alexanderzobnin/grafana-zabbix)
 [![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/CHANGELOG.md)
 [![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](https://alexanderzobnin.github.io/grafana-zabbix)
 [![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Follow)](https://twitter.com/alexanderzobnin)
-[![Donate](https://img.shields.io/badge/donate-paypal-2c9eda.svg?style=flat&colorA=0b3684)](https://paypal.me/alexanderzobnin/10)
 
 Visualize your Zabbix metrics with the leading open source software for time series analytics.
 

@@ -8,15 +8,25 @@ const GRAFANA_ZABBIX_REPO = 'grafana-zabbix';
 const github = new GithubClient(GRAFANA_ZABBIX_OWNER, GRAFANA_ZABBIX_REPO, true);
 
 async function main() {
-  const tag = process.env.CIRCLE_TAG;
-  const tagRegex = /v[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)/;
-  if (!tagRegex.test(tag)) {
-    console.error(`Release tag should has format v1.2.3[-meta], got ${tag}`);
-    process.exit(1);
+  let releaseVersion = '';
+  if (process.env.CIRCLE_TAG) {
+    const tag = process.env.CIRCLE_TAG;
+    const tagRegex = /v[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)/;
+    if (!tagRegex.test(tag)) {
+      console.error(`Release tag should has format v1.2.3[-meta], got ${tag}`);
+      process.exit(1);
+    }
+
+    releaseVersion = tag.slice(1);
+  } else {
+    releaseVersion = getPluginVersion();
   }
 
-  const releaseVersion = tag.slice(1);
   console.log('Release version', releaseVersion);
+  if (!releaseVersion) {
+    console.error('Release not found');
+    process.exit(1);
+  }
 
   const releaseNotes = `# Grafana-Zabbix ${releaseVersion}`;
   const preRelease = /(alpha|beta)/.test(releaseVersion);
@@ -29,7 +39,7 @@ async function main() {
   } catch (reason) {
     if (reason.response.status !== 404) {
       // 404 just means no release found. Not an error. Anything else though, re throw the error
-      console.error(reason);
+      console.error(reason.response.data);
       process.exit(1);
     }
   }
@@ -45,7 +55,7 @@ async function main() {
     } catch (reason) {
       if (reason.response.status !== 404) {
         // 404 just means no release found. Not an error. Anything else though, re throw the error
-        console.error(reason);
+        console.error(reason.response.data);
         process.exit(1);
       } else {
         console.error('No release tag found');
@@ -63,10 +73,10 @@ async function main() {
         prerelease: preRelease,
       });
 
-      console.log('Release published with id', releaseId);
       releaseId = newReleaseResponse.data.id;
+      console.log('Release published with id', releaseId);
     } catch (reason) {
-      console.error(reason);
+      console.error(reason.response.data);
       process.exit(1);
     }
   } else {
@@ -79,7 +89,7 @@ async function main() {
         prerelease: preRelease,
       });
     } catch (reason) {
-      console.error(reason);
+      console.error(reason.response.data);
       process.exit(1);
     }
   }
@@ -103,8 +113,8 @@ async function main() {
 async function publishAssets(fileName, destUrl) {
   // Add the assets. Loop through files in the ci/dist folder and upload each asset.
 
-  const fileStat = fs.statSync(`${fileName}`);
-  const fileData = fs.readFileSync(`${fileName}`);
+  const fileStat = fs.statSync(`${__dirname}/../../ci/packages/${fileName}`);
+  const fileData = fs.readFileSync(`${__dirname}/../../ci/packages/${fileName}`);
   return await github.client.post(`${destUrl}?name=${fileName}`, fileData, {
     headers: {
       'Content-Type': resolveContentType(path.extname(fileName)),
@@ -129,6 +139,15 @@ const resolveContentType = (extension) => {
     default:
       return 'application/octet-stream';
   }
+};
+
+const getPluginVersion = () => {
+  const pkg = fs.readFileSync(`${__dirname}/../../package.json`, 'utf8');
+  const { version } = JSON.parse(pkg);
+  if (!version) {
+    throw `Could not find the toolkit version`;
+  }
+  return version;
 };
 
 main();

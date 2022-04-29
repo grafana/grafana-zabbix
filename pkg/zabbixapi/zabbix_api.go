@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"golang.org/x/net/context/ctxhttp"
@@ -105,6 +106,8 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 	if err != nil {
 		return nil, err
 	}
+
+	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")

@@ -116,16 +116,25 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 			Name: seriesName,
 		}
 	}
+
 	scopedVars := map[string]ScopedVar{
 		"__zbx_item":          {Value: item.Name},
 		"__zbx_item_name":     {Value: item.Name},
 		"__zbx_item_key":      {Value: item.Key},
 		"__zbx_item_interval": {Value: item.Delay},
 	}
+
+	valueField.Labels = data.Labels{
+		"item":     item.Name,
+		"item_key": item.Key,
+	}
+
 	if len(item.Hosts) > 0 {
 		scopedVars["__zbx_host"] = ScopedVar{Value: item.Hosts[0].Name}
 		scopedVars["__zbx_host_name"] = ScopedVar{Value: item.Hosts[0].Name}
+		valueField.Labels["host"] = item.Hosts[0].Name
 	}
+
 	valueField.Config = &data.FieldConfig{
 		Custom: map[string]interface{}{
 			"scopedVars": scopedVars,

@@ -194,11 +194,8 @@ jobs:
       - attach_workspace:
           at: ~/alexanderzobnin
       - run:
-          name: Prepare assets
-          command: mv ci/packages/* ./
-      - run:
           name: Publish release
-          command: 'node ./.circleci/github/publishRelease.js'
+          command: 'node ./scripts/github/publishRelease.js'
           no_output_timeout: 15m
 
   make-release-commit:

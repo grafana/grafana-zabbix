@@ -14,17 +14,17 @@
     {
       "type": "dashboard",
       "name": "Zabbix System Status",
-      "path": "../dashboards/zabbix_system_status.json"
+      "path": "dashboards/zabbix_system_status.json"
     },
     {
       "type": "dashboard",
       "name": "Zabbix Template Linux Server",
-      "path": "../dashboards/template_linux_server.json"
+      "path": "dashboards/template_linux_server.json"
     },
     {
       "type": "dashboard",
       "name": "Zabbix Server Dashboard",
-      "path": "../dashboards/zabbix_server_dashboard.json"
+      "path": "dashboards/zabbix_server_dashboard.json"
     }
   ],
 

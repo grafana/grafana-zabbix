@@ -64,7 +64,7 @@ module.exports = {
       { from: '**/plugin.json' },
       { from: '**/*.html' },
       { from: '**/*.md' },
-      { from: 'dashboards/*' },
+      { from: '../dashboards/*', to: 'datasource-zabbix/dashboards' },
       { from: '../README.md' },
       { from: '**/img/*' },
     ]),
