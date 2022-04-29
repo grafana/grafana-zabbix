@@ -1,8 +1,20 @@
 # Change Log
 
+## [4.2.7] - Unreleased
+
+### Fixed
+
+- IT Services not working with Zabbix 6.0, [#1408](https://github.com/alexanderzobnin/grafana-zabbix/issues/1408)
+- Problems panel: `Cannot read properties of undefined (reading 'trim')` error when tag has only name,  [#1420](https://github.com/alexanderzobnin/grafana-zabbix/issues/1420)
+- Dashboards not included into plugin, [#1407](https://github.com/alexanderzobnin/grafana-zabbix/issues/1407)
+- Missing labels in response, [#1352](https://github.com/alexanderzobnin/grafana-zabbix/issues/1352)
+- Query returns all application data when host not found, [#1427](https://github.com/alexanderzobnin/grafana-zabbix/issues/1427)
+
 ## [4.2.6] - 2022-04-04
 
-- Fixes incorrect problem name when PROBLEM event generation mode set to multiple, [#1403](https://github.com/alexanderzobnin/grafana-zabbix/issues/1403)
+### Fixed
+
+- Problems panel: incorrect problem name when PROBLEM event generation mode set to multiple, [#1403](https://github.com/alexanderzobnin/grafana-zabbix/issues/1403)
 
 ## [4.2.5] - 2022-02-17
 
