@@ -385,6 +385,65 @@ export class ZabbixAPIConnector {
     return this.request('service.getsla', params);
   }
 
+  async getSLA60(serviceids, timeRange, options) {
+    const [timeFrom, timeTo] = timeRange;
+    let intervals = [{ from: timeFrom, to: timeTo }];
+    if (options.slaInterval === 'auto') {
+      const interval = getSLAInterval(options.intervalMs);
+      intervals = buildSLAIntervals(timeRange, interval);
+    } else if (options.slaInterval !== 'none') {
+      const interval = utils.parseInterval(options.slaInterval) / 1000;
+      intervals = buildSLAIntervals(timeRange, interval);
+    }
+
+    const params: any = {
+      output: 'extend',
+      serviceids,
+    };
+
+    const slaObjects = await this.request('sla.get', params);
+    if (slaObjects.length === 0) {
+      return {};
+    }
+    const sla = slaObjects[0];
+
+    const periods = intervals.map(interval => ({
+      period_from: interval.from,
+      period_to: interval.to,
+    }));
+    const sliParams: any = {
+      slaid: sla.slaid,
+      serviceids,
+      period_from: timeFrom,
+      period_to: timeTo,
+      periods: Math.min(intervals.length, 100),
+    };
+
+    const sliResponse = await this.request('sla.getsli', sliParams);
+    if (sliResponse.length === 0) {
+      return {};
+    }
+
+    const slaLikeResponse: any = {};
+    sliResponse.serviceids.forEach((serviceid) => {
+      slaLikeResponse[serviceid] = {
+        sla: []
+      };
+    });
+    sliResponse.sli.forEach((sliItem, i) => {
+      sliItem.forEach((sli, j) => {
+        slaLikeResponse[sliResponse.serviceids[j]].sla.push({
+          downtimeTime: sli.downtime,
+          okTime: sli.uptime,
+          sla: sli.sli,
+          from: sliResponse.periods[i].period_from,
+          to: sliResponse.periods[i].period_to
+        });
+      });
+    });
+    return slaLikeResponse;
+  }
+
   getProblems(groupids, hostids, applicationids, options): Promise<ZBXProblem[]> {
     const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags } = options;
 
