@@ -96,7 +96,7 @@ func AggPercentile(n float64) AggregationFunc {
 			return nil
 		}
 
-		sort.Sort(sort.Float64Slice(values))
+		sort.Float64s(values)
 		percentileIndex := int(math.Floor(float64(len(values)) * n / 100))
 		percentile := values[percentileIndex]
 		return &percentile

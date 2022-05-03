@@ -14,6 +14,10 @@ import (
 // New creates new HTTP client.
 func New(dsInfo *backend.DataSourceInstanceSettings, timeout time.Duration) (*http.Client, error) {
 	clientOptions, err := dsInfo.HTTPClientOptions()
+	if err != nil {
+		return nil, err
+	}
+
 	clientOptions.Timeouts.Timeout = timeout
 
 	tlsSkipVerify, err := getTLSSkipVerify(dsInfo)
