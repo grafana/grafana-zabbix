@@ -10,6 +10,7 @@
 - Missing labels in response, [#1352](https://github.com/alexanderzobnin/grafana-zabbix/issues/1352)
 - Query returns all application data when host not found, [#1427](https://github.com/alexanderzobnin/grafana-zabbix/issues/1427)
 - Basic Auth is not working (401 Unauthorized), [#1327](https://github.com/alexanderzobnin/grafana-zabbix/issues/1327)
+- _Show disabled items_ option is not working, [#1249](https://github.com/alexanderzobnin/grafana-zabbix/issues/1249)
 
 ## [4.2.6] - 2022-04-04
 
