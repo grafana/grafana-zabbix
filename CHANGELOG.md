@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.2.7] - Unreleased
+## [4.2.7] - 2022-05-04
 
 ### Fixed
 
