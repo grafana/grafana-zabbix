@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: zabbix
+    type: alexanderzobnin-zabbix-datasource
+    access: proxy
+    url: http://zabbix-web:8080/api_jsonrpc.php
+    isDefault: true
+    jsonData:
+      username: Admin
+      trends: true
+      trendsFrom: "7d"
+      trendsRange: "4d"
+    secureJsonData:
+      password: zabbix
