@@ -103,8 +103,8 @@ func convertTimeSeriesToDataFrames(series []*timeseries.TimeSeriesData, valuemap
 }
 
 func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.ValueMap) *data.Frame {
-	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
-	timeFileld.Name = data.TimeSeriesTimeFieldName
+	timeField := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
+	timeField.Name = data.TimeSeriesTimeFieldName
 
 	seriesName := series.Meta.Name
 	valueField := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
@@ -136,6 +136,7 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 	}
 
 	valueField.Config = &data.FieldConfig{
+		DisplayNameFromDS: seriesName,
 		Custom: map[string]interface{}{
 			"scopedVars": scopedVars,
 			"units":      item.Units,
@@ -147,10 +148,10 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 		valueField.Config.Mappings = mappings
 	}
 
-	frame := data.NewFrame(seriesName, timeFileld, valueField)
+	frame := data.NewFrame(seriesName, timeField, valueField)
 
 	for _, point := range series.TS {
-		timeFileld.Append(point.Time)
+		timeField.Append(point.Time)
 		valueField.Append(point.Value)
 	}
 
