@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.2.8] - Unreleased
+
+### Fixed
+
+- `setAlias()` doesn't work in some cases, [#1444](https://github.com/alexanderzobnin/grafana-zabbix/issues/1444)
+- Trend data displayed incorrectly when direct DB connection enabled, [#1445](https://github.com/alexanderzobnin/grafana-zabbix/issues/1445)
+
 ## [4.2.7] - 2022-05-04
 
 ### Fixed
