@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.2.8] - Unreleased
+## [4.2.8] - 2022-05-06
 
 ### Fixed
 
