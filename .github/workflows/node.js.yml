@@ -42,14 +42,4 @@ jobs:
     # A file, directory or wildcard pattern that describes what to upload
         path: dist/*
     # The desired behavior if no files are found using the provided path.
-    - name: Release & Assets
-  # You may pin to the exact commit or the version.
-  # uses: Hs1r1us/Release-AIO@354b8db50d5b6310b621cb6c5e29d1f8e611aff7
-      uses: Hs1r1us/Release-AIO@v1.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-    # The name of the tag
-        tag_name: PROD
-        asset_files: dist/*
-        repo: 'Sam-H101/grafana-zabbix'
+
