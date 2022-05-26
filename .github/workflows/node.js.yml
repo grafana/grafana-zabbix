@@ -32,7 +32,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+        #cache: 'npm'
     - run: make install
     - run: make dist
     - name: Upload a Build Artifact
