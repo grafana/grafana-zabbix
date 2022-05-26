@@ -52,3 +52,4 @@ jobs:
     # The name of the tag
         tag_name: PROD
         asset_files: dist/*
+        repo: 'Sam-H101/grafana-zabbix'
