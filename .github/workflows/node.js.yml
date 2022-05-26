@@ -46,6 +46,8 @@ jobs:
   # You may pin to the exact commit or the version.
   # uses: Hs1r1us/Release-AIO@354b8db50d5b6310b621cb6c5e29d1f8e611aff7
       uses: Hs1r1us/Release-AIO@v1.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }
       with:
     # The name of the tag
         tag_name: PROD
