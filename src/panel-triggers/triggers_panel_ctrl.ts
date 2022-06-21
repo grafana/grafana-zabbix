@@ -363,10 +363,11 @@ export class TriggerPanelCtrl extends MetricsPanelCtrl {
 
   executeScript(problem: ProblemDTO, scriptid: string) {
     const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
+    const eventid = problem.eventid ? problem.eventid : null;
 
     return getDataSourceSrv().get(problem.datasource)
     .then((datasource: any) => {
-      return datasource.zabbix.executeScript(hostid, scriptid);
+      return datasource.zabbix.executeScript(hostid, scriptid, eventid);
     });
   }
 
