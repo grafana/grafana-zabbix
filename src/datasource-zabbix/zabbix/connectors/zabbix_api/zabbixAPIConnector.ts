@@ -7,7 +7,7 @@ import { ShowProblemTypes, ZBXProblem } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
-
+import ( "strconv" )
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
 // Backward compatibility. Since Grafana 7.2 roundInterval() func was moved to @grafana/data package
@@ -133,11 +133,23 @@ export class ZabbixAPIConnector {
   }
 
   getGroups() {
-    const params = {
+    if (semver.gte(this.version, '6.2.0'))
+    {
+      const params = {
+      output: ['name'],
+      sortfield: 'name',
+      with_monitored_hosts: true
+    };
+    }
+    
+    else
+    {
+      const params = {
       output: ['name'],
       sortfield: 'name',
       real_hosts: true
-    };
+    }; 
+    }
 
     return this.request('hostgroup.get', params);
   }
@@ -487,51 +499,97 @@ export class ZabbixAPIConnector {
 
     return this.request('problem.get', params).then(utils.mustArray);
   }
-
+  
   getTriggersByIds(triggerids: string[]) {
-    const params: any = {
-      output: 'extend',
-      triggerids: triggerids,
-      expandDescription: true,
-      expandData: true,
-      expandComment: true,
-      monitored: true,
-      skipDependent: true,
-      selectGroups: ['name'],
-      selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
-      selectItems: ['name', 'key_', 'lastvalue'],
-      // selectLastEvent: 'extend',
-      // selectTags: 'extend',
-      preservekeys: '1',
+    if (semver.gte(this.version, '6.2.0'))
+    {
+        const params: any = {
+        output: 'extend',
+        triggerids: triggerids,
+        expandDescription: true,
+        expandData: true,
+        expandComment: true,
+        monitored: true,
+        skipDependent: true,
+        selectHostGroups: ['name'],
+        selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
+        selectItems: ['name', 'key_', 'lastvalue'],
+        // selectLastEvent: 'extend',
+        // selectTags: 'extend',
+        preservekeys: '1',
+      };
+    }
+    else
+    {
+        const params: any = {
+        output: 'extend',
+        triggerids: triggerids,
+        expandDescription: true,
+        expandData: true,
+        expandComment: true,
+        monitored: true,
+        skipDependent: true,
+        selectGroups: ['name'],
+        selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
+        selectItems: ['name', 'key_', 'lastvalue'],
+        // selectLastEvent: 'extend',
+        // selectTags: 'extend',
+        preservekeys: '1',
     };
+    }
+   
 
     return this.request('trigger.get', params).then(utils.mustArray);
   }
 
   getTriggers(groupids, hostids, applicationids, options) {
     const { showTriggers, maintenance, timeFrom, timeTo } = options;
-
-    const params: any = {
-      output: 'extend',
-      groupids: groupids,
-      hostids: hostids,
-      applicationids: applicationids,
-      expandDescription: true,
-      expandData: true,
-      expandComment: true,
-      monitored: true,
-      skipDependent: true,
-      //only_true: true,
-      filter: {
-        value: 1
-      },
-      selectGroups: ['name'],
-      selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
-      selectItems: ['name', 'key_', 'lastvalue'],
-      selectLastEvent: 'extend',
-      selectTags: 'extend'
-    };
-
+    if (semver.gte(this.version, '6.2.0'))
+    {
+      const params: any = {
+        output: 'extend',
+        groupids: groupids,
+        hostids: hostids,
+        applicationids: applicationids,
+        expandDescription: true,
+        expandData: true,
+        expandComment: true,
+        monitored: true,
+        skipDependent: true,
+        //only_true: true,
+        filter: {
+          value: 1
+        },
+        selectHostGroups: ['name'],
+        selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
+        selectItems: ['name', 'key_', 'lastvalue'],
+        selectLastEvent: 'extend',
+        selectTags: 'extend'
+      };
+    }
+    else
+    {
+        const params: any = {
+        output: 'extend',
+        groupids: groupids,
+        hostids: hostids,
+        applicationids: applicationids,
+        expandDescription: true,
+        expandData: true,
+        expandComment: true,
+        monitored: true,
+        skipDependent: true,
+        //only_true: true,
+        filter: {
+          value: 1
+        },
+        selectGroups: ['name'],
+        selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
+        selectItems: ['name', 'key_', 'lastvalue'],
+        selectLastEvent: 'extend',
+        selectTags: 'extend'
+      };
+    }
     if (showTriggers === ShowProblemTypes.Problems) {
       params.filter.value = 1;
     } else if (showTriggers === ShowProblemTypes.Recent || showTriggers === ShowProblemTypes.History) {
@@ -677,21 +735,40 @@ export class ZabbixAPIConnector {
 
   getHostAlerts(hostids, applicationids, options) {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
-    const params: any = {
-      output: 'extend',
-      hostids: hostids,
-      min_severity: minSeverity,
-      filter: { value: 1 },
-      expandDescription: true,
-      expandData: true,
-      expandComment: true,
-      monitored: true,
-      skipDependent: true,
-      selectLastEvent: 'extend',
-      selectGroups: 'extend',
-      selectHosts: ['host', 'name']
-    };
-
+    if (semver.gte(this.version, '6.2.0'))
+    {
+      const params: any = {
+        output: 'extend',
+        hostids: hostids,
+        min_severity: minSeverity,
+        filter: { value: 1 },
+        expandDescription: true,
+        expandData: true,
+        expandComment: true,
+        monitored: true,
+        skipDependent: true,
+        selectLastEvent: 'extend',
+        selectHostGroups: 'extend',
+        selectHosts: ['host', 'name']
+      };
+    }
+    else
+    {
+      const params: any = {
+        output: 'extend',
+        hostids: hostids,
+        min_severity: minSeverity,
+        filter: { value: 1 },
+        expandDescription: true,
+        expandData: true,
+        expandComment: true,
+        monitored: true,
+        skipDependent: true,
+        selectLastEvent: 'extend',
+        selectGroups: 'extend',
+        selectHosts: ['host', 'name']
+      };
+    }
     if (count && acknowledged !== 0 && acknowledged !== 1) {
       params.countOutput = true;
     }
