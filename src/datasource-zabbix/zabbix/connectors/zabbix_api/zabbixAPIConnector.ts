@@ -7,7 +7,7 @@ import { ShowProblemTypes, ZBXProblem } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
-import ( "strconv" )
+
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
 // Backward compatibility. Since Grafana 7.2 roundInterval() func was moved to @grafana/data package
