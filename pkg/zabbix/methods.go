@@ -413,13 +413,14 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 
 */
 func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
+	params := ZabbixAPIParams{}
 	if ds.version >= 62 {
-		params := ZabbixAPIParams{
+		params = ZabbixAPIParams{
 			"output":     []string{"name"},
 			"sortfield":  "name",
 			"with_monitored_hosts": true, }
 	} else {
-		params := ZabbixAPIParams{
+		params = ZabbixAPIParams{
 			"output":     []string{"name"},
 			"sortfield":  "name",
 			"real_hosts": true, }
