@@ -104,7 +104,7 @@ func (ds *Zabbix) GetItems(
 	isZabbix54orHigher := isAppMethodNotFoundError(err)
 	if isZabbix54orHigher {
 		apps = []Application{}
-	} else if err != nil {
+	}  if err != nil {
 		return nil, err
 	}
 	appids := make([]string, 0)
@@ -398,9 +398,7 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 			"sortfield":  "name",
 			"with_monitored_hosts": true,
 		}
-	}
-	else
-	{
+	 else if ds.version <= 62 {
 		params := ZabbixAPIParams{
 			"output":     []string{"name"},
 			"sortfield":  "name",
