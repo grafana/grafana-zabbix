@@ -134,7 +134,7 @@ export class ZabbixAPIConnector {
 
   getGroups() {
     if (!this.version) {
-      await this.initVersion();
+      this.initVersion().then((result) => { console.log(`Zabbix init version detected: ${result}`);});
     }
     if (semver.gte(this.version, '6.2.0'))
     {
@@ -505,7 +505,7 @@ export class ZabbixAPIConnector {
   
   getTriggersByIds(triggerids: string[]) {
     if (!this.version) {
-      await this.initVersion();
+      this.initVersion().then((result) => { console.log(`Zabbix init version detected: ${result}`);});
     }
     if (semver.gte(this.version, '6.2.0'))
     {
@@ -551,7 +551,7 @@ export class ZabbixAPIConnector {
   getTriggers(groupids, hostids, applicationids, options) {
     const { showTriggers, maintenance, timeFrom, timeTo } = options;
     if (!this.version) {
-      await this.initVersion();
+      this.initVersion().then((result) => { console.log(`Zabbix init version detected: ${result}`);});
     }
     if (semver.gte(this.version, '6.2.0'))
     {
@@ -745,7 +745,7 @@ export class ZabbixAPIConnector {
   getHostAlerts(hostids, applicationids, options) {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
     if (!this.version) {
-      await this.initVersion();
+      this.initVersion().then((result) => { console.log(`Zabbix init version detected: ${result}`);});
     }
     if (semver.gte(this.version, '6.2.0'))
     {
