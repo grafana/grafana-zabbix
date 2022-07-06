@@ -16,16 +16,16 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [17.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v3
     - name: Setup Go environment
       uses: actions/setup-go@v3.2.0
-      with:
+#      with:
         # The Go version to download (if necessary) and use. Supports semver spec and ranges.
-        go-version: 1.17 # optional
+        # go-version: 1.17 # optional
         # Path to the go.mod file.
         
     - name: Use Node.js ${{ matrix.node-version }}
@@ -34,10 +34,14 @@ jobs:
         node-version: ${{ matrix.node-version }}
         #cache: 'npm'
     - run: make
-    - run: export GRAFANA_API_KEY=${{ secrets.GRAFANA_API_KEY }}
-    - run: npx @grafana/toolkit plugin:sign --rootUrls https://sage-antiddos-mon.sagenetworks.com.br/
+      env:
+        NODE_OPTIONS: --openssl-legacy-provider
     - run: make install
+      env:
+        NODE_OPTIONS: --openssl-legacy-provider
     - run: make dist
+      env:
+        NODE_OPTIONS: --openssl-legacy-provider
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.0
       with:
