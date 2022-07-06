@@ -22,10 +22,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Setup Go environment
-      uses: actions/setup-go@v3.2.0
-#      with:
+      uses: actions/setup-go@v3
+      with:
         # The Go version to download (if necessary) and use. Supports semver spec and ranges.
-        # go-version: 1.17 # optional
+        go-version: 1.17 # optional
         # Path to the go.mod file.
         
     - name: Use Node.js ${{ matrix.node-version }}
