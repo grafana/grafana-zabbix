@@ -517,7 +517,7 @@ export class ZabbixAPIConnector {
 
     if (semver.gte(this.version, '6.2.0'))
     {
-        paramL : any = {
+        paramL = {
         output: 'extend',
         triggerids: triggerids,
         expandDescription: true,
@@ -535,7 +535,7 @@ export class ZabbixAPIConnector {
     }
     else
     {
-        paramL: any = {
+        paramL = {
         output: 'extend',
         triggerids: triggerids,
         expandDescription: true,
@@ -567,7 +567,7 @@ export class ZabbixAPIConnector {
 
     if (semver.gte(this.version, '6.2.0'))
     {
-      paramL: any = {
+      paramL = {
         output: 'extend',
         groupids: groupids,
         hostids: hostids,
@@ -590,7 +590,7 @@ export class ZabbixAPIConnector {
     }
     else
     {
-        paramL: any = {
+        paramL = {
         output: 'extend',
         groupids: groupids,
         hostids: hostids,
@@ -767,7 +767,7 @@ export class ZabbixAPIConnector {
 
     if (semver.gte(this.version, '6.2.0'))
     {
-      paramL: any = {
+      paramL = {
         output: 'extend',
         hostids: hostids,
         min_severity: minSeverity,
@@ -784,7 +784,7 @@ export class ZabbixAPIConnector {
     }
     else
     {
-      paramL: any = {
+      paramL = {
         output: 'extend',
         hostids: hostids,
         min_severity: minSeverity,
