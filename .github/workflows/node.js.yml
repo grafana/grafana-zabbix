@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [17.x]
+        node-version: [16.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -34,14 +34,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         #cache: 'npm'
     - run: make
-      env:
-        NODE_OPTIONS: --openssl-legacy-provider
     - run: make install
-      env:
-        NODE_OPTIONS: --openssl-legacy-provider
     - run: make dist
-      env:
-        NODE_OPTIONS: --openssl-legacy-provider
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.0
       with:
