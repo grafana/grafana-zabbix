@@ -173,6 +173,7 @@ export class ZabbixAPIConnector {
       params.groupids = groupids;
     }
     let reqret: any;
+    console.log(params);
     reqret = this.request('host.get', params);
     console.log(reqret);
     return reqret
