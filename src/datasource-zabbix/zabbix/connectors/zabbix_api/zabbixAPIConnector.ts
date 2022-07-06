@@ -133,6 +133,9 @@ export class ZabbixAPIConnector {
   }
 
   getGroups() {
+    if (!this.version) {
+      this.initVersion();
+    }
     if (semver.gte(this.version, '6.2.0'))
     {
       const params = {
@@ -501,6 +504,9 @@ export class ZabbixAPIConnector {
   }
   
   getTriggersByIds(triggerids: string[]) {
+    if (!this.version) {
+      this.initVersion();
+    }
     if (semver.gte(this.version, '6.2.0'))
     {
         const params: any = {
@@ -544,6 +550,9 @@ export class ZabbixAPIConnector {
 
   getTriggers(groupids, hostids, applicationids, options) {
     const { showTriggers, maintenance, timeFrom, timeTo } = options;
+    if (!this.version) {
+      this.initVersion();
+    }
     if (semver.gte(this.version, '6.2.0'))
     {
       const params: any = {
@@ -735,6 +744,9 @@ export class ZabbixAPIConnector {
 
   getHostAlerts(hostids, applicationids, options) {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
+    if (!this.version) {
+      this.initVersion();
+    }
     if (semver.gte(this.version, '6.2.0'))
     {
       const params: any = {
