@@ -136,9 +136,12 @@ export class ZabbixAPIConnector {
     if (!this.version) {
       await this.initVersion();
     }
+
+    let paramL: any;
+
     if (semver.gte(this.version, '6.2.0'))
     {
-      const params = {
+      paramL = {
       output: ['name'],
       sortfield: 'name',
       with_monitored_hosts: true
@@ -147,12 +150,14 @@ export class ZabbixAPIConnector {
     
     else
     {
-      const params = {
+      paramL = {
       output: ['name'],
       sortfield: 'name',
       real_hosts: true
     }; 
     }
+
+    const params = paramL;
 
     return this.request('hostgroup.get', params);
   }
