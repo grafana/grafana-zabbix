@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
+	"github.com/leleobhz/grafana-zabbix/pkg/metrics"
+	"github.com/leleobhz/grafana-zabbix/pkg/settings"
+	"github.com/leleobhz/grafana-zabbix/pkg/zabbixapi"
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"

@@ -6,7 +6,7 @@
     "description": "Zabbix plugin for Grafana",
     "author": {
       "name": "Alexander Zobnin",
-      "url": "https://github.com/alexanderzobnin"
+      "url": "https://github.com/leleobhz"
     },
     "keywords": [
       "zabbix"
@@ -18,7 +18,7 @@
     "links": [
       {
         "name": "GitHub",
-        "url": "https://github.com/alexanderzobnin/grafana-zabbix"
+        "url": "https://github.com/leleobhz/grafana-zabbix"
       },
       {
         "name": "Docs",
@@ -26,7 +26,7 @@
       },
       {
         "name": "License",
-        "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE"
+        "url": "https://github.com/leleobhz/grafana-zabbix/blob/master/LICENSE"
       }
     ],
     "screenshots": [

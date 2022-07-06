@@ -136,9 +136,12 @@ export class ZabbixAPIConnector {
     if (!this.version) {
       await this.initVersion();
     }
+
+    let paramL: any;
+
     if (semver.gte(this.version, '6.2.0'))
     {
-      const params = {
+      paramL = {
       output: ['name'],
       sortfield: 'name',
       with_monitored_hosts: true
@@ -147,12 +150,14 @@ export class ZabbixAPIConnector {
     
     else
     {
-      const params = {
+      paramL = {
       output: ['name'],
       sortfield: 'name',
       real_hosts: true
     }; 
     }
+
+    const params = paramL;
 
     return this.request('hostgroup.get', params);
   }
@@ -507,9 +512,12 @@ export class ZabbixAPIConnector {
     if (!this.version) {
       await this.initVersion();
     }
+
+    let paramL: any;
+
     if (semver.gte(this.version, '6.2.0'))
     {
-        const params: any = {
+        paramL = {
         output: 'extend',
         triggerids: triggerids,
         expandDescription: true,
@@ -527,7 +535,7 @@ export class ZabbixAPIConnector {
     }
     else
     {
-        const params: any = {
+        paramL = {
         output: 'extend',
         triggerids: triggerids,
         expandDescription: true,
@@ -544,6 +552,7 @@ export class ZabbixAPIConnector {
     };
     }
    
+    const params = paramL;
 
     return this.request('trigger.get', params).then(utils.mustArray);
   }
@@ -553,9 +562,12 @@ export class ZabbixAPIConnector {
     if (!this.version) {
       await this.initVersion();
     }
+    
+    let paramL: any;
+
     if (semver.gte(this.version, '6.2.0'))
     {
-      const params: any = {
+      paramL = {
         output: 'extend',
         groupids: groupids,
         hostids: hostids,
@@ -578,7 +590,7 @@ export class ZabbixAPIConnector {
     }
     else
     {
-        const params: any = {
+        paramL = {
         output: 'extend',
         groupids: groupids,
         hostids: hostids,
@@ -599,6 +611,9 @@ export class ZabbixAPIConnector {
         selectTags: 'extend'
       };
     }
+
+    const params = paramL;
+
     if (showTriggers === ShowProblemTypes.Problems) {
       params.filter.value = 1;
     } else if (showTriggers === ShowProblemTypes.Recent || showTriggers === ShowProblemTypes.History) {
@@ -747,9 +762,12 @@ export class ZabbixAPIConnector {
     if (!this.version) {
       await this.initVersion();
     }
+
+    let paramL: any;
+
     if (semver.gte(this.version, '6.2.0'))
     {
-      const params: any = {
+      paramL = {
         output: 'extend',
         hostids: hostids,
         min_severity: minSeverity,
@@ -766,7 +784,7 @@ export class ZabbixAPIConnector {
     }
     else
     {
-      const params: any = {
+      paramL = {
         output: 'extend',
         hostids: hostids,
         min_severity: minSeverity,
@@ -781,6 +799,9 @@ export class ZabbixAPIConnector {
         selectHosts: ['host', 'name']
       };
     }
+
+    const params = paramL;
+
     if (count && acknowledged !== 0 && acknowledged !== 1) {
       params.countOutput = true;
     }

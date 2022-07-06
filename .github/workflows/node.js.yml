@@ -5,9 +5,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ zabbix-6.2 ]
   pull_request:
-    branches: [ master ]
+    branches: [ zabbix-6.2 ]
 
 jobs:
   build:
@@ -16,13 +16,13 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [16.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v3
     - name: Setup Go environment
-      uses: actions/setup-go@v3.2.0
+      uses: actions/setup-go@v3
       with:
         # The Go version to download (if necessary) and use. Supports semver spec and ranges.
         go-version: 1.17 # optional
@@ -33,6 +33,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         #cache: 'npm'
+    - run: make
     - run: make install
     - run: make dist
     - name: Upload a Build Artifact
