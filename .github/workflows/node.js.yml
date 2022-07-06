@@ -5,9 +5,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ zabbix-6.2 ]
   pull_request:
-    branches: [ master ]
+    branches: [ zabbix-6.2 ]
 
 jobs:
   build:
