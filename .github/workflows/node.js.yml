@@ -33,6 +33,9 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         #cache: 'npm'
+    - run: make
+    - run: export GRAFANA_API_KEY=${{ secrets.GRAFANA_API_KEY }}
+    - run: npx @grafana/toolkit plugin:sign --rootUrls https://sage-antiddos-mon.sagenetworks.com.br/
     - run: make install
     - run: make dist
     - name: Upload a Build Artifact
