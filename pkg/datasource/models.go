@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
+	"github.com/leleobhz/grafana-zabbix/pkg/timeseries"
 
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"

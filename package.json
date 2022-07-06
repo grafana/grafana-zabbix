@@ -17,12 +17,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alexanderzobnin/grafana-zabbix.git"
+    "url": "git+https://github.com/leleobhz/grafana-zabbix.git"
   },
   "author": "Alexander Zobnin",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/alexanderzobnin/grafana-zabbix/issues"
+    "url": "https://github.com/leleobhz/grafana-zabbix/issues"
   },
   "devDependencies": {
     "@babel/core": "7.7.7",

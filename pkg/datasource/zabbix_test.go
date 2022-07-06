@@ -1,8 +1,8 @@
 package datasource
 
 import (
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
+	"github.com/leleobhz/grafana-zabbix/pkg/settings"
+	"github.com/leleobhz/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
