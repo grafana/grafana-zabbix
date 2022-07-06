@@ -133,10 +133,9 @@ export class ZabbixAPIConnector {
   }
 
   getGroups() {
-    if (!this.version) {
-      this.initVersion().then((result) => { console.log(`Zabbix init version detected: ${result}`);});
-    }
-    if (semver.gte(this.version, '6.2.0'))
+    this.initVersion().then((result) => {
+    
+    if (semver.gte(result, '6.2.0'))
     {
       const params = {
       output: ['name'],
@@ -156,7 +155,7 @@ export class ZabbixAPIConnector {
 
     return this.request('hostgroup.get', params);
   }
-
+});
   getHosts(groupids) {
     const params: any = {
       output: ['name', 'host'],
@@ -504,9 +503,8 @@ export class ZabbixAPIConnector {
   }
   
   getTriggersByIds(triggerids: string[]) {
-    if (!this.version) {
-      this.initVersion().then((result) => { console.log(`Zabbix init version detected: ${result}`);});
-    }
+    this.initVersion().then((result) => {
+    
     if (semver.gte(this.version, '6.2.0'))
     {
         const params: any = {
@@ -547,12 +545,12 @@ export class ZabbixAPIConnector {
 
     return this.request('trigger.get', params).then(utils.mustArray);
   }
-
+});
   getTriggers(groupids, hostids, applicationids, options) {
     const { showTriggers, maintenance, timeFrom, timeTo } = options;
-    if (!this.version) {
-      this.initVersion().then((result) => { console.log(`Zabbix init version detected: ${result}`);});
-    }
+    
+    this.initVersion().then((result) => { 
+    
     if (semver.gte(this.version, '6.2.0'))
     {
       const params: any = {
@@ -616,7 +614,7 @@ export class ZabbixAPIConnector {
 
     return this.request('trigger.get', params);
   }
-
+});
   getEvents(objectids, timeFrom, timeTo, showEvents, limit) {
     const params: any = {
       output: 'extend',
@@ -744,9 +742,9 @@ export class ZabbixAPIConnector {
 
   getHostAlerts(hostids, applicationids, options) {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
-    if (!this.version) {
-      this.initVersion().then((result) => { console.log(`Zabbix init version detected: ${result}`);});
-    }
+    
+    this.initVersion().then((result) => { 
+    
     if (semver.gte(this.version, '6.2.0'))
     {
       const params: any = {
@@ -805,7 +803,7 @@ export class ZabbixAPIConnector {
       return triggers;
     });
   }
-
+});
   getProxies() {
     const params = {
       output: ['proxyid', 'host'],
