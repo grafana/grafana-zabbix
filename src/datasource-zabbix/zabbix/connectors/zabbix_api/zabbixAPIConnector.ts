@@ -132,7 +132,10 @@ export class ZabbixAPIConnector {
     return this.request('event.acknowledge', params);
   }
 
-  getGroups() {
+  async getGroups() {
+    if (!this.version) {
+      await this.initVersion();
+    }
     if (semver.gte(this.version, '6.2.0'))
     {
       const params = {
@@ -500,7 +503,10 @@ export class ZabbixAPIConnector {
     return this.request('problem.get', params).then(utils.mustArray);
   }
   
-  getTriggersByIds(triggerids: string[]) {
+  async getTriggersByIds(triggerids: string[]) {
+    if (!this.version) {
+      await this.initVersion();
+    }
     if (semver.gte(this.version, '6.2.0'))
     {
         const params: any = {
@@ -542,8 +548,11 @@ export class ZabbixAPIConnector {
     return this.request('trigger.get', params).then(utils.mustArray);
   }
 
-  getTriggers(groupids, hostids, applicationids, options) {
+  async getTriggers(groupids, hostids, applicationids, options) {
     const { showTriggers, maintenance, timeFrom, timeTo } = options;
+    if (!this.version) {
+      await this.initVersion();
+    }
     if (semver.gte(this.version, '6.2.0'))
     {
       const params: any = {
@@ -733,8 +742,11 @@ export class ZabbixAPIConnector {
     return this.request('trigger.get', params);
   }
 
-  getHostAlerts(hostids, applicationids, options) {
+  async getHostAlerts(hostids, applicationids, options) {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
+    if (!this.version) {
+      await this.initVersion();
+    }
     if (semver.gte(this.version, '6.2.0'))
     {
       const params: any = {
