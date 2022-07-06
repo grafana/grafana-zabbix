@@ -138,7 +138,7 @@ export class ZabbixAPIConnector {
     }
 
     let paramL: any;
-
+    console.log("get groups");
     if (semver.gte(this.version, '6.2.0'))
     {
       paramL = {
@@ -146,6 +146,7 @@ export class ZabbixAPIConnector {
       sortfield: 'name',
       with_monitored_hosts: true
     };
+    console.log("6.2.0");
     }
     
     else
@@ -155,6 +156,7 @@ export class ZabbixAPIConnector {
       sortfield: 'name',
       real_hosts: true
     }; 
+    console.log(this.version);
     }
 
     const params = paramL;
@@ -170,8 +172,10 @@ export class ZabbixAPIConnector {
     if (groupids) {
       params.groupids = groupids;
     }
-
-    return this.request('host.get', params);
+    let reqret: any;
+    reqret = this.request('host.get', params);
+    console.log(reqret);
+    return reqret
   }
 
   async getApps(hostids): Promise<any[]> {
@@ -514,9 +518,12 @@ export class ZabbixAPIConnector {
     }
 
     let paramL: any;
-
+    console.log("get triggers by id");
+    console.log(this.version);
+    
     if (semver.gte(this.version, '6.2.0'))
     {
+        console.log("gte works");
         paramL = {
         output: 'extend',
         triggerids: triggerids,
@@ -564,9 +571,11 @@ export class ZabbixAPIConnector {
     }
     
     let paramL: any;
-
+    console.log("get triggers");
+    console.log(this.version);
     if (semver.gte(this.version, '6.2.0'))
     {
+      console.log("gte works 2");
       paramL = {
         output: 'extend',
         groupids: groupids,
@@ -764,9 +773,11 @@ export class ZabbixAPIConnector {
     }
 
     let paramL: any;
-
+    console.log("get host alerts");
+    console.log(this.version);
     if (semver.gte(this.version, '6.2.0'))
     {
+      console.log("gte hosts alerts works");
       paramL = {
         output: 'extend',
         hostids: hostids,
