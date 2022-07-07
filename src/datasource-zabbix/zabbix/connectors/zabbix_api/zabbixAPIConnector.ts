@@ -147,7 +147,7 @@ export class ZabbixAPIConnector {
     if (this.isZabbix62OrHigher())
     {
       paramL = {
-      output: ['name'],
+      output: ['name', 'groupid'],
       sortfield: 'name',
       with_monitored_hosts: true
     };
