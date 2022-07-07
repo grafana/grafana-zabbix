@@ -143,7 +143,7 @@ export class ZabbixAPIConnector {
     }
 
     let paramL: any;
-    console.log("get groups");
+    
     if (this.isZabbix62OrHigher())
     {
       paramL = {
@@ -151,7 +151,7 @@ export class ZabbixAPIConnector {
       sortfield: 'name',
       with_monitored_hosts: true
     };
-    console.log(this.version);
+    
     }
     
     else
@@ -161,13 +161,9 @@ export class ZabbixAPIConnector {
       sortfield: 'name',
       real_hosts: true
     }; 
-    console.log(this.version);
+
     }
-    
-    console.log("getGroups request paramL");
-    console.log(paramL);
-    console.log("getGroups request response");
-    console.log(this.request('hostgroup.get', paramL));
+
 
     return this.request('hostgroup.get', paramL);
   }
@@ -177,8 +173,7 @@ export class ZabbixAPIConnector {
       output: ['name', 'host'],
       sortfield: 'name'
     };
-    console.log("getHosts groupids");
-    console.log(groupids);
+
 
     if (groupids != null) {
       params.groupids = groupids;
@@ -186,10 +181,7 @@ export class ZabbixAPIConnector {
     let reqret: any;
     reqret = this.request('host.get', params);
 
-    console.log("getHosts request paramL");
-    console.log(params);
-    console.log("getHosts request response");
-    console.log(this.request('host.get', params));
+
 
     return reqret
   }
@@ -320,8 +312,12 @@ export class ZabbixAPIConnector {
 
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
+    console.log("grouped items");
+    console.log(grouped_items);
     const promises = _.map(grouped_items, (items, value_type) => {
       const itemids = _.map(items, 'itemid');
+      console.log("history item ids");
+      console.log(itemids);
       const params: any = {
         output: 'extend',
         history: value_type,
@@ -534,12 +530,9 @@ export class ZabbixAPIConnector {
     }
 
     let paramL: any;
-    console.log("get triggers by id");
-    console.log(this.version);
-    
+
     if (this.isZabbix62OrHigher())
     {
-        console.log("gte works");
         paramL = {
         output: 'extend',
         triggerids: triggerids,
@@ -585,11 +578,9 @@ export class ZabbixAPIConnector {
     }
     
     let paramL: any;
-    console.log("get triggers");
-    console.log(this.version);
+
     if (this.isZabbix62OrHigher())
     {
-      console.log("gte works 2");
       paramL = {
         output: 'extend',
         groupids: groupids,
@@ -785,11 +776,8 @@ export class ZabbixAPIConnector {
     }
 
     let paramL: any;
-    console.log("get host alerts");
-    console.log(this.version);
     if (this.isZabbix62OrHigher())
     {
-      console.log("gte hosts alerts works");
       paramL = {
         output: 'extend',
         hostids: hostids,
