@@ -33,6 +33,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         #cache: 'npm'
+    - run: make
     - run: make install
     - run: make dist
     - name: Upload a Build Artifact
