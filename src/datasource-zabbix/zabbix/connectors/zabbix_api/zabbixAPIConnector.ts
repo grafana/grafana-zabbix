@@ -309,7 +309,8 @@ export class ZabbixAPIConnector {
    * @return {Array}  Array of Zabbix history objects
    */
   getHistory(items, timeFrom, timeTill) {
-
+    console.log("Get History");
+    console.log(items);
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
     console.log("grouped items");
