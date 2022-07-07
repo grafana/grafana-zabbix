@@ -349,7 +349,8 @@ export class ZabbixAPIConnector {
    * @return {Array}  Array of Zabbix trend objects
    */
   getTrend_ZBXNEXT1193(items, timeFrom, timeTill) {
-
+    console.log("trends");
+    console.log(items);
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
     const promises = _.map(grouped_items, (items, value_type) => {
@@ -367,10 +368,11 @@ export class ZabbixAPIConnector {
       if (timeTill) {
         params.time_till = timeTill;
       }
-
+      console.log(this.request('trend.get', params));
       return this.request('trend.get', params);
+      
     });
-
+    
     return Promise.all(promises).then(_.flatten);
   }
 
