@@ -390,28 +390,7 @@ func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string) ([]Host, e
 	err = convertTo(result, &hosts)
 	return hosts, err
 }
-/*
-func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
-	params := ZabbixAPIParams{
-		"output":     []string{"name"},
-		"sortfield":  "name",
-		"real_hosts": true,
-	}
 
-	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "hostgroup.get", Params: params})
-	if err != nil {
-		return nil, err
-	}
-
-	var groups []Group
-	err = convertTo(result, &groups)
-	return groups, err
-}
-
-
-
-
-*/
 func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	params := ZabbixAPIParams{}
 	if ds.version >= 62 {
