@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [16]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -25,7 +25,7 @@ jobs:
       uses: actions/setup-go@v3
       with:
         # The Go version to download (if necessary) and use. Supports semver spec and ranges.
-        go-version: 1.17 # optional
+        go-version: 1.18 # optional
         # Path to the go.mod file.
         
     - name: Use Node.js ${{ matrix.node-version }}

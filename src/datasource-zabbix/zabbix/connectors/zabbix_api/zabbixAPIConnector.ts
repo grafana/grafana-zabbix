@@ -110,6 +110,11 @@ export class ZabbixAPIConnector {
     return semver.gte(this.version, '5.4.0');
   }
 
+  isZabbix62OrHigher() {
+    return semver.gte(this.version, '6.2.0');
+  }
+
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
@@ -139,14 +144,14 @@ export class ZabbixAPIConnector {
 
     let paramL: any;
     console.log("get groups");
-    if (semver.gte(this.version, '6.2.0'))
+    if (this.isZabbix62OrHigher())
     {
       paramL = {
       output: ['name'],
       sortfield: 'name',
       with_monitored_hosts: true
     };
-    console.log("6.2.0");
+    console.log(this.version);
     }
     
     else
@@ -158,10 +163,13 @@ export class ZabbixAPIConnector {
     }; 
     console.log(this.version);
     }
+    
+    console.log("getGroups request paramL");
+    console.log(paramL);
+    console.log("getGroups request response");
+    console.log(this.request('hostgroup.get', paramL));
 
-    const params = paramL;
-
-    return this.request('hostgroup.get', params);
+    return this.request('hostgroup.get', paramL);
   }
 
   getHosts(groupids) {
@@ -169,13 +177,20 @@ export class ZabbixAPIConnector {
       output: ['name', 'host'],
       sortfield: 'name'
     };
-    if (groupids) {
+    console.log("getHosts groupids");
+    console.log(groupids);
+
+    if (groupids != null) {
       params.groupids = groupids;
     }
     let reqret: any;
-    console.log(params);
     reqret = this.request('host.get', params);
-    console.log(reqret);
+
+    console.log("getHosts request paramL");
+    console.log(params);
+    console.log("getHosts request response");
+    console.log(this.request('host.get', params));
+
     return reqret
   }
 
@@ -522,7 +537,7 @@ export class ZabbixAPIConnector {
     console.log("get triggers by id");
     console.log(this.version);
     
-    if (semver.gte(this.version, '6.2.0'))
+    if (this.isZabbix62OrHigher())
     {
         console.log("gte works");
         paramL = {
@@ -560,9 +575,7 @@ export class ZabbixAPIConnector {
     };
     }
    
-    const params = paramL;
-
-    return this.request('trigger.get', params).then(utils.mustArray);
+    return this.request('trigger.get', paramL).then(utils.mustArray);
   }
 
   async getTriggers(groupids, hostids, applicationids, options) {
@@ -574,7 +587,7 @@ export class ZabbixAPIConnector {
     let paramL: any;
     console.log("get triggers");
     console.log(this.version);
-    if (semver.gte(this.version, '6.2.0'))
+    if (this.isZabbix62OrHigher())
     {
       console.log("gte works 2");
       paramL = {
@@ -622,24 +635,22 @@ export class ZabbixAPIConnector {
       };
     }
 
-    const params = paramL;
-
     if (showTriggers === ShowProblemTypes.Problems) {
-      params.filter.value = 1;
+      paramL.filter.value = 1;
     } else if (showTriggers === ShowProblemTypes.Recent || showTriggers === ShowProblemTypes.History) {
-      params.filter.value = [0, 1];
+      paramL.filter.value = [0, 1];
     }
 
     if (maintenance) {
-      params.maintenance = true;
+      paramL.maintenance = true;
     }
 
     if (timeFrom || timeTo) {
-      params.lastChangeSince = timeFrom;
-      params.lastChangeTill = timeTo;
+      paramL.lastChangeSince = timeFrom;
+      paramL.lastChangeTill = timeTo;
     }
 
-    return this.request('trigger.get', params);
+    return this.request('trigger.get', paramL);
   }
 
   getEvents(objectids, timeFrom, timeTo, showEvents, limit) {
@@ -776,7 +787,7 @@ export class ZabbixAPIConnector {
     let paramL: any;
     console.log("get host alerts");
     console.log(this.version);
-    if (semver.gte(this.version, '6.2.0'))
+    if (this.isZabbix62OrHigher())
     {
       console.log("gte hosts alerts works");
       paramL = {
@@ -812,22 +823,20 @@ export class ZabbixAPIConnector {
       };
     }
 
-    const params = paramL;
-
     if (count && acknowledged !== 0 && acknowledged !== 1) {
-      params.countOutput = true;
+      paramL.countOutput = true;
     }
 
     if (applicationids && applicationids.length) {
-      params.applicationids = applicationids;
+      paramL.applicationids = applicationids;
     }
 
     if (timeFrom || timeTo) {
-      params.lastChangeSince = timeFrom;
-      params.lastChangeTill = timeTo;
+      paramL.lastChangeSince = timeFrom;
+      paramL.lastChangeTill = timeTo;
     }
 
-    return this.request('trigger.get', params)
+    return this.request('trigger.get', paramL)
     .then((triggers) => {
       if (!count || acknowledged === 0 || acknowledged === 1) {
         triggers = filterTriggersByAcknowledge(triggers, acknowledged);
