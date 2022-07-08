@@ -393,7 +393,7 @@ func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string) ([]Host, e
 
 func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	params := ZabbixAPIParams{
-		"output":     []string{"name"},
+		"output":     []string{"name", "groupid"},
 		"sortfield":  "name",
 		"real_hosts": true,
 	}

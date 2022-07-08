@@ -134,7 +134,7 @@ export class ZabbixAPIConnector {
 
   getGroups() {
     const params = {
-      output: ['name'],
+      output: ['name', 'groupid'],
       sortfield: 'name',
       real_hosts: true
     };
