@@ -3,7 +3,7 @@ package settings
 import (
 	"encoding/json"
 	"errors"
-	"github.com/leleobhz/grafana-zabbix/pkg/gtime"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"strconv"
 	"time"
