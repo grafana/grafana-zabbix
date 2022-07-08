@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leleobhz/grafana-zabbix/pkg/timeseries"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 
-	"github.com/leleobhz/grafana-zabbix/pkg/zabbix"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"golang.org/x/net/context"
