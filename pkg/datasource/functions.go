@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/leleobhz/grafana-zabbix/pkg/gtime"
-	"github.com/leleobhz/grafana-zabbix/pkg/timeseries"
-	"github.com/leleobhz/grafana-zabbix/pkg/zabbix"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 )
 
 const RANGE_VARIABLE_VALUE = "range_series"
