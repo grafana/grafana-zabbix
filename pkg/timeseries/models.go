@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/leleobhz/grafana-zabbix/pkg/zabbix"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 )
 
 type TimePoint struct {
