@@ -1,7 +1,7 @@
 /**
  * Grafana-Zabbix
  * Zabbix plugin for Grafana.
- * http://github.com/leleobhz/grafana-zabbix
+ * http://github.com/alexanderzobnin/grafana-zabbix
  *
  * Trigger panel.
  * This feature sponsored by CORE IT
