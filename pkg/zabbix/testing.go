@@ -1,8 +1,8 @@
 package zabbix
 
 import (
-	"github.com/leleobhz/grafana-zabbix/pkg/settings"
-	"github.com/leleobhz/grafana-zabbix/pkg/zabbixapi"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"time"
 )
