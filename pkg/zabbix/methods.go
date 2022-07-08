@@ -396,7 +396,7 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	params := ZabbixAPIParams{}
 	if ds.version >= 62 {
 		params = ZabbixAPIParams{
-			"output":     []string{"name"},
+			"output":     []string{"name", "groupid"},
 			"sortfield":  "name",
 			"with_monitored_hosts": true, }
 	} else {
