@@ -497,7 +497,7 @@ export class ZabbixAPIConnector {
       expandComment: true,
       monitored: true,
       skipDependent: true,
-      selectGroups: ['name'],
+      selectGroups: ['name', 'groupid'],
       selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
       selectItems: ['name', 'key_', 'lastvalue'],
       // selectLastEvent: 'extend',
@@ -525,7 +525,7 @@ export class ZabbixAPIConnector {
       filter: {
         value: 1
       },
-      selectGroups: ['name'],
+      selectGroups: ['name', 'groupid'],
       selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
       selectItems: ['name', 'key_', 'lastvalue'],
       selectLastEvent: 'extend',
