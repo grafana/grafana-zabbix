@@ -170,7 +170,7 @@ export class ZabbixAPIConnector {
 
   getHosts(groupids) {
     const params: any = {
-      output: ['name', 'host'],
+      output: ['name', 'host', 'hostid'],
       sortfield: 'name'
     };
 
