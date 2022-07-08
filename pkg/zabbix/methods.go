@@ -55,11 +55,9 @@ func (ds *Zabbix) GetTrend(ctx context.Context, items []*Item, timeRange backend
 	itemids := make([]string, 0)
 	for _, item := range items {
 		itemids = append(itemids, item.ID)
+		ds.logger.Debug("print item: ", item.ID)
 	}
-	// SAM- TREND LOGGING
-	
-	ds.logger.Debug(strings.join(itemids, "_"))
-	//ds.logger.Debug(ds.getTrend(ctx, itemids, timeRange))
+
 	return ds.getTrend(ctx, itemids, timeRange)
 }
 
