@@ -35,7 +35,7 @@
   "info": {
     "author": {
       "name": "Alexander Zobnin",
-      "url": "https://github.com/leleobhz/grafana-zabbix"
+      "url": "https://github.com/alexanderzobnin/grafana-zabbix"
     },
     "logos": {
       "small": "img/icn-zabbix-datasource.svg",
