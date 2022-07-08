@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/leleobhz/grafana-zabbix/pkg/cache"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 )
 
 var cachedMethods = map[string]bool{
