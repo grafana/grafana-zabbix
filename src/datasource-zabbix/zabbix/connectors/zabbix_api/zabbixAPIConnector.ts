@@ -309,16 +309,10 @@ export class ZabbixAPIConnector {
    * @return {Array}  Array of Zabbix history objects
    */
   getHistory(items, timeFrom, timeTill) {
-    console.log("Get History");
-    console.log(items);
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
-    console.log("grouped items");
-    console.log(grouped_items);
     const promises = _.map(grouped_items, (items, value_type) => {
       const itemids = _.map(items, 'itemid');
-      console.log("history item ids");
-      console.log(itemids);
       const params: any = {
         output: 'extend',
         history: value_type,
@@ -349,8 +343,6 @@ export class ZabbixAPIConnector {
    * @return {Array}  Array of Zabbix trend objects
    */
   getTrend_ZBXNEXT1193(items, timeFrom, timeTill) {
-    console.log("trends");
-    console.log(items);
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
     const promises = _.map(grouped_items, (items, value_type) => {
@@ -368,7 +360,6 @@ export class ZabbixAPIConnector {
       if (timeTill) {
         params.time_till = timeTill;
       }
-      console.log(this.request('trend.get', params));
       return this.request('trend.get', params);
       
     });
