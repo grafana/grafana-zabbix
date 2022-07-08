@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/leleobhz/grafana-zabbix/pkg/zabbix"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
