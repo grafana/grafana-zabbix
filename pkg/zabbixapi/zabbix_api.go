@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/leleobhz/grafana-zabbix/pkg/metrics"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"golang.org/x/net/context/ctxhttp"
