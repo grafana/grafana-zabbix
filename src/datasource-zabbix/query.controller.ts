@@ -345,12 +345,8 @@ export class ZabbixQueryController extends QueryCtrl {
 
   suggestHosts() {
     const groupFilter = this.replaceTemplateVars(this.target.group.filter);
-    console.log("query.controller.ts groupfilter")
-    console.log(groupFilter)
     return this.zabbix.getAllHosts(groupFilter)
     .then(hosts => {
-      console.log("query.controller.ts suggestHosts hosts")
-      console.log(hosts)
       this.metric.hostList = hosts;
       return hosts;
     });
