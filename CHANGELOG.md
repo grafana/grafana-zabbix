@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.2.9] - 2022-07-12
+
+### Fixed
+
+- Plugin is not working with Zabbix 6.2.0, [#1470](https://github.com/alexanderzobnin/grafana-zabbix/issues/1470)
+
 ## [4.2.8] - 2022-05-06
 
 ### Fixed
