@@ -12,6 +12,12 @@ cd devenv/zabbix60
 docker-compose up -d
 ```
 
+Run bootstrap again in case of error:
+
+```shell
+docker-compose up -d --build bootstrap
+```
+
 Grafana will be available at http://localhost:3001 (with default `admin:admin` credentials).
 
 If you want to edit sources, do it, rebuild plugin and then restart grafana container:
