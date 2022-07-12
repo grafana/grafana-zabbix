@@ -144,7 +144,7 @@ export class ZabbixAPIConnector {
 
   getHosts(groupids) {
     const params: any = {
-      output: ['name', 'host'],
+      output: ['hostid', 'name', 'host'],
       sortfield: 'name'
     };
     if (groupids) {
@@ -177,6 +177,7 @@ export class ZabbixAPIConnector {
   getItems(hostids, appids, itemtype) {
     const params: any = {
       output: [
+        'itemid',
         'name',
         'key_',
         'value_type',
@@ -219,6 +220,7 @@ export class ZabbixAPIConnector {
     const params: any = {
       itemids: itemids,
       output: [
+        'itemid',
         'name',
         'key_',
         'value_type',
@@ -342,8 +344,9 @@ export class ZabbixAPIConnector {
     const itemids = _.map(items, 'itemid');
 
     const params: any = {
-      output: ["itemid",
-        "clock",
+      output: [
+        'itemid',
+        'clock',
         value_type
       ],
       itemids: itemids,
@@ -498,8 +501,8 @@ export class ZabbixAPIConnector {
       monitored: true,
       skipDependent: true,
       selectGroups: ['name', 'groupid'],
-      selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
-      selectItems: ['name', 'key_', 'lastvalue'],
+      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid'],
+      selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       // selectLastEvent: 'extend',
       // selectTags: 'extend',
       preservekeys: '1',
@@ -525,9 +528,9 @@ export class ZabbixAPIConnector {
       filter: {
         value: 1
       },
-      selectGroups: ['name', 'groupid'],
-      selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
-      selectItems: ['name', 'key_', 'lastvalue'],
+      selectGroups: ['groupid', 'name'],
+      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid'],
+      selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       selectLastEvent: 'extend',
       selectTags: 'extend'
     };
@@ -624,6 +627,7 @@ export class ZabbixAPIConnector {
     const params = {
       eventids: eventids,
       output: [
+        'alertid',
         'eventid',
         'message',
         'clock',
@@ -689,7 +693,7 @@ export class ZabbixAPIConnector {
       skipDependent: true,
       selectLastEvent: 'extend',
       selectGroups: 'extend',
-      selectHosts: ['host', 'name']
+      selectHosts: ['hostid', 'host', 'name']
     };
 
     if (count && acknowledged !== 0 && acknowledged !== 1) {
