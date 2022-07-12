@@ -9,6 +9,9 @@ function setAlias(alias: string, frame: DataFrame) {
     if (valueField?.config?.custom?.scopedVars) {
       alias = getTemplateSrv().replace(alias, valueField?.config?.custom?.scopedVars);
     }
+    if (valueField) {
+      valueField.config.displayNameFromDS = alias;
+    }
     frame.name = alias;
     return frame;
   }
@@ -19,7 +22,7 @@ function setAlias(alias: string, frame: DataFrame) {
       if (field?.config?.custom?.scopedVars) {
         alias = getTemplateSrv().replace(alias, field?.config?.custom?.scopedVars);
       }
-      field.name = alias;
+      field.config.displayNameFromDS = alias;
     }
   }
   return frame;
@@ -39,17 +42,20 @@ function replaceAlias(regexp: string, newAlias: string, frame: DataFrame) {
     if (valueField?.state?.scopedVars) {
       alias = getTemplateSrv().replace(alias, valueField?.state?.scopedVars);
     }
+    if (valueField) {
+      valueField.config.displayNameFromDS = alias;
+    }
     frame.name = alias;
     return frame;
   }
 
   for (const field of frame.fields) {
     if (field.type !== FieldType.time) {
-      let alias = field.name.replace(pattern, newAlias);
-      if (field?.state?.scopedVars) {
+      let alias = field.config?.displayNameFromDS?.replace(pattern, newAlias);
+      if (field?.state?.scopedVars && alias) {
         alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
       }
-      field.name = alias;
+      field.name = alias || field.name;
     }
   }
   return frame;
@@ -57,7 +63,11 @@ function replaceAlias(regexp: string, newAlias: string, frame: DataFrame) {
 
 function setAliasByRegex(alias: string, frame: DataFrame) {
   if (frame.fields?.length <= 2) {
+    const valueField = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
     try {
+      if (valueField) {
+        valueField.config.displayNameFromDS = extractText(valueField.config?.displayNameFromDS, alias);
+      }
       frame.name = extractText(frame.name, alias);
     } catch (error) {
       console.error('Failed to apply RegExp:', error?.message || error);
@@ -68,7 +78,7 @@ function setAliasByRegex(alias: string, frame: DataFrame) {
   for (const field of frame.fields) {
     if (field.type !== FieldType.time) {
       try {
-        field.name = extractText(field.name, alias);
+        field.config.displayNameFromDS = extractText(field.config?.displayNameFromDS, alias);
       } catch (error) {
         console.error('Failed to apply RegExp:', error?.message || error);
       }

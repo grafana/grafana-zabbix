@@ -1,9 +1,10 @@
 FROM python:2.7
 
-ENV ZAS_SOURCE_URL=https://github.com/vulogov/zas_agent/archive/master.zip
-ENV ZAS_ARC_NAME=zas_agent-master
-# ENV ZAS_SOURCE_URL=https://github.com/alexanderzobnin/zas_agent/archive/numpy-dependency.zip
-# ENV ZAS_ARC_NAME=zas_agent-numpy-dependency
+# ENV ZAS_SOURCE_URL=https://github.com/vulogov/zas_agent/archive/master.zip
+# ENV ZAS_ARC_NAME=zas_agent-master
+# Use version with fixed redis dependency
+ENV ZAS_SOURCE_URL=https://github.com/alexanderzobnin/zas_agent/archive/refs/heads/redis-dependency.zip
+ENV ZAS_ARC_NAME=zas_agent-redis-dependency
 ENV ZAS_ARC_FILE=${ZAS_ARC_NAME}.zip
 ENV ZAS_WORKDIR="/zas-agent"
 

@@ -134,7 +134,7 @@ export class ZabbixAPIConnector {
 
   getGroups() {
     const params = {
-      output: ['name'],
+      output: ['name', 'groupid'],
       sortfield: 'name',
       real_hosts: true
     };
@@ -144,7 +144,7 @@ export class ZabbixAPIConnector {
 
   getHosts(groupids) {
     const params: any = {
-      output: ['name', 'host'],
+      output: ['hostid', 'name', 'host'],
       sortfield: 'name'
     };
     if (groupids) {
@@ -177,6 +177,7 @@ export class ZabbixAPIConnector {
   getItems(hostids, appids, itemtype) {
     const params: any = {
       output: [
+        'itemid',
         'name',
         'key_',
         'value_type',
@@ -219,6 +220,7 @@ export class ZabbixAPIConnector {
     const params: any = {
       itemids: itemids,
       output: [
+        'itemid',
         'name',
         'key_',
         'value_type',
@@ -342,8 +344,9 @@ export class ZabbixAPIConnector {
     const itemids = _.map(items, 'itemid');
 
     const params: any = {
-      output: ["itemid",
-        "clock",
+      output: [
+        'itemid',
+        'clock',
         value_type
       ],
       itemids: itemids,
@@ -383,6 +386,65 @@ export class ZabbixAPIConnector {
     };
 
     return this.request('service.getsla', params);
+  }
+
+  async getSLA60(serviceids, timeRange, options) {
+    const [timeFrom, timeTo] = timeRange;
+    let intervals = [{ from: timeFrom, to: timeTo }];
+    if (options.slaInterval === 'auto') {
+      const interval = getSLAInterval(options.intervalMs);
+      intervals = buildSLAIntervals(timeRange, interval);
+    } else if (options.slaInterval !== 'none') {
+      const interval = utils.parseInterval(options.slaInterval) / 1000;
+      intervals = buildSLAIntervals(timeRange, interval);
+    }
+
+    const params: any = {
+      output: 'extend',
+      serviceids,
+    };
+
+    const slaObjects = await this.request('sla.get', params);
+    if (slaObjects.length === 0) {
+      return {};
+    }
+    const sla = slaObjects[0];
+
+    const periods = intervals.map(interval => ({
+      period_from: interval.from,
+      period_to: interval.to,
+    }));
+    const sliParams: any = {
+      slaid: sla.slaid,
+      serviceids,
+      period_from: timeFrom,
+      period_to: timeTo,
+      periods: Math.min(intervals.length, 100),
+    };
+
+    const sliResponse = await this.request('sla.getsli', sliParams);
+    if (sliResponse.length === 0) {
+      return {};
+    }
+
+    const slaLikeResponse: any = {};
+    sliResponse.serviceids.forEach((serviceid) => {
+      slaLikeResponse[serviceid] = {
+        sla: []
+      };
+    });
+    sliResponse.sli.forEach((sliItem, i) => {
+      sliItem.forEach((sli, j) => {
+        slaLikeResponse[sliResponse.serviceids[j]].sla.push({
+          downtimeTime: sli.downtime,
+          okTime: sli.uptime,
+          sla: sli.sli,
+          from: sliResponse.periods[i].period_from,
+          to: sliResponse.periods[i].period_to
+        });
+      });
+    });
+    return slaLikeResponse;
   }
 
   getProblems(groupids, hostids, applicationids, options): Promise<ZBXProblem[]> {
@@ -438,9 +500,9 @@ export class ZabbixAPIConnector {
       expandComment: true,
       monitored: true,
       skipDependent: true,
-      selectGroups: ['name'],
-      selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
-      selectItems: ['name', 'key_', 'lastvalue'],
+      selectGroups: ['name', 'groupid'],
+      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid'],
+      selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       // selectLastEvent: 'extend',
       // selectTags: 'extend',
       preservekeys: '1',
@@ -466,9 +528,9 @@ export class ZabbixAPIConnector {
       filter: {
         value: 1
       },
-      selectGroups: ['name'],
-      selectHosts: ['name', 'host', 'maintenance_status', 'proxy_hostid'],
-      selectItems: ['name', 'key_', 'lastvalue'],
+      selectGroups: ['groupid', 'name'],
+      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid'],
+      selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       selectLastEvent: 'extend',
       selectTags: 'extend'
     };
@@ -565,6 +627,7 @@ export class ZabbixAPIConnector {
     const params = {
       eventids: eventids,
       output: [
+        'alertid',
         'eventid',
         'message',
         'clock',
@@ -630,7 +693,7 @@ export class ZabbixAPIConnector {
       skipDependent: true,
       selectLastEvent: 'extend',
       selectGroups: 'extend',
-      selectHosts: ['host', 'name']
+      selectHosts: ['hostid', 'host', 'name']
     };
 
     if (count && acknowledged !== 0 && acknowledged !== 1) {

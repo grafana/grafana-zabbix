@@ -80,7 +80,16 @@ func (ds *Zabbix) getTrend(ctx context.Context, itemids []string, timeRange back
 	return trend, err
 }
 
-func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter string, appFilter string, itemTagFilter string, itemFilter string, itemType string) ([]*Item, error) {
+func (ds *Zabbix) GetItems(
+	ctx context.Context,
+	groupFilter string,
+	hostFilter string,
+	appFilter string,
+	itemTagFilter string,
+	itemFilter string,
+	itemType string,
+	showDisabled bool,
+) ([]*Item, error) {
 	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -105,9 +114,9 @@ func (ds *Zabbix) GetItems(ctx context.Context, groupFilter string, hostFilter s
 
 	var allItems []*Item
 	if len(appids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType)
+		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled)
 	} else if len(hostids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType)
+		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled)
 	}
 
 	if isZabbix54orHigher && itemTagFilter != "" {
@@ -285,7 +294,7 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string) ([]*Item, error) {
+func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool) ([]*Item, error) {
 	params := ZabbixAPIParams{
 		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
 		"sortfield":      "name",
@@ -305,6 +314,10 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 
 	if ds.version >= 54 {
 		params["selectTags"] = "extend"
+	}
+
+	if showDisabled == false {
+		params["monitored"] = true
 	}
 
 	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "item.get", Params: params})
@@ -363,7 +376,7 @@ func (ds *Zabbix) GetAllApps(ctx context.Context, hostids []string) ([]Applicati
 
 func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string) ([]Host, error) {
 	params := ZabbixAPIParams{
-		"output":    []string{"name", "host"},
+		"output":    []string{"hostid", "name", "host"},
 		"sortfield": "name",
 		"groupids":  groupids,
 	}
@@ -380,7 +393,7 @@ func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string) ([]Host, e
 
 func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	params := ZabbixAPIParams{
-		"output":     []string{"name"},
+		"output":     []string{"name", "groupid"},
 		"sortfield":  "name",
 		"real_hosts": true,
 	}

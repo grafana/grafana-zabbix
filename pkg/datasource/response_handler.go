@@ -9,7 +9,6 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -54,44 +53,6 @@ func convertHistoryToTimeSeries(history zabbix.History, items []*zabbix.Item) []
 	return series
 }
 
-func convertTimeSeriesToDataFrame(series []*timeseries.TimeSeriesData) *data.Frame {
-	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
-	timeFileld.Name = "time"
-	frame := data.NewFrame("History", timeFileld)
-
-	if len(series) == 0 {
-		return frame
-	}
-
-	for _, s := range series {
-		field := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
-		field.Name = s.Meta.Name
-
-		frame.Fields = append(frame.Fields, field)
-	}
-
-	for i, s := range series {
-		currentFieldIndex := i + 1
-		for _, point := range s.TS {
-			timeFileld.Append(point.Time)
-			for fieldIndex, field := range frame.Fields {
-				if fieldIndex == currentFieldIndex {
-					field.Append(point.Value)
-				} else if fieldIndex > 0 {
-					field.Append(nil)
-				}
-			}
-		}
-	}
-
-	wideFrame, err := data.LongToWide(frame, &data.FillMissing{Mode: data.FillModeNull})
-	if err != nil {
-		backend.Logger.Debug("Error converting data frame to the wide format", "error", err)
-		return frame
-	}
-	return wideFrame
-}
-
 func convertTimeSeriesToDataFrames(series []*timeseries.TimeSeriesData, valuemaps []zabbix.ValueMap) []*data.Frame {
 	frames := make([]*data.Frame, 0)
 
@@ -103,8 +64,8 @@ func convertTimeSeriesToDataFrames(series []*timeseries.TimeSeriesData, valuemap
 }
 
 func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.ValueMap) *data.Frame {
-	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
-	timeFileld.Name = data.TimeSeriesTimeFieldName
+	timeField := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
+	timeField.Name = data.TimeSeriesTimeFieldName
 
 	seriesName := series.Meta.Name
 	valueField := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
@@ -136,6 +97,7 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 	}
 
 	valueField.Config = &data.FieldConfig{
+		DisplayNameFromDS: seriesName,
 		Custom: map[string]interface{}{
 			"scopedVars": scopedVars,
 			"units":      item.Units,
@@ -147,54 +109,14 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 		valueField.Config.Mappings = mappings
 	}
 
-	frame := data.NewFrame(seriesName, timeFileld, valueField)
+	frame := data.NewFrame(seriesName, timeField, valueField)
 
 	for _, point := range series.TS {
-		timeFileld.Append(point.Time)
+		timeField.Append(point.Time)
 		valueField.Append(point.Value)
 	}
 
 	return frame
-}
-
-func convertHistoryToDataFrame(history zabbix.History, items []*zabbix.Item) *data.Frame {
-	timeFileld := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
-	timeFileld.Name = "time"
-	frame := data.NewFrame("History", timeFileld)
-
-	for _, item := range items {
-		field := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
-		if len(item.Hosts) > 0 {
-			field.Name = fmt.Sprintf("%s: %s", item.Hosts[0].Name, item.ExpandItemName())
-		} else {
-			field.Name = item.ExpandItemName()
-		}
-		frame.Fields = append(frame.Fields, field)
-	}
-
-	for _, point := range history {
-		for columnIndex, field := range frame.Fields {
-			if columnIndex == 0 {
-				ts := time.Unix(point.Clock, point.NS)
-				field.Append(ts)
-			} else {
-				item := items[columnIndex-1]
-				if point.ItemID == item.ID {
-					value := point.Value
-					field.Append(&value)
-				} else {
-					field.Append(nil)
-				}
-			}
-		}
-	}
-
-	wideFrame, err := data.LongToWide(frame, &data.FillMissing{Mode: data.FillModeNull})
-	if err != nil {
-		backend.Logger.Debug("Error converting data frame to the wide format", "error", err)
-		return frame
-	}
-	return wideFrame
 }
 
 func convertTrendToHistory(trend zabbix.Trend, valueType string) (zabbix.History, error) {

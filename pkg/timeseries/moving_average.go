@@ -77,8 +77,11 @@ func (ts TimeSeries) ExponentialMovingAverage(an float64) TimeSeries {
 	var a float64
 	var n int
 	ema := []TimePoint{ts[0]}
-	emaPrev := *ts[0].Value
 	var emaCurrent float64
+	var emaPrev float64 = 0
+	if ts[0].Value != nil {
+		emaPrev = *ts[0].Value
+	}
 
 	if an > 1 {
 		// Calculate a from window size

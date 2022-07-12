@@ -51,8 +51,8 @@
         "path": "img/screenshot-triggers.png"
       }
     ],
-    "version": "4.2.6",
-    "updated": "2022-04-04"
+    "version": "4.2.9",
+    "updated": "2022-07-12"
   },
   "includes": [
     {
@@ -65,8 +65,8 @@
     }
   ],
   "dependencies": {
-    "grafanaDependency": ">=8.0.0",
-    "grafanaVersion": "8.0",
+    "grafanaDependency": ">=8.3.0",
+    "grafanaVersion": "8.3",
     "plugins": []
   }
 }

@@ -1,8 +1,35 @@
 # Change Log
 
+## [4.2.9] - 2022-07-12
+
+### Fixed
+
+- Plugin is not working with Zabbix 6.2.0, [#1470](https://github.com/alexanderzobnin/grafana-zabbix/issues/1470)
+
+## [4.2.8] - 2022-05-06
+
+### Fixed
+
+- `setAlias()` doesn't work in some cases, [#1444](https://github.com/alexanderzobnin/grafana-zabbix/issues/1444)
+- Trend data displayed incorrectly when direct DB connection enabled, [#1445](https://github.com/alexanderzobnin/grafana-zabbix/issues/1445)
+
+## [4.2.7] - 2022-05-04
+
+### Fixed
+
+- IT Services not working with Zabbix 6.0, [#1408](https://github.com/alexanderzobnin/grafana-zabbix/issues/1408)
+- Problems panel: `Cannot read properties of undefined (reading 'trim')` error when tag has only name,  [#1420](https://github.com/alexanderzobnin/grafana-zabbix/issues/1420)
+- Dashboards not included into plugin, [#1407](https://github.com/alexanderzobnin/grafana-zabbix/issues/1407)
+- Missing labels in response, [#1352](https://github.com/alexanderzobnin/grafana-zabbix/issues/1352)
+- Query returns all application data when host not found, [#1427](https://github.com/alexanderzobnin/grafana-zabbix/issues/1427)
+- Basic Auth is not working (401 Unauthorized), [#1327](https://github.com/alexanderzobnin/grafana-zabbix/issues/1327)
+- _Show disabled items_ option is not working, [#1249](https://github.com/alexanderzobnin/grafana-zabbix/issues/1249)
+
 ## [4.2.6] - 2022-04-04
 
-- Fixes incorrect problem name when PROBLEM event generation mode set to multiple, [#1403](https://github.com/alexanderzobnin/grafana-zabbix/issues/1403)
+### Fixed
+
+- Problems panel: incorrect problem name when PROBLEM event generation mode set to multiple, [#1403](https://github.com/alexanderzobnin/grafana-zabbix/issues/1403)
 
 ## [4.2.5] - 2022-02-17
 

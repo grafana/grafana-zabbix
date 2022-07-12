@@ -9,7 +9,7 @@ class GithubClient {
 
     const clientConfig = {
       baseURL: githubURL(owner, repo),
-      timeout: 10000,
+      timeout: 30000,
     };
 
     if (required && (!username || !token)) {

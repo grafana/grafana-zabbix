@@ -184,6 +184,11 @@ export class Zabbix implements ZabbixConnector {
     return version ? semver.lt(version, '5.4.0') : true;
   }
 
+  supportSLA() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '6.0.0') : true;
+  }
+
   isZabbix54OrHigher() {
     const version = this.version || this.zabbixAPI.version;
     return version ? semver.gte(version, '5.4.0') : false;
@@ -496,14 +501,19 @@ export class Zabbix implements ZabbixConnector {
     }
   }
 
-  getSLA(itservices, timeRange, target, options) {
+  async getSLA(itservices, timeRange, target, options) {
     const itServiceIds = _.map(itservices, 'serviceid');
-    return this.zabbixAPI.getSLA(itServiceIds, timeRange, options)
-    .then(slaResponse => {
+    if (this.supportSLA()) {
+      const slaResponse = await this.zabbixAPI.getSLA60(itServiceIds, timeRange, options);
       return _.map(itServiceIds, serviceid => {
         const itservice = _.find(itservices, { 'serviceid': serviceid });
         return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
       });
+    }
+    const slaResponse = await this.zabbixAPI.getSLA(itServiceIds, timeRange, options);
+    return _.map(itServiceIds, serviceid => {
+      const itservice = _.find(itservices, { 'serviceid': serviceid });
+      return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
     });
   }
 }

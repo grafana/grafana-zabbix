@@ -50,8 +50,9 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	appFilter := query.Application.Filter
 	itemTagFilter := query.ItemTag.Filter
 	itemFilter := query.Item.Filter
+	showDisabled := query.Options.ShowDisabledItems
 
-	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, "num")
+	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, "num", showDisabled)
 	if err != nil {
 		return nil, err
 	}
@@ -117,10 +118,13 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 	// Align time series data if possible
 	disableDataAlignment := query.Options.DisableDataAlignment || ds.Settings.DisableDataAlignment || query.QueryType == MODE_ITSERVICE
 	if !disableDataAlignment {
-		if useTrend && !DBPostProcessing {
-			for _, s := range series {
-				// Trend data is already aligned (by 1 hour interval), but null values should be added
-				s.TS = s.TS.FillTrendWithNulls()
+		if useTrend {
+			// Skip if data fetched directly from DB (it already contains nulls)
+			if !DBPostProcessing {
+				for _, s := range series {
+					// Trend data is already aligned (by 1 hour interval), but null values should be added
+					s.TS = s.TS.FillTrendWithNulls()
+				}
 			}
 		} else {
 			for _, s := range series {

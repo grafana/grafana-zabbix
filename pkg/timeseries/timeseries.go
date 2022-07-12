@@ -176,9 +176,11 @@ func AggregateByRange(series []*TimeSeriesData, aggFunc AggFunc) *TimeSeriesData
 
 	value := aggFunc(aggregatedSeries)
 	aggregatedSeriesData := NewTimeSeriesData()
-	aggregatedSeriesData.TS = []TimePoint{
-		{Time: aggregatedSeries[0].Time, Value: value},
-		{Time: aggregatedSeries[aggregatedSeries.Len()-1].Time, Value: value},
+	if len(aggregatedSeries) > 0 {
+		aggregatedSeriesData.TS = []TimePoint{
+			{Time: aggregatedSeries[0].Time, Value: value},
+			{Time: aggregatedSeries[aggregatedSeries.Len()-1].Time, Value: value},
+		}
 	}
 
 	return aggregatedSeriesData
