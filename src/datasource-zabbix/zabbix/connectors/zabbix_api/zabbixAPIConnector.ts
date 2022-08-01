@@ -574,7 +574,7 @@ export class ZabbixAPIConnector {
   }
 
   getEventsHistory(groupids, hostids, applicationids, options) {
-    const { timeFrom, timeTo, severities, limit, value } = options;
+    const { timeFrom, timeTo, severities, limit, value, tags } = options;
 
     const params: any = {
       output: 'extend',
@@ -604,6 +604,10 @@ export class ZabbixAPIConnector {
 
     if (value) {
       params.value = value;
+    }
+
+    if (tags) {
+      params.tags = tags;
     }
 
     return this.request('event.get', params).then(utils.mustArray);
