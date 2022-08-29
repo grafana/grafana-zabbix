@@ -11,7 +11,7 @@
                 </select>
             </div>
         </div>
-        <div class="gf-form" ng-show="ctrl.target.queryType == editorMode.TEXT">
+        <div class="gf-form" ng-show="ctrl.target.queryType == editorMode.TEXT | ctrl.target.queryType == editorMode.MACROS">
             <label class="gf-form-label query-keyword width-7">Format As</label>
             <div class="gf-form-select-wrapper">
                 <select class="gf-form-input gf-size-auto" ng-model="ctrl.target.resultFormat"
@@ -66,7 +66,7 @@
     </div>
 
     <div class="gf-form-inline"
-         ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
+         ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM || ctrl.target.queryType == editorMode.TRIGGERS_ITEM || ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.MACROS">
         <!-- Select Group -->
         <div class="gf-form max-width-20">
             <label class="gf-form-label query-keyword width-7">Group</label>
@@ -97,8 +97,22 @@
           'zbx-regex': ctrl.isRegex(ctrl.target.host.filter)
           }">
         </div>
-
-        <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS">
+    	<!-- Select Macros -->
+    	<div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.MACROS">
+      		<label class="gf-form-label query-keyword width-7">Macros</label>
+      		<input type="text"
+        	       ng-model="ctrl.target.macro.filter"
+        		   bs-typeahead="ctrl.getMacroNames"
+        		   ng-blur="ctrl.onTargetBlur()"
+        		   data-min-length=0
+        		   data-items=100
+        		   class="gf-form-input"
+        		   ng-class="{
+          'zbx-variable': ctrl.isVariable(ctrl.target.macro.filter),
+          'zbx-regex': ctrl.isRegex(ctrl.target.macro.filter)
+          }">
+    	</div>
+        <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM">
             <label class="gf-form-label query-keyword width-7">Proxy</label>
             <input type="text"
                    ng-model="ctrl.target.proxy.filter"
@@ -119,7 +133,7 @@
     </div>
 
     <div class="gf-form-inline"
-         ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
+         ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM || ctrl.target.queryType == editorMode.TRIGGERS_ITEM || ctrl.target.queryType == editorMode.PROBLEMS">
         <!-- Select Application -->
         <div class="gf-form max-width-20" ng-show="!ctrl.appFilterDisabled()">
             <label class="gf-form-label query-keyword width-7">Application</label>
@@ -154,7 +168,7 @@
 
         <!-- Select Item -->
         <div class="gf-form max-width-20"
-             ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT">
+             ng-show="ctrl.target.queryType == editorMode.METRICS || ctrl.target.queryType == editorMode.TEXT || ctrl.target.queryType == editorMode.TRIGGERS_ITEM">
             <label class="gf-form-label query-keyword width-7">Item</label>
             <input type="text"
                    ng-model="ctrl.target.item.filter"
@@ -169,7 +183,7 @@
         }">
         </div>
 
-        <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS">
+        <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM">
             <label class="gf-form-label query-keyword width-7">Problem</label>
             <input type="text"
                    ng-model="ctrl.target.trigger.filter"
@@ -183,7 +197,7 @@
         }">
         </div>
 
-        <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS">
+        <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM">
             <label class="gf-form-label query-keyword width-7">Tags</label>
             <input type="text" class="gf-form-input width-14"
                    ng-model="ctrl.target.tags.filter"
@@ -197,7 +211,7 @@
     </div>
 
     <div class="gf-form-inline"
-         ng-show="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
+         ng-show="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM || ctrl.target.queryType == editorMode.TRIGGERS_ITEM || ctrl.target.queryType == editorMode.PROBLEMS">
         <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.PROBLEMS">
             <label class="gf-form-label query-keyword width-7">Show</label>
             <div class="gf-form-select-wrapper max-width-20">
@@ -218,7 +232,7 @@
                 </select>
             </div>
         </div>
-        <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.TRIGGERS">
+        <div class="gf-form max-width-20" ng-show="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM || ctrl.target.queryType == editorMode.TRIGGERS_ITEM">
             <label class="gf-form-label query-keyword width-7">Min Severity</label>
             <div class="gf-form-select-wrapper width-14">
                 <select class="gf-form-input"
@@ -305,7 +319,7 @@
 
     <!-- Query options -->
     <div class="gf-form-group offset-width-7" ng-if="ctrl.showQueryOptions">
-        <div ng-hide="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.PROBLEMS">
+        <div ng-hide="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM || ctrl.target.queryType == editorMode.TRIGGERS_ITEM || ctrl.target.queryType == editorMode.PROBLEMS">
             <gf-form-switch class="gf-form" label-class="width-12"
                             label="Show disabled items"
                             checked="ctrl.target.options.showDisabledItems"
@@ -335,15 +349,15 @@
         </div>
 
         <div class="gf-form-group"
-             ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS">
-            <gf-form-switch class="gf-form" ng-show="ctrl.target.queryType == editorMode.TRIGGERS"
+             ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM || ctrl.target.queryType == editorMode.TRIGGERS_ITEM">
+            <gf-form-switch class="gf-form" ng-show="ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM || ctrl.target.queryType == editorMode.TRIGGERS_ITEM"
                             label-class="width-9"
                             label="Count"
                             checked="ctrl.target.triggers.count"
                             on-change="ctrl.onTargetBlur()">
             </gf-form-switch>
             <div class="gf-form"
-                 ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS">
+                 ng-show="ctrl.target.queryType == editorMode.PROBLEMS || ctrl.target.queryType == editorMode.TRIGGERS || ctrl.target.queryType == editorMode.TRIGGERS_PROBLEM || ctrl.target.queryType == editorMode.TRIGGERS_ITEM">
                 <label class="gf-form-label width-9">Acknowledged</label>
                 <div class="gf-form-select-wrapper width-12">
                     <select class="gf-form-input"

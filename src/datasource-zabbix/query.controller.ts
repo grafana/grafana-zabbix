@@ -17,6 +17,7 @@ function getTargetDefaults() {
     host: { 'filter': "" },
     application: { 'filter': "" },
     itemTag: { 'filter': "" },
+    macro: { 'filter': "" },
     item: { 'filter': "" },
     functions: [],
     triggers: {
@@ -98,6 +99,7 @@ export class ZabbixQueryController extends QueryCtrl {
   getHostNames: (...args: any[]) => any;
   getApplicationNames: (...args: any[]) => any;
   getItemNames: (...args: any[]) => any;
+  getMacroNames: (...args: any[]) => any;
   getITServices: (...args: any[]) => any;
   getProxyNames: (...args: any[]) => any;
   getVariables: (...args: any[]) => any;
@@ -121,7 +123,10 @@ export class ZabbixQueryController extends QueryCtrl {
       { value: 'text', text: 'Text', queryType: c.MODE_TEXT },
       { value: 'itservice', text: 'IT Services', queryType: c.MODE_ITSERVICE },
       { value: 'itemid', text: 'Item ID', queryType: c.MODE_ITEMID },
+      { value: 'macro', text: 'User Macros', queryType: c.MODE_MACROS},
       { value: 'triggers', text: 'Triggers', queryType: c.MODE_TRIGGERS },
+      { value: 'triggers', text: 'Triggers count by Item', queryType: c.MODE_TRIGGERS_ITEM},
+      { value: 'triggers', text: 'Triggers count by Problem', queryType: c.MODE_TRIGGERS_PROBLEM},
       { value: 'problems', text: 'Problems', queryType: c.MODE_PROBLEMS },
     ];
 
@@ -130,7 +135,10 @@ export class ZabbixQueryController extends QueryCtrl {
       TEXT: c.MODE_TEXT,
       ITSERVICE: c.MODE_ITSERVICE,
       ITEMID: c.MODE_ITEMID,
+      MACROS: c.MODE_MACROS,
       TRIGGERS: c.MODE_TRIGGERS,
+      TRIGGERS_ITEM: c.MODE_TRIGGERS_ITEM,
+      TRIGGERS_PROBLEM: c.MODE_TRIGGERS_PROBLEM,
       PROBLEMS: c.MODE_PROBLEMS,
     };
 
@@ -191,6 +199,7 @@ export class ZabbixQueryController extends QueryCtrl {
     this.getHostNames = _.bind(this.getMetricNames, this, 'hostList', true);
     this.getApplicationNames = _.bind(this.getMetricNames, this, 'appList');
     this.getItemNames = _.bind(this.getMetricNames, this, 'itemList');
+    this.getMacroNames = _.bind(this.getMacrosMetricNames, this, 'MacroList');
     this.getITServices = _.bind(this.getMetricNames, this, 'itServiceList');
     this.getProxyNames = _.bind(this.getMetricNames, this, 'proxyList');
     this.getVariables = _.bind(this.getTemplateVariables, this);
@@ -236,13 +245,16 @@ export class ZabbixQueryController extends QueryCtrl {
         _.defaultsDeep(target, getSLATargetDefaults());
       }
 
-      if (target.queryType === c.MODE_PROBLEMS) {
+      if (target.queryType === c.MODE_PROBLEMS || this.target.queryType === c.MODE_TRIGGERS_PROBLEM) {
         _.defaultsDeep(target, getProblemsTargetDefaults());
       }
 
       if (target.queryType === c.MODE_METRICS ||
         target.queryType === c.MODE_TEXT ||
+        target.queryType === c.MODE_MACROS ||
         target.queryType === c.MODE_TRIGGERS ||
+        target.queryType === c.MODE_TRIGGERS_ITEM ||
+        target.queryType === c.MODE_TRIGGERS_PROBLEM ||
         target.queryType === c.MODE_PROBLEMS) {
         this.initFilters();
       } else if (target.queryType === c.MODE_ITSERVICE) {
@@ -266,13 +278,14 @@ export class ZabbixQueryController extends QueryCtrl {
       this.suggestGroups(),
       this.suggestHosts(),
       this.suggestApps(),
+      this.suggestMacros(),
     ];
 
-    if (this.target.queryType === c.MODE_METRICS || this.target.queryType === c.MODE_TEXT) {
+    if (this.target.queryType === c.MODE_METRICS || this.target.queryType === c.MODE_TEXT || this.target.queryType === c.MODE_TRIGGERS_ITEM) {
       promises.push(this.suggestItems(itemtype));
     }
 
-    if (this.target.queryType === c.MODE_PROBLEMS) {
+    if (this.target.queryType === c.MODE_PROBLEMS || this.target.queryType === c.MODE_TRIGGERS_PROBLEM) {
       promises.push(this.suggestProxies());
     }
 
@@ -289,7 +302,10 @@ export class ZabbixQueryController extends QueryCtrl {
       target.queryType === c.MODE_TEXT ||
       target.queryType === c.MODE_ITSERVICE ||
       target.queryType === c.MODE_ITEMID ||
+      target.queryType === c.MODE_MACROS ||
       target.queryType === c.MODE_TRIGGERS ||
+      target.queryType === c.MODE_TRIGGERS_ITEM ||
+      target.queryType === c.MODE_TRIGGERS_PROBLEM ||
       target.queryType === c.MODE_PROBLEMS)) {
       target.queryType = c.MODE_METRICS;
     }
@@ -298,6 +314,22 @@ export class ZabbixQueryController extends QueryCtrl {
   // Get list of metric names for bs-typeahead directive
   getMetricNames(metricList, addAllValue) {
     const metrics = _.uniq(_.map(this.metric[metricList], 'name'));
+
+    // Add template variables
+    _.forEach(this.templateSrv.getVariables(), variable => {
+      metrics.unshift('$' + variable.name);
+    });
+
+    if (addAllValue) {
+      metrics.unshift('/.*/');
+    }
+
+    return metrics;
+  }
+  
+   // Get list of metric names for bs-typeahead directive
+  getMacrosMetricNames(metricList, addAllValue) {
+    const metrics = _.uniq(_.map(this.metric[metricList], 'macro'));
 
     // Add template variables
     _.forEach(this.templateSrv.getVariables(), variable => {
@@ -359,6 +391,17 @@ export class ZabbixQueryController extends QueryCtrl {
     .then(apps => {
       this.metric.appList = apps;
       return apps;
+    });
+  }
+
+  suggestMacros() {
+    const groupFilter = this.replaceTemplateVars(this.target.group.filter);
+    const hostFilter = this.replaceTemplateVars(this.target.host.filter);
+    const macroFilter = this.replaceTemplateVars(this.target.macro.filter);
+    return this.zabbix.getAllMacros(groupFilter, hostFilter)
+    .then(macros => {
+      this.metric.MacroList = macros;
+      return macros;
     });
   }
 
@@ -527,7 +570,7 @@ export class ZabbixQueryController extends QueryCtrl {
 
     if (this.target.queryType === c.MODE_METRICS) {
       optionsMap = metricOptionsMap;
-    } else if (this.target.queryType === c.MODE_PROBLEMS || this.target.queryType === c.MODE_TRIGGERS) {
+    } else if (this.target.queryType === c.MODE_PROBLEMS  || this.target.queryType === c.MODE_TRIGGERS || this.target.queryType === c.MODE_TRIGGERS_ITEM || this.target.queryType === c.MODE_TRIGGERS_PROBLEM) {
       optionsMap = problemsOptionsMap;
     }
 

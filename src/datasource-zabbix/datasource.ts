@@ -223,6 +223,15 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       } else if (target.queryType === c.MODE_TRIGGERS) {
         // Triggers query
         return this.queryTriggersData(target, timeRange);
+      } else if (target.queryType === c.MODE_MACROS) {
+        // UserMacro query
+        return this.queryUserMacrosData(target);        
+      } else if (target.queryType === c.MODE_TRIGGERS_ITEM) {
+        // Triggers item query
+        return this.queryTriggersICData(target, timeRange);
+      } else if (target.queryType === c.MODE_TRIGGERS_PROBLEM) {
+        // Triggers problem query
+        return this.queryTriggersPCData(target, timeRange, request);
       } else if (target.queryType === c.MODE_PROBLEMS) {
         // Problems query
         return this.queryProblems(target, timeRange, request);
@@ -475,6 +484,23 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const processedResponse = await this.invokeDataProcessingQuery(backendRequest, target, {});
     return this.handleBackendPostProcessingResponse(processedResponse, request, target);
   }
+  
+  queryUserMacrosData(target) {
+    const groupFilter = target.group.filter;
+    const hostFilter = target.host.filter;
+    const macroFilter = target.macro.filter;
+    return this.zabbix.getUMacros(groupFilter, hostFilter, macroFilter)
+    .then(macros => {
+      const hostmacroids = _.map(macros, 'hostmacroid');
+      return this.zabbix.getUserMacros(hostmacroids);
+    }) 
+    .then(result => {
+      if (target.resultFormat !== 'table') {
+        return responseHandler.handleTimeMacro(result);
+      }
+      return responseHandler.handleMacro(result);
+    });
+  }
 
   queryTriggersData(target, timeRange) {
     const [timeFrom, timeTo] = timeRange;
@@ -504,6 +530,103 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       }
     });
   }
+
+  queryTriggersICData(target, timeRange) {
+    const [timeFrom, timeTo] = timeRange;
+    const getItemOptions = {
+          itemtype: 'num'
+      };
+
+    return this.zabbix.getHostsFromICTarget(target, getItemOptions)
+    .then(results => {
+      const [hosts, apps, items] = results;
+      if (hosts.length) {
+        const hostids = _.map(hosts, 'hostid');
+        const appids = _.map(apps, 'applicationid');
+        const itemids = _.map(items, 'itemid');
+        const options = {
+          minSeverity: target.triggers.minSeverity,
+          acknowledged: target.triggers.acknowledged,
+          count: target.triggers.count,
+          timeFrom: timeFrom,
+          timeTo: timeTo
+        };
+        const groupFilter = target.group.filter;
+        return Promise.all([
+          this.zabbix.getHostICAlerts(hostids, appids, itemids, options),
+          this.zabbix.getGroups(groupFilter)
+        ])
+        .then(([triggers, groups]) => {
+          return responseHandler.handleTriggersResponse(triggers, groups, timeRange);
+        });
+      } else {
+        return Promise.resolve([]);
+      }
+    });
+  }
+
+    queryTriggersPCData(target, timeRange, options) {
+      const [timeFrom, timeTo] = timeRange;
+      const tagsFilter = this.replaceTemplateVars(target.tags?.filter, options.scopedVars);
+          // replaceTemplateVars() builds regex-like string, so we should trim it.
+      const tagsFilterStr = tagsFilter.replace('/^', '').replace('$/', '');
+      const tags = utils.parseTags(tagsFilterStr);
+        tags.forEach(tag => {
+          // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
+          tag.operator = 1;
+        });
+  
+      const problemsOptions: any = {
+          minSeverity: target.options?.minSeverity,
+          limit: target.options?.limit,
+        };
+    
+        if (tags && tags.length) {
+          problemsOptions.tags = tags;
+        }
+    
+        if (target.options?.acknowledged === 0 || target.options?.acknowledged === 1) {
+          problemsOptions.acknowledged = target.options?.acknowledged ? true : false;
+        }
+    
+        if (target.options?.minSeverity) {
+          let severities = [0, 1, 2, 3, 4, 5].filter(v => v >= target.options?.minSeverity);
+          if (target.options?.severities) {
+            severities = severities.filter(v => target.options?.severities.includes(v));
+          }
+          problemsOptions.severities = severities;
+        }
+  
+        problemsOptions.timeFrom = timeFrom;
+        problemsOptions.timeTo = timeTo;
+  
+        return this.zabbix.getHostsFromPCTarget(target, problemsOptions)
+        .then(results => {
+          const [hosts, apps, triggers] = results;
+          if (hosts.length) {
+            const hostids = _.map(hosts, 'hostid');
+            const appids = _.map(apps, 'applicationid');
+            const triggerids = _.map(triggers, 'triggerid');
+            const options = {
+              minSeverity: target.triggers.minSeverity,
+              acknowledged: target.triggers.acknowledged,
+              count: target.triggers.count,
+              timeFrom: timeFrom,
+              timeTo: timeTo
+            };
+            const groupFilter = target.group.filter;
+            return Promise.all([
+              this.zabbix.getHostPCAlerts(hostids, appids, triggerids, options),
+              this.zabbix.getGroups(groupFilter)
+            ])
+            .then(([triggers, groups]) => {
+              return responseHandler.handleTriggersResponse(triggers, groups, timeRange);
+            });
+          } else {
+            return Promise.resolve([]);
+          }
+        });
+      }
 
   queryProblems(target: ZabbixMetricsQuery, timeRange, options) {
     const [timeFrom, timeTo] = timeRange;
@@ -707,6 +830,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       templateSrv.variableExists(target.application?.filter) ||
       templateSrv.variableExists(target.itemTag?.filter) ||
       templateSrv.variableExists(target.item?.filter) ||
+      templateSrv.variableExists(target.macro?.filter) ||
       templateSrv.variableExists(target.proxy?.filter) ||
       templateSrv.variableExists(target.trigger?.filter) ||
       templateSrv.variableExists(target.textFilter) ||

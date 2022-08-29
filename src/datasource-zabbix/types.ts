@@ -40,6 +40,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   group: { filter: string; name?: string; };
   host: { filter: string; name?: string; };
   application: { filter: string; name?: string; };
+  macro: { filter: string; macro?: string; };
   itemTag: { filter: string; name?: string; };
   item: { filter: string; name?: string; };
   textFilter: string;
@@ -57,6 +58,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   // Deprecated
   hostFilter?: string;
   itemFilter?: string;
+  macroFilter?: string;
 }
 
 export interface ZabbixQueryOptions {
@@ -152,6 +154,7 @@ export interface VariableQuery {
   application?: string;
   itemTag?: string;
   item?: string;
+  macro?: string;
 }
 
 export type LegacyVariableQuery = VariableQuery | string;
@@ -160,6 +163,7 @@ export enum VariableQueryTypes {
   Group = 'group',
   Host = 'host',
   Application = 'application',
+  Macro = 'macro',
   ItemTag = 'itemTag',
   Item = 'item',
   ItemValues = 'itemValues',
@@ -291,6 +295,7 @@ export interface ZBXHost {
   host: string;
   maintenance_status?: string;
   proxy_hostid?: string;
+  description?: string;
 }
 
 export interface ZBXItem {

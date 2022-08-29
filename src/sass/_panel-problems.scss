@@ -237,9 +237,9 @@
       transition-property: opacity, max-height;
 
       &.show {
-        max-height: 32rem;
+        max-height: 40rem;
         opacity: 1;
-        box-shadow: inset -3px 3px 10px $problem-container-shadow;
+        box-shadow: inset -3px 3px 5px #33b5ec4f;
       }
 
       .problem-details-row {
@@ -268,6 +268,7 @@
         padding: 0.5rem 1rem 0.5rem 1.2rem;
         display: flex;
         flex-direction: column;
+        white-space: pre-line;
       }
 
       .problem-description-row {
@@ -281,7 +282,7 @@
           &:after {
             content: "";
             text-align: right;
-            position: absolute;
+            position: inherit;
             bottom: 0;
             right: 0;
             width: 70%;
@@ -296,6 +297,15 @@
           color: $text-muted;
           cursor: pointer;
         }
+
+        .description-delimiter {
+          border-bottom: solid 2px #f9f9f91c;
+          margin-top: 10px;
+        }
+
+        .description-expression {
+          white-space: normal;
+        }
       }
 
       .problem-age {
@@ -306,11 +316,11 @@
         padding-top: 0.8rem;
         padding-bottom: 0.8rem;
         margin-top: auto;
+        position: relative;
       }
 
       .problem-items-row {
-        position: relative;
-        height: 1.5rem;
+        position: inherit;
         overflow: hidden;
 
         &:after {
@@ -326,7 +336,7 @@
       }
 
       .problem-item {
-        display: flex;
+        display: inherit;
 
         .problem-item-name {
           color: $text-muted;
@@ -334,6 +344,9 @@
 
         .problem-item-value {
           font-weight: 500;
+	  overflow: auto;
+	  display: -webkit-box;
+	  max-height: 60px;
         }
       }
 
@@ -412,6 +425,7 @@
       .problem-ack-list {
         display: flex;
         overflow: auto;
+        white-space: pre-line;
 
         .problem-ack-col {
           display: flex;

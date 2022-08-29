@@ -9,11 +9,13 @@ import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource-zabbix/
 import { GFTimeRange, RTRow, ZBXItem } from '../../types';
 import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
+import TaskTag from '../TaskTag';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
 import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController } from '../../../components';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
 import ProblemStatusBar from "./ProblemStatusBar";
+import { Link } from "react-router-dom";
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
@@ -163,16 +165,48 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
                 {problem.items && <ProblemItems items={problem.items}/>}
               </div>
             </div>
-            {problem.comments &&
+            {problem.items &&
             <div className="problem-description-row">
-              <div className="problem-description">
-                <Tooltip placement="right" content={problem.comments}>
-                  <span className="description-label">Description:&nbsp;</span>
+              <div className="problem-description description-delimiter">
+                <Tooltip placement="right" content={problem.expression}>
+                  <span className="description-label">Expression:&nbsp;</span>
                 </Tooltip>
-                <span>{problem.comments}</span>
+                  <span className="description-expression">{problem.expression}</span>
               </div>
             </div>
-            }
+          }
+          {problem.comments &&
+            <div className="problem-description-row">
+              <div className="problem-description description-delimiter">
+                <Tooltip placement="right" content={problem.comments}>
+                  <span className="description-label">Problem Description:&nbsp;</span>
+                </Tooltip>
+                  <span>{problem.comments}</span>
+              </div>
+            </div>
+          }
+          {problem.hosts && 
+            <div className="problem-description-row">
+              <div className="problem-description description-delimiter">
+                  <span className="description-label">Host Description:&nbsp;</span>
+                  <ProblemHostsd hosts={problem.hosts} />
+              </div>
+            </div>
+          }
+          {problem.tags &&
+            <div className="problem-description-row">
+              <div className="problem-description description-delimiter">
+                <span className="description-label">Jira task:&nbsp;</span>
+                  <span>{problem.tags && problem.tags.map(tag =>
+                    <TaskTag
+                      key={tag.tag + tag.value}
+                      tag={tag}
+                    />)
+                  } 
+                  </span>
+              </div>
+            </div>
+          }
             {problem.tags && problem.tags.length > 0 &&
             <div className="problem-tags">
               {problem.tags && problem.tags.map(tag =>
@@ -288,6 +322,14 @@ class ProblemHosts extends PureComponent<ProblemHostsProps> {
         <FAIcon icon="server"/>
         <span>{h.name}</span>
       </div>
+    ));
+  }
+}
+
+class ProblemHostsd extends PureComponent<ProblemHostsProps> {
+  render() {
+    return this.props.hosts.map(h => (
+        <span>{h.description}</span>
     ));
   }
 }

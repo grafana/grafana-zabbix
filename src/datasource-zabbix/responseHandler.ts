@@ -74,6 +74,30 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
+function handleMacro(macros) {
+  let data = [];
+    for (let i = 0; i < macros.length; i++) {
+      data = data.concat([[macros[i].hosts[0].name, macros[i].macro, macros[i].value]]);
+    }
+    return {
+      columns: [{'text': "Host",'type':'string'}, {'text': "Macros",'type':'string'}, {'text': "Value",'type':'string'}],
+      rows: data
+    };
+}
+
+function handleTimeMacro(macros) {
+  let data = [];
+  
+  for (let i = 0; i < macros.length; i++) {
+      data = data.concat([[macros[i].value, Date.now()]]);
+    }
+
+    return {
+      target: macros[0].macro,
+      datapoints: data
+    };
+}
+
 export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueMappings?: any[], fieldType?: FieldType): MutableDataFrame {
   const { datapoints, scopedVars, target: seriesName, item } = timeseries;
 
@@ -582,6 +606,8 @@ export default {
   convertHistory,
   handleTrends,
   handleText,
+  handleMacro,
+  handleTimeMacro,
   handleHistoryAsTable,
   handleSLAResponse,
   handleTriggersResponse,

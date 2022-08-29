@@ -5,6 +5,7 @@
 .vscode
 
 *.bat
+.DS_Store
 
 # Grafana linter config
 # .jshintrc

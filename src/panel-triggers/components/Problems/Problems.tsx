@@ -154,7 +154,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         Cell: statusIconCell,
       },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
-      { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell },
+      { Header: 'Problem', accessor: 'name', minWidth: 200, Cell: ProblemCell},
       {
         Header: 'Ack', id: 'ack', show: options.ackField, width: 70,
         Cell: props => <AckCell {...props} />
