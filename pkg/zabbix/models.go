@@ -67,8 +67,8 @@ type ItemTag struct {
 type Trend []TrendPoint
 
 type TrendPoint struct {
-	ItemID   string `json:"itemid,omitempty"`
-	Clock    int64  `json:"clock,omitempty,string"`
+	ItemID   int64 `json:"itemid,omitempty"`
+	Clock    int64  `json:"clock,omitempty"`
 	Num      string `json:"num,omitempty"`
 	ValueMin string `json:"value_min,omitempty"`
 	ValueAvg string `json:"value_avg,omitempty"`
@@ -78,10 +78,10 @@ type TrendPoint struct {
 type History []HistoryPoint
 
 type HistoryPoint struct {
-	ItemID string  `json:"itemid,omitempty"`
-	Clock  int64   `json:"clock,omitempty,string"`
+	ItemID int64  `json:"itemid,omitempty"`
+	Clock  int64   `json:"clock,omitempty"`
 	Value  float64 `json:"value,omitempty,string"`
-	NS     int64   `json:"ns,omitempty,string"`
+	NS     int64   `json:"ns,omitempty"`
 }
 
 type Group struct {
