@@ -1,4 +1,4 @@
-import { DataSourceApi } from '@grafana/data';
+import { ArrayVector, DataFrame, dataFrameToJSON, DataSourceApi, Field, FieldType, MutableDataFrame, TIME_SERIES_TIME_FIELD_NAME, toDataFrame } from '@grafana/data';
 import _ from 'lodash';
 import { compactQuery } from '../../../utils';
 import { consolidateByTrendColumns, DBConnector, HISTORY_TO_TABLE_MAP } from '../dbConnector';
@@ -105,7 +105,7 @@ function handleInfluxHistoryResponse(results) {
     return [];
   }
 
-  const seriesList = [];
+  const frames: DataFrame[] = [];
   for (let i = 0; i < results.length; i++) {
     const result = results[i];
 
@@ -122,19 +122,34 @@ function handleInfluxHistoryResponse(results) {
 
     for (let y = 0; y < influxSeriesList.length; y++) {
       const influxSeries = influxSeriesList[y];
-      const datapoints = [];
+      const tsBuffer = [];
+      const valuesBuffer = [];
       if (influxSeries.values) {
         for (i = 0; i < influxSeries.values.length; i++) {
-          datapoints[i] = [influxSeries.values[i][1], influxSeries.values[i][0]];
+          tsBuffer.push(influxSeries.values[i][0]);
+          valuesBuffer.push(influxSeries.values[i][1])
         }
       }
-      const timeSeries = {
-        name: influxSeries.tags.itemid,
-        points: datapoints
+      const timeFiled: Field<number> = {
+        name: TIME_SERIES_TIME_FIELD_NAME,
+        type: FieldType.time,
+        config: {},
+        values: new ArrayVector(tsBuffer),
       };
-      seriesList.push(timeSeries);
+
+      const valueFiled: Field<number | null> = {
+        name: influxSeries?.tags?.itemid,
+        type: FieldType.number,
+        config: {},
+        values: new ArrayVector(valuesBuffer),
+      };
+
+      frames.push(new MutableDataFrame({
+        name: influxSeries?.tags?.itemid,
+        fields: [timeFiled, valueFiled]
+      }));
     }
   }
 
-  return seriesList;
+  return frames.map(f => dataFrameToJSON(f));
 }
