@@ -1,3 +1,4 @@
+import { DataSourceApi } from '@grafana/data';
 import _ from 'lodash';
 import { compactQuery } from '../../../utils';
 import { consolidateByTrendColumns, DBConnector, HISTORY_TO_TABLE_MAP } from '../dbConnector';
@@ -91,9 +92,9 @@ export class InfluxDBConnector extends DBConnector {
     return `(${itemidsWhere})`;
   }
 
-  invokeInfluxDBQuery(query) {
-    return this.influxDS._seriesQuery(query)
-    .then(data => data && data.results ? data.results : []);
+  async invokeInfluxDBQuery(query) {
+    const data = await this.influxDS._seriesQuery(query).toPromise();
+    return data?.results || [];
   }
 }
 
