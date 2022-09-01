@@ -51,7 +51,7 @@ jobs:
         run: go install -v ./pkg/
 
       - name: Install golint
-	      run: GO111MODULE=off go get -u golang.org/x/lint/golint
+        run: GO111MODULE=off go get -u golang.org/x/lint/golint
 
       - name: Lint
         run: make lint
