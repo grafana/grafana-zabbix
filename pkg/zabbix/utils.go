@@ -67,8 +67,8 @@ func splitKeyParams(paramStr string) []string {
 
 func parseFilter(filter string) (*regexp2.Regexp, error) {
 	vaildREModifiers := "imncsxrde"
-	regex := regexp.MustCompile(`^/(.+)/(\w*)$`)
-	flagRE := regexp.MustCompile("[" + vaildREModifiers + "]+")
+	regex := regexp.MustCompile(`^/(.+)/([imncsxrde]*)$`)
+	flagRE := regexp.MustCompile(fmt.Sprintf("[%s]+", vaildREModifiers))
 
 	matches := regex.FindStringSubmatch(filter)
 	if len(matches) <= 1 {
