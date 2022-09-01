@@ -148,7 +148,7 @@ func filterItemsByTag(items []*Item, filter string) ([]*Item, error) {
 			}
 			for _, t := range tags {
 				if re != nil {
-					if re.MatchString(t) {
+					if match, err := re.MatchString(t); match && err != nil {
 						filteredItems = append(filteredItems, i)
 						break
 					}
@@ -173,7 +173,7 @@ func filterItemsByQuery(items []*Item, filter string) ([]*Item, error) {
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
-			if re.MatchString(name) {
+			if match, err := re.MatchString(name); match && err != nil {
 				filteredItems = append(filteredItems, i)
 			}
 		} else if name == filter {
@@ -212,7 +212,7 @@ func filterAppsByQuery(items []Application, filter string) ([]Application, error
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
-			if re.MatchString(name) {
+			if match, err := re.MatchString(name); match && err != nil {
 				filteredItems = append(filteredItems, i)
 			}
 		} else if name == filter {
@@ -251,7 +251,7 @@ func filterHostsByQuery(items []Host, filter string) ([]Host, error) {
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
-			if re.MatchString(name) {
+			if match, err := re.MatchString(name); match && err != nil {
 				filteredItems = append(filteredItems, i)
 			}
 		} else if name == filter {
@@ -282,7 +282,7 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 	for _, i := range items {
 		name := i.Name
 		if re != nil {
-			if re.MatchString(name) {
+			if match, err := re.MatchString(name); match && err != nil {
 				filteredItems = append(filteredItems, i)
 			}
 		} else if name == filter {

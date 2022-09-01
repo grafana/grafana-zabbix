@@ -1,8 +1,10 @@
 package zabbix
 
 import (
+	"reflect"
 	"testing"
 
+	"github.com/dlclark/regexp2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,32 +63,52 @@ func TestParseFilter(t *testing.T) {
 	tests := []struct {
 		name          string
 		filter        string
+		want          *regexp2.Regexp
 		expectNoError bool
 		expectedError string
 	}{
 		{
 			name:          "Simple regexp",
 			filter:        "/.*/",
+			want:          regexp2.MustCompile(".*", regexp2.RE2),
 			expectNoError: true,
 			expectedError: "",
 		},
 		{
 			name:          "Not a regex",
 			filter:        "/var/lib/mysql: Total space",
+			want:          nil,
 			expectNoError: true,
+			expectedError: "",
+		},
+		{
+			name:          "Regexp with modifier",
+			filter:        "/.*/i",
+			want:          regexp2.MustCompile("(?i).*", regexp2.RE2),
+			expectNoError: true,
+			expectedError: "",
+		},
+		{
+			name:          "Regexp with unsupported modifier",
+			filter:        "/.*/1",
+			want:          nil,
+			expectNoError: false,
 			expectedError: "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := parseFilter(tt.filter)
+			got, err := parseFilter(tt.filter)
 			if tt.expectNoError {
 				assert.NoError(t, err)
 			}
 			if tt.expectedError != "" {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tt.expectedError)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseFilter() = %v, want %v", got, tt.want)
 			}
 		})
 	}
