@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.2.10] - 2022-09-01
+
+### Fixed
+
+- Perl regex syntax no longer accepted in any filter, [#1264](https://github.com/alexanderzobnin/grafana-zabbix/issues/1264)
+- InfluxDB direct DB connection error (`this.influxDS._seriesQuery(...).then is not a function`), [#1255](https://github.com/alexanderzobnin/grafana-zabbix/issues/1255)
+
 ## [4.2.9] - 2022-07-12
 
 ### Fixed
