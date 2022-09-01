@@ -48,6 +48,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build frontend
+        run: yarn build
 
       - name: Build backend
         run: make build-backend
