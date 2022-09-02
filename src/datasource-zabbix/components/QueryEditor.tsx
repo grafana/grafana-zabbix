@@ -1,7 +1,8 @@
+import _ from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { useAsyncFn } from 'react-use';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { AsyncSelect, InlineField, InlineFieldRow, Select } from '@grafana/ui';
+import { InlineField, InlineFieldRow, Select } from '@grafana/ui';
 import { ZabbixDatasource } from '../datasource';
 import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes } from '../types';
 import * as c from '../constants';
@@ -113,10 +114,11 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   const loadHostOptions = async (group: string) => {
     const groupFilter = datasource.replaceTemplateVars(group);
     const hosts = await datasource.zabbix.getAllHosts(groupFilter);
-    const options: SelectableValue<string>[] = hosts?.map((host) => ({
+    let options: SelectableValue<string>[] = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
+    options = _.uniqBy(options, (o) => o.value);
     options.unshift({ value: '/.*/' });
     options.unshift(...getVariableOptions());
     return options;
@@ -131,10 +133,11 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     const groupFilter = datasource.replaceTemplateVars(group);
     const hostFilter = datasource.replaceTemplateVars(host);
     const apps = await datasource.zabbix.getAllApps(groupFilter, hostFilter);
-    const options: SelectableValue<string>[] = apps?.map((app) => ({
+    let options: SelectableValue<string>[] = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
+    options = _.uniqBy(options, (o) => o.value);
     options.unshift(...getVariableOptions());
     return options;
   };
@@ -154,10 +157,11 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       showDisabledItems: query.options.showDisabledItems,
     };
     const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, appFilter, tagFilter, options);
-    const itemOptions: SelectableValue<string>[] = items?.map((item) => ({
+    let itemOptions: SelectableValue<string>[] = items?.map((item) => ({
       value: item.name,
       label: item.name,
     }));
+    itemOptions = _.uniqBy(itemOptions, (o) => o.value);
     itemOptions.unshift(...getVariableOptions());
     return itemOptions;
   };

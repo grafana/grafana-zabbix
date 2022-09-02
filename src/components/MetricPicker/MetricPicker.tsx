@@ -16,6 +16,8 @@ export interface Props {
 export const MetricPicker = ({ value, options, isLoading, width, onChange }: Props): JSX.Element => {
   const [isOpen, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
+  const [filteredOptions, setFilteredOptions] = useState(options);
+  const [selectedOptionIdx, setSelectedOptionIdx] = useState(-1);
   const [offset, setOffset] = useState({ vertical: 0, horizontal: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const customStyles = useStyles2(getStyles);
@@ -25,28 +27,42 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
     [customStyles.inputVariable]: query.startsWith('$'),
   });
 
-  const onOpen = useCallback(
-    (event: FormEvent<HTMLElement>) => {
-      // event.preventDefault();
-      // event.stopPropagation();
-      setOpen(true);
-    },
-    [setOpen]
-  );
+  useEffect(() => {
+    setFilteredOptions(options);
+  }, [options]);
+
+  const onOpen = () => {
+    setOpen(true);
+    setFilteredOptions(options);
+  };
 
   const onClose = useCallback(() => {
     setOpen(false);
-    // setQuery('');
   }, []);
 
   // Only call onClose if menu is open. Prevent unnecessary calls for multiple pickers on the page.
   const onClickOutside = () => isOpen && onClose();
 
   const onInputChange = (v: FormEvent<HTMLInputElement>) => {
-    if (v?.currentTarget?.value) {
-      setQuery(v?.currentTarget?.value);
+    if (!isOpen) {
+      setOpen(true);
+    }
+    const newQuery = v?.currentTarget?.value;
+    if (newQuery) {
+      setQuery(newQuery);
+      if (value != newQuery) {
+        const filtered = options.filter(
+          (option) =>
+            option.value?.toLowerCase().includes(newQuery.toLowerCase()) ||
+            option.label?.toLowerCase().includes(newQuery.toLowerCase())
+        );
+        setFilteredOptions(filtered);
+      } else {
+        setFilteredOptions(options);
+      }
     } else {
       setQuery('');
+      setFilteredOptions(options);
     }
   };
 
@@ -55,6 +71,24 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
     setQuery(newValue);
     onChange(newValue);
     onClose();
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      e.stopPropagation();
+      const selected = selectedOptionIdx < filteredOptions.length - 1 ? selectedOptionIdx + 1 : 0;
+      setSelectedOptionIdx(selected);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      e.stopPropagation();
+      const selected = selectedOptionIdx > 0 ? selectedOptionIdx - 1 : filteredOptions.length - 1;
+      setSelectedOptionIdx(selected);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      onMenuOptionSelect(filteredOptions[selectedOptionIdx]);
+    }
   };
 
   return (
@@ -69,9 +103,16 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
           onMouseDown={onOpen}
           suffix={isLoading && <Spinner />}
           width={width}
+          onKeyDown={onKeyDown}
         />
         {isOpen && (
-          <MetricPickerMenu options={options} onSelect={onMenuOptionSelect} offset={offset} minWidth={width} />
+          <MetricPickerMenu
+            options={filteredOptions}
+            onSelect={onMenuOptionSelect}
+            offset={offset}
+            minWidth={width}
+            selected={selectedOptionIdx}
+          />
         )}
       </ClickOutsideWrapper>
     </div>

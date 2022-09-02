@@ -9,9 +9,10 @@ interface Props {
   onSelect: (option: SelectableValue<string>) => void;
   offset: { vertical: number; horizontal: number };
   minWidth?: number;
+  selected?: number;
 }
 
-export const MetricPickerMenu = ({ options, offset, minWidth, onSelect }: Props): JSX.Element => {
+export const MetricPickerMenu = ({ options, offset, minWidth, selected, onSelect }: Props): JSX.Element => {
   const theme = useTheme2();
   const styles = getSelectStyles(theme);
   const customStyles = useStyles2(getStyles(minWidth));
@@ -33,7 +34,7 @@ export const MetricPickerMenu = ({ options, offset, minWidth, onSelect }: Props)
           <div>
             <div className={styles.optionBody}>
               {options?.map((option, i) => (
-                <MenuOption data={option} key={i} onClick={onSelect} hideDescription />
+                <MenuOption data={option} key={i} onClick={onSelect} isFocused={selected === i} hideDescription />
               ))}
             </div>
           </div>
@@ -118,13 +119,6 @@ export const getStyles = (menuWidth?: number) => (theme: GrafanaTheme2) => {
       border-radius: ${theme.shape.borderRadius(1)};
       background-color: ${theme.colors.background.primary};
       z-index: ${theme.zIndex.modal};
-    `,
-    menuSection: css`
-      margin-bottom: ${theme.spacing(2)};
-    `,
-    menuButtonRow: css`
-      background-color: ${theme.colors.background.primary};
-      padding: ${theme.spacing(1)};
     `,
     menuOptionWrapper: css`
       padding: ${theme.spacing(0.5)};
