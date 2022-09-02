@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useAsyncFn } from 'react-use';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { AsyncSelect, InlineField, InlineFieldRow, Select } from '@grafana/ui';
 import { ZabbixDatasource } from '../datasource';
 import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes } from '../types';
 import * as c from '../constants';
+import { MetricPicker } from '../../components';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -94,24 +96,39 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
 
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
-    console.log(groups);
     return groups?.map((group) => ({
       value: group.name,
       label: group.name,
     }));
   };
 
-  const loadHostOptions = (group: string) => {
-    return async () => {
-      const groupFilter = datasource.replaceTemplateVars(group);
-      const hosts = await datasource.zabbix.getAllHosts(groupFilter);
-      console.log(hosts);
-      return hosts?.map((host) => ({
-        value: host.name,
-        label: host.name,
-      }));
-    };
+  const [{ loading: groupsLoading, value: groupsOptions }, fetchGroups] = useAsyncFn(async () => {
+    const options = await loadGroupOptions();
+    return options;
+  }, []);
+
+  const loadHostOptions = async (group: string) => {
+    const groupFilter = datasource.replaceTemplateVars(group);
+    const hosts = await datasource.zabbix.getAllHosts(groupFilter);
+    const options: SelectableValue<string>[] = hosts?.map((host) => ({
+      value: host.name,
+      label: host.name,
+    }));
+    return options;
   };
+
+  const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
+    const options = await loadHostOptions(query.group.filter);
+    return options;
+  }, [query.group.filter]);
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  useEffect(() => {
+    fetchHosts();
+  }, [query.group.filter]);
 
   const onPropChange = (prop: string) => {
     return (option: SelectableValue) => {
@@ -125,6 +142,14 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     return (option: SelectableValue<string>) => {
       if (option.value) {
         onChangeInternal({ ...query, [prop]: { filter: option.value } });
+      }
+    };
+  };
+
+  const onMetricChange = (prop: string) => {
+    return (value: string) => {
+      if (value) {
+        onChangeInternal({ ...query, [prop]: { filter: value } });
       }
     };
   };
@@ -143,7 +168,13 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       <>
         <InlineFieldRow>
           <InlineField label="Group" labelWidth={16}>
-            <AsyncSelect
+            <MetricPicker
+              value={query.group.filter}
+              options={groupsOptions}
+              isLoading={groupsLoading}
+              onChange={onMetricChange('group')}
+            />
+            {/* <AsyncSelect
               defaultOptions
               isSearchable
               allowCustomValue
@@ -151,17 +182,14 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
               value={getSelectableValue(query.group.filter)}
               loadOptions={loadGroupOptions}
               onChange={onFilterChange('group')}
-            />
+            /> */}
           </InlineField>
           <InlineField label="Host" labelWidth={16}>
-            <AsyncSelect
-              defaultOptions
-              isSearchable
-              allowCustomValue
-              width={24}
-              value={getSelectableValue(query.host.filter)}
-              loadOptions={loadHostOptions(query.group.filter)}
-              onChange={onFilterChange('host')}
+            <MetricPicker
+              value={query.host.filter}
+              options={hostOptions}
+              isLoading={hostsLoading}
+              onChange={onMetricChange('host')}
             />
           </InlineField>
           <div className="gf-form gf-form--grow">

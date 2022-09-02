@@ -75,6 +75,7 @@
     "react-table-6": "^6.8.6",
     "react-test-renderer": "17.0.2",
     "react-transition-group": "4.3.0",
+    "react-use": "17.4.0",
     "rst2html": "github:thoward/rst2html#990cb89",
     "rxjs": "6.6.3",
     "sass-loader": "10.2.1",
