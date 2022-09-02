@@ -122,6 +122,45 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     return options;
   }, [query.group.filter]);
 
+  const loadAppOptions = async (group: string, host: string) => {
+    const groupFilter = datasource.replaceTemplateVars(group);
+    const hostFilter = datasource.replaceTemplateVars(host);
+    const apps = await datasource.zabbix.getAllApps(groupFilter, hostFilter);
+    const options: SelectableValue<string>[] = apps?.map((app) => ({
+      value: app.name,
+      label: app.name,
+    }));
+    return options;
+  };
+
+  const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
+    const options = await loadAppOptions(query.group.filter, query.host.filter);
+    return options;
+  }, [query.group.filter, query.host.filter]);
+
+  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
+    const groupFilter = datasource.replaceTemplateVars(group);
+    const hostFilter = datasource.replaceTemplateVars(host);
+    const appFilter = datasource.replaceTemplateVars(app);
+    const tagFilter = datasource.replaceTemplateVars(app);
+    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, appFilter, tagFilter);
+    const options: SelectableValue<string>[] = items?.map((item) => ({
+      value: item.name,
+      label: item.name,
+    }));
+    return options;
+  };
+
+  const [{ loading: itemsLoading, value: itemOptions }, fetchItems] = useAsyncFn(async () => {
+    const options = await loadItemOptions(
+      query.group.filter,
+      query.host.filter,
+      query.application.filter,
+      query.itemTag.filter
+    );
+    return options;
+  }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
+
   useEffect(() => {
     fetchGroups();
   }, []);
@@ -129,6 +168,14 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   useEffect(() => {
     fetchHosts();
   }, [query.group.filter]);
+
+  useEffect(() => {
+    fetchApps();
+  }, [query.group.filter, query.host.filter]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
 
   const onPropChange = (prop: string) => {
     return (option: SelectableValue) => {
@@ -190,6 +237,27 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
               options={hostOptions}
               isLoading={hostsLoading}
               onChange={onMetricChange('host')}
+            />
+          </InlineField>
+          <div className="gf-form gf-form--grow">
+            <div className="gf-form-label gf-form-label--grow" />
+          </div>
+        </InlineFieldRow>
+        <InlineFieldRow>
+          <InlineField label="Application" labelWidth={16}>
+            <MetricPicker
+              value={query.application.filter}
+              options={appOptions}
+              isLoading={appsLoading}
+              onChange={onMetricChange('application')}
+            />
+          </InlineField>
+          <InlineField label="Item" labelWidth={16}>
+            <MetricPicker
+              value={query.item.filter}
+              options={itemOptions}
+              isLoading={itemsLoading}
+              onChange={onMetricChange('item')}
             />
           </InlineField>
           <div className="gf-form gf-form--grow">
