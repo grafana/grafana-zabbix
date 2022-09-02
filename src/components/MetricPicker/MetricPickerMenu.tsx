@@ -40,7 +40,7 @@ export const MetricPickerMenu = ({ options, offset, onSelect }: Props): JSX.Elem
         `
       )}
     >
-      <div className={customStyles.menu} aria-label="Role picker menu">
+      <div className={customStyles.menu} aria-label="Metric picker menu">
         <CustomScrollbar autoHide={false} autoHeightMax={`${MENU_MAX_HEIGHT}px`} hideHorizontalTrack hideVerticalTrack>
           <div>
             <div className={styles.optionBody}>
@@ -71,6 +71,7 @@ const MenuOption = React.forwardRef<HTMLDivElement, React.PropsWithChildren<Menu
 
     const wrapperClassName = cx(
       styles.option,
+      customStyles.menuOptionWrapper,
       isFocused && styles.optionFocused,
       disabled && customStyles.menuOptionDisabled
     );
@@ -85,7 +86,7 @@ const MenuOption = React.forwardRef<HTMLDivElement, React.PropsWithChildren<Menu
     };
 
     return (
-      <div ref={ref} className={wrapperClassName} aria-label="Role picker option" onClick={onClickInternal}>
+      <div ref={ref} className={wrapperClassName} aria-label="Menu option" onClick={onClickInternal}>
         <div className={cx(styles.optionBody, customStyles.menuOptionBody)}>
           <span>{data.label || data.value}</span>
           {!hideDescription && data.description && <div className={styles.optionDescription}>{data.description}</div>}
@@ -100,7 +101,7 @@ const MenuOption = React.forwardRef<HTMLDivElement, React.PropsWithChildren<Menu
   }
 );
 
-MenuOption.displayName = 'RoleMenuOption';
+MenuOption.displayName = 'MenuOption';
 
 export const getStyles = (theme: GrafanaTheme2) => {
   return {
@@ -136,6 +137,9 @@ export const getStyles = (theme: GrafanaTheme2) => {
     menuButtonRow: css`
       background-color: ${theme.colors.background.primary};
       padding: ${theme.spacing(1)};
+    `,
+    menuOptionWrapper: css`
+      padding: ${theme.spacing(0.5)};
     `,
     menuOptionBody: css`
       font-weight: ${theme.typography.fontWeightRegular};
