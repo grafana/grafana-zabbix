@@ -1,5 +1,5 @@
 import { css, cx } from '@emotion/css';
-import React, { FormEvent, useEffect, useRef, useState } from 'react';
+import React, { FormEvent } from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { CustomScrollbar, getSelectStyles, Icon, Tooltip, useStyles2, useTheme2 } from '@grafana/ui';
 import { MENU_MAX_HEIGHT } from './constants';

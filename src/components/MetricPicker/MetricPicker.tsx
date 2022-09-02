@@ -1,6 +1,6 @@
 import { css, cx } from '@emotion/css';
 import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react';
-import { ClickOutsideWrapper, Icon, Input, Spinner, useStyles2, useTheme2 } from '@grafana/ui';
+import { ClickOutsideWrapper, Icon, Input, Spinner, useStyles2 } from '@grafana/ui';
 import { MetricPickerMenu } from './MetricPickerMenu';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import { isRegex } from '../../datasource-zabbix/utils';
@@ -75,11 +75,17 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
+      if (!isOpen) {
+        setOpen(true);
+      }
       e.preventDefault();
       e.stopPropagation();
       const selected = selectedOptionIdx < filteredOptions.length - 1 ? selectedOptionIdx + 1 : 0;
       setSelectedOptionIdx(selected);
     } else if (e.key === 'ArrowUp') {
+      if (!isOpen) {
+        setOpen(true);
+      }
       e.preventDefault();
       e.stopPropagation();
       const selected = selectedOptionIdx > 0 ? selectedOptionIdx - 1 : filteredOptions.length - 1;
