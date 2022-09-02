@@ -95,18 +95,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   query = { ...getDefaultQuery(), ...query };
   const { queryType } = query;
 
-  const getVariableOptions = () => {
-    const variables = getTemplateSrv()
-      .getVariables()
-      .filter((v) => {
-        return v.type !== 'datasource' && v.type !== 'interval';
-      });
-    return variables?.map((v) => ({
-      value: `$${v.name}`,
-      label: `$${v.name}`,
-    }));
-  };
-
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
     const options = groups?.map((group) => ({
@@ -239,6 +227,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
         <InlineFieldRow>
           <InlineField label="Group" labelWidth={16}>
             <MetricPicker
+              width={24}
               value={query.group.filter}
               options={groupsOptions}
               isLoading={groupsLoading}
@@ -256,6 +245,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
           </InlineField>
           <InlineField label="Host" labelWidth={16}>
             <MetricPicker
+              width={24}
               value={query.host.filter}
               options={hostOptions}
               isLoading={hostsLoading}
@@ -269,6 +259,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
         <InlineFieldRow>
           <InlineField label="Application" labelWidth={16}>
             <MetricPicker
+              width={24}
               value={query.application.filter}
               options={appOptions}
               isLoading={appsLoading}
@@ -277,6 +268,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
           </InlineField>
           <InlineField label="Item" labelWidth={16}>
             <MetricPicker
+              width={24}
               value={query.item.filter}
               options={itemOptions}
               isLoading={itemsLoading}
@@ -310,4 +302,16 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
     </>
   );
+};
+
+const getVariableOptions = () => {
+  const variables = getTemplateSrv()
+    .getVariables()
+    .filter((v) => {
+      return v.type !== 'datasource' && v.type !== 'interval';
+    });
+  return variables?.map((v) => ({
+    value: `$${v.name}`,
+    label: `$${v.name}`,
+  }));
 };

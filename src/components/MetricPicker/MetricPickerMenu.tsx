@@ -1,32 +1,20 @@
 import { css, cx } from '@emotion/css';
 import React, { FormEvent, useEffect, useRef, useState } from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import {
-  Button,
-  Checkbox,
-  CustomScrollbar,
-  getSelectStyles,
-  HorizontalGroup,
-  Icon,
-  MenuItem,
-  Portal,
-  RadioButtonGroup,
-  Tooltip,
-  useStyles2,
-  useTheme2,
-} from '@grafana/ui';
+import { CustomScrollbar, getSelectStyles, Icon, Tooltip, useStyles2, useTheme2 } from '@grafana/ui';
 import { MENU_MAX_HEIGHT } from './constants';
 
 interface Props {
   options: SelectableValue<string>[];
   onSelect: (option: SelectableValue<string>) => void;
   offset: { vertical: number; horizontal: number };
+  minWidth?: number;
 }
 
-export const MetricPickerMenu = ({ options, offset, onSelect }: Props): JSX.Element => {
+export const MetricPickerMenu = ({ options, offset, minWidth, onSelect }: Props): JSX.Element => {
   const theme = useTheme2();
   const styles = getSelectStyles(theme);
-  const customStyles = useStyles2(getStyles);
+  const customStyles = useStyles2(getStyles(minWidth));
 
   return (
     <div
@@ -41,7 +29,7 @@ export const MetricPickerMenu = ({ options, offset, onSelect }: Props): JSX.Elem
       )}
     >
       <div className={customStyles.menu} aria-label="Metric picker menu">
-        <CustomScrollbar autoHide={false} autoHeightMax={`${MENU_MAX_HEIGHT}px`} hideHorizontalTrack hideVerticalTrack>
+        <CustomScrollbar autoHide={false} autoHeightMax={`${MENU_MAX_HEIGHT}px`} hideHorizontalTrack>
           <div>
             <div className={styles.optionBody}>
               {options?.map((option, i) => (
@@ -67,7 +55,7 @@ const MenuOption = React.forwardRef<HTMLDivElement, React.PropsWithChildren<Menu
   ({ data, isFocused, disabled, onClick, hideDescription }, ref) => {
     const theme = useTheme2();
     const styles = getSelectStyles(theme);
-    const customStyles = useStyles2(getStyles);
+    const customStyles = useStyles2(getStyles());
 
     const wrapperClassName = cx(
       styles.option,
@@ -103,7 +91,7 @@ const MenuOption = React.forwardRef<HTMLDivElement, React.PropsWithChildren<Menu
 
 MenuOption.displayName = 'MenuOption';
 
-export const getStyles = (theme: GrafanaTheme2) => {
+export const getStyles = (menuWidth?: number) => (theme: GrafanaTheme2) => {
   return {
     menuWrapper: css`
       display: flex;
@@ -114,7 +102,7 @@ export const getStyles = (theme: GrafanaTheme2) => {
       min-width: auto;
     `,
     menu: css`
-      min-width: 260px;
+      min-width: ${theme.spacing(menuWidth || 0)};
 
       & > div {
         padding-top: ${theme.spacing(1)};
