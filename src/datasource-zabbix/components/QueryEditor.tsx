@@ -6,6 +6,7 @@ import { ZabbixDatasource } from '../datasource';
 import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes } from '../types';
 import * as c from '../constants';
 import { MetricPicker } from '../../components';
+import { getTemplateSrv } from '@grafana/runtime';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -94,12 +95,26 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   query = { ...getDefaultQuery(), ...query };
   const { queryType } = query;
 
+  const getVariableOptions = () => {
+    const variables = getTemplateSrv()
+      .getVariables()
+      .filter((v) => {
+        return v.type !== 'datasource' && v.type !== 'interval';
+      });
+    return variables?.map((v) => ({
+      value: `$${v.name}`,
+      label: `$${v.name}`,
+    }));
+  };
+
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
-    return groups?.map((group) => ({
+    const options = groups?.map((group) => ({
       value: group.name,
       label: group.name,
     }));
+    options.unshift(...getVariableOptions());
+    return options;
   };
 
   const [{ loading: groupsLoading, value: groupsOptions }, fetchGroups] = useAsyncFn(async () => {
@@ -114,6 +129,8 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       value: host.name,
       label: host.name,
     }));
+    options.unshift({ value: '/.*/' });
+    options.unshift(...getVariableOptions());
     return options;
   };
 
@@ -130,6 +147,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       value: app.name,
       label: app.name,
     }));
+    options.unshift(...getVariableOptions());
     return options;
   };
 
@@ -142,13 +160,18 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     const groupFilter = datasource.replaceTemplateVars(group);
     const hostFilter = datasource.replaceTemplateVars(host);
     const appFilter = datasource.replaceTemplateVars(app);
-    const tagFilter = datasource.replaceTemplateVars(app);
-    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, appFilter, tagFilter);
-    const options: SelectableValue<string>[] = items?.map((item) => ({
+    const tagFilter = datasource.replaceTemplateVars(itemTag);
+    const options = {
+      itemtype: 'num',
+      showDisabledItems: query.options.showDisabledItems,
+    };
+    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, appFilter, tagFilter, options);
+    const itemOptions: SelectableValue<string>[] = items?.map((item) => ({
       value: item.name,
       label: item.name,
     }));
-    return options;
+    itemOptions.unshift(...getVariableOptions());
+    return itemOptions;
   };
 
   const [{ loading: itemsLoading, value: itemOptions }, fetchItems] = useAsyncFn(async () => {
