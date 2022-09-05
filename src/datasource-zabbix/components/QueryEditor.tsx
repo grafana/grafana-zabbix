@@ -246,18 +246,14 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   };
 
   const onFuncAdd = (def: FuncDef) => {
-    console.log(def.name);
     const newFunc = createFuncInstance(def);
     newFunc.added = true;
-    // this.target.functions.push(newFunc);
-    console.log(query.functions);
-    const functions = query.functions.concat(newFunc);
+    let functions = query.functions.concat(newFunc);
+    functions = moveAliasFuncLast(functions);
 
-    // this.moveAliasFuncLast();
-
-    if ((newFunc.params.length && newFunc.added) || newFunc.def.params.length === 0) {
-      onChangeInternal({ ...query, functions });
-    }
+    // if ((newFunc.params.length && newFunc.added) || newFunc.def.params.length === 0) {
+    // }
+    onChangeInternal({ ...query, functions });
   };
 
   const getSelectableValue = (value: string): SelectableValue<string> => {
@@ -370,3 +366,15 @@ const getVariableOptions = () => {
     label: `$${v.name}`,
   }));
 };
+
+function moveAliasFuncLast(functions: MetricFunc[]) {
+  const aliasFuncIndex = functions.findIndex((func) => func.def.category === 'Alias');
+
+  console.log(aliasFuncIndex);
+  if (aliasFuncIndex >= 0) {
+    const aliasFunc = functions[aliasFuncIndex];
+    functions.splice(aliasFuncIndex, 1);
+    functions.push(aliasFunc);
+  }
+  return functions;
+}
