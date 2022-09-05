@@ -2,8 +2,8 @@ import _ from 'lodash';
 import { FuncDef } from './types';
 import { isNumeric } from './utils';
 
-const index = [];
-const categories = {
+const index = {};
+const categories: { [key: string]: FuncDef[] } = {
   Transform: [],
   Aggregate: [],
   Filter: [],

@@ -7,11 +7,13 @@ import { getTemplateSrv } from '@grafana/runtime';
 import { InlineField, InlineFieldRow, InlineFormLabel, Label, Select } from '@grafana/ui';
 
 import { ZabbixDatasource } from '../datasource';
-import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes, MetricFunc } from '../types';
+import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes, MetricFunc, FuncDef } from '../types';
 import * as c from '../constants';
 import { MetricPicker } from '../../components';
 import { ZabbixFunctionEditor } from './ZabbixFunctionEditor';
 import { swap } from '../utils';
+import { AddZabbixFunction } from './AddZabbixFunction';
+import { createFuncInstance } from '../metricFunctions';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -235,6 +237,21 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     onChangeInternal({ ...query, functions });
   };
 
+  const onFuncAdd = (def: FuncDef) => {
+    console.log(def.name);
+    const newFunc = createFuncInstance(def);
+    newFunc.added = true;
+    // this.target.functions.push(newFunc);
+    console.log(query.functions);
+    const functions = query.functions.concat(newFunc);
+
+    // this.moveAliasFuncLast();
+
+    if ((newFunc.params.length && newFunc.added) || newFunc.def.params.length === 0) {
+      onChangeInternal({ ...query, functions });
+    }
+  };
+
   const getSelectableValue = (value: string): SelectableValue<string> => {
     return { value, label: value };
   };
@@ -295,6 +312,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
               />
             );
           })}
+          <AddZabbixFunction onFuncAdd={onFuncAdd} />
         </QueryEditorRow>
       </>
     );
