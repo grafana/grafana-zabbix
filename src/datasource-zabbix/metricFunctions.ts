@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { FuncDef } from './types';
 import { isNumeric } from './utils';
 
 const index = [];
@@ -9,10 +10,10 @@ const categories = {
   Trends: [],
   Time: [],
   Alias: [],
-  Special: []
+  Special: [],
 };
 
-function addFuncDef(funcDef) {
+function addFuncDef(funcDef: FuncDef) {
   funcDef.params = funcDef.params || [];
   funcDef.defaultParams = funcDef.defaultParams || [];
 
@@ -29,8 +30,8 @@ addFuncDef({
   name: 'groupBy',
   category: 'Transform',
   params: [
-    { name: 'interval', type: 'string'},
-    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
+    { name: 'interval', type: 'string' },
+    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] },
   ],
   defaultParams: ['1m', 'avg'],
 });
@@ -38,18 +39,14 @@ addFuncDef({
 addFuncDef({
   name: 'scale',
   category: 'Transform',
-  params: [
-    { name: 'factor', type: 'float', options: [100, 0.01, 10, -1]}
-  ],
+  params: [{ name: 'factor', type: 'float', options: [100, 0.01, 10, -1] }],
   defaultParams: [100],
 });
 
 addFuncDef({
   name: 'offset',
   category: 'Transform',
-  params: [
-    { name: 'delta', type: 'float', options: [-100, 100]}
-  ],
+  params: [{ name: 'delta', type: 'float', options: [-100, 100] }],
   defaultParams: [100],
 });
 
@@ -70,18 +67,14 @@ addFuncDef({
 addFuncDef({
   name: 'movingAverage',
   category: 'Transform',
-  params: [
-    { name: 'factor', type: 'int', options: [6, 10, 60, 100, 600] }
-  ],
+  params: [{ name: 'factor', type: 'int', options: [6, 10, 60, 100, 600] }],
   defaultParams: [10],
 });
 
 addFuncDef({
   name: 'exponentialMovingAverage',
   category: 'Transform',
-  params: [
-    { name: 'smoothing', type: 'float', options: [6, 10, 60, 100, 600] }
-  ],
+  params: [{ name: 'smoothing', type: 'float', options: [6, 10, 60, 100, 600] }],
   defaultParams: [0.2],
 });
 
@@ -90,7 +83,7 @@ addFuncDef({
   category: 'Transform',
   params: [
     { name: 'interval', type: 'string' },
-    { name: 'percent', type: 'float', options: [25, 50, 75, 90, 95, 99, 99.9] }
+    { name: 'percent', type: 'float', options: [25, 50, 75, 90, 95, 99, 99.9] },
   ],
   defaultParams: ['1m', 95],
 });
@@ -98,27 +91,21 @@ addFuncDef({
 addFuncDef({
   name: 'removeAboveValue',
   category: 'Transform',
-  params: [
-    {name: 'number', type: 'float'},
-  ],
+  params: [{ name: 'number', type: 'float' }],
   defaultParams: [0],
 });
 
 addFuncDef({
   name: 'removeBelowValue',
   category: 'Transform',
-  params: [
-    {name: 'number', type: 'float'},
-  ],
+  params: [{ name: 'number', type: 'float' }],
   defaultParams: [0],
 });
 
 addFuncDef({
   name: 'transformNull',
   category: 'Transform',
-  params: [
-    {name: 'number', type: 'float'}
-  ],
+  params: [{ name: 'number', type: 'float' }],
   defaultParams: [0],
 });
 
@@ -129,7 +116,7 @@ addFuncDef({
   category: 'Aggregate',
   params: [
     { name: 'interval', type: 'string' },
-    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
+    { name: 'function', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] },
   ],
   defaultParams: ['1m', 'avg'],
 });
@@ -146,7 +133,7 @@ addFuncDef({
   category: 'Aggregate',
   params: [
     { name: 'interval', type: 'string' },
-    { name: 'percent', type: 'float', options: [25, 50, 75, 90, 95, 99, 99.9] }
+    { name: 'percent', type: 'float', options: [25, 50, 75, 90, 95, 99, 99.9] },
   ],
   defaultParams: ['1m', 95],
 });
@@ -158,7 +145,7 @@ addFuncDef({
   category: 'Filter',
   params: [
     { name: 'number', type: 'int' },
-    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
+    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] },
   ],
   defaultParams: [5, 'avg'],
 });
@@ -168,7 +155,7 @@ addFuncDef({
   category: 'Filter',
   params: [
     { name: 'number', type: 'int' },
-    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] }
+    { name: 'value', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count', 'median', 'first', 'last'] },
   ],
   defaultParams: [5, 'avg'],
 });
@@ -176,10 +163,8 @@ addFuncDef({
 addFuncDef({
   name: 'sortSeries',
   category: 'Filter',
-  params: [
-    { name: 'direction', type: 'string', options: ['asc', 'desc'] }
-  ],
-  defaultParams: ['asc']
+  params: [{ name: 'direction', type: 'string', options: ['asc', 'desc'] }],
+  defaultParams: ['asc'],
 });
 
 // Trends
@@ -187,9 +172,7 @@ addFuncDef({
 addFuncDef({
   name: 'trendValue',
   category: 'Trends',
-  params: [
-    { name: 'type', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count'] }
-  ],
+  params: [{ name: 'type', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count'] }],
   defaultParams: ['avg'],
 });
 
@@ -198,9 +181,7 @@ addFuncDef({
 addFuncDef({
   name: 'timeShift',
   category: 'Time',
-  params: [
-    { name: 'interval', type: 'string', options: ['24h', '7d', '1M', '+24h', '-24h']}
-  ],
+  params: [{ name: 'interval', type: 'string', options: ['24h', '7d', '1M', '+24h', '-24h'] }],
   defaultParams: ['24h'],
 });
 
@@ -209,19 +190,15 @@ addFuncDef({
 addFuncDef({
   name: 'setAlias',
   category: 'Alias',
-  params: [
-    { name: 'alias', type: 'string' }
-  ],
-  defaultParams: []
+  params: [{ name: 'alias', type: 'string' }],
+  defaultParams: [],
 });
 
 addFuncDef({
   name: 'setAliasByRegex',
   category: 'Alias',
-  params: [
-    { name: 'aliasByRegex', type: 'string' }
-  ],
-  defaultParams: []
+  params: [{ name: 'aliasByRegex', type: 'string' }],
+  defaultParams: [],
 });
 
 addFuncDef({
@@ -229,18 +206,16 @@ addFuncDef({
   category: 'Alias',
   params: [
     { name: 'regexp', type: 'string' },
-    { name: 'newAlias', type: 'string' }
+    { name: 'newAlias', type: 'string' },
   ],
-  defaultParams: ['/(.*)/', '$1']
+  defaultParams: ['/(.*)/', '$1'],
 });
 
 // Special
 addFuncDef({
   name: 'consolidateBy',
   category: 'Special',
-  params: [
-    { name: 'type', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count'] }
-  ],
+  params: [{ name: 'type', type: 'string', options: ['avg', 'min', 'max', 'sum', 'count'] }],
   defaultParams: ['avg'],
 });
 
@@ -271,7 +246,6 @@ class FuncInstance {
   bindFunction(metricFunctions) {
     const func = metricFunctions[this.def.name];
     if (func) {
-
       // Bind function arguments
       let bindedFunc = func;
       let param;
@@ -279,8 +253,7 @@ class FuncInstance {
         param = this.params[i];
 
         // Convert numeric params
-        if (this.def.params[i].type === 'int' ||
-            this.def.params[i].type === 'float') {
+        if (this.def.params[i].type === 'int' || this.def.params[i].type === 'float') {
           param = Number(param);
         }
         bindedFunc = _.partial(bindedFunc, param);
@@ -295,17 +268,13 @@ class FuncInstance {
     const str = this.def.name + '(';
     const parameters = _.map(this.params, (value, index) => {
       const paramType = this.def.params[index].type;
-      if (paramType === 'int' ||
-          paramType === 'float' ||
-          paramType === 'value_or_series' ||
-          paramType === 'boolean') {
+      if (paramType === 'int' || paramType === 'float' || paramType === 'value_or_series' || paramType === 'boolean') {
         return value;
       } else if (paramType === 'int_or_interval' && isNumeric(value)) {
         return value;
       }
 
       return "'" + value + "'";
-
     });
 
     if (metricExp) {
@@ -335,7 +304,7 @@ class FuncInstance {
 
     if (strValue === '' && this.def.params[index].optional) {
       this.params.splice(index, 1);
-    }else {
+    } else {
       this.params[index] = strValue;
     }
 

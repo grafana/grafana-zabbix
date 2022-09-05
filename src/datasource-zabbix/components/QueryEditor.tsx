@@ -1,13 +1,16 @@
 import _ from 'lodash';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
+
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { InlineField, InlineFieldRow, Select } from '@grafana/ui';
+import { getTemplateSrv } from '@grafana/runtime';
+import { InlineField, InlineFieldRow, InlineFormLabel, Label, Select } from '@grafana/ui';
+
 import { ZabbixDatasource } from '../datasource';
-import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes } from '../types';
+import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes, MetricFunc } from '../types';
 import * as c from '../constants';
 import { MetricPicker } from '../../components';
-import { getTemplateSrv } from '@grafana/runtime';
+import { ZabbixFunctionEditor } from './ZabbixFunctionEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -176,6 +179,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     return options;
   }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
 
+  // Update suggestions on every metric change
   useEffect(() => {
     fetchGroups();
   }, []);
@@ -201,14 +205,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   };
 
   const onFilterChange = (prop: string) => {
-    return (option: SelectableValue<string>) => {
-      if (option.value) {
-        onChangeInternal({ ...query, [prop]: { filter: option.value } });
-      }
-    };
-  };
-
-  const onMetricChange = (prop: string) => {
     return (value: string) => {
       if (value) {
         onChangeInternal({ ...query, [prop]: { filter: value } });
@@ -221,6 +217,12 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     onRunQuery();
   };
 
+  const onMoveFuncLeft = (func: MetricFunc) => {};
+
+  const onMoveFuncRight = (func: MetricFunc) => {};
+
+  const onRemoveFunc = (func: MetricFunc) => {};
+
   const getSelectableValue = (value: string): SelectableValue<string> => {
     return { value, label: value };
   };
@@ -228,24 +230,15 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   const renderMetricsEditor = () => {
     return (
       <>
-        <InlineFieldRow>
+        <QueryEditorRow>
           <InlineField label="Group" labelWidth={16}>
             <MetricPicker
               width={24}
               value={query.group.filter}
               options={groupsOptions}
               isLoading={groupsLoading}
-              onChange={onMetricChange('group')}
-            />
-            {/* <AsyncSelect
-              defaultOptions
-              isSearchable
-              allowCustomValue
-              width={24}
-              value={getSelectableValue(query.group.filter)}
-              loadOptions={loadGroupOptions}
               onChange={onFilterChange('group')}
-            /> */}
+            />
           </InlineField>
           <InlineField label="Host" labelWidth={16}>
             <MetricPicker
@@ -253,21 +246,18 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
               value={query.host.filter}
               options={hostOptions}
               isLoading={hostsLoading}
-              onChange={onMetricChange('host')}
+              onChange={onFilterChange('host')}
             />
           </InlineField>
-          <div className="gf-form gf-form--grow">
-            <div className="gf-form-label gf-form-label--grow" />
-          </div>
-        </InlineFieldRow>
-        <InlineFieldRow>
+        </QueryEditorRow>
+        <QueryEditorRow>
           <InlineField label="Application" labelWidth={16}>
             <MetricPicker
               width={24}
               value={query.application.filter}
               options={appOptions}
               isLoading={appsLoading}
-              onChange={onMetricChange('application')}
+              onChange={onFilterChange('application')}
             />
           </InlineField>
           <InlineField label="Item" labelWidth={16}>
@@ -276,13 +266,24 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
               value={query.item.filter}
               options={itemOptions}
               isLoading={itemsLoading}
-              onChange={onMetricChange('item')}
+              onChange={onFilterChange('item')}
             />
           </InlineField>
-          <div className="gf-form gf-form--grow">
-            <div className="gf-form-label gf-form-label--grow" />
-          </div>
-        </InlineFieldRow>
+        </QueryEditorRow>
+        <QueryEditorRow>
+          <InlineFormLabel width={8}>Functions</InlineFormLabel>
+          {query.functions?.map((f, i) => {
+            return (
+              <ZabbixFunctionEditor
+                func={f}
+                key={i}
+                onMoveLeft={onMoveFuncLeft}
+                onMoveRight={onMoveFuncRight}
+                onRemove={onRemoveFunc}
+              />
+            );
+          })}
+        </QueryEditorRow>
       </>
     );
   };
@@ -305,6 +306,17 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       </InlineFieldRow>
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
     </>
+  );
+};
+
+const QueryEditorRow = ({ children }: React.PropsWithChildren<{}>) => {
+  return (
+    <InlineFieldRow>
+      {children}
+      <div className="gf-form gf-form--grow">
+        <div className="gf-form-label gf-form-label--grow" />
+      </div>
+    </InlineFieldRow>
   );
 };
 

@@ -1,108 +1,50 @@
+import { css } from '@emotion/css';
 import React from 'react';
-// import rst2html from 'rst2html';
-import { FunctionDescriptor, FunctionEditorControlsProps, FunctionEditorControls } from './FunctionEditorControls';
+import { FunctionEditorControlsProps, FunctionEditorControls } from './FunctionEditorControls';
 
-// @ts-ignore
-import { PopoverController, Popover } from '@grafana/ui';
+import { useStyles2, Tooltip } from '@grafana/ui';
+import { GrafanaTheme2 } from '@grafana/data';
+import { MetricFunc } from '../types';
 
 interface FunctionEditorProps extends FunctionEditorControlsProps {
-  func: FunctionDescriptor;
+  func: MetricFunc;
 }
 
-interface FunctionEditorState {
-  showingDescription: boolean;
-}
-
-class FunctionEditor extends React.PureComponent<FunctionEditorProps, FunctionEditorState> {
-  private triggerRef = React.createRef<HTMLSpanElement>();
-
-  constructor(props: FunctionEditorProps) {
-    super(props);
-
-    this.state = {
-      showingDescription: false,
-    };
-  }
-
-  renderContent = ({ updatePopperPosition }) => {
-    const {
-      onMoveLeft,
-      onMoveRight,
-      func: {
-        def: { name, description },
-      },
-    } = this.props;
-    const { showingDescription } = this.state;
-
-    if (showingDescription) {
-      return (
-        <div style={{ overflow: 'auto', maxHeight: '30rem', textAlign: 'left', fontWeight: 'normal' }}>
-          <h4 style={{ color: 'white' }}> {name} </h4>
-          <div>{description}</div>
-        </div>
-      );
-    }
-
-    return (
-      <FunctionEditorControls
-        {...this.props}
-        onMoveLeft={() => {
-          onMoveLeft(this.props.func);
-          updatePopperPosition();
-        }}
-        onMoveRight={() => {
-          onMoveRight(this.props.func);
-          updatePopperPosition();
-        }}
-        onDescriptionShow={() => {
-          this.setState({ showingDescription: true }, () => {
-            updatePopperPosition();
-          });
-        }}
-      />
-    );
+const getStyles = (theme: GrafanaTheme2) => {
+  return {
+    icon: css`
+      margin-right: ${theme.spacing(0.5)};
+    `,
+    label: css({
+      fontWeight: theme.typography.fontWeightMedium,
+      fontSize: theme.typography.bodySmall.fontSize, // to match .gf-form-label
+      cursor: 'pointer',
+      display: 'inline-block',
+    }),
   };
+};
 
-  render() {
-    return (
-      <PopoverController content={this.renderContent} placement="top" hideAfter={300}>
-        {(showPopper, hidePopper, popperProps) => {
-          return (
-            <>
-              {this.triggerRef && (
-                <Popover
-                  {...popperProps}
-                  referenceElement={this.triggerRef.current}
-                  wrapperClassName="popper"
-                  className="popper__background"
-                  onMouseLeave={() => {
-                    this.setState({ showingDescription: false });
-                    hidePopper();
-                  }}
-                  onMouseEnter={showPopper}
-                  renderArrow={({ arrowProps, placement }) => (
-                    <div className="popper__arrow" data-placement={placement} {...arrowProps} />
-                  )}
-                />
-              )}
+export const FunctionEditor: React.FC<FunctionEditorProps> = ({ onMoveLeft, onMoveRight, func, ...props }) => {
+  const styles = useStyles2(getStyles);
 
-              <span
-                ref={this.triggerRef}
-                onClick={popperProps.show ? hidePopper : showPopper}
-                onMouseLeave={() => {
-                  hidePopper();
-                  this.setState({ showingDescription: false });
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                {this.props.func.def.name}
-              </span>
-            </>
-          );
-        }}
-      </PopoverController>
-    );
-  }
-}
+  const renderContent = ({ updatePopperPosition }: any) => (
+    <FunctionEditorControls
+      {...props}
+      func={func}
+      onMoveLeft={() => {
+        onMoveLeft(func);
+        updatePopperPosition();
+      }}
+      onMoveRight={() => {
+        onMoveRight(func);
+        updatePopperPosition();
+      }}
+    />
+  );
 
-export { FunctionEditor };
+  return (
+    <Tooltip content={renderContent} placement="top" interactive>
+      <span className={styles.label}>{func.def.name}</span>
+    </Tooltip>
+  );
+};

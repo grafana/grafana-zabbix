@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from "@grafana/data";
+import { DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from '@grafana/data';
 
 export interface ZabbixDSOptions extends DataSourceJsonData {
   username: string;
@@ -34,23 +34,23 @@ export interface ZabbixConnectionTestQuery {
 }
 
 export interface ZabbixMetricsQuery extends DataQuery {
-  triggers: { minSeverity: string; acknowledged: boolean; count: number; };
+  triggers: { minSeverity: string; acknowledged: boolean; count: number };
   queryType: string;
   datasourceId: number;
-  group: { filter: string; name?: string; };
-  host: { filter: string; name?: string; };
-  application: { filter: string; name?: string; };
-  itemTag: { filter: string; name?: string; };
-  item: { filter: string; name?: string; };
+  group: { filter: string; name?: string };
+  host: { filter: string; name?: string };
+  application: { filter: string; name?: string };
+  itemTag: { filter: string; name?: string };
+  item: { filter: string; name?: string };
   textFilter: string;
   mode: number;
   itemids: number[];
   useCaptureGroups: boolean;
-  proxy?: { filter: string; };
-  trigger?: { filter: string; };
+  proxy?: { filter: string };
+  trigger?: { filter: string };
   itServiceFilter?: string;
-  tags?: { filter: string; };
-  functions: ZabbixMetricFunction[];
+  tags?: { filter: string };
+  functions: MetricFunc[];
   options: ZabbixQueryOptions;
   // Problems
   showProblems?: ShowProblemTypes;
@@ -75,11 +75,36 @@ export interface ZabbixQueryOptions {
   severities?: number[];
 }
 
-export interface ZabbixMetricFunction {
-  name: string;
-  params: any;
-  def: { name: string; params: any; };
+export interface MetricFunc {
+  text: string;
+  params: Array<string | number>;
+  def: FuncDef;
+  added?: boolean;
 }
+
+export interface FuncDef {
+  name: string;
+  params: ParamDef[];
+  defaultParams: Array<string | number>;
+  category?: string;
+  shortName?: any;
+  fake?: boolean;
+  version?: string;
+  description?: string;
+  /**
+   * True if the function was not found on the list of available function descriptions.
+   */
+  unknown?: boolean;
+}
+
+export type ParamDef = {
+  name: string;
+  type: string;
+  options?: Array<string | number>;
+  multiple?: boolean;
+  optional?: boolean;
+  version?: string;
+};
 
 // The paths of these files have moved around in Grafana and they don't resolve properly
 // either. Safer not to bother trying to import them just for type hinting.
