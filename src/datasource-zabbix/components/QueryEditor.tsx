@@ -11,6 +11,7 @@ import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes, MetricFunc } fro
 import * as c from '../constants';
 import { MetricPicker } from '../../components';
 import { ZabbixFunctionEditor } from './ZabbixFunctionEditor';
+import { swap } from '../utils';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -217,11 +218,22 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     onRunQuery();
   };
 
-  const onMoveFuncLeft = (func: MetricFunc) => {};
+  const onMoveFuncLeft = (func: MetricFunc) => {
+    const index = query.functions.indexOf(func);
+    const functions = swap(query.functions, index, index - 1);
+    onChangeInternal({ ...query, functions });
+  };
 
-  const onMoveFuncRight = (func: MetricFunc) => {};
+  const onMoveFuncRight = (func: MetricFunc) => {
+    const index = query.functions.indexOf(func);
+    const functions = swap(query.functions, index, index + 1);
+    onChangeInternal({ ...query, functions });
+  };
 
-  const onRemoveFunc = (func: MetricFunc) => {};
+  const onRemoveFunc = (func: MetricFunc) => {
+    const functions = query.functions?.filter((f) => f.def.name != func.def.name);
+    onChangeInternal({ ...query, functions });
+  };
 
   const getSelectableValue = (value: string): SelectableValue<string> => {
     return { value, label: value };
