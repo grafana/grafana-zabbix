@@ -264,7 +264,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     return (
       <>
         <QueryEditorRow>
-          <InlineField label="Group" labelWidth={16}>
+          <InlineField label="Group" labelWidth={12}>
             <MetricPicker
               width={24}
               value={query.group.filter}
@@ -273,7 +273,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
               onChange={onFilterChange('group')}
             />
           </InlineField>
-          <InlineField label="Host" labelWidth={16}>
+          <InlineField label="Host" labelWidth={12}>
             <MetricPicker
               width={24}
               value={query.host.filter}
@@ -284,7 +284,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
           </InlineField>
         </QueryEditorRow>
         <QueryEditorRow>
-          <InlineField label="Application" labelWidth={16}>
+          <InlineField label="Application" labelWidth={12}>
             <MetricPicker
               width={24}
               value={query.application.filter}
@@ -293,7 +293,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
               onChange={onFilterChange('application')}
             />
           </InlineField>
-          <InlineField label="Item" labelWidth={16}>
+          <InlineField label="Item" labelWidth={12}>
             <MetricPicker
               width={24}
               value={query.item.filter}
@@ -304,7 +304,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
           </InlineField>
         </QueryEditorRow>
         <QueryEditorRow>
-          <InlineFormLabel width={8}>Functions</InlineFormLabel>
+          <InlineFormLabel width={6}>Functions</InlineFormLabel>
           {query.functions?.map((f, i) => {
             return (
               <ZabbixFunctionEditor
@@ -326,7 +326,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   return (
     <>
       <InlineFieldRow>
-        <InlineField label="Query type" labelWidth={16}>
+        <InlineField label="Query type" labelWidth={12}>
           <Select
             isSearchable={false}
             width={24}
