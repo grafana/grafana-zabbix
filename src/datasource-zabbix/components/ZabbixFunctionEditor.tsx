@@ -14,12 +14,13 @@ export type FunctionEditorProps = {
   onMoveLeft: (func: MetricFunc) => void;
   onMoveRight: (func: MetricFunc) => void;
   onRemove: (func: MetricFunc) => void;
+  onParamChange: (func: MetricFunc, index: number, value: string) => void;
 };
 
 /**
  * Allows editing function params and removing/moving a function (note: editing function name is not supported)
  */
-export function ZabbixFunctionEditor({ func, onMoveLeft, onMoveRight, onRemove }: FunctionEditorProps) {
+export function ZabbixFunctionEditor({ func, onMoveLeft, onMoveRight, onRemove, onParamChange }: FunctionEditorProps) {
   const styles = useStyles2(getStyles);
 
   // keep track of mouse over and isExpanded state to display buttons for adding optional/multiple params
@@ -51,6 +52,7 @@ export function ZabbixFunctionEditor({ func, onMoveLeft, onMoveRight, onRemove }
                 onChange={(value) => {
                   if (value !== '' || editableParam.optional) {
                     // dispatch(actions.updateFunctionParam({ func, index, value }));
+                    onParamChange(func, index, value);
                   }
                   setIsExpanded(false);
                   setIsMouseOver(false);

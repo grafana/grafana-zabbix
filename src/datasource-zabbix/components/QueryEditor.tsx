@@ -220,6 +220,14 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     onRunQuery();
   };
 
+  const onFuncParamChange = (func: MetricFunc, index: number, value: string) => {
+    func.params[index] = value;
+    const funcIndex = query.functions.findIndex((f) => f === func);
+    const functions = query.functions;
+    functions[funcIndex] = func;
+    onChangeInternal({ ...query, functions });
+  };
+
   const onMoveFuncLeft = (func: MetricFunc) => {
     const index = query.functions.indexOf(func);
     const functions = swap(query.functions, index, index - 1);
@@ -233,7 +241,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   };
 
   const onRemoveFunc = (func: MetricFunc) => {
-    const functions = query.functions?.filter((f) => f.def.name != func.def.name);
+    const functions = query.functions?.filter((f) => f != func);
     onChangeInternal({ ...query, functions });
   };
 
@@ -306,6 +314,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
               <ZabbixFunctionEditor
                 func={f}
                 key={i}
+                onParamChange={onFuncParamChange}
                 onMoveLeft={onMoveFuncLeft}
                 onMoveRight={onMoveFuncRight}
                 onRemove={onRemoveFunc}
