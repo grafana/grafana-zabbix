@@ -7,6 +7,8 @@ import { ZabbixVariableQueryEditor } from './components/VariableQueryEditor';
 import { ConfigEditor } from './components/ConfigEditor';
 import './add-metric-function.directive';
 import './metric-function-editor.directive';
+import '../sass/grafana-zabbix.dark.scss';
+import '../sass/grafana-zabbix.light.scss';
 
 class ZabbixAnnotationsQueryController {
   static templateUrl = 'datasource-zabbix/partials/annotations.editor.html';
