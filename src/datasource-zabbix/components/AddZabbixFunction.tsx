@@ -14,6 +14,7 @@ import {
   Portal,
   Segment,
   useStyles2,
+  useTheme2,
 } from '@grafana/ui';
 
 import { FuncDef } from '../types';
@@ -29,6 +30,7 @@ type Props = {
 export function AddZabbixFunction({ onFuncAdd }: Props) {
   const [showMenu, setShowMenu] = useState(false);
   const styles = useStyles2(getStyles);
+  const theme = useTheme2();
 
   const onFuncAddInternal = (def: FuncDef) => {
     onFuncAdd(def);
@@ -59,7 +61,7 @@ export function AddZabbixFunction({ onFuncAdd }: Props) {
       {showMenu && (
         <ClickOutsideWrapper onClick={onClickOutside} useCapture>
           <Input onChange={onSearch} suffix={<Icon name="search" />} />
-          <Menu style={{ position: 'absolute' }}>{menuItems}</Menu>
+          <Menu style={{ position: 'absolute', zIndex: theme.zIndex.dropdown }}>{menuItems}</Menu>
         </ClickOutsideWrapper>
       )}
     </div>
