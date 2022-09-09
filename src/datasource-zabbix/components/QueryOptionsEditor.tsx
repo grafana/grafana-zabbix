@@ -10,14 +10,16 @@ import {
   useStyles2,
   VerticalGroup,
 } from '@grafana/ui';
+import * as c from '../constants';
 import { ZabbixQueryOptions } from '../types';
 
 interface Props {
+  queryType: string;
   queryOptions: ZabbixQueryOptions;
   onChange: (options: ZabbixQueryOptions) => void;
 }
 
-export const QueryOptionsEditor = ({ queryOptions, onChange }: Props) => {
+export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const styles = useStyles2(getStyles);
 
@@ -25,7 +27,8 @@ export const QueryOptionsEditor = ({ queryOptions, onChange }: Props) => {
     return (
       <>
         <HorizontalGroup>
-          <Icon name="angle-right" />
+          {!isOpen && <Icon name="angle-right" />}
+          {isOpen && <Icon name="angle-down" />}
           <span className={styles.label}>Options</span>
           <div className={styles.options}>{renderOptions()}</div>
         </HorizontalGroup>
@@ -58,7 +61,7 @@ export const QueryOptionsEditor = ({ queryOptions, onChange }: Props) => {
   };
 
   const renderEditor = () => {
-    return <div className={styles.editorContainer}>{renderMetricOptions()}</div>;
+    return <div className={styles.editorContainer}>{queryType === c.MODE_METRICS && renderMetricOptions()}</div>;
   };
 
   const renderMetricOptions = () => {

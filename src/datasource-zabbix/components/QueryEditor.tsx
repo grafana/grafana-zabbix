@@ -16,6 +16,7 @@ import {
   ZabbixQueryOptions,
 } from '../types';
 import * as c from '../constants';
+import * as migrations from '../migrations';
 import { MetricPicker } from '../../components';
 import { ZabbixFunctionEditor } from './ZabbixFunctionEditor';
 import { swap } from '../utils';
@@ -190,6 +191,12 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     return options;
   }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
 
+  // Migrate query on load
+  useEffect(() => {
+    const migratedQuery = migrations.migrate(query);
+    onChange(migratedQuery);
+  }, []);
+
   // Update suggestions on every metric change
   useEffect(() => {
     fetchGroups();
@@ -331,7 +338,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
           })}
           <AddZabbixFunction onFuncAdd={onFuncAdd} />
         </QueryEditorRow>
-        <QueryOptionsEditor queryOptions={query.options} onChange={onOptionsChange} />
       </>
     );
   };
@@ -353,6 +359,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
         </div>
       </InlineFieldRow>
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
+      <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );
 };
