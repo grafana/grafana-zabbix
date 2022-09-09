@@ -7,13 +7,21 @@ import { getTemplateSrv } from '@grafana/runtime';
 import { InlineField, InlineFieldRow, InlineFormLabel, Label, Select } from '@grafana/ui';
 
 import { ZabbixDatasource } from '../datasource';
-import { ZabbixMetricsQuery, ZabbixDSOptions, ShowProblemTypes, MetricFunc, FuncDef } from '../types';
+import {
+  ZabbixMetricsQuery,
+  ZabbixDSOptions,
+  ShowProblemTypes,
+  MetricFunc,
+  FuncDef,
+  ZabbixQueryOptions,
+} from '../types';
 import * as c from '../constants';
 import { MetricPicker } from '../../components';
 import { ZabbixFunctionEditor } from './ZabbixFunctionEditor';
 import { swap } from '../utils';
 import { AddZabbixFunction } from './AddZabbixFunction';
 import { createFuncInstance } from '../metricFunctions';
+import { QueryOptionsEditor } from './QueryOptionsEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -256,6 +264,10 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     onChangeInternal({ ...query, functions });
   };
 
+  const onOptionsChange = (options: ZabbixQueryOptions) => {
+    onChangeInternal({ ...query, options });
+  };
+
   const getSelectableValue = (value: string): SelectableValue<string> => {
     return { value, label: value };
   };
@@ -319,6 +331,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
           })}
           <AddZabbixFunction onFuncAdd={onFuncAdd} />
         </QueryEditorRow>
+        <QueryOptionsEditor queryOptions={query.options} onChange={onOptionsChange} />
       </>
     );
   };
