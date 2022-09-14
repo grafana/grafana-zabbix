@@ -91,6 +91,7 @@ export class ZabbixAPIConnector {
     if (!this.getVersionPromise) {
       this.getVersionPromise = Promise.resolve(
         this.getVersion().then(version => {
+          version = semver.clean(version);
           if (version) {
             console.log(`Zabbix version detected: ${version}`);
           } else {
