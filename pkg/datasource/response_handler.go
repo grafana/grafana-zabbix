@@ -21,11 +21,11 @@ func convertHistoryToTimeSeries(history zabbix.History, items []*zabbix.Item) []
 	}
 
 	for _, point := range history {
-		pointItem := itemsMap[point.ItemID]
-		if seriesMap[point.ItemID] == nil {
-			seriesMap[point.ItemID] = timeseries.NewTimeSeriesData()
+		pointItem := itemsMap[strconv.FormatInt(point.ItemID, 10)]
+		if seriesMap[strconv.FormatInt(point.ItemID, 10)] == nil {
+			seriesMap[strconv.FormatInt(point.ItemID, 10)] = timeseries.NewTimeSeriesData()
 		}
-		pointSeries := seriesMap[point.ItemID]
+		pointSeries := seriesMap[strconv.FormatInt(point.ItemID, 10)]
 		if pointSeries.Meta.Item == nil {
 			itemName := pointItem.ExpandItemName()
 			pointSeries.Meta.Item = pointItem
