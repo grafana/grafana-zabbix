@@ -17,8 +17,8 @@ import {
   useTheme2,
 } from '@grafana/ui';
 
-import { FuncDef } from '../types';
-import { getCategories } from '../metricFunctions';
+import { FuncDef } from '../../types';
+import { getCategories } from '../../metricFunctions';
 
 // import { mapFuncDefsToSelectables } from './helpers';
 

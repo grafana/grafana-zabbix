@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { InlineField, InlineFieldRow, Select } from '@grafana/ui';
-import * as c from '../../constants';
-import * as migrations from '../../migrations';
-import { ZabbixDatasource } from '../../datasource';
-import { MetricFunc, ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions } from '../../types';
-import { MetricsQueryEditor } from './MetricsQueryEditor';
-import { QueryFunctionsEditor } from './QueryFunctionsEditor';
-import { QueryOptionsEditor } from './QueryOptionsEditor';
+import * as c from '../constants';
+import * as migrations from '../migrations';
+import { ZabbixDatasource } from '../datasource';
+import { MetricFunc, ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions } from '../types';
+import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
+import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
+import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {

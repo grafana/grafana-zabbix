@@ -5,8 +5,8 @@ import { ZabbixDatasource } from '../../datasource';
 import { FuncDef, MetricFunc, ZabbixMetricsQuery } from '../../types';
 import { QueryEditorRow } from './QueryEditorRow';
 import { InlineFormLabel } from '@grafana/ui';
-import { ZabbixFunctionEditor } from '../ZabbixFunctionEditor';
-import { AddZabbixFunction } from '../AddZabbixFunction';
+import { ZabbixFunctionEditor } from '../FunctionEditor/ZabbixFunctionEditor';
+import { AddZabbixFunction } from '../FunctionEditor/AddZabbixFunction';
 
 export interface Props {
   query: ZabbixMetricsQuery;

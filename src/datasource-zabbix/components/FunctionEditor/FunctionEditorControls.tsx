@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Icon, Tooltip } from '@grafana/ui';
-import { MetricFunc } from '../types';
+import { MetricFunc } from '../../types';
 
 const DOCS_FUNC_REF_URL = 'https://alexanderzobnin.github.io/grafana-zabbix/reference/functions/';
 

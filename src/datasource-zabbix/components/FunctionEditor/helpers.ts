@@ -1,5 +1,5 @@
 import { SelectableValue } from '@grafana/data';
-import { MetricFunc } from '../types';
+import { MetricFunc } from '../../types';
 
 export type ParamDef = {
   name: string;

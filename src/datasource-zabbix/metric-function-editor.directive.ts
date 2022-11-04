@@ -2,7 +2,7 @@ import coreModule from 'grafana/app/core/core_module';
 import _ from 'lodash';
 import $ from 'jquery';
 import { react2AngularDirective } from './react2angular';
-import { FunctionEditor } from './components/FunctionEditor';
+import { FunctionEditor } from './components/FunctionEditor/FunctionEditor';
 
 /** @ngInject */
 export function zabbixFunctionEditor($compile, templateSrv) {
@@ -28,15 +28,15 @@ export function zabbixFunctionEditor($compile, templateSrv) {
       let paramCountAtLink = 0;
       let cancelBlur = null;
 
-      ctrl.handleRemoveFunction = func => {
+      ctrl.handleRemoveFunction = (func) => {
         ctrl.removeFunction(func);
       };
 
-      ctrl.handleMoveLeft = func => {
+      ctrl.handleMoveLeft = (func) => {
         ctrl.moveFunction(func, -1);
       };
 
-      ctrl.handleMoveRight = func => {
+      ctrl.handleMoveRight = (func) => {
         ctrl.moveFunction(func, 1);
       };
 
@@ -147,7 +147,7 @@ export function zabbixFunctionEditor($compile, templateSrv) {
 
         let options = paramDef(paramIndex).options;
         if (paramDef(paramIndex).type === 'int' || paramDef(paramIndex).type === 'float') {
-          options = _.map(options, val => {
+          options = _.map(options, (val) => {
             return val.toString();
           });
         }
@@ -156,7 +156,7 @@ export function zabbixFunctionEditor($compile, templateSrv) {
           source: options,
           minLength: 0,
           items: 20,
-          updater: value => {
+          updater: (value) => {
             $input.val(value);
             switchToLink($input[0], paramIndex);
             return value;
@@ -164,7 +164,7 @@ export function zabbixFunctionEditor($compile, templateSrv) {
         });
 
         const typeahead = $input.data('typeahead');
-        typeahead.lookup = function() {
+        typeahead.lookup = function () {
           this.query = this.$element.val() || '';
           return this.process(this.source);
         };
@@ -233,10 +233,7 @@ export function zabbixFunctionEditor($compile, templateSrv) {
         if ($scope.func.added) {
           $scope.func.added = false;
           setTimeout(() => {
-            elem
-              .find('.graphite-func-param-link')
-              .first()
-              .click();
+            elem.find('.graphite-func-param-link').first().click();
           }, 10);
         }
       }

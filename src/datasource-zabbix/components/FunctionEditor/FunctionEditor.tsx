@@ -4,7 +4,7 @@ import { FunctionEditorControlsProps, FunctionEditorControls } from './FunctionE
 
 import { useStyles2, Tooltip } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
-import { MetricFunc } from '../types';
+import { MetricFunc } from '../../types';
 
 interface FunctionEditorProps extends FunctionEditorControlsProps {
   func: MetricFunc;

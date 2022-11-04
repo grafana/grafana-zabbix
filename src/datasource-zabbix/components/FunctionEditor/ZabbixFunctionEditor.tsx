@@ -7,7 +7,7 @@ import { HorizontalGroup, InlineLabel, useStyles2 } from '@grafana/ui';
 import { FunctionEditor } from './FunctionEditor';
 import { EditableParam, FunctionParamEditor } from './FunctionParamEditor';
 import { mapFuncInstanceToParams } from './helpers';
-import { MetricFunc } from '../types';
+import { MetricFunc } from '../../types';
 
 export type FunctionEditorProps = {
   func: MetricFunc;
