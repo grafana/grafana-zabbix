@@ -50,7 +50,12 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
   };
 
   const renderEditor = () => {
-    return <div className={styles.editorContainer}>{queryType === c.MODE_METRICS && renderMetricOptions()}</div>;
+    return (
+      <div className={styles.editorContainer}>
+        {queryType === c.MODE_METRICS && renderMetricOptions()}
+        {queryType === c.MODE_TEXT && renderTextMetricsOptions()}
+      </div>
+    );
   };
 
   const renderMetricOptions = () => {
@@ -72,6 +77,19 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
           <InlineSwitch
             value={queryOptions.disableDataAlignment}
             onChange={() => onChange({ ...queryOptions, disableDataAlignment: !queryOptions.disableDataAlignment })}
+          />
+        </InlineField>
+      </>
+    );
+  };
+
+  const renderTextMetricsOptions = () => {
+    return (
+      <>
+        <InlineField label="Show disabled items" labelWidth={24}>
+          <InlineSwitch
+            value={queryOptions.showDisabledItems}
+            onChange={() => onChange({ ...queryOptions, showDisabledItems: !queryOptions.showDisabledItems })}
           />
         </InlineField>
       </>

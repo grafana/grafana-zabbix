@@ -34,24 +34,24 @@ export interface ZabbixConnectionTestQuery {
 }
 
 export interface ZabbixMetricsQuery extends DataQuery {
-  triggers: { minSeverity: string; acknowledged: boolean; count: number };
   queryType: string;
-  datasourceId: number;
-  group: { filter: string; name?: string };
-  host: { filter: string; name?: string };
-  application: { filter: string; name?: string };
-  itemTag: { filter: string; name?: string };
-  item: { filter: string; name?: string };
-  textFilter: string;
-  mode: number;
-  itemids: number[];
-  useCaptureGroups: boolean;
+  datasourceId?: number;
+  group?: { filter: string; name?: string };
+  host?: { filter: string; name?: string };
+  application?: { filter: string; name?: string };
+  itemTag?: { filter: string; name?: string };
+  item?: { filter: string; name?: string };
+  textFilter?: string;
+  mode?: number;
+  itemids?: number[];
+  useCaptureGroups?: boolean;
   proxy?: { filter: string };
   trigger?: { filter: string };
   itServiceFilter?: string;
   tags?: { filter: string };
-  functions: MetricFunc[];
-  options: ZabbixQueryOptions;
+  triggers?: { minSeverity: number; acknowledged: number; count: boolean };
+  functions?: MetricFunc[];
+  options?: ZabbixQueryOptions;
   // Problems
   showProblems?: ShowProblemTypes;
   // Deprecated

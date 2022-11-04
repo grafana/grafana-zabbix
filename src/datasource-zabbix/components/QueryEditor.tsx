@@ -8,6 +8,7 @@ import { MetricFunc, ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, Zabb
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
+import { TextMetricsQueryEditor } from './QueryEditor/TextMetricsQueryEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -42,7 +43,7 @@ const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   },
 ];
 
-const getDefaultQuery = () => ({
+const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
   queryType: c.MODE_METRICS,
   group: { filter: '' },
   host: { filter: '' },
@@ -58,6 +59,7 @@ const getDefaultQuery = () => ({
   trigger: { filter: '' },
   tags: { filter: '' },
   proxy: { filter: '' },
+  textFilter: '',
   options: {
     showDisabledItems: false,
     skipEmptyValues: false,
@@ -131,6 +133,15 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     );
   };
 
+  const renderTextMetricsEditor = () => {
+    return (
+      <>
+        <TextMetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
+        {/* <QueryFunctionsEditor query={query} onChange={onChangeInternal} /> */}
+      </>
+    );
+  };
+
   return (
     <>
       <InlineFieldRow>
@@ -148,6 +159,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
         </div>
       </InlineFieldRow>
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
+      {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );
