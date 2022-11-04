@@ -2,7 +2,7 @@ import { DataSourcePlugin } from '@grafana/data';
 import { loadPluginCss } from '@grafana/runtime';
 import { ZabbixDatasource } from './datasource';
 import { ZabbixQueryController } from './query.controller';
-import { QueryEditor } from './components/QueryEditor';
+import { QueryEditor } from './components/QueryEditor/QueryEditor';
 import { ZabbixVariableQueryEditor } from './components/VariableQueryEditor';
 import { ConfigEditor } from './components/ConfigEditor';
 import './add-metric-function.directive';

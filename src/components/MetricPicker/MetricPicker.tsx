@@ -67,7 +67,7 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
   };
 
   const onMenuOptionSelect = (option: SelectableValue<string>) => {
-    const newValue = option.value || '';
+    const newValue = option?.value || '';
     setQuery(newValue);
     onChange(newValue);
     onClose();

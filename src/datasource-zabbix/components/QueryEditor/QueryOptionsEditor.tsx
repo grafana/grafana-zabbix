@@ -10,8 +10,8 @@ import {
   useStyles2,
   VerticalGroup,
 } from '@grafana/ui';
-import * as c from '../constants';
-import { ZabbixQueryOptions } from '../types';
+import * as c from '../../constants';
+import { ZabbixQueryOptions } from '../../types';
 
 interface Props {
   queryType: string;
@@ -31,17 +31,6 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
           {isOpen && <Icon name="angle-down" />}
           <span className={styles.label}>Options</span>
           <div className={styles.options}>{renderOptions()}</div>
-        </HorizontalGroup>
-      </>
-    );
-  };
-
-  const renderOpened = () => {
-    return (
-      <>
-        <HorizontalGroup>
-          <Icon name="angle-down" />
-          <span className={styles.label}>Options</span>
         </HorizontalGroup>
       </>
     );
