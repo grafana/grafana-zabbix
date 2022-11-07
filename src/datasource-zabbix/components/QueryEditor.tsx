@@ -79,7 +79,7 @@ function getSLATargetDefaults() {
   };
 }
 
-function getProblemsTargetDefaults() {
+function getProblemsTargetDefaults(): Partial<ZabbixMetricsQuery> {
   return {
     showProblems: ShowProblemTypes.Problems,
     options: {
@@ -89,6 +89,7 @@ function getProblemsTargetDefaults() {
       hostsInMaintenance: false,
       hostProxy: false,
       limit: c.DEFAULT_ZABBIX_PROBLEMS_LIMIT,
+      useTimeRange: false,
     },
   };
 }
@@ -112,7 +113,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
 
   const onPropChange = (prop: string) => {
     return (option: SelectableValue) => {
-      if (option.value) {
+      if (option.value !== null) {
         onChangeInternal({ ...query, [prop]: option.value });
       }
     };

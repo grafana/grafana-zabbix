@@ -1,17 +1,30 @@
-import { css, cx } from '@emotion/css';
-import React, { useState } from 'react';
-import { GrafanaTheme2 } from '@grafana/data';
+import { css } from '@emotion/css';
+import React, { useState, FormEvent } from 'react';
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
   HorizontalGroup,
   Icon,
   InlineField,
   InlineFieldRow,
   InlineSwitch,
+  Input,
+  Select,
   useStyles2,
-  VerticalGroup,
 } from '@grafana/ui';
 import * as c from '../../constants';
 import { ZabbixQueryOptions } from '../../types';
+
+const ackOptions: SelectableValue<number>[] = [
+  { label: 'all triggers', value: 2 },
+  { label: 'unacknowledged', value: 0 },
+  { label: 'acknowledged', value: 1 },
+];
+
+const sortOptions: SelectableValue<string>[] = [
+  { label: 'Default', value: 'default' },
+  { label: 'Last change', value: 'lastchange' },
+  { label: 'Severity', value: 'severity' },
+];
 
 interface Props {
   queryType: string;
@@ -22,6 +35,21 @@ interface Props {
 export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const styles = useStyles2(getStyles);
+
+  const onLimitChange = (v: FormEvent<HTMLInputElement>) => {
+    const newValue = Number(v?.currentTarget?.value);
+    if (newValue !== null) {
+      onChange({ ...queryOptions, limit: newValue });
+    }
+  };
+
+  const onPropChange = (prop: string) => {
+    return (option: SelectableValue) => {
+      if (option.value !== null) {
+        onChange({ ...queryOptions, [prop]: option.value });
+      }
+    };
+  };
 
   const renderClosed = () => {
     return (
@@ -54,6 +82,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
       <div className={styles.editorContainer}>
         {queryType === c.MODE_METRICS && renderMetricOptions()}
         {queryType === c.MODE_TEXT && renderTextMetricsOptions()}
+        {queryType === c.MODE_PROBLEMS && renderProblemsOptions()}
       </div>
     );
   };
@@ -91,6 +120,52 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
             value={queryOptions.showDisabledItems}
             onChange={() => onChange({ ...queryOptions, showDisabledItems: !queryOptions.showDisabledItems })}
           />
+        </InlineField>
+      </>
+    );
+  };
+
+  const renderProblemsOptions = () => {
+    return (
+      <>
+        <InlineField label="Acknowledged" labelWidth={24}>
+          <Select
+            isSearchable={false}
+            width={24}
+            value={queryOptions.acknowledged}
+            options={ackOptions}
+            onChange={onPropChange('acknowledged')}
+          />
+        </InlineField>
+        <InlineField label="Sort by" labelWidth={24}>
+          <Select
+            isSearchable={false}
+            width={24}
+            value={queryOptions.sortProblems}
+            options={sortOptions}
+            onChange={onPropChange('sortProblems')}
+          />
+        </InlineField>
+        <InlineField label="Use time range" labelWidth={24}>
+          <InlineSwitch
+            value={queryOptions.useTimeRange}
+            onChange={() => onChange({ ...queryOptions, useTimeRange: !queryOptions.useTimeRange })}
+          />
+        </InlineField>
+        <InlineField label="Hosts in maintenance" labelWidth={24}>
+          <InlineSwitch
+            value={queryOptions.hostsInMaintenance}
+            onChange={() => onChange({ ...queryOptions, hostsInMaintenance: !queryOptions.hostsInMaintenance })}
+          />
+        </InlineField>
+        <InlineField label="Host proxy" labelWidth={24}>
+          <InlineSwitch
+            value={queryOptions.hostProxy}
+            onChange={() => onChange({ ...queryOptions, hostProxy: !queryOptions.hostProxy })}
+          />
+        </InlineField>
+        <InlineField label="Limit" labelWidth={24}>
+          <Input width={12} type="number" defaultValue={queryOptions.limit} onBlur={onLimitChange} />
         </InlineField>
       </>
     );

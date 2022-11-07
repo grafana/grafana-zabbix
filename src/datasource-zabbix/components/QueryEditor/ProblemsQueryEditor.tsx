@@ -115,7 +115,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const onPropChange = (prop: string) => {
     return (option: SelectableValue) => {
-      if (option.value) {
+      if (option.value !== null) {
         onChange({ ...query, [prop]: option.value });
       }
     };
