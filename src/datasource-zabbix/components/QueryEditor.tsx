@@ -9,6 +9,7 @@ import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
 import { TextMetricsQueryEditor } from './QueryEditor/TextMetricsQueryEditor';
+import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -97,6 +98,12 @@ export interface Props extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQ
 export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) => {
   query = { ...getDefaultQuery(), ...query };
   const { queryType } = query;
+  if (queryType === c.MODE_PROBLEMS) {
+    const defaults = getProblemsTargetDefaults();
+    query = { ...defaults, ...query };
+    query.options = { ...defaults.options, ...query.options };
+  }
+
   // Migrate query on load
   useEffect(() => {
     const migratedQuery = migrations.migrate(query);
@@ -142,6 +149,10 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     );
   };
 
+  const renderProblemsEditor = () => {
+    return <ProblemsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+  };
+
   return (
     <>
       <InlineFieldRow>
@@ -160,6 +171,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       </InlineFieldRow>
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
       {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
+      {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );
