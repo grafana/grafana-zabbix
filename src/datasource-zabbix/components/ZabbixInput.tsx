@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
-import { css, cx } from '@emotion/css';
-import { EventsWithValidation, ValidationEvents, useTheme } from '@grafana/ui';
-import { GrafanaTheme } from '@grafana/data';
+import { css } from '@emotion/css';
+import { EventsWithValidation, ValidationEvents, useStyles2 } from '@grafana/ui';
+import { GrafanaTheme2 } from '@grafana/data';
 import { isRegex, variableRegex } from '../utils';
 
 import * as grafanaUi from '@grafana/ui';
@@ -9,19 +9,19 @@ const Input = (grafanaUi as any).LegacyForms?.Input || (grafanaUi as any).Input;
 
 const variablePattern = RegExp(`^${variableRegex.source}`);
 
-const getStyles = (theme: GrafanaTheme) => ({
+const getStyles = (theme: GrafanaTheme2) => ({
   inputRegex: css`
-    color: ${theme.palette.orange}
+    color: ${theme.colors.warning.main};
   `,
   inputVariable: css`
-    color: ${theme.colors.textBlue}
+    color: ${theme.colors.action.focus};
   `,
 });
 
 const zabbixInputValidationEvents: ValidationEvents = {
   [EventsWithValidation.onBlur]: [
     {
-      rule: value => {
+      rule: (value) => {
         if (!value) {
           return true;
         }
@@ -35,7 +35,7 @@ const zabbixInputValidationEvents: ValidationEvents = {
       errorMessage: 'Not a valid regex',
     },
     {
-      rule: value => {
+      rule: (value) => {
         if (value === '*') {
           return false;
         }
@@ -47,8 +47,7 @@ const zabbixInputValidationEvents: ValidationEvents = {
 };
 
 export const ZabbixInput: FC<any> = ({ value, ref, validationEvents, ...restProps }) => {
-  const theme = useTheme();
-  const styles = getStyles(theme);
+  const styles = useStyles2(getStyles);
 
   let inputClass = styles.inputRegex;
   if (variablePattern.test(value as string)) {
@@ -57,12 +56,5 @@ export const ZabbixInput: FC<any> = ({ value, ref, validationEvents, ...restProp
     inputClass = styles.inputRegex;
   }
 
-  return (
-    <Input
-      className={inputClass}
-      value={value}
-      validationEvents={zabbixInputValidationEvents}
-      {...restProps}
-    />
-  );
+  return <Input className={inputClass} value={value} validationEvents={zabbixInputValidationEvents} {...restProps} />;
 };

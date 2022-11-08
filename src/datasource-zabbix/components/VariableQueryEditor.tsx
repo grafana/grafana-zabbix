@@ -35,10 +35,10 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
       this.state = {
         selectedQueryType,
         legacyQuery: this.props.query,
-        ...query
+        ...query,
       };
     } else if (this.props.query) {
-      const query = (this.props.query as VariableQuery);
+      const query = this.props.query as VariableQuery;
       const selectedQueryType = this.getSelectedQueryType(query.queryType);
       this.state = {
         ...this.defaults,
@@ -51,7 +51,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   }
 
   getSelectedQueryType(queryType: VariableQueryTypes) {
-    return this.queryTypes.find(q => q.value === queryType);
+    return this.queryTypes.find((q) => q.value === queryType);
   }
 
   handleQueryUpdate = (evt: React.ChangeEvent<HTMLInputElement>, prop: string) => {
@@ -108,70 +108,68 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
             <InlineFormLabel width={10}>Group</InlineFormLabel>
             <ZabbixInput
               value={group}
-              onChange={evt => this.handleQueryUpdate(evt, 'group')}
+              onChange={(evt) => this.handleQueryUpdate(evt, 'group')}
               onBlur={this.handleQueryChange}
             />
           </div>
-          {selectedQueryType.value !== VariableQueryTypes.Group &&
-          <div className="gf-form max-width-30">
-            <InlineFormLabel width={10}>Host</InlineFormLabel>
-            <ZabbixInput
-              value={host}
-              onChange={evt => this.handleQueryUpdate(evt, 'host')}
-              onBlur={this.handleQueryChange}
-            />
-          </div>
-          }
+          {selectedQueryType.value !== VariableQueryTypes.Group && (
+            <div className="gf-form max-width-30">
+              <InlineFormLabel width={10}>Host</InlineFormLabel>
+              <ZabbixInput
+                value={host}
+                onChange={(evt) => this.handleQueryUpdate(evt, 'host')}
+                onBlur={this.handleQueryChange}
+              />
+            </div>
+          )}
         </div>
         {(selectedQueryType.value === VariableQueryTypes.Application ||
           selectedQueryType.value === VariableQueryTypes.ItemTag ||
           selectedQueryType.value === VariableQueryTypes.Item ||
-          selectedQueryType.value === VariableQueryTypes.ItemValues) &&
-        <div className="gf-form-inline">
-          {supportsItemTags && (
-            <div className="gf-form max-width-30">
-              <InlineFormLabel width={10}>Item tag</InlineFormLabel>
-              <ZabbixInput
-                value={itemTag}
-                onChange={evt => this.handleQueryUpdate(evt, 'itemTag')}
-                onBlur={this.handleQueryChange}
-              />
-            </div>
-          )}
-          {!supportsItemTags && (
-            <div className="gf-form max-width-30">
-              <InlineFormLabel width={10}>Application</InlineFormLabel>
-              <ZabbixInput
-                value={application}
-                onChange={evt => this.handleQueryUpdate(evt, 'application')}
-                onBlur={this.handleQueryChange}
-              />
-            </div>
-          )}
-          {(selectedQueryType.value === VariableQueryTypes.Item ||
-            selectedQueryType.value === VariableQueryTypes.ItemValues) &&
-          <div className="gf-form max-width-30">
-            <InlineFormLabel width={10}>Item</InlineFormLabel>
-            <ZabbixInput
-              value={item}
-              onChange={evt => this.handleQueryUpdate(evt, 'item')}
-              onBlur={this.handleQueryChange}
-            />
+          selectedQueryType.value === VariableQueryTypes.ItemValues) && (
+          <div className="gf-form-inline">
+            {supportsItemTags && (
+              <div className="gf-form max-width-30">
+                <InlineFormLabel width={10}>Item tag</InlineFormLabel>
+                <ZabbixInput
+                  value={itemTag}
+                  onChange={(evt) => this.handleQueryUpdate(evt, 'itemTag')}
+                  onBlur={this.handleQueryChange}
+                />
+              </div>
+            )}
+            {!supportsItemTags && (
+              <div className="gf-form max-width-30">
+                <InlineFormLabel width={10}>Application</InlineFormLabel>
+                <ZabbixInput
+                  value={application}
+                  onChange={(evt) => this.handleQueryUpdate(evt, 'application')}
+                  onBlur={this.handleQueryChange}
+                />
+              </div>
+            )}
+            {(selectedQueryType.value === VariableQueryTypes.Item ||
+              selectedQueryType.value === VariableQueryTypes.ItemValues) && (
+              <div className="gf-form max-width-30">
+                <InlineFormLabel width={10}>Item</InlineFormLabel>
+                <ZabbixInput
+                  value={item}
+                  onChange={(evt) => this.handleQueryUpdate(evt, 'item')}
+                  onBlur={this.handleQueryChange}
+                />
+              </div>
+            )}
           </div>
-          }
-        </div>
-        }
+        )}
 
-        {legacyQuery &&
-        <div className="gf-form">
-          <InlineFormLabel width={10} tooltip="Original query string, read-only">Legacy Query</InlineFormLabel>
-          <Input
-            css=""
-            value={legacyQuery}
-            readOnly={true}
-          />
-        </div>
-        }
+        {legacyQuery && (
+          <div className="gf-form">
+            <InlineFormLabel width={10} tooltip="Original query string, read-only">
+              Legacy Query
+            </InlineFormLabel>
+            <Input value={legacyQuery} readOnly={true} />
+          </div>
+        )}
       </>
     );
   }
