@@ -99,17 +99,20 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, []);
 
   // Update suggestions on every metric change
+  const groupFilter = datasource.replaceTemplateVars(query.group?.filter);
+  const hostFilter = datasource.replaceTemplateVars(query.host?.filter);
+
   useEffect(() => {
     fetchGroups();
   }, []);
 
   useEffect(() => {
     fetchHosts();
-  }, [query.group.filter]);
+  }, [groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [query.group.filter, query.host.filter]);
+  }, [groupFilter, hostFilter]);
 
   useEffect(() => {
     fetchProxies();

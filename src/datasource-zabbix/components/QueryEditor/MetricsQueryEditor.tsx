@@ -98,21 +98,26 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
 
   // Update suggestions on every metric change
+  const groupFilter = datasource.replaceTemplateVars(query.group?.filter);
+  const hostFilter = datasource.replaceTemplateVars(query.host?.filter);
+  const appFilter = datasource.replaceTemplateVars(query.application?.filter);
+  const tagFilter = datasource.replaceTemplateVars(query.itemTag?.filter);
+
   useEffect(() => {
     fetchGroups();
   }, []);
 
   useEffect(() => {
     fetchHosts();
-  }, [query.group.filter]);
+  }, [groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [query.group.filter, query.host.filter]);
+  }, [groupFilter, hostFilter]);
 
   useEffect(() => {
     fetchItems();
-  }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
+  }, [groupFilter, hostFilter, appFilter, tagFilter]);
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {

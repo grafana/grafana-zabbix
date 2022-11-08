@@ -78,17 +78,20 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [query.group.filter, query.host.filter]);
 
   // Update suggestions on every metric change
+  const groupFilter = datasource.replaceTemplateVars(query.group?.filter);
+  const hostFilter = datasource.replaceTemplateVars(query.host?.filter);
+
   useEffect(() => {
     fetchGroups();
   }, []);
 
   useEffect(() => {
     fetchHosts();
-  }, [query.group.filter]);
+  }, [groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [query.group.filter, query.host.filter]);
+  }, [groupFilter, hostFilter]);
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {
