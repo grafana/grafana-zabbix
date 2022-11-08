@@ -12,6 +12,7 @@ import { TextMetricsQueryEditor } from './QueryEditor/TextMetricsQueryEditor';
 import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
 import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ITServicesQueryEditor } from './QueryEditor/ITServicesQueryEditor';
+import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -102,7 +103,7 @@ export interface Props extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQ
 export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) => {
   query = { ...getDefaultQuery(), ...query };
   const { queryType } = query;
-  if (queryType === c.MODE_PROBLEMS) {
+  if (queryType === c.MODE_PROBLEMS || queryType === c.MODE_TRIGGERS) {
     const defaults = getProblemsQueryDefaults();
     query = { ...defaults, ...query };
     query.options = { ...defaults.options, ...query.options };
@@ -178,6 +179,10 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     return <ProblemsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
   };
 
+  const renderTriggersEditor = () => {
+    return <TriggersQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+  };
+
   return (
     <>
       <InlineFieldRow>
@@ -195,10 +200,11 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
         </div>
       </InlineFieldRow>
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
-      {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
-      {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_ITEMID && renderItemIdsEditor()}
+      {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
       {queryType === c.MODE_ITSERVICE && renderITServicesEditor()}
+      {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
+      {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );

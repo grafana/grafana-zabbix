@@ -85,6 +85,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
         {queryType === c.MODE_ITSERVICE && renderMetricOptions()}
         {queryType === c.MODE_TEXT && renderTextMetricsOptions()}
         {queryType === c.MODE_PROBLEMS && renderProblemsOptions()}
+        {queryType === c.MODE_TRIGGERS && renderTriggersOptions()}
       </div>
     );
   };
@@ -168,6 +169,22 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
         </InlineField>
         <InlineField label="Limit" labelWidth={24}>
           <Input width={12} type="number" defaultValue={queryOptions.limit} onBlur={onLimitChange} />
+        </InlineField>
+      </>
+    );
+  };
+
+  const renderTriggersOptions = () => {
+    return (
+      <>
+        <InlineField label="Acknowledged" labelWidth={24}>
+          <Select
+            isSearchable={false}
+            width={24}
+            value={queryOptions.acknowledged}
+            options={ackOptions}
+            onChange={onPropChange('acknowledged')}
+          />
         </InlineField>
       </>
     );
