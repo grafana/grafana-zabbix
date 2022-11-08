@@ -10,6 +10,7 @@ import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
 import { TextMetricsQueryEditor } from './QueryEditor/TextMetricsQueryEditor';
 import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
+import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -141,6 +142,15 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     );
   };
 
+  const renderItemIdsEditor = () => {
+    return (
+      <>
+        <ItemIdQueryEditor query={query} onChange={onChangeInternal} />
+        <QueryFunctionsEditor query={query} onChange={onChangeInternal} />
+      </>
+    );
+  };
+
   const renderTextMetricsEditor = () => {
     return (
       <>
@@ -173,6 +183,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
       {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
+      {queryType === c.MODE_ITEMID && renderItemIdsEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );
