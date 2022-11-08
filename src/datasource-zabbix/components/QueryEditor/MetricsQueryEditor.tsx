@@ -8,7 +8,7 @@ import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery, ZabbixDSOptions } from '../../types';
+import { ZabbixMetricsQuery } from '../../types';
 
 export interface Props {
   query: ZabbixMetricsQuery;
@@ -113,14 +113,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   useEffect(() => {
     fetchItems();
   }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
-
-  const onPropChange = (prop: string) => {
-    return (option: SelectableValue) => {
-      if (option.value) {
-        onChange({ ...query, [prop]: option.value });
-      }
-    };
-  };
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {

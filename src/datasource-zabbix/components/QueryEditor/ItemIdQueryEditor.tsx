@@ -1,14 +1,7 @@
-import _ from 'lodash';
-import React, { useEffect, FormEvent } from 'react';
-import { useAsyncFn } from 'react-use';
-
-import { SelectableValue } from '@grafana/data';
-import { InlineField, InlineSwitch, Input } from '@grafana/ui';
+import React, { FormEvent } from 'react';
+import { InlineField, Input } from '@grafana/ui';
+import { ZabbixMetricsQuery } from '../../types';
 import { QueryEditorRow } from './QueryEditorRow';
-import { MetricPicker } from '../../../components';
-import { getVariableOptions } from './utils';
-import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery, ZabbixDSOptions } from '../../types';
 
 export interface Props {
   query: ZabbixMetricsQuery;

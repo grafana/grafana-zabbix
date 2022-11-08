@@ -8,7 +8,7 @@ import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery, ZabbixDSOptions } from '../../types';
+import { ZabbixMetricsQuery } from '../../types';
 
 export interface Props {
   query: ZabbixMetricsQuery;
@@ -119,14 +119,6 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     if (newValue !== null) {
       onChange({ ...query, textFilter: newValue });
     }
-  };
-
-  const onPropChange = (prop: string) => {
-    return (value: string) => {
-      if (value !== null) {
-        onChange({ ...query, [prop]: value });
-      }
-    };
   };
 
   const onFilterChange = (prop: string) => {

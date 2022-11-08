@@ -1,9 +1,9 @@
 import _ from 'lodash';
-import React, { useEffect, FormEvent } from 'react';
+import React, { useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
-import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
+import { InlineField, InlineSwitch, Select } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -90,27 +90,10 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     fetchApps();
   }, [query.group.filter, query.host.filter]);
 
-  const onTextFilterChange = (prop: string) => {
-    return (v: FormEvent<HTMLInputElement>) => {
-      const newValue = v?.currentTarget?.value;
-      if (newValue !== null) {
-        onChange({ ...query, [prop]: { filter: newValue } });
-      }
-    };
-  };
-
   const onFilterChange = (prop: string) => {
     return (value: string) => {
       if (value !== null) {
         onChange({ ...query, [prop]: { filter: value } });
-      }
-    };
-  };
-
-  const onPropChange = (prop: string) => {
-    return (option: SelectableValue) => {
-      if (option.value !== null) {
-        onChange({ ...query, [prop]: option.value });
       }
     };
   };
