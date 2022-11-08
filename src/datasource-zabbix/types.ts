@@ -48,6 +48,8 @@ export interface ZabbixMetricsQuery extends DataQuery {
   proxy?: { filter: string };
   trigger?: { filter: string };
   itServiceFilter?: string;
+  slaProperty?: any;
+  slaInterval?: string;
   tags?: { filter: string };
   triggers?: { minSeverity: number; acknowledged: number; count: boolean };
   functions?: MetricFunc[];

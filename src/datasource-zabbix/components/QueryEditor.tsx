@@ -11,6 +11,7 @@ import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
 import { TextMetricsQueryEditor } from './QueryEditor/TextMetricsQueryEditor';
 import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
 import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
+import { ITServicesQueryEditor } from './QueryEditor/ITServicesQueryEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -73,14 +74,15 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
   },
 });
 
-function getSLATargetDefaults() {
+function getSLAQueryDefaults() {
   return {
-    slaProperty: { name: 'SLA', property: 'sla' },
+    itServiceFilter: '',
+    slaProperty: 'sla',
     slaInterval: 'none',
   };
 }
 
-function getProblemsTargetDefaults(): Partial<ZabbixMetricsQuery> {
+function getProblemsQueryDefaults(): Partial<ZabbixMetricsQuery> {
   return {
     showProblems: ShowProblemTypes.Problems,
     options: {
@@ -101,9 +103,12 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
   query = { ...getDefaultQuery(), ...query };
   const { queryType } = query;
   if (queryType === c.MODE_PROBLEMS) {
-    const defaults = getProblemsTargetDefaults();
+    const defaults = getProblemsQueryDefaults();
     query = { ...defaults, ...query };
     query.options = { ...defaults.options, ...query.options };
+  }
+  if (queryType === c.MODE_ITSERVICE) {
+    query = { ...getSLAQueryDefaults(), ...query };
   }
 
   // Migrate query on load
@@ -160,6 +165,15 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
     );
   };
 
+  const renderITServicesEditor = () => {
+    return (
+      <>
+        <ITServicesQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
+        <QueryFunctionsEditor query={query} onChange={onChangeInternal} />
+      </>
+    );
+  };
+
   const renderProblemsEditor = () => {
     return <ProblemsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
   };
@@ -184,6 +198,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) 
       {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_ITEMID && renderItemIdsEditor()}
+      {queryType === c.MODE_ITSERVICE && renderITServicesEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );

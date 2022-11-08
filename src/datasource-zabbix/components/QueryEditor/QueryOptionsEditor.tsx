@@ -82,6 +82,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
       <div className={styles.editorContainer}>
         {queryType === c.MODE_METRICS && renderMetricOptions()}
         {queryType === c.MODE_ITEMID && renderMetricOptions()}
+        {queryType === c.MODE_ITSERVICE && renderMetricOptions()}
         {queryType === c.MODE_TEXT && renderTextMetricsOptions()}
         {queryType === c.MODE_PROBLEMS && renderProblemsOptions()}
       </div>

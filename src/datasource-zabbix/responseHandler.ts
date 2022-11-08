@@ -38,30 +38,30 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
    *       ]
    */
 
-    // Group history by itemid
+  // Group history by itemid
   const grouped_history = _.groupBy(history, 'itemid');
-  const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');  //uniqBy is needed to deduplicate
+  const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid'); //uniqBy is needed to deduplicate
 
   return _.map(grouped_history, (hist, itemid) => {
-    const item = _.find(items, { 'itemid': itemid }) as any;
+    const item = _.find(items, { itemid: itemid }) as any;
     let alias = item.name;
 
     // Add scopedVars for using in alias functions
     const scopedVars: any = {
-      '__zbx_item': { value: item.name },
-      '__zbx_item_name': { value: item.name },
-      '__zbx_item_key': { value: item.key_ },
-      '__zbx_item_interval': { value: item.delay },
+      __zbx_item: { value: item.name },
+      __zbx_item_name: { value: item.name },
+      __zbx_item_key: { value: item.key_ },
+      __zbx_item_interval: { value: item.delay },
     };
 
     if (_.keys(hosts).length > 0) {
-      const host = _.find(hosts, { 'hostid': item.hostid });
+      const host = _.find(hosts, { hostid: item.hostid });
       scopedVars['__zbx_host'] = { value: host.host };
       scopedVars['__zbx_host_name'] = { value: host.name };
 
       // Only add host when multiple hosts selected
       if (_.keys(hosts).length > 1 && addHostName) {
-        alias = host.name + ": " + alias;
+        alias = host.name + ': ' + alias;
       }
     }
 
@@ -69,28 +69,33 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
       target: alias,
       datapoints: _.map(hist, convertPointCallback),
       scopedVars,
-      item
+      item,
     };
   });
 }
 
-export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueMappings?: any[], fieldType?: FieldType): MutableDataFrame {
+export function seriesToDataFrame(
+  timeseries,
+  target: ZabbixMetricsQuery,
+  valueMappings?: any[],
+  fieldType?: FieldType
+): MutableDataFrame {
   const { datapoints, scopedVars, target: seriesName, item } = timeseries;
 
   const timeFiled: Field = {
     name: TIME_SERIES_TIME_FIELD_NAME,
     type: FieldType.time,
     config: {
-      custom: {}
+      custom: {},
     },
-    values: new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_TS])),
+    values: new ArrayVector<number>(datapoints.map((p) => p[c.DATAPOINT_TS])),
   };
 
   let values: ArrayVector<number> | ArrayVector<string>;
   if (fieldType === FieldType.string) {
-    values = new ArrayVector<string>(datapoints.map(p => p[c.DATAPOINT_VALUE]));
+    values = new ArrayVector<string>(datapoints.map((p) => p[c.DATAPOINT_VALUE]));
   } else {
-    values = new ArrayVector<number>(datapoints.map(p => p[c.DATAPOINT_VALUE]));
+    values = new ArrayVector<number>(datapoints.map((p) => p[c.DATAPOINT_VALUE]));
   }
 
   const valueFiled: Field = {
@@ -99,7 +104,7 @@ export function seriesToDataFrame(timeseries, target: ZabbixMetricsQuery, valueM
     labels: {},
     config: {
       displayNameFromDS: seriesName,
-      custom: {}
+      custom: {},
     },
     values,
   };
@@ -179,7 +184,7 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items, reque
       }
 
       const itemid = field.name;
-      const item = _.find(items, { 'itemid': itemid });
+      const item = _.find(items, { itemid: itemid });
 
       // Convert interval to nanoseconds in order to unmarshall it on the backend to time.Duration
       let interval = request.intervalMs * 1000000;
@@ -201,7 +206,7 @@ export function dataResponseToTimeSeries(response: DataFrameJSON[], items, reque
           name: seriesName,
           item,
           interval,
-        }
+        },
       };
 
       series.push(timeSeriesData);
@@ -263,7 +268,7 @@ export function itServiceResponseToTimeSeries(response: any, interval) {
         name: s.target,
         interval: null,
         item: {},
-      }
+      },
     };
 
     series.push(timeSeriesData);
@@ -277,13 +282,13 @@ export function isConvertibleToWide(data: DataFrame[]): boolean {
     return false;
   }
 
-  const first = data[0].fields.find(f => f.type === FieldType.time);
+  const first = data[0].fields.find((f) => f.type === FieldType.time);
   if (!first) {
     return false;
   }
 
   for (let i = 1; i < data.length; i++) {
-    const timeField = data[i].fields.find(f => f.type === FieldType.time);
+    const timeField = data[i].fields.find((f) => f.type === FieldType.time);
 
     for (let j = 0; j < Math.min(data.length, 2); j++) {
       if (timeField.values.get(j) !== first.values.get(j)) {
@@ -301,9 +306,9 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
   }
 
   // Get oldest time stamp for all frames
-  let minTimestamp = data[0].fields.find(f => f.name === TIME_SERIES_TIME_FIELD_NAME).values.get(0);
+  let minTimestamp = data[0].fields.find((f) => f.name === TIME_SERIES_TIME_FIELD_NAME).values.get(0);
   for (let i = 0; i < data.length; i++) {
-    const timeField = data[i].fields.find(f => f.name === TIME_SERIES_TIME_FIELD_NAME);
+    const timeField = data[i].fields.find((f) => f.name === TIME_SERIES_TIME_FIELD_NAME);
     const firstTs = timeField.values.get(0);
     if (firstTs < minTimestamp) {
       minTimestamp = firstTs;
@@ -312,8 +317,8 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
 
   for (let i = 0; i < data.length; i++) {
     const frame = data[i];
-    const timeField = frame.fields.find(f => f.name === TIME_SERIES_TIME_FIELD_NAME);
-    const valueField = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    const timeField = frame.fields.find((f) => f.name === TIME_SERIES_TIME_FIELD_NAME);
+    const valueField = frame.fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
     const firstTs = timeField.values.get(0);
 
     if (firstTs > minTimestamp) {
@@ -340,7 +345,7 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
 
 export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
   const maxLengthIndex = getLongestFrame(data);
-  const timeField = data[maxLengthIndex].fields.find(f => f.type === FieldType.time);
+  const timeField = data[maxLengthIndex].fields.find((f) => f.type === FieldType.time);
   if (!timeField) {
     return [];
   }
@@ -348,7 +353,7 @@ export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
   const fields: MutableField[] = [timeField];
 
   for (let i = 0; i < data.length; i++) {
-    const valueField = data[i].fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    const valueField = data[i].fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
     if (!valueField) {
       continue;
     }
@@ -363,7 +368,7 @@ export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
   }
 
   const frame: DataFrame = {
-    name: "wide",
+    name: 'wide',
     fields,
     length: timeField.values.length,
   };
@@ -375,7 +380,7 @@ function getLongestFrame(data: MutableDataFrame[]): number {
   let maxLengthIndex = 0;
   let maxLength = 0;
   for (let i = 0; i < data.length; i++) {
-    const timeField = data[i].fields.find(f => f.type === FieldType.time);
+    const timeField = data[i].fields.find((f) => f.type === FieldType.time);
     if (timeField.values.length > maxLength) {
       maxLength = timeField.values.length;
       maxLengthIndex = i;
@@ -387,8 +392,8 @@ function getLongestFrame(data: MutableDataFrame[]): number {
 
 function sortTimeseries(timeseries) {
   // Sort trend data, issue #202
-  _.forEach(timeseries, series => {
-    series.datapoints = _.sortBy(series.datapoints, point => point[c.DATAPOINT_TS]);
+  _.forEach(timeseries, (series) => {
+    series.datapoints = _.sortBy(series.datapoints, (point) => point[c.DATAPOINT_TS]);
   });
   return timeseries;
 }
@@ -430,11 +435,9 @@ function handleHistoryAsTable(history, items, target) {
     }
 
     let host: any = _.first(item.hosts);
-    host = host ? host.name : "";
+    host = host ? host.name : '';
 
-    table.rows.push([
-      host, item.name, item.key_, lastValue
-    ]);
+    table.rows.push([host, item.name, item.key_, lastValue]);
   });
 
   return table;
@@ -448,10 +451,7 @@ function convertText(target, point) {
     value = extractText(point.value, target.textFilter, target.useCaptureGroups);
   }
 
-  return [
-    value,
-    point.clock * 1000 + Math.round(point.ns / 1000000)
-  ];
+  return [value, point.clock * 1000 + Math.round(point.ns / 1000000)];
 }
 
 function extractText(str, pattern, useCaptureGroups) {
@@ -464,31 +464,29 @@ function extractText(str, pattern, useCaptureGroups) {
       return extractedValue[0];
     }
   }
-  return "";
+  return '';
 }
 
 function handleSLAResponse(itservice, slaProperty, slaObject) {
   const targetSLA = slaObject[itservice.serviceid].sla;
-  if (slaProperty.property === 'status') {
+  if (slaProperty === 'status') {
     const targetStatus = parseInt(slaObject[itservice.serviceid].status, 10);
     return {
-      target: itservice.name + ' ' + slaProperty.name,
-      datapoints: [
-        [targetStatus, targetSLA[0].to * 1000]
-      ]
+      target: itservice.name + ' ' + slaProperty,
+      datapoints: [[targetStatus, targetSLA[0].to * 1000]],
     };
   } else {
     let i;
     const slaArr = [];
     for (i = 0; i < targetSLA.length; i++) {
       if (i === 0) {
-        slaArr.push([targetSLA[i][slaProperty.property], targetSLA[i].from * 1000]);
+        slaArr.push([targetSLA[i][slaProperty], targetSLA[i].from * 1000]);
       }
-      slaArr.push([targetSLA[i][slaProperty.property], targetSLA[i].to * 1000]);
+      slaArr.push([targetSLA[i][slaProperty], targetSLA[i].to * 1000]);
     }
     return {
-      target: itservice.name + ' ' + slaProperty.name,
-      datapoints: slaArr
+      target: itservice.name + ' ' + slaProperty,
+      datapoints: slaArr,
     };
   }
 }
@@ -499,13 +497,11 @@ function handleTriggersResponse(triggers, groups, timeRange) {
     try {
       triggersCount = Number(triggers);
     } catch (err) {
-      console.log("Error when handling triggers count: ", err);
+      console.log('Error when handling triggers count: ', err);
     }
     return {
-      target: "triggers count",
-      datapoints: [
-        [triggersCount, timeRange[1] * 1000]
-      ]
+      target: 'triggers count',
+      datapoints: [[triggersCount, timeRange[1] * 1000]],
     };
   } else {
     const stats = getTriggerStats(triggers);
@@ -517,7 +513,10 @@ function handleTriggersResponse(triggers, groups, timeRange) {
     });
     _.each(stats, (severity_stats, group) => {
       if (_.includes(groupNames, group)) {
-        let row = _.map(_.orderBy(_.toPairs(severity_stats), (s) => s[0], ['desc']), (s) => s[1]);
+        let row = _.map(
+          _.orderBy(_.toPairs(severity_stats), (s) => s[0], ['desc']),
+          (s) => s[1]
+        );
         row = _.concat([group], ...row);
         table.rows.push(row);
       }
@@ -543,38 +542,32 @@ function getTriggerStats(triggers) {
 
 function convertHistoryPoint(point) {
   // Value must be a number for properly work
-  return [
-    Number(point.value),
-    point.clock * 1000 + Math.round(point.ns / 1000000)
-  ];
+  return [Number(point.value), point.clock * 1000 + Math.round(point.ns / 1000000)];
 }
 
 function convertTrendPoint(valueType, point) {
   let value;
   switch (valueType) {
-    case "min":
+    case 'min':
       value = point.value_min;
       break;
-    case "max":
+    case 'max':
       value = point.value_max;
       break;
-    case "avg":
+    case 'avg':
       value = point.value_avg;
       break;
-    case "sum":
+    case 'sum':
       value = point.value_avg * point.num;
       break;
-    case "count":
+    case 'count':
       value = point.num;
       break;
     default:
       value = point.value_avg;
   }
 
-  return [
-    Number(value),
-    point.clock * 1000
-  ];
+  return [Number(value), point.clock * 1000];
 }
 
 export default {

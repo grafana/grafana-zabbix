@@ -79,6 +79,12 @@ function migrateApplications(target) {
   }
 }
 
+function migrateSLAProperty(target) {
+  if (target.slaProperty?.property) {
+    target.slaProperty = target.slaProperty?.property;
+  }
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -90,6 +96,7 @@ export function migrate(target) {
   migrateSLA(target);
   migrateProblemSort(target);
   migrateApplications(target);
+  migrateSLAProperty(target);
   return target;
 }
 
