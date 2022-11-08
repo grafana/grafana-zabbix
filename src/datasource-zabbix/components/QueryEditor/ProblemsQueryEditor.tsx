@@ -83,6 +83,21 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   }, [query.group.filter, query.host.filter]);
 
+  const loadProxyOptions = async () => {
+    const proxies = await datasource.zabbix.getProxies();
+    const options = proxies?.map((proxy) => ({
+      value: proxy.host,
+      label: proxy.host,
+    }));
+    options.unshift(...getVariableOptions());
+    return options;
+  };
+
+  const [{ loading: proxiesLoading, value: proxiesOptions }, fetchProxies] = useAsyncFn(async () => {
+    const options = await loadProxyOptions();
+    return options;
+  }, []);
+
   // Update suggestions on every metric change
   useEffect(() => {
     fetchGroups();
@@ -95,6 +110,10 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
   useEffect(() => {
     fetchApps();
   }, [query.group.filter, query.host.filter]);
+
+  useEffect(() => {
+    fetchProxies();
+  }, []);
 
   const onTextFilterChange = (prop: string) => {
     return (v: FormEvent<HTMLInputElement>) => {
@@ -149,7 +168,13 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
           />
         </InlineField>
         <InlineField label="Proxy" labelWidth={12}>
-          <Input width={24} defaultValue={query.proxy?.filter} onBlur={onTextFilterChange('proxy')} />
+          <MetricPicker
+            width={24}
+            value={query.proxy?.filter}
+            options={proxiesOptions}
+            isLoading={proxiesLoading}
+            onChange={onFilterChange('proxy')}
+          />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
