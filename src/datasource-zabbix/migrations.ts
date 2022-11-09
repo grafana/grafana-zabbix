@@ -9,9 +9,11 @@ import * as c from './constants';
 
 export function isGrafana2target(target) {
   if (!target.mode || target.mode === 0 || target.mode === 2) {
-    if ((target.hostFilter || target.itemFilter || target.downsampleFunction ||
-        (target.host && target.host.host)) &&
-      (target.item.filter === undefined && target.host.filter === undefined)) {
+    if (
+      (target.hostFilter || target.itemFilter || target.downsampleFunction || (target.host && target.host.host)) &&
+      target.item.filter === undefined &&
+      target.host.filter === undefined
+    ) {
       return true;
     } else {
       return false;
@@ -22,10 +24,10 @@ export function isGrafana2target(target) {
 }
 
 export function migrateFrom2To3version(target: ZabbixMetricsQuery) {
-  target.group.filter = target.group.name === "*" ? "/.*/" : target.group.name;
-  target.host.filter = target.host.name === "*" ? convertToRegex(target.hostFilter) : target.host.name;
-  target.application.filter = target.application.name === "*" ? "" : target.application.name;
-  target.item.filter = target.item.name === "All" ? convertToRegex(target.itemFilter) : target.item.name;
+  target.group.filter = target.group.name === '*' ? '/.*/' : target.group.name;
+  target.host.filter = target.host.name === '*' ? convertToRegex(target.hostFilter) : target.host.name;
+  target.application.filter = target.application.name === '*' ? '' : target.application.name;
+  target.item.filter = target.item.name === 'All' ? convertToRegex(target.itemFilter) : target.item.name;
   return target;
 }
 
@@ -77,6 +79,12 @@ function migrateApplications(target) {
   }
 }
 
+function migrateSLAProperty(target) {
+  if (target.slaProperty?.property) {
+    target.slaProperty = target.slaProperty?.property;
+  }
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -88,12 +96,13 @@ export function migrate(target) {
   migrateSLA(target);
   migrateProblemSort(target);
   migrateApplications(target);
+  migrateSLAProperty(target);
   return target;
 }
 
 function fixTargetGroup(target) {
   if (target.group && Array.isArray(target.group)) {
-    target.group = { 'filter': "" };
+    target.group = { filter: '' };
   }
   return target;
 }
@@ -128,7 +137,7 @@ export function migrateDSConfig(jsonData) {
   }
 
   if (oldVersion < 3) {
-    jsonData.timeout = (jsonData.timeout as string) === "" ? null : Number(jsonData.timeout as string);
+    jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
   }
 
   return jsonData;
@@ -143,3 +152,34 @@ function shouldMigrateDSConfig(jsonData): boolean {
   }
   return false;
 }
+
+const getDefaultAnnotationTarget = (json: any) => {
+  return {
+    group: { filter: json.group ?? '' },
+    host: { filter: json.host ?? '' },
+    application: { filter: json.application ?? '' },
+    trigger: { filter: json.trigger ?? '' },
+    options: {
+      minSeverity: json.minseverity ?? 0,
+      showOkEvents: json.showOkEvents ?? false,
+      hideAcknowledged: json.hideAcknowledged ?? false,
+      showHostname: json.showHostname ?? false,
+    },
+  };
+};
+
+export const prepareAnnotation = (json: any) => {
+  const defaultTarget = getDefaultAnnotationTarget(json);
+
+  json.target = {
+    ...defaultTarget,
+    ...json.target,
+    fromAnnotations: true,
+    options: {
+      ...defaultTarget.options!,
+      ...json.target?.options,
+    },
+  };
+
+  return json;
+};

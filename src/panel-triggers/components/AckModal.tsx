@@ -1,7 +1,23 @@
 import React, { PureComponent } from 'react';
 import { cx, css } from '@emotion/css';
-import { ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_ACK, ZBX_ACK_ACTION_CHANGE_SEVERITY, ZBX_ACK_ACTION_CLOSE } from '../../datasource-zabbix/constants';
-import { Button, VerticalGroup, Spinner, Modal, Checkbox, RadioButtonGroup, stylesFactory, withTheme, Themeable, TextArea } from '@grafana/ui';
+import {
+  ZBX_ACK_ACTION_ADD_MESSAGE,
+  ZBX_ACK_ACTION_ACK,
+  ZBX_ACK_ACTION_CHANGE_SEVERITY,
+  ZBX_ACK_ACTION_CLOSE,
+} from '../../datasource-zabbix/constants';
+import {
+  Button,
+  VerticalGroup,
+  Spinner,
+  Modal,
+  Checkbox,
+  RadioButtonGroup,
+  stylesFactory,
+  withTheme,
+  Themeable,
+  TextArea,
+} from '@grafana/ui';
 import { FAIcon } from '../../components';
 import { GrafanaTheme } from '@grafana/data';
 
@@ -37,12 +53,12 @@ export interface AckProblemData {
 }
 
 const severityOptions = [
-  {value: 0, label: 'Not classified'},
-  {value: 1, label: 'Information'},
-  {value: 2, label: 'Warning'},
-  {value: 3, label: 'Average'},
-  {value: 4, label: 'High'},
-  {value: 5, label: 'Disaster'}
+  { value: 0, label: 'Not classified' },
+  { value: 1, label: 'Information' },
+  { value: 2, label: 'Warning' },
+  { value: 3, label: 'Average' },
+  { value: 4, label: 'High' },
+  { value: 5, label: 'Disaster' },
 ];
 
 export class AckModalUnthemed extends PureComponent<Props, State> {
@@ -67,7 +83,7 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
 
   handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     this.setState({ value: event.target.value, error: false });
-  }
+  };
 
   handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.which === KEYBOARD_ENTER_KEY || event.key === 'Enter') {
@@ -75,32 +91,32 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     } else if (event.which === KEYBOARD_ESCAPE_KEY || event.key === 'Escape') {
       this.dismiss();
     }
-  }
+  };
 
   handleBackdropClick = () => {
     this.dismiss();
-  }
+  };
 
   onAcknowledgeToggle = () => {
     this.setState({ acknowledge: !this.state.acknowledge, error: false });
-  }
+  };
 
   onChangeSeverityToggle = () => {
     this.setState({ changeSeverity: !this.state.changeSeverity, error: false });
-  }
+  };
 
   onCloseProblemToggle = () => {
     this.setState({ closeProblem: !this.state.closeProblem, error: false });
-  }
+  };
 
-  onChangeSelectedSeverity = v => {
+  onChangeSelectedSeverity = (v) => {
     this.setState({ selectedSeverity: v });
   };
 
   dismiss = () => {
     this.setState({ value: '', error: false, errorMessage: '', ackError: '', loading: false });
     this.props.onDismiss();
-  }
+  };
 
   submit = () => {
     const { acknowledge, changeSeverity, closeProblem } = this.state;
@@ -109,7 +125,7 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     if (!this.state.value && !actionSelected) {
       return this.setState({
         error: true,
-        errorMessage: 'Enter message text or select an action'
+        errorMessage: 'Enter message text or select an action',
       });
     }
 
@@ -132,51 +148,54 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     }
     ackData.action = action;
 
-    this.props.onSubmit(ackData).then(() => {
-      this.dismiss();
-    }).catch(err => {
-      const errorMessage = err.data?.message || err.data?.error || err.data || err.statusText || '';
-      this.setState({
-        ackError: errorMessage,
-        loading: false,
+    this.props
+      .onSubmit(ackData)
+      .then(() => {
+        this.dismiss();
+      })
+      .catch((err) => {
+        const errorMessage = err.data?.message || err.data?.error || err.data || err.statusText || '';
+        this.setState({
+          ackError: errorMessage,
+          loading: false,
+        });
       });
-    });
-  }
+  };
 
   renderActions() {
     const { canClose } = this.props;
 
     const actions = [
-      <Checkbox translate="" key="ack" label="Acknowledge" value={this.state.acknowledge} onChange={this.onAcknowledgeToggle} />,
+      <Checkbox key="ack" label="Acknowledge" value={this.state.acknowledge} onChange={this.onAcknowledgeToggle} />,
       <Checkbox
-        translate=""
         key="change-severity"
         label="Change severity"
         description=""
         value={this.state.changeSeverity}
         onChange={this.onChangeSeverityToggle}
       />,
-      this.state.changeSeverity &&
+      this.state.changeSeverity && (
         <RadioButtonGroup
           key="severity"
           size="sm"
           options={severityOptions}
           value={this.state.selectedSeverity}
           onChange={this.onChangeSelectedSeverity}
-        />,
-      canClose &&
+        />
+      ),
+      canClose && (
         <Checkbox
-          translate=""
           key="close"
           label="Close problem"
           disabled={!canClose}
           value={this.state.closeProblem}
           onChange={this.onCloseProblemToggle}
-        />,
+        />
+      ),
     ];
 
     // <VerticalGroup /> doesn't handle empty elements properly, so don't return it
-    return actions.filter(e => e);
+    return actions.filter((e) => e);
   }
 
   render() {
@@ -204,8 +223,8 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
       >
         <div className={inputGroupClass}>
           <label className="gf-form-hint">
-            <TextArea className={inputClass}
-              translate=""
+            <TextArea
+              className={inputClass}
               type="text"
               name="message"
               placeholder="Message"
@@ -213,30 +232,30 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
               autoFocus={true}
               value={this.state.value}
               onChange={this.handleChange}
-              onKeyDown={this.handleKeyPress}>
-            </TextArea>
+              onKeyDown={this.handleKeyPress}
+            ></TextArea>
             <small className={inputHintClass}>Press Enter to submit</small>
-            {this.state.error &&
-              <small className={inputErrorClass}>{this.state.errorMessage}</small>
-            }
+            {this.state.error && <small className={inputErrorClass}>{this.state.errorMessage}</small>}
           </label>
         </div>
 
         <div className="gf-form">
-          <VerticalGroup>
-            {this.renderActions()}
-          </VerticalGroup>
+          <VerticalGroup>{this.renderActions()}</VerticalGroup>
         </div>
 
-        {this.state.ackError &&
+        {this.state.ackError && (
           <div className="gf-form ack-request-error">
             <span className={styles.ackError}>{this.state.ackError}</span>
           </div>
-        }
+        )}
 
         <div className="gf-form-button-row text-center">
-          <Button variant="primary" onClick={this.submit}>Update</Button>
-          <Button variant="secondary" onClick={this.dismiss}>Cancel</Button>
+          <Button variant="primary" onClick={this.submit}>
+            Update
+          </Button>
+          <Button variant="secondary" onClick={this.dismiss}>
+            Cancel
+          </Button>
         </div>
       </Modal>
     );

@@ -2,8 +2,6 @@ name: CI
 
 on:
   push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -16,12 +14,12 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
-          node-version: "16.x"
+          node-version: '16.x'
 
       - name: Setup Go environment
         uses: actions/setup-go@v2
         with:
-          go-version: "1.17"
+          go-version: '1.17'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
@@ -61,12 +59,12 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
-          node-version: "16.x"
+          node-version: '16.x'
 
       - name: Setup Go environment
         uses: actions/setup-go@v2
         with:
-          go-version: "1.17"
+          go-version: '1.17'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
@@ -105,12 +103,12 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
-          node-version: "16.x"
+          node-version: '16.x'
 
       - name: Setup Go environment
         uses: actions/setup-go@v2
         with:
-          go-version: "1.17"
+          go-version: '1.17'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path

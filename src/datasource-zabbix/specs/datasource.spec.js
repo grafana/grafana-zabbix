@@ -13,6 +13,10 @@ jest.mock('@grafana/runtime', () => ({
   },
 }), { virtual: true });
 
+jest.mock('../components/AnnotationQueryEditor', () => ({
+  AnnotationQueryEditor: () => {},
+}));
+
 describe('ZabbixDatasource', () => {
   let ctx = {};
 

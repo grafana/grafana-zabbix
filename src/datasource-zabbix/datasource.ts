@@ -22,8 +22,10 @@ import {
   DataSourceInstanceSettings,
   FieldType,
   isDataFrame,
-  LoadingState
+  LoadingState,
+  toDataFrame,
 } from '@grafana/data';
+import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -52,6 +54,11 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     this.templateSrv = templateSrv;
     this.enableDebugLog = config.buildInfo.env === 'development';
+
+    this.annotations = {
+      QueryEditor: AnnotationQueryEditor,
+      prepareAnnotation: migrations.prepareAnnotation,
+    };
 
     // Use custom format for template variables
     this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
@@ -108,7 +115,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    */
   query(request: DataQueryRequest<ZabbixMetricsQuery>) {
     // Migrate old targets
-    const requestTargets = request.targets.map(t => {
+    const requestTargets = request.targets.map((t) => {
       // Prevent changes of original object
       const target = _.cloneDeep(t);
       return migrations.migrate(target);
@@ -117,16 +124,25 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const backendResponsePromise = this.backendQuery({ ...request, targets: requestTargets });
     const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: requestTargets });
     const frontendResponsePromise = this.frontendQuery({ ...request, targets: requestTargets });
+    const annotationResposePromise = this.annotationRequest({ ...request, targets: requestTargets });
 
-    return Promise.all([backendResponsePromise, dbConnectionResponsePromise, frontendResponsePromise])
-    .then(rsp => {
+    return Promise.all([
+      backendResponsePromise,
+      dbConnectionResponsePromise,
+      frontendResponsePromise,
+      annotationResposePromise,
+    ]).then((rsp) => {
       // Merge backend and frontend queries results
-      const [backendRes, dbConnectionRes, frontendRes] = rsp;
+      const [backendRes, dbConnectionRes, frontendRes, annotationRes] = rsp;
       if (dbConnectionRes.data) {
         backendRes.data = backendRes.data.concat(dbConnectionRes.data);
       }
       if (frontendRes.data) {
         backendRes.data = backendRes.data.concat(frontendRes.data);
+      }
+
+      if (annotationRes.data) {
+        backendRes.data = backendRes.data.concat(annotationRes.data);
       }
 
       return {
@@ -144,21 +160,23 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     // Add range variables
     request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
 
-    const queries = _.compact(targets.map((query) => {
-      // Don't request for hidden targets
-      if (query.hide) {
-        return null;
-      }
+    const queries = _.compact(
+      targets.map((query) => {
+        // Don't request for hidden targets
+        if (query.hide) {
+          return null;
+        }
 
-      this.replaceTargetVariables(query, request);
+        this.replaceTargetVariables(query, request);
 
-      return {
-        ...query,
-        datasourceId: this.datasourceId,
-        intervalMs,
-        maxDataPoints,
-      };
-    }));
+        return {
+          ...query,
+          datasourceId: this.datasourceId,
+          intervalMs,
+          maxDataPoints,
+        };
+      })
+    );
 
     // Return early if no queries exist
     if (!queries.length) {
@@ -175,12 +193,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     let rsp: any;
     try {
-      rsp = await getBackendSrv().fetch({
-        url: '/api/ds/query',
-        method: 'POST',
-        data: body,
-        requestId,
-      }).toPromise();
+      rsp = await getBackendSrv()
+        .fetch({
+          url: '/api/ds/query',
+          method: 'POST',
+          data: body,
+          requestId,
+        })
+        .toPromise();
     } catch (err) {
       return toDataQueryResponse(err);
     }
@@ -198,8 +218,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   }
 
   async frontendQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
-    const frontendTargets = request.targets.filter(t => !(this.isBackendTarget(t) || this.isDBConnectionTarget(t)));
-    const promises = _.map(frontendTargets, target => {
+    const frontendTargets = request.targets.filter((t) => !(this.isBackendTarget(t) || this.isDBConnectionTarget(t)));
+    const promises = _.map(frontendTargets, (target) => {
       // Don't request for hidden targets
       if (target.hide) {
         return [];
@@ -233,50 +253,52 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     // Data for panel (all targets)
     return Promise.all(_.flatten(promises))
-    .then(_.flatten)
-    .then(data => {
-      if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
-        data = responseHandler.alignFrames(data);
-        if (responseHandler.isConvertibleToWide(data)) {
-          console.log('Converting response to the wide format');
-          data = responseHandler.convertToWide(data);
+      .then(_.flatten)
+      .then((data) => {
+        if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
+          data = responseHandler.alignFrames(data);
+          if (responseHandler.isConvertibleToWide(data)) {
+            console.log('Converting response to the wide format');
+            data = responseHandler.convertToWide(data);
+          }
         }
-      }
-      return { data };
-    });
+        return { data };
+      });
   }
 
   async dbConnectionQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
     const targets = request.targets.filter(this.isDBConnectionTarget);
 
-    const queries = _.compact(targets.map((target) => {
-      // Don't request for hidden targets
-      if (target.hide) {
-        return [];
-      }
-
-      // Add range variables
-      request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
-      this.replaceTargetVariables(target, request);
-      const timeRange = this.buildTimeRange(request, target);
-      const useTrends = this.isUseTrends(timeRange);
-
-      if (!target.queryType || target.queryType === c.MODE_METRICS) {
-        return this.queryNumericData(target, timeRange, useTrends, request);
-      } else if (target.queryType === c.MODE_ITEMID) {
-        // Item ID query
-        if (!target.itemids) {
+    const queries = _.compact(
+      targets.map((target) => {
+        // Don't request for hidden targets
+        if (target.hide) {
           return [];
         }
-        return this.queryItemIdData(target, timeRange, useTrends, request);
-      } else {
-        return [];
-      }
-    }));
+
+        // Add range variables
+        request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
+        this.replaceTargetVariables(target, request);
+        const timeRange = this.buildTimeRange(request, target);
+        const useTrends = this.isUseTrends(timeRange);
+
+        if (!target.queryType || target.queryType === c.MODE_METRICS) {
+          return this.queryNumericData(target, timeRange, useTrends, request);
+        } else if (target.queryType === c.MODE_ITEMID) {
+          // Item ID query
+          if (!target.itemids) {
+            return [];
+          }
+          return this.queryItemIdData(target, timeRange, useTrends, request);
+        } else {
+          return [];
+        }
+      })
+    );
 
     const promises: Promise<DataQueryResponse> = Promise.all(queries)
-    .then(_.flatten)
-    .then(data => ({ data }));
+      .then(_.flatten)
+      .then((data) => ({ data }));
 
     return promises;
   }
@@ -300,7 +322,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    */
   async queryNumericData(target, timeRange, useTrends, request): Promise<any> {
     const getItemOptions = {
-      itemtype: 'num'
+      itemtype: 'num',
     };
 
     const items = await this.zabbix.getItemsFromTarget(target, getItemOptions);
@@ -343,7 +365,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       url: `/api/datasources/${this.datasourceId}/resources/db-connection-post`,
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       hideFromInspector: false,
       data: {
@@ -379,10 +401,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   getTrendValueType(target) {
     // Find trendValue() function and get specified trend value
     const trendFunctions = _.map(metricFunctions.getCategories()['Trends'], 'name');
-    const trendValueFunc = _.find(target.functions, func => {
+    const trendValueFunc = _.find(target.functions, (func) => {
       return _.includes(trendFunctions, func.def.name);
     });
-    return trendValueFunc ? trendValueFunc.params[0] : "avg";
+    return trendValueFunc ? trendValueFunc.params[0] : 'avg';
   }
 
   sortByRefId(response: DataQueryResponse) {
@@ -413,18 +435,19 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    */
   queryTextData(target, timeRange) {
     const options = {
-      itemtype: 'text'
+      itemtype: 'text',
     };
-    return this.zabbix.getItemsFromTarget(target, options)
-    .then(items => {
-      return this.zabbix.getHistoryText(items, timeRange, target);
-    })
-    .then(result => {
-      if (target.resultFormat !== 'table') {
-        return result.map(s => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
-      }
-      return result;
-    });
+    return this.zabbix
+      .getItemsFromTarget(target, options)
+      .then((items) => {
+        return this.zabbix.getHistoryText(items, timeRange, target);
+      })
+      .then((result) => {
+        if (target.resultFormat !== 'table') {
+          return result.map((s) => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
+        }
+        return result;
+      });
   }
 
   /**
@@ -433,14 +456,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   queryItemIdData(target, timeRange, useTrends, options) {
     let itemids = target.itemids;
     itemids = this.templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
-    itemids = _.map(itemids.split(','), itemid => itemid.trim());
+    itemids = _.map(itemids.split(','), (itemid) => itemid.trim());
 
     if (!itemids) {
       return [];
     }
 
-    return this.zabbix.getItemsByIDs(itemids)
-    .then(items => {
+    return this.zabbix.getItemsByIDs(itemids).then((items) => {
       return this.queryNumericDataForItems(items, target, timeRange, useTrends, options);
     });
   }
@@ -468,7 +490,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     let itservices = await this.zabbix.getITServices(itServiceFilter);
     if (request.isOldVersion) {
-      itservices = _.filter(itservices, { 'serviceid': target.itservice?.serviceid });
+      itservices = _.filter(itservices, { serviceid: target.itservice?.serviceid });
     }
     const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
     const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
@@ -478,8 +500,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
   queryTriggersData(target, timeRange) {
     const [timeFrom, timeTo] = timeRange;
-    return this.zabbix.getHostsFromTarget(target)
-    .then(results => {
+    return this.zabbix.getHostsFromTarget(target).then((results) => {
       const [hosts, apps] = results;
       if (hosts.length) {
         const hostids = _.map(hosts, 'hostid');
@@ -489,14 +510,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
           acknowledged: target.triggers.acknowledged,
           count: target.triggers.count,
           timeFrom: timeFrom,
-          timeTo: timeTo
+          timeTo: timeTo,
         };
         const groupFilter = target.group.filter;
         return Promise.all([
           this.zabbix.getHostAlerts(hostids, appids, options),
-          this.zabbix.getGroups(groupFilter)
-        ])
-        .then(([triggers, groups]) => {
+          this.zabbix.getGroups(groupFilter),
+        ]).then(([triggers, groups]) => {
           return responseHandler.handleTriggersResponse(triggers, groups, timeRange);
         });
       } else {
@@ -536,7 +556,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     // replaceTemplateVars() builds regex-like string, so we should trim it.
     const tagsFilterStr = tagsFilter.replace('/^', '').replace('$/', '');
     const tags = utils.parseTags(tagsFilterStr);
-    tags.forEach(tag => {
+    tags.forEach((tag) => {
       // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
       tag.operator = 1;
     });
@@ -556,9 +576,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     if (target.options?.minSeverity) {
-      let severities = [0, 1, 2, 3, 4, 5].filter(v => v >= target.options?.minSeverity);
+      let severities = [0, 1, 2, 3, 4, 5].filter((v) => v >= target.options?.minSeverity);
       if (target.options?.severities) {
-        severities = severities.filter(v => target.options?.severities.includes(v));
+        severities = severities.filter((v) => target.options?.severities.includes(v));
       }
       problemsOptions.severities = severities;
     }
@@ -567,27 +587,30 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     if (showProblems === ShowProblemTypes.History || target.options?.useTimeRange) {
       problemsOptions.timeFrom = timeFrom;
       problemsOptions.timeTo = timeTo;
-      getProblemsPromise = this.zabbix.getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);
+      getProblemsPromise = this.zabbix.getProblemsHistory(
+        groupFilter,
+        hostFilter,
+        appFilter,
+        proxyFilter,
+        problemsOptions
+      );
     } else {
       getProblemsPromise = this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);
     }
 
-    const problemsPromises = Promise.all([
-      getProblemsPromise,
-      getProxiesPromise
-    ])
-    .then(([problems, sourceProxies]) => {
-      proxies = _.keyBy(sourceProxies, 'proxyid');
-      return problems;
-    })
-    .then(problems => problemsHandler.setMaintenanceStatus(problems))
-    .then(problems => problemsHandler.setAckButtonStatus(problems, showAckButton))
-    .then(problems => problemsHandler.filterTriggersPre(problems, replacedTarget))
-    .then(problems => problemsHandler.sortProblems(problems, target))
-    .then(problems => problemsHandler.addTriggerDataSource(problems, target))
-    .then(problems => problemsHandler.addTriggerHostProxy(problems, proxies));
+    const problemsPromises = Promise.all([getProblemsPromise, getProxiesPromise])
+      .then(([problems, sourceProxies]) => {
+        proxies = _.keyBy(sourceProxies, 'proxyid');
+        return problems;
+      })
+      .then((problems) => problemsHandler.setMaintenanceStatus(problems))
+      .then((problems) => problemsHandler.setAckButtonStatus(problems, showAckButton))
+      .then((problems) => problemsHandler.filterTriggersPre(problems, replacedTarget))
+      .then((problems) => problemsHandler.sortProblems(problems, target))
+      .then((problems) => problemsHandler.addTriggerDataSource(problems, target))
+      .then((problems) => problemsHandler.addTriggerHostProxy(problems, proxies));
 
-    return problemsPromises.then(problems => {
+    return problemsPromises.then((problems) => {
       const problemsDataFrame = problemsHandler.toDataFrame(problems);
       return problemsDataFrame;
     });
@@ -604,35 +627,35 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         message += `, DB connector type: ${dbConnectorStatus.dsType}`;
       }
       return {
-        status: "success",
-        title: "Success",
-        message: message
+        status: 'success',
+        title: 'Success',
+        message: message,
       };
     } catch (error) {
       if (error instanceof ZabbixAPIError) {
         return {
-          status: "error",
+          status: 'error',
           title: error.message,
-          message: error.message
+          message: error.message,
         };
       } else if (error.data && error.data.message) {
         return {
-          status: "error",
-          title: "Zabbix Client Error",
-          message: error.data.message
+          status: 'error',
+          title: 'Zabbix Client Error',
+          message: error.data.message,
         };
-      } else if (typeof (error) === 'string') {
+      } else if (typeof error === 'string') {
         return {
-          status: "error",
-          title: "Unknown Error",
-          message: error
+          status: 'error',
+          title: 'Unknown Error',
+          message: error,
         };
       } else {
         console.log(error);
         return {
-          status: "error",
-          title: "Connection failed",
-          message: "Could not connect to given url"
+          status: 'error',
+          title: 'Connection failed',
+          message: 'Could not connect to given url',
         };
       }
     }
@@ -683,7 +706,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         resultPromise = this.zabbix.getItemTags(queryModel.group, queryModel.host, queryModel.itemTag);
         break;
       case VariableQueryTypes.Item:
-        resultPromise = this.zabbix.getItems(queryModel.group, queryModel.host, queryModel.application, null, queryModel.item);
+        resultPromise = this.zabbix.getItems(
+          queryModel.group,
+          queryModel.host,
+          queryModel.application,
+          null,
+          queryModel.item
+        );
         break;
       case VariableQueryTypes.ItemValues:
         const range = options?.range;
@@ -694,7 +723,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         break;
     }
 
-    return resultPromise.then(metrics => {
+    return resultPromise.then((metrics) => {
       return _.map(metrics, formatMetric);
     });
   }
@@ -718,74 +747,85 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   // Annotations //
   /////////////////
 
-  annotationQuery(options) {
+  async annotationRequest(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
+    const targets = request.targets.filter((t) => t.fromAnnotations);
+    if (!targets.length) {
+      return Promise.resolve({ data: [] });
+    }
+
+    const events = await this.annotationQueryLegacy({ ...request, targets });
+    return { data: [toDataFrame(events)] };
+  }
+
+  annotationQueryLegacy(options) {
     const timeRange = options.range || options.rangeRaw;
     const timeFrom = Math.ceil(dateMath.parse(timeRange.from) / 1000);
     const timeTo = Math.ceil(dateMath.parse(timeRange.to) / 1000);
-    const annotation = options.annotation;
+    const annotation = options.targets[0];
 
     // Show all triggers
     const problemsOptions: any = {
-      value: annotation.showOkEvents ? ['0', '1'] : '1',
+      value: annotation.options.showOkEvents ? ['0', '1'] : '1',
       valueFromEvent: true,
       timeFrom,
       timeTo,
     };
 
-    if (annotation.minseverity) {
-      const severities = [0, 1, 2, 3, 4, 5].filter(v => v >= Number(annotation.minseverity));
+    if (annotation.options.minSeverity) {
+      const severities = [0, 1, 2, 3, 4, 5].filter((v) => v >= Number(annotation.options.minSeverity));
       problemsOptions.severities = severities;
     }
 
-    const groupFilter = this.replaceTemplateVars(annotation.group, {});
-    const hostFilter = this.replaceTemplateVars(annotation.host, {});
-    const appFilter = this.replaceTemplateVars(annotation.application, {});
+    const groupFilter = this.replaceTemplateVars(annotation.group.filter, {});
+    const hostFilter = this.replaceTemplateVars(annotation.host.filter, {});
+    const appFilter = this.replaceTemplateVars(annotation.application.filter, {});
     const proxyFilter = undefined;
 
-    return this.zabbix.getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions)
-    .then(problems => {
-      // Filter triggers by description
-      const problemName = this.replaceTemplateVars(annotation.trigger, {});
-      if (utils.isRegex(problemName)) {
-        problems = _.filter(problems, p => {
-          return utils.buildRegex(problemName).test(p.description);
-        });
-      } else if (problemName) {
-        problems = _.filter(problems, p => {
-          return p.description === problemName;
-        });
-      }
-
-      // Hide acknowledged events if option enabled
-      if (annotation.hideAcknowledged) {
-        problems = _.filter(problems, p => {
-          return !p.acknowledges?.length;
-        });
-      }
-
-      return _.map(problems, p => {
-        const formattedAcknowledges = utils.formatAcknowledges(p.acknowledges);
-
-        let annotationTags: string[] = [];
-        if (annotation.showHostname) {
-          annotationTags = _.map(p.hosts, 'name');
+    return this.zabbix
+      .getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions)
+      .then((problems) => {
+        // Filter triggers by description
+        const problemName = this.replaceTemplateVars(annotation.trigger.filter, {});
+        if (utils.isRegex(problemName)) {
+          problems = _.filter(problems, (p) => {
+            return utils.buildRegex(problemName).test(p.description);
+          });
+        } else if (problemName) {
+          problems = _.filter(problems, (p) => {
+            return p.description === problemName;
+          });
         }
 
-        return {
-          title: p.value === '1' ? 'Problem' : 'OK',
-          time: p.timestamp * 1000,
-          annotation: annotation,
-          text: p.name + formattedAcknowledges,
-          tags: annotationTags,
-        };
+        // Hide acknowledged events if option enabled
+        if (annotation.hideAcknowledged) {
+          problems = _.filter(problems, (p) => {
+            return !p.acknowledges?.length;
+          });
+        }
+
+        return _.map(problems, (p) => {
+          const formattedAcknowledges = utils.formatAcknowledges(p.acknowledges);
+
+          let annotationTags: string[] = [];
+          if (annotation.showHostname) {
+            annotationTags = _.map(p.hosts, 'name');
+          }
+
+          return {
+            title: p.value === '1' ? 'Problem' : 'OK',
+            time: p.timestamp * 1000,
+            annotation: annotation,
+            text: p.name + formattedAcknowledges,
+            tags: annotationTags,
+          };
+        });
       });
-    });
   }
 
   // Replace template variables
   replaceTargetVariables(target, options) {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    _.forEach(parts, p => {
+    _.forEach(parts, (p) => {
       if (target[p] && target[p].filter) {
         target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
       }
@@ -799,8 +839,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       target.itemids = this.templateSrv.replace(target.itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
     }
 
-    _.forEach(target.functions, func => {
-      func.params = _.map(func.params, param => {
+    _.forEach(target.functions, (func) => {
+      func.params = _.map(func.params, (param) => {
         if (typeof param === 'number') {
           return +this.templateSrv.replace(param.toString(), options.scopedVars);
         } else {
@@ -814,10 +854,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const [timeFrom, timeTo] = timeRange;
     const useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
     const useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
-    const useTrends = this.trends && (
-      (timeFrom < useTrendsFrom) ||
-      (timeTo - timeFrom > useTrendsRange)
-    );
+    const useTrends = this.trends && (timeFrom < useTrendsFrom || timeTo - timeFrom > useTrendsRange);
     return useTrends;
   }
 
@@ -826,23 +863,21 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       return false;
     }
 
-    return target.queryType === c.MODE_METRICS ||
-      target.queryType === c.MODE_ITEMID;
+    return target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID;
   };
 
   isDBConnectionTarget = (target: any): boolean => {
-    return this.enableDirectDBConnection &&
-      (target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID);
+    return this.enableDirectDBConnection && (target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID);
   };
 }
 
 function bindFunctionDefs(functionDefs, category) {
   const aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
-  const aggFuncDefs = _.filter(functionDefs, func => {
+  const aggFuncDefs = _.filter(functionDefs, (func) => {
     return _.includes(aggregationFunctions, func.def.name);
   });
 
-  return _.map(aggFuncDefs, func => {
+  return _.map(aggFuncDefs, (func) => {
     const funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
     return funcInstance.bindFunction(dataProcessor.metricFunctions);
   });
@@ -850,7 +885,7 @@ function bindFunctionDefs(functionDefs, category) {
 
 function getConsolidateBy(target) {
   let consolidateBy;
-  const funcDef = _.find(target.functions, func => {
+  const funcDef = _.find(target.functions, (func) => {
     return func.def.name === 'consolidateBy';
   });
   if (funcDef && funcDef.params && funcDef.params.length) {
@@ -862,7 +897,7 @@ function getConsolidateBy(target) {
 function formatMetric(metricObj) {
   return {
     text: metricObj.name,
-    expandable: false
+    expandable: false,
   };
 }
 

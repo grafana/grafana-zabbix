@@ -20,7 +20,6 @@ export const variableRegex = /\$(\w+)|\[\[([\s\S]+?)(?::(\w+))?\]\]|\${(\w+)(?:\
  * @return {string}      expanded name, ie "CPU system time"
  */
 export function expandItemName(name: string, key: string): string {
-
   // extract params from key:
   // "system.cpu.util[,system,avg1]" --> ["", "system", "avg1"]
   const key_params_str = key.substring(key.indexOf('[') + 1, key.lastIndexOf(']'));
@@ -34,7 +33,7 @@ export function expandItemName(name: string, key: string): string {
 }
 
 export function expandItems(items) {
-  _.forEach(items, item => {
+  _.forEach(items, (item) => {
     item.item = item.name;
     item.name = expandItemName(item.item, item.key_);
     return item;
@@ -49,7 +48,7 @@ function splitKeyParams(paramStr) {
   const split_symbol = ',';
   let param = '';
 
-  _.forEach(paramStr, symbol => {
+  _.forEach(paramStr, (symbol) => {
     if (symbol === '"' && in_array) {
       param += symbol;
     } else if (symbol === '"' && quoted) {
@@ -81,14 +80,14 @@ export function containsMacro(itemName) {
 export function replaceMacro(item, macros, isTriggerItem?) {
   let itemName = isTriggerItem ? item.url : item.name;
   const item_macros = itemName.match(MACRO_PATTERN);
-  _.forEach(item_macros, macro => {
-    const host_macros = _.filter(macros, m => {
+  _.forEach(item_macros, (macro) => {
+    const host_macros = _.filter(macros, (m) => {
       if (m.hostid) {
         if (isTriggerItem) {
           // Trigger item can have multiple hosts
           // Check all trigger host ids against macro host id
           let hostIdFound = false;
-          _.forEach(item.hosts, h => {
+          _.forEach(item.hosts, (h) => {
             if (h.hostid === m.hostid) {
               hostIdFound = true;
             }
@@ -116,7 +115,7 @@ export function replaceMacro(item, macros, isTriggerItem?) {
 }
 
 function escapeMacro(macro) {
-  macro = macro.replace(/\$/, '\\\$');
+  macro = macro.replace(/\$/, '\\$');
   return macro;
 }
 
@@ -125,7 +124,7 @@ export function parseLegacyVariableQuery(query: string): VariableQuery {
   const parts = [];
 
   // Split query. Query structure: group.host.app.item
-  _.each(splitTemplateQuery(query), part => {
+  _.each(splitTemplateQuery(query), (part) => {
     // Replace wildcard to regex
     if (part === '*') {
       part = '/.*/';
@@ -176,7 +175,7 @@ export function splitTemplateQuery(query) {
 
   if (isContainsBraces(query)) {
     const result = query.match(splitPattern);
-    split = _.map(result, part => {
+    split = _.map(result, (part) => {
       return _.trim(part, '{}');
     });
   } else {
@@ -201,7 +200,7 @@ export function isRegex(str) {
 export function isTemplateVariable(str, templateVariables) {
   const variablePattern = /^\$\w+/;
   if (variablePattern.test(str)) {
-    const variables = _.map(templateVariables, variable => {
+    const variables = _.map(templateVariables, (variable) => {
       return '$' + variable.name;
     });
     return _.includes(variables, str);
@@ -225,7 +224,7 @@ export function getRangeScopedVars(range) {
 export function buildRegex(str) {
   const matches = str.match(regexPattern);
   const pattern = matches[1];
-  const flags = matches[2] !== "" ? matches[2] : undefined;
+  const flags = matches[2] !== '' ? matches[2] : undefined;
   return new RegExp(pattern, flags);
 }
 
@@ -260,7 +259,7 @@ export function parseInterval(interval: string): number {
   const intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)/g;
   const momentInterval: any[] = intervalPattern.exec(interval);
   const duration = moment.duration(Number(momentInterval[1]), momentInterval[2]);
-  return (duration.valueOf() as number);
+  return duration.valueOf() as number;
 }
 
 export function parseTimeShiftInterval(interval) {
@@ -285,15 +284,30 @@ export function parseTimeShiftInterval(interval) {
  */
 export function formatAcknowledges(acknowledges) {
   if (acknowledges.length) {
-    let formatted_acknowledges = '<br><br>Acknowledges:<br><table><tr><td><b>Time</b></td>'
-      + '<td><b>User</b></td><td><b>Comments</b></td></tr>';
-    _.each(_.map(acknowledges, ack => {
-      const timestamp = moment.unix(ack.clock);
-      return '<tr><td><i>' + timestamp.format("DD MMM YYYY HH:mm:ss") + '</i></td><td>' + ack.alias
-        + ' (' + ack.name + ' ' + ack.surname + ')' + '</td><td>' + ack.message + '</td></tr>';
-    }), ack => {
-      formatted_acknowledges = formatted_acknowledges.concat(ack);
-    });
+    let formatted_acknowledges =
+      '<br><br>Acknowledges:<br><table><tr><td><b>Time</b></td>' + '<td><b>User</b></td><td><b>Comments</b></td></tr>';
+    _.each(
+      _.map(acknowledges, (ack) => {
+        const timestamp = moment.unix(ack.clock);
+        return (
+          '<tr><td><i>' +
+          timestamp.format('DD MMM YYYY HH:mm:ss') +
+          '</i></td><td>' +
+          ack.alias +
+          ' (' +
+          ack.name +
+          ' ' +
+          ack.surname +
+          ')' +
+          '</td><td>' +
+          ack.message +
+          '</td></tr>'
+        );
+      }),
+      (ack) => {
+        formatted_acknowledges = formatted_acknowledges.concat(ack);
+      }
+    );
     formatted_acknowledges = formatted_acknowledges.concat('</table>');
     return formatted_acknowledges;
   } else {
@@ -307,7 +321,7 @@ export function convertToZabbixAPIUrl(url) {
   if (url.match(zabbixAPIUrlPattern)) {
     return url;
   } else {
-    return url.replace(trimSlashPattern, "$1");
+    return url.replace(trimSlashPattern, '$1');
   }
 }
 
@@ -319,14 +333,16 @@ export function callOnce(func, promiseKeeper) {
   return function () {
     if (!promiseKeeper) {
       promiseKeeper = Promise.resolve(
-        func.apply(this, arguments)
-        .then(result => {
-          promiseKeeper = null;
-          return result;
-        }).catch(err => {
-          promiseKeeper = null;
-          throw err;
-        })
+        func
+          .apply(this, arguments)
+          .then((result) => {
+            promiseKeeper = null;
+            return result;
+          })
+          .catch((err) => {
+            promiseKeeper = null;
+            throw err;
+          })
       );
     }
     return promiseKeeper;
@@ -426,19 +442,19 @@ export function mustArray(result: any): any[] {
 
 const getUnitsMap = () => ({
   '%': 'percent',
-  'b': 'decbits', // bits(SI)
-  'bps': 'bps', // bits/sec(SI)
-  'B': 'bytes', // bytes(IEC)
-  'Bps': 'binBps', // bytes/sec(IEC)
+  b: 'decbits', // bits(SI)
+  bps: 'bps', // bits/sec(SI)
+  B: 'bytes', // bytes(IEC)
+  Bps: 'binBps', // bytes/sec(IEC)
   // 'unixtime': 'dateTimeAsSystem',
-  'uptime': 'dtdhms',
-  'qps': 'qps', // requests/sec (rps)
-  'iops': 'iops', // I/O ops/sec (iops)
-  'Hz': 'hertz', // Hertz (1/s)
-  'V': 'volt', // Volt (V)
-  'C': 'celsius', // Celsius (°C)
-  'RPM': 'rotrpm', // Revolutions per minute (rpm)
-  'dBm': 'dBm', // Decibel-milliwatt (dBm)
+  uptime: 'dtdhms',
+  qps: 'qps', // requests/sec (rps)
+  iops: 'iops', // I/O ops/sec (iops)
+  Hz: 'hertz', // Hertz (1/s)
+  V: 'volt', // Volt (V)
+  C: 'celsius', // Celsius (°C)
+  RPM: 'rotrpm', // Revolutions per minute (rpm)
+  dBm: 'dBm', // Decibel-milliwatt (dBm)
 });
 
 const getKnownGrafanaUnits = () => {
@@ -466,7 +482,7 @@ export function convertZabbixUnit(zabbixUnit: string): string {
 
 export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | null {
   const { valuemapid } = item;
-  const mapping = valueMappings?.find(m => m.valuemapid === valuemapid);
+  const mapping = valueMappings?.find((m) => m.valuemapid === valuemapid);
   if (!mapping) {
     return null;
   }
@@ -478,12 +494,33 @@ export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | nu
       options: {
         value: m.value,
         text: m.newvalue,
-      }
+      },
     };
     return valueMapping;
   });
 }
 
 export function isProblemsDataFrame(data: DataFrame): boolean {
-  return data.fields.length && data.fields[0].type === FieldType.other && data.fields[0].config.custom['type'] === 'problems';
+  return (
+    data.fields.length && data.fields[0].type === FieldType.other && data.fields[0].config.custom['type'] === 'problems'
+  );
+}
+
+// Swap n and k elements.
+export function swap<T>(list: Array<T>, n: number, k: number): Array<T> {
+  if (list === null || list.length < 2 || k > list.length - 1 || k < 0 || n > list.length - 1 || n < 0) {
+    return list;
+  }
+
+  const newList: Array<T> = new Array(list.length);
+  for (let i = 0; i < list.length; i++) {
+    if (i === n) {
+      newList[i] = list[k];
+    } else if (i === k) {
+      newList[i] = list[n];
+    } else {
+      newList[i] = list[i];
+    }
+  }
+  return newList;
 }
