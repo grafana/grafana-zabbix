@@ -152,3 +152,34 @@ function shouldMigrateDSConfig(jsonData): boolean {
   }
   return false;
 }
+
+const getDefaultAnnotationTarget = (json: any) => {
+  return {
+    group: { filter: json.group ?? '' },
+    host: { filter: json.host ?? '' },
+    application: { filter: json.application ?? '' },
+    trigger: { filter: json.trigger ?? '' },
+    options: {
+      minSeverity: json.minseverity ?? 0,
+      showOkEvents: json.showOkEvents ?? false,
+      hideAcknowledged: json.hideAcknowledged ?? false,
+      showHostname: json.showHostname ?? false,
+    },
+  };
+};
+
+export const prepareAnnotation = (json: any) => {
+  const defaultTarget = getDefaultAnnotationTarget(json);
+
+  json.target = {
+    ...defaultTarget,
+    ...json.target,
+    fromAnnotations: true,
+    options: {
+      ...defaultTarget.options!,
+      ...json.target?.options,
+    },
+  };
+
+  return json;
+};

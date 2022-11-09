@@ -98,9 +98,10 @@ function getProblemsQueryDefaults(): Partial<ZabbixMetricsQuery> {
   };
 }
 
-export interface Props extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQuery, ZabbixDSOptions> {}
+export interface ZabbixQueryEditorProps
+  extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQuery, ZabbixDSOptions> {}
 
-export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: Props) => {
+export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQueryEditorProps) => {
   query = { ...getDefaultQuery(), ...query };
   const { queryType } = query;
   if (queryType === c.MODE_PROBLEMS || queryType === c.MODE_TRIGGERS) {

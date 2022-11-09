@@ -75,6 +75,11 @@ export interface ZabbixQueryOptions {
   limit?: number;
   useTimeRange?: boolean;
   severities?: number[];
+
+  // Annotations
+  showOkEvents?: boolean;
+  hideAcknowledged?: boolean;
+  showHostname?: boolean;
 }
 
 export interface MetricFunc {
