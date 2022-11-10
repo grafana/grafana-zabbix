@@ -17,7 +17,7 @@ module.exports = {
   entry: {
     'module': './module.ts',
     'datasource-zabbix/module': './datasource-zabbix/module.ts',
-    'panel-triggers/module': './panel-triggers/module.ts',
+    'panel-triggers/module': './panel-triggers/module.tsx',
   },
   output: {
     filename: "[name].js",

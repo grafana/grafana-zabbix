@@ -1,9 +1,11 @@
-import { DataSourceRef } from "@grafana/data";
+import { DataSourceRef } from '@grafana/data';
+import { CURRENT_SCHEMA_VERSION } from './migrations';
 
 export interface ProblemsPanelOptions {
   schemaVersion: number;
   datasources: any[];
   targets: ProblemsPanelTarget[];
+  layout: 'table' | 'list';
   // Fields
   hostField?: boolean;
   hostTechNameField?: boolean;
@@ -19,15 +21,9 @@ export interface ProblemsPanelOptions {
   descriptionAtNewLine?: boolean;
   // Options
   hostsInMaintenance?: boolean;
-  showTriggers?: 'all triggers' | 'unacknowledged' | 'acknowledges';
-  sortTriggersBy?: {
-    text: string;
-    value: 'lastchange' | 'priority';
-  };
-  showEvents?: {
-    text: 'All' | 'OK' | 'Problems';
-    value: 1 | Array<0 | 1>;
-  };
+  showTriggers?: 'all triggers' | 'unacknowledged' | 'acknowledged';
+  sortProblems?: 'default' | 'lastchange' | 'priority';
+  showEvents?: Number[];
   limit?: number;
   // View options
   fontSize?: string;
@@ -46,24 +42,71 @@ export interface ProblemsPanelOptions {
   markAckEvents?: boolean;
 }
 
+export const DEFAULT_SEVERITY = [
+  { priority: 0, severity: 'Not classified', color: 'rgb(108, 108, 108)', show: true },
+  { priority: 1, severity: 'Information', color: 'rgb(120, 158, 183)', show: true },
+  { priority: 2, severity: 'Warning', color: 'rgb(175, 180, 36)', show: true },
+  { priority: 3, severity: 'Average', color: 'rgb(255, 137, 30)', show: true },
+  { priority: 4, severity: 'High', color: 'rgb(255, 101, 72)', show: true },
+  { priority: 5, severity: 'Disaster', color: 'rgb(215, 0, 0)', show: true },
+];
+
+export const getDefaultSeverity = () => DEFAULT_SEVERITY;
+
+export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
+  schemaVersion: CURRENT_SCHEMA_VERSION,
+  // Fields
+  hostField: true,
+  hostTechNameField: false,
+  hostProxy: false,
+  hostGroups: false,
+  showTags: true,
+  statusField: true,
+  statusIcon: false,
+  severityField: true,
+  ackField: true,
+  ageField: false,
+  descriptionField: true,
+  descriptionAtNewLine: false,
+  // Options
+  sortProblems: 'lastchange',
+  limit: null,
+  // View options
+  layout: 'table',
+  fontSize: '100%',
+  pageSize: 10,
+  problemTimeline: true,
+  highlightBackground: false,
+  highlightNewEvents: false,
+  highlightNewerThan: '1h',
+  customLastChangeFormat: false,
+  lastChangeFormat: '',
+  resizedColumns: [],
+  // Triggers severity and colors
+  triggerSeverity: getDefaultSeverity(),
+  okEventColor: 'rgb(56, 189, 113)',
+  ackEventColor: 'rgb(56, 219, 156)',
+  markAckEvents: false,
+};
+
 export interface ProblemsPanelTarget {
   group: {
-    filter: string
+    filter: string;
   };
   host: {
-    filter: string
+    filter: string;
   };
   application: {
-    filter: string
+    filter: string;
   };
   trigger: {
-    filter: string
+    filter: string;
   };
   tags: {
-    filter: string
+    filter: string;
   };
   proxy: {
-    filter: string
+    filter: string;
   };
   datasource: string;
 }
