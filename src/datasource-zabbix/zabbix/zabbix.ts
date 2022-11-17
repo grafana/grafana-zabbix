@@ -295,10 +295,7 @@ export class Zabbix implements ZabbixConnector {
     let items: any[];
 
     if (this.isZabbix54OrHigher()) {
-      items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
-      if (itemTagFilter) {
-        items = filterItemsByTag(items, itemTagFilter);
-      }
+      items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype, itemTagFilter);
     } else {
       if (apps.appFilterEmpty) {
         items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);

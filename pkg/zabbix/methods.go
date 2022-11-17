@@ -4,6 +4,8 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"regexp"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -114,16 +116,9 @@ func (ds *Zabbix) GetItems(
 
 	var allItems []*Item
 	if len(appids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled)
+		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, itemTagFilter)
 	} else if len(hostids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled)
-	}
-
-	if isZabbix54orHigher && itemTagFilter != "" {
-		allItems, err = filterItemsByTag(allItems, itemTagFilter)
-		if err != nil {
-			return nil, err
-		}
+		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter)
 	}
 
 	return filterItemsByQuery(allItems, itemFilter)
@@ -314,7 +309,7 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool) ([]*Item, error) {
+func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool, itemTagFilter string) ([]*Item, error) {
 	params := ZabbixAPIParams{
 		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
 		"sortfield":      "name",
@@ -334,6 +329,21 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 
 	if ds.version >= 54 {
 		params["selectTags"] = "extend"
+		if len(itemTagFilter) > 0 {
+			var all_tags = strings.Split(itemTagFilter, ",")
+			var re = regexp.MustCompile(`(?m).*?([a-zA-Z0-9\s\-_]*):\s*([a-zA-Z0-9\-_\/:]*)`)
+			var tags_param []string
+			for i := 0; i < len(all_tags); i++ {
+				res := re.FindAllStringSubmatch(all_tags[i], -1)
+				for i := range res {
+						tmp := ""
+						tmp += fmt.Sprintf("{\"tag\": %s, \"value\": %s, \"operator\": \"1\"}", res[i][1], res[i][2])
+						tags_param = append(tags_param, tmp)
+				}
+			}
+		params["tags"]=tags_param
+		params["evaltype"]=2
+		}
 	}
 
 	if showDisabled == false {

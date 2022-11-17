@@ -174,7 +174,7 @@ export class ZabbixAPIConnector {
    * @param  {String} itemtype 'num' or 'text'
    * @return {[type]}          array of items
    */
-  getItems(hostids, appids, itemtype) {
+  getItems(hostids, appids, itemtype,itemTagFilter) {
     const params: any = {
       output: [
         'itemid',
@@ -210,6 +210,20 @@ export class ZabbixAPIConnector {
 
     if (this.isZabbix54OrHigher()) {
       params.selectTags = 'extend';
+      if (itemTagFilter) {
+        var all_tags=[];
+        all_tags=itemTagFilter.split(',');
+        var tags_param=[];
+        const regex = /.*?([a-zA-Z0-9\s\-_]*):\s*([a-zA-Z0-9\-_\/:]*)/;
+        for(var i = 0; i < all_tags.length; i++) {
+          var m = all_tags[i].match(regex);
+          var tag_value=[];
+          tag_value=all_tags[i].split(':');
+          tags_param.push({"tag": m[1].replace('/',''),"value": m[2].trim() , "operator": "1"})
+        }
+        params.tags=tags_param;
+        params.evaltype=2;
+      }
     }
 
     return this.request('item.get', params)
