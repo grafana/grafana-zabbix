@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import { locationService } from '@grafana/runtime';
-import { ExploreUrlState, TimeRange, urlUtil } from "@grafana/data";
+import { ExploreUrlState, TimeRange, urlUtil } from '@grafana/data';
 import { MODE_ITEMID, MODE_METRICS } from '../../datasource-zabbix/constants';
 import { ActionButton } from '../ActionButton/ActionButton';
 import { expandItemName } from '../../datasource-zabbix/utils';
@@ -35,7 +35,7 @@ const openInExplore = (problem: ProblemDTO, panelId: number, range: TimeRange) =
       item: { filter: itemName },
     };
   } else {
-    const itemids = problem.items?.map(p => p.itemid).join(',');
+    const itemids = problem.items?.map((p) => p.itemid).join(',');
     query = {
       queryType: MODE_ITEMID,
       itemids: itemids,
@@ -54,4 +54,3 @@ const openInExplore = (problem: ProblemDTO, panelId: number, range: TimeRange) =
   const url = urlUtil.renderUrl('/explore', { left: exploreState });
   locationService.push(url);
 };
-

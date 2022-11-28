@@ -18,7 +18,6 @@ import ProblemStatusBar from './ProblemStatusBar';
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
   timeRange: TimeRange;
-  range: TimeRange;
   showTimeline?: boolean;
   panelId?: number;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
@@ -95,7 +94,7 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
   render() {
     const problem = this.props.original as ProblemDTO;
     const alerts = this.state.alerts;
-    const { rootWidth, panelId, range } = this.props;
+    const { rootWidth, panelId, timeRange } = this.props;
     const displayClass = this.state.show ? 'show' : '';
     const wideLayout = rootWidth > 1200;
     const compactStatusBar = rootWidth < 800 || (problem.acknowledges && wideLayout && rootWidth < 1400);
@@ -115,7 +114,7 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
           <div className="problem-details">
             <div className="problem-details-head">
               <div className="problem-actions-left">
-                <ExploreButton problem={problem} panelId={panelId} range={range} />
+                <ExploreButton problem={problem} panelId={panelId} range={timeRange} />
               </div>
               {problem.showAckButton && (
                 <div className="problem-actions">
