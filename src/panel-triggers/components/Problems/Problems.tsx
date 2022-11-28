@@ -8,17 +8,17 @@ import EventTag from '../EventTag';
 import { ProblemDetails } from './ProblemDetails';
 import { AckProblemData } from '../AckModal';
 import { FAIcon, GFHeartIcon } from '../../../components';
-import { GFTimeRange, ProblemsPanelOptions, RTCell, RTResized, TriggerSeverity } from '../../types';
+import { ProblemsPanelOptions, RTCell, RTResized, TriggerSeverity } from '../../types';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource-zabbix/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
-import { DataSourceRef, TimeRange } from "@grafana/data";
+import { DataSourceRef, TimeRange } from '@grafana/data';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
-  timeRange?: GFTimeRange;
+  timeRange?: TimeRange;
   range?: TimeRange;
   pageSize?: number;
   fontSize?: number;
@@ -52,7 +52,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     };
   }
 
-  setRootRef = ref => {
+  setRootRef = (ref) => {
     this.rootRef = ref;
   };
 
@@ -60,8 +60,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     return this.props.onProblemAck(problem, data);
   };
 
-  onExecuteScript = (problem: ProblemDTO, data: AckProblemData) => {
-  };
+  onExecuteScript = (problem: ProblemDTO, data: AckProblemData) => {};
 
   handlePageSizeChange = (pageSize, pageIndex) => {
     if (this.props.onPageSizeChange) {
@@ -132,10 +131,12 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const result = [];
     const options = this.props.panelOptions;
     const highlightNewerThan = options.highlightNewEvents && options.highlightNewerThan;
-    const statusCell = props => StatusCell(props, highlightNewerThan);
-    const statusIconCell = props => StatusIconCell(props, highlightNewerThan);
-    const hostNameCell = props => <HostCell name={props.original.host} maintenance={props.original.maintenance}/>;
-    const hostTechNameCell = props => <HostCell name={props.original.hostTechName} maintenance={props.original.maintenance}/>;
+    const statusCell = (props) => StatusCell(props, highlightNewerThan);
+    const statusIconCell = (props) => StatusIconCell(props, highlightNewerThan);
+    const hostNameCell = (props) => <HostCell name={props.original.host} maintenance={props.original.maintenance} />;
+    const hostTechNameCell = (props) => (
+      <HostCell name={props.original.hostTechName} maintenance={props.original.maintenance} />
+    );
 
     const columns = [
       { Header: 'Host', id: 'host', show: options.hostField, Cell: hostNameCell },
@@ -143,35 +144,62 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
       { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
       { Header: 'Proxy', accessor: 'proxy', show: options.hostProxy },
       {
-        Header: 'Severity', show: options.severityField, className: 'problem-severity', width: 120,
-        accessor: problem => problem.priority,
+        Header: 'Severity',
+        show: options.severityField,
+        className: 'problem-severity',
+        width: 120,
+        accessor: (problem) => problem.priority,
         id: 'severity',
-        Cell: props => SeverityCell(props, options.triggerSeverity, options.markAckEvents, options.ackEventColor, options.okEventColor),
+        Cell: (props) =>
+          SeverityCell(
+            props,
+            options.triggerSeverity,
+            options.markAckEvents,
+            options.ackEventColor,
+            options.okEventColor
+          ),
       },
       {
-        Header: '', id: 'statusIcon', show: options.statusIcon, className: 'problem-status-icon', width: 50,
+        Header: '',
+        id: 'statusIcon',
+        show: options.statusIcon,
+        className: 'problem-status-icon',
+        width: 50,
         accessor: 'value',
         Cell: statusIconCell,
       },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell },
       {
-        Header: 'Ack', id: 'ack', show: options.ackField, width: 70,
-        Cell: props => <AckCell {...props} />
+        Header: 'Ack',
+        id: 'ack',
+        show: options.ackField,
+        width: 70,
+        Cell: (props) => <AckCell {...props} />,
       },
       {
-        Header: 'Tags', accessor: 'tags', show: options.showTags, className: 'problem-tags',
-        Cell: props => <TagCell {...props} onTagClick={this.handleTagClick}/>
+        Header: 'Tags',
+        accessor: 'tags',
+        show: options.showTags,
+        className: 'problem-tags',
+        Cell: (props) => <TagCell {...props} onTagClick={this.handleTagClick} />,
       },
       {
-        Header: 'Age', className: 'problem-age', width: 100, show: options.ageField, accessor: 'timestamp',
+        Header: 'Age',
+        className: 'problem-age',
+        width: 100,
+        show: options.ageField,
+        accessor: 'timestamp',
         id: 'age',
         Cell: AgeCell,
       },
       {
-        Header: 'Time', className: 'last-change', width: 150, accessor: 'timestamp',
+        Header: 'Time',
+        className: 'last-change',
+        width: 150,
+        accessor: 'timestamp',
         id: 'lastchange',
-        Cell: props => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
+        Cell: (props) => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
       },
       { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
     ];
@@ -207,25 +235,26 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
           minRows={0}
           loading={this.props.loading}
           noDataText="No problems found"
-          SubComponent={props =>
-            <ProblemDetails {...props}
-                            rootWidth={this.rootWidth}
-                            timeRange={this.props.timeRange}
-                            range={this.props.range}
-                            showTimeline={panelOptions.problemTimeline}
-                            panelId={this.props.panelId}
-                            getProblemEvents={this.props.getProblemEvents}
-                            getProblemAlerts={this.props.getProblemAlerts}
-                            getScripts={this.props.getScripts}
-                            onProblemAck={this.handleProblemAck}
-                            onExecuteScript={this.props.onExecuteScript}
-                            onTagClick={this.handleTagClick}
-                            subRows={false}
+          SubComponent={(props) => (
+            <ProblemDetails
+              {...props}
+              rootWidth={this.rootWidth}
+              timeRange={this.props.timeRange}
+              range={this.props.range}
+              showTimeline={panelOptions.problemTimeline}
+              panelId={this.props.panelId}
+              getProblemEvents={this.props.getProblemEvents}
+              getProblemAlerts={this.props.getProblemAlerts}
+              getScripts={this.props.getScripts}
+              onProblemAck={this.handleProblemAck}
+              onExecuteScript={this.props.onExecuteScript}
+              onTagClick={this.handleTagClick}
+              subRows={false}
             />
-          }
+          )}
           expanded={this.getExpandedPage(this.state.page)}
           onExpandedChange={this.handleExpandedChange}
-          onPageChange={page => this.setState({ page })}
+          onPageChange={(page) => this.setState({ page })}
           onPageSizeChange={this.handlePageSizeChange}
           onResizedChange={this.handleResizedChange}
         />
@@ -243,7 +272,7 @@ const HostCell: React.FC<HostCellProps> = ({ name, maintenance }) => {
   return (
     <div>
       <span style={{ paddingRight: '0.4rem' }}>{name}</span>
-      {maintenance && <FAIcon customClass="fired" icon="wrench"/>}
+      {maintenance && <FAIcon customClass="fired" icon="wrench" />}
     </div>
   );
 };
@@ -260,15 +289,15 @@ function SeverityCell(
 
   let severityDesc: TriggerSeverity;
   const severity = Number(problem.severity);
-  severityDesc = _.find(problemSeverityDesc, s => s.priority === severity);
+  severityDesc = _.find(problemSeverityDesc, (s) => s.priority === severity);
   if (problem.severity && problem.value === '1') {
-    severityDesc = _.find(problemSeverityDesc, s => s.priority === severity);
+    severityDesc = _.find(problemSeverityDesc, (s) => s.priority === severity);
   }
 
   color = problem.value === '0' ? okColor : severityDesc.color;
 
   // Mark acknowledged triggers with different color
-  if (markAckEvents && problem.acknowledged === "1") {
+  if (markAckEvents && problem.acknowledged === '1') {
     color = ackEventColor;
   }
 
@@ -290,7 +319,9 @@ function StatusCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {
     newProblem = isNewProblem(props.original, highlightNewerThan);
   }
   return (
-    <span className={newProblem ? 'problem-status--new' : ''} style={{ color }}>{status}</span>
+    <span className={newProblem ? 'problem-status--new' : ''} style={{ color }}>
+      {status}
+    </span>
   );
 }
 
@@ -300,22 +331,21 @@ function StatusIconCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) 
   if (highlightNewerThan) {
     newProblem = isNewProblem(props.original, highlightNewerThan);
   }
-  const className = classNames('zbx-problem-status-icon',
+  const className = classNames(
+    'zbx-problem-status-icon',
     { 'problem-status--new': newProblem },
     { 'zbx-problem': props.value === '1' },
-    { 'zbx-ok': props.value === '0' },
+    { 'zbx-ok': props.value === '0' }
   );
-  return <GFHeartIcon status={status} className={className}/>;
+  return <GFHeartIcon status={status} className={className} />;
 }
 
 function GroupCell(props: RTCell<ProblemDTO>) {
-  let groups = "";
+  let groups = '';
   if (props.value && props.value.length) {
-    groups = props.value.map(g => g.name).join(', ');
+    groups = props.value.map((g) => g.name).join(', ');
   }
-  return (
-    <span>{groups}</span>
-  );
+  return <span>{groups}</span>;
 }
 
 function ProblemCell(props: RTCell<ProblemDTO>) {
@@ -336,7 +366,7 @@ function AgeCell(props: RTCell<ProblemDTO>) {
 }
 
 function LastChangeCell(props: RTCell<ProblemDTO>, customFormat?: string) {
-  const DEFAULT_TIME_FORMAT = "DD MMM YYYY HH:mm:ss";
+  const DEFAULT_TIME_FORMAT = 'DD MMM YYYY HH:mm:ss';
   const problem = props.original;
   const timestamp = moment.unix(problem.timestamp);
   const format = customFormat || DEFAULT_TIME_FORMAT;
@@ -358,14 +388,21 @@ class TagCell extends PureComponent<TagCellProps> {
   render() {
     const tags = this.props.value || [];
     return [
-      tags.map(tag => <EventTag key={tag.tag + tag.value} tag={tag} datasource={this.props.original.datasource} onClick={this.handleTagClick}/>)
+      tags.map((tag) => (
+        <EventTag
+          key={tag.tag + tag.value}
+          tag={tag}
+          datasource={this.props.original.datasource}
+          onClick={this.handleTagClick}
+        />
+      )),
     ];
   }
 }
 
 function CustomExpander(props: RTCell<any>) {
   return (
-    <span className={props.isExpanded ? "expanded" : ""}>
+    <span className={props.isExpanded ? 'expanded' : ''}>
       <i className="fa fa-info-circle"></i>
     </span>
   );

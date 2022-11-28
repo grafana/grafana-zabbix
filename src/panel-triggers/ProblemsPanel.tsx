@@ -1,16 +1,21 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import _ from 'lodash';
-import { PanelProps } from '@grafana/data';
+import { BusEventBase, BusEventWithPayload, dateMath, PanelProps } from '@grafana/data';
+import { getDataSourceSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
+import { contextSrv } from 'grafana/app/core/core';
 import { ProblemsPanelOptions } from './types';
 import { ProblemDTO, ZBXTrigger } from '../datasource-zabbix/types';
 import { APIExecuteScriptResponse } from '../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import ProblemList from './components/Problems/Problems';
+import { AckProblemData } from './components/AckModal';
 
-interface TimelinePanelProps extends PanelProps<ProblemsPanelOptions> {}
+const PROBLEM_EVENTS_LIMIT = 100;
 
-export const ProblemsPanel = (props: TimelinePanelProps): JSX.Element => {
-  const { data, options, onOptionsChange } = props;
+interface ProblemsPanelProps extends PanelProps<ProblemsPanelOptions> {}
+
+export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
+  const { data, options, timeRange, onOptionsChange } = props;
   const { layout, showTriggers, triggerSeverity, sortProblems } = options;
   const theme = useTheme2();
 
@@ -104,19 +109,52 @@ export const ProblemsPanel = (props: TimelinePanelProps): JSX.Element => {
   };
 
   const getProblemEvents = async (problem: ProblemDTO) => {
-    return [];
+    const triggerids = [problem.triggerid];
+    const timeFrom = Math.ceil(dateMath.parse(timeRange.from).unix());
+    const timeTo = Math.ceil(dateMath.parse(timeRange.to).unix());
+    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    return ds.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
   };
 
   const getProblemAlerts = async (problem: ProblemDTO) => {
-    return [];
+    if (!problem.eventid) {
+      return Promise.resolve([]);
+    }
+    const eventids = [problem.eventid];
+    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    return ds.zabbix.getEventAlerts(eventids);
   };
 
   const getScripts = async (problem: ProblemDTO) => {
-    return [];
+    const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
+    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    return ds.zabbix.getScripts([hostid]);
   };
 
   const onExecuteScript = async (problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse> => {
     return { response: 'success' };
+  };
+
+  const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
+    const { message, action, severity } = data;
+    const eventid = problem.eventid;
+    const grafana_user = (contextSrv.user as any).name;
+    const ack_message = grafana_user + ' (Grafana): ' + message;
+    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const userIsEditor = contextSrv.isEditor || contextSrv.isGrafanaAdmin;
+    if (ds.disableReadOnlyUsersAck && !userIsEditor) {
+      return { message: 'You have no permissions to acknowledge events.' };
+    }
+    if (eventid) {
+      try {
+        return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity);
+      } catch (error) {
+        console.log(error);
+        return Promise.reject(error);
+      }
+    } else {
+      return { message: 'Trigger has no events. Nothing to acknowledge.' };
+    }
   };
 
   const onColumnResize = (newResized) => {
@@ -127,14 +165,21 @@ export const ProblemsPanel = (props: TimelinePanelProps): JSX.Element => {
 
   const renderTable = () => {
     const problems = prepareProblems();
+    const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
+    const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
+
     return (
       <ProblemList
         problems={problems}
         panelOptions={options}
+        pageSize={options.pageSize}
+        fontSize={fontSizeProp}
+        timeRange={timeRange}
         getProblemEvents={getProblemEvents}
         getProblemAlerts={getProblemAlerts}
         getScripts={getScripts}
         onExecuteScript={onExecuteScript}
+        onProblemAck={onProblemAck}
         onColumnResize={onColumnResize}
       />
     );

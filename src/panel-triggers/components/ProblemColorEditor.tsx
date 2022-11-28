@@ -27,8 +27,12 @@ export const ProblemColorEditor = ({ value, onChange }: Props): JSX.Element => {
 
   return (
     <>
-      {value.map((severity) => (
-        <ProblemColorEditorRow value={severity} onChange={(value) => onSeverityItemChange(value)} />
+      {value.map((severity, index) => (
+        <ProblemColorEditorRow
+          key={`${severity.priority}-${index}`}
+          value={severity}
+          onChange={(value) => onSeverityItemChange(value)}
+        />
       ))}
     </>
   );

@@ -2,7 +2,6 @@ import { PanelPlugin, StandardEditorProps } from '@grafana/data';
 import { problemsPanelChangedHandler, problemsPanelMigrationHandler } from './migrations';
 import { ProblemsPanel } from './ProblemsPanel';
 import { defaultPanelOptions, ProblemsPanelOptions } from './types';
-import { Button } from '@grafana/ui';
 import { ResetColumnsEditor } from './components/ResetColumnsEditor';
 import { ProblemColorEditor } from './components/ProblemColorEditor';
 

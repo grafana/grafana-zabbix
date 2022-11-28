@@ -1,7 +1,8 @@
 import React, { PureComponent } from 'react';
 import _ from 'lodash';
 import moment from 'moment';
-import { GFTimeRange, ZBXEvent, ZBXAcknowledge } from '../../types';
+import { ZBXEvent, ZBXAcknowledge } from '../../types';
+import { TimeRange } from '@grafana/data';
 
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
 const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
@@ -12,7 +13,7 @@ const EVENT_REGION_HEIGHT = Math.round(EVENT_POINT_SIZE * 0.6);
 
 export interface ProblemTimelineProps {
   events: ZBXEvent[];
-  timeRange: GFTimeRange;
+  timeRange: TimeRange;
   okColor?: string;
   problemColor?: string;
   eventRegionHeight?: number;
@@ -51,7 +52,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       highlightedEvent: null,
       highlightedRegion: null,
       showEventInfo: false,
-      eventInfo: {}
+      eventInfo: {},
     };
   }
 
@@ -62,11 +63,11 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     }
   }
 
-  setRootRef = ref => {
+  setRootRef = (ref) => {
     this.rootRef = ref;
-    const width = ref && ref.clientWidth || 0;
+    const width = (ref && ref.clientWidth) || 0;
     this.setState({ width });
-  }
+  };
 
   handlePointHighlight = (index: number, secondIndex?: number) => {
     const event: ZBXEvent = this.sortedEvents[index];
@@ -80,15 +81,15 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       showEventInfo: true,
       highlightedRegion: regionToHighlight,
       eventInfo: {
-        duration
-      }
+        duration,
+      },
     });
     // this.showEventInfo(event);
-  }
+  };
 
   handlePointUnHighlight = () => {
     this.setState({ showEventInfo: false, highlightedRegion: null });
-  }
+  };
 
   handleAckHighlight = (ack: ZBXAcknowledge, index: number) => {
     this.setState({
@@ -96,34 +97,34 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
       eventInfo: {
         timestamp: Number(ack.clock),
         message: ack.message,
-      }
+      },
     });
-  }
+  };
 
   handleAckUnHighlight = () => {
     this.setState({ showEventInfo: false });
-  }
+  };
 
   showEventInfo = (event: ZBXEvent) => {
     this.setState({ highlightedEvent: event, showEventInfo: true });
-  }
+  };
 
   hideEventInfo = () => {
     this.setState({ showEventInfo: false });
-  }
+  };
 
   getRegionToHighlight = (index: number): number => {
     const event = this.sortedEvents[index];
     const regionToHighlight = event.value === '1' ? index + 1 : index;
     return regionToHighlight;
-  }
+  };
 
   getEventDuration(firstIndex: number, secondIndex: number): number {
     return Math.abs(Number(this.sortedEvents[firstIndex].clock) - Number(this.sortedEvents[secondIndex].clock)) * 1000;
   }
 
   sortEvents() {
-    const events = _.sortBy(this.props.events, e => Number(e.clock));
+    const events = _.sortBy(this.props.events, (e) => Number(e.clock));
     this.sortedEvents = events;
     return events;
   }
@@ -137,7 +138,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
         }
       }
     }
-    return _.sortBy(acks, ack => Number(ack.clock));
+    return _.sortBy(acks, (ack) => Number(ack.clock));
   }
 
   render() {
@@ -156,13 +157,14 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
     const timelineYpos = Math.round(boxHeight / 2 - eventPointSize / 2);
 
     return (
-      <div className="event-timeline" ref={this.setRootRef} style={{ transform: `translate(${-padding}px, 0)`}}>
-        <TimelineInfoContainer className="timeline-info-container"
+      <div className="event-timeline" ref={this.setRootRef} style={{ transform: `translate(${-padding}px, 0)` }}>
+        <TimelineInfoContainer
+          className="timeline-info-container"
           event={this.state.highlightedEvent}
           eventInfo={this.state.eventInfo}
           show={this.state.showEventInfo}
           left={padding}
-      />
+        />
         <svg className="event-timeline-canvas" viewBox={`0 0 ${boxWidth} ${boxHeight}`}>
           <defs>
             <TimelineSVGFilters />
@@ -265,7 +267,7 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
         <span key="ts" className="event-timestamp">
           <span className="event-timestamp-label">Time:&nbsp;</span>
           <span className="event-timestamp-value">{tsFormatted}</span>
-        </span>
+        </span>,
       ];
     }
     if (eventInfo && eventInfo.duration) {
@@ -285,7 +287,7 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
         <span key="ts" className="event-timestamp">
           <span className="event-timestamp-label">Time:&nbsp;</span>
           <span className="event-timestamp-value">{tsFormatted}</span>
-        </span>
+        </span>,
       ];
     }
 
@@ -296,20 +298,16 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
 
     return (
       <div className={className} style={containerStyle}>
-        <div>
-          {infoItems}
-        </div>
-        <div>
-          {durationItem}
-        </div>
-        {eventInfo && eventInfo.message &&
+        <div>{infoItems}</div>
+        <div>{durationItem}</div>
+        {eventInfo && eventInfo.message && (
           <div>
             <span key="duration" className="event-timestamp">
               <span className="event-timestamp-label">Message:&nbsp;</span>
               <span className="event-timestamp-value">{eventInfo.message}</span>
             </span>
           </div>
-        }
+        )}
       </div>
     );
   }
@@ -317,7 +315,7 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
 
 interface TimelineRegionsProps {
   events: ZBXEvent[];
-  timeRange: GFTimeRange;
+  timeRange: TimeRange;
   width: number;
   height: number;
   okColor?: string;
@@ -332,7 +330,8 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
 
   render() {
     const { events, timeRange, width, height, highlightedRegion } = this.props;
-    const { timeFrom, timeTo } = timeRange;
+    const timeFrom = timeRange.from.unix();
+    const timeTo = timeRange.to.unix();
     const range = timeTo - timeFrom;
 
     let firstItem: React.ReactNode;
@@ -349,9 +348,7 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
         width: regionWidth,
         height: height,
       };
-      firstItem = (
-        <rect key='0' className={className} {...firstEventAttributes}></rect>
-      );
+      firstItem = <rect key="0" className={className} {...firstEventAttributes}></rect>;
     }
 
     const eventsIntervalItems = events.map((event, index) => {
@@ -359,7 +356,7 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
       const nextTs = index < events.length - 1 ? Number(events[index + 1].clock) : timeTo;
       const duration = (nextTs - ts) / range;
       const regionWidth = Math.round(duration * width);
-      const posLeft = Math.round((ts - timeFrom) / range * width);
+      const posLeft = Math.round(((ts - timeFrom) / range) * width);
       const highlighted = highlightedRegion && highlightedRegion - 1 === index;
       const valueClass = `problem-event--${event.value === '1' ? 'problem' : 'ok'}`;
       const className = `problem-event-region ${valueClass} ${highlighted ? 'highlighted' : ''}`;
@@ -370,21 +367,16 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
         height: height,
       };
 
-      return (
-        <rect key={`${event.eventid}-${index}`} className={className} {...attributes} />
-      );
+      return <rect key={`${event.eventid}-${index}`} className={className} {...attributes} />;
     });
 
-    return [
-      firstItem,
-      eventsIntervalItems
-    ];
+    return [firstItem, eventsIntervalItems];
   }
 }
 
 interface TimelinePointsProps {
   events: ZBXEvent[];
-  timeRange: GFTimeRange;
+  timeRange: TimeRange;
   width: number;
   pointSize: number;
   okColor?: string;
@@ -415,7 +407,7 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
     order = moveToEnd(order, indexes);
     const highlighted = highlight ? indexes : null;
     this.setState({ order, highlighted });
-  }
+  };
 
   highlightPoint = (index: number) => () => {
     let pointsToHighlight = [index];
@@ -429,12 +421,12 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
       }
     }
     this.bringToFront(pointsToHighlight, true);
-  }
+  };
 
   getRegionEvents(index: number) {
     const events = this.props.events;
     const event = events[index];
-    if (event.value === '1' && index < events.length ) {
+    if (event.value === '1' && index < events.length) {
       // Problem event
       for (let i = index; i < events.length; i++) {
         if (events[i].value === '0') {
@@ -459,22 +451,23 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
     return [index];
   }
 
-  unHighlightPoint = index => () => {
+  unHighlightPoint = (index) => () => {
     if (this.props.onPointUnHighlight) {
       this.props.onPointUnHighlight();
     }
     const order = this.props.events.map((v, i) => i);
     this.setState({ order, highlighted: [] });
-  }
+  };
 
   render() {
     const { events, timeRange, width, pointSize } = this.props;
-    const { timeFrom, timeTo } = timeRange;
+    const timeFrom = timeRange.from.unix();
+    const timeTo = timeRange.to.unix();
     const range = timeTo - timeFrom;
     const pointR = pointSize / 2;
     const eventsItems = events.map((event, i) => {
       const ts = Number(event.clock);
-      const posLeft = Math.round((ts - timeFrom) / range * width - pointR);
+      const posLeft = Math.round(((ts - timeFrom) / range) * width - pointR);
       const className = `problem-event-item problem-event--${event.value === '1' ? 'problem' : 'ok'}`;
       const highlighted = this.state.highlighted.indexOf(i) !== -1;
 
@@ -491,7 +484,7 @@ class TimelinePoints extends PureComponent<TimelinePointsProps, TimelinePointsSt
       );
     });
     if (this.state.order.length) {
-      return this.state.order.map(i => eventsItems[i]);
+      return this.state.order.map((i) => eventsItems[i]);
     }
     return eventsItems;
   }
@@ -528,13 +521,13 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
     if (this.props.onPointHighlight) {
       this.props.onPointHighlight();
     }
-  }
+  };
 
   handleMouseLeave = () => {
     if (this.props.onPointUnHighlight) {
       this.props.onPointUnHighlight();
     }
-  }
+  };
 
   render() {
     const { x } = this.props;
@@ -543,11 +536,13 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
     const rInner = Math.round(r * INNER_POINT_SIZE);
     const className = `${this.props.className || ''} ${this.state.highlighted ? 'highlighted' : ''}`;
     return (
-      <g className={className}
+      <g
+        className={className}
         transform={`translate(${cx}, 0)`}
         filter="url(#dropShadow)"
         onMouseOver={this.handleMouseOver}
-        onMouseLeave={this.handleMouseLeave}>
+        onMouseLeave={this.handleMouseLeave}
+      >
         <circle cx={0} cy={0} r={r} className="point-border" />
         <circle cx={0} cy={0} r={rInner} className="point-core" />
       </g>
@@ -557,7 +552,7 @@ class TimelinePoint extends PureComponent<TimelinePointProps, TimelinePointState
 
 interface TimelineAcksProps {
   acknowledges: ZBXAcknowledge[];
-  timeRange: GFTimeRange;
+  timeRange: TimeRange;
   width: number;
   size: number;
   onHighlight?: (ack: ZBXAcknowledge, index: number) => void;
@@ -581,7 +576,7 @@ class TimelineAcks extends PureComponent<TimelineAcksProps, TimelineAcksState> {
       this.props.onHighlight(ack, index);
     }
     this.bringToFront(index, true);
-  }
+  };
 
   handleUnHighlight = () => {
     if (this.props.onUnHighlight) {
@@ -589,7 +584,7 @@ class TimelineAcks extends PureComponent<TimelineAcksProps, TimelineAcksState> {
     }
     const order = this.props.acknowledges.map((v, i) => i);
     this.setState({ order, highlighted: null });
-  }
+  };
 
   bringToFront = (index: number, highlight = false) => {
     const { acknowledges } = this.props;
@@ -597,16 +592,17 @@ class TimelineAcks extends PureComponent<TimelineAcksProps, TimelineAcksState> {
     order = moveToEnd(order, [index]);
     const highlighted = highlight ? index : null;
     this.setState({ order, highlighted });
-  }
+  };
 
   render() {
     const { acknowledges, timeRange, width, size } = this.props;
-    const { timeFrom, timeTo } = timeRange;
+    const timeFrom = timeRange.from.unix();
+    const timeTo = timeRange.to.unix();
     const range = timeTo - timeFrom;
     const pointR = size / 2;
     const eventsItems = acknowledges.map((ack, i) => {
       const ts = Number(ack.clock);
-      const posLeft = Math.round((ts - timeFrom) / range * width - pointR);
+      const posLeft = Math.round(((ts - timeFrom) / range) * width - pointR);
       const highlighted = this.state.highlighted === i;
 
       return (
@@ -621,7 +617,7 @@ class TimelineAcks extends PureComponent<TimelineAcksProps, TimelineAcksState> {
       );
     });
     if (this.state.order.length) {
-      return this.state.order.map(i => eventsItems[i]);
+      return this.state.order.map((i) => eventsItems[i]);
     }
     return eventsItems;
   }
@@ -656,13 +652,13 @@ class TimelineAck extends PureComponent<TimelineAckProps, TimelineAckState> {
     if (this.props.onHighlight) {
       this.props.onHighlight();
     }
-  }
+  };
 
   handleUnHighlight = () => {
     if (this.props.onUnHighlight) {
       this.props.onUnHighlight();
     }
-  }
+  };
 
   render() {
     const { x } = this.props;
@@ -671,11 +667,13 @@ class TimelineAck extends PureComponent<TimelineAckProps, TimelineAckState> {
     const rInner = Math.round(r * INNER_POINT_SIZE);
     const className = `problem-event-ack ${this.state.highlighted ? 'highlighted' : ''}`;
     return (
-      <g className={className}
+      <g
+        className={className}
         transform={`translate(${cx}, 0)`}
         filter="url(#dropShadow)"
         onMouseOver={this.handleHighlight}
-        onMouseLeave={this.handleUnHighlight}>
+        onMouseLeave={this.handleUnHighlight}
+      >
         <circle cx={0} cy={0} r={r} className="point-border" />
         <circle cx={0} cy={0} r={rInner} className="point-core" />
       </g>
