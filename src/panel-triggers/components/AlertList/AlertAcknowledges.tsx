@@ -1,8 +1,8 @@
 import React, { PureComponent } from 'react';
-import { ZBXTrigger } from '../../types';
+import { ProblemDTO } from '../../../datasource-zabbix/types';
 
 interface AlertAcknowledgesProps {
-  problem: ZBXTrigger;
+  problem: ProblemDTO;
   onClick: (event?) => void;
 }
 

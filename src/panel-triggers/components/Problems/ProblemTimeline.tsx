@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import _ from 'lodash';
 import moment from 'moment';
-import { ZBXEvent, ZBXAcknowledge } from '../../types';
+import { ZBXEvent, ZBXAcknowledge } from '../../../datasource-zabbix/types';
 import { TimeRange } from '@grafana/data';
 
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';

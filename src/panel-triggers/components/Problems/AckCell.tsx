@@ -21,12 +21,12 @@ export const AckCell: React.FC<RTCell<ProblemDTO>> = (props: RTCell<ProblemDTO>)
 
   return (
     <div>
-      {problem.acknowledges?.length > 0 &&
+      {problem.acknowledges?.length > 0 && (
         <>
           <FAIcon icon="comments" />
           <span className={styles.countLabel}> ({problem.acknowledges?.length})</span>
         </>
-      }
+      )}
     </div>
   );
 };

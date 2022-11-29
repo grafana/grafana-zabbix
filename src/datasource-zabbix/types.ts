@@ -248,6 +248,7 @@ export interface ProblemDTO {
   error?: string;
 
   showAckButton?: boolean;
+  type?: string;
 }
 
 export interface ZBXProblem {
