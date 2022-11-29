@@ -67,6 +67,7 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         path: 'highlightNewerThan',
         name: 'Newer than',
         defaultValue: defaultPanelOptions.highlightNewerThan,
+        showIf: (options) => options.highlightNewEvents,
       })
       .addBooleanSwitch({
         path: 'customLastChangeFormat',
@@ -88,6 +89,7 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         path: 'resizedColumns',
         name: 'Reset resized columns',
         editor: ResetColumnsEditor,
+        showIf: (options) => options.layout === 'table',
       })
       .addCustomEditor({
         id: 'triggerColors',
