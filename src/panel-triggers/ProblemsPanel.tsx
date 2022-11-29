@@ -5,7 +5,7 @@ import { getDataSourceSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
 import { contextSrv } from 'grafana/app/core/core';
 import { ProblemsPanelOptions } from './types';
-import { ProblemDTO, ZBXTag } from '../datasource-zabbix/types';
+import { ProblemDTO, ZabbixMetricsQuery, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource-zabbix/types';
 import { APIExecuteScriptResponse } from '../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import ProblemList from './components/Problems/Problems';
 import { AckProblemData } from './components/AckModal';
@@ -109,6 +109,67 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     return trigger;
   };
 
+  const parseTags = (tagStr: string) => {
+    if (!tagStr) {
+      return [];
+    }
+
+    const tagStrings = _.map(tagStr.split(','), (tag) => tag.trim());
+    const tags = _.map(tagStrings, (tag) => {
+      const tagParts = tag.split(':');
+      return { tag: tagParts[0].trim(), value: tagParts[1].trim() };
+    });
+    return tags;
+  };
+
+  const tagsToString = (tags: ZBXTag[]) => {
+    return _.map(tags, (tag) => `${tag.tag}:${tag.value}`).join(', ');
+  };
+
+  const addTagFilter = (tag, datasource) => {
+    const targets = data.request.targets;
+    let updated = false;
+    for (const target of targets) {
+      if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
+        const tagFilter = (target as ZabbixMetricsQuery).tags.filter;
+        let targetTags = parseTags(tagFilter);
+        const newTag = { tag: tag.tag, value: tag.value };
+        targetTags.push(newTag);
+        targetTags = _.uniqWith(targetTags, _.isEqual);
+        const newFilter = tagsToString(targetTags);
+        (target as ZabbixMetricsQuery).tags.filter = newFilter;
+        updated = true;
+      }
+    }
+    if (updated) {
+      // TODO: investigate is it possible to handle this event
+      const event = new ZBXQueryUpdatedEvent(targets);
+      props.eventBus.publish(event);
+    }
+  };
+
+  const removeTagFilter = (tag, datasource) => {
+    const matchTag = (t) => t.tag === tag.tag && t.value === tag.value;
+    const targets = data.request.targets;
+    let updated = false;
+    for (const target of targets) {
+      if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
+        const tagFilter = (target as ZabbixMetricsQuery).tags.filter;
+        let targetTags = parseTags(tagFilter);
+        _.remove(targetTags, matchTag);
+        targetTags = _.uniqWith(targetTags, _.isEqual);
+        const newFilter = tagsToString(targetTags);
+        (target as ZabbixMetricsQuery).tags.filter = newFilter;
+        updated = true;
+      }
+    }
+    if (updated) {
+      // TODO: investigate is it possible to handle this event
+      const event = new ZBXQueryUpdatedEvent(targets);
+      props.eventBus.publish(event);
+    }
+  };
+
   const getProblemEvents = async (problem: ProblemDTO) => {
     const triggerids = [problem.triggerid];
     const timeFrom = Math.ceil(dateMath.parse(timeRange.from).unix());
@@ -160,7 +221,11 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
   };
 
   const onTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
-    // TODO: handle adding/removing tags with event bus
+    if (ctrlKey || shiftKey) {
+      removeTagFilter(tag, datasource);
+    } else {
+      addTagFilter(tag, datasource);
+    }
   };
 
   const renderList = () => {

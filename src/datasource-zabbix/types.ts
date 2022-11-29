@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from '@grafana/data';
+import { BusEventWithPayload, DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from '@grafana/data';
 
 export interface ZabbixDSOptions extends DataSourceJsonData {
   username: string;
@@ -384,4 +384,8 @@ export interface ZBXAlert {
   clock: string;
   message: string;
   error: string;
+}
+
+export class ZBXQueryUpdatedEvent extends BusEventWithPayload<any> {
+  static type = 'zbx-query-updated';
 }
