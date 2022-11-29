@@ -5,10 +5,11 @@ import { getDataSourceSrv } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
 import { contextSrv } from 'grafana/app/core/core';
 import { ProblemsPanelOptions } from './types';
-import { ProblemDTO, ZBXTrigger } from '../datasource-zabbix/types';
+import { ProblemDTO, ZBXTag } from '../datasource-zabbix/types';
 import { APIExecuteScriptResponse } from '../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import ProblemList from './components/Problems/Problems';
 import { AckProblemData } from './components/AckModal';
+import AlertList from './components/AlertList/AlertList';
 
 const PROBLEM_EVENTS_LIMIT = 100;
 
@@ -132,7 +133,9 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
   };
 
   const onExecuteScript = async (problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse> => {
-    return { response: 'success' };
+    const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
+    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    return ds.zabbix.executeScript(hostid, scriptid);
   };
 
   const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
@@ -146,12 +149,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
       return { message: 'You have no permissions to acknowledge events.' };
     }
     if (eventid) {
-      try {
-        return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity);
-      } catch (error) {
-        console.log(error);
-        return Promise.reject(error);
-      }
+      return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity);
     } else {
       return { message: 'Trigger has no events. Nothing to acknowledge.' };
     }
@@ -161,7 +159,26 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     onOptionsChange({ ...options, resizedColumns: newResized });
   };
 
-  const renderList = () => {};
+  const onTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
+    // TODO: handle adding/removing tags with event bus
+  };
+
+  const renderList = () => {
+    const problems = prepareProblems();
+    const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
+    const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
+
+    return (
+      <AlertList
+        problems={problems}
+        panelOptions={options}
+        pageSize={options.pageSize}
+        fontSize={fontSizeProp}
+        onProblemAck={onProblemAck}
+        onTagClick={onTagClick}
+      />
+    );
+  };
 
   const renderTable = () => {
     const problems = prepareProblems();
@@ -181,6 +198,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
         onExecuteScript={onExecuteScript}
         onProblemAck={onProblemAck}
         onColumnResize={onColumnResize}
+        onTagClick={onTagClick}
       />
     );
   };
