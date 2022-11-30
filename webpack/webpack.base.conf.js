@@ -15,10 +15,9 @@ module.exports = {
   target: 'node',
   context: resolve('src'),
   entry: {
-    'module': './module.js',
-    'app_config_ctrl/config': './app_config_ctrl/config.js',
+    'module': './module.ts',
     'datasource-zabbix/module': './datasource-zabbix/module.ts',
-    'panel-triggers/module': './panel-triggers/module.js',
+    'panel-triggers/module': './panel-triggers/module.tsx',
   },
   output: {
     filename: "[name].js",

@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
-import { ZBXTag } from '../types';
 import { DataSourceRef } from '@grafana/data';
 import { Tooltip } from '@grafana/ui';
+import { ZBXTag } from '../../datasource-zabbix/types';
 
 const TAG_COLORS = [
   '#E24D42',
@@ -96,10 +96,10 @@ interface EventTagProps {
 export default class EventTag extends PureComponent<EventTagProps> {
   handleClick = (event) => {
     if (this.props.onClick) {
-      const { tag, datasource} = this.props;
+      const { tag, datasource } = this.props;
       this.props.onClick(tag, datasource, event.ctrlKey, event.shiftKey);
     }
-  }
+  };
 
   render() {
     const { tag, highlight } = this.props;
@@ -110,13 +110,12 @@ export default class EventTag extends PureComponent<EventTagProps> {
     };
     return (
       <Tooltip placement="bottom" content="Click to add tag filter or Ctrl/Shift+click to remove">
-        <span className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
+        <span
+          className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
           style={style}
-          onClick={this.handleClick}>
-          {tag.value ?
-            `${tag.tag}: ${tag.value}` :
-            `${tag.tag}`
-          }
+          onClick={this.handleClick}
+        >
+          {tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}
         </span>
       </Tooltip>
     );

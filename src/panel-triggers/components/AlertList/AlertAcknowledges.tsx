@@ -1,27 +1,29 @@
 import React, { PureComponent } from 'react';
-import { ZBXTrigger } from '../../types';
+import { ProblemDTO } from '../../../datasource-zabbix/types';
 
 interface AlertAcknowledgesProps {
-  problem: ZBXTrigger;
+  problem: ProblemDTO;
   onClick: (event?) => void;
 }
 
 export default class AlertAcknowledges extends PureComponent<AlertAcknowledgesProps> {
   handleClick = (event) => {
     this.props.onClick(event);
-  }
+  };
 
   render() {
     const { problem } = this.props;
-    const ackRows = problem.acknowledges && problem.acknowledges.map(ack => {
-      return (
-        <tr key={ack.acknowledgeid}>
-          <td>{ack.time}</td>
-          <td>{ack.user}</td>
-          <td>{ack.message}</td>
-        </tr>
-      );
-    });
+    const ackRows =
+      problem.acknowledges &&
+      problem.acknowledges.map((ack) => {
+        return (
+          <tr key={ack.acknowledgeid}>
+            <td>{ack.time}</td>
+            <td>{ack.user}</td>
+            <td>{ack.message}</td>
+          </tr>
+        );
+      });
     return (
       <div className="ack-tooltip">
         <table className="table">
@@ -32,17 +34,19 @@ export default class AlertAcknowledges extends PureComponent<AlertAcknowledgesPr
               <th className="ack-comments">Comments</th>
             </tr>
           </thead>
-          <tbody>
-            {ackRows}
-          </tbody>
+          <tbody>{ackRows}</tbody>
         </table>
-        {problem.showAckButton &&
+        {problem.showAckButton && (
           <div className="ack-add-button">
-            <button id="add-acknowledge-btn" className="btn btn-mini btn-inverse gf-form-button" onClick={this.handleClick}>
+            <button
+              id="add-acknowledge-btn"
+              className="btn btn-mini btn-inverse gf-form-button"
+              onClick={this.handleClick}
+            >
               <i className="fa fa-plus"></i>
             </button>
           </div>
-        }
+        )}
       </div>
     );
   }

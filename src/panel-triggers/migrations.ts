@@ -1,18 +1,20 @@
 import _ from 'lodash';
 import { getNextRefIdChar } from './utils';
 import { ShowProblemTypes } from '../datasource-zabbix/types';
+import { ProblemsPanelOptions } from './types';
+import { PanelModel } from '@grafana/data';
 
 // Actual schema version
 export const CURRENT_SCHEMA_VERSION = 8;
 
 export const getDefaultTarget = (targets?) => {
   return {
-    group: {filter: ""},
-    host: {filter: ""},
-    application: {filter: ""},
-    trigger: {filter: ""},
-    tags: {filter: ""},
-    proxy: {filter: ""},
+    group: { filter: '' },
+    host: { filter: '' },
+    application: { filter: '' },
+    trigger: { filter: '' },
+    tags: { filter: '' },
+    proxy: { filter: '' },
     refId: getNextRefIdChar(targets),
   };
 };
@@ -105,7 +107,7 @@ export function migratePanelSchema(panel) {
       target.options = migrateOptions(panel);
 
       _.defaults(target.options, getDefaultTargetOptions());
-      _.defaults(target, { tags: { filter: "" } });
+      _.defaults(target, { tags: { filter: '' } });
     }
 
     panel.sortProblems = panel.sortTriggersBy?.value === 'priority' ? 'priority' : 'lastchange';
@@ -161,7 +163,7 @@ function isEmptyPanel(panel) {
 }
 
 function isEmptyTargets(targets) {
-  return !targets || (_.isArray(targets) && (targets.length === 0 || targets.length === 1 && _.isEmpty(targets[0])));
+  return !targets || (_.isArray(targets) && (targets.length === 0 || (targets.length === 1 && _.isEmpty(targets[0]))));
 }
 
 function isDefaultPanel(panel) {
@@ -169,7 +171,13 @@ function isDefaultPanel(panel) {
 }
 
 function isDefaultTarget(target) {
-  return !target.group?.filter && !target.host?.filter && !target.application?.filter && !target.trigger?.filter && !target.queryType;
+  return (
+    !target.group?.filter &&
+    !target.host?.filter &&
+    !target.application?.filter &&
+    !target.trigger?.filter &&
+    !target.queryType
+  );
 }
 
 function isEmptyTarget(target) {
@@ -179,3 +187,53 @@ function isEmptyTarget(target) {
 function isInvalidTarget(target, targetKey) {
   return target && target.refId === 'A' && targetKey === '0';
 }
+
+// This is called when the panel changes from another panel
+export const problemsPanelMigrationHandler = (panel: PanelModel<Partial<ProblemsPanelOptions>> | any) => {
+  let options = (panel.options ?? {}) as ProblemsPanelOptions;
+  const legacyOptions: Partial<ProblemsPanelOptions> = {
+    layout: panel.layout,
+    hostField: panel.hostField,
+    hostTechNameField: panel.hostTechNameField,
+    hostGroups: panel.hostGroups,
+    hostProxy: panel.hostProxy,
+    showTags: panel.showTags,
+    statusField: panel.statusField,
+    statusIcon: panel.statusIcon,
+    severityField: panel.severityField,
+    ackField: panel.ackField,
+    ageField: panel.ageField,
+    descriptionField: panel.descriptionField,
+    descriptionAtNewLine: panel.descriptionAtNewLine,
+    hostsInMaintenance: panel.hostsInMaintenance,
+    showTriggers: panel.showTriggers,
+    sortProblems: panel.sortProblems,
+    limit: panel.limit,
+    fontSize: panel.fontSize,
+    pageSize: panel.pageSize,
+    problemTimeline: panel.problemTimeline,
+    highlightBackground: panel.highlightBackground,
+    highlightNewEvents: panel.highlightNewEvents,
+    highlightNewerThan: panel.highlightNewerThan,
+    customLastChangeFormat: panel.customLastChangeFormat,
+    lastChangeFormat: panel.lastChangeFormat,
+    resizedColumns: panel.resizedColumns,
+    triggerSeverity: panel.triggerSeverity,
+    okEventColor: panel.okEventColor,
+    ackEventColor: panel.ackEventColor,
+    markAckEvents: panel.markAckEvents,
+    showEvents: panel.showEvents?.value ?? panel.showEvents,
+  };
+
+  return { ...legacyOptions, ...options };
+};
+
+// This is called when the panel changes from another panel
+export const problemsPanelChangedHandler = (
+  panel: PanelModel<Partial<ProblemsPanelOptions>> | any,
+  prevPluginId: string,
+  prevOptions: any
+) => {
+  let options = (panel.options ?? {}) as ProblemsPanelOptions;
+  return options;
+};

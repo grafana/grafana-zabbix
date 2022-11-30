@@ -1,6 +1,6 @@
 import React, { PureComponent, CSSProperties } from 'react';
 import classNames from 'classnames';
-import { ProblemsPanelOptions, GFTimeRange } from '../../types';
+import { ProblemsPanelOptions } from '../../types';
 import { AckProblemData } from '../AckModal';
 import AlertCard from './AlertCard';
 import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
@@ -10,7 +10,6 @@ export interface AlertListProps {
   problems: ProblemDTO[];
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
-  timeRange?: GFTimeRange;
   pageSize?: number;
   fontSize?: number;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
@@ -44,18 +43,17 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
       page: newPage,
       currentProblems: items,
     });
-  }
-
+  };
 
   handleTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
       this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
-  }
+  };
 
   handleProblemAck = (problem: ProblemDTO, data: AckProblemData) => {
     return this.props.onProblemAck(problem, data);
-  }
+  };
 
   render() {
     const { problems, panelOptions } = this.props;
@@ -68,15 +66,17 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
       <div className="triggers-panel-container" key="alertListContainer">
         <section className="card-section card-list-layout-list">
           <ol className={alertListClass}>
-            {currentProblems.map((problem, index) =>
+            {currentProblems.map((problem, index) => (
               <AlertCard
-                key={`${problem.triggerid}-${problem.eventid}-${(problem.datasource as DataSourceRef)?.uid || problem.datasource}-${index}`}
+                key={`${problem.triggerid}-${problem.eventid}-${
+                  (problem.datasource as DataSourceRef)?.uid || problem.datasource
+                }-${index}`}
                 problem={problem}
                 panelOptions={panelOptions}
                 onTagClick={this.handleTagClick}
                 onProblemAck={this.handleProblemAck}
               />
-            )}
+            ))}
           </ol>
         </section>
 
@@ -101,10 +101,9 @@ interface PaginationControlProps {
 }
 
 class PaginationControl extends PureComponent<PaginationControlProps> {
-
   handlePageChange = (index: number) => () => {
     this.props.onPageChange(index);
-  }
+  };
 
   render() {
     const { itemsLength, pageIndex, pageSize } = this.props;
@@ -116,23 +115,20 @@ class PaginationControl extends PureComponent<PaginationControlProps> {
     const startPage = Math.max(pageIndex - 3, 0);
     const endPage = Math.min(pageCount, startPage + 9);
 
-
     const pageLinks = [];
     for (let i = startPage; i < endPage; i++) {
-      const pageLinkClass = classNames('triggers-panel-page-link', 'pointer', { 'active': i === pageIndex });
+      const pageLinkClass = classNames('triggers-panel-page-link', 'pointer', { active: i === pageIndex });
       const value = i + 1;
       const pageLinkElem = (
         <li key={value.toString()}>
-          <a className={pageLinkClass} onClick={this.handlePageChange(i)}>{value}</a>
+          <a className={pageLinkClass} onClick={this.handlePageChange(i)}>
+            {value}
+          </a>
         </li>
       );
       pageLinks.push(pageLinkElem);
     }
 
-    return (
-      <ul>
-        {pageLinks}
-      </ul>
-    );
+    return <ul>{pageLinks}</ul>;
   }
 }

@@ -1,10 +1,10 @@
 import React from 'react';
 import { Tooltip } from '@grafana/ui';
 import FAIcon from '../../../components/FAIcon/FAIcon';
-import { ZBXTrigger, ZBXAlert } from '../../types';
+import { ZBXAlert, ProblemDTO } from '../../../datasource-zabbix/types';
 
 export interface ProblemStatusBarProps {
-  problem: ZBXTrigger;
+  problem: ProblemDTO;
   alerts?: ZBXAlert[];
   className?: string;
 }
@@ -26,7 +26,11 @@ export default function ProblemStatusBar(props: ProblemStatusBarProps) {
       <ProblemStatusBarItem icon="wrench" fired={maintenance} tooltip="Host maintenance" />
       <ProblemStatusBarItem icon="globe" fired={link} link={link && problem.url} tooltip="External link" />
       <ProblemStatusBarItem icon="bullhorn" fired={multiEvent} tooltip="Trigger generates multiple problem events" />
-      <ProblemStatusBarItem icon="tag" fired={closeByTag} tooltip={`OK event closes problems matched to tag: ${problem.correlation_tag}`} />
+      <ProblemStatusBarItem
+        icon="tag"
+        fired={closeByTag}
+        tooltip={`OK event closes problems matched to tag: ${problem.correlation_tag}`}
+      />
       <ProblemStatusBarItem icon="circle-o-notch" fired={actions} tooltip={actionMessage} />
       <ProblemStatusBarItem icon="question-circle" fired={stateUnknown} tooltip="Current trigger state is unknown" />
       <ProblemStatusBarItem icon="warning" fired={error} tooltip={problem.error} />
@@ -56,5 +60,11 @@ function ProblemStatusBarItem(props: ProblemStatusBarItemProps) {
       </Tooltip>
     );
   }
-  return link ? <a href={link} target="_blank">{item}</a> : item;
+  return link ? (
+    <a href={link} target="_blank">
+      {item}
+    </a>
+  ) : (
+    item
+  );
 }

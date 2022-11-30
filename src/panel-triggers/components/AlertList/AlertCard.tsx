@@ -31,25 +31,32 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
   ackProblem = (data: AckProblemData) => {
     const problem = this.props.problem;
     return this.props.onProblemAck(problem, data);
-  }
+  };
 
   render() {
     const { problem, panelOptions } = this.props;
     const showDatasourceName = panelOptions.targets && panelOptions.targets.length > 1;
-    const cardClass = classNames('alert-rule-item', 'zbx-trigger-card', { 'zbx-trigger-highlighted': panelOptions.highlightBackground });
-    const descriptionClass = classNames('alert-rule-item__text', { 'zbx-description--newline': panelOptions.descriptionAtNewLine });
+    const cardClass = classNames('alert-rule-item', 'zbx-trigger-card', {
+      'zbx-trigger-highlighted': panelOptions.highlightBackground,
+    });
+    const descriptionClass = classNames('alert-rule-item__text', {
+      'zbx-description--newline': panelOptions.descriptionAtNewLine,
+    });
 
     const problemSeverity = Number(problem.severity);
     let severityDesc: TriggerSeverity;
-    severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === problemSeverity);
+    severityDesc = _.find(panelOptions.triggerSeverity, (s) => s.priority === problemSeverity);
     if (problem.severity) {
-      severityDesc = _.find(panelOptions.triggerSeverity, s => s.priority === problemSeverity);
+      severityDesc = _.find(panelOptions.triggerSeverity, (s) => s.priority === problemSeverity);
     }
 
-    const lastchange = formatLastChange(problem.timestamp, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat);
+    const lastchange = formatLastChange(
+      problem.timestamp,
+      panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat
+    );
     const age = moment.unix(problem.timestamp).fromNow(true);
 
-    let dsName: string = (problem.datasource as string);
+    let dsName: string = problem.datasource as string;
     if ((problem.datasource as DataSourceRef)?.uid) {
       const dsInstance = getDataSourceSrv().getInstanceSettings((problem.datasource as DataSourceRef).uid);
       dsName = dsInstance.name;
@@ -64,7 +71,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
     let problemColor: string;
     if (problem.value === '0') {
       problemColor = panelOptions.okEventColor;
-    } else if (panelOptions.markAckEvents && problem.acknowledged === "1") {
+    } else if (panelOptions.markAckEvents && problem.acknowledged === '1') {
       problemColor = panelOptions.ackEventColor;
     } else {
       problemColor = severityDesc.color;
@@ -77,7 +84,12 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
 
     return (
       <li className={cardClass} style={cardStyle}>
-        <AlertIcon problem={problem} color={problemColor} highlightBackground={panelOptions.highlightBackground} blink={blink} />
+        <AlertIcon
+          problem={problem}
+          color={problemColor}
+          highlightBackground={panelOptions.highlightBackground}
+          blink={blink}
+        />
 
         <div className="alert-rule-item__body">
           <div className="alert-rule-item__header">
@@ -90,15 +102,16 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
 
               {panelOptions.showTags && (
                 <span className="zbx-trigger-tags">
-                  {problem.tags && problem.tags.map(tag =>
-                    <EventTag
-                      key={tag.tag + tag.value}
-                      tag={tag}
-                      datasource={dsName}
-                      highlight={tag.tag === problem.correlation_tag}
-                      onClick={this.handleTagClick}
-                    />
-                  )}
+                  {problem.tags &&
+                    problem.tags.map((tag) => (
+                      <EventTag
+                        key={tag.tag + tag.value}
+                        tag={tag}
+                        datasource={dsName}
+                        highlight={tag.tag === problem.correlation_tag}
+                        onClick={this.handleTagClick}
+                      />
+                    ))}
                 </span>
               )}
             </div>
@@ -106,25 +119,26 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
             <div className={descriptionClass}>
               {panelOptions.statusField && <AlertStatus problem={problem} blink={blink} />}
               {panelOptions.severityField && (
-                <AlertSeverity severityDesc={severityDesc} blink={blink} highlightBackground={panelOptions.highlightBackground} />
+                <AlertSeverity
+                  severityDesc={severityDesc}
+                  blink={blink}
+                  highlightBackground={panelOptions.highlightBackground}
+                />
               )}
-              <span className="alert-rule-item__time">
-                {panelOptions.ageField && "for " + age}
-              </span>
+              <span className="alert-rule-item__time">{panelOptions.ageField && 'for ' + age}</span>
               {panelOptions.descriptionField && !panelOptions.descriptionAtNewLine && (
                 <span className="zbx-description" dangerouslySetInnerHTML={{ __html: problem.comments }} />
               )}
             </div>
 
             {panelOptions.descriptionField && panelOptions.descriptionAtNewLine && (
-              <div className="alert-rule-item__text zbx-description--newline" >
+              <div className="alert-rule-item__text zbx-description--newline">
                 <span
                   className="alert-rule-item__info zbx-description"
                   dangerouslySetInnerHTML={{ __html: problem.comments }}
                 />
               </div>
             )}
-
           </div>
         </div>
 
@@ -138,30 +152,36 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
         )}
 
         <div className="alert-rule-item__time zbx-trigger-lastchange">
-          <span>{lastchange || "last change unknown"}</span>
+          <span>{lastchange || 'last change unknown'}</span>
           <div className="trigger-info-block zbx-status-icons">
-            {problem.url && <a href={problem.url} target="_blank"><i className="fa fa-external-link"></i></a>}
+            {problem.url && (
+              <a href={problem.url} target="_blank">
+                <i className="fa fa-external-link"></i>
+              </a>
+            )}
             {problem.state === '1' && (
               <Tooltip placement="bottom" content={problem.error}>
-                <span><i className="fa fa-question-circle"></i></span>
+                <span>
+                  <i className="fa fa-question-circle"></i>
+                </span>
               </Tooltip>
             )}
             {problem.eventid && (
               <ModalController>
-              {({ showModal, hideModal }) => (
-                <AlertAcknowledgesButton
-                  problem={problem}
-                  onClick={() => {
-                    showModal(AckModal, {
-                      canClose: problem.manual_close === '1',
-                      severity: problemSeverity,
-                      onSubmit: this.ackProblem,
-                      onDismiss: hideModal,
-                    });
-                  }}
-                />
-              )}
-            </ModalController>
+                {({ showModal, hideModal }) => (
+                  <AlertAcknowledgesButton
+                    problem={problem}
+                    onClick={() => {
+                      showModal(AckModal, {
+                        canClose: problem.manual_close === '1',
+                        severity: problemSeverity,
+                        onSubmit: this.ackProblem,
+                        onDismiss: hideModal,
+                      });
+                    }}
+                  />
+                )}
+              </ModalController>
             )}
           </div>
         </div>
@@ -178,7 +198,7 @@ interface AlertHostProps {
 function AlertHost(props: AlertHostProps) {
   const problem = props.problem;
   const panel = props.panelOptions;
-  let host = "";
+  let host = '';
   if (panel.hostField && panel.hostTechNameField) {
     host = `${problem.host} (${problem.hostTechName})`;
   } else if (panel.hostField || panel.hostTechNameField) {
@@ -204,15 +224,13 @@ interface AlertGroupProps {
 function AlertGroup(props: AlertGroupProps) {
   const problem = props.problem;
   const panel = props.panelOptions;
-  let groupNames = "";
+  let groupNames = '';
   if (panel.hostGroups) {
     const groups = _.map(problem.groups, 'name').join(', ');
     groupNames += `[ ${groups} ]`;
   }
 
-  return (
-    <span className="zabbix-hostname">{groupNames}</span>
-  );
+  return <span className="zabbix-hostname">{groupNames}</span>;
 }
 
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
@@ -228,11 +246,7 @@ function AlertStatus(props) {
     { 'alert-state-ok': problem.value === '0' },
     { 'zabbix-trigger--blinked': blink }
   );
-  return (
-    <span className={className}>
-      {status}
-    </span>
-  );
+  return <span className={className}>{status}</span>;
 }
 
 function AlertSeverity(props) {
@@ -257,25 +271,29 @@ interface AlertAcknowledgesButtonProps {
 class AlertAcknowledgesButton extends PureComponent<AlertAcknowledgesButtonProps> {
   handleClick = (event) => {
     this.props.onClick(event);
-  }
+  };
 
   renderTooltipContent = () => {
     return <AlertAcknowledges problem={this.props.problem} onClick={this.handleClick} />;
-  }
+  };
 
   render() {
     const { problem } = this.props;
     let content = null;
     if (problem.acknowledges && problem.acknowledges.length) {
       content = (
-        <Tooltip placement="bottom" content={this.renderTooltipContent}>
-          <span><i className="fa fa-comments"></i></span>
+        <Tooltip placement="auto" content={this.renderTooltipContent} interactive>
+          <span>
+            <i className="fa fa-comments"></i>
+          </span>
         </Tooltip>
       );
     } else if (problem.showAckButton) {
       content = (
         <Tooltip placement="bottom" content="Acknowledge problem">
-          <span role="button" onClick={this.handleClick}><i className="fa fa-comments-o"></i></span>
+          <span role="button" onClick={this.handleClick}>
+            <i className="fa fa-comments-o"></i>
+          </span>
         </Tooltip>
       );
     }

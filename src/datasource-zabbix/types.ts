@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from '@grafana/data';
+import { BusEventWithPayload, DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from '@grafana/data';
 
 export interface ZabbixDSOptions extends DataSourceJsonData {
   username: string;
@@ -207,6 +207,8 @@ export interface ProblemDTO {
   triggerid?: string;
   eventid?: string;
   timestamp: number;
+  lastchange?: string;
+  lastchangeUnix?: number;
 
   /** Name of the trigger. */
   name?: string;
@@ -223,6 +225,7 @@ export interface ProblemDTO {
   hostTechName?: string;
   proxy?: string;
   severity?: string;
+  priority?: string;
 
   acknowledged?: '1' | '0';
   acknowledges?: ZBXAcknowledge[];
@@ -245,6 +248,7 @@ export interface ProblemDTO {
   error?: string;
 
   showAckButton?: boolean;
+  type?: string;
 }
 
 export interface ZBXProblem {
@@ -323,6 +327,7 @@ export interface ZBXHost {
   host: string;
   maintenance_status?: string;
   proxy_hostid?: string;
+  proxy?: any;
 }
 
 export interface ZBXItem {
@@ -379,4 +384,8 @@ export interface ZBXAlert {
   clock: string;
   message: string;
   error: string;
+}
+
+export class ZBXQueryUpdatedEvent extends BusEventWithPayload<any> {
+  static type = 'zbx-query-updated';
 }
