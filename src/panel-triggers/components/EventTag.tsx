@@ -109,15 +109,16 @@ export default class EventTag extends PureComponent<EventTagProps> {
       borderColor: tagColor.borderColor,
     };
     return (
-      <Tooltip placement="bottom" content="Click to add tag filter or Ctrl/Shift+click to remove">
-        <span
-          className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
-          style={style}
-          onClick={this.handleClick}
-        >
-          {tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}
-        </span>
-      </Tooltip>
+      // TODO: show tooltip when click feature is fixed
+      // <Tooltip placement="bottom" content="Click to add tag filter or Ctrl/Shift+click to remove">
+      <span
+        className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
+        style={style}
+        onClick={this.handleClick}
+      >
+        {tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}
+      </span>
+      // </Tooltip>
     );
   }
 }
