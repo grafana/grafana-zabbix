@@ -18,19 +18,59 @@ interface AppsResponse extends Array<any> {
 }
 
 const REQUESTS_TO_PROXYFY = [
-  'getHistory', 'getTrend', 'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs',
-  'getEvents', 'getAlerts', 'getHostAlerts', 'getAcknowledges', 'getITService', 'getSLA', 'getProxies',
-  'getEventAlerts', 'getExtendedEventData', 'getProblems', 'getEventsHistory', 'getTriggersByIds', 'getScripts', 'getValueMappings'
+  'getHistory',
+  'getTrend',
+  'getGroups',
+  'getHosts',
+  'getApps',
+  'getItems',
+  'getMacros',
+  'getItemsByIDs',
+  'getEvents',
+  'getAlerts',
+  'getHostAlerts',
+  'getAcknowledges',
+  'getITService',
+  'getSLA',
+  'getProxies',
+  'getEventAlerts',
+  'getExtendedEventData',
+  'getProblems',
+  'getEventsHistory',
+  'getTriggersByIds',
+  'getScripts',
+  'getValueMappings',
 ];
 
 const REQUESTS_TO_CACHE = [
-  'getGroups', 'getHosts', 'getApps', 'getItems', 'getMacros', 'getItemsByIDs', 'getITService', 'getProxies', 'getValueMappings'
+  'getGroups',
+  'getHosts',
+  'getApps',
+  'getItems',
+  'getMacros',
+  'getItemsByIDs',
+  'getITService',
+  'getProxies',
+  'getValueMappings',
 ];
 
 const REQUESTS_TO_BIND = [
-  'getHistory', 'getTrend', 'getMacros', 'getItemsByIDs', 'getEvents', 'getAlerts', 'getHostAlerts',
-  'getAcknowledges', 'getITService', 'acknowledgeEvent', 'getProxies', 'getEventAlerts',
-  'getExtendedEventData', 'getScripts', 'executeScript', 'getValueMappings'
+  'getHistory',
+  'getTrend',
+  'getMacros',
+  'getItemsByIDs',
+  'getEvents',
+  'getAlerts',
+  'getHostAlerts',
+  'getAcknowledges',
+  'getITService',
+  'acknowledgeEvent',
+  'getProxies',
+  'getEventAlerts',
+  'getExtendedEventData',
+  'getScripts',
+  'executeScript',
+  'getValueMappings',
 ];
 
 export class Zabbix implements ZabbixConnector {
@@ -74,7 +114,7 @@ export class Zabbix implements ZabbixConnector {
     // Initialize caching proxy for requests
     const cacheOptions = {
       enabled: true,
-      ttl: cacheTTL
+      ttl: cacheTTL,
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
@@ -86,17 +126,23 @@ export class Zabbix implements ZabbixConnector {
 
     if (enableDirectDBConnection) {
       const connectorOptions: any = { dbConnectionRetentionPolicy };
-      this.initDBConnector(dbConnectionDatasourceId, dbConnectionDatasourceName, connectorOptions)
-      .then(() => {
-        this.getHistoryDB = this.cachingProxy.proxifyWithCache(this.dbConnector.getHistory, 'getHistory', this.dbConnector);
-        this.getTrendsDB = this.cachingProxy.proxifyWithCache(this.dbConnector.getTrends, 'getTrends', this.dbConnector);
+      this.initDBConnector(dbConnectionDatasourceId, dbConnectionDatasourceName, connectorOptions).then(() => {
+        this.getHistoryDB = this.cachingProxy.proxifyWithCache(
+          this.dbConnector.getHistory,
+          'getHistory',
+          this.dbConnector
+        );
+        this.getTrendsDB = this.cachingProxy.proxifyWithCache(
+          this.dbConnector.getTrends,
+          'getTrends',
+          this.dbConnector
+        );
       });
     }
   }
 
   initDBConnector(datasourceId, datasourceName, options) {
-    return DBConnector.loadDatasource(datasourceId, datasourceName)
-    .then(ds => {
+    return DBConnector.loadDatasource(datasourceId, datasourceName).then((ds) => {
       const connectorOptions: any = { datasourceId, datasourceName };
       if (ds.type === 'influxdb') {
         connectorOptions.retentionPolicy = options.dbConnectionRetentionPolicy;
@@ -143,29 +189,29 @@ export class Zabbix implements ZabbixConnector {
     let zabbixVersion;
     let dbConnectorStatus;
     return this.getVersion()
-    .then(version => {
-      zabbixVersion = version;
-      return this.getAllGroups();
-    })
-    .then(() => {
-      if (this.enableDirectDBConnection) {
-        return this.dbConnector.testDataSource();
-      } else {
-        return Promise.resolve();
-      }
-    })
-    .catch(error => {
-      return Promise.reject(error);
-    })
-    .then(testResult => {
-      if (testResult) {
-        dbConnectorStatus = {
-          dsType: this.dbConnector.datasourceTypeName,
-          dsName: this.dbConnector.datasourceName
-        };
-      }
-      return { zabbixVersion, dbConnectorStatus };
-    });
+      .then((version) => {
+        zabbixVersion = version;
+        return this.getAllGroups();
+      })
+      .then(() => {
+        if (this.enableDirectDBConnection) {
+          return this.dbConnector.testDataSource();
+        } else {
+          return Promise.resolve();
+        }
+      })
+      .catch((error) => {
+        return Promise.reject(error);
+      })
+      .then((testResult) => {
+        if (testResult) {
+          dbConnectorStatus = {
+            dsType: this.dbConnector.datasourceTypeName,
+            dsName: this.dbConnector.datasourceName,
+          };
+        }
+        return { zabbixVersion, dbConnectorStatus };
+      });
   }
 
   async getVersion() {
@@ -196,17 +242,14 @@ export class Zabbix implements ZabbixConnector {
 
   getItemsFromTarget(target, options) {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    const filters = _.map(parts, p => target[p].filter);
+    const filters = _.map(parts, (p) => target[p].filter);
     return this.getItems(...filters, options);
   }
 
   getHostsFromTarget(target) {
     const parts = ['group', 'host', 'application'];
-    const filters = _.map(parts, p => target[p].filter);
-    return Promise.all([
-      this.getHosts(...filters),
-      this.getApps(...filters),
-    ]).then(results => {
+    const filters = _.map(parts, (p) => target[p].filter);
+    return Promise.all([this.getHosts(...filters), this.getApps(...filters)]).then((results) => {
       const hosts = results[0];
       let apps: AppsResponse = results[1];
       if (apps.appFilterEmpty) {
@@ -221,24 +264,21 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getGroups(groupFilter) {
-    return this.getAllGroups()
-    .then(groups => findByFilter(groups, groupFilter));
+    return this.getAllGroups().then((groups) => findByFilter(groups, groupFilter));
   }
 
   /**
    * Get list of host belonging to given groups.
    */
   getAllHosts(groupFilter) {
-    return this.getGroups(groupFilter)
-    .then(groups => {
+    return this.getGroups(groupFilter).then((groups) => {
       const groupids = _.map(groups, 'groupid');
       return this.zabbixAPI.getHosts(groupids);
     });
   }
 
   getHosts(groupFilter?, hostFilter?) {
-    return this.getAllHosts(groupFilter)
-    .then(hosts => findByFilter(hosts, hostFilter));
+    return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
   }
 
   /**
@@ -250,8 +290,7 @@ export class Zabbix implements ZabbixConnector {
       return [];
     }
 
-    return this.getHosts(groupFilter, hostFilter)
-    .then(hosts => {
+    return this.getHosts(groupFilter, hostFilter).then((hosts) => {
       const hostids = _.map(hosts, 'hostid');
       return this.zabbixAPI.getApps(hostids);
     });
@@ -261,12 +300,10 @@ export class Zabbix implements ZabbixConnector {
     await this.getVersion();
     const skipAppFilter = !this.supportsApplications();
 
-    return this.getHosts(groupFilter, hostFilter)
-    .then(hosts => {
+    return this.getHosts(groupFilter, hostFilter).then((hosts) => {
       const hostids = _.map(hosts, 'hostid');
       if (appFilter && !skipAppFilter) {
-        return this.zabbixAPI.getApps(hostids)
-        .then(apps => filterByQuery(apps, appFilter));
+        return this.zabbixAPI.getApps(hostids).then((apps) => filterByQuery(apps, appFilter));
       } else {
         const appsResponse: AppsResponse = hostids;
         appsResponse.hostids = hostids;
@@ -278,15 +315,17 @@ export class Zabbix implements ZabbixConnector {
 
   async getItemTags(groupFilter?, hostFilter?, itemTagFilter?) {
     const items = await this.getAllItems(groupFilter, hostFilter, null, null, {});
-    let tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => {
-      if (item.tags) {
-        return item.tags;
-      } else {
-        return [];
-      }
-    }));
-    tags = _.uniqBy(tags, t => t.tag + t.value || '');
-    const tagsStr = tags.map(t => ({ name: utils.itemTagToString(t) }));
+    let tags: ZBXItemTag[] = _.flatten(
+      items.map((item: ZBXItem) => {
+        if (item.tags) {
+          return item.tags;
+        } else {
+          return [];
+        }
+      })
+    );
+    tags = _.uniqBy(tags, (t) => t.tag + t.value || '');
+    const tagsStr = tags.map((t) => ({ name: utils.itemTagToString(t) }));
     return findByFilter(tagsStr, itemTagFilter);
   }
 
@@ -309,7 +348,7 @@ export class Zabbix implements ZabbixConnector {
     }
 
     if (!options.showDisabledItems) {
-      items = _.filter(items, { 'status': '0' });
+      items = _.filter(items, { status: '0' });
     }
 
     return await this.expandUserMacro(items, false);
@@ -317,9 +356,8 @@ export class Zabbix implements ZabbixConnector {
 
   expandUserMacro(items, isTriggerItem) {
     const hostids = getHostIds(items);
-    return this.getMacros(hostids)
-    .then(macros => {
-      _.forEach(items, item => {
+    return this.getMacros(hostids).then((macros) => {
+      _.forEach(items, (item) => {
         if (utils.containsMacro(isTriggerItem ? item.url : item.name)) {
           if (isTriggerItem) {
             item.url = utils.replaceMacro(item, macros, isTriggerItem);
@@ -333,22 +371,23 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getItems(groupFilter?, hostFilter?, appFilter?, itemTagFilter?, itemFilter?, options = {}) {
-    return this.getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, options)
-    .then(items => filterByQuery(items, itemFilter));
+    return this.getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, options).then((items) =>
+      filterByQuery(items, itemFilter)
+    );
   }
 
   getItemValues(groupFilter?, hostFilter?, appFilter?, itemFilter?, options: any = {}) {
-    return this.getItems(groupFilter, hostFilter, appFilter, null, itemFilter, options).then(items => {
+    return this.getItems(groupFilter, hostFilter, appFilter, null, itemFilter, options).then((items) => {
       let timeRange = [moment().subtract(2, 'h').unix(), moment().unix()];
       if (options.range) {
         timeRange = [options.range.from.unix(), options.range.to.unix()];
       }
       const [timeFrom, timeTo] = timeRange;
 
-      return this.zabbixAPI.getHistory(items, timeFrom, timeTo).then(history => {
+      return this.zabbixAPI.getHistory(items, timeFrom, timeTo).then((history) => {
         if (history) {
-          const values = _.uniq(history.map(v => v.value));
-          return values.map(value => ({ name: value }));
+          const values = _.uniq(history.map((v) => v.value));
+          return values.map((value) => ({ name: value }));
         } else {
           return [];
         }
@@ -357,44 +396,40 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getITServices(itServiceFilter) {
-    return this.zabbixAPI.getITService()
-    .then(itServices => findByFilter(itServices, itServiceFilter));
+    return this.zabbixAPI.getITService().then((itServices) => findByFilter(itServices, itServiceFilter));
   }
 
   getProblems(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {
     const promises = [
       this.getGroups(groupFilter),
       this.getHosts(groupFilter, hostFilter),
-      this.getApps(groupFilter, hostFilter, appFilter)
+      this.getApps(groupFilter, hostFilter, appFilter),
     ];
 
     return Promise.all(promises)
-    .then(results => {
-      const [filteredGroups, filteredHosts, filteredApps] = results;
-      const query: any = {};
+      .then((results) => {
+        const [filteredGroups, filteredHosts, filteredApps] = results;
+        const query: any = {};
 
-      if (appFilter) {
-        query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
-      }
-      if (hostFilter && hostFilter !== '/.*/') {
-        query.hostids = _.map(filteredHosts, 'hostid');
-      }
-      if (groupFilter) {
-        query.groupids = _.map(filteredGroups, 'groupid');
-      }
+        if (appFilter) {
+          query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
+        }
+        if (hostFilter && hostFilter !== '/.*/') {
+          query.hostids = _.map(filteredHosts, 'hostid');
+        }
+        if (groupFilter) {
+          query.groupids = _.map(filteredGroups, 'groupid');
+        }
 
-      return query;
-    })
-    .then(query => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
-    .then(problems => {
-      const triggerids = problems?.map(problem => problem.objectid);
-      return Promise.all([
-        Promise.resolve(problems),
-        this.zabbixAPI.getTriggersByIds(triggerids)
-      ]);
-    })
-    .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
-    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter));
+        return query;
+      })
+      .then((query) => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
+      .then((problems) => {
+        const triggerids = problems?.map((problem) => problem.objectid);
+        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+      })
+      .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
+      .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
@@ -404,42 +439,41 @@ export class Zabbix implements ZabbixConnector {
     const promises = [
       this.getGroups(groupFilter),
       this.getHosts(groupFilter, hostFilter),
-      this.getApps(groupFilter, hostFilter, appFilter)
+      this.getApps(groupFilter, hostFilter, appFilter),
     ];
 
     return Promise.all(promises)
-    .then(results => {
-      const [filteredGroups, filteredHosts, filteredApps] = results;
-      const query: any = {};
+      .then((results) => {
+        const [filteredGroups, filteredHosts, filteredApps] = results;
+        const query: any = {};
 
-      if (appFilter) {
-        query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
-      }
-      if (hostFilter) {
-        query.hostids = _.map(filteredHosts, 'hostid');
-      }
-      if (groupFilter) {
-        query.groupids = _.map(filteredGroups, 'groupid');
-      }
+        if (appFilter) {
+          query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
+        }
+        if (hostFilter) {
+          query.hostids = _.map(filteredHosts, 'hostid');
+        }
+        if (groupFilter) {
+          query.groupids = _.map(filteredGroups, 'groupid');
+        }
 
-      return query;
-    })
-    .then(query => this.zabbixAPI.getEventsHistory(query.groupids, query.hostids, query.applicationids, options))
-    .then(problems => {
-      const triggerids = problems?.map(problem => problem.objectid);
-      return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
-    })
-    .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
-    .then(triggers => this.filterTriggersByProxy(triggers, proxyFilter));
+        return query;
+      })
+      .then((query) => this.zabbixAPI.getEventsHistory(query.groupids, query.hostids, query.applicationids, options))
+      .then((problems) => {
+        const triggerids = problems?.map((problem) => problem.objectid);
+        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+      })
+      .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
+      .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
   filterTriggersByProxy(triggers, proxyFilter) {
-    return this.getFilteredProxies(proxyFilter)
-    .then(proxies => {
+    return this.getFilteredProxies(proxyFilter).then((proxies) => {
       if (proxyFilter && proxyFilter !== '/.*/' && triggers) {
-        const proxy_ids = proxies.map(proxy => proxy.proxyid);
-        triggers = triggers.filter(trigger => {
+        const proxy_ids = proxies.map((proxy) => proxy.proxyid);
+        triggers = triggers.filter((trigger) => {
           for (let i = 0; i < trigger.hosts.length; i++) {
             const host = trigger.hosts[i];
             if (proxy_ids.includes(host.proxy_hostid)) {
@@ -454,9 +488,8 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getFilteredProxies(proxyFilter) {
-    return this.zabbixAPI.getProxies()
-    .then(proxies => {
-      proxies.forEach(proxy => proxy.name = proxy.host);
+    return this.zabbixAPI.getProxies().then((proxies) => {
+      proxies.forEach((proxy) => (proxy.name = proxy.host));
       return findByFilter(proxies, proxyFilter);
     });
   }
@@ -464,32 +497,35 @@ export class Zabbix implements ZabbixConnector {
   getHistoryTS(items, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
-      return this.getHistoryDB(items, timeFrom, timeTo, request)
-      .then(history => responseHandler.dataResponseToTimeSeries(history, items, request));
+      return this.getHistoryDB(items, timeFrom, timeTo, request).then((history) =>
+        responseHandler.dataResponseToTimeSeries(history, items, request)
+      );
     } else {
-      return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
-      .then(history => responseHandler.handleHistory(history, items));
+      return this.zabbixAPI
+        .getHistory(items, timeFrom, timeTo)
+        .then((history) => responseHandler.handleHistory(history, items));
     }
   }
 
   getTrends(items, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
     if (this.enableDirectDBConnection) {
-      return this.getTrendsDB(items, timeFrom, timeTo, request)
-      .then(history => responseHandler.dataResponseToTimeSeries(history, items, request));
+      return this.getTrendsDB(items, timeFrom, timeTo, request).then((history) =>
+        responseHandler.dataResponseToTimeSeries(history, items, request)
+      );
     } else {
       const valueType = request.consolidateBy || request.valueType;
-      return this.zabbixAPI.getTrend(items, timeFrom, timeTo)
-      .then(history => responseHandler.handleTrends(history, items, valueType))
-      .then(responseHandler.sortTimeseries); // Sort trend data, issue #202
+      return this.zabbixAPI
+        .getTrend(items, timeFrom, timeTo)
+        .then((history) => responseHandler.handleTrends(history, items, valueType))
+        .then(responseHandler.sortTimeseries); // Sort trend data, issue #202
     }
   }
 
   getHistoryText(items, timeRange, target) {
     const [timeFrom, timeTo] = timeRange;
     if (items.length) {
-      return this.zabbixAPI.getHistory(items, timeFrom, timeTo)
-      .then(history => {
+      return this.zabbixAPI.getHistory(items, timeFrom, timeTo).then((history) => {
         if (target.resultFormat === 'table') {
           return responseHandler.handleHistoryAsTable(history, items, target);
         } else {
@@ -505,14 +541,14 @@ export class Zabbix implements ZabbixConnector {
     const itServiceIds = _.map(itservices, 'serviceid');
     if (this.supportSLA()) {
       const slaResponse = await this.zabbixAPI.getSLA60(itServiceIds, timeRange, options);
-      return _.map(itServiceIds, serviceid => {
-        const itservice = _.find(itservices, { 'serviceid': serviceid });
+      return _.map(itServiceIds, (serviceid) => {
+        const itservice = _.find(itservices, { serviceid: serviceid });
         return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
       });
     }
     const slaResponse = await this.zabbixAPI.getSLA(itServiceIds, timeRange, options);
-    return _.map(itServiceIds, serviceid => {
-      const itservice = _.find(itservices, { 'serviceid': serviceid });
+    return _.map(itServiceIds, (serviceid) => {
+      const itservice = _.find(itservices, { serviceid: serviceid });
       return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
     });
   }
@@ -527,7 +563,7 @@ export class Zabbix implements ZabbixConnector {
  * @return      array with finded element or empty array
  */
 function findByName(list, name) {
-  const finded = _.find(list, { 'name': name });
+  const finded = _.find(list, { name: name });
   if (finded) {
     return [finded];
   } else {
@@ -544,7 +580,7 @@ function findByName(list, name) {
  * @return {[type]}      array with finded element or empty array
  */
 function filterByName(list, name) {
-  const finded = _.filter(list, { 'name': name });
+  const finded = _.filter(list, { name: name });
   if (finded) {
     return finded;
   } else {
@@ -576,7 +612,7 @@ function filterByQuery(list, filter) {
 }
 
 function getHostIds(items) {
-  const hostIds = _.map(items, item => {
+  const hostIds = _.map(items, (item) => {
     return _.map(item.hosts, 'hostid');
   });
   return _.uniq(_.flatten(hostIds));
@@ -587,7 +623,7 @@ function filterItemsByTag(items: any[], itemTagFilter: string) {
     const filterPattern = utils.buildRegex(itemTagFilter);
     return items.filter((item) => {
       if (item.tags) {
-        const tags: string[] = item.tags.map(t => utils.itemTagToString(t));
+        const tags: string[] = item.tags.map((t) => utils.itemTagToString(t));
         return tags.some((tag) => {
           return filterPattern.test(tag);
         });
@@ -596,9 +632,9 @@ function filterItemsByTag(items: any[], itemTagFilter: string) {
       }
     });
   } else {
-    return items.filter(item => {
+    return items.filter((item) => {
       if (item.tags) {
-        const tags: string[] = item.tags.map(t => utils.itemTagToString(t));
+        const tags: string[] = item.tags.map((t) => utils.itemTagToString(t));
         return tags.includes(itemTagFilter);
       } else {
         return false;

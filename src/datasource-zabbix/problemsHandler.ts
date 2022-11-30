@@ -41,7 +41,6 @@ export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTr
 
       problemDTOList.push(problemDTO);
     }
-
   }
 
   return problemDTOList;
@@ -51,7 +50,11 @@ interface JoinOptions {
   valueFromEvent?: boolean;
 }
 
-export function joinTriggersWithEvents(events: ZBXEvent[], triggers: ZBXTrigger[], options?: JoinOptions): ProblemDTO[] {
+export function joinTriggersWithEvents(
+  events: ZBXEvent[],
+  triggers: ZBXTrigger[],
+  options?: JoinOptions
+): ProblemDTO[] {
   const { valueFromEvent } = options;
   const problemDTOList: ProblemDTO[] = [];
 
@@ -89,7 +92,6 @@ export function joinTriggersWithEvents(events: ZBXEvent[], triggers: ZBXTrigger[
 
       problemDTOList.push(problemDTO);
     }
-
   }
 
   return problemDTOList;
@@ -118,7 +120,7 @@ export function addTriggerDataSource(triggers, target) {
 }
 
 export function addTriggerHostProxy(triggers, proxies) {
-  triggers.forEach(trigger => {
+  triggers.forEach((trigger) => {
     if (trigger.hosts && trigger.hosts.length) {
       const host = trigger.hosts[0];
       if (host.proxy_hostid !== '0') {
@@ -147,11 +149,11 @@ export function filterTriggersPre(triggerList, replacedTarget) {
 
 function filterTriggers(triggers, triggerFilter) {
   if (utils.isRegex(triggerFilter)) {
-    return _.filter(triggers, trigger => {
+    return _.filter(triggers, (trigger) => {
       return utils.buildRegex(triggerFilter).test(trigger.description);
     });
   } else {
-    return _.filter(triggers, trigger => {
+    return _.filter(triggers, (trigger) => {
       return trigger.description === triggerFilter;
     });
   }

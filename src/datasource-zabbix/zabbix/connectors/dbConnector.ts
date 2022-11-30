@@ -8,27 +8,27 @@ export const HISTORY_TO_TABLE_MAP = {
   '1': 'history_str',
   '2': 'history_log',
   '3': 'history_uint',
-  '4': 'history_text'
+  '4': 'history_text',
 };
 
 export const TREND_TO_TABLE_MAP = {
   '0': 'trends',
-  '3': 'trends_uint'
+  '3': 'trends_uint',
 };
 
 export const consolidateByFunc = {
-  'avg': 'AVG',
-  'min': 'MIN',
-  'max': 'MAX',
-  'sum': 'SUM',
-  'count': 'COUNT'
+  avg: 'AVG',
+  min: 'MIN',
+  max: 'MAX',
+  sum: 'SUM',
+  count: 'COUNT',
 };
 
 export const consolidateByTrendColumns = {
-  'avg': 'value_avg',
-  'min': 'value_min',
-  'max': 'value_max',
-  'sum': 'num*value_avg' // sum of sums inside the one-hour trend period
+  avg: 'value_avg',
+  min: 'value_min',
+  max: 'value_max',
+  sum: 'num*value_avg', // sum of sums inside the one-hour trend period
 };
 
 export interface IDBConnector {
@@ -58,7 +58,7 @@ export class DBConnector {
 
   static loadDatasource(dsId, dsName) {
     if (!dsName && dsId !== undefined) {
-      const ds = _.find(getDataSourceSrv().getList(), { 'id': dsId });
+      const ds = _.find(getDataSourceSrv().getList(), { id: dsId });
       if (!ds) {
         return Promise.reject(`Data Source with ID ${dsId} not found`);
       }
@@ -72,8 +72,7 @@ export class DBConnector {
   }
 
   loadDBDataSource() {
-    return DBConnector.loadDatasource(this.datasourceId, this.datasourceName)
-    .then(ds => {
+    return DBConnector.loadDatasource(this.datasourceId, this.datasourceName).then((ds) => {
       this.datasourceTypeId = ds.meta.id;
       this.datasourceTypeName = ds.meta.name;
       if (!this.datasourceName) {
@@ -93,5 +92,5 @@ export default {
   HISTORY_TO_TABLE_MAP,
   TREND_TO_TABLE_MAP,
   consolidateByFunc,
-  consolidateByTrendColumns
+  consolidateByTrendColumns,
 };

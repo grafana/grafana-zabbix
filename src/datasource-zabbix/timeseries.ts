@@ -26,7 +26,7 @@ function downsample(datapoints, time_to, ms_interval, func) {
   const downsampledSeries = [];
   const timeWindow = {
     from: time_to * 1000 - ms_interval,
-    to: time_to * 1000
+    to: time_to * 1000,
   };
 
   let points_sum = 0;
@@ -42,9 +42,9 @@ function downsample(datapoints, time_to, ms_interval, func) {
     } else {
       value_avg = points_num ? points_sum / points_num : 0;
 
-      if (func === "max") {
+      if (func === 'max') {
         downsampledSeries.push([_.max(frame), timeWindow.to]);
-      } else if (func === "min") {
+      } else if (func === 'min') {
         downsampledSeries.push([_.min(frame), timeWindow.to]);
       } else {
         downsampledSeries.push([value_avg, timeWindow.to]);
@@ -156,24 +156,26 @@ function groupBy(datapoints, interval, groupByCallback) {
   const ms_interval = utils.parseInterval(interval);
 
   // Calculate frame timestamps
-  const frames = _.groupBy(datapoints, point => {
+  const frames = _.groupBy(datapoints, (point) => {
     // Calculate time for group of points
     return Math.floor(point[1] / ms_interval) * ms_interval;
   });
 
   // frame: { '<unixtime>': [[<value>, <unixtime>], ...] }
   // return [{ '<unixtime>': <value> }, { '<unixtime>': <value> }, ...]
-  const grouped = _.mapValues(frames, frame => {
-    const points = _.map(frame, point => {
+  const grouped = _.mapValues(frames, (frame) => {
+    const points = _.map(frame, (point) => {
       return point[0];
     });
     return groupByCallback(points);
   });
 
   // Convert points to Grafana format
-  return sortByTime(_.map(grouped, (value, timestamp) => {
-    return [Number(value), Number(timestamp)];
-  }));
+  return sortByTime(
+    _.map(grouped, (value, timestamp) => {
+      return [Number(value), Number(timestamp)];
+    })
+  );
 }
 
 export function groupBy_perf(datapoints, interval, groupByCallback) {
@@ -228,7 +230,10 @@ export function groupByRange(datapoints, groupByCallback) {
     frame_values.push(point[POINT_VALUE]);
   }
   const frame_value = groupByCallback(frame_values);
-  return [[frame_value, frame_start], [frame_value, frame_end]];
+  return [
+    [frame_value, frame_start],
+    [frame_value, frame_end],
+  ];
 }
 
 /**
@@ -236,19 +241,20 @@ export function groupByRange(datapoints, groupByCallback) {
  * @param {datapoints[]} timeseries array of time series
  */
 function sumSeries(timeseries) {
-
   // Calculate new points for interpolation
-  let new_timestamps = _.uniq(_.map(_.flatten(timeseries), point => {
-    return point[1];
-  }));
+  let new_timestamps = _.uniq(
+    _.map(_.flatten(timeseries), (point) => {
+      return point[1];
+    })
+  );
   new_timestamps = _.sortBy(new_timestamps);
 
-  const interpolated_timeseries = _.map(timeseries, series => {
+  const interpolated_timeseries = _.map(timeseries, (series) => {
     series = fillZeroes(series, new_timestamps);
-    const timestamps = _.map(series, point => {
+    const timestamps = _.map(series, (point) => {
       return point[1];
     });
-    const new_points = _.map(_.difference(new_timestamps, timestamps), timestamp => {
+    const new_points = _.map(_.difference(new_timestamps, timestamps), (timestamp) => {
       return [null, timestamp];
     });
     const new_series = series.concat(new_points);
@@ -271,20 +277,14 @@ function sumSeries(timeseries) {
 }
 
 function scale(datapoints, factor) {
-  return _.map(datapoints, point => {
-    return [
-      point[0] * factor,
-      point[1]
-    ];
+  return _.map(datapoints, (point) => {
+    return [point[0] * factor, point[1]];
   });
 }
 
 function scale_perf(datapoints, factor) {
   for (let i = 0; i < datapoints.length; i++) {
-    datapoints[i] = [
-      datapoints[i][POINT_VALUE] * factor,
-      datapoints[i][POINT_TIMESTAMP]
-    ];
+    datapoints[i] = [datapoints[i][POINT_VALUE] * factor, datapoints[i][POINT_TIMESTAMP]];
   }
 
   return datapoints;
@@ -292,10 +292,7 @@ function scale_perf(datapoints, factor) {
 
 function offset(datapoints, delta) {
   for (let i = 0; i < datapoints.length; i++) {
-    datapoints[i] = [
-      datapoints[i][POINT_VALUE] + delta,
-      datapoints[i][POINT_TIMESTAMP]
-    ];
+    datapoints[i] = [datapoints[i][POINT_VALUE] + delta, datapoints[i][POINT_TIMESTAMP]];
   }
 
   return datapoints;
@@ -440,7 +437,7 @@ function expMovingAverage(datapoints: TimeSeriesPoints, n: number): TimeSeriesPo
 
 function PERCENTILE(n, values) {
   const sorted = _.sortBy(values);
-  return sorted[Math.floor(sorted.length * n / 100)];
+  return sorted[Math.floor((sorted.length * n) / 100)];
 }
 
 function COUNT(values) {
@@ -505,7 +502,7 @@ function getPointTimeFrame(timestamp, ms_interval) {
 }
 
 function sortByTime(series) {
-  return _.sortBy(series, point => {
+  return _.sortBy(series, (point) => {
     return point[1];
   });
 }
@@ -561,7 +558,7 @@ function linearInterpolation(timestamp, left, right) {
   if (left[1] === right[1]) {
     return (left[0] + right[0]) / 2;
   } else {
-    return (left[0] + (right[0] - left[0]) / (right[1] - left[1]) * (timestamp - left[1]));
+    return left[0] + ((right[0] - left[0]) / (right[1] - left[1])) * (timestamp - left[1]);
   }
 }
 

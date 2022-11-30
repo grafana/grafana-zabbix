@@ -11,7 +11,7 @@ export class CachingProxy {
 
   constructor(cacheOptions) {
     this.cacheEnabled = cacheOptions.enabled;
-    this.ttl          = cacheOptions.ttl || 600000; // 10 minutes by default
+    this.ttl = cacheOptions.ttl || 600000; // 10 minutes by default
 
     // Internal objects for data storing
     this.cache = {};
@@ -57,18 +57,20 @@ export class CachingProxy {
  */
 function callOnce(func, promiseKeeper, funcScope) {
   // tslint:disable-next-line: only-arrow-functions
-  return function() {
+  return function () {
     const hash = getRequestHash(arguments);
     if (!promiseKeeper[hash]) {
       promiseKeeper[hash] = Promise.resolve(
-        func.apply(funcScope, arguments)
-        .then(result => {
-          promiseKeeper[hash] = null;
-          return result;
-        }).catch(err => {
-          promiseKeeper[hash] = null;
-          throw err;
-        })
+        func
+          .apply(funcScope, arguments)
+          .then((result) => {
+            promiseKeeper[hash] = null;
+            return result;
+          })
+          .catch((err) => {
+            promiseKeeper[hash] = null;
+            throw err;
+          })
       );
     }
     return promiseKeeper[hash];
@@ -77,7 +79,7 @@ function callOnce(func, promiseKeeper, funcScope) {
 
 function cacheRequest(func, funcName, funcScope, self) {
   // tslint:disable-next-line: only-arrow-functions
-  return function() {
+  return function () {
     if (!self.cache[funcName]) {
       self.cache[funcName] = {};
     }
@@ -87,12 +89,11 @@ function cacheRequest(func, funcName, funcScope, self) {
     if (self.cacheEnabled && !self._isExpired(cacheObject[hash])) {
       return Promise.resolve(cacheObject[hash].value);
     } else {
-      return func.apply(funcScope, arguments)
-      .then(result => {
+      return func.apply(funcScope, arguments).then((result) => {
         if (result !== undefined) {
           cacheObject[hash] = {
             value: result,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           };
         }
         return result;
@@ -107,11 +108,14 @@ function getRequestHash(args) {
 }
 
 function getHash(str: string): number {
-  let hash = 0, i, chr, len;
+  let hash = 0,
+    i,
+    chr,
+    len;
   if (str.length !== 0) {
     for (i = 0, len = str.length; i < len; i++) {
-      chr   = str.charCodeAt(i);
-      hash  = ((hash << 5) - hash) + chr;
+      chr = str.charCodeAt(i);
+      hash = (hash << 5) - hash + chr;
       hash |= 0; // Convert to 32bit integer
     }
   }

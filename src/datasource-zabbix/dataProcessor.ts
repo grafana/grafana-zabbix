@@ -5,7 +5,7 @@ import { DataFrame, FieldType, TIME_SERIES_VALUE_FIELD_NAME } from '@grafana/dat
 
 function setAlias(alias: string, frame: DataFrame) {
   if (frame.fields?.length <= 2) {
-    const valueField = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    const valueField = frame.fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
     if (valueField?.config?.custom?.scopedVars) {
       alias = getTemplateSrv().replace(alias, valueField?.config?.custom?.scopedVars);
     }
@@ -38,7 +38,7 @@ function replaceAlias(regexp: string, newAlias: string, frame: DataFrame) {
 
   if (frame.fields?.length <= 2) {
     let alias = frame.name.replace(pattern, newAlias);
-    const valueField = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    const valueField = frame.fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
     if (valueField?.state?.scopedVars) {
       alias = getTemplateSrv().replace(alias, valueField?.state?.scopedVars);
     }
@@ -63,7 +63,7 @@ function replaceAlias(regexp: string, newAlias: string, frame: DataFrame) {
 
 function setAliasByRegex(alias: string, frame: DataFrame) {
   if (frame.fields?.length <= 2) {
-    const valueField = frame.fields.find(f => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    const valueField = frame.fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
     try {
       if (valueField) {
         valueField.config.displayNameFromDS = extractText(valueField.config?.displayNameFromDS, alias);
@@ -96,7 +96,7 @@ function extractText(str: string, pattern: string) {
 
 function timeShift(interval, range) {
   const shift = utils.parseTimeShiftInterval(interval) / 1000;
-  return _.map(range, time => {
+  return _.map(range, (time) => {
     return time - shift;
   });
 }
@@ -105,11 +105,11 @@ const metricFunctions = {
   timeShift: timeShift,
   setAlias: setAlias,
   setAliasByRegex: setAliasByRegex,
-  replaceAlias: replaceAlias
+  replaceAlias: replaceAlias,
 };
 
 export default {
   get metricFunctions() {
     return metricFunctions;
-  }
+  },
 };

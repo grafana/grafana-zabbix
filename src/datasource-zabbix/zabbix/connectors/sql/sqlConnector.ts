@@ -3,11 +3,16 @@ import { getBackendSrv } from '@grafana/runtime';
 import { compactQuery } from '../../../utils';
 import mysql from './mysql';
 import postgres from './postgres';
-import dbConnector, { DBConnector, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP, TREND_TO_TABLE_MAP } from '../dbConnector';
+import dbConnector, {
+  DBConnector,
+  DEFAULT_QUERY_LIMIT,
+  HISTORY_TO_TABLE_MAP,
+  TREND_TO_TABLE_MAP,
+} from '../dbConnector';
 
 const supportedDatabases = {
   mysql: 'mysql',
-  postgres: 'postgres'
+  postgres: 'postgres',
 };
 
 export class SQLConnector extends DBConnector {
@@ -20,8 +25,7 @@ export class SQLConnector extends DBConnector {
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     this.sqlDialect = null;
 
-    super.loadDBDataSource()
-    .then(() => {
+    super.loadDBDataSource().then(() => {
       this.loadSQLDialect();
     });
   }
@@ -56,7 +60,7 @@ export class SQLConnector extends DBConnector {
       return this.invokeSQLQuery(query);
     });
 
-    return Promise.all(promises).then(results => {
+    return Promise.all(promises).then((results) => {
       return _.flatten(results);
     });
   }
@@ -72,13 +76,21 @@ export class SQLConnector extends DBConnector {
       const table = TREND_TO_TABLE_MAP[value_type];
       let valueColumn = _.includes(['avg', 'min', 'max', 'sum'], consolidateBy) ? consolidateBy : 'avg';
       valueColumn = dbConnector.consolidateByTrendColumns[valueColumn];
-      let query = this.sqlDialect.trendsQuery(itemids, table, timeFrom, timeTill, intervalSec, aggFunction, valueColumn);
+      let query = this.sqlDialect.trendsQuery(
+        itemids,
+        table,
+        timeFrom,
+        timeTill,
+        intervalSec,
+        aggFunction,
+        valueColumn
+      );
 
       query = compactQuery(query);
       return this.invokeSQLQuery(query);
     });
 
-    return Promise.all(promises).then(results => {
+    return Promise.all(promises).then((results) => {
       return _.flatten(results);
     });
   }
@@ -89,24 +101,25 @@ export class SQLConnector extends DBConnector {
       format: 'time_series',
       datasourceId: this.datasourceId,
       rawSql: query,
-      maxDataPoints: this.limit
+      maxDataPoints: this.limit,
     };
 
-    return getBackendSrv().datasourceRequest({
-      url: '/api/ds/query',
-      method: 'POST',
-      data: {
-        queries: [queryDef],
-      }
-    })
-    .then(response => {
-      const results = response.data.results;
-      if (results['A']) {
-        return results['A'].frames;
-      } else {
-        return null;
-      }
-    });
+    return getBackendSrv()
+      .datasourceRequest({
+        url: '/api/ds/query',
+        method: 'POST',
+        data: {
+          queries: [queryDef],
+        },
+      })
+      .then((response) => {
+        const results = response.data.results;
+        if (results['A']) {
+          return results['A'].frames;
+        } else {
+          return null;
+        }
+      });
   }
 }
 

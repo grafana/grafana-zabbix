@@ -34,12 +34,12 @@ export const ZBX_ACK_ACTION_ADD_MESSAGE = 4;
 export const ZBX_ACK_ACTION_CHANGE_SEVERITY = 8;
 
 export const TRIGGER_SEVERITY = [
-  {val: 0, text: 'Not classified'},
-  {val: 1, text: 'Information'},
-  {val: 2, text: 'Warning'},
-  {val: 3, text: 'Average'},
-  {val: 4, text: 'High'},
-  {val: 5, text: 'Disaster'}
+  { val: 0, text: 'Not classified' },
+  { val: 1, text: 'Information' },
+  { val: 2, text: 'Warning' },
+  { val: 3, text: 'Average' },
+  { val: 4, text: 'High' },
+  { val: 5, text: 'Disaster' },
 ];
 
 /** Minimum interval for SLA over time (1 hour) */

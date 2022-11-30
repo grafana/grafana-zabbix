@@ -46,7 +46,7 @@ function testQuery() {
 const postgres = {
   historyQuery,
   trendsQuery,
-  testQuery
+  testQuery,
 };
 
 export default postgres;

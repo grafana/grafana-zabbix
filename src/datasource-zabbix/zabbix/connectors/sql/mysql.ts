@@ -40,7 +40,7 @@ function testQuery() {
 const mysql = {
   historyQuery,
   trendsQuery,
-  testQuery
+  testQuery,
 };
 
 export default mysql;

@@ -1,14 +1,24 @@
-import { ArrayVector, DataFrame, dataFrameToJSON, DataSourceApi, Field, FieldType, MutableDataFrame, TIME_SERIES_TIME_FIELD_NAME, toDataFrame } from '@grafana/data';
+import {
+  ArrayVector,
+  DataFrame,
+  dataFrameToJSON,
+  DataSourceApi,
+  Field,
+  FieldType,
+  MutableDataFrame,
+  TIME_SERIES_TIME_FIELD_NAME,
+  toDataFrame,
+} from '@grafana/data';
 import _ from 'lodash';
 import { compactQuery } from '../../../utils';
 import { consolidateByTrendColumns, DBConnector, HISTORY_TO_TABLE_MAP } from '../dbConnector';
 
 const consolidateByFunc = {
-  'avg': 'MEAN',
-  'min': 'MIN',
-  'max': 'MAX',
-  'sum': 'SUM',
-  'count': 'COUNT'
+  avg: 'MEAN',
+  min: 'MIN',
+  max: 'MAX',
+  sum: 'SUM',
+  count: 'COUNT',
 };
 
 export class InfluxDBConnector extends DBConnector {
@@ -18,7 +28,7 @@ export class InfluxDBConnector extends DBConnector {
   constructor(options) {
     super(options);
     this.retentionPolicy = options.retentionPolicy;
-    super.loadDBDataSource().then(ds => {
+    super.loadDBDataSource().then((ds) => {
       this.influxDS = ds;
       return ds;
     });
@@ -28,12 +38,12 @@ export class InfluxDBConnector extends DBConnector {
    * Try to invoke test query for one of Zabbix database tables.
    */
   testDataSource() {
-    return this.influxDS.testDatasource().then(result => {
+    return this.influxDS.testDatasource().then((result) => {
       if (result.status && result.status === 'error') {
         return Promise.reject({
           data: {
-            message: `InfluxDB connection error: ${result.message}`
-          }
+            message: `InfluxDB connection error: ${result.message}`,
+          },
         });
       }
       return result;
@@ -58,10 +68,10 @@ export class InfluxDBConnector extends DBConnector {
     });
 
     return Promise.all(promises)
-    .then(_.flatten)
-    .then(results => {
-      return handleInfluxHistoryResponse(results);
-    });
+      .then(_.flatten)
+      .then((results) => {
+        return handleInfluxHistoryResponse(results);
+      });
   }
 
   getTrends(items, timeFrom, timeTill, options) {
@@ -88,7 +98,7 @@ export class InfluxDBConnector extends DBConnector {
   }
 
   buildWhereClause(itemids) {
-    const itemidsWhere = itemids.map(itemid => `"itemid" = '${itemid}'`).join(' OR ');
+    const itemidsWhere = itemids.map((itemid) => `"itemid" = '${itemid}'`).join(' OR ');
     return `(${itemidsWhere})`;
   }
 
@@ -127,7 +137,7 @@ function handleInfluxHistoryResponse(results) {
       if (influxSeries.values) {
         for (i = 0; i < influxSeries.values.length; i++) {
           tsBuffer.push(influxSeries.values[i][0]);
-          valuesBuffer.push(influxSeries.values[i][1])
+          valuesBuffer.push(influxSeries.values[i][1]);
         }
       }
       const timeFiled: Field<number> = {
@@ -144,12 +154,14 @@ function handleInfluxHistoryResponse(results) {
         values: new ArrayVector(valuesBuffer),
       };
 
-      frames.push(new MutableDataFrame({
-        name: influxSeries?.tags?.itemid,
-        fields: [timeFiled, valueFiled]
-      }));
+      frames.push(
+        new MutableDataFrame({
+          name: influxSeries?.tags?.itemid,
+          fields: [timeFiled, valueFiled],
+        })
+      );
     }
   }
 
-  return frames.map(f => dataFrameToJSON(f));
+  return frames.map((f) => dataFrameToJSON(f));
 }
