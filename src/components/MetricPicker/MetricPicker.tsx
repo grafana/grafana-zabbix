@@ -73,6 +73,13 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
     onClose();
   };
 
+  const onBlurInternal = () => {
+    if (!isOpen) {
+      // Only call if menu isn't opened
+      onChange(query);
+    }
+  };
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       if (!isOpen) {
@@ -105,7 +112,7 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
           value={query}
           type="text"
           onChange={onInputChange}
-          onBlur={() => onChange(query)}
+          onBlur={onBlurInternal}
           onMouseDown={onOpen}
           suffix={isLoading && <Spinner />}
           width={width}
