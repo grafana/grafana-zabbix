@@ -34,7 +34,7 @@ dist/
 ci/
 
 # Grafana toolkit configs
-.prettierrc.js
+# .prettierrc.js
 
 # locally required config files
 public/css/*.min.css

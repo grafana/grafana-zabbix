@@ -1,25 +1,3 @@
 {
-  "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "ES6",
-    "lib": [ "es6", "dom", "es2017" ],
-    "rootDir": "./src",
-    "jsx": "react",
-    "module": "esnext",
-    "declaration": false,
-    "allowSyntheticDefaultImports": true,
-    "inlineSourceMap": false,
-    "sourceMap": true,
-    "noEmitOnError": false,
-    "emitDecoratorMetadata": false,
-    "experimentalDecorators": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": false,
-    "noImplicitUseStrict": false,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "baseUrl": "./src",
-    "strictFunctionTypes": false,
-    "skipLibCheck": true
-  }
+  "extends": "./.config/tsconfig.json"
 }
