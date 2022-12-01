@@ -1,22 +1,7 @@
 import { css, cx } from '@emotion/css';
-import React, { useEffect, useMemo, useState } from 'react';
-
-import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import {
-  Button,
-  ClickOutsideWrapper,
-  ContextMenu,
-  Dropdown,
-  Icon,
-  Input,
-  Menu,
-  MenuItem,
-  Portal,
-  Segment,
-  useStyles2,
-  useTheme2,
-} from '@grafana/ui';
-
+import React, { useCallback, useMemo, useState } from 'react';
+import { GrafanaTheme2 } from '@grafana/data';
+import { Button, ClickOutsideWrapper, Icon, Input, Menu, useStyles2, useTheme2 } from '@grafana/ui';
 import { FuncDef } from '../../types';
 import { getCategories } from '../../metricFunctions';
 
@@ -32,10 +17,13 @@ export function AddZabbixFunction({ onFuncAdd }: Props) {
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
 
-  const onFuncAddInternal = (def: FuncDef) => {
-    onFuncAdd(def);
-    setShowMenu(false);
-  };
+  const onFuncAddInternal = useCallback(
+    () => (def: FuncDef) => {
+      onFuncAdd(def);
+      setShowMenu(false);
+    },
+    [onFuncAdd]
+  );
 
   const onSearch = (e: React.FormEvent<HTMLInputElement>) => {
     console.log(e.currentTarget.value);
@@ -45,7 +33,7 @@ export function AddZabbixFunction({ onFuncAdd }: Props) {
     setShowMenu(false);
   };
 
-  const menuItems = useMemo(() => buildMenuItems(onFuncAddInternal), [onFuncAdd]);
+  const menuItems = useMemo(() => buildMenuItems(onFuncAddInternal), [onFuncAddInternal]);
 
   return (
     <div>

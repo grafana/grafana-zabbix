@@ -31,14 +31,6 @@ export const consolidateByTrendColumns = {
   sum: 'num*value_avg', // sum of sums inside the one-hour trend period
 };
 
-export interface IDBConnector {
-  getHistory(): any;
-
-  getTrends(): any;
-
-  testDataSource(): any;
-}
-
 /**
  * Base class for external history database connectors. Subclasses should implement `getHistory()`, `getTrends()` and
  * `testDataSource()` methods, which describe how to fetch data from source other than Zabbix API.
@@ -47,13 +39,13 @@ export class DBConnector {
   protected datasourceId: any;
   private datasourceName: any;
   protected datasourceTypeId: any;
-  private datasourceTypeName: any;
+  // private datasourceTypeName: any;
 
   constructor(options) {
     this.datasourceId = options.datasourceId;
     this.datasourceName = options.datasourceName;
     this.datasourceTypeId = null;
-    this.datasourceTypeName = null;
+    // this.datasourceTypeName = null;
   }
 
   static loadDatasource(dsId, dsName) {
@@ -74,7 +66,7 @@ export class DBConnector {
   loadDBDataSource() {
     return DBConnector.loadDatasource(this.datasourceId, this.datasourceName).then((ds) => {
       this.datasourceTypeId = ds.meta.id;
-      this.datasourceTypeName = ds.meta.name;
+      // this.datasourceTypeName = ds.meta.name;
       if (!this.datasourceName) {
         this.datasourceName = ds.name;
       }

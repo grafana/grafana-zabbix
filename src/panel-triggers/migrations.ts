@@ -71,7 +71,7 @@ export function migratePanelSchema(panel) {
   }
 
   if (schemaVersion < 7) {
-    const updatedTargets = [];
+    const updatedTargets: any[] = [];
     for (const targetKey in panel.targets) {
       const target = panel.targets[targetKey];
       if (!isEmptyTarget(target) && !isInvalidTarget(target, targetKey)) {

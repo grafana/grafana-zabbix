@@ -1,5 +1,6 @@
 import React, { PureComponent } from 'react';
 import _ from 'lodash';
+// eslint-disable-next-line
 import moment from 'moment';
 import { ZBXEvent, ZBXAcknowledge } from '../../../datasource-zabbix/types';
 import { TimeRange } from '@grafana/data';

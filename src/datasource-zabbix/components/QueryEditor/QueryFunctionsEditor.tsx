@@ -34,7 +34,7 @@ export const QueryFunctionsEditor = ({ query, onChange }: Props) => {
   };
 
   const onRemoveFunc = (func: MetricFunc) => {
-    const functions = query.functions?.filter((f) => f != func);
+    const functions = query.functions?.filter((f) => f !== func);
     onChange({ ...query, functions });
   };
 

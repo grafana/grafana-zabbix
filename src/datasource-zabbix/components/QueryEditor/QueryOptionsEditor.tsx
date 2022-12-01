@@ -14,13 +14,13 @@ import {
 import * as c from '../../constants';
 import { ZabbixQueryOptions } from '../../types';
 
-const ackOptions: SelectableValue<number>[] = [
+const ackOptions: Array<SelectableValue<number>> = [
   { label: 'all triggers', value: 2 },
   { label: 'unacknowledged', value: 0 },
   { label: 'acknowledged', value: 1 },
 ];
 
-const sortOptions: SelectableValue<string>[] = [
+const sortOptions: Array<SelectableValue<string>> = [
   { label: 'Default', value: 'default' },
   { label: 'Last change', value: 'lastchange' },
   { label: 'Severity', value: 'severity' },

@@ -1,6 +1,7 @@
 import React, { PureComponent, CSSProperties } from 'react';
 import classNames from 'classnames';
 import _ from 'lodash';
+// eslint-disable-next-line
 import moment from 'moment';
 import { isNewProblem, formatLastChange } from '../../utils';
 import { ProblemsPanelOptions, TriggerSeverity } from '../../types';
@@ -155,7 +156,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
           <span>{lastchange || 'last change unknown'}</span>
           <div className="trigger-info-block zbx-status-icons">
             {problem.url && (
-              <a href={problem.url} target="_blank">
+              <a href={problem.url} target="_blank" rel="noreferrer">
                 <i className="fa fa-external-link"></i>
               </a>
             )}
@@ -239,14 +240,18 @@ const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
 function AlertStatus(props) {
   const { problem, okColor, problemColor, blink } = props;
   const status = problem.value === '0' ? 'RESOLVED' : 'PROBLEM';
-  const color = problem.value === '0' ? okColor || DEFAULT_OK_COLOR : problemColor || DEFAULT_PROBLEM_COLOR;
+  const color: string = problem.value === '0' ? okColor || DEFAULT_OK_COLOR : problemColor || DEFAULT_PROBLEM_COLOR;
   const className = classNames(
     'zbx-trigger-state',
     { 'alert-state-critical': problem.value === '1' },
     { 'alert-state-ok': problem.value === '0' },
     { 'zabbix-trigger--blinked': blink }
   );
-  return <span className={className}>{status}</span>;
+  return (
+    <span className={className} style={{ color: color }}>
+      {status}
+    </span>
+  );
 }
 
 function AlertSeverity(props) {

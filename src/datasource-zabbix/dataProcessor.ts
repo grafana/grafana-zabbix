@@ -69,7 +69,7 @@ function setAliasByRegex(alias: string, frame: DataFrame) {
         valueField.config.displayNameFromDS = extractText(valueField.config?.displayNameFromDS, alias);
       }
       frame.name = extractText(frame.name, alias);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to apply RegExp:', error?.message || error);
     }
     return frame;
@@ -79,7 +79,7 @@ function setAliasByRegex(alias: string, frame: DataFrame) {
     if (field.type !== FieldType.time) {
       try {
         field.config.displayNameFromDS = extractText(field.config?.displayNameFromDS, alias);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to apply RegExp:', error?.message || error);
       }
     }

@@ -2,12 +2,10 @@ import {
   ArrayVector,
   DataFrame,
   dataFrameToJSON,
-  DataSourceApi,
   Field,
   FieldType,
   MutableDataFrame,
   TIME_SERIES_TIME_FIELD_NAME,
-  toDataFrame,
 } from '@grafana/data';
 import _ from 'lodash';
 import { compactQuery } from '../../../utils';

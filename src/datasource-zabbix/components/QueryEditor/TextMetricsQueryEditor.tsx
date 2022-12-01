@@ -35,7 +35,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
   const loadHostOptions = async (group: string) => {
     const groupFilter = datasource.replaceTemplateVars(group);
     const hosts = await datasource.zabbix.getAllHosts(groupFilter);
-    let options: SelectableValue<string>[] = hosts?.map((host) => ({
+    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -54,7 +54,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     const groupFilter = datasource.replaceTemplateVars(group);
     const hostFilter = datasource.replaceTemplateVars(host);
     const apps = await datasource.zabbix.getAllApps(groupFilter, hostFilter);
-    let options: SelectableValue<string>[] = apps?.map((app) => ({
+    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -78,7 +78,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
       showDisabledItems: query.options.showDisabledItems,
     };
     const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, appFilter, tagFilter, options);
-    let itemOptions: SelectableValue<string>[] = items?.map((item) => ({
+    let itemOptions: Array<SelectableValue<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
     }));
@@ -105,19 +105,19 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
 
   useEffect(() => {
     fetchGroups();
-  }, []);
+  }, [fetchGroups]);
 
   useEffect(() => {
     fetchHosts();
-  }, [groupFilter]);
+  }, [fetchHosts, groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [groupFilter, hostFilter]);
+  }, [fetchApps, groupFilter, hostFilter]);
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter]);
+  }, [groupFilter, hostFilter, appFilter, tagFilter, fetchItems]);
 
   const onTextFilterChange = (v: FormEvent<HTMLInputElement>) => {
     const newValue = v?.currentTarget?.value;

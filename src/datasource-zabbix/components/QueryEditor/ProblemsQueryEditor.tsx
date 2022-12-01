@@ -10,13 +10,13 @@ import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery } from '../../types';
 
-const showProblemsOptions: SelectableValue<string>[] = [
+const showProblemsOptions: Array<SelectableValue<string>> = [
   { label: 'Problems', value: 'problems' },
   { label: 'Recent problems', value: 'recent' },
   { label: 'History', value: 'history' },
 ];
 
-const severityOptions: SelectableValue<number>[] = [
+const severityOptions: Array<SelectableValue<number>> = [
   { value: 0, label: 'Not classified' },
   { value: 1, label: 'Information' },
   { value: 2, label: 'Warning' },
@@ -50,7 +50,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
   const loadHostOptions = async (group: string) => {
     const groupFilter = datasource.replaceTemplateVars(group);
     const hosts = await datasource.zabbix.getAllHosts(groupFilter);
-    let options: SelectableValue<string>[] = hosts?.map((host) => ({
+    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -69,7 +69,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
     const groupFilter = datasource.replaceTemplateVars(group);
     const hostFilter = datasource.replaceTemplateVars(host);
     const apps = await datasource.zabbix.getAllApps(groupFilter, hostFilter);
-    let options: SelectableValue<string>[] = apps?.map((app) => ({
+    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -104,19 +104,19 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchGroups();
-  }, []);
+  }, [fetchGroups]);
 
   useEffect(() => {
     fetchHosts();
-  }, [groupFilter]);
+  }, [fetchHosts, groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [groupFilter, hostFilter]);
+  }, [fetchApps, groupFilter, hostFilter]);
 
   useEffect(() => {
     fetchProxies();
-  }, []);
+  }, [fetchProxies]);
 
   const onTextFilterChange = (prop: string) => {
     return (v: FormEvent<HTMLInputElement>) => {

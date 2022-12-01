@@ -20,7 +20,7 @@ const roundInterval: (interval: number) => number = rangeUtil?.roundInterval || 
  */
 export class ZabbixAPIConnector {
   backendAPIUrl: string;
-  requestOptions: { basicAuth: any; withCredentials: boolean; };
+  requestOptions: { basicAuth: any; withCredentials: boolean };
   getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
   version: string;
   getVersionPromise: Promise<string>;
@@ -32,7 +32,7 @@ export class ZabbixAPIConnector {
 
     this.requestOptions = {
       basicAuth: basicAuth,
-      withCredentials: withCredentials
+      withCredentials: withCredentials,
     };
 
     this.getTrend = this.getTrend_ZBXNEXT1193;
@@ -58,7 +58,7 @@ export class ZabbixAPIConnector {
       url: this.backendAPIUrl,
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       hideFromInspector: false,
       data: {
@@ -90,7 +90,7 @@ export class ZabbixAPIConnector {
   initVersion(): Promise<string> {
     if (!this.getVersionPromise) {
       this.getVersionPromise = Promise.resolve(
-        this.getVersion().then(version => {
+        this.getVersion().then((version) => {
           if (version) {
             console.log(`Zabbix version detected: ${version}`);
           } else {
@@ -122,7 +122,7 @@ export class ZabbixAPIConnector {
     const params: any = {
       eventids: eventid,
       message: message,
-      action: action
+      action: action,
     };
 
     if (severity !== undefined) {
@@ -136,7 +136,7 @@ export class ZabbixAPIConnector {
     const params = {
       output: ['name', 'groupid'],
       sortfield: 'name',
-      real_hosts: true
+      real_hosts: true,
     };
 
     return this.request('hostgroup.get', params);
@@ -145,7 +145,7 @@ export class ZabbixAPIConnector {
   getHosts(groupids) {
     const params: any = {
       output: ['hostid', 'name', 'host'],
-      sortfield: 'name'
+      sortfield: 'name',
     };
     if (groupids) {
       params.groupids = groupids;
@@ -161,7 +161,7 @@ export class ZabbixAPIConnector {
 
     const params = {
       output: 'extend',
-      hostids: hostids
+      hostids: hostids,
     };
 
     return this.request('application.get', params);
@@ -176,22 +176,11 @@ export class ZabbixAPIConnector {
    */
   getItems(hostids, appids, itemtype) {
     const params: any = {
-      output: [
-        'itemid',
-        'name',
-        'key_',
-        'value_type',
-        'hostid',
-        'status',
-        'state',
-        'units',
-        'valuemapid',
-        'delay'
-      ],
+      output: ['itemid', 'name', 'key_', 'value_type', 'hostid', 'status', 'state', 'units', 'valuemapid', 'delay'],
       sortfield: 'name',
       webitems: true,
       filter: {},
-      selectHosts: ['hostid', 'name', 'host']
+      selectHosts: ['hostid', 'name', 'host'],
     };
     if (hostids) {
       params.hostids = hostids;
@@ -212,41 +201,28 @@ export class ZabbixAPIConnector {
       params.selectTags = 'extend';
     }
 
-    return this.request('item.get', params)
-    .then(utils.expandItems);
+    return this.request('item.get', params).then(utils.expandItems);
   }
 
   getItemsByIDs(itemids) {
     const params: any = {
       itemids: itemids,
-      output: [
-        'itemid',
-        'name',
-        'key_',
-        'value_type',
-        'hostid',
-        'status',
-        'state',
-        'units',
-        'valuemapid',
-        'delay'
-      ],
+      output: ['itemid', 'name', 'key_', 'value_type', 'hostid', 'status', 'state', 'units', 'valuemapid', 'delay'],
       webitems: true,
-      selectHosts: ['hostid', 'name']
+      selectHosts: ['hostid', 'name'],
     };
 
     if (this.isZabbix54OrHigher()) {
       params.selectTags = 'extend';
     }
 
-    return this.request('item.get', params)
-    .then(items => utils.expandItems(items));
+    return this.request('item.get', params).then((items) => utils.expandItems(items));
   }
 
   getMacros(hostids) {
     const params = {
       output: 'extend',
-      hostids: hostids
+      hostids: hostids,
     };
 
     return this.request('usermacro.get', params);
@@ -255,7 +231,7 @@ export class ZabbixAPIConnector {
   getGlobalMacros() {
     const params = {
       output: 'extend',
-      globalmacro: true
+      globalmacro: true,
     };
 
     return this.request('usermacro.get', params);
@@ -264,10 +240,9 @@ export class ZabbixAPIConnector {
   getLastValue(itemid) {
     const params = {
       output: ['lastvalue'],
-      itemids: itemid
+      itemids: itemid,
     };
-    return this.request('item.get', params)
-    .then(items => items.length ? items[0].lastvalue : null);
+    return this.request('item.get', params).then((items) => (items.length ? items[0].lastvalue : null));
   }
 
   /**
@@ -279,7 +254,6 @@ export class ZabbixAPIConnector {
    * @return {Array}  Array of Zabbix history objects
    */
   getHistory(items, timeFrom, timeTill) {
-
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
     const promises = _.map(grouped_items, (items, value_type) => {
@@ -290,7 +264,7 @@ export class ZabbixAPIConnector {
         itemids: itemids,
         sortfield: 'clock',
         sortorder: 'ASC',
-        time_from: timeFrom
+        time_from: timeFrom,
       };
 
       // Relative queries (e.g. last hour) don't include an end time
@@ -314,7 +288,6 @@ export class ZabbixAPIConnector {
    * @return {Array}  Array of Zabbix trend objects
    */
   getTrend_ZBXNEXT1193(items, timeFrom, timeTill) {
-
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
     const promises = _.map(grouped_items, (items, value_type) => {
@@ -325,7 +298,7 @@ export class ZabbixAPIConnector {
         itemids: itemids,
         sortfield: 'clock',
         sortorder: 'ASC',
-        time_from: timeFrom
+        time_from: timeFrom,
       };
 
       // Relative queries (e.g. last hour) don't include an end time
@@ -344,13 +317,9 @@ export class ZabbixAPIConnector {
     const itemids = _.map(items, 'itemid');
 
     const params: any = {
-      output: [
-        'itemid',
-        'clock',
-        value_type
-      ],
+      output: ['itemid', 'clock', value_type],
       itemids: itemids,
-      time_from: time_from
+      time_from: time_from,
     };
 
     // Relative queries (e.g. last hour) don't include an end time
@@ -364,7 +333,7 @@ export class ZabbixAPIConnector {
   getITService(serviceids?) {
     const params = {
       output: 'extend',
-      serviceids: serviceids
+      serviceids: serviceids,
     };
     return this.request('service.get', params);
   }
@@ -382,7 +351,7 @@ export class ZabbixAPIConnector {
 
     const params: any = {
       serviceids,
-      intervals
+      intervals,
     };
 
     return this.request('service.getsla', params);
@@ -410,10 +379,10 @@ export class ZabbixAPIConnector {
     }
     const sla = slaObjects[0];
 
-    const periods = intervals.map(interval => ({
-      period_from: interval.from,
-      period_to: interval.to,
-    }));
+    // const periods = intervals.map(interval => ({
+    //   period_from: interval.from,
+    //   period_to: interval.to,
+    // }));
     const sliParams: any = {
       slaid: sla.slaid,
       serviceids,
@@ -430,7 +399,7 @@ export class ZabbixAPIConnector {
     const slaLikeResponse: any = {};
     sliResponse.serviceids.forEach((serviceid) => {
       slaLikeResponse[serviceid] = {
-        sla: []
+        sla: [],
       };
     });
     sliResponse.sli.forEach((sliItem, i) => {
@@ -440,7 +409,7 @@ export class ZabbixAPIConnector {
           okTime: sli.uptime,
           sla: sli.sli,
           from: sliResponse.periods[i].period_from,
-          to: sliResponse.periods[i].period_to
+          to: sliResponse.periods[i].period_to,
         });
       });
     });
@@ -526,13 +495,13 @@ export class ZabbixAPIConnector {
       skipDependent: true,
       //only_true: true,
       filter: {
-        value: 1
+        value: 1,
       },
       selectGroups: ['groupid', 'name'],
       selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid'],
       selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       selectLastEvent: 'extend',
-      selectTags: 'extend'
+      selectTags: 'extend',
     };
 
     if (showTriggers === ShowProblemTypes.Problems) {
@@ -617,7 +586,7 @@ export class ZabbixAPIConnector {
       select_acknowledges: 'extend',
       selectTags: 'extend',
       sortfield: 'clock',
-      sortorder: 'DESC'
+      sortorder: 'DESC',
     };
 
     return this.request('event.get', params);
@@ -626,13 +595,7 @@ export class ZabbixAPIConnector {
   getEventAlerts(eventids) {
     const params = {
       eventids: eventids,
-      output: [
-        'alertid',
-        'eventid',
-        'message',
-        'clock',
-        'error'
-      ],
+      output: ['alertid', 'eventid', 'message', 'clock', 'error'],
       selectUsers: true,
     };
 
@@ -646,11 +609,10 @@ export class ZabbixAPIConnector {
       preservekeys: true,
       select_acknowledges: 'extend',
       sortfield: 'clock',
-      sortorder: 'DESC'
+      sortorder: 'DESC',
     };
 
-    return this.request('event.get', params)
-    .then(events => {
+    return this.request('event.get', params).then((events) => {
       return _.filter(events, (event) => event.acknowledges.length);
     });
   }
@@ -668,7 +630,7 @@ export class ZabbixAPIConnector {
       // filter: {
       //   value: 1
       // },
-      selectLastEvent: 'extend'
+      selectLastEvent: 'extend',
     };
 
     if (timeFrom || timeTo) {
@@ -693,7 +655,7 @@ export class ZabbixAPIConnector {
       skipDependent: true,
       selectLastEvent: 'extend',
       selectGroups: 'extend',
-      selectHosts: ['hostid', 'host', 'name']
+      selectHosts: ['hostid', 'host', 'name'],
     };
 
     if (count && acknowledged !== 0 && acknowledged !== 1) {
@@ -709,8 +671,7 @@ export class ZabbixAPIConnector {
       params.lastChangeTill = timeTo;
     }
 
-    return this.request('trigger.get', params)
-    .then((triggers) => {
+    return this.request('trigger.get', params).then((triggers) => {
       if (!count || acknowledged === 0 || acknowledged === 1) {
         triggers = filterTriggersByAcknowledge(triggers, acknowledged);
         if (count) {
@@ -750,7 +711,7 @@ export class ZabbixAPIConnector {
   getValueMappings() {
     const params = {
       output: 'extend',
-      selectMappings: "extend",
+      selectMappings: 'extend',
     };
 
     return this.request('valuemap.get', params);
@@ -759,9 +720,9 @@ export class ZabbixAPIConnector {
 
 function filterTriggersByAcknowledge(triggers, acknowledged) {
   if (acknowledged === 0) {
-    return _.filter(triggers, (trigger) => trigger.lastEvent.acknowledged === "0");
+    return _.filter(triggers, (trigger) => trigger.lastEvent.acknowledged === '0');
   } else if (acknowledged === 1) {
-    return _.filter(triggers, (trigger) => trigger.lastEvent.acknowledged === "1");
+    return _.filter(triggers, (trigger) => trigger.lastEvent.acknowledged === '1');
   } else {
     return triggers;
   }
@@ -785,9 +746,8 @@ function buildSLAIntervals(timeRange, interval) {
   for (let i = timeFrom; i <= timeTo - interval; i += interval) {
     intervals.push({
       from: i,
-      to: (i + interval)
+      to: i + interval,
     });
-
   }
 
   return intervals;
@@ -802,12 +762,12 @@ export class ZabbixAPIError {
 
   constructor(error: JSONRPCError) {
     this.code = error.code || null;
-    this.name = error.message || "";
-    this.data = error.data || "";
-    this.message = "Zabbix API Error: " + this.name + " " + this.data;
+    this.name = error.message || '';
+    this.data = error.data || '';
+    this.message = 'Zabbix API Error: ' + this.name + ' ' + this.data;
   }
 
   toString() {
-    return this.name + " " + this.data;
+    return this.name + ' ' + this.data;
   }
 }

@@ -1,4 +1,4 @@
-import { PanelPlugin, StandardEditorProps } from '@grafana/data';
+import { PanelPlugin } from '@grafana/data';
 import { problemsPanelChangedHandler, problemsPanelMigrationHandler } from './migrations';
 import { ProblemsPanel } from './ProblemsPanel';
 import { defaultPanelOptions, ProblemsPanelOptions } from './types';

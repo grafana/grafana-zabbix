@@ -1,10 +1,9 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React from 'react';
 import _ from 'lodash';
-import { BusEventBase, BusEventWithPayload, dateMath, PanelProps } from '@grafana/data';
+import { DataSourceRef, dateMath, PanelProps } from '@grafana/data';
 import { getDataSourceSrv } from '@grafana/runtime';
-import { useTheme2 } from '@grafana/ui';
 import { contextSrv } from 'grafana/app/core/core';
-import { ProblemsPanelOptions } from './types';
+import { ProblemsPanelOptions, RTResized } from './types';
 import { ProblemDTO, ZabbixMetricsQuery, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource-zabbix/types';
 import { APIExecuteScriptResponse } from '../datasource-zabbix/zabbix/connectors/zabbix_api/types';
 import ProblemList from './components/Problems/Problems';
@@ -18,7 +17,6 @@ interface ProblemsPanelProps extends PanelProps<ProblemsPanelOptions> {}
 export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
   const { data, options, timeRange, onOptionsChange } = props;
   const { layout, showTriggers, triggerSeverity, sortProblems } = options;
-  const theme = useTheme2();
 
   const prepareProblems = () => {
     const problems: ProblemDTO[] = [];
@@ -63,11 +61,8 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
 
     // Filter triggers by severity
     problemsList = problemsList.filter((problem) => {
-      if (problem.severity) {
-        return triggerSeverity[problem.severity].show;
-      } else {
-        return triggerSeverity[problem.priority].show;
-      }
+      const severity = problem.severity !== undefined ? Number(problem.severity) : Number(problem.priority);
+      return triggerSeverity[severity].show;
     });
 
     return problemsList;
@@ -97,7 +92,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
 
     // Set tags if present
     if (trigger.tags && trigger.tags.length === 0) {
-      trigger.tags = null;
+      trigger.tags = undefined;
     }
 
     // Handle multi-line description
@@ -109,7 +104,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     return trigger;
   };
 
-  const parseTags = (tagStr: string) => {
+  const parseTags = (tagStr: string): ZBXTag[] => {
     if (!tagStr) {
       return [];
     }
@@ -126,18 +121,18 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     return _.map(tags, (tag) => `${tag.tag}:${tag.value}`).join(', ');
   };
 
-  const addTagFilter = (tag, datasource) => {
-    const targets = data.request.targets;
+  const addTagFilter = (tag: ZBXTag, datasource: DataSourceRef) => {
+    const targets = data.request?.targets!;
     let updated = false;
     for (const target of targets) {
       if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
-        const tagFilter = (target as ZabbixMetricsQuery).tags.filter;
+        const tagFilter = (target as ZabbixMetricsQuery).tags?.filter!;
         let targetTags = parseTags(tagFilter);
         const newTag = { tag: tag.tag, value: tag.value };
         targetTags.push(newTag);
         targetTags = _.uniqWith(targetTags, _.isEqual);
         const newFilter = tagsToString(targetTags);
-        (target as ZabbixMetricsQuery).tags.filter = newFilter;
+        (target as ZabbixMetricsQuery).tags!.filter = newFilter;
         updated = true;
       }
     }
@@ -148,18 +143,18 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     }
   };
 
-  const removeTagFilter = (tag, datasource) => {
-    const matchTag = (t) => t.tag === tag.tag && t.value === tag.value;
-    const targets = data.request.targets;
+  const removeTagFilter = (tag: ZBXTag, datasource: DataSourceRef) => {
+    const matchTag = (t: ZBXTag) => t.tag === tag.tag && t.value === tag.value;
+    const targets = data.request?.targets!;
     let updated = false;
     for (const target of targets) {
       if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
-        const tagFilter = (target as ZabbixMetricsQuery).tags.filter;
+        const tagFilter = (target as ZabbixMetricsQuery).tags?.filter!;
         let targetTags = parseTags(tagFilter);
         _.remove(targetTags, matchTag);
         targetTags = _.uniqWith(targetTags, _.isEqual);
         const newFilter = tagsToString(targetTags);
-        (target as ZabbixMetricsQuery).tags.filter = newFilter;
+        (target as ZabbixMetricsQuery).tags!.filter = newFilter;
         updated = true;
       }
     }
@@ -172,8 +167,8 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
 
   const getProblemEvents = async (problem: ProblemDTO) => {
     const triggerids = [problem.triggerid];
-    const timeFrom = Math.ceil(dateMath.parse(timeRange.from).unix());
-    const timeTo = Math.ceil(dateMath.parse(timeRange.to).unix());
+    const timeFrom = Math.ceil(dateMath.parse(timeRange.from)!.unix());
+    const timeTo = Math.ceil(dateMath.parse(timeRange.to)!.unix());
     const ds: any = await getDataSourceSrv().get(problem.datasource);
     return ds.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
   };
@@ -216,11 +211,11 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     }
   };
 
-  const onColumnResize = (newResized) => {
+  const onColumnResize = (newResized: RTResized) => {
     onOptionsChange({ ...options, resizedColumns: newResized });
   };
 
-  const onTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
+  const onTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (ctrlKey || shiftKey) {
       removeTagFilter(tag, datasource);
     } else {
@@ -231,7 +226,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
   const renderList = () => {
     const problems = prepareProblems();
     const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
-    const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
+    const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
     return (
       <AlertList
@@ -248,7 +243,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
   const renderTable = () => {
     const problems = prepareProblems();
     const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
-    const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : null;
+    const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
     return (
       <ProblemList

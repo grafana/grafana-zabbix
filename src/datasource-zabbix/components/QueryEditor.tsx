@@ -4,7 +4,7 @@ import { InlineField, InlineFieldRow, Select } from '@grafana/ui';
 import * as c from '../constants';
 import * as migrations from '../migrations';
 import { ZabbixDatasource } from '../datasource';
-import { MetricFunc, ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions } from '../types';
+import { ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions } from '../types';
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
@@ -117,6 +117,8 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   useEffect(() => {
     const migratedQuery = migrations.migrate(query);
     onChange(migratedQuery);
+    // Update should only happen once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onPropChange = (prop: string) => {
@@ -134,10 +136,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
 
   const onOptionsChange = (options: ZabbixQueryOptions) => {
     onChangeInternal({ ...query, options });
-  };
-
-  const getSelectableValue = (value: string): SelectableValue<string> => {
-    return { value, label: value };
   };
 
   const renderMetricsEditor = () => {

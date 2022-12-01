@@ -1,4 +1,5 @@
 import _ from 'lodash';
+// eslint-disable-next-line
 import moment from 'moment';
 import * as c from './constants';
 import { VariableQuery, VariableQueryTypes, ZBXItemTag } from './types';
@@ -507,12 +508,12 @@ export function isProblemsDataFrame(data: DataFrame): boolean {
 }
 
 // Swap n and k elements.
-export function swap<T>(list: Array<T>, n: number, k: number): Array<T> {
+export function swap<T>(list: T[], n: number, k: number): T[] {
   if (list === null || list.length < 2 || k > list.length - 1 || k < 0 || n > list.length - 1 || n < 0) {
     return list;
   }
 
-  const newList: Array<T> = new Array(list.length);
+  const newList: T[] = new Array(list.length);
   for (let i = 0; i < list.length; i++) {
     if (i === n) {
       newList[i] = list[k];

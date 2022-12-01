@@ -10,7 +10,7 @@ import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery } from '../../types';
 
-const slaPropertyList: SelectableValue<string>[] = [
+const slaPropertyList: Array<SelectableValue<string>> = [
   { label: 'Status', value: 'status' },
   { label: 'SLA', value: 'sla' },
   { label: 'OK time', value: 'okTime' },
@@ -18,7 +18,7 @@ const slaPropertyList: SelectableValue<string>[] = [
   { label: 'Down time', value: 'downtimeTime' },
 ];
 
-const slaIntervals: SelectableValue<string>[] = [
+const slaIntervals: Array<SelectableValue<string>> = [
   { label: 'No interval', value: 'none' },
   { label: 'Auto', value: 'auto' },
   { label: '1 hour', value: '1h' },
@@ -52,7 +52,7 @@ export const ITServicesQueryEditor = ({ query, datasource, onChange }: Props) =>
 
   useEffect(() => {
     fetchITServices();
-  }, []);
+  }, [fetchITServices]);
 
   const onPropChange = (prop: string) => {
     return (option: SelectableValue) => {

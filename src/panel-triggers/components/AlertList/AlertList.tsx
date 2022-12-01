@@ -1,4 +1,4 @@
-import React, { PureComponent, CSSProperties } from 'react';
+import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import { ProblemsPanelOptions } from '../../types';
 import { AckProblemData } from '../AckModal';
@@ -13,7 +13,7 @@ export interface AlertListProps {
   pageSize?: number;
   fontSize?: number;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
-  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
+  onTagClick?: (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 interface AlertListState {
@@ -45,7 +45,7 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
     });
   };
 
-  handleTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
+  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
       this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }

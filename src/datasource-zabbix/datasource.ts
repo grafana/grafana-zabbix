@@ -48,11 +48,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
   replaceTemplateVars: (target: any, scopedVars?: any) => any;
 
-  /** @ngInject */
-  constructor(instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>, private templateSrv) {
+  constructor(instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>) {
     super(instanceSettings);
 
-    this.templateSrv = templateSrv;
     this.enableDebugLog = config.buildInfo.env === 'development';
 
     this.annotations = {
@@ -61,7 +59,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     };
 
     // Use custom format for template variables
-    this.replaceTemplateVars = _.partial(replaceTemplateVars, this.templateSrv);
+    const templateSrv = getTemplateSrv();
+    this.replaceTemplateVars = _.partial(replaceTemplateVars, templateSrv);
 
     // General data source settings
     this.datasourceId = instanceSettings.id;
@@ -455,7 +454,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    */
   queryItemIdData(target, timeRange, useTrends, options) {
     let itemids = target.itemids;
-    itemids = this.templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
+    const templateSrv = getTemplateSrv();
+    itemids = templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
     itemids = _.map(itemids.split(','), (itemid) => itemid.trim());
 
     if (!itemids) {
@@ -631,7 +631,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         title: 'Success',
         message: message,
       };
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof ZabbixAPIError) {
         return {
           status: 'error',
@@ -824,6 +824,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
   // Replace template variables
   replaceTargetVariables(target, options) {
+    const templateSrv = getTemplateSrv();
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
     _.forEach(parts, (p) => {
       if (target[p] && target[p].filter) {
@@ -836,15 +837,15 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     if (target.itemids) {
-      target.itemids = this.templateSrv.replace(target.itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
+      target.itemids = templateSrv.replace(target.itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
     }
 
     _.forEach(target.functions, (func) => {
       func.params = _.map(func.params, (param) => {
         if (typeof param === 'number') {
-          return +this.templateSrv.replace(param.toString(), options.scopedVars);
+          return +templateSrv.replace(param.toString(), options.scopedVars);
         } else {
-          return this.templateSrv.replace(param, options.scopedVars);
+          return templateSrv.replace(param, options.scopedVars);
         }
       });
     });

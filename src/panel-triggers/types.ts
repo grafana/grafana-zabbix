@@ -1,4 +1,3 @@
-import { DataSourceRef } from '@grafana/data';
 import { CURRENT_SCHEMA_VERSION } from './migrations';
 
 export interface ProblemsPanelOptions {
@@ -26,7 +25,7 @@ export interface ProblemsPanelOptions {
   showEvents?: Number[];
   limit?: number;
   // View options
-  fontSize?: string;
+  fontSize: string;
   pageSize?: number;
   problemTimeline?: boolean;
   highlightBackground?: boolean;
@@ -36,9 +35,9 @@ export interface ProblemsPanelOptions {
   lastChangeFormat?: string;
   resizedColumns?: RTResized;
   // Triggers severity and colors
-  triggerSeverity?: TriggerSeverity[];
-  okEventColor?: TriggerColor;
-  ackEventColor?: TriggerColor;
+  triggerSeverity: TriggerSeverity[];
+  okEventColor: TriggerColor;
+  ackEventColor: TriggerColor;
   markAckEvents?: boolean;
 }
 
@@ -70,7 +69,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   descriptionAtNewLine: false,
   // Options
   sortProblems: 'lastchange',
-  limit: null,
+  limit: undefined,
   // View options
   layout: 'table',
   fontSize: '100%',
