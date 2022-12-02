@@ -576,7 +576,7 @@
       font-size: 1% * $i * 10;
 
       & .rt-tr .rt-td.custom-expander i {
-        font-size: 1.2rem * $i / 10;
+        font-size: calc(1.2rem * $i / 10);
       }
 
       .problem-details-container.show {
@@ -594,7 +594,7 @@
         font-size: 1% * $i * 10;
 
         & .rt-tr .rt-td.custom-expander i {
-          font-size: 1.2rem * $i / 10;
+          font-size: calc(1.2rem * $i / 10);
         }
 
         .problem-details-container.show {
