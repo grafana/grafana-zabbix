@@ -13,7 +13,7 @@ deps-go:
 
 build: build-frontend build-backend
 build-frontend:
-	yarn dev-build
+	yarn build
 build-backend:
 	env GOOS=linux go build -o ./dist/zabbix-plugin_linux_amd64 ./pkg
 build-debug:

@@ -14,7 +14,7 @@
     "lint:fix": "yarn lint --fix",
     "e2e": "yarn cypress install && yarn grafana-e2e run",
     "e2e:update": "yarn cypress install && yarn grafana-e2e run --update-screenshots",
-    "sign": "npx --yes @grafana/sign-plugin"
+    "sign": "grafana-toolkit plugin:sign"
   },
   "repository": {
     "type": "git",
