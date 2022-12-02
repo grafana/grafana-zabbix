@@ -11,6 +11,7 @@ import LiveReloadPlugin from 'webpack-livereload-plugin';
 import path from 'path';
 import ReplaceInFileWebpackPlugin from 'replace-in-file-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import RemoveEmptyScriptsPlugin from 'webpack-remove-empty-scripts';
 import { Configuration } from 'webpack';
 
 import { getPackageJson, getPluginId, hasReadme, getEntries } from './utils';
@@ -186,6 +187,7 @@ const config = async (env): Promise<Configuration> => ({
         { from: 'static/**/*', to: '.', noErrorOnMissing: true }, // Optional
       ],
     }),
+    new RemoveEmptyScriptsPlugin({}),
     new MiniCssExtractPlugin({
       filename: 'styles/[name].css',
     }),
