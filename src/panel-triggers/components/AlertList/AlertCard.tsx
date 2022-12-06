@@ -1,5 +1,5 @@
 import React, { PureComponent, CSSProperties } from 'react';
-import classNames from 'classnames';
+import { cx } from '@emotion/css';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
@@ -37,10 +37,10 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
   render() {
     const { problem, panelOptions } = this.props;
     const showDatasourceName = panelOptions.targets && panelOptions.targets.length > 1;
-    const cardClass = classNames('alert-rule-item', 'zbx-trigger-card', {
+    const cardClass = cx('alert-rule-item', 'zbx-trigger-card', {
       'zbx-trigger-highlighted': panelOptions.highlightBackground,
     });
-    const descriptionClass = classNames('alert-rule-item__text', {
+    const descriptionClass = cx('alert-rule-item__text', {
       'zbx-description--newline': panelOptions.descriptionAtNewLine,
     });
 
@@ -241,7 +241,7 @@ function AlertStatus(props) {
   const { problem, okColor, problemColor, blink } = props;
   const status = problem.value === '0' ? 'RESOLVED' : 'PROBLEM';
   const color: string = problem.value === '0' ? okColor || DEFAULT_OK_COLOR : problemColor || DEFAULT_PROBLEM_COLOR;
-  const className = classNames(
+  const className = cx(
     'zbx-trigger-state',
     { 'alert-state-critical': problem.value === '1' },
     { 'alert-state-ok': problem.value === '0' },
@@ -256,7 +256,7 @@ function AlertStatus(props) {
 
 function AlertSeverity(props) {
   const { severityDesc, highlightBackground, blink } = props;
-  const className = classNames('zbx-trigger-severity', { 'zabbix-trigger--blinked': blink });
+  const className = cx('zbx-trigger-severity', { 'zabbix-trigger--blinked': blink });
   const style: CSSProperties = {};
   if (!highlightBackground) {
     style.color = severityDesc.color;

@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
+import { cx } from '@emotion/css';
 import ReactTable from 'react-table-6';
-import classNames from 'classnames';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
@@ -218,7 +218,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const columns = this.buildColumns();
     this.rootWidth = this.rootRef && this.rootRef.clientWidth;
     const { pageSize, fontSize, panelOptions } = this.props;
-    const panelClass = classNames('panel-problems', { [`font-size--${fontSize}`]: fontSize });
+    const panelClass = cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize });
     let pageSizeOptions = [5, 10, 20, 25, 50, 100];
     if (pageSize) {
       pageSizeOptions.push(pageSize);
@@ -332,7 +332,7 @@ function StatusIconCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) 
   if (highlightNewerThan) {
     newProblem = isNewProblem(props.original, highlightNewerThan);
   }
-  const className = classNames(
+  const className = cx(
     'zbx-problem-status-icon',
     { 'problem-status--new': newProblem },
     { 'zbx-problem': props.value === '1' },

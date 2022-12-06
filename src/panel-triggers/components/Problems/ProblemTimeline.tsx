@@ -371,7 +371,12 @@ class TimelineRegions extends PureComponent<TimelineRegionsProps> {
       return <rect key={`${event.eventid}-${index}`} className={className} {...attributes} />;
     });
 
-    return [firstItem, eventsIntervalItems];
+    return (
+      <>
+        {firstItem}
+        {eventsIntervalItems}
+      </>
+    );
   }
 }
 

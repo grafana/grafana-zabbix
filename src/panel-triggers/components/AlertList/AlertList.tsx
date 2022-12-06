@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import classNames from 'classnames';
+import { cx } from '@emotion/css';
 import { ProblemsPanelOptions } from '../../types';
 import { AckProblemData } from '../AckModal';
 import AlertCard from './AlertCard';
@@ -60,7 +60,7 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
     const currentProblems = this.getCurrentProblems(this.state.page);
     let fontSize = parseInt(panelOptions.fontSize.slice(0, panelOptions.fontSize.length - 1), 10);
     fontSize = fontSize && fontSize !== 100 ? fontSize : null;
-    const alertListClass = classNames('alert-rule-list', { [`font-size--${fontSize}`]: fontSize });
+    const alertListClass = cx('alert-rule-list', { [`font-size--${fontSize}`]: !!fontSize });
 
     return (
       <div className="triggers-panel-container" key="alertListContainer">
@@ -117,7 +117,7 @@ class PaginationControl extends PureComponent<PaginationControlProps> {
 
     const pageLinks = [];
     for (let i = startPage; i < endPage; i++) {
-      const pageLinkClass = classNames('triggers-panel-page-link', 'pointer', { active: i === pageIndex });
+      const pageLinkClass = cx('triggers-panel-page-link', 'pointer', { active: i === pageIndex });
       const value = i + 1;
       const pageLinkElem = (
         <li key={value.toString()}>
