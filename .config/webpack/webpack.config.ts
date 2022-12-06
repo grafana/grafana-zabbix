@@ -10,8 +10,6 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import LiveReloadPlugin from 'webpack-livereload-plugin';
 import path from 'path';
 import ReplaceInFileWebpackPlugin from 'replace-in-file-webpack-plugin';
-import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import RemoveEmptyScriptsPlugin from 'webpack-remove-empty-scripts';
 import { Configuration } from 'webpack';
 
 import { getPackageJson, getPluginId, hasReadme, getEntries } from './utils';
@@ -30,13 +28,6 @@ const config = async (env): Promise<Configuration> => ({
   devtool: env.production ? 'source-map' : 'eval-source-map',
 
   // entry: await getEntries(),
-  entry: {
-    module: './module.ts',
-    'datasource-zabbix/module': './datasource-zabbix/module.ts',
-    'panel-triggers/module': './panel-triggers/module.tsx',
-    dark: './styles/dark.scss',
-    light: './styles/light.scss',
-  },
 
   externals: [
     'lodash',
@@ -101,38 +92,13 @@ const config = async (env): Promise<Configuration> => ({
         },
       },
       {
-        test: /(dark|light)\.scss$/,
-        exclude: /node_modules/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: 'css-loader',
-            options: {
-              importLoaders: 1,
-              url: false,
-              sourceMap: false,
-            },
-          },
-          {
-            loader: require.resolve('postcss-loader'),
-            options: {
-              postcssOptions: {
-                plugins: () => [
-                  require('postcss-flexbugs-fixes'),
-                  require('postcss-preset-env')({
-                    autoprefixer: { flexbox: 'no-2009', grid: true },
-                  }),
-                ],
-              },
-            },
-          },
-          {
-            loader: 'sass-loader',
-            options: {
-              sourceMap: false,
-            },
-          },
-        ],
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
+        exclude: /(node_modules)/,
+        test: /\.s[ac]ss$/,
+        use: ['style-loader', 'css-loader', 'sass-loader'],
       },
       {
         test: /\.(png|jpe?g|gif|svg)$/,
@@ -186,10 +152,6 @@ const config = async (env): Promise<Configuration> => ({
         { from: 'libs/**/*', to: '.', noErrorOnMissing: true }, // Optional
         { from: 'static/**/*', to: '.', noErrorOnMissing: true }, // Optional
       ],
-    }),
-    new RemoveEmptyScriptsPlugin({}),
-    new MiniCssExtractPlugin({
-      filename: 'styles/[name].css',
     }),
     // Replace certain template-variables in the README and plugin.json
     new ReplaceInFileWebpackPlugin([
