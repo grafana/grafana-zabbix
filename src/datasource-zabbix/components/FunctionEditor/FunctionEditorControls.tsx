@@ -10,15 +10,17 @@ export interface FunctionEditorControlsProps {
   onRemove: (func: MetricFunc) => void;
 }
 
-const FunctionDescription = React.lazy(async () => {
-  // @ts-ignore
-  const { default: rst2html } = await import(/* webpackChunkName: "rst2html" */ 'rst2html');
-  return {
-    default(props: { description?: string }) {
-      return <div dangerouslySetInnerHTML={{ __html: rst2html(props.description ?? '') }} />;
-    },
-  };
-});
+// const FunctionDescription = React.lazy(async () => {
+//   // @ts-ignore
+//   const { default: rst2html } = await import(/* webpackChunkName: "rst2html" */ 'rst2html');
+//   return {
+//     default(props: { description?: string }) {
+//       return <div dangerouslySetInnerHTML={{ __html: rst2html(props.description ?? '') }} />;
+//     },
+//   };
+// });
+
+const FunctionDescription = ({ description }): JSX.Element => <></>;
 
 const FunctionHelpButton = (props: { description?: string; name: string }) => {
   if (props.description) {
