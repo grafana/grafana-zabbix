@@ -11,12 +11,6 @@
     "baseUrl": "../src",
     "typeRoots": ["../node_modules/@types"],
     "resolveJsonModule": true,
-    // Disable some default rules from @grafana/tsconfig
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "strictPropertyInitialization": false,
-    "strictFunctionTypes": false,
-    "strictNullChecks": false
   },
   "ts-node": {
     "compilerOptions": {
