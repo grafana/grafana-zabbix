@@ -68,7 +68,9 @@ export const ConfigEditor = (props: Props) => {
         setCurrentDSType(selectedDs.type);
       }
     }
-  }, [onOptionsChange, options]);
+    // Update should only happen once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
