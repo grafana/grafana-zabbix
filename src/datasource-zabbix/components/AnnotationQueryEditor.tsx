@@ -85,15 +85,15 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
 
   useEffect(() => {
     fetchGroups();
-  }, [fetchGroups]);
+  }, []);
 
   useEffect(() => {
     fetchHosts();
-  }, [fetchHosts, groupFilter]);
+  }, [groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [fetchApps, groupFilter, hostFilter]);
+  }, [groupFilter, hostFilter]);
 
   const onChange = (query: any) => {
     onAnnotationChange({

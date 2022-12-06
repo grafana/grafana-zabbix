@@ -1,3 +1,6 @@
 {
-  "extends": "./.config/.eslintrc"
+  "extends": "./.config/.eslintrc",
+  "rules": {
+    "react-hooks/exhaustive-deps": "off"
+  }
 }

@@ -83,15 +83,15 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchGroups();
-  }, [fetchGroups]);
+  }, []);
 
   useEffect(() => {
     fetchHosts();
-  }, [fetchHosts, groupFilter]);
+  }, [groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [fetchApps, groupFilter, hostFilter]);
+  }, [groupFilter, hostFilter]);
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {

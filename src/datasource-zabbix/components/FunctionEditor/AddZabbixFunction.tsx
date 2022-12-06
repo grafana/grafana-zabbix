@@ -1,5 +1,5 @@
 import { css, cx } from '@emotion/css';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { Button, ClickOutsideWrapper, Icon, Input, Menu, useStyles2, useTheme2 } from '@grafana/ui';
 import { FuncDef } from '../../types';
@@ -17,13 +17,10 @@ export function AddZabbixFunction({ onFuncAdd }: Props) {
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
 
-  const onFuncAddInternal = useCallback(
-    () => (def: FuncDef) => {
-      onFuncAdd(def);
-      setShowMenu(false);
-    },
-    [onFuncAdd]
-  );
+  const onFuncAddInternal = (def: FuncDef) => {
+    onFuncAdd(def);
+    setShowMenu(false);
+  };
 
   const onSearch = (e: React.FormEvent<HTMLInputElement>) => {
     console.log(e.currentTarget.value);
@@ -33,7 +30,7 @@ export function AddZabbixFunction({ onFuncAdd }: Props) {
     setShowMenu(false);
   };
 
-  const menuItems = useMemo(() => buildMenuItems(onFuncAddInternal), [onFuncAddInternal]);
+  const menuItems = useMemo(() => buildMenuItems(onFuncAddInternal), [onFuncAdd]);
 
   return (
     <div>

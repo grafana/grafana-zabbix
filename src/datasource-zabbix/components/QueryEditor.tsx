@@ -117,8 +117,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   useEffect(() => {
     const migratedQuery = migrations.migrate(query);
     onChange(migratedQuery);
-    // Update should only happen once
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onPropChange = (prop: string) => {

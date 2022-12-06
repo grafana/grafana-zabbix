@@ -52,7 +52,7 @@ export const ITServicesQueryEditor = ({ query, datasource, onChange }: Props) =>
 
   useEffect(() => {
     fetchITServices();
-  }, [fetchITServices]);
+  }, []);
 
   const onPropChange = (prop: string) => {
     return (option: SelectableValue) => {

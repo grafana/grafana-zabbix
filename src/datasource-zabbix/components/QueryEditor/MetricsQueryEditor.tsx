@@ -105,19 +105,19 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchGroups();
-  }, [fetchGroups]);
+  }, []);
 
   useEffect(() => {
     fetchHosts();
-  }, [fetchHosts, groupFilter]);
+  }, [groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [fetchApps, groupFilter, hostFilter]);
+  }, [groupFilter, hostFilter]);
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter, fetchItems]);
+  }, [groupFilter, hostFilter, appFilter, tagFilter]);
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {

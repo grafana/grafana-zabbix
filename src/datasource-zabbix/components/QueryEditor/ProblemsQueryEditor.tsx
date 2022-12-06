@@ -104,19 +104,19 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchGroups();
-  }, [fetchGroups]);
+  }, []);
 
   useEffect(() => {
     fetchHosts();
-  }, [fetchHosts, groupFilter]);
+  }, [groupFilter]);
 
   useEffect(() => {
     fetchApps();
-  }, [fetchApps, groupFilter, hostFilter]);
+  }, [groupFilter, hostFilter]);
 
   useEffect(() => {
     fetchProxies();
-  }, [fetchProxies]);
+  }, []);
 
   const onTextFilterChange = (prop: string) => {
     return (v: FormEvent<HTMLInputElement>) => {
