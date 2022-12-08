@@ -74,10 +74,7 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
   };
 
   const onBlurInternal = () => {
-    if (!isOpen) {
-      // Only call if menu isn't opened
-      onChange(query);
-    }
+    onChange(query);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
