@@ -3,7 +3,7 @@ import { cx } from '@emotion/css';
 import { ProblemsPanelOptions } from '../../types';
 import { AckProblemData } from '../AckModal';
 import AlertCard from './AlertCard';
-import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
+import { ProblemDTO, ZBXTag } from '../../../datasource/types';
 import { DataSourceRef } from '@grafana/data';
 
 export interface AlertListProps {

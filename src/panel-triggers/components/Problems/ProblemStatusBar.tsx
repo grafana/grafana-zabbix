@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tooltip } from '@grafana/ui';
 import FAIcon from '../../../components/FAIcon/FAIcon';
-import { ZBXAlert, ProblemDTO } from '../../../datasource-zabbix/types';
+import { ZBXAlert, ProblemDTO } from '../../../datasource/types';
 
 export interface ProblemStatusBarProps {
   problem: ProblemDTO;

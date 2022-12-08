@@ -3,7 +3,7 @@ import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'reac
 import { ClickOutsideWrapper, Input, Spinner, useStyles2 } from '@grafana/ui';
 import { MetricPickerMenu } from './MetricPickerMenu';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { isRegex } from '../../datasource-zabbix/utils';
+import { isRegex } from '../../datasource/utils';
 
 export interface Props {
   value: string;

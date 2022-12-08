@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import { DataSourceRef } from '@grafana/data';
-import { ZBXTag } from '../../datasource-zabbix/types';
+import { ZBXTag } from '../../datasource/types';
 
 const TAG_COLORS = [
   '#E24D42',

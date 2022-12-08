@@ -9,7 +9,7 @@ import { AckProblemData, AckModal } from '../AckModal';
 import EventTag from '../EventTag';
 import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
-import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
+import { ProblemDTO, ZBXTag } from '../../../datasource/types';
 import { ModalController } from '../../../components';
 import { DataSourceRef } from '@grafana/data';
 import { Tooltip } from '@grafana/ui';

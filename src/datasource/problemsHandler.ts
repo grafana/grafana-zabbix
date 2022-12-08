@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import * as utils from '../datasource-zabbix/utils';
+import * as utils from './utils';
 import { DataFrame, Field, FieldType, ArrayVector } from '@grafana/data';
 import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent } from './types';
 

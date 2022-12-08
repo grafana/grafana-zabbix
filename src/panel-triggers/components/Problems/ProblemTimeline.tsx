@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
-import { ZBXEvent, ZBXAcknowledge } from '../../../datasource-zabbix/types';
+import { ZBXEvent, ZBXAcknowledge } from '../../../datasource/types';
 import { TimeRange } from '@grafana/data';
 
 const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';

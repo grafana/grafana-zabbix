@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { getNextRefIdChar } from './utils';
-import { ShowProblemTypes } from '../datasource-zabbix/types';
+import { ShowProblemTypes } from '../datasource/types';
 import { ProblemsPanelOptions } from './types';
 import { PanelModel } from '@grafana/data';
 

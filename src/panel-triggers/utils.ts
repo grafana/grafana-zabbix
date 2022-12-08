@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { DataQuery, dateMath } from '@grafana/data';
-import * as utils from '../datasource-zabbix/utils';
-import { ProblemDTO } from 'datasource-zabbix/types';
+import * as utils from '../datasource/utils';
+import { ProblemDTO } from 'datasource/types';
 
 export function isNewProblem(problem: ProblemDTO, highlightNewerThan: string): boolean {
   try {

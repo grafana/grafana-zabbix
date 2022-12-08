@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import { cx, css } from '@emotion/css';
 import { GFHeartIcon } from '../../../components';
-import { ProblemDTO } from '../../../datasource-zabbix/types';
+import { ProblemDTO } from '../../../datasource/types';
 
 interface Props {
   problem: ProblemDTO;

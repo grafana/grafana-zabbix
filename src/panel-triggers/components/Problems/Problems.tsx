@@ -10,8 +10,8 @@ import { ProblemDetails } from './ProblemDetails';
 import { AckProblemData } from '../AckModal';
 import { FAIcon, GFHeartIcon } from '../../../components';
 import { ProblemsPanelOptions, RTCell, RTResized, TriggerSeverity } from '../../types';
-import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource-zabbix/types';
-import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
+import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
+import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
 import { DataSourceRef, TimeRange } from '@grafana/data';
 
