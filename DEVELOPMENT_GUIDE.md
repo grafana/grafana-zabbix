@@ -1,5 +1,16 @@
 # Plugin development
 
+### Building plugin
+
+```sh
+# install frontend deps
+yarn install --pure-lockfile
+# build frontend
+yarn build
+#build backend for all platforms
+make dist-backend
+```
+
 ### Debugging backend plugin
 
 For debugging backend part written on Go, you should go through a few steps. First, build a plugin with special flags for debugging:
