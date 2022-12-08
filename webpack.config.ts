@@ -11,7 +11,7 @@ const config = async (env): Promise<Configuration> => {
     // Add custom config here...
     entry: {
       module: './module.ts',
-      'datasource-zabbix/module': './datasource-zabbix/module.ts',
+      'datasource/module': './datasource/module.ts',
       'panel-triggers/module': './panel-triggers/module.tsx',
       dark: './styles/dark.scss',
       light: './styles/light.scss',
