@@ -1,5 +1,5 @@
-import React, { Suspense } from 'react';
-import { Icon, Tooltip } from '@grafana/ui';
+import React from 'react';
+import { Icon } from '@grafana/ui';
 import { MetricFunc } from '../../types';
 
 const DOCS_FUNC_REF_URL = 'https://alexanderzobnin.github.io/grafana-zabbix/reference/functions/';
@@ -10,32 +10,7 @@ export interface FunctionEditorControlsProps {
   onRemove: (func: MetricFunc) => void;
 }
 
-// const FunctionDescription = React.lazy(async () => {
-//   // @ts-ignore
-//   const { default: rst2html } = await import(/* webpackChunkName: "rst2html" */ 'rst2html');
-//   return {
-//     default(props: { description?: string }) {
-//       return <div dangerouslySetInnerHTML={{ __html: rst2html(props.description ?? '') }} />;
-//     },
-//   };
-// });
-
-const FunctionDescription = ({ description }): JSX.Element => <></>;
-
 const FunctionHelpButton = (props: { description?: string; name: string }) => {
-  if (props.description) {
-    let tooltip = (
-      <Suspense fallback={<span>Loading description...</span>}>
-        <FunctionDescription description={props.description} />
-      </Suspense>
-    );
-    return (
-      <Tooltip content={tooltip} placement={'bottom-end'}>
-        <Icon className={props.description ? undefined : 'pointer'} name="question-circle" />
-      </Tooltip>
-    );
-  }
-
   return (
     <Icon
       className="pointer"
