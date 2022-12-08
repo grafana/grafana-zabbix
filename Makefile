@@ -15,7 +15,7 @@ build: build-frontend build-backend
 build-frontend:
 	yarn build
 build-backend:
-	env GOOS=linux go build -o ./dist/gpx_zabbix-plugin_linux_amd64 ./pkg
+	mage -v build:backend
 build-debug:
 	env GOOS=linux go build -gcflags="all=-N -l" -o ./dist/gpx_zabbix-plugin_linux_amd64 ./pkg
 
