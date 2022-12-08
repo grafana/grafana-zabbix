@@ -1,6 +1,6 @@
 module github.com/alexanderzobnin/grafana-zabbix
 
-go 1.19
+go 1.18
 
 require github.com/grafana/grafana-plugin-sdk-go v0.145.0
 
