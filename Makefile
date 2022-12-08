@@ -77,3 +77,8 @@ clean:
 lint:
 	yarn lint
 	golint -min_confidence=1.1 -set_exit_status pkg/...
+
+sign-package:
+	yarn sign
+
+package: install dist sign-package
