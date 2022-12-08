@@ -1,7 +1,7 @@
 [run]
 init_cmds = [
 	["make", "build-backend"],
-	["pkill", "zabbix-plugin"]
+	["pkill", "gpx_zabbix-plugin"]
 ]									# Commands run in start
 watch_all = true					# Watch all sub-directories
 watch_dirs = ["pkg"]						# Directories to watch
@@ -13,7 +13,7 @@ interrupt_timout = 15				# Time to wait until force kill
 graceful_kill = false				# Wait for exit and before directly kill
 cmds = [
 	["make", "build-backend"],
-	["pkill", "zabbix-plugin"]
+	["pkill", "gpx_zabbix-plugin"]
 ]									# Commands to run
 
 [sync]
