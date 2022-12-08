@@ -25,6 +25,12 @@ node_modules
 coverage/
 /tmp
 
+artifacts/
+work/
+e2e-results/
+**/cypress/videos
+**/cypress/report.json
+
 # Tools logs
 npm-debug.log
 yarn-error.log
