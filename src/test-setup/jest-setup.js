@@ -4,21 +4,8 @@
 import { JSDOM } from 'jsdom';
 import { PanelCtrl, MetricsPanelCtrl } from './panelStub';
 
+// Suppress messages
 console.log = () => {};
-
-// Mock Grafana modules that are not available outside of the core project
-// Required for loading module.js
-jest.mock('angular', () => {
-  return {
-    module: function() {
-      return {
-        directive: function() {},
-        service: function() {},
-        factory: function() {}
-      };
-    }
-  };
-}, {virtual: true});
 
 jest.mock('grafana/app/features/templating/template_srv', () => {
   return {};
@@ -104,13 +91,8 @@ jest.mock('grafana/app/core/utils/kbn', () => {
   };
 }, {virtual: true});
 
-// jest.mock('@grafana/ui', () => {
-//   return {};
-// }, {virtual: true});
-
-// Required for loading angularjs
-let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
 // Setup jsdom
+let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
 global.window = dom.window;
 global.document = global.window.document;
 global.Node = window.Node;
