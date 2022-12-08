@@ -94,7 +94,6 @@
     "memoize-one": "5.1.1",
     "mini-css-extract-plugin": "2.6.1",
     "moment": "2.24.0",
-    "ng-annotate-webpack-plugin": "0.3.0",
     "node-sass": "^7.0.1",
     "postcss": "8.4.14",
     "postcss-loader": "7.0.1",
@@ -127,6 +126,9 @@
     "webpack-cli": "^4.9.2",
     "webpack-livereload-plugin": "^3.0.2",
     "webpack-remove-empty-scripts": "^1.0.1"
+  },
+  "engines": {
+    "node": ">=16"
   },
   "resolutions": {
     "js-yaml": "^3.13.1",
