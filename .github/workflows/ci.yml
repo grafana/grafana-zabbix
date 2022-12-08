@@ -93,7 +93,7 @@ jobs:
         run: make test-backend
 
       - name: Test frontend
-        run: yarn test
+        run: yarn test:ci
 
   lint:
     runs-on: ubuntu-latest
