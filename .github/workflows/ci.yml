@@ -17,7 +17,7 @@ jobs:
           node-version: '16.x'
 
       - name: Setup Go environment
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '1.19'
 
@@ -49,7 +49,11 @@ jobs:
         run: yarn build
 
       - name: Build backend
-        run: make build-backend
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@v1
+        with:
+          version: latest
+          args: buildAll
 
   test:
     runs-on: ubuntu-latest
@@ -62,7 +66,7 @@ jobs:
           node-version: '16.x'
 
       - name: Setup Go environment
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '1.19'
 
@@ -90,7 +94,11 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Test backend
-        run: make test-backend
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@v1
+        with:
+          version: latest
+          args: coverage
 
       - name: Test frontend
         run: yarn test:ci
