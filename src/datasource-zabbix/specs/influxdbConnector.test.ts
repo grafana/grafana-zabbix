@@ -3,14 +3,12 @@ import { compactQuery } from '../utils';
 
 jest.mock('@grafana/runtime', () => ({
   getDataSourceSrv: jest.fn(() => ({
-    get: jest.fn().mockResolvedValue(
-      { id: 42, name: 'InfluxDB DS', meta: {} }
-    ),
+    get: jest.fn().mockResolvedValue({ id: 42, name: 'InfluxDB DS', meta: {} }),
   })),
 }));
 
 describe('InfluxDBConnector', () => {
-  let ctx = {};
+  let ctx: any = {};
 
   beforeEach(() => {
     ctx.options = { datasourceName: 'InfluxDB DS', retentionPolicy: 'longterm' };
@@ -20,7 +18,8 @@ describe('InfluxDBConnector', () => {
       itemids: ['123', '234'],
       range: { timeFrom: 15000, timeTill: 15100 },
       intervalSec: 5,
-      table: 'history', aggFunction: 'MAX'
+      table: 'history',
+      aggFunction: 'MAX',
     };
   });
 
@@ -57,9 +56,7 @@ describe('InfluxDBConnector', () => {
     it('should query proper table depending on item type', () => {
       const { timeFrom, timeTill } = ctx.defaultQueryParams.range;
       const options = { intervalMs: 5000 };
-      const items = [
-        { itemid: '123', value_type: 3 }
-      ];
+      const items = [{ itemid: '123', value_type: 3 }];
       const expectedQuery = compactQuery(`SELECT MEAN("value")
                                           FROM "history_uint"
                                           WHERE ("itemid" = '123')
@@ -97,9 +94,7 @@ describe('InfluxDBConnector', () => {
       ctx.influxDBConnector.retentionPolicy = '';
       const { timeFrom, timeTill } = ctx.defaultQueryParams.range;
       const options = { intervalMs: 5000 };
-      const items = [
-        { itemid: '123', value_type: 3 }
-      ];
+      const items = [{ itemid: '123', value_type: 3 }];
       const expectedQuery = compactQuery(`SELECT MEAN("value")
                                           FROM "history_uint"
                                           WHERE ("itemid" = '123')
@@ -114,9 +109,7 @@ describe('InfluxDBConnector', () => {
     it('should use retention policy name for trends query if it was set', () => {
       const { timeFrom, timeTill } = ctx.defaultQueryParams.range;
       const options = { intervalMs: 5000 };
-      const items = [
-        { itemid: '123', value_type: 3 }
-      ];
+      const items = [{ itemid: '123', value_type: 3 }];
       const expectedQuery = compactQuery(`SELECT MEAN("value_avg")
                                           FROM "longterm"."history_uint"
                                           WHERE ("itemid" = '123')
@@ -131,9 +124,7 @@ describe('InfluxDBConnector', () => {
     it('should use proper value column if retention policy set (trends used)', () => {
       const { timeFrom, timeTill } = ctx.defaultQueryParams.range;
       const options = { intervalMs: 5000, consolidateBy: 'max' };
-      const items = [
-        { itemid: '123', value_type: 3 }
-      ];
+      const items = [{ itemid: '123', value_type: 3 }];
       const expectedQuery = compactQuery(`SELECT MAX("value_max")
                                           FROM "longterm"."history_uint"
                                           WHERE ("itemid" = '123')

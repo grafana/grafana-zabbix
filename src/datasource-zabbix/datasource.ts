@@ -936,7 +936,7 @@ function zabbixItemIdsTemplateFormat(value) {
  * $variable    -> a|b|c    -> /a|b|c/
  * /$variable/  -> /a|b|c/  -> /a|b|c/
  */
-function replaceTemplateVars(templateSrv, target, scopedVars) {
+export function replaceTemplateVars(templateSrv, target, scopedVars) {
   let replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
   if (target && target !== replacedTarget && !utils.isRegex(replacedTarget)) {
     replacedTarget = '/^' + replacedTarget + '$/';

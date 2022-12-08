@@ -20,6 +20,6 @@
     },
     "transpileOnly": true
   },
-  "include": ["../src", "./types"],
+  "include": ["../src", "./types", "../test-setup"],
   "extends": "@grafana/tsconfig"
 }

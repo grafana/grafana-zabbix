@@ -33,6 +33,9 @@ jest.mock('@grafana/runtime', () => {
     getBackendSrv: () => ({
       datasourceRequest: jest.fn().mockResolvedValue(),
     }),
+    getTemplateSrv: () => ({
+      replace: jest.fn().mockImplementation(query => query),
+    }),
   };
 }, {virtual: true});
 
