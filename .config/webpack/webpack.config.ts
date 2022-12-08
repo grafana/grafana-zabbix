@@ -27,6 +27,7 @@ const config = async (env): Promise<Configuration> => ({
 
   devtool: env.production ? 'source-map' : 'eval-source-map',
 
+  // Entries from getEntries() work incorrect, so declare it manually in root webpack config
   // entry: await getEntries(),
 
   externals: [
