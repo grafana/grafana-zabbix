@@ -14,6 +14,7 @@
     "lint:fix": "yarn lint --fix",
     "e2e": "yarn cypress install && yarn grafana-e2e run",
     "e2e:update": "yarn cypress install && yarn grafana-e2e run --update-screenshots",
+    "server": "docker-compose up --build",
     "sign": "grafana-toolkit plugin:sign"
   },
   "repository": {
