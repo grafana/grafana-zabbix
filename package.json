@@ -59,7 +59,7 @@
     "@typescript-eslint/eslint-plugin": "^5.42.1",
     "@typescript-eslint/parser": "^5.42.1",
     "autoprefixer": "10.4.7",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "benchmark": "^2.1.4",
     "classnames": "2.2.6",
     "clean-webpack-plugin": "^0.1.19",
