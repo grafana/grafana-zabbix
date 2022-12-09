@@ -1,7 +1,7 @@
 import React from 'react';
 import { css } from '@emotion/css';
 import { RTCell } from '../../types';
-import { ProblemDTO } from '../../../datasource-zabbix/types';
+import { ProblemDTO } from '../../../datasource/types';
 import { FAIcon } from '../../../components';
 import { useTheme, stylesFactory } from '@grafana/ui';
 import { GrafanaTheme } from '@grafana/data';
@@ -21,12 +21,12 @@ export const AckCell: React.FC<RTCell<ProblemDTO>> = (props: RTCell<ProblemDTO>)
 
   return (
     <div>
-      {problem.acknowledges?.length > 0 &&
+      {problem.acknowledges?.length > 0 && (
         <>
           <FAIcon icon="comments" />
           <span className={styles.countLabel}> ({problem.acknowledges?.length})</span>
         </>
-      }
+      )}
     </div>
   );
 };

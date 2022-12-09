@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/dlclark/regexp2"
 )
 
 func (item *Item) ExpandItemName() string {
@@ -63,9 +65,10 @@ func splitKeyParams(paramStr string) []string {
 	return params
 }
 
-func parseFilter(filter string) (*regexp.Regexp, error) {
-	regex := regexp.MustCompile(`^/(.+)/([imsU]*)$`)
-	flagRE := regexp.MustCompile("[imsU]+")
+func parseFilter(filter string) (*regexp2.Regexp, error) {
+	vaildREModifiers := "imncsxrde"
+	regex := regexp.MustCompile(`^/(.+)/([imncsxrde]*)$`)
+	flagRE := regexp.MustCompile(fmt.Sprintf("[%s]+", vaildREModifiers))
 
 	matches := regex.FindStringSubmatch(filter)
 	if len(matches) <= 1 {
@@ -77,12 +80,12 @@ func parseFilter(filter string) (*regexp.Regexp, error) {
 		if flagRE.MatchString(matches[2]) {
 			pattern += "(?" + matches[2] + ")"
 		} else {
-			return nil, fmt.Errorf("error parsing regexp: unsupported flags `%s` (expected [imsU])", matches[2])
+			return nil, fmt.Errorf("error parsing regexp: unsupported flags `%s` (expected [%s])", matches[2], vaildREModifiers)
 		}
 	}
 	pattern += matches[1]
 
-	return regexp.Compile(pattern)
+	return regexp2.Compile(pattern, regexp2.RE2)
 }
 
 func itemTagToString(tag ItemTag) string {

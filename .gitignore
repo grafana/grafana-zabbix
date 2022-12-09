@@ -26,6 +26,12 @@ node_modules
 coverage/
 /tmp
 
+artifacts/
+work/
+e2e-results/
+**/cypress/videos
+**/cypress/report.json
+
 # Tools logs
 npm-debug.log
 yarn-error.log
@@ -35,7 +41,7 @@ dist/
 ci/
 
 # Grafana toolkit configs
-.prettierrc.js
+# .prettierrc.js
 
 # locally required config files
 public/css/*.min.css

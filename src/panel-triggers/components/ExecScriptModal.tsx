@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 import { cx, css } from '@emotion/css';
 import { GrafanaTheme, SelectableValue } from '@grafana/data';
 import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable } from '@grafana/ui';
-import { ZBXScript, APIExecuteScriptResponse } from '../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
+import { ZBXScript, APIExecuteScriptResponse } from '../../datasource/zabbix/connectors/zabbix_api/types';
 import { FAIcon } from '../../components';
 
 interface Props extends Themeable {
@@ -46,7 +46,7 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
   async componentDidMount() {
     const scripts = await this.props.getScripts();
     this.scripts = scripts;
-    const scriptOptions: Array<SelectableValue<string>> = scripts.map(s => {
+    const scriptOptions: Array<SelectableValue<string>> = scripts.map((s) => {
       return {
         value: s.scriptid,
         label: s.name,
@@ -55,27 +55,27 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
     });
 
     const selectedScript = scriptOptions?.length ? scriptOptions[0] : null;
-    const script = scripts.find(s => selectedScript.value === s.scriptid);
+    const script = scripts.find((s) => selectedScript.value === s.scriptid);
 
     this.setState({ scriptOptions, selectedScript, script });
   }
 
   onChangeSelectedScript = (v: SelectableValue<string>) => {
-    const script = this.scripts.find(s => v.value === s.scriptid);
+    const script = this.scripts.find((s) => v.value === s.scriptid);
     this.setState({ selectedScript: v, script, errorMessage: '', loading: false, result: '' });
   };
 
   dismiss = () => {
     this.setState({ selectedScript: null, error: false, errorMessage: '', selectError: '', loading: false });
     this.props.onDismiss();
-  }
+  };
 
   submit = () => {
     const { selectedScript } = this.state;
 
     if (!selectedScript) {
       return this.setState({
-        selectError: 'Select a script to execute.'
+        selectError: 'Select a script to execute.',
       });
     }
 
@@ -85,30 +85,33 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
       scriptid: selectedScript.value,
     };
 
-    this.props.onSubmit(data).then((result: APIExecuteScriptResponse) => {
-      const message = this.formatResult(result?.value || '');
-      if (result?.response === 'success') {
-        this.setState({ result: message, loading: false });
-      } else {
-        this.setState({ error: true, errorMessage: message, loading: false });
-      }
-    }).catch(err => {
-      let errorMessage = err.data?.message || err.data?.error || err.data || err.statusText || '';
-      errorMessage = this.formatResult(errorMessage);
-      this.setState({
-        error: true,
-        loading: false,
-        errorMessage,
+    this.props
+      .onSubmit(data)
+      .then((result: APIExecuteScriptResponse) => {
+        const message = this.formatResult(result?.value || '');
+        if (result?.response === 'success') {
+          this.setState({ result: message, loading: false });
+        } else {
+          this.setState({ error: true, errorMessage: message, loading: false });
+        }
+      })
+      .catch((err) => {
+        let errorMessage = err.data?.message || err.data?.error || err.data || err.statusText || '';
+        errorMessage = this.formatResult(errorMessage);
+        this.setState({
+          error: true,
+          loading: false,
+          errorMessage,
+        });
       });
-    });
-  }
+  };
 
   formatResult = (result: string) => {
     const formatted = result.split('\n').map((p, i) => {
       return <p key={i}>{p}</p>;
     });
     return <>{formatted}</>;
-  }
+  };
 
   render() {
     const { theme } = this.props;
@@ -135,14 +138,8 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
       >
         <div className="gf-form">
           <label className="gf-form-hint">
-            <Select
-              options={scriptOptions}
-              value={selectedScript}
-              onChange={this.onChangeSelectedScript}
-            />
-            {selectError &&
-              <small className={selectErrorClass}>{selectError}</small>
-            }
+            <Select options={scriptOptions} value={selectedScript} onChange={this.onChangeSelectedScript} />
+            {selectError && <small className={selectErrorClass}>{selectError}</small>}
           </label>
         </div>
         <div className={scriptCommandContainerClass}>
@@ -150,17 +147,17 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
         </div>
 
         <div className={styles.resultContainer}>
-        {result &&
-          <span className={styles.execResult}>{result}</span>
-        }
-        {error &&
-          <span className={styles.execError}>{errorMessage}</span>
-        }
+          {result && <span className={styles.execResult}>{result}</span>}
+          {error && <span className={styles.execError}>{errorMessage}</span>}
         </div>
 
         <div className="gf-form-button-row text-center">
-          <Button variant="primary" onClick={this.submit}>Execute</Button>
-          <Button variant="secondary" onClick={this.dismiss}>Cancel</Button>
+          <Button variant="primary" onClick={this.submit}>
+            Execute
+          </Button>
+          <Button variant="secondary" onClick={this.dismiss}>
+            Cancel
+          </Button>
         </div>
       </Modal>
     );
@@ -211,8 +208,7 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
         margin-bottom: 0px;
       }
     `,
-    execResult: css`
-    `,
+    execResult: css``,
     execError: css`
       color: ${red};
     `,

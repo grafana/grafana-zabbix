@@ -5,7 +5,7 @@ if [ "$1" == "-h" ]; then
 fi
 
 PORT="${2:-3222}"
-PLUGIN_NAME="${1:-zabbix-plugin_}"
+PLUGIN_NAME="${1:-gpx_zabbix-plugin_}"
 
 # Build optimized for debug
 make build-debug

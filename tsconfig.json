@@ -1,25 +1,11 @@
 {
+  "extends": "./.config/tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "es5",
-    "lib": [ "es6", "dom", "es2017" ],
-    "rootDir": "./src",
-    "jsx": "react",
-    "module": "esnext",
-    "declaration": false,
-    "allowSyntheticDefaultImports": true,
-    "inlineSourceMap": false,
-    "sourceMap": true,
-    "noEmitOnError": false,
-    "emitDecoratorMetadata": false,
-    "experimentalDecorators": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": false,
-    "noImplicitUseStrict": false,
+    // Disable some default rules from @grafana/tsconfig
     "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "baseUrl": "./src",
+    "noImplicitThis": false,
+    "strictPropertyInitialization": false,
     "strictFunctionTypes": false,
-    "skipLibCheck": true
+    "strictNullChecks": false
   }
 }
