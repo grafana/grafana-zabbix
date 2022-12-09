@@ -81,7 +81,7 @@
     "jest-environment-jsdom": "^29.3.1",
     "jest-environment-jsdom-fifteen": "^1.0.2",
     "jscs": "^3.0.7",
-    "jsdom": "~11.3.0",
+    "jsdom": "~16.5.0",
     "jshint": "^2.9.6",
     "jshint-stylish": "^2.1.0",
     "lodash": "4.17.21",
