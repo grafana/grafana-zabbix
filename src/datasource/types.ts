@@ -44,7 +44,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   macro: { filter: string; macro?: string };
   textFilter: string;
   mode: number;
-  itemids: number[];
+  itemids: string;
   useCaptureGroups: boolean;
   proxy?: { filter: string };
   trigger?: { filter: string };

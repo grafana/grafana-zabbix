@@ -13,6 +13,9 @@ import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
 import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ITServicesQueryEditor } from './QueryEditor/ITServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
+import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
+import { CountByMetricsQueryEditor } from './QueryEditor/CountByMetricsQueryEditor';
+import { CountByProblemsQueryEditor } from './QueryEditor/CountByProblemsQueryEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -196,6 +199,18 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
     return <TriggersQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
   };
 
+  const renderUserMacrosEditor = () => {
+    return <UserMacrosQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+  };
+
+  const renderCountByMetricsEditor = () => {
+    return <CountByMetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+  };
+
+  const renderCountByproblemsEditor = () => {
+    return <CountByProblemsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+  };
+
   return (
     <>
       <InlineFieldRow>
@@ -218,6 +233,9 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
       {queryType === c.MODE_ITSERVICE && renderITServicesEditor()}
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
+      {queryType === c.MODE_MACROS && renderUserMacrosEditor()}
+      {queryType === c.MODE_TRIGGERS_ITEM && renderCountByMetricsEditor()}
+      {queryType === c.MODE_TRIGGERS_PROBLEM && renderCountByproblemsEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );

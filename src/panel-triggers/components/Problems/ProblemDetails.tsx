@@ -333,6 +333,6 @@ class ProblemHosts extends PureComponent<ProblemHostsProps> {
 
 class ProblemHostsd extends PureComponent<ProblemHostsProps> {
   render() {
-    return this.props.hosts.map((h) => <span>{h.description}</span>);
+    return this.props.hosts.map((h, i) => <span key={`${h.hostid}-${i}`}>{h.description}</span>);
   }
 }
