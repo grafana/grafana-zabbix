@@ -507,6 +507,10 @@ export function isProblemsDataFrame(data: DataFrame): boolean {
   );
 }
 
+export function isMacrosDataFrame(data: DataFrame): boolean {
+  return data.name === 'macros';
+}
+
 // Swap n and k elements.
 export function swap<T>(list: T[], n: number, k: number): T[] {
   if (list === null || list.length < 2 || k > list.length - 1 || k < 0 || n > list.length - 1 || n < 0) {

@@ -74,32 +74,27 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
   });
 }
 
-function handleMacro(macros) {
-  let data = [];
-  for (let i = 0; i < macros.length; i++) {
-    data = data.concat([[macros[i].hosts[0].name, macros[i].macro, macros[i].value]]);
-  }
-  return {
-    columns: [
-      { text: 'Host', type: 'string' },
-      { text: 'Macros', type: 'string' },
-      { text: 'Value', type: 'string' },
+function handleMacro(macros, target): MutableDataFrame {
+  const frame = new MutableDataFrame({
+    refId: target.refId,
+    name: 'macros',
+    fields: [
+      { name: 'Host', type: FieldType.string },
+      { name: 'Macros', type: FieldType.string },
+      { name: TIME_SERIES_VALUE_FIELD_NAME, type: FieldType.string },
     ],
-    rows: data,
-  };
-}
-
-function handleTimeMacro(macros) {
-  let data = [];
+  });
 
   for (let i = 0; i < macros.length; i++) {
-    data = data.concat([[macros[i].value, Date.now()]]);
+    const m = macros[i];
+    const dataRow: any = {
+      Host: m.hosts[0]!.name,
+      Macros: m.macro,
+      [TIME_SERIES_VALUE_FIELD_NAME]: m.value,
+    };
+    frame.add(dataRow);
   }
-
-  return {
-    target: macros[0].macro,
-    datapoints: data,
-  };
+  return frame;
 }
 
 export function seriesToDataFrame(
@@ -604,7 +599,6 @@ export default {
   handleTrends,
   handleText,
   handleMacro,
-  handleTimeMacro,
   handleHistoryAsTable,
   handleSLAResponse,
   handleTriggersResponse,

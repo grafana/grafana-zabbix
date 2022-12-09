@@ -366,15 +366,15 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getAllMacros(groupFilter, hostFilter) {
-    return this.getHosts(groupFilter, hostFilter).then((hosts) => {
-      const hostids = _.map(hosts, 'hostid');
-      return this.zabbixAPI.getMacros(hostids);
-    });
+  async getAllMacros(groupFilter, hostFilter) {
+    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hostids = hosts?.map((h) => h.hostid);
+    return this.zabbixAPI.getMacros(hostids);
   }
 
-  getUMacros(groupFilter?, hostFilter?, macroFilter?) {
-    return this.getAllMacros(groupFilter, hostFilter).then((macros) => filterByMQuery(macros, macroFilter));
+  async getUMacros(groupFilter?, hostFilter?, macroFilter?) {
+    const allMacros = await this.getAllMacros(groupFilter, hostFilter);
+    return filterByMQuery(allMacros, macroFilter);
   }
 
   async getItemTags(groupFilter?, hostFilter?, itemTagFilter?) {
@@ -708,7 +708,7 @@ function filterByRegex(list, regex) {
 function filterByMRegex(list, regex) {
   const filterPattern = utils.buildRegex(regex);
   return _.filter(list, (zbx_obj) => {
-    return filterPattern.test(zbx_obj.macro);
+    return filterPattern.test(zbx_obj?.macro);
   });
 }
 

@@ -263,7 +263,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then((data) => {
-        if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
+        if (
+          data &&
+          data.length > 0 &&
+          isDataFrame(data[0]) &&
+          !utils.isProblemsDataFrame(data[0]) &&
+          !utils.isMacrosDataFrame(data[0])
+        ) {
           data = responseHandler.alignFrames(data);
           if (responseHandler.isConvertibleToWide(data)) {
             console.log('Converting response to the wide format');
@@ -507,22 +513,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return this.handleBackendPostProcessingResponse(processedResponse, request, target);
   }
 
-  queryUserMacrosData(target) {
+  async queryUserMacrosData(target) {
     const groupFilter = target.group.filter;
     const hostFilter = target.host.filter;
     const macroFilter = target.macro.filter;
-    return this.zabbix
-      .getUMacros(groupFilter, hostFilter, macroFilter)
-      .then((macros) => {
-        const hostmacroids = _.map(macros, 'hostmacroid');
-        return this.zabbix.getUserMacros(hostmacroids);
-      })
-      .then((result) => {
-        if (target.resultFormat !== 'table') {
-          return responseHandler.handleTimeMacro(result);
-        }
-        return responseHandler.handleMacro(result);
-      });
+    const macros = await this.zabbix.getUMacros(groupFilter, hostFilter, macroFilter);
+    const hostmacroids = _.map(macros, 'hostmacroid');
+    const userMacros = await this.zabbix.getUserMacros(hostmacroids);
+    return responseHandler.handleMacro(userMacros, target);
   }
 
   queryTriggersData(target, timeRange) {

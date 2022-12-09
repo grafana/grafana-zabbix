@@ -55,10 +55,11 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
     const hostFilter = datasource.replaceTemplateVars(host);
     const macros = await datasource.zabbix.getAllMacros(groupFilter, hostFilter);
     let options: Array<SelectableValue<string>> = macros?.map((m) => ({
-      value: m.name,
-      label: m.name,
+      value: m.macro,
+      label: m.macro,
     }));
     options = _.uniqBy(options, (o) => o.value);
+    options.unshift({ value: '/.*/' });
     options.unshift(...getVariableOptions());
     return options;
   };
