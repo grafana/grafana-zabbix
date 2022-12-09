@@ -3,9 +3,13 @@ version: "3"
 services:
   # Grafana
   grafana:
-    image: grafana/grafana:9.2.5
+    container_name: 'alexanderzobnin-boilerplate-app'
+    build:
+      context: ./
+      args:
+        grafana_version: ${GRAFANA_VERSION:-9.2.5}
     ports:
-      - "3000:3000"
+      - 3000:3000/tcp
     volumes:
       - ../../dist:/grafana-zabbix
       - ../dashboards:/devenv/dashboards

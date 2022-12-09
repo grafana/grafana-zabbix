@@ -14,7 +14,9 @@
     "lint:fix": "yarn lint --fix",
     "e2e": "yarn cypress install && yarn grafana-e2e run",
     "e2e:update": "yarn cypress install && yarn grafana-e2e run --update-screenshots",
-    "server": "docker-compose --file ./devenv/default/docker-compose.yml up -d",
+    "server": "docker-compose --file ./devenv/default/docker-compose.yml up --build",
+    "server:stop": "docker-compose --file ./devenv/default/docker-compose.yml stop",
+    "server:down": "docker-compose --file ./devenv/default/docker-compose.yml down",
     "sign": "grafana-toolkit plugin:sign"
   },
   "repository": {
