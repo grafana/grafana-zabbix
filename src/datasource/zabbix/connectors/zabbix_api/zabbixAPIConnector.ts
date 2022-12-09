@@ -746,6 +746,7 @@ export class ZabbixAPIConnector {
 
   getHostPCAlerts(hostids, applicationids, triggerids, options) {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
+    console.log(options);
     const params: any = {
       output: 'extend',
       hostids: hostids,

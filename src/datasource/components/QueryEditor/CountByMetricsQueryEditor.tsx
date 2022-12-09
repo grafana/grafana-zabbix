@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
-import { InlineField, Select } from '@grafana/ui';
+import { InlineField, InlineSwitch, Select } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -192,6 +192,12 @@ export const CountByMetricsQueryEditor = ({ query, datasource, onChange }: Props
             value={query.options?.minSeverity}
             options={severityOptions}
             onChange={onMinSeverityChange}
+          />
+        </InlineField>
+        <InlineField label="Count" labelWidth={12}>
+          <InlineSwitch
+            value={query.options?.count}
+            onChange={() => onChange({ ...query, options: { ...query.options, count: !query.options?.count } })}
           />
         </InlineField>
       </QueryEditorRow>

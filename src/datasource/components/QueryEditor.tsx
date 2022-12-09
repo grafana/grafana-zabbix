@@ -88,6 +88,7 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
     skipEmptyValues: false,
     disableDataAlignment: false,
     useZabbixValueMapping: false,
+    count: false,
   },
   table: {
     skipEmptyValues: false,
@@ -113,6 +114,7 @@ function getProblemsQueryDefaults(): Partial<ZabbixMetricsQuery> {
       hostProxy: false,
       limit: c.DEFAULT_ZABBIX_PROBLEMS_LIMIT,
       useTimeRange: false,
+      count: false,
     },
   };
 }

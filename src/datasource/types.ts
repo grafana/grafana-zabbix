@@ -77,6 +77,7 @@ export interface ZabbixQueryOptions {
   limit?: number;
   useTimeRange?: boolean;
   severities?: number[];
+  count?: boolean;
 
   // Annotations
   showOkEvents?: boolean;

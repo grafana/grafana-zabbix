@@ -86,6 +86,8 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
         {queryType === c.MODE_TEXT && renderTextMetricsOptions()}
         {queryType === c.MODE_PROBLEMS && renderProblemsOptions()}
         {queryType === c.MODE_TRIGGERS && renderTriggersOptions()}
+        {queryType === c.MODE_TRIGGERS_ITEM && renderProblemsOptions()}
+        {queryType === c.MODE_TRIGGERS_PROBLEM && renderProblemsOptions()}
       </div>
     );
   };
