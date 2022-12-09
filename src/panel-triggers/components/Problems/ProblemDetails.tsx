@@ -1,11 +1,12 @@
 import React, { FC, PureComponent } from 'react';
+// eslint-disable-next-line
 import moment from 'moment';
 import { TimeRange, DataSourceRef } from '@grafana/data';
 import { Tooltip } from '@grafana/ui';
 import { getDataSourceSrv } from '@grafana/runtime';
-import * as utils from '../../../datasource-zabbix/utils';
-import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXHost, ZBXTag } from '../../../datasource-zabbix/types';
-import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
+import * as utils from '../../../datasource/utils';
+import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXHost, ZBXTag, ZBXItem } from '../../../datasource/types';
+import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
 import AcknowledgesList from './AcknowledgesList';
@@ -13,7 +14,6 @@ import ProblemTimeline from './ProblemTimeline';
 import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController } from '../../../components';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
 import ProblemStatusBar from './ProblemStatusBar';
-import { ZBXItem } from '../../../datasource-zabbix/types';
 import { RTRow } from '../../types';
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {

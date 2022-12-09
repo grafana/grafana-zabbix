@@ -1,0 +1,40 @@
+{
+  "type": "datasource",
+  "name": "Zabbix",
+  "id": "alexanderzobnin-zabbix-datasource",
+  "metrics": true,
+  "annotations": true,
+  "backend": true,
+  "alerting": true,
+  "executable": "../gpx_zabbix-plugin",
+  "includes": [
+    {
+      "type": "dashboard",
+      "name": "Zabbix System Status",
+      "path": "dashboards/zabbix_system_status.json"
+    },
+    {
+      "type": "dashboard",
+      "name": "Zabbix Template Linux Server",
+      "path": "dashboards/template_linux_server.json"
+    },
+    {
+      "type": "dashboard",
+      "name": "Zabbix Server Dashboard",
+      "path": "dashboards/zabbix_server_dashboard.json"
+    }
+  ],
+  "queryOptions": {
+    "maxDataPoints": true
+  },
+  "info": {
+    "author": {
+      "name": "Alexander Zobnin",
+      "url": "https://github.com/alexanderzobnin/grafana-zabbix"
+    },
+    "logos": {
+      "small": "img/icn-zabbix-datasource.svg",
+      "large": "img/icn-zabbix-datasource.svg"
+    }
+  }
+}

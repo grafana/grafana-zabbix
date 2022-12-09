@@ -1,7 +1,8 @@
 import React, { PureComponent } from 'react';
+import { cx } from '@emotion/css';
 import ReactTable from 'react-table-6';
-import classNames from 'classnames';
 import _ from 'lodash';
+// eslint-disable-next-line
 import moment from 'moment';
 import { isNewProblem } from '../../utils';
 import EventTag from '../EventTag';
@@ -9,8 +10,8 @@ import { ProblemDetails } from './ProblemDetails';
 import { AckProblemData } from '../AckModal';
 import { FAIcon, GFHeartIcon } from '../../../components';
 import { ProblemsPanelOptions, RTCell, RTResized, TriggerSeverity } from '../../types';
-import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource-zabbix/types';
-import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource-zabbix/zabbix/connectors/zabbix_api/types';
+import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
+import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
 import { DataSourceRef, TimeRange } from '@grafana/data';
 
@@ -28,7 +29,7 @@ export interface ProblemListProps {
   getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
   onExecuteScript: (problem: ProblemDTO, scriptid: string) => Promise<APIExecuteScriptResponse>;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
-  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
+  onTagClick?: (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
   onColumnResize?: (newResized: RTResized) => void;
 }
@@ -43,8 +44,9 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
   rootWidth: number;
   rootRef: any;
 
-  constructor(props) {
+  constructor(props: ProblemListProps) {
     super(props);
+    this.rootWidth = 0;
     this.state = {
       expanded: {},
       expandedProblems: {},
@@ -52,12 +54,12 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     };
   }
 
-  setRootRef = (ref) => {
+  setRootRef = (ref: any) => {
     this.rootRef = ref;
   };
 
   handleProblemAck = (problem: ProblemDTO, data: AckProblemData) => {
-    return this.props.onProblemAck(problem, data);
+    return this.props.onProblemAck!(problem, data);
   };
 
   onExecuteScript = (problem: ProblemDTO, data: AckProblemData) => {};
@@ -102,7 +104,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     });
   };
 
-  handleTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
+  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
       this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
@@ -216,7 +218,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const columns = this.buildColumns();
     this.rootWidth = this.rootRef && this.rootRef.clientWidth;
     const { pageSize, fontSize, panelOptions } = this.props;
-    const panelClass = classNames('panel-problems', { [`font-size--${fontSize}`]: fontSize });
+    const panelClass = cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize });
     let pageSizeOptions = [5, 10, 20, 25, 50, 100];
     if (pageSize) {
       pageSizeOptions.push(pageSize);
@@ -330,7 +332,7 @@ function StatusIconCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) 
   if (highlightNewerThan) {
     newProblem = isNewProblem(props.original, highlightNewerThan);
   }
-  const className = classNames(
+  const className = cx(
     'zbx-problem-status-icon',
     { 'problem-status--new': newProblem },
     { 'zbx-problem': props.value === '1' },
@@ -348,7 +350,7 @@ function GroupCell(props: RTCell<ProblemDTO>) {
 }
 
 function ProblemCell(props: RTCell<ProblemDTO>) {
-  const comments = props.original.comments;
+  // const comments = props.original.comments;
   return (
     <div>
       <span className="problem-description">{props.value}</span>

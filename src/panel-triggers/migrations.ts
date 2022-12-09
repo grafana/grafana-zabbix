@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { getNextRefIdChar } from './utils';
-import { ShowProblemTypes } from '../datasource-zabbix/types';
+import { ShowProblemTypes } from '../datasource/types';
 import { ProblemsPanelOptions } from './types';
 import { PanelModel } from '@grafana/data';
 
@@ -71,7 +71,7 @@ export function migratePanelSchema(panel) {
   }
 
   if (schemaVersion < 7) {
-    const updatedTargets = [];
+    const updatedTargets: any[] = [];
     for (const targetKey in panel.targets) {
       const target = panel.targets[targetKey];
       if (!isEmptyTarget(target) && !isInvalidTarget(target, targetKey)) {

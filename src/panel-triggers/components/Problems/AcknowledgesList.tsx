@@ -1,5 +1,5 @@
 import React from 'react';
-import { ZBXAcknowledge } from '../../../datasource-zabbix/types';
+import { ZBXAcknowledge } from '../../../datasource/types';
 
 interface AcknowledgesListProps {
   acknowledges: ZBXAcknowledge[];

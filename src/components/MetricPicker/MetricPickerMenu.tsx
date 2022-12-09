@@ -5,7 +5,7 @@ import { CustomScrollbar, getSelectStyles, Icon, Tooltip, useStyles2, useTheme2 
 import { MENU_MAX_HEIGHT } from './constants';
 
 interface Props {
-  options: SelectableValue<string>[];
+  options: Array<SelectableValue<string>>;
   onSelect: (option: SelectableValue<string>) => void;
   offset: { vertical: number; horizontal: number };
   minWidth?: number;

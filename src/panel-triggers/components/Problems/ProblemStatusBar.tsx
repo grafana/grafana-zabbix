@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tooltip } from '@grafana/ui';
 import FAIcon from '../../../components/FAIcon/FAIcon';
-import { ZBXAlert, ProblemDTO } from '../../../datasource-zabbix/types';
+import { ZBXAlert, ProblemDTO } from '../../../datasource/types';
 
 export interface ProblemStatusBarProps {
   problem: ProblemDTO;
@@ -61,7 +61,7 @@ function ProblemStatusBarItem(props: ProblemStatusBarItemProps) {
     );
   }
   return link ? (
-    <a href={link} target="_blank">
+    <a href={link} target="_blank" rel="noreferrer">
       {item}
     </a>
   ) : (

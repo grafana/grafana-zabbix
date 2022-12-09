@@ -5,7 +5,7 @@ import {
   ZBX_ACK_ACTION_ACK,
   ZBX_ACK_ACTION_CHANGE_SEVERITY,
   ZBX_ACK_ACTION_CLOSE,
-} from '../../datasource-zabbix/constants';
+} from '../../datasource/constants';
 import {
   Button,
   VerticalGroup,

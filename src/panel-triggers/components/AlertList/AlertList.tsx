@@ -1,9 +1,9 @@
-import React, { PureComponent, CSSProperties } from 'react';
-import classNames from 'classnames';
+import React, { PureComponent } from 'react';
+import { cx } from '@emotion/css';
 import { ProblemsPanelOptions } from '../../types';
 import { AckProblemData } from '../AckModal';
 import AlertCard from './AlertCard';
-import { ProblemDTO, ZBXTag } from '../../../datasource-zabbix/types';
+import { ProblemDTO, ZBXTag } from '../../../datasource/types';
 import { DataSourceRef } from '@grafana/data';
 
 export interface AlertListProps {
@@ -13,7 +13,7 @@ export interface AlertListProps {
   pageSize?: number;
   fontSize?: number;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
-  onTagClick?: (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => void;
+  onTagClick?: (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
 interface AlertListState {
@@ -45,7 +45,7 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
     });
   };
 
-  handleTagClick = (tag: ZBXTag, datasource: string, ctrlKey?: boolean, shiftKey?: boolean) => {
+  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
       this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
@@ -60,7 +60,7 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
     const currentProblems = this.getCurrentProblems(this.state.page);
     let fontSize = parseInt(panelOptions.fontSize.slice(0, panelOptions.fontSize.length - 1), 10);
     fontSize = fontSize && fontSize !== 100 ? fontSize : null;
-    const alertListClass = classNames('alert-rule-list', { [`font-size--${fontSize}`]: fontSize });
+    const alertListClass = cx('alert-rule-list', { [`font-size--${fontSize}`]: !!fontSize });
 
     return (
       <div className="triggers-panel-container" key="alertListContainer">
@@ -117,7 +117,7 @@ class PaginationControl extends PureComponent<PaginationControlProps> {
 
     const pageLinks = [];
     for (let i = startPage; i < endPage; i++) {
-      const pageLinkClass = classNames('triggers-panel-page-link', 'pointer', { active: i === pageIndex });
+      const pageLinkClass = cx('triggers-panel-page-link', 'pointer', { active: i === pageIndex });
       const value = i + 1;
       const pageLinkElem = (
         <li key={value.toString()}>

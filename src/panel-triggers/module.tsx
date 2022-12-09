@@ -1,9 +1,15 @@
-import { PanelPlugin, StandardEditorProps } from '@grafana/data';
+import { PanelPlugin } from '@grafana/data';
 import { problemsPanelChangedHandler, problemsPanelMigrationHandler } from './migrations';
 import { ProblemsPanel } from './ProblemsPanel';
 import { defaultPanelOptions, ProblemsPanelOptions } from './types';
 import { ResetColumnsEditor } from './components/ResetColumnsEditor';
 import { ProblemColorEditor } from './components/ProblemColorEditor';
+import { loadPluginCss } from '@grafana/runtime';
+
+loadPluginCss({
+  dark: 'plugins/alexanderzobnin-zabbix-app/styles/dark.css',
+  light: 'plugins/alexanderzobnin-zabbix-app/styles/light.css',
+});
 
 export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
   .setPanelChangeHandler(problemsPanelChangedHandler)

@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { ProblemDTO } from '../../../datasource-zabbix/types';
+import { ProblemDTO } from '../../../datasource/types';
 
 interface AlertAcknowledgesProps {
   problem: ProblemDTO;

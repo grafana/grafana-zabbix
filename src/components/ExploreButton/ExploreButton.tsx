@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
 import { locationService } from '@grafana/runtime';
 import { ExploreUrlState, TimeRange, urlUtil } from '@grafana/data';
-import { MODE_ITEMID, MODE_METRICS } from '../../datasource-zabbix/constants';
+import { MODE_ITEMID, MODE_METRICS } from '../../datasource/constants';
 import { ActionButton } from '../ActionButton/ActionButton';
-import { expandItemName } from '../../datasource-zabbix/utils';
-import { ProblemDTO } from '../../datasource-zabbix/types';
+import { expandItemName } from '../../datasource/utils';
+import { ProblemDTO } from '../../datasource/types';
 
 interface Props {
   problem: ProblemDTO;

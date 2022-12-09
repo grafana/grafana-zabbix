@@ -1,6 +1,23 @@
 # Plugin development
 
-### Debugging backend plugin
+## Building plugin
+
+```sh
+# install frontend deps
+yarn install --pure-lockfile
+# build frontend
+yarn build
+#build backend for current platform
+mage -v build:backend
+```
+
+## Rebuild backend on changes
+
+```sh
+mage watch
+```
+
+## Debugging backend plugin
 
 For debugging backend part written on Go, you should go through a few steps. First, build a plugin with special flags for debugging:
 

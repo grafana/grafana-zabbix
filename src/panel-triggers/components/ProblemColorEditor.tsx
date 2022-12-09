@@ -1,17 +1,6 @@
 import React, { FormEvent } from 'react';
-import {
-  Button,
-  ColorPicker,
-  HorizontalGroup,
-  InlineField,
-  InlineFieldRow,
-  InlineLabel,
-  InlineSwitch,
-  Input,
-  VerticalGroup,
-} from '@grafana/ui';
 import { StandardEditorProps } from '@grafana/data';
-import { GFHeartIcon } from '../../components';
+import { ColorPicker, InlineField, InlineFieldRow, InlineLabel, InlineSwitch, Input, VerticalGroup } from '@grafana/ui';
 import { TriggerSeverity } from '../types';
 
 type Props = StandardEditorProps<TriggerSeverity[]>;

@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
+    branches:
+      - master
+      - main
   pull_request:
     branches:
       - master
+      - main
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,9 +21,9 @@ jobs:
           node-version: '16.x'
 
       - name: Setup Go environment
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: '1.17'
+          go-version: '1.19'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
@@ -49,7 +53,11 @@ jobs:
         run: yarn build
 
       - name: Build backend
-        run: make build-backend
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@v1
+        with:
+          version: latest
+          args: buildAll
 
   test:
     runs-on: ubuntu-latest
@@ -62,9 +70,9 @@ jobs:
           node-version: '16.x'
 
       - name: Setup Go environment
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: '1.17'
+          go-version: '1.19'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
@@ -90,10 +98,52 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Test backend
-        run: make test-backend
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@v1
+        with:
+          version: latest
+          args: coverage
 
       - name: Test frontend
-        run: yarn test
+        run: yarn test:ci
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'yarn'
+      - name: Install dependencies
+        run: yarn install --immutable --prefer-offline
+
+      - name: Build frontend
+        run: yarn build
+
+      - name: Setup Go environment
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.19'
+
+      - name: Build backend
+        if: steps.check-for-backend.outputs.has-backend == 'true'
+        uses: magefile/mage-action@v1
+        with:
+          version: latest
+          args: buildAll
+
+      - name: Start grafana docker
+        run: yarn server -d
+
+      - name: Run e2e tests
+        run: yarn e2e
+
+      - name: Stop grafana docker
+        run: yarn server:stop
 
   lint:
     runs-on: ubuntu-latest
@@ -108,7 +158,7 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v2
         with:
-          go-version: '1.17'
+          go-version: '1.19'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
