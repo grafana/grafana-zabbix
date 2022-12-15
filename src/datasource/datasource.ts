@@ -241,19 +241,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         return this.queryITServiceData(target, timeRange, request);
       } else if (target.queryType === c.MODE_TRIGGERS) {
         // Triggers query
-        return this.queryTriggersData(target, timeRange);
-      } else if (target.queryType === c.MODE_MACROS) {
-        // UserMacro query
-        return this.queryUserMacrosData(target);
-      } else if (target.queryType === c.MODE_TRIGGERS_ITEM) {
-        // Triggers item query
-        return this.queryTriggersICData(target, timeRange);
-      } else if (target.queryType === c.MODE_TRIGGERS_PROBLEM) {
-        // Triggers problem query
-        return this.queryTriggersPCData(target, timeRange, request);
+        return this.queryTriggersData(target, timeRange, request);
       } else if (target.queryType === c.MODE_PROBLEMS) {
         // Problems query
         return this.queryProblems(target, timeRange, request);
+      } else if (target.queryType === c.MODE_MACROS) {
+        // UserMacro query
+        return this.queryUserMacrosData(target);
       } else {
         return [];
       }
@@ -523,31 +517,36 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return responseHandler.handleMacro(userMacros, target);
   }
 
-  queryTriggersData(target, timeRange) {
+  async queryTriggersData(target: ZabbixMetricsQuery, timeRange, request) {
+    if (target.countTriggersBy === 'items') {
+      return this.queryTriggersICData(target, timeRange);
+    } else if (target.countTriggersBy === 'problems') {
+      return this.queryTriggersPCData(target, timeRange, request);
+    }
+
     const [timeFrom, timeTo] = timeRange;
-    return this.zabbix.getHostsFromTarget(target).then((results) => {
-      const [hosts, apps] = results;
-      if (hosts.length) {
-        const hostids = _.map(hosts, 'hostid');
-        const appids = _.map(apps, 'applicationid');
-        const options = {
-          minSeverity: target.triggers.minSeverity,
-          acknowledged: target.triggers.acknowledged,
-          count: target.options.count,
-          timeFrom: timeFrom,
-          timeTo: timeTo,
-        };
-        const groupFilter = target.group.filter;
-        return Promise.all([
-          this.zabbix.getHostAlerts(hostids, appids, options),
-          this.zabbix.getGroups(groupFilter),
-        ]).then(([triggers, groups]) => {
-          return responseHandler.handleTriggersResponse(triggers, groups, timeRange);
-        });
-      } else {
-        return Promise.resolve([]);
-      }
-    });
+    const results = await this.zabbix.getHostsFromTarget(target);
+    const [hosts, apps] = results;
+    if (hosts.length) {
+      const hostids = _.map(hosts, 'hostid');
+      const appids = _.map(apps, 'applicationid');
+      const options = {
+        minSeverity: target.options.minSeverity,
+        acknowledged: target.options.acknowledged,
+        count: target.options.count,
+        timeFrom: timeFrom,
+        timeTo: timeTo,
+      };
+      const groupFilter = target.group.filter;
+      return Promise.all([
+        this.zabbix.getHostAlerts(hostids, appids, options),
+        this.zabbix.getGroups(groupFilter),
+      ]).then(([triggers, groups]) => {
+        return responseHandler.handleTriggersResponse(triggers, groups, timeRange);
+      });
+    } else {
+      return Promise.resolve([]);
+    }
   }
 
   async queryTriggersICData(target, timeRange) {

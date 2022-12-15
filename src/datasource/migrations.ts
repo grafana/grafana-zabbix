@@ -86,6 +86,17 @@ function migrateSLAProperty(target) {
   }
 }
 
+function migrateTriggersMode(target: any) {
+  if (target.triggers?.minSeverity) {
+    target.options.minSeverity = target.triggers?.minSeverity;
+    delete target.triggers.minSeverity;
+  }
+  if (target.triggers?.count) {
+    target.options.count = target.triggers?.count;
+    delete target.triggers.count;
+  }
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -98,6 +109,7 @@ export function migrate(target) {
   migrateProblemSort(target);
   migrateApplications(target);
   migrateSLAProperty(target);
+  migrateTriggersMode(target);
   return target;
 }
 

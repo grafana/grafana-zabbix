@@ -53,6 +53,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   slaInterval?: string;
   tags?: { filter: string };
   triggers?: { minSeverity: number; acknowledged: number; count: boolean };
+  countTriggersBy?: 'problems' | 'items' | '';
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
   // Problems

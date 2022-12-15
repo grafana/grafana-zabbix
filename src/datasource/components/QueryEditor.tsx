@@ -14,8 +14,6 @@ import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ITServicesQueryEditor } from './QueryEditor/ITServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
-import { CountByMetricsQueryEditor } from './QueryEditor/CountByMetricsQueryEditor';
-import { CountByProblemsQueryEditor } from './QueryEditor/CountByProblemsQueryEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -41,7 +39,7 @@ const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
     value: c.MODE_TRIGGERS,
     label: 'Triggers',
-    description: 'Query triggers data',
+    description: 'Count triggers',
   },
   {
     value: c.MODE_PROBLEMS,
@@ -50,18 +48,8 @@ const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   },
   {
     value: c.MODE_MACROS,
-    label: 'User Macros',
+    label: 'User macros',
     description: 'User Macros',
-  },
-  {
-    value: c.MODE_TRIGGERS_ITEM,
-    label: 'Triggers count by Item',
-    description: 'Triggers count by Item',
-  },
-  {
-    value: c.MODE_TRIGGERS_PROBLEM,
-    label: 'Triggers count by Problem',
-    description: 'Triggers count by Problem',
   },
 ];
 
@@ -80,6 +68,7 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
     acknowledged: 2,
   },
   trigger: { filter: '' },
+  countTriggersBy: '',
   tags: { filter: '' },
   proxy: { filter: '' },
   textFilter: '',
@@ -205,14 +194,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
     return <UserMacrosQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
   };
 
-  const renderCountByMetricsEditor = () => {
-    return <CountByMetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
-  };
-
-  const renderCountByproblemsEditor = () => {
-    return <CountByProblemsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
-  };
-
   return (
     <>
       <InlineFieldRow>
@@ -236,8 +217,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
       {queryType === c.MODE_MACROS && renderUserMacrosEditor()}
-      {queryType === c.MODE_TRIGGERS_ITEM && renderCountByMetricsEditor()}
-      {queryType === c.MODE_TRIGGERS_PROBLEM && renderCountByproblemsEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );
