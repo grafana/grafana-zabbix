@@ -7,8 +7,9 @@ import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
+import { itemTagToString } from '../../utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery } from '../../types';
+import { ZabbixMetricsQuery, ZBXItem, ZBXItemTag } from '../../types';
 
 const countByOptions: Array<SelectableValue<string>> = [
   { value: '', label: 'All triggers' },
@@ -83,6 +84,31 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   }, [query.group.filter, query.host.filter]);
 
+  const loadTagOptions = async (group: string, host: string) => {
+    if (!datasource.zabbix.isZabbix54OrHigher()) {
+      return [];
+    }
+
+    const groupFilter = datasource.replaceTemplateVars(group);
+    const hostFilter = datasource.replaceTemplateVars(host);
+    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, null, null, {});
+    const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
+
+    const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
+    let options: Array<SelectableValue<string>> = tagList?.map((tag) => ({
+      value: tag,
+      label: tag,
+    }));
+    options = _.uniqBy(options, (o) => o.value);
+    options.unshift(...getVariableOptions());
+    return options;
+  };
+
+  const [{ loading: tagsLoading, value: tagOptions }, fetchItemTags] = useAsyncFn(async () => {
+    const options = await loadTagOptions(query.group.filter, query.host.filter);
+    return options;
+  }, [query.group.filter, query.host.filter]);
+
   const loadProxyOptions = async () => {
     const proxies = await datasource.zabbix.getProxies();
     const options = proxies?.map((proxy) => ({
@@ -146,6 +172,10 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [groupFilter, hostFilter]);
 
   useEffect(() => {
+    fetchItemTags();
+  }, [groupFilter, hostFilter]);
+
+  useEffect(() => {
     fetchProxies();
   }, []);
 
@@ -181,6 +211,8 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
       onChange({ ...query, countTriggersBy: option.value! });
     }
   };
+
+  const supportsApplications = datasource.zabbix.supportsApplications();
 
   return (
     <>
@@ -227,15 +259,28 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
         )}
       </QueryEditorRow>
       <QueryEditorRow>
-        <InlineField label="Application" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.application?.filter}
-            options={appOptions}
-            isLoading={appsLoading}
-            onChange={onFilterChange('application')}
-          />
-        </InlineField>
+        {(supportsApplications || query.countTriggersBy !== 'items') && (
+          <InlineField label="Application" labelWidth={12}>
+            <MetricPicker
+              width={24}
+              value={query.application?.filter}
+              options={appOptions}
+              isLoading={appsLoading}
+              onChange={onFilterChange('application')}
+            />
+          </InlineField>
+        )}
+        {!supportsApplications && query.countTriggersBy === 'items' && (
+          <InlineField label="Item tag" labelWidth={12}>
+            <MetricPicker
+              width={24}
+              value={query.itemTag.filter}
+              options={tagOptions}
+              isLoading={tagsLoading}
+              onChange={onFilterChange('itemTag')}
+            />
+          </InlineField>
+        )}
         {query.countTriggersBy === 'problems' && (
           <>
             <InlineField label="Problem" labelWidth={12}>
