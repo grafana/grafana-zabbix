@@ -8,7 +8,8 @@ import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery } from '../../types';
+import { ZabbixMetricsQuery, ZBXItem, ZBXItemTag } from '../../types';
+import { itemTagToString } from '../../utils';
 
 export interface Props {
   query: ZabbixMetricsQuery;
@@ -68,6 +69,31 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   }, [query.group.filter, query.host.filter]);
 
+  const loadTagOptions = async (group: string, host: string) => {
+    if (!datasource.zabbix.isZabbix54OrHigher()) {
+      return [];
+    }
+
+    const groupFilter = datasource.replaceTemplateVars(group);
+    const hostFilter = datasource.replaceTemplateVars(host);
+    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, null, null, {});
+    const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
+
+    const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
+    let options: Array<SelectableValue<string>> = tagList?.map((tag) => ({
+      value: tag,
+      label: tag,
+    }));
+    options = _.uniqBy(options, (o) => o.value);
+    options.unshift(...getVariableOptions());
+    return options;
+  };
+
+  const [{ loading: tagsLoading, value: tagOptions }, fetchTags] = useAsyncFn(async () => {
+    const options = await loadTagOptions(query.group.filter, query.host.filter);
+    return options;
+  }, [query.group.filter, query.host.filter]);
+
   const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
     const groupFilter = datasource.replaceTemplateVars(group);
     const hostFilter = datasource.replaceTemplateVars(host);
@@ -116,6 +142,10 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [groupFilter, hostFilter]);
 
   useEffect(() => {
+    fetchTags();
+  }, [groupFilter, hostFilter]);
+
+  useEffect(() => {
     fetchItems();
   }, [groupFilter, hostFilter, appFilter, tagFilter]);
 
@@ -126,6 +156,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       }
     };
   };
+
+  const supportsApplications = datasource.zabbix.supportsApplications();
 
   return (
     <>
@@ -150,15 +182,28 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
-        <InlineField label="Application" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.application.filter}
-            options={appOptions}
-            isLoading={appsLoading}
-            onChange={onFilterChange('application')}
-          />
-        </InlineField>
+        {supportsApplications && (
+          <InlineField label="Application" labelWidth={12}>
+            <MetricPicker
+              width={24}
+              value={query.application.filter}
+              options={appOptions}
+              isLoading={appsLoading}
+              onChange={onFilterChange('application')}
+            />
+          </InlineField>
+        )}
+        {!supportsApplications && (
+          <InlineField label="Item tag" labelWidth={12}>
+            <MetricPicker
+              width={24}
+              value={query.itemTag.filter}
+              options={tagOptions}
+              isLoading={tagsLoading}
+              onChange={onFilterChange('itemTag')}
+            />
+          </InlineField>
+        )}
         <InlineField label="Item" labelWidth={12}>
           <MetricPicker
             width={24}
