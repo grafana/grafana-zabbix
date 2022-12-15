@@ -530,13 +530,16 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     if (hosts.length) {
       const hostids = _.map(hosts, 'hostid');
       const appids = _.map(apps, 'applicationid');
-      const options = {
+      const options: any = {
         minSeverity: target.options.minSeverity,
         acknowledged: target.options.acknowledged,
         count: target.options.count,
-        timeFrom: timeFrom,
-        timeTo: timeTo,
       };
+      if (target.options.useTimeRange) {
+        options.timeFrom = timeFrom;
+        options.timeTo = timeTo;
+      }
+
       const groupFilter = target.group.filter;
       return Promise.all([
         this.zabbix.getHostAlerts(hostids, appids, options),
@@ -561,13 +564,16 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       const hostids = _.map(hosts, 'hostid');
       const appids = _.map(apps, 'applicationid');
       const itemids = _.map(items, 'itemid');
-      const options = {
+      const options: any = {
         minSeverity: target.options.minSeverity,
         acknowledged: target.options.acknowledged,
         count: target.options.count,
-        timeFrom: timeFrom,
-        timeTo: timeTo,
       };
+      if (target.options.useTimeRange) {
+        options.timeFrom = timeFrom;
+        options.timeTo = timeTo;
+      }
+
       const groupFilter = target.group.filter;
       return Promise.all([
         this.zabbix.getHostICAlerts(hostids, appids, itemids, options),
@@ -612,8 +618,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       problemsOptions.severities = severities;
     }
 
-    problemsOptions.timeFrom = timeFrom;
-    problemsOptions.timeTo = timeTo;
+    if (target.options.useTimeRange) {
+      problemsOptions.timeFrom = timeFrom;
+      problemsOptions.timeTo = timeTo;
+    }
 
     return this.zabbix.getHostsFromPCTarget(target, problemsOptions).then((results) => {
       const [hosts, apps, triggers] = results;
@@ -621,13 +629,16 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         const hostids = _.map(hosts, 'hostid');
         const appids = _.map(apps, 'applicationid');
         const triggerids = _.map(triggers, 'triggerid');
-        const options = {
+        const options: any = {
           minSeverity: target.options?.minSeverity,
           acknowledged: target.options?.acknowledged,
           count: target.options.count,
-          timeFrom: timeFrom,
-          timeTo: timeTo,
         };
+        if (target.options.useTimeRange) {
+          options.timeFrom = timeFrom;
+          options.timeTo = timeTo;
+        }
+
         const groupFilter = target.group.filter;
         return Promise.all([
           this.zabbix.getHostPCAlerts(hostids, appids, triggerids, options),
