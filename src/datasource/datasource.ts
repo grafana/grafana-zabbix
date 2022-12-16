@@ -262,7 +262,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
           data.length > 0 &&
           isDataFrame(data[0]) &&
           !utils.isProblemsDataFrame(data[0]) &&
-          !utils.isMacrosDataFrame(data[0])
+          !utils.isMacrosDataFrame(data[0]) &&
+          !utils.nonTimeSeriesDataFrame(data[0])
         ) {
           data = responseHandler.alignFrames(data);
           if (responseHandler.isConvertibleToWide(data)) {
@@ -546,7 +547,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     const alerts = await this.zabbix.getHostAlerts(hostids, appids, options);
-    return responseHandler.handleTriggersResponse(alerts, groups, timeRange);
+    return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
   async queryTriggersICData(target, timeRange) {
@@ -554,7 +555,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const getItemOptions = {
       itemtype: 'num',
     };
-
     const [hosts, apps, items] = await this.zabbix.getHostsFromICTarget(target, getItemOptions);
     if (!hosts.length) {
       return Promise.resolve([]);
@@ -563,9 +563,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const groupFilter = target.group.filter;
     const groups = await this.zabbix.getGroups(groupFilter);
 
-    const hostids = _.map(hosts, 'hostid');
-    const appids = _.map(apps, 'applicationid');
-    const itemids = _.map(items, 'itemid');
+    const hostids = hosts?.map((h) => h.hostid);
+    const appids = apps?.map((a) => a.applicationid);
+    const itemids = items?.map((i) => i.itemid);
     const options: any = {
       minSeverity: target.options.minSeverity,
       acknowledged: target.options.acknowledged,
@@ -577,7 +577,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     const alerts = await this.zabbix.getHostICAlerts(hostids, appids, itemids, options);
-    return responseHandler.handleTriggersResponse(alerts, groups, timeRange);
+    return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
   async queryTriggersPCData(target, timeRange, request) {
@@ -625,9 +625,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const groupFilter = target.group.filter;
     const groups = await this.zabbix.getGroups(groupFilter);
 
-    const hostids = _.map(hosts, 'hostid');
-    const appids = _.map(apps, 'applicationid');
-    const triggerids = _.map(triggers, 'triggerid');
+    const hostids = hosts?.map((h) => h.hostid);
+    const appids = apps?.map((a) => a.applicationid);
+    const triggerids = triggers.map((t) => t.triggerid);
     const options: any = {
       minSeverity: target.options?.minSeverity,
       acknowledged: target.options?.acknowledged,
@@ -639,7 +639,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     }
 
     const alerts = await this.zabbix.getHostPCAlerts(hostids, appids, triggerids, options);
-    return responseHandler.handleTriggersResponse(alerts, groups, timeRange);
+    return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
   queryProblems(target: ZabbixMetricsQuery, timeRange, options) {

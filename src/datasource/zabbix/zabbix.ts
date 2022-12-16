@@ -11,7 +11,7 @@ import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
-import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag } from '../types';
+import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -97,7 +97,7 @@ export class Zabbix implements ZabbixConnector {
   getItemsByIDs: (itemids) => Promise<any>;
   getEvents: (objectids, timeFrom, timeTo, showEvents, limit?) => Promise<any>;
   getAlerts: (itemids, timeFrom?, timeTo?) => Promise<any>;
-  getHostAlerts: (hostids, applicationids, options?) => Promise<any>;
+  getHostAlerts: (hostids, applicationids, options?) => Promise<ZBXTrigger[]>;
   getHostICAlerts: (hostids, applicationids, itemids, options?) => Promise<any>;
   getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
@@ -265,51 +265,50 @@ export class Zabbix implements ZabbixConnector {
     return this.getUMacros(...filters);
   }
 
-  getHostsApsFromTarget(target): Promise<[ZBXHost[], ZBXApp[]]> {
+  async getHostsApsFromTarget(target): Promise<[ZBXHost[], ZBXApp[]]> {
     const parts = ['group', 'host', 'application'];
-    const filters = _.map(parts, (p) => target[p].filter);
-    return Promise.all([this.getHosts(...filters), this.getApps(...filters)]).then((results) => {
-      const hosts = results[0];
-      let apps: AppsResponse = results[1];
-      if (apps.appFilterEmpty) {
-        apps = [];
-      }
-      return [hosts, apps];
-    });
+    const filters = parts.map((p) => target[p].filter);
+    const results = await Promise.all([this.getHosts(...filters), this.getApps(...filters)]);
+    const hosts = results[0];
+    let apps: AppsResponse = results[1];
+    if (apps.appFilterEmpty) {
+      apps = [];
+    }
+    return [hosts, apps];
   }
 
-  getHostsFromICTarget(target, options) {
+  async getHostsFromICTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    const filters = _.map(parts, (p) => target[p].filter);
-    return Promise.all([this.getHosts(...filters), this.getApps(...filters), this.getItems(...filters, options)]).then(
-      (results) => {
-        const hosts = results[0];
-        let apps: AppsResponse = results[1];
-        if (apps.appFilterEmpty) {
-          apps = [];
-        }
-        const items = results[2];
-        return [hosts, apps, items];
-      }
-    );
+    const filters = parts.map((p) => target[p].filter);
+    const results = await Promise.all([
+      this.getHosts(...filters),
+      this.getApps(...filters),
+      this.getItems(...filters, options),
+    ]);
+    const hosts = results[0];
+    let apps: AppsResponse = results[1];
+    if (apps.appFilterEmpty) {
+      apps = [];
+    }
+    const items = results[2];
+    return [hosts, apps, items];
   }
 
-  getHostsFromPCTarget(target, options) {
+  async getHostsFromPCTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ProblemDTO[]]> {
     const parts = ['group', 'host', 'application', 'proxy', 'trigger'];
-    const filters = _.map(parts, (p) => target[p].filter);
-    return Promise.all([
+    const filters = parts.map((p) => target[p].filter);
+    const results = await Promise.all([
       this.getHosts(...filters),
       this.getApps(...filters),
       this.getCProblems(...filters, options),
-    ]).then((results) => {
-      const hosts = results[0];
-      let apps: AppsResponse = results[1];
-      if (apps.appFilterEmpty) {
-        apps = [];
-      }
-      const triggers = results[2];
-      return [hosts, apps, triggers];
-    });
+    ]);
+    const hosts = results[0];
+    let apps: AppsResponse = results[1];
+    if (apps.appFilterEmpty) {
+      apps = [];
+    }
+    const problems = results[2];
+    return [hosts, apps, problems];
   }
 
   getAllGroups() {

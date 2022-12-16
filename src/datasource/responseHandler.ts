@@ -16,7 +16,7 @@ import {
   TIME_SERIES_TIME_FIELD_NAME,
   TIME_SERIES_VALUE_FIELD_NAME,
 } from '@grafana/data';
-import { ZabbixMetricsQuery } from './types';
+import { ZabbixMetricsQuery, ZBXGroup, ZBXTrigger } from './types';
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -514,7 +514,7 @@ function handleSLAResponse(itservice, slaProperty, slaObject) {
   }
 }
 
-function handleTriggersResponse(triggers, groups, timeRange) {
+function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], timeRange: number[], target) {
   if (!_.isArray(triggers)) {
     let triggersCount = null;
     try {
@@ -522,29 +522,50 @@ function handleTriggersResponse(triggers, groups, timeRange) {
     } catch (err) {
       console.log('Error when handling triggers count: ', err);
     }
-    return {
-      target: 'triggers count',
-      datapoints: [[triggersCount, timeRange[1] * 1000]],
-    };
+
+    const frame = new MutableDataFrame({
+      refId: target.refId,
+      fields: [
+        { name: TIME_SERIES_TIME_FIELD_NAME, type: FieldType.time, values: new ArrayVector([timeRange[1] * 1000]) },
+        { name: TIME_SERIES_VALUE_FIELD_NAME, type: FieldType.number, values: new ArrayVector([triggersCount]) },
+      ],
+      length: 1,
+    });
+
+    return frame;
   } else {
     const stats = getTriggerStats(triggers);
-    const groupNames = _.map(groups, 'name');
-    const table: any = new TableModel();
-    table.addColumn({ text: 'Host group' });
-    _.each(_.orderBy(c.TRIGGER_SEVERITY, ['val'], ['desc']), (severity) => {
-      table.addColumn({ text: severity.text });
+    const frame = new MutableDataFrame({
+      refId: target.refId,
+      fields: [{ name: 'Host group', type: FieldType.string, values: new ArrayVector() }],
     });
-    _.each(stats, (severity_stats, group) => {
-      if (_.includes(groupNames, group)) {
-        let row = _.map(
-          _.orderBy(_.toPairs(severity_stats), (s) => s[0], ['desc']),
-          (s) => s[1]
-        );
-        row = _.concat([group], ...row);
-        table.rows.push(row);
+
+    for (let i = c.TRIGGER_SEVERITY.length - 1; i >= 0; i--) {
+      frame.fields.push({
+        name: c.TRIGGER_SEVERITY[i].text,
+        type: FieldType.number,
+        config: { unit: 'none', decimals: 0 },
+        values: new ArrayVector(),
+      });
+    }
+
+    const groupNames = groups?.map((g) => g.name);
+    groupNames?.forEach((group) => {
+      if (!stats[group]) {
+        return;
       }
+      frame.add({
+        'Host group': group,
+        Disaster: stats[group][5],
+        High: stats[group][4],
+        Average: stats[group][3],
+        Warning: stats[group][2],
+        Information: stats[group][1],
+        'Not classified': stats[group][0],
+      });
     });
-    return table;
+
+    return frame;
   }
 }
 

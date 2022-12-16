@@ -3,7 +3,7 @@ import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
-import { ShowProblemTypes, ZBXProblem } from '../../../types';
+import { ShowProblemTypes, ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
@@ -651,7 +651,7 @@ export class ZabbixAPIConnector {
     return this.request('trigger.get', params);
   }
 
-  getHostAlerts(hostids, applicationids, options) {
+  async getHostAlerts(hostids, applicationids, options): Promise<ZBXTrigger[]> {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
     const params: any = {
       output: 'extend',
@@ -684,15 +684,14 @@ export class ZabbixAPIConnector {
       params.lastChangeTill = timeTo;
     }
 
-    return this.request('trigger.get', params).then((triggers) => {
-      if (!count || acknowledged === 1) {
-        triggers = filterTriggersByAcknowledge(triggers, acknowledged);
-        if (count) {
-          triggers = triggers.length;
-        }
+    let triggers = await this.request('trigger.get', params);
+    if (!count || acknowledged === 1) {
+      triggers = filterTriggersByAcknowledge(triggers, acknowledged);
+      if (count) {
+        triggers = triggers.length;
       }
-      return triggers;
-    });
+    }
+    return triggers;
   }
 
   getHostICAlerts(hostids, applicationids, itemids, options) {
