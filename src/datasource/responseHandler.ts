@@ -551,17 +551,14 @@ function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], time
 
     const groupNames = groups?.map((g) => g.name);
     groupNames?.forEach((group) => {
-      if (!stats[group]) {
-        return;
-      }
       frame.add({
         'Host group': group,
-        Disaster: stats[group][5],
-        High: stats[group][4],
-        Average: stats[group][3],
-        Warning: stats[group][2],
-        Information: stats[group][1],
-        'Not classified': stats[group][0],
+        Disaster: stats[group] ? stats[group][5] : 0,
+        High: stats[group] ? stats[group][4] : 0,
+        Average: stats[group] ? stats[group][3] : 0,
+        Warning: stats[group] ? stats[group][2] : 0,
+        Information: stats[group] ? stats[group][1] : 0,
+        'Not classified': stats[group] ? stats[group][0] : 0,
       });
     });
 

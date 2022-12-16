@@ -566,6 +566,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     const hostids = hosts?.map((h) => h.hostid);
     const appids = apps?.map((a) => a.applicationid);
     const itemids = items?.map((i) => i.itemid);
+    if (!itemids.length) {
+      return Promise.resolve([]);
+    }
+
     const options: any = {
       minSeverity: target.options.minSeverity,
       acknowledged: target.options.acknowledged,
