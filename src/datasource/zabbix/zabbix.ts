@@ -11,7 +11,7 @@ import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
-import { ProblemDTO, ZBXItem, ZBXItemTag } from '../types';
+import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag } from '../types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -265,7 +265,7 @@ export class Zabbix implements ZabbixConnector {
     return this.getUMacros(...filters);
   }
 
-  getHostsFromTarget(target) {
+  getHostsApsFromTarget(target): Promise<[ZBXHost[], ZBXApp[]]> {
     const parts = ['group', 'host', 'application'];
     const filters = _.map(parts, (p) => target[p].filter);
     return Promise.all([this.getHosts(...filters), this.getApps(...filters)]).then((results) => {
@@ -279,7 +279,7 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getHostsFromICTarget(target, options) {
-    const parts = ['group', 'host', 'application', 'item'];
+    const parts = ['group', 'host', 'application', 'itemTag', 'item'];
     const filters = _.map(parts, (p) => target[p].filter);
     return Promise.all([this.getHosts(...filters), this.getApps(...filters), this.getItems(...filters, options)]).then(
       (results) => {

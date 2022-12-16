@@ -345,6 +345,13 @@ export interface ZBXItem {
   tags?: ZBXItemTag[];
 }
 
+export interface ZBXApp {
+  applicationid: string;
+  hostid: string;
+  name: string;
+  templateids?: string;
+}
+
 export interface ZBXItemTag {
   tag: string;
   value?: string;
