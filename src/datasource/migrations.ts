@@ -97,6 +97,22 @@ function migrateTriggersMode(target: any) {
   }
 }
 
+function migrateNewTriggersCountModes(target: any) {
+  if (target.schema >= 11) {
+    return;
+  }
+  if (target.queryType === '6') {
+    target.queryType = c.MODE_TRIGGERS;
+    target.countTriggersBy = 'items';
+  } else if (target.queryType === '7') {
+    target.queryType = c.MODE_TRIGGERS;
+    target.countTriggersBy = 'problems';
+  } else if (target.queryType === '8') {
+    target.queryType = c.MODE_MACROS;
+  }
+  target.schema = 11;
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -110,6 +126,7 @@ export function migrate(target) {
   migrateApplications(target);
   migrateSLAProperty(target);
   migrateTriggersMode(target);
+  migrateNewTriggersCountModes(target);
   return target;
 }
 
