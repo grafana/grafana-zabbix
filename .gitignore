@@ -39,6 +39,7 @@ yarn-error.log
 # Built plugin
 dist/
 ci/
+alexanderzobnin-zabbix-app.zip
 
 # Grafana toolkit configs
 # .prettierrc.js
