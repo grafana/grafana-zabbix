@@ -2,6 +2,9 @@ import _ from 'lodash';
 import { ZabbixMetricsQuery } from './types';
 import * as c from './constants';
 
+export const DS_QUERY_SCHEMA = 11;
+export const DS_CONFIG_SCHEMA = 3;
+
 /**
  * Query format migration.
  * This module can detect query format version and make migration.
@@ -110,7 +113,6 @@ function migrateNewTriggersCountModes(target: any) {
   } else if (target.queryType === '8') {
     target.queryType = c.MODE_MACROS;
   }
-  target.schema = 11;
 }
 
 export function migrate(target) {
@@ -127,6 +129,8 @@ export function migrate(target) {
   migrateSLAProperty(target);
   migrateTriggersMode(target);
   migrateNewTriggersCountModes(target);
+
+  target.schema = DS_QUERY_SCHEMA;
   return target;
 }
 
@@ -144,8 +148,6 @@ function convertToRegex(str) {
     return '/.*/';
   }
 }
-
-export const DS_CONFIG_SCHEMA = 3;
 
 export function migrateDSConfig(jsonData) {
   if (!jsonData) {

@@ -34,6 +34,7 @@ export interface ZabbixConnectionTestQuery {
 }
 
 export interface ZabbixMetricsQuery extends DataQuery {
+  schema: number;
   queryType: string;
   datasourceId: number;
   group: { filter: string; name?: string };

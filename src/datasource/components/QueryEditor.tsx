@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { InlineField, InlineFieldRow, Select } from '@grafana/ui';
 import * as c from '../constants';
-import * as migrations from '../migrations';
+import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
 import { ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions } from '../types';
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
@@ -54,6 +54,7 @@ const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
 ];
 
 const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
+  schema: DS_QUERY_SCHEMA,
   queryType: c.MODE_METRICS,
   group: { filter: '' },
   host: { filter: '' },
@@ -62,11 +63,6 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
   item: { filter: '' },
   macro: { filter: '' },
   functions: [],
-  triggers: {
-    count: true,
-    minSeverity: 3,
-    acknowledged: 2,
-  },
   trigger: { filter: '' },
   countTriggersBy: '',
   tags: { filter: '' },
@@ -125,7 +121,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
 
   // Migrate query on load
   useEffect(() => {
-    const migratedQuery = migrations.migrate(query);
+    const migratedQuery = migrate(query);
     onChange(migratedQuery);
   }, []);
 
