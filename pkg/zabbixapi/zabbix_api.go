@@ -123,7 +123,7 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 // Login performs API authentication and returns authentication token.
 func (api *ZabbixAPI) Login(ctx context.Context, username string, password string) (string, error) {
 	params := ZabbixAPIParams{
-		"user":     username,
+		"username": username,
 		"password": password,
 	}
 
