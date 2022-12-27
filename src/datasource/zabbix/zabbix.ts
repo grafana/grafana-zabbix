@@ -280,34 +280,16 @@ export class Zabbix implements ZabbixConnector {
   async getHostsFromICTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
     const filters = parts.map((p) => target[p].filter);
-    const results = await Promise.all([
-      this.getHosts(...filters),
-      this.getApps(...filters),
-      this.getItems(...filters, options),
-    ]);
-    const hosts = results[0];
-    let apps: AppsResponse = results[1];
-    if (apps.appFilterEmpty) {
-      apps = [];
-    }
-    const items = results[2];
+    const [hosts, apps] = await this.getHostsApsFromTarget(target);
+    const items = await this.getItems(...filters, options);
     return [hosts, apps, items];
   }
 
   async getHostsFromPCTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ProblemDTO[]]> {
     const parts = ['group', 'host', 'application', 'proxy', 'trigger'];
     const filters = parts.map((p) => target[p].filter);
-    const results = await Promise.all([
-      this.getHosts(...filters),
-      this.getApps(...filters),
-      this.getCProblems(...filters, options),
-    ]);
-    const hosts = results[0];
-    let apps: AppsResponse = results[1];
-    if (apps.appFilterEmpty) {
-      apps = [];
-    }
-    const problems = results[2];
+    const [hosts, apps] = await this.getHostsApsFromTarget(target);
+    const problems = await this.getCProblems(...filters, options);
     return [hosts, apps, problems];
   }
 

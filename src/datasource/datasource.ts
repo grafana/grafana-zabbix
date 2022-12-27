@@ -525,7 +525,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       return this.queryTriggersPCData(target, timeRange, request);
     }
 
-    const [timeFrom, timeTo] = timeRange;
     const [hosts, apps] = await this.zabbix.getHostsApsFromTarget(target);
     if (!hosts.length) {
       return Promise.resolve([]);
@@ -536,25 +535,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     const hostids = hosts?.map((h) => h.hostid);
     const appids = apps?.map((a) => a.applicationid);
-    const options: any = {
-      minSeverity: target.options.minSeverity,
-      acknowledged: target.options.acknowledged,
-      count: target.options.count,
-    };
-    if (target.options.useTimeRange) {
-      options.timeFrom = timeFrom;
-      options.timeTo = timeTo;
-    }
-
+    const options = getTriggersOptions(target, timeRange);
     const alerts = await this.zabbix.getHostAlerts(hostids, appids, options);
     return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
   async queryTriggersICData(target, timeRange) {
-    const [timeFrom, timeTo] = timeRange;
-    const getItemOptions = {
-      itemtype: 'num',
-    };
+    const getItemOptions = { itemtype: 'num' };
     const [hosts, apps, items] = await this.zabbix.getHostsFromICTarget(target, getItemOptions);
     if (!hosts.length) {
       return Promise.resolve([]);
@@ -570,21 +557,12 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       return Promise.resolve([]);
     }
 
-    const options: any = {
-      minSeverity: target.options.minSeverity,
-      acknowledged: target.options.acknowledged,
-      count: target.options.count,
-    };
-    if (target.options.useTimeRange) {
-      options.timeFrom = timeFrom;
-      options.timeTo = timeTo;
-    }
-
+    const options = getTriggersOptions(target, timeRange);
     const alerts = await this.zabbix.getHostICAlerts(hostids, appids, itemids, options);
     return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
-  async queryTriggersPCData(target, timeRange, request) {
+  async queryTriggersPCData(target: ZabbixMetricsQuery, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
     const tagsFilter = this.replaceTemplateVars(target.tags?.filter, request.scopedVars);
     // replaceTemplateVars() builds regex-like string, so we should trim it.
@@ -1083,3 +1061,17 @@ function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
   }
   return null;
 }
+
+const getTriggersOptions = (target: ZabbixMetricsQuery, timeRange) => {
+  const [timeFrom, timeTo] = timeRange;
+  const options: any = {
+    minSeverity: target.options?.minSeverity,
+    acknowledged: target.options?.acknowledged,
+    count: target.options?.count,
+  };
+  if (target.options?.useTimeRange) {
+    options.timeFrom = timeFrom;
+    options.timeTo = timeTo;
+  }
+  return options;
+};
