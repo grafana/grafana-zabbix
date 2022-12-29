@@ -67,6 +67,7 @@ export interface ZabbixQueryOptions {
   skipEmptyValues?: boolean;
   disableDataAlignment?: boolean;
   useZabbixValueMapping?: boolean;
+  useTrends?: 'default' | 'true' | 'false';
   // Problems options
   minSeverity?: number;
   sortProblems?: string;

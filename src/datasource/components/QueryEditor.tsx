@@ -69,6 +69,7 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
     skipEmptyValues: false,
     disableDataAlignment: false,
     useZabbixValueMapping: false,
+    useTrends: 'default',
   },
   table: {
     skipEmptyValues: false,
@@ -103,7 +104,9 @@ export interface ZabbixQueryEditorProps
   extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQuery, ZabbixDSOptions> {}
 
 export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQueryEditorProps) => {
-  query = { ...getDefaultQuery(), ...query };
+  const queryDefaults = getDefaultQuery();
+  query = { ...queryDefaults, ...query };
+  query.options = { ...queryDefaults.options, ...query.options };
   const { queryType } = query;
   if (queryType === c.MODE_PROBLEMS || queryType === c.MODE_TRIGGERS) {
     const defaults = getProblemsQueryDefaults();

@@ -279,7 +279,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
         this.replaceTargetVariables(target, request);
         const timeRange = this.buildTimeRange(request, target);
-        const useTrends = this.isUseTrends(timeRange);
+        const useTrends = this.isUseTrends(timeRange, target);
 
         if (!target.queryType || target.queryType === c.MODE_METRICS) {
           return this.queryNumericData(target, timeRange, useTrends, request);
@@ -857,11 +857,16 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     });
   }
 
-  isUseTrends(timeRange) {
+  isUseTrends(timeRange, target: ZabbixMetricsQuery) {
+    if (target.options.useTrends === 'false') {
+      return false;
+    }
     const [timeFrom, timeTo] = timeRange;
     const useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
     const useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
-    const useTrends = this.trends && (timeFrom < useTrendsFrom || timeTo - timeFrom > useTrendsRange);
+    const useTrendsToggle = target.options.useTrends === 'true';
+    const useTrends =
+      (useTrendsToggle || this.trends) && (timeFrom < useTrendsFrom || timeTo - timeFrom > useTrendsRange);
     return useTrends;
   }
 
