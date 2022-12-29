@@ -330,12 +330,28 @@ export class ZabbixAPIConnector {
     return self.request('trend.get', params);
   }
 
-  getITService(serviceids?) {
+  getITService(serviceids?: any[]) {
     const params = {
       output: 'extend',
       serviceids: serviceids,
     };
     return this.request('service.get', params);
+  }
+
+  // Returns services. Non-cached method (for getting actual service status).
+  getServices(serviceids?: any[]) {
+    const params = {
+      output: 'extend',
+      serviceids: serviceids,
+    };
+    return this.request('service.get', params);
+  }
+
+  getSLAList() {
+    const params = {
+      output: 'extend',
+    };
+    return this.request('sla.get', params);
   }
 
   getSLA(serviceids, timeRange, options) {
@@ -414,6 +430,29 @@ export class ZabbixAPIConnector {
       });
     });
     return slaLikeResponse;
+  }
+
+  async getSLI(slaid, serviceids, timeRange, options) {
+    const [timeFrom, timeTo] = timeRange;
+    let intervals = [{ from: timeFrom, to: timeTo }];
+    if (options.slaInterval === 'auto') {
+      const interval = getSLAInterval(options.intervalMs);
+      intervals = buildSLAIntervals(timeRange, interval);
+    } else if (options.slaInterval !== 'none') {
+      const interval = utils.parseInterval(options.slaInterval) / 1000;
+      intervals = buildSLAIntervals(timeRange, interval);
+    }
+
+    const sliParams: any = {
+      slaid,
+      serviceids,
+      period_from: timeFrom,
+      period_to: timeTo,
+      periods: Math.min(intervals.length, 100),
+    };
+
+    const sliResponse = await this.request('sla.getsli', sliParams);
+    return sliResponse;
   }
 
   getProblems(groupids, hostids, applicationids, options): Promise<ZBXProblem[]> {

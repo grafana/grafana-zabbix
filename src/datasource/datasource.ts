@@ -470,14 +470,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Query target data for IT Services
    */
-  async queryITServiceData(target, timeRange, request) {
+  async queryITServiceData(target: ZabbixMetricsQuery, timeRange, request) {
     // Don't show undefined and hidden targets
-    if (target.hide || (!target.itservice && !target.itServiceFilter) || !target.slaProperty) {
+    if (target.hide || (!(target as any).itservice && !target.itServiceFilter) || !target.slaProperty) {
       return [];
     }
 
     let itServiceFilter;
-    request.isOldVersion = target.itservice && !target.itServiceFilter;
+    request.isOldVersion = (target as any).itservice && !target.itServiceFilter;
 
     if (request.isOldVersion) {
       // Backward compatibility
@@ -490,7 +490,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     let itservices = await this.zabbix.getITServices(itServiceFilter);
     if (request.isOldVersion) {
-      itservices = _.filter(itservices, { serviceid: target.itservice?.serviceid });
+      itservices = _.filter(itservices, { serviceid: (target as any).itservice?.serviceid });
+    }
+    if (target.slaFilter !== undefined) {
+      const slaFilter = this.replaceTemplateVars(target.slaFilter, request.scopedVars);
+      const slas = await this.zabbix.getSLAs(slaFilter);
+      const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
+      return result;
     }
     const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
     const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
