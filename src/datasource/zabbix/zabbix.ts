@@ -3,7 +3,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import semver from 'semver';
 import * as utils from '../utils';
-import responseHandler from '../responseHandler';
+import responseHandler, { handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
 import { DBConnector } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
@@ -11,7 +11,7 @@ import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
-import { ProblemDTO, ZBXItem, ZBXItemTag } from '../types';
+import { ProblemDTO, ZabbixMetricsQuery, ZBXItem, ZBXItemTag } from '../types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -41,6 +41,7 @@ const REQUESTS_TO_PROXYFY = [
   'getTriggersByIds',
   'getScripts',
   'getValueMappings',
+  'getSLAList',
 ];
 
 const REQUESTS_TO_CACHE = [
@@ -53,6 +54,7 @@ const REQUESTS_TO_CACHE = [
   'getITService',
   'getProxies',
   'getValueMappings',
+  'getSLAList',
 ];
 
 const REQUESTS_TO_BIND = [
@@ -72,6 +74,7 @@ const REQUESTS_TO_BIND = [
   'getScripts',
   'executeScript',
   'getValueMappings',
+  'getSLAList',
 ];
 
 export class Zabbix implements ZabbixConnector {
@@ -97,6 +100,7 @@ export class Zabbix implements ZabbixConnector {
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
   getValueMappings: () => Promise<any>;
+  getSLAList: () => Promise<any>;
 
   constructor(options) {
     const {
@@ -396,8 +400,14 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getITServices(itServiceFilter) {
-    return this.zabbixAPI.getITService().then((itServices) => findByFilter(itServices, itServiceFilter));
+  async getITServices(itServiceFilter: string) {
+    const itServices = await this.zabbixAPI.getITService();
+    return findByFilter(itServices, itServiceFilter);
+  }
+
+  async getSLAs(slaFilter: string) {
+    const slas = await this.zabbixAPI.getSLAList();
+    return findByFilter(slas, slaFilter);
   }
 
   getProblems(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {
@@ -536,6 +546,19 @@ export class Zabbix implements ZabbixConnector {
     } else {
       return Promise.resolve([]);
     }
+  }
+
+  async getSLI(itservices: any[], slas: any[], timeRange, target: ZabbixMetricsQuery, options) {
+    const itServiceIds = itservices.map((s) => s.serviceid);
+    if (target.slaProperty === 'status') {
+      const res = await this.zabbixAPI.getServices(itServiceIds);
+      return handleServiceResponse(res, itservices, target);
+    }
+
+    const slaIds = slas.map((s) => s.slaid);
+    const slaId = slaIds?.length > 0 ? slaIds[0] : undefined;
+    const result = await this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options);
+    return handleSLIResponse(result, itservices, target);
   }
 
   async getSLA(itservices, timeRange, target, options) {
