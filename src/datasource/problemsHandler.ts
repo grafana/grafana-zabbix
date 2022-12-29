@@ -99,6 +99,7 @@ export function joinTriggersWithEvents(
 
 export function setMaintenanceStatus(triggers) {
   _.each(triggers, (trigger) => {
+    trigger.hostInMaintenance = _.some(trigger.hosts, (host) => host.maintenance_status === '1');
     trigger.maintenance = false;
     if (trigger.suppressed === '1') {
       trigger.maintenance = true;
