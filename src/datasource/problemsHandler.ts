@@ -100,7 +100,7 @@ export function joinTriggersWithEvents(
 export function setMaintenanceStatus(triggers) {
   _.each(triggers, (trigger) => {
     trigger.maintenance = false;
-    if (trigger.suppressed === 1) {
+    if (trigger.suppressed === '1') {
       trigger.maintenance = true;
     }
   });
