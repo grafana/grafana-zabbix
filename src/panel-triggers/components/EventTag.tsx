@@ -1,5 +1,7 @@
 import React from 'react';
-import { DataSourceRef } from '@grafana/data';
+import { css } from '@emotion/css';
+import { Icon, useStyles2 } from '@grafana/ui';
+import { DataSourceRef, GrafanaTheme2 } from '@grafana/data';
 import { ZBXTag } from '../../datasource/types';
 
 const TAG_COLORS = [
@@ -85,6 +87,8 @@ function djb2(str) {
   return hash;
 }
 
+const URLPattern = /^https?:\/\/.+/;
+
 interface Props {
   tag: ZBXTag;
   datasource: DataSourceRef | string;
@@ -93,6 +97,7 @@ interface Props {
 }
 
 export const EventTag = ({ tag, datasource, highlight, onClick }: Props) => {
+  const styles = useStyles2(getStyles);
   const onClickInternal = (event) => {
     if (onClick) {
       onClick(tag, datasource, event.ctrlKey, event.shiftKey);
@@ -104,6 +109,18 @@ export const EventTag = ({ tag, datasource, highlight, onClick }: Props) => {
     background: tagColor.color,
     borderColor: tagColor.borderColor,
   };
+
+  const isUrl = URLPattern.test(tag.value);
+  let tagElement = <>{tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}</>;
+  if (isUrl) {
+    tagElement = (
+      <a href={tag.value} target="_blank" rel="noreferrer">
+        <Icon name="link" className={styles.icon} />
+        {tag.tag}
+      </a>
+    );
+  }
+
   return (
     // TODO: show tooltip when click feature is fixed
     // <Tooltip placement="bottom" content="Click to add tag filter or Ctrl/Shift+click to remove">
@@ -112,8 +129,14 @@ export const EventTag = ({ tag, datasource, highlight, onClick }: Props) => {
       style={style}
       onClick={onClickInternal}
     >
-      {tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}
+      {tagElement}
     </span>
     // </Tooltip>
   );
 };
+
+const getStyles = (theme: GrafanaTheme2) => ({
+  icon: css`
+    margin-right: ${theme.spacing(0.5)};
+  `,
+});
