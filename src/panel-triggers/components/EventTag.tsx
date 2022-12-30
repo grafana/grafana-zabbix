@@ -1,6 +1,6 @@
 import React from 'react';
 import { css } from '@emotion/css';
-import { Icon, useStyles2 } from '@grafana/ui';
+import { Icon, Tooltip, useStyles2 } from '@grafana/ui';
 import { DataSourceRef, GrafanaTheme2 } from '@grafana/data';
 import { ZBXTag } from '../../datasource/types';
 
@@ -114,10 +114,12 @@ export const EventTag = ({ tag, datasource, highlight, onClick }: Props) => {
   let tagElement = <>{tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}</>;
   if (isUrl) {
     tagElement = (
-      <a href={tag.value} target="_blank" rel="noreferrer">
-        <Icon name="link" className={styles.icon} />
-        {tag.tag}
-      </a>
+      <Tooltip placement="top" content={tag.value}>
+        <a href={tag.value} target="_blank" rel="noreferrer">
+          <Icon name="link" className={styles.icon} />
+          {tag.tag}
+        </a>
+      </Tooltip>
     );
   }
 
