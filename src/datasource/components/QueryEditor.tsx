@@ -11,7 +11,7 @@ import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
 import { TextMetricsQueryEditor } from './QueryEditor/TextMetricsQueryEditor';
 import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
 import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
-import { ITServicesQueryEditor } from './QueryEditor/ITServicesQueryEditor';
+import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
 
@@ -28,8 +28,8 @@ const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   },
   {
     value: c.MODE_ITSERVICE,
-    label: 'IT Services',
-    description: 'Query IT Services data',
+    label: 'Services',
+    description: 'Query services SLA',
   },
   {
     value: c.MODE_ITEMID,
@@ -73,6 +73,7 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
     skipEmptyValues: false,
     disableDataAlignment: false,
     useZabbixValueMapping: false,
+    useTrends: 'default',
     count: false,
   },
   table: {
@@ -80,9 +81,10 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
   },
 });
 
-function getSLAQueryDefaults() {
+function getSLAQueryDefaults(): Partial<ZabbixMetricsQuery> {
   return {
     itServiceFilter: '',
+    slaFilter: '',
     slaProperty: 'sla',
     slaInterval: 'none',
   };
@@ -108,7 +110,9 @@ export interface ZabbixQueryEditorProps
   extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQuery, ZabbixDSOptions> {}
 
 export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQueryEditorProps) => {
-  query = { ...getDefaultQuery(), ...query };
+  const queryDefaults = getDefaultQuery();
+  query = { ...queryDefaults, ...query };
+  query.options = { ...queryDefaults.options, ...query.options };
   const { queryType } = query;
   if (queryType === c.MODE_PROBLEMS || queryType === c.MODE_TRIGGERS) {
     const defaults = getProblemsQueryDefaults();
@@ -172,7 +176,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   const renderITServicesEditor = () => {
     return (
       <>
-        <ITServicesQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
+        <ServicesQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
         <QueryFunctionsEditor query={query} onChange={onChangeInternal} />
       </>
     );

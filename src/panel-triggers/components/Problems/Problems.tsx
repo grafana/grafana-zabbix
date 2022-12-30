@@ -135,9 +135,11 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const highlightNewerThan = options.highlightNewEvents && options.highlightNewerThan;
     const statusCell = (props) => StatusCell(props, highlightNewerThan);
     const statusIconCell = (props) => StatusIconCell(props, highlightNewerThan);
-    const hostNameCell = (props) => <HostCell name={props.original.host} maintenance={props.original.maintenance} />;
+    const hostNameCell = (props) => (
+      <HostCell name={props.original.host} maintenance={props.original.hostInMaintenance} />
+    );
     const hostTechNameCell = (props) => (
-      <HostCell name={props.original.hostTechName} maintenance={props.original.maintenance} />
+      <HostCell name={props.original.hostTechName} maintenance={props.original.hostInMaintenance} />
     );
 
     const columns = [

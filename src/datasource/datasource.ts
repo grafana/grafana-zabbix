@@ -289,7 +289,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
         this.replaceTargetVariables(target, request);
         const timeRange = this.buildTimeRange(request, target);
-        const useTrends = this.isUseTrends(timeRange);
+        const useTrends = this.isUseTrends(timeRange, target);
 
         if (!target.queryType || target.queryType === c.MODE_METRICS) {
           return this.queryNumericData(target, timeRange, useTrends, request);
@@ -480,14 +480,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Query target data for IT Services
    */
-  async queryITServiceData(target, timeRange, request) {
+  async queryITServiceData(target: ZabbixMetricsQuery, timeRange, request) {
     // Don't show undefined and hidden targets
-    if (target.hide || (!target.itservice && !target.itServiceFilter) || !target.slaProperty) {
+    if (target.hide || (!(target as any).itservice && !target.itServiceFilter) || !target.slaProperty) {
       return [];
     }
 
     let itServiceFilter;
-    request.isOldVersion = target.itservice && !target.itServiceFilter;
+    request.isOldVersion = (target as any).itservice && !target.itServiceFilter;
 
     if (request.isOldVersion) {
       // Backward compatibility
@@ -500,7 +500,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     let itservices = await this.zabbix.getITServices(itServiceFilter);
     if (request.isOldVersion) {
-      itservices = _.filter(itservices, { serviceid: target.itservice?.serviceid });
+      itservices = _.filter(itservices, { serviceid: (target as any).itservice?.serviceid });
+    }
+    if (target.slaFilter !== undefined) {
+      const slaFilter = this.replaceTemplateVars(target.slaFilter, request.scopedVars);
+      const slas = await this.zabbix.getSLAs(slaFilter);
+      const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
+      return result;
     }
     const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
     const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
@@ -951,11 +957,16 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     });
   }
 
-  isUseTrends(timeRange) {
+  isUseTrends(timeRange, target: ZabbixMetricsQuery) {
+    if (target.options.useTrends === 'false') {
+      return false;
+    }
     const [timeFrom, timeTo] = timeRange;
     const useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
     const useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
-    const useTrends = this.trends && (timeFrom < useTrendsFrom || timeTo - timeFrom > useTrendsRange);
+    const useTrendsToggle = target.options.useTrends === 'true';
+    const useTrends =
+      (useTrendsToggle || this.trends) && (timeFrom < useTrendsFrom || timeTo - timeFrom > useTrendsRange);
     return useTrends;
   }
 

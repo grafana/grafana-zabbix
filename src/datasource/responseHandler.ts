@@ -490,7 +490,105 @@ function extractText(str, pattern, useCaptureGroups) {
   return '';
 }
 
-function handleSLAResponse(itservice, slaProperty, slaObject) {
+export function handleSLIResponse(response: any, itservices: any[], target: ZabbixMetricsQuery) {
+  const timestamps = [];
+  for (let i = 0; i < response?.periods?.length; i++) {
+    const period = response.periods[i];
+    if (i === 0) {
+      timestamps.push(period.period_from * 1000);
+    }
+    timestamps.push(period.period_to * 1000);
+  }
+
+  const timeFiled: Field = {
+    name: TIME_SERIES_TIME_FIELD_NAME,
+    type: FieldType.time,
+    config: {
+      custom: {},
+    },
+    values: new ArrayVector<number>(timestamps),
+  };
+
+  const valueFields: Field[] = [];
+  const values: number[][] = [];
+
+  let slaProperty = mapLegacySLAProperty(target.slaProperty);
+  for (let i = 0; i < response?.sli?.length; i++) {
+    const slis = response.sli[i];
+    for (let j = 0; j < slis.length; j++) {
+      const sli = slis[j];
+      const value = sli[slaProperty];
+      if (!values[j]) {
+        values[j] = [];
+      }
+      if (i === 0) {
+        values[j].push(value);
+      }
+      values[j].push(value);
+    }
+  }
+
+  for (let i = 0; i < response?.serviceids?.length; i++) {
+    const serviceId = response?.serviceids[i].toString();
+    const service = itservices.find((s) => s.serviceid === serviceId);
+    valueFields.push({
+      name: service ? service.name : serviceId,
+      type: FieldType.number,
+      config: {},
+      values: new ArrayVector<number>(values[i]),
+    });
+  }
+
+  return new MutableDataFrame({
+    refId: target.refId,
+    name: 'SLI',
+    fields: [timeFiled, ...valueFields],
+  });
+}
+
+function mapLegacySLAProperty(property: string) {
+  switch (property) {
+    case 'sla':
+      return 'sli';
+    case 'okTime':
+      return 'uptime';
+    case 'downtimeTime':
+      return 'downtime';
+    default:
+      return property;
+  }
+}
+
+export function handleServiceResponse(response: any, itservices: any[], target: ZabbixMetricsQuery) {
+  const valueFields: Field[] = [];
+  for (let i = 0; i < response?.length; i++) {
+    const service = response[i];
+    const status = Number(service.status);
+    valueFields.push({
+      name: service ? service.name : i,
+      type: FieldType.number,
+      config: {},
+      values: new ArrayVector<number>([status]),
+    });
+  }
+
+  const timeFiled: Field = {
+    name: TIME_SERIES_TIME_FIELD_NAME,
+    type: FieldType.time,
+    config: {
+      custom: {},
+    },
+    values: new ArrayVector<number>([Date.now()]),
+  };
+
+  return new MutableDataFrame({
+    refId: target.refId,
+    name: 'Service status',
+    fields: [timeFiled, ...valueFields],
+  });
+}
+
+export function handleSLAResponse(itservice, slaProperty, slaObject) {
   const targetSLA = slaObject[itservice.serviceid].sla;
   if (slaProperty === 'status') {
     const targetStatus = parseInt(slaObject[itservice.serviceid].status, 10);

@@ -108,7 +108,7 @@ func (ds *ZabbixDatasourceInstance) queryNumericDataForItems(ctx context.Context
 
 func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, query *QueryModel, series []*timeseries.TimeSeriesData, DBPostProcessing bool) ([]*data.Frame, error) {
 	consolidateBy := ds.getConsolidateBy(query)
-	useTrend := ds.isUseTrend(query.TimeRange)
+	useTrend := ds.isUseTrend(query.TimeRange, query)
 
 	// Sort trend data (in some cases Zabbix API returns it unsorted)
 	if useTrend {
@@ -199,7 +199,7 @@ func (ds *ZabbixDatasourceInstance) getConsolidateBy(query *QueryModel) string {
 
 func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query *QueryModel, items []*zabbix.Item, trendValueType string) (zabbix.History, error) {
 	timeRange := query.TimeRange
-	useTrend := ds.isUseTrend(timeRange)
+	useTrend := ds.isUseTrend(timeRange, query)
 
 	if useTrend {
 		result, err := ds.zabbix.GetTrend(ctx, items, timeRange)
@@ -212,8 +212,8 @@ func (ds *ZabbixDatasourceInstance) getHistotyOrTrend(ctx context.Context, query
 	return ds.zabbix.GetHistory(ctx, items, timeRange)
 }
 
-func (ds *ZabbixDatasourceInstance) isUseTrend(timeRange backend.TimeRange) bool {
-	if !ds.Settings.Trends {
+func (ds *ZabbixDatasourceInstance) isUseTrend(timeRange backend.TimeRange, query *QueryModel) bool {
+	if query.Options.UseTrends == "false" {
 		return false
 	}
 
@@ -223,8 +223,7 @@ func (ds *ZabbixDatasourceInstance) isUseTrend(timeRange backend.TimeRange) bool
 	toSec := timeRange.To.Unix()
 	rangeSec := float64(toSec - fromSec)
 
-	if (fromSec < time.Now().Add(-trendsFrom).Unix()) || (rangeSec > trendsRange.Seconds()) {
-		return true
-	}
-	return false
+	trendTimeRange := (fromSec < time.Now().Add(-trendsFrom).Unix()) || (rangeSec > trendsRange.Seconds())
+	useTrendsToggle := query.Options.UseTrends == "true" || ds.Settings.Trends
+	return trendTimeRange && useTrendsToggle
 }

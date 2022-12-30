@@ -75,9 +75,10 @@ type QueryFilter struct {
 
 // QueryOptions model
 type QueryOptions struct {
-	ShowDisabledItems     bool `json:"showDisabledItems"`
-	DisableDataAlignment  bool `json:"disableDataAlignment"`
-	UseZabbixValueMapping bool `json:"useZabbixValueMapping"`
+	ShowDisabledItems     bool   `json:"showDisabledItems"`
+	DisableDataAlignment  bool   `json:"disableDataAlignment"`
+	UseZabbixValueMapping bool   `json:"useZabbixValueMapping"`
+	UseTrends             string `json:"useTrends"`
 }
 
 // QueryOptions model

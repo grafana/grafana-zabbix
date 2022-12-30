@@ -50,6 +50,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   proxy?: { filter: string };
   trigger?: { filter: string };
   itServiceFilter?: string;
+  slaFilter?: string;
   slaProperty?: any;
   slaInterval?: string;
   tags?: { filter: string };
@@ -70,6 +71,7 @@ export interface ZabbixQueryOptions {
   skipEmptyValues?: boolean;
   disableDataAlignment?: boolean;
   useZabbixValueMapping?: boolean;
+  useTrends?: 'default' | 'true' | 'false';
   // Problems options
   minSeverity?: number;
   sortProblems?: string;

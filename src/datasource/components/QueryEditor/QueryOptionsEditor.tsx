@@ -26,6 +26,12 @@ const sortOptions: Array<SelectableValue<string>> = [
   { label: 'Severity', value: 'severity' },
 ];
 
+const trendsOptions: Array<SelectableValue<string>> = [
+  { label: 'Default', value: 'default' },
+  { label: 'True', value: 'true' },
+  { label: 'False', value: 'false' },
+];
+
 interface Props {
   queryType: string;
   queryOptions: ZabbixQueryOptions;
@@ -93,6 +99,15 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
   const renderMetricOptions = () => {
     return (
       <>
+        <InlineField label="Trends" labelWidth={24}>
+          <Select
+            isSearchable={false}
+            width={16}
+            value={queryOptions.useTrends}
+            options={trendsOptions}
+            onChange={onPropChange('useTrends')}
+          />
+        </InlineField>
         <InlineField label="Show disabled items" labelWidth={24}>
           <InlineSwitch
             value={queryOptions.showDisabledItems}
