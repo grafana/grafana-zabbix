@@ -1,11 +1,10 @@
-import React, { FC, PureComponent } from 'react';
+import React, { PureComponent } from 'react';
 // eslint-disable-next-line
 import moment from 'moment';
 import { TimeRange, DataSourceRef } from '@grafana/data';
 import { Tooltip } from '@grafana/ui';
 import { getDataSourceSrv } from '@grafana/runtime';
-import * as utils from '../../../datasource/utils';
-import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXHost, ZBXTag, ZBXItem } from '../../../datasource/types';
+import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckModal, AckProblemData } from '../AckModal';
 import EventTag from '../EventTag';
@@ -16,6 +15,10 @@ import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController } f
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
 import ProblemStatusBar from './ProblemStatusBar';
 import { RTRow } from '../../types';
+import { ProblemItems } from './ProblemItems';
+import { ProblemHosts, ProblemHostsDescription } from './ProblemHosts';
+import { ProblemGroups } from './ProblemGroups';
+import { ProblemExpression } from './ProblemExpression';
 
 interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   rootWidth: number;
@@ -162,42 +165,24 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
                 {problem.items && <ProblemItems items={problem.items} />}
               </div>
             </div>
-            {problem.items && (
-              <div className="problem-description-row">
-                <div className="problem-description description-delimiter">
-                  <Tooltip placement="right" content={problem.expression}>
-                    <span className="description-label">Expression:&nbsp;</span>
-                  </Tooltip>
-                  <span className="description-expression">{problem.expression}</span>
-                </div>
-              </div>
-            )}
             {problem.comments && (
               <div className="problem-description-row">
-                <div className="problem-description description-delimiter">
+                <div className="problem-description">
                   <Tooltip placement="right" content={problem.comments}>
-                    <span className="description-label">Problem Description:&nbsp;</span>
+                    <span className="description-label">Description:&nbsp;</span>
                   </Tooltip>
                   <span>{problem.comments}</span>
                 </div>
               </div>
             )}
-            {problem.hosts && (
+            {problem.items && (
               <div className="problem-description-row">
-                <div className="problem-description description-delimiter">
-                  <span className="description-label">Host Description:&nbsp;</span>
-                  <ProblemHostsd hosts={problem.hosts} />
-                </div>
+                <ProblemExpression problem={problem} />
               </div>
             )}
-            {problem.tags && (
+            {problem.hosts && (
               <div className="problem-description-row">
-                <div className="problem-description description-delimiter">
-                  <span className="description-label">Jira task:&nbsp;</span>
-                  <span>
-                    {problem.tags && problem.tags.map((tag) => <TaskTag key={tag.tag + tag.value} tag={tag} />)}
-                  </span>
-                </div>
+                <ProblemHostsDescription hosts={problem.hosts} />
               </div>
             )}
             {problem.tags && problem.tags.length > 0 && (
@@ -247,92 +232,11 @@ export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDe
                 <span>{problem.proxy}</span>
               </div>
             )}
-            {problem.groups && <ProblemGroups groups={problem.groups} className="problem-details-right-item" />}
-            {problem.hosts && <ProblemHosts hosts={problem.hosts} className="problem-details-right-item" />}
+            {problem.groups && <ProblemGroups groups={problem.groups} />}
+            {problem.hosts && <ProblemHosts hosts={problem.hosts} />}
           </div>
         </div>
       </div>
     );
-  }
-}
-
-interface ProblemItemProps {
-  item: ZBXItem;
-  showName?: boolean;
-}
-
-function ProblemItem(props: ProblemItemProps) {
-  const { item, showName } = props;
-  const itemName = utils.expandItemName(item.name, item.key_);
-  const tooltipContent = () => (
-    <>
-      {itemName}
-      <br />
-      {item.lastvalue}
-    </>
-  );
-
-  return (
-    <div className="problem-item">
-      <FAIcon icon="thermometer-three-quarters" />
-      {showName && <span className="problem-item-name">{item.name}: </span>}
-      <Tooltip placement="top-start" content={tooltipContent}>
-        <span className="problem-item-value">{item.lastvalue}</span>
-      </Tooltip>
-    </div>
-  );
-}
-
-interface ProblemItemsProps {
-  items: ZBXItem[];
-}
-
-const ProblemItems: FC<ProblemItemsProps> = ({ items }) => {
-  return (
-    <div className="problem-items-row">
-      {items.length > 1 ? (
-        items.map((item) => <ProblemItem item={item} key={item.itemid} showName={true} />)
-      ) : (
-        <ProblemItem item={items[0]} />
-      )}
-    </div>
-  );
-};
-
-interface ProblemGroupsProps {
-  groups: ZBXGroup[];
-  className?: string;
-}
-
-class ProblemGroups extends PureComponent<ProblemGroupsProps> {
-  render() {
-    return this.props.groups.map((g) => (
-      <div className={this.props.className || ''} key={g.groupid}>
-        <FAIcon icon="folder" />
-        <span>{g.name}</span>
-      </div>
-    ));
-  }
-}
-
-interface ProblemHostsProps {
-  hosts: ZBXHost[];
-  className?: string;
-}
-
-class ProblemHosts extends PureComponent<ProblemHostsProps> {
-  render() {
-    return this.props.hosts.map((h) => (
-      <div className={this.props.className || ''} key={h.hostid}>
-        <FAIcon icon="server" />
-        <span>{h.name}</span>
-      </div>
-    ));
-  }
-}
-
-class ProblemHostsd extends PureComponent<ProblemHostsProps> {
-  render() {
-    return this.props.hosts.map((h, i) => <span key={`${h.hostid}-${i}`}>{h.description}</span>);
   }
 }
