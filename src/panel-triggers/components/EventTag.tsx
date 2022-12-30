@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React from 'react';
 import { DataSourceRef } from '@grafana/data';
 import { ZBXTag } from '../../datasource/types';
 
@@ -85,39 +85,35 @@ function djb2(str) {
   return hash;
 }
 
-interface EventTagProps {
+interface Props {
   tag: ZBXTag;
   datasource: DataSourceRef | string;
   highlight?: boolean;
   onClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
-export default class EventTag extends PureComponent<EventTagProps> {
-  handleClick = (event) => {
-    if (this.props.onClick) {
-      const { tag, datasource } = this.props;
-      this.props.onClick(tag, datasource, event.ctrlKey, event.shiftKey);
+export const EventTag = ({ tag, datasource, highlight, onClick }: Props) => {
+  const onClickInternal = (event) => {
+    if (onClick) {
+      onClick(tag, datasource, event.ctrlKey, event.shiftKey);
     }
   };
 
-  render() {
-    const { tag, highlight } = this.props;
-    const tagColor = getTagColorsFromName(tag.tag);
-    const style: React.CSSProperties = {
-      background: tagColor.color,
-      borderColor: tagColor.borderColor,
-    };
-    return (
-      // TODO: show tooltip when click feature is fixed
-      // <Tooltip placement="bottom" content="Click to add tag filter or Ctrl/Shift+click to remove">
-      <span
-        className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
-        style={style}
-        onClick={this.handleClick}
-      >
-        {tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}
-      </span>
-      // </Tooltip>
-    );
-  }
-}
+  const tagColor = getTagColorsFromName(tag.tag);
+  const style: React.CSSProperties = {
+    background: tagColor.color,
+    borderColor: tagColor.borderColor,
+  };
+  return (
+    // TODO: show tooltip when click feature is fixed
+    // <Tooltip placement="bottom" content="Click to add tag filter or Ctrl/Shift+click to remove">
+    <span
+      className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
+      style={style}
+      onClick={onClickInternal}
+    >
+      {tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}
+    </span>
+    // </Tooltip>
+  );
+};
