@@ -2,7 +2,7 @@ const GithubClient = require('./githubClient');
 const fs = require('fs');
 const path = require('path');
 
-const GRAFANA_ZABBIX_OWNER = 'alexanderzobnin';
+const GRAFANA_ZABBIX_OWNER = 'konstantin-kornienko';
 const GRAFANA_ZABBIX_REPO = 'grafana-zabbix';
 
 const github = new GithubClient(GRAFANA_ZABBIX_OWNER, GRAFANA_ZABBIX_REPO, true);
@@ -53,6 +53,7 @@ async function main() {
       releaseCommitHash = releaseTag.commit.sha;
       console.log('Tag found', releaseTag.name, releaseCommitHash);
     } catch (reason) {
+      console.log(reason);
       if (reason.response.status !== 404) {
         // 404 just means no release found. Not an error. Anything else though, re throw the error
         console.error(reason.response.data);
