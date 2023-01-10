@@ -1,5 +1,4 @@
 # Zabbix plugin for Grafana
-test
 
 [![Version](https://badge.fury.io/gh/alexanderzobnin%2Fgrafana-zabbix.svg)](https://github.com/alexanderzobnin/grafana-zabbix/releases)
 [![codecov](https://codecov.io/gh/alexanderzobnin/grafana-zabbix/branch/master/graph/badge.svg)](https://codecov.io/gh/alexanderzobnin/grafana-zabbix)
