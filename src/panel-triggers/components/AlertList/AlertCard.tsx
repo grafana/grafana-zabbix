@@ -128,16 +128,26 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
               )}
               <span className="alert-rule-item__time">{panelOptions.ageField && 'for ' + age}</span>
               {panelOptions.descriptionField && !panelOptions.descriptionAtNewLine && (
-                <span className="zbx-description" dangerouslySetInnerHTML={{ __html: problem.comments }} />
+                <>
+                  {panelOptions.allowDangerousHTML ? (
+                    <span className="zbx-description" dangerouslySetInnerHTML={{ __html: problem.comments }} />
+                  ) : (
+                    <span className="zbx-description">{problem.comments}</span>
+                  )}
+                </>
               )}
             </div>
 
             {panelOptions.descriptionField && panelOptions.descriptionAtNewLine && (
               <div className="alert-rule-item__text zbx-description--newline">
-                <span
-                  className="alert-rule-item__info zbx-description"
-                  dangerouslySetInnerHTML={{ __html: problem.comments }}
-                />
+                {panelOptions.allowDangerousHTML ? (
+                  <span
+                    className="alert-rule-item__info zbx-description"
+                    dangerouslySetInnerHTML={{ __html: problem.comments }}
+                  />
+                ) : (
+                  <span className="alert-rule-item__info zbx-description">{problem.comments}</span>
+                )}
               </div>
             )}
           </div>
