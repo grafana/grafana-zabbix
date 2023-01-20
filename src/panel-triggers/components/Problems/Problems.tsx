@@ -245,6 +245,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
               rootWidth={this.rootWidth}
               timeRange={this.props.timeRange}
               showTimeline={panelOptions.problemTimeline}
+              allowDangerousHTML={panelOptions.allowDangerousHTML}
               panelId={this.props.panelId}
               getProblemEvents={this.props.getProblemEvents}
               getProblemAlerts={this.props.getProblemAlerts}

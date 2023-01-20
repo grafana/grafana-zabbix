@@ -25,6 +25,7 @@ interface Props extends RTRow<ProblemDTO> {
   timeRange: TimeRange;
   showTimeline?: boolean;
   panelId?: number;
+  allowDangerousHTML?: boolean;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
   getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
@@ -39,6 +40,7 @@ export const ProblemDetails = ({
   timeRange,
   showTimeline,
   panelId,
+  allowDangerousHTML,
   getProblemAlerts,
   getProblemEvents,
   getScripts,
@@ -100,13 +102,19 @@ export const ProblemDetails = ({
   const age = moment.unix(problem.timestamp).fromNow(true);
   const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
   const problemSeverity = Number(problem.severity);
+  const styles = useStyles2(getStyles);
 
   let dsName: string = original.datasource as string;
   if ((original.datasource as DataSourceRef)?.uid) {
     const dsInstance = getDataSourceSrv().getInstanceSettings((original.datasource as DataSourceRef).uid);
     dsName = dsInstance.name;
   }
-  const styles = useStyles2(getStyles);
+
+  const problemDescriptionEl = allowDangerousHTML ? (
+    <span dangerouslySetInnerHTML={{ __html: problem.comments }} />
+  ) : (
+    <span>{problem.comments}</span>
+  );
 
   return (
     <div className={`problem-details-container ${displayClass}`}>
@@ -162,22 +170,21 @@ export const ProblemDetails = ({
           </div>
           {problem.comments && (
             <div className="problem-description-row">
-              <div className="problem-description">
-                <Tooltip placement="right" content={<span dangerouslySetInnerHTML={{ __html: problem.comments }} />}>
+              <div className={styles.problemDescription}>
+                <Tooltip placement="right" content={problemDescriptionEl}>
                   <span className="description-label">Description:&nbsp;</span>
                 </Tooltip>
-                {/* <span>{problem.comments}</span> */}
-                <span dangerouslySetInnerHTML={{ __html: problem.comments }} />
+                {problemDescriptionEl}
               </div>
             </div>
           )}
           {problem.items && (
-            <div className="problem-description-row">
+            <div>
               <ProblemExpression problem={problem} />
             </div>
           )}
           {problem.hosts && (
-            <div className="problem-description-row">
+            <div>
               <ProblemHostsDescription hosts={problem.hosts} />
             </div>
           )}
@@ -239,9 +246,27 @@ const getStyles = (theme: GrafanaTheme2) => ({
     position: relative;
     flex: 10 1 auto;
     // padding: 0.5rem 1rem 0.5rem 1.2rem;
-    padding: ${theme.spacing(0.5)} ${theme.spacing(1)} ${theme.spacing(0.5)} ${theme.spacing(1.2)}
+    padding: ${theme.spacing(0.5)} ${theme.spacing(1)} ${theme.spacing(0.5)} ${theme.spacing(1.2)};
     display: flex;
     flex-direction: column;
     // white-space: pre-line;
+    font-size: ${theme.typography.bodySmall.fontSize};
+  `,
+  problemDescription: css`
+    position: relative;
+    max-height: 6rem;
+    min-height: 3rem;
+    overflow: hidden;
+
+    &:after {
+      content: '';
+      text-align: right;
+      position: inherit;
+      bottom: 0;
+      right: 0;
+      width: 70%;
+      height: 1.5rem;
+      background: linear-gradient(to right, rgba(0, 0, 0, 0), ${theme.colors.background.canvas} 50%);
+    }
   `,
 });

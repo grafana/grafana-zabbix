@@ -34,6 +34,7 @@ export interface ProblemsPanelOptions {
   customLastChangeFormat?: boolean;
   lastChangeFormat?: string;
   resizedColumns?: RTResized;
+  allowDangerousHTML: boolean;
   // Triggers severity and colors
   triggerSeverity: TriggerSeverity[];
   okEventColor: TriggerColor;
@@ -81,6 +82,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   customLastChangeFormat: false,
   lastChangeFormat: '',
   resizedColumns: [],
+  allowDangerousHTML: false,
   // Triggers severity and colors
   triggerSeverity: getDefaultSeverity(),
   okEventColor: 'rgb(56, 189, 113)',

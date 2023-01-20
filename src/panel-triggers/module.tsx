@@ -90,6 +90,12 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         },
         showIf: (options) => options.customLastChangeFormat,
       })
+      .addBooleanSwitch({
+        path: 'allowDangerousHTML',
+        name: 'Allow HTML',
+        description: `Format problem description and other data as HTML. Use with caution, it's potential cross-site scripting (XSS) vulnerability.`,
+        defaultValue: defaultPanelOptions.allowDangerousHTML,
+      })
       .addCustomEditor({
         id: 'resetColumns',
         path: 'resizedColumns',
