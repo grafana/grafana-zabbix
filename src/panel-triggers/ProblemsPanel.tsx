@@ -96,7 +96,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     }
 
     // Handle multi-line description
-    if (trigger.comments) {
+    if (trigger.comments && options.allowDangerousHTML) {
       trigger.comments = trigger.comments.replace('\n', '<br>');
     }
 
