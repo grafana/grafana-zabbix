@@ -102,6 +102,7 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         path: 'triggerSeverity',
         name: 'Problem colors',
         editor: ProblemColorEditor,
+        defaultValue: defaultPanelOptions.triggerSeverity,
         category: ['Colors'],
       })
       .addBooleanSwitch({
