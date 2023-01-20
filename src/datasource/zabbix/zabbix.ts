@@ -11,7 +11,7 @@ import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
-import { ProblemDTO, ZabbixMetricsQuery, ZBXItem, ZBXItemTag } from '../types';
+import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger, ZabbixMetricsQuery } from '../types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -26,13 +26,18 @@ const REQUESTS_TO_PROXYFY = [
   'getApps',
   'getItems',
   'getMacros',
+  'getUMacros',
   'getItemsByIDs',
   'getEvents',
   'getAlerts',
   'getHostAlerts',
+  'getUserMacros',
+  'getHostICAlerts',
+  'getHostPCAlerts',
   'getAcknowledges',
   'getITService',
   'getSLA',
+  'getVersion',
   'getProxies',
   'getEventAlerts',
   'getExtendedEventData',
@@ -50,6 +55,7 @@ const REQUESTS_TO_CACHE = [
   'getApps',
   'getItems',
   'getMacros',
+  'getUMacros',
   'getItemsByIDs',
   'getITService',
   'getProxies',
@@ -65,6 +71,9 @@ const REQUESTS_TO_BIND = [
   'getEvents',
   'getAlerts',
   'getHostAlerts',
+  'getUserMacros',
+  'getHostICAlerts',
+  'getHostPCAlerts',
   'getAcknowledges',
   'getITService',
   'acknowledgeEvent',
@@ -91,7 +100,9 @@ export class Zabbix implements ZabbixConnector {
   getItemsByIDs: (itemids) => Promise<any>;
   getEvents: (objectids, timeFrom, timeTo, showEvents, limit?) => Promise<any>;
   getAlerts: (itemids, timeFrom?, timeTo?) => Promise<any>;
-  getHostAlerts: (hostids, applicationids, options?) => Promise<any>;
+  getHostAlerts: (hostids, applicationids, options?) => Promise<ZBXTrigger[]>;
+  getHostICAlerts: (hostids, applicationids, itemids, options?) => Promise<any>;
+  getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
   acknowledgeEvent: (eventid, message) => Promise<any>;
@@ -99,6 +110,7 @@ export class Zabbix implements ZabbixConnector {
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
+  getUserMacros: (hostmacroids) => Promise<any>;
   getValueMappings: () => Promise<any>;
   getSLAList: () => Promise<any>;
 
@@ -251,17 +263,38 @@ export class Zabbix implements ZabbixConnector {
     return this.getItems(...filters, options);
   }
 
-  getHostsFromTarget(target) {
-    const parts = ['group', 'host', 'application'];
+  getMacrosFromTarget(target) {
+    const parts = ['group', 'host', 'macro'];
     const filters = _.map(parts, (p) => target[p].filter);
-    return Promise.all([this.getHosts(...filters), this.getApps(...filters)]).then((results) => {
-      const hosts = results[0];
-      let apps: AppsResponse = results[1];
-      if (apps.appFilterEmpty) {
-        apps = [];
-      }
-      return [hosts, apps];
-    });
+    return this.getUMacros(...filters);
+  }
+
+  async getHostsApsFromTarget(target): Promise<[ZBXHost[], ZBXApp[]]> {
+    const parts = ['group', 'host', 'application'];
+    const filters = parts.map((p) => target[p].filter);
+    const results = await Promise.all([this.getHosts(...filters), this.getApps(...filters)]);
+    const hosts = results[0];
+    let apps: AppsResponse = results[1];
+    if (apps.appFilterEmpty) {
+      apps = [];
+    }
+    return [hosts, apps];
+  }
+
+  async getHostsFromICTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
+    const parts = ['group', 'host', 'application', 'itemTag', 'item'];
+    const filters = parts.map((p) => target[p].filter);
+    const [hosts, apps] = await this.getHostsApsFromTarget(target);
+    const items = await this.getItems(...filters, options);
+    return [hosts, apps, items];
+  }
+
+  async getHostsFromPCTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ProblemDTO[]]> {
+    const parts = ['group', 'host', 'application', 'proxy', 'trigger'];
+    const filters = parts.map((p) => target[p].filter);
+    const [hosts, apps] = await this.getHostsApsFromTarget(target);
+    const problems = await this.getCProblems(...filters, options);
+    return [hosts, apps, problems];
   }
 
   getAllGroups() {
@@ -316,6 +349,17 @@ export class Zabbix implements ZabbixConnector {
         return Promise.resolve(appsResponse);
       }
     });
+  }
+
+  async getAllMacros(groupFilter, hostFilter) {
+    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hostids = hosts?.map((h) => h.hostid);
+    return this.zabbixAPI.getMacros(hostids);
+  }
+
+  async getUMacros(groupFilter?, hostFilter?, macroFilter?) {
+    const allMacros = await this.getAllMacros(groupFilter, hostFilter);
+    return filterByMQuery(allMacros, macroFilter);
   }
 
   async getItemTags(groupFilter?, hostFilter?, itemTagFilter?) {
@@ -480,6 +524,43 @@ export class Zabbix implements ZabbixConnector {
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
+  getCProblems(groupFilter?, hostFilter?, appFilter?, proxyFilter?, triggerFilter?, options?): Promise<ProblemDTO[]> {
+    const promises = [
+      this.getGroups(groupFilter),
+      this.getHosts(groupFilter, hostFilter),
+      this.getApps(groupFilter, hostFilter, appFilter),
+    ];
+
+    return Promise.all(promises)
+      .then((results) => {
+        const [filteredGroups, filteredHosts, filteredApps] = results;
+        const query: any = {};
+
+        if (appFilter) {
+          query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
+        }
+        if (hostFilter && hostFilter !== '/.*/') {
+          query.hostids = _.map(filteredHosts, 'hostid');
+        }
+        if (groupFilter) {
+          query.groupids = _.map(filteredGroups, 'groupid');
+        }
+
+        return query;
+      })
+      .then((query) => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
+      .then((problems) => findByFilter(problems, triggerFilter))
+      .then((problems) => {
+        const triggerids = problems?.map((problem) => problem.objectid);
+        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+      })
+
+      .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
+      .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
+    //.then(triggers => findByFilter(triggers, triggerFilter));
+    // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
+  }
+
   filterTriggersByProxy(triggers, proxyFilter) {
     return this.getFilteredProxies(proxyFilter).then((proxies) => {
       if (proxyFilter && proxyFilter !== '/.*/' && triggers) {
@@ -612,10 +693,26 @@ function filterByName(list, name) {
   }
 }
 
+function filterByMacro(list, name) {
+  const finded = _.filter(list, { macro: name });
+  if (finded) {
+    return finded;
+  } else {
+    return [];
+  }
+}
+
 function filterByRegex(list, regex) {
   const filterPattern = utils.buildRegex(regex);
   return _.filter(list, (zbx_obj) => {
     return filterPattern.test(zbx_obj.name);
+  });
+}
+
+function filterByMRegex(list, regex) {
+  const filterPattern = utils.buildRegex(regex);
+  return _.filter(list, (zbx_obj) => {
+    return filterPattern.test(zbx_obj?.macro);
   });
 }
 
@@ -632,6 +729,14 @@ function filterByQuery(list, filter) {
     return filterByRegex(list, filter);
   } else {
     return filterByName(list, filter);
+  }
+}
+
+function filterByMQuery(list, filter) {
+  if (utils.isRegex(filter)) {
+    return filterByMRegex(list, filter);
+  } else {
+    return filterByMacro(list, filter);
   }
 }
 

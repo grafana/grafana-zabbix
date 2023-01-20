@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { InlineField, InlineFieldRow, Select } from '@grafana/ui';
 import * as c from '../constants';
-import * as migrations from '../migrations';
+import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
 import { ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions } from '../types';
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
@@ -13,6 +13,7 @@ import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
 import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
+import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
 
 const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
@@ -38,29 +39,32 @@ const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
   {
     value: c.MODE_TRIGGERS,
     label: 'Triggers',
-    description: 'Query triggers data',
+    description: 'Count triggers',
   },
   {
     value: c.MODE_PROBLEMS,
     label: 'Problems',
     description: 'Query problems',
   },
+  {
+    value: c.MODE_MACROS,
+    label: 'User macros',
+    description: 'User Macros',
+  },
 ];
 
 const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
+  schema: DS_QUERY_SCHEMA,
   queryType: c.MODE_METRICS,
   group: { filter: '' },
   host: { filter: '' },
   application: { filter: '' },
   itemTag: { filter: '' },
   item: { filter: '' },
+  macro: { filter: '' },
   functions: [],
-  triggers: {
-    count: true,
-    minSeverity: 3,
-    acknowledged: 2,
-  },
   trigger: { filter: '' },
+  countTriggersBy: '',
   tags: { filter: '' },
   proxy: { filter: '' },
   textFilter: '',
@@ -70,6 +74,7 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
     disableDataAlignment: false,
     useZabbixValueMapping: false,
     useTrends: 'default',
+    count: false,
   },
   table: {
     skipEmptyValues: false,
@@ -96,6 +101,7 @@ function getProblemsQueryDefaults(): Partial<ZabbixMetricsQuery> {
       hostProxy: false,
       limit: c.DEFAULT_ZABBIX_PROBLEMS_LIMIT,
       useTimeRange: false,
+      count: false,
     },
   };
 }
@@ -119,7 +125,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
 
   // Migrate query on load
   useEffect(() => {
-    const migratedQuery = migrations.migrate(query);
+    const migratedQuery = migrate(query);
     onChange(migratedQuery);
   }, []);
 
@@ -184,6 +190,10 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
     return <TriggersQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
   };
 
+  const renderUserMacrosEditor = () => {
+    return <UserMacrosQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+  };
+
   return (
     <>
       <InlineFieldRow>
@@ -206,6 +216,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
       {queryType === c.MODE_ITSERVICE && renderITServicesEditor()}
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
+      {queryType === c.MODE_MACROS && renderUserMacrosEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </>
   );

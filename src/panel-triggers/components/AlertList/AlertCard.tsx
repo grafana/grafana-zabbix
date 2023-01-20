@@ -6,7 +6,7 @@ import moment from 'moment';
 import { isNewProblem, formatLastChange } from '../../utils';
 import { ProblemsPanelOptions, TriggerSeverity } from '../../types';
 import { AckProblemData, AckModal } from '../AckModal';
-import EventTag from '../EventTag';
+import { EventTag } from '../EventTag';
 import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
 import { ProblemDTO, ZBXTag } from '../../../datasource/types';

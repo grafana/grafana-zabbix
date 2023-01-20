@@ -2,6 +2,9 @@ import _ from 'lodash';
 import { ZabbixMetricsQuery } from './types';
 import * as c from './constants';
 
+export const DS_QUERY_SCHEMA = 11;
+export const DS_CONFIG_SCHEMA = 3;
+
 /**
  * Query format migration.
  * This module can detect query format version and make migration.
@@ -28,6 +31,7 @@ export function migrateFrom2To3version(target: ZabbixMetricsQuery) {
   target.host.filter = target.host.name === '*' ? convertToRegex(target.hostFilter) : target.host.name;
   target.application.filter = target.application.name === '*' ? '' : target.application.name;
   target.item.filter = target.item.name === 'All' ? convertToRegex(target.itemFilter) : target.item.name;
+  target.macro.filter = target.macro.macro === '*' ? convertToRegex(target.macroFilter) : target.macro.macro;
   return target;
 }
 
@@ -85,6 +89,32 @@ function migrateSLAProperty(target) {
   }
 }
 
+function migrateTriggersMode(target: any) {
+  if (target.triggers?.minSeverity) {
+    target.options.minSeverity = target.triggers?.minSeverity;
+    delete target.triggers.minSeverity;
+  }
+  if (target.triggers?.count) {
+    target.options.count = target.triggers?.count;
+    delete target.triggers.count;
+  }
+}
+
+function migrateNewTriggersCountModes(target: any) {
+  if (target.schema >= 11) {
+    return;
+  }
+  if (target.queryType === '6') {
+    target.queryType = c.MODE_TRIGGERS;
+    target.countTriggersBy = 'items';
+  } else if (target.queryType === '7') {
+    target.queryType = c.MODE_TRIGGERS;
+    target.countTriggersBy = 'problems';
+  } else if (target.queryType === '8') {
+    target.queryType = c.MODE_MACROS;
+  }
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -97,6 +127,10 @@ export function migrate(target) {
   migrateProblemSort(target);
   migrateApplications(target);
   migrateSLAProperty(target);
+  migrateTriggersMode(target);
+  migrateNewTriggersCountModes(target);
+
+  target.schema = DS_QUERY_SCHEMA;
   return target;
 }
 
@@ -114,8 +148,6 @@ function convertToRegex(str) {
     return '/.*/';
   }
 }
-
-export const DS_CONFIG_SCHEMA = 3;
 
 export function migrateDSConfig(jsonData) {
   if (!jsonData) {

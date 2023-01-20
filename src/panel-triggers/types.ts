@@ -41,7 +41,7 @@ export interface ProblemsPanelOptions {
   markAckEvents?: boolean;
 }
 
-export const DEFAULT_SEVERITY = [
+export const DEFAULT_SEVERITY: TriggerSeverity[] = [
   { priority: 0, severity: 'Not classified', color: 'rgb(108, 108, 108)', show: true },
   { priority: 1, severity: 'Information', color: 'rgb(120, 158, 183)', show: true },
   { priority: 2, severity: 'Warning', color: 'rgb(175, 180, 36)', show: true },

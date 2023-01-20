@@ -3,7 +3,15 @@ import _ from 'lodash';
 import moment from 'moment';
 import * as c from './constants';
 import { VariableQuery, VariableQueryTypes, ZBXItemTag } from './types';
-import { DataFrame, FieldType, getValueFormats, MappingType, rangeUtil, ValueMapping } from '@grafana/data';
+import {
+  DataFrame,
+  FieldType,
+  getValueFormats,
+  MappingType,
+  rangeUtil,
+  TIME_SERIES_TIME_FIELD_NAME,
+  ValueMapping,
+} from '@grafana/data';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier
@@ -505,6 +513,14 @@ export function isProblemsDataFrame(data: DataFrame): boolean {
   return (
     data.fields.length && data.fields[0].type === FieldType.other && data.fields[0].config.custom['type'] === 'problems'
   );
+}
+
+export function isMacrosDataFrame(data: DataFrame): boolean {
+  return data.name === 'macros';
+}
+
+export function nonTimeSeriesDataFrame(data: DataFrame): boolean {
+  return !data.fields.find((f) => f.type === FieldType.time || f.name === TIME_SERIES_TIME_FIELD_NAME);
 }
 
 // Swap n and k elements.

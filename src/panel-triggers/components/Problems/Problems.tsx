@@ -5,7 +5,7 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import { isNewProblem } from '../../utils';
-import EventTag from '../EventTag';
+import { EventTag } from '../EventTag';
 import { ProblemDetails } from './ProblemDetails';
 import { AckProblemData } from '../AckModal';
 import { FAIcon, GFHeartIcon } from '../../../components';
@@ -173,7 +173,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         Cell: statusIconCell,
       },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
-      { Header: 'Problem', accessor: 'description', minWidth: 200, Cell: ProblemCell },
+      { Header: 'Problem', accessor: 'name', minWidth: 200, Cell: ProblemCell },
       {
         Header: 'Ack',
         id: 'ack',

@@ -4,6 +4,7 @@ import { ColorPicker, InlineField, InlineFieldRow, InlineLabel, InlineSwitch, In
 import { TriggerSeverity } from '../types';
 
 type Props = StandardEditorProps<TriggerSeverity[]>;
+
 export const ProblemColorEditor = ({ value, onChange }: Props): JSX.Element => {
   const onSeverityItemChange = (severity: TriggerSeverity) => {
     value.forEach((v, i) => {

@@ -82,3 +82,8 @@ sign-package:
 	yarn sign
 
 package: install dist sign-package
+
+zip:
+	cp -r dist/ alexanderzobnin-zabbix-app
+	zip -r alexanderzobnin-zabbix-app.zip alexanderzobnin-zabbix-app
+	rm -rf alexanderzobnin-zabbix-app

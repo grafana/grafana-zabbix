@@ -3,7 +3,7 @@ import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
-import { ShowProblemTypes, ZBXProblem } from '../../../types';
+import { ShowProblemTypes, ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
@@ -225,6 +225,15 @@ export class ZabbixAPIConnector {
       hostids: hostids,
     };
 
+    return this.request('usermacro.get', params);
+  }
+
+  getUserMacros(hostmacroids) {
+    const params = {
+      output: 'extend',
+      hostmacroids: hostmacroids,
+      selectHosts: ['hostid', 'name'],
+    };
     return this.request('usermacro.get', params);
   }
 
@@ -506,10 +515,11 @@ export class ZabbixAPIConnector {
       expandDescription: true,
       expandData: true,
       expandComment: true,
+      expandExpression: true,
       monitored: true,
       skipDependent: true,
       selectGroups: ['name', 'groupid'],
-      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid'],
+      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid', 'description'],
       selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       // selectLastEvent: 'extend',
       // selectTags: 'extend',
@@ -680,7 +690,7 @@ export class ZabbixAPIConnector {
     return this.request('trigger.get', params);
   }
 
-  getHostAlerts(hostids, applicationids, options) {
+  async getHostAlerts(hostids, applicationids, options): Promise<ZBXTrigger[]> {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
     const params: any = {
       output: 'extend',
@@ -695,6 +705,100 @@ export class ZabbixAPIConnector {
       selectLastEvent: 'extend',
       selectGroups: 'extend',
       selectHosts: ['hostid', 'host', 'name'],
+    };
+
+    if (count && acknowledged !== 1) {
+      params.countOutput = true;
+      if (acknowledged === 0) {
+        params.withLastEventUnacknowledged = true;
+      }
+    }
+
+    if (applicationids && applicationids.length) {
+      params.applicationids = applicationids;
+    }
+
+    if (timeFrom || timeTo) {
+      params.lastChangeSince = timeFrom;
+      params.lastChangeTill = timeTo;
+    }
+
+    let triggers = await this.request('trigger.get', params);
+    if (!count || acknowledged === 1) {
+      triggers = filterTriggersByAcknowledge(triggers, acknowledged);
+      if (count) {
+        triggers = triggers.length;
+      }
+    }
+    return triggers;
+  }
+
+  getHostICAlerts(hostids, applicationids, itemids, options) {
+    const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
+    const params: any = {
+      output: 'extend',
+      hostids: hostids,
+      min_severity: minSeverity,
+      filter: { value: 1 },
+      expandDescription: true,
+      expandData: true,
+      expandComment: true,
+      monitored: true,
+      skipDependent: true,
+      selectLastEvent: 'extend',
+      selectGroups: 'extend',
+      selectHosts: ['host', 'name'],
+      selectItems: ['name', 'key_'],
+    };
+
+    if (count && acknowledged !== 1) {
+      params.countOutput = true;
+      if (acknowledged === 0) {
+        params.withLastEventUnacknowledged = true;
+      }
+    }
+
+    if (applicationids && applicationids.length) {
+      params.applicationids = applicationids;
+    }
+
+    if (itemids && itemids.length) {
+      params.itemids = itemids;
+    }
+
+    if (timeFrom || timeTo) {
+      params.lastChangeSince = timeFrom;
+      params.lastChangeTill = timeTo;
+    }
+
+    return this.request('trigger.get', params).then((triggers) => {
+      if (!count || acknowledged === 1) {
+        triggers = filterTriggersByAcknowledge(triggers, acknowledged);
+        if (count) {
+          triggers = triggers.length;
+        }
+      }
+      return triggers;
+    });
+  }
+
+  getHostPCAlerts(hostids, applicationids, triggerids, options) {
+    const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
+    const params: any = {
+      output: 'extend',
+      hostids: hostids,
+      triggerids: triggerids,
+      min_severity: minSeverity,
+      filter: { value: 1 },
+      expandDescription: true,
+      expandData: true,
+      expandComment: true,
+      monitored: true,
+      skipDependent: true,
+      selectLastEvent: 'extend',
+      selectGroups: 'extend',
+      selectHosts: ['host', 'name'],
+      selectItems: ['name', 'key_'],
     };
 
     if (count && acknowledged !== 0 && acknowledged !== 1) {

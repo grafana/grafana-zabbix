@@ -34,17 +34,19 @@ export interface ZabbixConnectionTestQuery {
 }
 
 export interface ZabbixMetricsQuery extends DataQuery {
+  schema: number;
   queryType: string;
-  datasourceId?: number;
-  group?: { filter: string; name?: string };
-  host?: { filter: string; name?: string };
-  application?: { filter: string; name?: string };
-  itemTag?: { filter: string; name?: string };
-  item?: { filter: string; name?: string };
-  textFilter?: string;
-  mode?: number;
-  itemids?: string;
-  useCaptureGroups?: boolean;
+  datasourceId: number;
+  group: { filter: string; name?: string };
+  host: { filter: string; name?: string };
+  application: { filter: string; name?: string };
+  itemTag: { filter: string; name?: string };
+  item: { filter: string; name?: string };
+  macro: { filter: string; macro?: string };
+  textFilter: string;
+  mode: number;
+  itemids: string;
+  useCaptureGroups: boolean;
   proxy?: { filter: string };
   trigger?: { filter: string };
   itServiceFilter?: string;
@@ -53,6 +55,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   slaInterval?: string;
   tags?: { filter: string };
   triggers?: { minSeverity: number; acknowledged: number; count: boolean };
+  countTriggersBy?: 'problems' | 'items' | '';
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
   // Problems
@@ -60,6 +63,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   // Deprecated
   hostFilter?: string;
   itemFilter?: string;
+  macroFilter?: string;
 }
 
 export interface ZabbixQueryOptions {
@@ -77,6 +81,7 @@ export interface ZabbixQueryOptions {
   limit?: number;
   useTimeRange?: boolean;
   severities?: number[];
+  count?: boolean;
 
   // Annotations
   showOkEvents?: boolean;
@@ -186,6 +191,7 @@ export interface VariableQuery {
   application?: string;
   itemTag?: string;
   item?: string;
+  macro?: string;
 }
 
 export type LegacyVariableQuery = VariableQuery | string;
@@ -194,6 +200,7 @@ export enum VariableQueryTypes {
   Group = 'group',
   Host = 'host',
   Application = 'application',
+  Macro = 'macro',
   ItemTag = 'itemTag',
   Item = 'item',
   ItemValues = 'itemValues',
@@ -330,6 +337,7 @@ export interface ZBXHost {
   maintenance_status?: string;
   proxy_hostid?: string;
   proxy?: any;
+  description?: string;
 }
 
 export interface ZBXItem {
@@ -338,6 +346,13 @@ export interface ZBXItem {
   key_: string;
   lastvalue?: string;
   tags?: ZBXItemTag[];
+}
+
+export interface ZBXApp {
+  applicationid: string;
+  hostid: string;
+  name: string;
+  templateids?: string;
 }
 
 export interface ZBXItemTag {

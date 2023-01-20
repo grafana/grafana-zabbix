@@ -201,6 +201,12 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
             onChange={onPropChange('acknowledged')}
           />
         </InlineField>
+        <InlineField label="Use time range" labelWidth={24}>
+          <InlineSwitch
+            value={queryOptions.useTimeRange}
+            onChange={() => onChange({ ...queryOptions, useTimeRange: !queryOptions.useTimeRange })}
+          />
+        </InlineField>
       </>
     );
   };

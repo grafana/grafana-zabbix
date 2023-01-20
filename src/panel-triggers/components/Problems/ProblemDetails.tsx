@@ -1,22 +1,26 @@
-import React, { FC, PureComponent } from 'react';
+import React, { useState, useEffect } from 'react';
+import { css } from '@emotion/css';
 // eslint-disable-next-line
 import moment from 'moment';
-import { TimeRange, DataSourceRef } from '@grafana/data';
-import { Tooltip } from '@grafana/ui';
+import { TimeRange, DataSourceRef, GrafanaTheme2 } from '@grafana/data';
+import { Tooltip, useStyles2 } from '@grafana/ui';
 import { getDataSourceSrv } from '@grafana/runtime';
-import * as utils from '../../../datasource/utils';
-import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXHost, ZBXTag, ZBXItem } from '../../../datasource/types';
+import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckModal, AckProblemData } from '../AckModal';
-import EventTag from '../EventTag';
+import { EventTag } from '../EventTag';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
 import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController } from '../../../components';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
 import ProblemStatusBar from './ProblemStatusBar';
 import { RTRow } from '../../types';
+import { ProblemItems } from './ProblemItems';
+import { ProblemHosts, ProblemHostsDescription } from './ProblemHosts';
+import { ProblemGroups } from './ProblemGroups';
+import { ProblemExpression } from './ProblemExpression';
 
-interface ProblemDetailsProps extends RTRow<ProblemDTO> {
+interface Props extends RTRow<ProblemDTO> {
   rootWidth: number;
   timeRange: TimeRange;
   showTimeline?: boolean;
@@ -24,280 +28,220 @@ interface ProblemDetailsProps extends RTRow<ProblemDTO> {
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
   getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
-
   onExecuteScript(problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse>;
-
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
-interface ProblemDetailsState {
-  events: ZBXEvent[];
-  alerts: ZBXAlert[];
-  show: boolean;
-}
+export const ProblemDetails = ({
+  original,
+  rootWidth,
+  timeRange,
+  showTimeline,
+  panelId,
+  getProblemAlerts,
+  getProblemEvents,
+  getScripts,
+  onExecuteScript,
+  onProblemAck,
+  onTagClick,
+}: Props) => {
+  const [events, setEvents] = useState([]);
+  const [alerts, setAletrs] = useState([]);
+  const [show, setShow] = useState(false);
 
-export class ProblemDetails extends PureComponent<ProblemDetailsProps, ProblemDetailsState> {
-  constructor(props) {
-    super(props);
-    this.state = {
-      events: [],
-      alerts: [],
-      show: false,
-    };
-  }
-
-  componentDidMount() {
-    if (this.props.showTimeline) {
-      this.fetchProblemEvents();
+  useEffect(() => {
+    if (showTimeline) {
+      fetchProblemEvents();
     }
-    this.fetchProblemAlerts();
+    fetchProblemAlerts();
     requestAnimationFrame(() => {
-      this.setState({ show: true });
+      setShow(true);
     });
-  }
+  }, []);
 
-  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
-    if (this.props.onTagClick) {
-      this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
+  const fetchProblemEvents = async () => {
+    const problem = original;
+    const events = await getProblemEvents(problem);
+    setEvents(events);
+  };
+
+  const fetchProblemAlerts = async () => {
+    const problem = original;
+    const alerts = await getProblemAlerts(problem);
+    setAletrs(alerts);
+  };
+
+  const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
+    if (onTagClick) {
+      onTagClick(tag, datasource, ctrlKey, shiftKey);
     }
   };
 
-  fetchProblemEvents() {
-    const problem = this.props.original;
-    this.props.getProblemEvents(problem).then((events) => {
-      this.setState({ events });
-    });
+  const ackProblem = (data: AckProblemData) => {
+    const problem = original as ProblemDTO;
+    return onProblemAck(problem, data);
+  };
+
+  const getScriptsInternal = () => {
+    const problem = original as ProblemDTO;
+    return getScripts(problem);
+  };
+
+  const onExecuteScriptInternal = (data: ExecScriptData) => {
+    const problem = original as ProblemDTO;
+    return onExecuteScript(problem, data.scriptid);
+  };
+
+  const problem = original as ProblemDTO;
+  const displayClass = show ? 'show' : '';
+  const wideLayout = rootWidth > 1200;
+  const compactStatusBar = rootWidth < 800 || (problem.acknowledges && wideLayout && rootWidth < 1400);
+  const age = moment.unix(problem.timestamp).fromNow(true);
+  const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
+  const problemSeverity = Number(problem.severity);
+
+  let dsName: string = original.datasource as string;
+  if ((original.datasource as DataSourceRef)?.uid) {
+    const dsInstance = getDataSourceSrv().getInstanceSettings((original.datasource as DataSourceRef).uid);
+    dsName = dsInstance.name;
   }
+  const styles = useStyles2(getStyles);
 
-  fetchProblemAlerts() {
-    const problem = this.props.original;
-    this.props.getProblemAlerts(problem).then((alerts) => {
-      this.setState({ alerts });
-    });
-  }
-
-  ackProblem = (data: AckProblemData) => {
-    const problem = this.props.original as ProblemDTO;
-    return this.props.onProblemAck(problem, data);
-  };
-
-  getScripts = () => {
-    const problem = this.props.original as ProblemDTO;
-    return this.props.getScripts(problem);
-  };
-
-  onExecuteScript = (data: ExecScriptData) => {
-    const problem = this.props.original as ProblemDTO;
-    return this.props.onExecuteScript(problem, data.scriptid);
-  };
-
-  render() {
-    const problem = this.props.original as ProblemDTO;
-    const alerts = this.state.alerts;
-    const { rootWidth, panelId, timeRange } = this.props;
-    const displayClass = this.state.show ? 'show' : '';
-    const wideLayout = rootWidth > 1200;
-    const compactStatusBar = rootWidth < 800 || (problem.acknowledges && wideLayout && rootWidth < 1400);
-    const age = moment.unix(problem.timestamp).fromNow(true);
-    const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
-    const problemSeverity = Number(problem.severity);
-
-    let dsName: string = this.props.original.datasource as string;
-    if ((this.props.original.datasource as DataSourceRef)?.uid) {
-      const dsInstance = getDataSourceSrv().getInstanceSettings((this.props.original.datasource as DataSourceRef).uid);
-      dsName = dsInstance.name;
-    }
-
-    return (
-      <div className={`problem-details-container ${displayClass}`}>
-        <div className="problem-details-body">
-          <div className="problem-details">
-            <div className="problem-details-head">
-              <div className="problem-actions-left">
-                <ExploreButton problem={problem} panelId={panelId} range={timeRange} />
-              </div>
-              {problem.showAckButton && (
-                <div className="problem-actions">
-                  <ModalController>
-                    {({ showModal, hideModal }) => (
-                      <ExecScriptButton
-                        className="problem-action-button"
-                        onClick={() => {
-                          showModal(ExecScriptModal, {
-                            getScripts: this.getScripts,
-                            onSubmit: this.onExecuteScript,
-                            onDismiss: hideModal,
-                          });
-                        }}
-                      />
-                    )}
-                  </ModalController>
-                  <ModalController>
-                    {({ showModal, hideModal }) => (
-                      <AckButton
-                        className="problem-action-button"
-                        onClick={() => {
-                          showModal(AckModal, {
-                            canClose: problem.manual_close === '1',
-                            severity: problemSeverity,
-                            onSubmit: this.ackProblem,
-                            onDismiss: hideModal,
-                          });
-                        }}
-                      />
-                    )}
-                  </ModalController>
-                </div>
-              )}
-              <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
+  return (
+    <div className={`problem-details-container ${displayClass}`}>
+      <div className="problem-details-body">
+        <div className={styles.problemDetails}>
+          <div className="problem-details-head">
+            <div className="problem-actions-left">
+              <ExploreButton problem={problem} panelId={panelId} range={timeRange} />
             </div>
-            <div className="problem-details-row">
-              <div className="problem-value-container">
-                <div className="problem-age">
-                  <FAIcon icon="clock-o" />
-                  <span>{age}</span>
-                </div>
-                {problem.items && <ProblemItems items={problem.items} />}
-              </div>
-            </div>
-            {problem.comments && (
-              <div className="problem-description-row">
-                <div className="problem-description">
-                  <Tooltip placement="right" content={problem.comments}>
-                    <span className="description-label">Description:&nbsp;</span>
-                  </Tooltip>
-                  <span>{problem.comments}</span>
-                </div>
-              </div>
-            )}
-            {problem.tags && problem.tags.length > 0 && (
-              <div className="problem-tags">
-                {problem.tags &&
-                  problem.tags.map((tag) => (
-                    <EventTag
-                      key={tag.tag + tag.value}
-                      tag={tag}
-                      datasource={problem.datasource}
-                      highlight={tag.tag === problem.correlation_tag}
-                      onClick={this.handleTagClick}
+            {problem.showAckButton && (
+              <div className="problem-actions">
+                <ModalController>
+                  {({ showModal, hideModal }) => (
+                    <ExecScriptButton
+                      className="problem-action-button"
+                      onClick={() => {
+                        showModal(ExecScriptModal, {
+                          getScripts: getScriptsInternal,
+                          onSubmit: onExecuteScriptInternal,
+                          onDismiss: hideModal,
+                        });
+                      }}
                     />
-                  ))}
+                  )}
+                </ModalController>
+                <ModalController>
+                  {({ showModal, hideModal }) => (
+                    <AckButton
+                      className="problem-action-button"
+                      onClick={() => {
+                        showModal(AckModal, {
+                          canClose: problem.manual_close === '1',
+                          severity: problemSeverity,
+                          onSubmit: ackProblem,
+                          onDismiss: hideModal,
+                        });
+                      }}
+                    />
+                  )}
+                </ModalController>
               </div>
             )}
-            {this.props.showTimeline && this.state.events.length > 0 && (
-              <ProblemTimeline events={this.state.events} timeRange={this.props.timeRange} />
-            )}
-            {showAcknowledges && !wideLayout && (
-              <div className="problem-ack-container">
-                <h6>
-                  <FAIcon icon="reply-all" /> Acknowledges
-                </h6>
-                <AcknowledgesList acknowledges={problem.acknowledges} />
-              </div>
-            )}
+            <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
           </div>
-          {showAcknowledges && wideLayout && (
-            <div className="problem-details-middle">
-              <div className="problem-ack-container">
-                <h6>
-                  <FAIcon icon="reply-all" /> Acknowledges
-                </h6>
-                <AcknowledgesList acknowledges={problem.acknowledges} />
+          <div className="problem-details-row">
+            <div className="problem-value-container">
+              <div className="problem-age">
+                <FAIcon icon="clock-o" />
+                <span>{age}</span>
+              </div>
+              {problem.items && <ProblemItems items={problem.items} />}
+            </div>
+          </div>
+          {problem.comments && (
+            <div className="problem-description-row">
+              <div className="problem-description">
+                <Tooltip placement="right" content={<span dangerouslySetInnerHTML={{ __html: problem.comments }} />}>
+                  <span className="description-label">Description:&nbsp;</span>
+                </Tooltip>
+                {/* <span>{problem.comments}</span> */}
+                <span dangerouslySetInnerHTML={{ __html: problem.comments }} />
               </div>
             </div>
           )}
-          <div className="problem-details-right">
-            <div className="problem-details-right-item">
-              <FAIcon icon="database" />
-              <span>{dsName}</span>
+          {problem.items && (
+            <div className="problem-description-row">
+              <ProblemExpression problem={problem} />
             </div>
-            {problem.proxy && (
-              <div className="problem-details-right-item">
-                <FAIcon icon="cloud" />
-                <span>{problem.proxy}</span>
-              </div>
-            )}
-            {problem.groups && <ProblemGroups groups={problem.groups} className="problem-details-right-item" />}
-            {problem.hosts && <ProblemHosts hosts={problem.hosts} className="problem-details-right-item" />}
+          )}
+          {problem.hosts && (
+            <div className="problem-description-row">
+              <ProblemHostsDescription hosts={problem.hosts} />
+            </div>
+          )}
+          {problem.tags && problem.tags.length > 0 && (
+            <div className="problem-tags">
+              {problem.tags &&
+                problem.tags.map((tag) => (
+                  <EventTag
+                    key={tag.tag + tag.value}
+                    tag={tag}
+                    datasource={problem.datasource}
+                    highlight={tag.tag === problem.correlation_tag}
+                    onClick={handleTagClick}
+                  />
+                ))}
+            </div>
+          )}
+          {showTimeline && events.length > 0 && <ProblemTimeline events={events} timeRange={timeRange} />}
+          {showAcknowledges && !wideLayout && (
+            <div className="problem-ack-container">
+              <h6>
+                <FAIcon icon="reply-all" /> Acknowledges
+              </h6>
+              <AcknowledgesList acknowledges={problem.acknowledges} />
+            </div>
+          )}
+        </div>
+        {showAcknowledges && wideLayout && (
+          <div className="problem-details-middle">
+            <div className="problem-ack-container">
+              <h6>
+                <FAIcon icon="reply-all" /> Acknowledges
+              </h6>
+              <AcknowledgesList acknowledges={problem.acknowledges} />
+            </div>
           </div>
+        )}
+        <div className="problem-details-right">
+          <div className="problem-details-right-item">
+            <FAIcon icon="database" />
+            <span>{dsName}</span>
+          </div>
+          {problem.proxy && (
+            <div className="problem-details-right-item">
+              <FAIcon icon="cloud" />
+              <span>{problem.proxy}</span>
+            </div>
+          )}
+          {problem.groups && <ProblemGroups groups={problem.groups} />}
+          {problem.hosts && <ProblemHosts hosts={problem.hosts} />}
         </div>
       </div>
-    );
-  }
-}
-
-interface ProblemItemProps {
-  item: ZBXItem;
-  showName?: boolean;
-}
-
-function ProblemItem(props: ProblemItemProps) {
-  const { item, showName } = props;
-  const itemName = utils.expandItemName(item.name, item.key_);
-  const tooltipContent = () => (
-    <>
-      {itemName}
-      <br />
-      {item.lastvalue}
-    </>
-  );
-
-  return (
-    <div className="problem-item">
-      <FAIcon icon="thermometer-three-quarters" />
-      {showName && <span className="problem-item-name">{item.name}: </span>}
-      <Tooltip placement="top-start" content={tooltipContent}>
-        <span className="problem-item-value">{item.lastvalue}</span>
-      </Tooltip>
-    </div>
-  );
-}
-
-interface ProblemItemsProps {
-  items: ZBXItem[];
-}
-
-const ProblemItems: FC<ProblemItemsProps> = ({ items }) => {
-  return (
-    <div className="problem-items-row">
-      {items.length > 1 ? (
-        items.map((item) => <ProblemItem item={item} key={item.itemid} showName={true} />)
-      ) : (
-        <ProblemItem item={items[0]} />
-      )}
     </div>
   );
 };
 
-interface ProblemGroupsProps {
-  groups: ZBXGroup[];
-  className?: string;
-}
-
-class ProblemGroups extends PureComponent<ProblemGroupsProps> {
-  render() {
-    return this.props.groups.map((g) => (
-      <div className={this.props.className || ''} key={g.groupid}>
-        <FAIcon icon="folder" />
-        <span>{g.name}</span>
-      </div>
-    ));
-  }
-}
-
-interface ProblemHostsProps {
-  hosts: ZBXHost[];
-  className?: string;
-}
-
-class ProblemHosts extends PureComponent<ProblemHostsProps> {
-  render() {
-    return this.props.hosts.map((h) => (
-      <div className={this.props.className || ''} key={h.hostid}>
-        <FAIcon icon="server" />
-        <span>{h.name}</span>
-      </div>
-    ));
-  }
-}
+const getStyles = (theme: GrafanaTheme2) => ({
+  problemDetails: css`
+    position: relative;
+    flex: 10 1 auto;
+    // padding: 0.5rem 1rem 0.5rem 1.2rem;
+    padding: ${theme.spacing(0.5)} ${theme.spacing(1)} ${theme.spacing(0.5)} ${theme.spacing(1.2)}
+    display: flex;
+    flex-direction: column;
+    // white-space: pre-line;
+  `,
+});

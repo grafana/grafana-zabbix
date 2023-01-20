@@ -241,10 +241,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         return this.queryITServiceData(target, timeRange, request);
       } else if (target.queryType === c.MODE_TRIGGERS) {
         // Triggers query
-        return this.queryTriggersData(target, timeRange);
+        return this.queryTriggersData(target, timeRange, request);
       } else if (target.queryType === c.MODE_PROBLEMS) {
         // Problems query
         return this.queryProblems(target, timeRange, request);
+      } else if (target.queryType === c.MODE_MACROS) {
+        // UserMacro query
+        return this.queryUserMacrosData(target);
       } else {
         return [];
       }
@@ -254,7 +257,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return Promise.all(_.flatten(promises))
       .then(_.flatten)
       .then((data) => {
-        if (data && data.length > 0 && isDataFrame(data[0]) && !utils.isProblemsDataFrame(data[0])) {
+        if (
+          data &&
+          data.length > 0 &&
+          isDataFrame(data[0]) &&
+          !utils.isProblemsDataFrame(data[0]) &&
+          !utils.isMacrosDataFrame(data[0]) &&
+          !utils.nonTimeSeriesDataFrame(data[0])
+        ) {
           data = responseHandler.alignFrames(data);
           if (responseHandler.isConvertibleToWide(data)) {
             console.log('Converting response to the wide format');
@@ -504,31 +514,120 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return this.handleBackendPostProcessingResponse(processedResponse, request, target);
   }
 
-  queryTriggersData(target, timeRange) {
+  async queryUserMacrosData(target) {
+    const groupFilter = target.group.filter;
+    const hostFilter = target.host.filter;
+    const macroFilter = target.macro.filter;
+    const macros = await this.zabbix.getUMacros(groupFilter, hostFilter, macroFilter);
+    const hostmacroids = _.map(macros, 'hostmacroid');
+    const userMacros = await this.zabbix.getUserMacros(hostmacroids);
+    return responseHandler.handleMacro(userMacros, target);
+  }
+
+  async queryTriggersData(target: ZabbixMetricsQuery, timeRange, request) {
+    if (target.countTriggersBy === 'items') {
+      return this.queryTriggersICData(target, timeRange);
+    } else if (target.countTriggersBy === 'problems') {
+      return this.queryTriggersPCData(target, timeRange, request);
+    }
+
+    const [hosts, apps] = await this.zabbix.getHostsApsFromTarget(target);
+    if (!hosts.length) {
+      return Promise.resolve([]);
+    }
+
+    const groupFilter = target.group.filter;
+    const groups = await this.zabbix.getGroups(groupFilter);
+
+    const hostids = hosts?.map((h) => h.hostid);
+    const appids = apps?.map((a) => a.applicationid);
+    const options = getTriggersOptions(target, timeRange);
+    const alerts = await this.zabbix.getHostAlerts(hostids, appids, options);
+    return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
+  }
+
+  async queryTriggersICData(target, timeRange) {
+    const getItemOptions = { itemtype: 'num' };
+    const [hosts, apps, items] = await this.zabbix.getHostsFromICTarget(target, getItemOptions);
+    if (!hosts.length) {
+      return Promise.resolve([]);
+    }
+
+    const groupFilter = target.group.filter;
+    const groups = await this.zabbix.getGroups(groupFilter);
+
+    const hostids = hosts?.map((h) => h.hostid);
+    const appids = apps?.map((a) => a.applicationid);
+    const itemids = items?.map((i) => i.itemid);
+    if (!itemids.length) {
+      return Promise.resolve([]);
+    }
+
+    const options = getTriggersOptions(target, timeRange);
+    const alerts = await this.zabbix.getHostICAlerts(hostids, appids, itemids, options);
+    return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
+  }
+
+  async queryTriggersPCData(target: ZabbixMetricsQuery, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
-    return this.zabbix.getHostsFromTarget(target).then((results) => {
-      const [hosts, apps] = results;
-      if (hosts.length) {
-        const hostids = _.map(hosts, 'hostid');
-        const appids = _.map(apps, 'applicationid');
-        const options = {
-          minSeverity: target.triggers.minSeverity,
-          acknowledged: target.triggers.acknowledged,
-          count: target.triggers.count,
-          timeFrom: timeFrom,
-          timeTo: timeTo,
-        };
-        const groupFilter = target.group.filter;
-        return Promise.all([
-          this.zabbix.getHostAlerts(hostids, appids, options),
-          this.zabbix.getGroups(groupFilter),
-        ]).then(([triggers, groups]) => {
-          return responseHandler.handleTriggersResponse(triggers, groups, timeRange);
-        });
-      } else {
-        return Promise.resolve([]);
-      }
+    const tagsFilter = this.replaceTemplateVars(target.tags?.filter, request.scopedVars);
+    // replaceTemplateVars() builds regex-like string, so we should trim it.
+    const tagsFilterStr = tagsFilter.replace('/^', '').replace('$/', '');
+    const tags = utils.parseTags(tagsFilterStr);
+    tags.forEach((tag) => {
+      // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
+      tag.operator = 1;
     });
+
+    const problemsOptions: any = {
+      minSeverity: target.options?.minSeverity,
+      limit: target.options?.limit,
+    };
+
+    if (tags && tags.length) {
+      problemsOptions.tags = tags;
+    }
+
+    if (target.options?.acknowledged === 0 || target.options?.acknowledged === 1) {
+      problemsOptions.acknowledged = target.options?.acknowledged ? true : false;
+    }
+
+    if (target.options?.minSeverity) {
+      let severities = [0, 1, 2, 3, 4, 5].filter((v) => v >= target.options?.minSeverity);
+      if (target.options?.severities) {
+        severities = severities.filter((v) => target.options?.severities.includes(v));
+      }
+      problemsOptions.severities = severities;
+    }
+
+    if (target.options.useTimeRange) {
+      problemsOptions.timeFrom = timeFrom;
+      problemsOptions.timeTo = timeTo;
+    }
+
+    const [hosts, apps, triggers] = await this.zabbix.getHostsFromPCTarget(target, problemsOptions);
+    if (!hosts.length) {
+      return Promise.resolve([]);
+    }
+
+    const groupFilter = target.group.filter;
+    const groups = await this.zabbix.getGroups(groupFilter);
+
+    const hostids = hosts?.map((h) => h.hostid);
+    const appids = apps?.map((a) => a.applicationid);
+    const triggerids = triggers.map((t) => t.triggerid);
+    const options: any = {
+      minSeverity: target.options?.minSeverity,
+      acknowledged: target.options?.acknowledged,
+      count: target.options.count,
+    };
+    if (target.options.useTimeRange) {
+      options.timeFrom = timeFrom;
+      options.timeTo = timeTo;
+    }
+
+    const alerts = await this.zabbix.getHostPCAlerts(hostids, appids, triggerids, options);
+    return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
   queryProblems(target: ZabbixMetricsQuery, timeRange, options) {
@@ -742,6 +841,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       templateSrv.variableExists(target.application?.filter) ||
       templateSrv.variableExists(target.itemTag?.filter) ||
       templateSrv.variableExists(target.item?.filter) ||
+      templateSrv.variableExists(target.macro?.filter) ||
       templateSrv.variableExists(target.proxy?.filter) ||
       templateSrv.variableExists(target.trigger?.filter) ||
       templateSrv.variableExists(target.textFilter) ||
@@ -972,3 +1072,17 @@ function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
   }
   return null;
 }
+
+const getTriggersOptions = (target: ZabbixMetricsQuery, timeRange) => {
+  const [timeFrom, timeTo] = timeRange;
+  const options: any = {
+    minSeverity: target.options?.minSeverity,
+    acknowledged: target.options?.acknowledged,
+    count: target.options?.count,
+  };
+  if (target.options?.useTimeRange) {
+    options.timeFrom = timeFrom;
+    options.timeTo = timeTo;
+  }
+  return options;
+};

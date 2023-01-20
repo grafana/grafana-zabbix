@@ -5,6 +5,7 @@
 .vscode
 
 *.bat
+.DS_Store
 
 # Grafana linter config
 # .jshintrc
@@ -38,6 +39,7 @@ yarn-error.log
 # Built plugin
 dist/
 ci/
+alexanderzobnin-zabbix-app.zip
 
 # Grafana toolkit configs
 # .prettierrc.js
