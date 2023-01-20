@@ -28,20 +28,30 @@ interface Props extends RTRow<ProblemDTO> {
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
   getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
-
   onExecuteScript(problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse>;
-
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
-export const ProblemDetails = (props: Props) => {
+export const ProblemDetails = ({
+  original,
+  rootWidth,
+  timeRange,
+  showTimeline,
+  panelId,
+  getProblemAlerts,
+  getProblemEvents,
+  getScripts,
+  onExecuteScript,
+  onProblemAck,
+  onTagClick,
+}: Props) => {
   const [events, setEvents] = useState([]);
   const [alerts, setAletrs] = useState([]);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (props.showTimeline) {
+    if (showTimeline) {
       fetchProblemEvents();
     }
     fetchProblemAlerts();
@@ -50,41 +60,40 @@ export const ProblemDetails = (props: Props) => {
     });
   }, []);
 
-  const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
-    if (props.onTagClick) {
-      props.onTagClick(tag, datasource, ctrlKey, shiftKey);
-    }
-  };
-
   const fetchProblemEvents = async () => {
-    const problem = props.original;
-    const events = await props.getProblemEvents(problem);
+    const problem = original;
+    const events = await getProblemEvents(problem);
     setEvents(events);
   };
 
   const fetchProblemAlerts = async () => {
-    const problem = props.original;
-    const alerts = await props.getProblemAlerts(problem);
+    const problem = original;
+    const alerts = await getProblemAlerts(problem);
     setAletrs(alerts);
   };
 
+  const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
+    if (onTagClick) {
+      onTagClick(tag, datasource, ctrlKey, shiftKey);
+    }
+  };
+
   const ackProblem = (data: AckProblemData) => {
-    const problem = props.original as ProblemDTO;
-    return props.onProblemAck(problem, data);
+    const problem = original as ProblemDTO;
+    return onProblemAck(problem, data);
   };
 
-  const getScripts = () => {
-    const problem = props.original as ProblemDTO;
-    return props.getScripts(problem);
+  const getScriptsInternal = () => {
+    const problem = original as ProblemDTO;
+    return getScripts(problem);
   };
 
-  const onExecuteScript = (data: ExecScriptData) => {
-    const problem = props.original as ProblemDTO;
-    return props.onExecuteScript(problem, data.scriptid);
+  const onExecuteScriptInternal = (data: ExecScriptData) => {
+    const problem = original as ProblemDTO;
+    return onExecuteScript(problem, data.scriptid);
   };
 
-  const problem = props.original as ProblemDTO;
-  const { rootWidth, panelId, timeRange } = props;
+  const problem = original as ProblemDTO;
   const displayClass = show ? 'show' : '';
   const wideLayout = rootWidth > 1200;
   const compactStatusBar = rootWidth < 800 || (problem.acknowledges && wideLayout && rootWidth < 1400);
@@ -92,9 +101,9 @@ export const ProblemDetails = (props: Props) => {
   const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
   const problemSeverity = Number(problem.severity);
 
-  let dsName: string = props.original.datasource as string;
-  if ((props.original.datasource as DataSourceRef)?.uid) {
-    const dsInstance = getDataSourceSrv().getInstanceSettings((props.original.datasource as DataSourceRef).uid);
+  let dsName: string = original.datasource as string;
+  if ((original.datasource as DataSourceRef)?.uid) {
+    const dsInstance = getDataSourceSrv().getInstanceSettings((original.datasource as DataSourceRef).uid);
     dsName = dsInstance.name;
   }
   const styles = useStyles2(getStyles);
@@ -115,8 +124,8 @@ export const ProblemDetails = (props: Props) => {
                       className="problem-action-button"
                       onClick={() => {
                         showModal(ExecScriptModal, {
-                          getScripts: getScripts,
-                          onSubmit: onExecuteScript,
+                          getScripts: getScriptsInternal,
+                          onSubmit: onExecuteScriptInternal,
                           onDismiss: hideModal,
                         });
                       }}
@@ -186,7 +195,7 @@ export const ProblemDetails = (props: Props) => {
                 ))}
             </div>
           )}
-          {props.showTimeline && events.length > 0 && <ProblemTimeline events={events} timeRange={props.timeRange} />}
+          {showTimeline && events.length > 0 && <ProblemTimeline events={events} timeRange={timeRange} />}
           {showAcknowledges && !wideLayout && (
             <div className="problem-ack-container">
               <h6>
