@@ -196,6 +196,12 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         category: ['Fields'],
       })
       .addBooleanSwitch({
+        path: 'opdataField',
+        name: 'Operational data',
+        defaultValue: defaultPanelOptions.opdataField,
+        category: ['Fields'],
+      })
+      .addBooleanSwitch({
         path: 'descriptionField',
         name: 'Description',
         defaultValue: defaultPanelOptions.descriptionField,

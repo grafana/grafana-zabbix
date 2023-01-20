@@ -16,6 +16,7 @@ export interface ProblemsPanelOptions {
   severityField?: boolean;
   ackField?: boolean;
   ageField?: boolean;
+  opdataField?: boolean;
   descriptionField?: boolean;
   descriptionAtNewLine?: boolean;
   // Options
@@ -66,6 +67,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   severityField: true,
   ackField: true,
   ageField: false,
+  opdataField: false,
   descriptionField: true,
   descriptionAtNewLine: false,
   // Options

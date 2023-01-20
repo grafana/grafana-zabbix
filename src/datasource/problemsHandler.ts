@@ -26,6 +26,7 @@ export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTr
         description: p.name || t.description,
         comments: t.comments,
         value: t.value,
+        opdata: p.opdata,
         groups: t.groups,
         hosts: t.hosts,
         items: t.items,

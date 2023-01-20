@@ -174,6 +174,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
       },
       { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'name', minWidth: 200, Cell: ProblemCell },
+      { Header: 'Operational data', accessor: 'opdata', show: options.opdataField, width: 150, Cell: OpdataCell },
       {
         Header: 'Ack',
         id: 'ack',
@@ -358,6 +359,15 @@ function ProblemCell(props: RTCell<ProblemDTO>) {
     <div>
       <span className="problem-description">{props.value}</span>
       {/* {comments && <FAIcon icon="file-text-o" customClass="comments-icon" />} */}
+    </div>
+  );
+}
+
+function OpdataCell(props: RTCell<ProblemDTO>) {
+  const problem = props.original;
+  return (
+    <div>
+      <span>{problem.opdata}</span>
     </div>
   );
 }

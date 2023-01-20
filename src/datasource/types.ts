@@ -235,6 +235,7 @@ export interface ProblemDTO {
   proxy?: string;
   severity?: string;
   priority?: string;
+  opdata?: string;
 
   acknowledged?: '1' | '0';
   acknowledges?: ZBXAcknowledge[];
