@@ -95,6 +95,11 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
       trigger.tags = undefined;
     }
 
+    // Handle multi-line description
+    if (trigger.comments && options.allowDangerousHTML) {
+      trigger.comments = trigger.comments.replace('\n', '<br>');
+    }
+
     trigger.lastchangeUnix = Number(trigger.lastchange);
     return trigger;
   };
