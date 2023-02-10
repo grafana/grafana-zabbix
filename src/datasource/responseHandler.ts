@@ -471,10 +471,7 @@ export function handleSLIResponse(response: any, itservices: any[], target: Zabb
   const timestamps = [];
   for (let i = 0; i < response?.periods?.length; i++) {
     const period = response.periods[i];
-    if (i === 0) {
-      timestamps.push(period.period_from * 1000);
-    }
-    timestamps.push(period.period_to * 1000);
+    timestamps.push(period.period_from * 1000);
   }
 
   const timeFiled: Field = {
@@ -497,9 +494,6 @@ export function handleSLIResponse(response: any, itservices: any[], target: Zabb
       const value = sli[slaProperty];
       if (!values[j]) {
         values[j] = [];
-      }
-      if (i === 0) {
-        values[j].push(value);
       }
       values[j].push(value);
     }
