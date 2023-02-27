@@ -1,5 +1,5 @@
 import { AppPlugin } from '@grafana/data';
-import { loadPluginCss } from 'grafana/app/plugins/sdk';
+import { loadPluginCss } from '@grafana/runtime';
 
 loadPluginCss({
   dark: 'plugins/alexanderzobnin-zabbix-app/styles/dark.css',
