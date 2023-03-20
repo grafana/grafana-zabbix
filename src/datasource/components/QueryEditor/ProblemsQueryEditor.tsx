@@ -3,7 +3,7 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
-import { InlineField, Input, Select } from '@grafana/ui';
+import { InlineField, Input, MultiSelect, Select } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -143,9 +143,9 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
     };
   };
 
-  const onMinSeverityChange = (option: SelectableValue) => {
-    if (option.value !== null) {
-      onChange({ ...query, options: { ...query.options, minSeverity: option.value } });
+  const onSeveritiesChange = (options: SelectableValue[]) => {
+    if (options !== null) {
+      onChange({ ...query, options: { ...query.options, severities: options.map((o) => o.value) } });
     }
   };
 
@@ -217,13 +217,14 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             onChange={onPropChange('showProblems')}
           />
         </InlineField>
-        <InlineField label="Min severity" labelWidth={12}>
-          <Select
+        <InlineField label="Severity" labelWidth={12}>
+          <MultiSelect
             isSearchable={false}
-            width={24}
-            value={query.options?.minSeverity}
+            isClearable={true}
+            placeholder="Show all problems"
+            value={query.options?.severities}
             options={severityOptions}
-            onChange={onMinSeverityChange}
+            onChange={onSeveritiesChange}
           />
         </InlineField>
       </QueryEditorRow>

@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { ZabbixMetricsQuery } from './types';
 import * as c from './constants';
 
-export const DS_QUERY_SCHEMA = 11;
+export const DS_QUERY_SCHEMA = 12;
 export const DS_CONFIG_SCHEMA = 3;
 
 /**
@@ -115,6 +115,15 @@ function migrateNewTriggersCountModes(target: any) {
   }
 }
 
+function migrateProblemsSeverity(target: any) {
+  if (target.schema >= 12) {
+    return;
+  }
+  if (target?.options?.minSeverity) {
+    target.options.severities = [0, 1, 2, 3, 4, 5].filter((v) => v >= target.options.minSeverity);
+  }
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -129,6 +138,7 @@ export function migrate(target) {
   migrateSLAProperty(target);
   migrateTriggersMode(target);
   migrateNewTriggersCountModes(target);
+  migrateProblemsSeverity(target);
 
   target.schema = DS_QUERY_SCHEMA;
   return target;

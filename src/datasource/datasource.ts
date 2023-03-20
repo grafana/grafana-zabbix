@@ -682,9 +682,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     if (target.options?.minSeverity) {
       let severities = [0, 1, 2, 3, 4, 5].filter((v) => v >= target.options?.minSeverity);
-      if (target.options?.severities) {
-        severities = severities.filter((v) => target.options?.severities.includes(v));
-      }
+      problemsOptions.severities = severities;
+    }
+    if (target.options?.severities?.length) {
+      let severities = [0, 1, 2, 3, 4, 5].filter((v) => target.options?.severities.includes(v));
       problemsOptions.severities = severities;
     }
 
