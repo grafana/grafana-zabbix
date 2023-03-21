@@ -70,7 +70,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [query.group.filter, query.host.filter]);
 
   const loadTagOptions = async (group: string, host: string) => {
-    if (!datasource.zabbix.isZabbix54OrHigher()) {
+    const tagsAvailable = await datasource.zabbix.isZabbix54OrHigher();
+    if (!tagsAvailable) {
       return [];
     }
 
@@ -78,6 +79,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     const hostFilter = datasource.replaceTemplateVars(host);
     const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, null, null, {});
     const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
+    // const tags: ZBXItemTag[] = await datasource.zabbix.getItemTags(groupFilter, hostFilter, null);
 
     const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
     let options: Array<SelectableValue<string>> = tagList?.map((tag) => ({

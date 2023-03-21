@@ -2,6 +2,7 @@ package zabbix
 
 import (
 	"context"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -84,8 +85,46 @@ func (ds *Zabbix) GetItems(
 	ctx context.Context,
 	groupFilter string,
 	hostFilter string,
-	appFilter string,
 	itemTagFilter string,
+	itemFilter string,
+	itemType string,
+	showDisabled bool,
+) ([]*Item, error) {
+	var allItems []*Item
+	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
+	if err != nil {
+		return nil, err
+	}
+	if len(hosts) == 0 {
+		return allItems, nil
+	}
+
+	hostids := make([]string, 0)
+	for _, host := range hosts {
+		hostids = append(hostids, host.ID)
+	}
+
+	if isRegex(itemTagFilter) {
+		tags, err := ds.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter)
+		if err != nil {
+			return nil, err
+		}
+		var tagStrs []string
+		for _, t := range tags {
+			tagStrs = append(tagStrs, itemTagToString(t))
+		}
+		itemTagFilter = strings.Join(tagStrs, ",")
+	}
+	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter)
+
+	return filterItemsByQuery(allItems, itemFilter)
+}
+
+func (ds *Zabbix) GetItemsBefore54(
+	ctx context.Context,
+	groupFilter string,
+	hostFilter string,
+	appFilter string,
 	itemFilter string,
 	itemType string,
 	showDisabled bool,
@@ -100,13 +139,10 @@ func (ds *Zabbix) GetItems(
 	}
 
 	apps, err := ds.GetApps(ctx, groupFilter, hostFilter, appFilter)
-	// Apps not supported in Zabbix 5.4 and higher
-	isZabbix54orHigher := isAppMethodNotFoundError(err)
-	if isZabbix54orHigher {
-		apps = []Application{}
-	} else if err != nil {
+	if err != nil {
 		return nil, err
 	}
+
 	appids := make([]string, 0)
 	for _, app := range apps {
 		appids = append(appids, app.ID)
@@ -114,57 +150,12 @@ func (ds *Zabbix) GetItems(
 
 	var allItems []*Item
 	if len(appids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled)
+		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "")
 	} else if len(hostids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled)
-	}
-
-	if isZabbix54orHigher && itemTagFilter != "" {
-		allItems, err = filterItemsByTag(allItems, itemTagFilter)
-		if err != nil {
-			return nil, err
-		}
+		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
 	}
 
 	return filterItemsByQuery(allItems, itemFilter)
-}
-
-func filterItemsByTag(items []*Item, filter string) ([]*Item, error) {
-	re, err := parseFilter(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	filteredItems := make([]*Item, 0)
-	for _, i := range items {
-		if len(i.Tags) == 0 && filter == "/.*/" {
-			filteredItems = append(filteredItems, i)
-		}
-
-		if len(i.Tags) > 0 {
-			tags := make([]string, 0)
-			for _, t := range i.Tags {
-				tags = append(tags, itemTagToString(t))
-			}
-			for _, t := range tags {
-				if re != nil {
-					match, err := re.MatchString(t)
-					if err != nil {
-						return nil, err
-					}
-					if match {
-						filteredItems = append(filteredItems, i)
-						break
-					}
-				} else if t == filter {
-					filteredItems = append(filteredItems, i)
-					break
-				}
-			}
-		}
-	}
-
-	return filteredItems, nil
 }
 
 func filterItemsByQuery(items []*Item, filter string) ([]*Item, error) {
@@ -228,6 +219,55 @@ func filterAppsByQuery(items []Application, filter string) ([]Application, error
 				filteredItems = append(filteredItems, i)
 			}
 		} else if name == filter {
+			filteredItems = append(filteredItems, i)
+		}
+
+	}
+
+	return filteredItems, nil
+}
+
+func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilter string, tagFilter string) ([]ItemTag, error) {
+	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
+	if err != nil {
+		return nil, err
+	}
+	hostids := make([]string, 0)
+	for _, host := range hosts {
+		hostids = append(hostids, host.ID)
+	}
+
+	var allItems []*Item
+	itemType := "num"
+	showDisabled := false
+	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+
+	var allTags []ItemTag
+	for _, item := range allItems {
+		allTags = append(allTags, item.Tags...)
+	}
+
+	return filterTags(allTags, tagFilter)
+}
+
+func filterTags(items []ItemTag, filter string) ([]ItemTag, error) {
+	re, err := parseFilter(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredItems := make([]ItemTag, 0)
+	for _, i := range items {
+		tagStr := itemTagToString(i)
+		if re != nil {
+			match, err := re.MatchString(tagStr)
+			if err != nil {
+				return nil, err
+			}
+			if match {
+				filteredItems = append(filteredItems, i)
+			}
+		} else if tagStr == filter {
 			filteredItems = append(filteredItems, i)
 		}
 
@@ -314,7 +354,7 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool) ([]*Item, error) {
+func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool, itemTagFilter string) ([]*Item, error) {
 	params := ZabbixAPIParams{
 		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
 		"sortfield":      "name",
@@ -334,6 +374,24 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 
 	if ds.version >= 54 {
 		params["selectTags"] = "extend"
+		if len(itemTagFilter) > 0 {
+			allTags := strings.Split(itemTagFilter, ",")
+			re := regexp.MustCompile(`(?m).*?([a-zA-Z0-9\s\-_]*):\s*([a-zA-Z0-9\-_\/:]*)`)
+			var tagsParams []map[string]string
+			for i := 0; i < len(allTags); i++ {
+				res := re.FindAllStringSubmatch(allTags[i], -1)
+				for i := range res {
+					tagParam := map[string]string{
+						"tag":      res[i][1],
+						"value":    res[i][2],
+						"operator": "1",
+					}
+					tagsParams = append(tagsParams, tagParam)
+				}
+			}
+			params["tags"] = tagsParams
+			params["evaltype"] = 2
+		}
 	}
 
 	if showDisabled == false {

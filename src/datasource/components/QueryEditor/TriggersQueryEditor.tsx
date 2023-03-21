@@ -85,7 +85,8 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [query.group.filter, query.host.filter]);
 
   const loadTagOptions = async (group: string, host: string) => {
-    if (!datasource.zabbix.isZabbix54OrHigher()) {
+    const tagsAvailable = await datasource.zabbix.isZabbix54OrHigher();
+    if (!tagsAvailable) {
       return [];
     }
 

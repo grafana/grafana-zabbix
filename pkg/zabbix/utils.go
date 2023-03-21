@@ -88,6 +88,11 @@ func parseFilter(filter string) (*regexp2.Regexp, error) {
 	return regexp2.Compile(pattern, regexp2.RE2)
 }
 
+func isRegex(filter string) bool {
+	regex := regexp.MustCompile(`^/(.+)/([imncsxrde]*)$`)
+	return regex.MatchString(filter)
+}
+
 func itemTagToString(tag ItemTag) string {
 	if tag.Value != "" {
 		return fmt.Sprintf("%s: %s", tag.Tag, tag.Value)

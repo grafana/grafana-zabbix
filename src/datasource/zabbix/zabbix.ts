@@ -252,8 +252,8 @@ export class Zabbix implements ZabbixConnector {
     return version ? semver.gte(version, '6.0.0') : true;
   }
 
-  isZabbix54OrHigher() {
-    const version = this.version || this.zabbixAPI.version;
+  async isZabbix54OrHigher() {
+    const version = await this.zabbixAPI.initVersion();
     return version ? semver.gte(version, '5.4.0') : false;
   }
 
@@ -301,28 +301,28 @@ export class Zabbix implements ZabbixConnector {
     return this.zabbixAPI.getGroups();
   }
 
-  getGroups(groupFilter) {
+  getGroups(groupFilter): Promise<any[]> {
     return this.getAllGroups().then((groups) => findByFilter(groups, groupFilter));
   }
 
   /**
    * Get list of host belonging to given groups.
    */
-  getAllHosts(groupFilter) {
+  getAllHosts(groupFilter): Promise<any[]> {
     return this.getGroups(groupFilter).then((groups) => {
       const groupids = _.map(groups, 'groupid');
       return this.zabbixAPI.getHosts(groupids);
     });
   }
 
-  getHosts(groupFilter?, hostFilter?) {
+  getHosts(groupFilter?, hostFilter?): Promise<any[]> {
     return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
   }
 
   /**
    * Get list of applications belonging to given groups and hosts.
    */
-  async getAllApps(groupFilter, hostFilter) {
+  async getAllApps(groupFilter, hostFilter): Promise<any[]> {
     await this.getVersion();
     if (!this.supportsApplications()) {
       return [];
@@ -378,22 +378,44 @@ export class Zabbix implements ZabbixConnector {
     return findByFilter(tagsStr, itemTagFilter);
   }
 
-  async getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, options: any = {}) {
+  async getAllItems(
+    groupFilter: string,
+    hostFilter: string,
+    appFilter: string,
+    itemTagFilter: string,
+    options: any = {}
+  ): Promise<any[]> {
+    if (!this.isZabbix54OrHigher()) {
+      return this.getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options);
+    }
+
+    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hostids = _.map(hosts, 'hostid');
+
+    // Support regexp in tags
+    if (utils.isRegex(itemTagFilter)) {
+      const tags = await this.getItemTags(groupFilter, hostFilter, itemTagFilter);
+      itemTagFilter = tags.map((t) => t.name).join(',');
+    }
+
+    let items = await this.zabbixAPI.getItems(hostids, undefined, options.itemtype, itemTagFilter);
+
+    if (!options.showDisabledItems) {
+      items = _.filter(items, { status: '0' });
+    }
+
+    return await this.expandUserMacro(items, false);
+  }
+
+  async getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options: any = {}) {
     const apps = await this.getApps(groupFilter, hostFilter, appFilter);
     let items: any[];
 
-    if (this.isZabbix54OrHigher()) {
-      items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
-      if (itemTagFilter) {
-        items = filterItemsByTag(items, itemTagFilter);
-      }
+    if (apps.appFilterEmpty) {
+      items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype, undefined);
     } else {
-      if (apps.appFilterEmpty) {
-        items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype);
-      } else {
-        const appids = _.map(apps, 'applicationid');
-        items = await this.zabbixAPI.getItems(undefined, appids, options.itemtype);
-      }
+      const appids = _.map(apps, 'applicationid');
+      items = await this.zabbixAPI.getItems(undefined, appids, options.itemtype, undefined);
     }
 
     if (!options.showDisabledItems) {
@@ -745,29 +767,4 @@ function getHostIds(items) {
     return _.map(item.hosts, 'hostid');
   });
   return _.uniq(_.flatten(hostIds));
-}
-
-function filterItemsByTag(items: any[], itemTagFilter: string) {
-  if (utils.isRegex(itemTagFilter)) {
-    const filterPattern = utils.buildRegex(itemTagFilter);
-    return items.filter((item) => {
-      if (item.tags) {
-        const tags: string[] = item.tags.map((t) => utils.itemTagToString(t));
-        return tags.some((tag) => {
-          return filterPattern.test(tag);
-        });
-      } else {
-        return false;
-      }
-    });
-  } else {
-    return items.filter((item) => {
-      if (item.tags) {
-        const tags: string[] = item.tags.map((t) => utils.itemTagToString(t));
-        return tags.includes(itemTagFilter);
-      } else {
-        return false;
-      }
-    });
-  }
 }

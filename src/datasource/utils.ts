@@ -41,7 +41,7 @@ export function expandItemName(name: string, key: string): string {
   return name;
 }
 
-export function expandItems(items) {
+export function expandItems(items: any[]) {
   _.forEach(items, (item) => {
     item.item = item.name;
     item.name = expandItemName(item.item, item.key_);

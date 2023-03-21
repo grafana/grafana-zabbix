@@ -7,9 +7,10 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
+	"golang.org/x/net/context"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"golang.org/x/net/context"
 )
 
 // ZabbixAPIQuery handles query requests to Zabbix API
@@ -52,7 +53,15 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	itemFilter := query.Item.Filter
 	showDisabled := query.Options.ShowDisabledItems
 
-	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, "num", showDisabled)
+	var items []*zabbix.Item
+	var err error
+	zabbixVersion, err := ds.zabbix.GetVersion(ctx)
+	if zabbixVersion >= 54 {
+		items, err = ds.zabbix.GetItems(ctx, groupFilter, hostFilter, itemTagFilter, itemFilter, "num", showDisabled)
+	} else {
+		items, err = ds.zabbix.GetItemsBefore54(ctx, groupFilter, hostFilter, appFilter, itemFilter, "num", showDisabled)
+	}
+
 	if err != nil {
 		return nil, err
 	}

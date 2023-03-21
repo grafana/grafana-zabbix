@@ -88,6 +88,10 @@ export class ZabbixAPIConnector {
   }
 
   initVersion(): Promise<string> {
+    if (this.version) {
+      return Promise.resolve(this.version);
+    }
+
     if (!this.getVersionPromise) {
       this.getVersionPromise = Promise.resolve(
         this.getVersion().then((version) => {
@@ -142,7 +146,7 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
-  getHosts(groupids) {
+  getHosts(groupids): Promise<any[]> {
     const params: any = {
       output: ['hostid', 'name', 'host'],
       sortfield: 'name',
@@ -174,7 +178,7 @@ export class ZabbixAPIConnector {
    * @param  {String} itemtype 'num' or 'text'
    * @return {[type]}          array of items
    */
-  getItems(hostids, appids, itemtype) {
+  getItems(hostids, appids, itemtype, itemTagFilter?: string): Promise<any[]> {
     const params: any = {
       output: ['itemid', 'name', 'key_', 'value_type', 'hostid', 'status', 'state', 'units', 'valuemapid', 'delay'],
       sortfield: 'name',
@@ -199,6 +203,18 @@ export class ZabbixAPIConnector {
 
     if (this.isZabbix54OrHigher()) {
       params.selectTags = 'extend';
+      if (itemTagFilter) {
+        const allTags = itemTagFilter.split(',');
+        let tagsParam = [];
+        const regex = /.*?([a-zA-Z0-9\s\-_]*):\s*([a-zA-Z0-9\-_\/:]*)/;
+        for (let i = 0; i < allTags.length; i++) {
+          const matches = allTags[i].match(regex);
+          tagsParam.push({ tag: matches[1].replace('/', ''), value: matches[2].trim(), operator: '1' });
+        }
+        params.tags = tagsParam;
+        // Use OR eval type
+        params.evaltype = 2;
+      }
     }
 
     return this.request('item.get', params).then(utils.expandItems);
