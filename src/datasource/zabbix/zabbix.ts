@@ -47,6 +47,7 @@ const REQUESTS_TO_PROXYFY = [
   'getScripts',
   'getValueMappings',
   'getSLAList',
+  'getUsers',
 ];
 
 const REQUESTS_TO_CACHE = [
@@ -61,6 +62,7 @@ const REQUESTS_TO_CACHE = [
   'getProxies',
   'getValueMappings',
   'getSLAList',
+  'getUsers',
 ];
 
 const REQUESTS_TO_BIND = [
@@ -84,6 +86,7 @@ const REQUESTS_TO_BIND = [
   'executeScript',
   'getValueMappings',
   'getSLAList',
+  'getUsers',
 ];
 
 export class Zabbix implements ZabbixConnector {
@@ -113,6 +116,7 @@ export class Zabbix implements ZabbixConnector {
   getUserMacros: (hostmacroids) => Promise<any>;
   getValueMappings: () => Promise<any>;
   getSLAList: () => Promise<any>;
+  getUsers: () => Promise<any>;
 
   constructor(options) {
     const {

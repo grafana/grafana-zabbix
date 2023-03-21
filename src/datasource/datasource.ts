@@ -630,11 +630,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
-  queryProblems(target: ZabbixMetricsQuery, timeRange, options) {
+  async queryProblems(target: ZabbixMetricsQuery, timeRange, options) {
     const [timeFrom, timeTo] = timeRange;
     const userIsEditor = contextSrv.isEditor || contextSrv.isGrafanaAdmin;
 
-    let proxies;
     let showAckButton = true;
 
     const showProblems = target.showProblems || ShowProblemTypes.Problems;
@@ -703,9 +702,13 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     } else {
       getProblemsPromise = this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);
     }
+    const getUsersPromise = this.zabbix.getUsers();
 
-    const problemsPromises = Promise.all([getProblemsPromise, getProxiesPromise])
-      .then(([problems, sourceProxies]) => {
+    let proxies;
+    let zabbixUsers;
+    const problemsPromises = Promise.all([getProblemsPromise, getProxiesPromise, getUsersPromise])
+      .then(([problems, sourceProxies, users]) => {
+        zabbixUsers = _.keyBy(users, 'userid');
         proxies = _.keyBy(sourceProxies, 'proxyid');
         return problems;
       })
@@ -714,6 +717,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       .then((problems) => problemsHandler.filterTriggersPre(problems, replacedTarget))
       .then((problems) => problemsHandler.sortProblems(problems, target))
       .then((problems) => problemsHandler.addTriggerDataSource(problems, target))
+      .then((problems) => problemsHandler.formatAcknowledges(problems, zabbixUsers))
       .then((problems) => problemsHandler.addTriggerHostProxy(problems, proxies));
 
     return problemsPromises.then((problems) => {

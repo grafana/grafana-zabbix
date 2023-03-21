@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import * as utils from './utils';
-import { DataFrame, Field, FieldType, ArrayVector } from '@grafana/data';
+import { DataFrame, Field, FieldType, ArrayVector, dateTime } from '@grafana/data';
 import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent, ZabbixMetricsQuery } from './types';
 
 export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTrigger[]): ProblemDTO[] {
@@ -136,6 +136,37 @@ export function addTriggerHostProxy(triggers, proxies) {
   return triggers;
 }
 
+export function formatAcknowledges(triggers, users) {
+  if (!users) {
+    return;
+  }
+  triggers.forEach((trigger) => {
+    if (trigger.acknowledges?.length) {
+      for (let i = 0; i < trigger.acknowledges.length; i++) {
+        const ack = trigger.acknowledges[i];
+        let userData = users[ack.userid];
+
+        // User with id 1 is Admin
+        if (!userData && ack.userid === '1') {
+          userData = {
+            username: 'Admin',
+          };
+        }
+
+        ack['user'] = userData?.username || '';
+        ack['name'] = userData?.name || '';
+        ack['surname'] = userData?.surname || '';
+
+        const ts = Number(ack.clock) * 1000;
+        if (!isNaN(ts)) {
+          ack['time'] = dateTime(ts).format('YYYY-MM-DD HH:mm:ss');
+        }
+      }
+    }
+  });
+  return triggers;
+}
+
 export function filterTriggersPre(triggerList, replacedTarget) {
   // Filter triggers by description
   const triggerFilter = replacedTarget.trigger.filter;
@@ -197,6 +228,7 @@ export function toDataFrame(problems: any[], query: ZabbixMetricsQuery): DataFra
 const problemsHandler = {
   addTriggerDataSource,
   addTriggerHostProxy,
+  formatAcknowledges,
   setMaintenanceStatus,
   setAckButtonStatus,
   filterTriggersPre,

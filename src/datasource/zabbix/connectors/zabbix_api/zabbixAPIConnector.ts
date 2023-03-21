@@ -875,6 +875,14 @@ export class ZabbixAPIConnector {
 
     return this.request('valuemap.get', params);
   }
+
+  getUsers() {
+    const params = {
+      output: ['userid', 'username', 'name', 'surname'],
+    };
+
+    return this.request('user.get', params);
+  }
 }
 
 function filterTriggersByAcknowledge(triggers, acknowledged) {
