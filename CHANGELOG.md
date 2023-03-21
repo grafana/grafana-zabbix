@@ -1,5 +1,27 @@
 # Change Log
 
+## [4.3.0] - 2023-03-21
+
+### Added
+
+- SLA support in Zabbix 6.0, [#1437](https://github.com/alexanderzobnin/grafana-zabbix/issues/1437)
+- Build for FreeBSD, [#1301](https://github.com/alexanderzobnin/grafana-zabbix/issues/1301)
+- Problems panel: add operational data, [#1260](https://github.com/alexanderzobnin/grafana-zabbix/issues/1260)
+- Problems panel: allow HTML in problem description, [#1557](https://github.com/alexanderzobnin/grafana-zabbix/issues/1557)
+- Problems panel: show acknowledge author in message, [#1281](https://github.com/alexanderzobnin/grafana-zabbix/issues/1281)
+- Problems panel: query problems with particular severity, [#572](https://github.com/alexanderzobnin/grafana-zabbix/issues/572)
+- Show non-suppressed problems from maintenance hosts when "Show Maintenance Hosts" is not selected, [#830](https://github.com/alexanderzobnin/grafana-zabbix/issues/830)
+- Set data frame name in triggers query mode, [#1441](https://github.com/alexanderzobnin/grafana-zabbix/issues/1441)
+- Use trends by graph, [#1442](https://github.com/alexanderzobnin/grafana-zabbix/issues/1442)
+- Improved performance of item tags, [#1315](https://github.com/alexanderzobnin/grafana-zabbix/issues/1315)
+- Triggers query mode: add time range switcher, [#918](https://github.com/alexanderzobnin/grafana-zabbix/issues/918)
+
+### Fixed
+
+- Zabbix authentication does not work in 6.4, [#1544](https://github.com/alexanderzobnin/grafana-zabbix/issues/1544)
+- Error `json: invalid use of ,string struct tag, trying to unmarshal into float64`, [#1325](https://github.com/alexanderzobnin/grafana-zabbix/issues/1325)
+- Triggers: acknowledged filter doesn't work, [#985](https://github.com/alexanderzobnin/grafana-zabbix/issues/985)
+
 ## [4.2.10] - 2022-09-01
 
 ### Fixed
