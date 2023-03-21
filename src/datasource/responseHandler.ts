@@ -614,6 +614,7 @@ export function handleSLAResponse(itservice, slaProperty, slaObject) {
 
 function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], timeRange: number[], target) {
   if (!_.isArray(triggers)) {
+    // Handling count mode
     let triggersCount = null;
     try {
       triggersCount = Number(triggers);
@@ -622,6 +623,7 @@ function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], time
     }
 
     const frame = new MutableDataFrame({
+      name: `Count ${target.refId}`,
       refId: target.refId,
       fields: [
         { name: TIME_SERIES_TIME_FIELD_NAME, type: FieldType.time, values: new ArrayVector([timeRange[1] * 1000]) },
@@ -634,6 +636,7 @@ function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], time
   } else {
     const stats = getTriggerStats(triggers);
     const frame = new MutableDataFrame({
+      name: `Triggers ${target.refId}`,
       refId: target.refId,
       fields: [{ name: 'Host group', type: FieldType.string, values: new ArrayVector() }],
     });

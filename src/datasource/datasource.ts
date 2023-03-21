@@ -717,7 +717,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       .then((problems) => problemsHandler.addTriggerHostProxy(problems, proxies));
 
     return problemsPromises.then((problems) => {
-      const problemsDataFrame = problemsHandler.toDataFrame(problems);
+      const problemsDataFrame = problemsHandler.toDataFrame(problems, target);
       return problemsDataFrame;
     });
   }

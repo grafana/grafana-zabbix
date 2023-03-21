@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import * as utils from './utils';
 import { DataFrame, Field, FieldType, ArrayVector } from '@grafana/data';
-import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent } from './types';
+import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent, ZabbixMetricsQuery } from './types';
 
 export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTrigger[]): ProblemDTO[] {
   const problemDTOList: ProblemDTO[] = [];
@@ -172,7 +172,7 @@ export function sortProblems(problems: ProblemDTO[], target) {
   return problems;
 }
 
-export function toDataFrame(problems: any[]): DataFrame {
+export function toDataFrame(problems: any[], query: ZabbixMetricsQuery): DataFrame {
   const problemsField: Field<any> = {
     name: 'Problems',
     type: FieldType.other,
@@ -186,6 +186,7 @@ export function toDataFrame(problems: any[]): DataFrame {
 
   const response: DataFrame = {
     name: 'problems',
+    refId: query?.refId || 'A',
     fields: [problemsField],
     length: problems.length,
   };
