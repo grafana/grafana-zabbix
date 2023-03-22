@@ -261,6 +261,10 @@ export class Zabbix implements ZabbixConnector {
     return version ? semver.gte(version, '5.4.0') : false;
   }
 
+  isZabbix54OrHigherSync() {
+    return this.version ? semver.gte(this.version, '5.4.0') : false;
+  }
+
   getItemsFromTarget(target, options) {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
     const filters = _.map(parts, (p) => target[p].filter);
