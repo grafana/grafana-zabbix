@@ -49,8 +49,8 @@ export const ConfigEditor = (props: Props) => {
           .then((ds) => {
             if (ds) {
               const selectedDs = getDirectDBDatasources().find((dsOption) => dsOption.id === ds.id);
-              setSelectedDBDatasource({ label: selectedDs.name, value: selectedDs.id });
-              setCurrentDSType(selectedDs.type);
+              setSelectedDBDatasource({ label: selectedDs?.name, value: selectedDs?.id });
+              setCurrentDSType(selectedDs?.type);
               onOptionsChange({
                 ...options,
                 jsonData: {
@@ -64,8 +64,8 @@ export const ConfigEditor = (props: Props) => {
         const selectedDs = getDirectDBDatasources().find(
           (dsOption) => dsOption.id === options.jsonData.dbConnectionDatasourceId
         );
-        setSelectedDBDatasource({ label: selectedDs.name, value: selectedDs.id });
-        setCurrentDSType(selectedDs.type);
+        setSelectedDBDatasource({ label: selectedDs?.name, value: selectedDs?.id });
+        setCurrentDSType(selectedDs?.type);
       }
     }
   }, []);
@@ -225,13 +225,13 @@ export const ConfigEditor = (props: Props) => {
         <h3 className="page-heading">Other</h3>
         <Switch
           label="Disable acknowledges for read-only users"
-          labelClass="width-16"
+          labelClass="width-20"
           checked={options.jsonData.disableReadOnlyUsersAck}
           onChange={jsonDataSwitchHandler('disableReadOnlyUsersAck', options, onOptionsChange)}
         />
         <Switch
           label="Disable data alignment"
-          labelClass="width-16"
+          labelClass="width-20"
           checked={!!options.jsonData.disableDataAlignment}
           onChange={jsonDataSwitchHandler('disableDataAlignment', options, onOptionsChange)}
           tooltip="Data alignment feature aligns points based on item update interval.

@@ -227,7 +227,7 @@ export class Zabbix implements ZabbixConnector {
       .then((testResult) => {
         if (testResult) {
           dbConnectorStatus = {
-            dsType: this.dbConnector.datasourceTypeName,
+            dsType: this.dbConnector.datasourceTypeName || this.dbConnector.datasourceTypeId,
             dsName: this.dbConnector.datasourceName,
           };
         }
