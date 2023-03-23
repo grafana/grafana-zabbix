@@ -7,6 +7,7 @@ import { ShowProblemTypes, ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
+import { parseItemTag } from '../../../utils';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
@@ -206,10 +207,9 @@ export class ZabbixAPIConnector {
       if (itemTagFilter) {
         const allTags = itemTagFilter.split(',');
         let tagsParam = [];
-        const regex = /.*?([a-zA-Z0-9\s\-_]*):\s*([a-zA-Z0-9\-_\/:]*)/;
         for (let i = 0; i < allTags.length; i++) {
-          const matches = allTags[i].match(regex);
-          tagsParam.push({ tag: matches[1].replace('/', ''), value: matches[2].trim(), operator: '1' });
+          const tag = parseItemTag(allTags[i]);
+          tagsParam.push({ tag: tag.tag, value: tag.value, operator: '1' });
         }
         params.tags = tagsParam;
         // Use OR eval type

@@ -100,3 +100,17 @@ func itemTagToString(tag ItemTag) string {
 		return tag.Tag
 	}
 }
+
+func parseItemTag(tagStr string) ItemTag {
+	tag := ItemTag{}
+	firstIdx := strings.Index(tagStr, ":")
+	if firstIdx > 0 {
+		tag.Tag = strings.TrimSpace(tagStr[:firstIdx])
+		if firstIdx < len(tagStr)-1 {
+			tag.Value = strings.TrimSpace(tagStr[firstIdx+1:])
+		}
+	} else {
+		tag.Tag = strings.TrimSpace(tagStr)
+	}
+	return tag
+}

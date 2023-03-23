@@ -433,10 +433,12 @@ export function parseTags(tagStr: string): any[] {
 // Parses string representation of tag into the object
 export function parseItemTag(tagStr: string): ZBXItemTag {
   const itemTag: ZBXItemTag = { tag: '', value: '' };
-  const tagParts = tagStr.split(': ');
-  itemTag.tag = tagParts[0];
-  if (tagParts[1]) {
-    itemTag.value = tagParts[1];
+  const firstIdx = tagStr.indexOf(':');
+  if (firstIdx > 0) {
+    itemTag.tag = tagStr.slice(0, firstIdx).trim();
+    itemTag.value = tagStr.slice(Math.min(firstIdx + 1, tagStr.length)).trim();
+  } else {
+    itemTag.tag = tagStr.trim();
   }
   return itemTag;
 }
