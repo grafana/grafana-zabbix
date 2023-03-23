@@ -16,7 +16,7 @@ export function isNewProblem(problem: ProblemDTO, highlightNewerThan: string): b
 const DEFAULT_TIME_FORMAT = 'DD MMM YYYY HH:mm:ss';
 
 export function formatLastChange(lastchangeUnix: number, customFormat?: string) {
-  const date = new Date(lastchangeUnix);
+  const date = new Date(lastchangeUnix * 1000);
   const timestamp = dateMath.parse(date);
   const format = customFormat || DEFAULT_TIME_FORMAT;
   const lastchange = timestamp!.format(format);
