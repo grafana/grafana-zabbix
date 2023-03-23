@@ -1,5 +1,15 @@
 # Change Log
 
+## [4.3.1] - 2023-03-23
+
+### Fixed
+
+- Cannot create or edit variables (unexpected error happened), [#1590](https://github.com/alexanderzobnin/grafana-zabbix/issues/1590)
+- Item tag filter not working properly, [#1594](https://github.com/alexanderzobnin/grafana-zabbix/issues/1594)
+- SLA dates differ in Grafana and Zabbix, [#1595](https://github.com/alexanderzobnin/grafana-zabbix/issues/1595)
+- Problems panel: invalid problem lastchange time for list layout, [#1596](https://github.com/alexanderzobnin/grafana-zabbix/issues/1596)
+- Problems panel: tags filter doesn't work in history mode, [#1592](https://github.com/alexanderzobnin/grafana-zabbix/issues/1592)
+
 ## [4.3.0] - 2023-03-21
 
 ### Added
