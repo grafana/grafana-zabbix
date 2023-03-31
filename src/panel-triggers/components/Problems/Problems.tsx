@@ -206,7 +206,6 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         id: 'lastchange',
         Cell: (props) => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
       },
-      { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
     ];
     for (const column of columns) {
       if (column.show || column.show === undefined) {
@@ -412,12 +411,4 @@ class TagCell extends PureComponent<TagCellProps> {
       )),
     ];
   }
-}
-
-function CustomExpander(props: RTCell<any>) {
-  return (
-    <span className={props.isExpanded ? 'expanded' : ''}>
-      <i className="fa fa-info-circle"></i>
-    </span>
-  );
 }
