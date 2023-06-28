@@ -83,7 +83,7 @@ func newZabbixDatasourceInstance(dsSettings backend.DataSourceInstanceSettings) 
 func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
 
-	dsInstance, err := ds.getDSInstance(req.PluginContext)
+	dsInstance, err := ds.getDSInstance(ctx, req.PluginContext)
 	if err != nil {
 		res.Status = backend.HealthStatusError
 		res.Message = "Error getting datasource instance"
@@ -108,7 +108,7 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 	metrics.DataSourceQueryTotal.WithLabelValues("metrics").Inc()
 	qdr := backend.NewQueryDataResponse()
 
-	zabbixDS, err := ds.getDSInstance(req.PluginContext)
+	zabbixDS, err := ds.getDSInstance(ctx, req.PluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +143,8 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 }
 
 // getDSInstance Returns cached datasource or creates new one
-func (ds *ZabbixDatasource) getDSInstance(pluginContext backend.PluginContext) (*ZabbixDatasourceInstance, error) {
-	instance, err := ds.im.Get(pluginContext)
+func (ds *ZabbixDatasource) getDSInstance(ctx context.Context, pluginContext backend.PluginContext) (*ZabbixDatasourceInstance, error) {
+	instance, err := ds.im.Get(ctx, pluginContext)
 	if err != nil {
 		return nil, err
 	}

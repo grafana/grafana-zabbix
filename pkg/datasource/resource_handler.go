@@ -41,8 +41,9 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 		return
 	}
 
-	pluginCxt := httpadapter.PluginConfigFromContext(req.Context())
-	dsInstance, err := ds.getDSInstance(pluginCxt)
+	ctx := req.Context()
+	pluginCxt := httpadapter.PluginConfigFromContext(ctx)
+	dsInstance, err := ds.getDSInstance(ctx, pluginCxt)
 	if err != nil {
 		ds.logger.Error("Error loading datasource", "error", err)
 		writeError(rw, http.StatusInternalServerError, err)
@@ -81,8 +82,9 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 		return
 	}
 
-	pluginCxt := httpadapter.PluginConfigFromContext(req.Context())
-	dsInstance, err := ds.getDSInstance(pluginCxt)
+	ctx := req.Context()
+	pluginCxt := httpadapter.PluginConfigFromContext(ctx)
+	dsInstance, err := ds.getDSInstance(ctx, pluginCxt)
 	if err != nil {
 		ds.logger.Error("Error loading datasource", "error", err)
 		writeError(rw, http.StatusInternalServerError, err)

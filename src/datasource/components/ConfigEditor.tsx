@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getDataSourceSrv } from '@grafana/runtime';
+import { getDataSourceSrv, config } from '@grafana/runtime';
 import { DataSourcePluginOptionsEditorProps, DataSourceSettings, SelectableValue } from '@grafana/data';
 import { Button, DataSourceHttpSettings, InlineFormLabel, LegacyForms, Select } from '@grafana/ui';
 import { ZabbixDSOptions, ZabbixSecureJSONData } from '../types';
+import { gte } from 'semver';
 
 const { FormField, Switch } = LegacyForms;
 
@@ -221,7 +222,7 @@ export const ConfigEditor = (props: Props) => {
         )}
       </div>
 
-      <div className="gf-form-group">
+     <div className="gf-form-group">
         <h3 className="page-heading">Other</h3>
         <Switch
           label="Disable acknowledges for read-only users"
@@ -240,6 +241,18 @@ export const ConfigEditor = (props: Props) => {
             If you don't need stacked graphs and want to get exactly the same timestamps as in Zabbix, then you can disable this feature."
         />
       </div>
+
+      {config.featureToggles['secureSocksDSProxyEnabled'] && gte(config.buildInfo.version, '10.0.0-0') && (
+        <div className="gf-form-group">
+          <Switch
+            label="Secure Socks Proxy"
+            labelClass="width-20"
+            checked={options.jsonData.enableSecureSocksProxy}
+            tooltip="Enable proxying the datasource connection through the secure socks proxy to a different network."
+            onChange={jsonDataSwitchHandler('enableSecureSocksProxy', options, onOptionsChange)}
+          />
+        </div>  
+      )}
     </>
   );
 };
