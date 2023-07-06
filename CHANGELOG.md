@@ -3,6 +3,7 @@
 ## [4.4.0] - 2023-06-06
 
 ### Added
+
 - Enables PDC for zabbix datasource, [#1653](https://github.com/alexanderzobnin/grafana-zabbix/issues/1653)
 
 ## [4.3.1] - 2023-03-23
