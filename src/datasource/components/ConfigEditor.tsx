@@ -116,6 +116,31 @@ export const ConfigEditor = (props: Props) => {
             />
           )}
         </div>
+        <div className="gf-form max-width-128">
+          {options.secureJsonFields?.apitoken ? (
+            <>
+              <FormField
+                labelWidth={7} 
+                inputWidth={25}
+                label="Apitoken"
+                disabled={true}
+                value=""
+                placeholder="Configured"
+              />
+              <Button onClick={resetSecureJsonField('apitoken', options, onOptionsChange)}>Reset</Button>
+            </>
+          ) : (
+            <FormField
+              labelWidth={7}
+              inputWidth={15}
+              label="Apitoken"
+              type="password"
+              value={options.secureJsonData?.apitoken || options.jsonData.apitoken || ''}
+              onChange={secureJsonDataChangeHandler('apitoken', options, onOptionsChange)}
+              required
+            />
+          )}
+        </div>
         <Switch
           label="Trends"
           labelClass="width-7"

@@ -3,6 +3,7 @@ import { BusEventWithPayload, DataQuery, DataSourceJsonData, DataSourceRef, Sele
 export interface ZabbixDSOptions extends DataSourceJsonData {
   username: string;
   password?: string;
+  apitoken?: string;
   trends: boolean;
   trendsFrom: string;
   trendsRange: string;
@@ -18,6 +19,7 @@ export interface ZabbixDSOptions extends DataSourceJsonData {
 
 export interface ZabbixSecureJSONData {
   password?: string;
+  apitoken?: string;
 }
 
 export interface ZabbixConnectionInfo {

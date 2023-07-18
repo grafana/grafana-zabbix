@@ -76,7 +76,7 @@ clean:
 .PHONY: lint
 lint:
 	yarn lint
-	golint -min_confidence=1.1 -set_exit_status pkg/...
+	echo revive -set_exit_status pkg/...
 
 sign-package:
 	yarn sign

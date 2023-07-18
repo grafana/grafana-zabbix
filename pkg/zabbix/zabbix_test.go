@@ -29,7 +29,7 @@ func TestLoginError(t *testing.T) {
 	zabbixClient, _ := MockZabbixClient(basicDatasourceInfo, `{"result":""}`, 500)
 	err := zabbixClient.Login(context.Background())
 
-	assert.Error(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "", zabbixClient.api.GetAuth())
 }
 

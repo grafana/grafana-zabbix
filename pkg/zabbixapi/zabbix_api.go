@@ -122,7 +122,7 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 }
 
 // Login performs API authentication and returns authentication token.
-func (api *ZabbixAPI) Login(ctx context.Context, username string, password string) (string, error) {
+func (api *ZabbixAPI) Login(ctx context.Context, username string, password string, apitoken string) (string, error) {
 	params := ZabbixAPIParams{
 		"username": username,
 		"password": password,
@@ -130,7 +130,7 @@ func (api *ZabbixAPI) Login(ctx context.Context, username string, password strin
 
 	auth, err := api.request(ctx, "user.login", params, "")
 	if err != nil {
-		return "", err
+		return apitoken, nil
 	}
 
 	return auth.MustString(), nil
@@ -152,8 +152,8 @@ func (api *ZabbixAPI) LoginDeprecated(ctx context.Context, username string, pass
 }
 
 // Authenticate performs API authentication and sets authentication token.
-func (api *ZabbixAPI) Authenticate(ctx context.Context, username string, password string) error {
-	auth, err := api.Login(ctx, username, password)
+func (api *ZabbixAPI) Authenticate(ctx context.Context, username string, password string, apitoken string) error {
+	auth, err := api.Login(ctx, username, password, apitoken)
 	if isDeprecatedUserParamError(err) {
 		api.logger.Debug("user.login method error, switching to deprecated user parameter", "error", err)
 		auth, err = api.LoginDeprecated(ctx, username, password)

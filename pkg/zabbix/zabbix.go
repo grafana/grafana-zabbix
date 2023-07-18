@@ -120,8 +120,15 @@ func (zabbix *Zabbix) Login(ctx context.Context) error {
 		// Fallback
 		zabbixPassword = jsonData.Get("password").MustString()
 	}
+        var zabbixApitoken string
+        if secureApitoken, exists := zabbix.dsInfo.DecryptedSecureJSONData["apitoken"]; exists {
+                zabbixApitoken = secureApitoken
+        } else {
+                // Fallback
+                zabbixApitoken = jsonData.Get("apitoken").MustString()
+        }
 
-	err = zabbix.api.Authenticate(ctx, zabbixLogin, zabbixPassword)
+	err = zabbix.api.Authenticate(ctx, zabbixLogin, zabbixPassword, zabbixApitoken)
 	if err != nil {
 		zabbix.logger.Error("Zabbix authentication error", "error", err)
 		return err
