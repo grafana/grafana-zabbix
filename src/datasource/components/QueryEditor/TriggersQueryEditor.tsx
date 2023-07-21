@@ -13,8 +13,8 @@ import { ZabbixMetricsQuery, ZBXItem, ZBXItemTag } from '../../types';
 
 const countByOptions: Array<SelectableValue<string>> = [
   { value: '', label: 'All triggers' },
-  // { value: 'problems', label: 'Problems' },
-  // { value: 'items', label: 'Items' },
+  { value: 'problems', label: 'Problems' },
+  { value: 'items', label: 'Items' },
 ];
 
 const severityOptions: Array<SelectableValue<number>> = [
