@@ -14,6 +14,7 @@ export interface ZabbixDSOptions extends DataSourceJsonData {
   dbConnectionRetentionPolicy?: string;
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
+  enableSecureSocksProxy?: boolean;
 }
 
 export interface ZabbixSecureJSONData {
