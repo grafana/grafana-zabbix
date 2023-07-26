@@ -1,10 +1,11 @@
 # Change Log
 
-## [4.4.0] - 2023-06-06
+## [4.4.0] - Unreleased
 
 ### Added
 
-- Enables PDC for zabbix datasource, [#1653](https://github.com/alexanderzobnin/grafana-zabbix/issues/1653)
+- Support for secure socks proxy, [#1653](https://github.com/alexanderzobnin/grafana-zabbix/issues/1653)
+- Able to use API tokens for authentication, [#1513](https://github.com/alexanderzobnin/grafana-zabbix/issues/1513)
 
 ## [4.3.1] - 2023-03-23
 
