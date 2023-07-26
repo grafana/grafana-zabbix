@@ -2,6 +2,7 @@ package zabbix
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 	"github.com/bitly/go-simplejson"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
@@ -16,11 +18,12 @@ import (
 // Zabbix is a wrapper for Zabbix API. It wraps Zabbix API queries and performs authentication, adds caching,
 // deduplication and other performance optimizations.
 type Zabbix struct {
-	api     *zabbixapi.ZabbixAPI
-	dsInfo  *backend.DataSourceInstanceSettings
-	cache   *ZabbixCache
-	version int
-	logger  log.Logger
+	api      *zabbixapi.ZabbixAPI
+	dsInfo   *backend.DataSourceInstanceSettings
+	settings *settings.ZabbixDatasourceSettings
+	cache    *ZabbixCache
+	version  int
+	logger   log.Logger
 }
 
 // New returns new instance of Zabbix client.
@@ -29,10 +32,11 @@ func New(dsInfo *backend.DataSourceInstanceSettings, zabbixSettings *settings.Za
 	zabbixCache := NewZabbixCache(zabbixSettings.CacheTTL, 10*time.Minute)
 
 	return &Zabbix{
-		api:    zabbixAPI,
-		dsInfo: dsInfo,
-		cache:  zabbixCache,
-		logger: logger,
+		api:      zabbixAPI,
+		dsInfo:   dsInfo,
+		settings: zabbixSettings,
+		cache:    zabbixCache,
+		logger:   logger,
 	}, nil
 }
 
@@ -90,11 +94,12 @@ func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixA
 
 	result, err := zabbix.api.Request(ctx, method, params)
 	notAuthorized := isNotAuthorized(err)
-	if err == zabbixapi.ErrNotAuthenticated || notAuthorized {
+	isTokenAuth := zabbix.settings.AuthType == settings.AuthTypeToken
+	if err == zabbixapi.ErrNotAuthenticated || (notAuthorized && !isTokenAuth) {
 		if notAuthorized {
 			zabbix.logger.Debug("Authentication token expired, performing re-login")
 		}
-		err = zabbix.Login(ctx)
+		err = zabbix.Authenticate(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -106,10 +111,25 @@ func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixA
 	return result, err
 }
 
-func (zabbix *Zabbix) Login(ctx context.Context) error {
+func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 	jsonData, err := simplejson.NewJson(zabbix.dsInfo.JSONData)
 	if err != nil {
 		return err
+	}
+
+	authType := zabbix.settings.AuthType
+	if authType == settings.AuthTypeToken {
+		token, exists := zabbix.dsInfo.DecryptedSecureJSONData["apiToken"]
+		if !exists {
+			return errors.New("cannot find Zabbix API token")
+		}
+		err = zabbix.api.AuthenticateWithToken(ctx, token)
+		if err != nil {
+			zabbix.logger.Error("Zabbix authentication error", "error", err)
+			return err
+		}
+		zabbix.logger.Debug("Using API token for authentication")
+		return nil
 	}
 
 	zabbixLogin := jsonData.Get("username").MustString()

@@ -13,8 +13,9 @@ import (
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/bitly/go-simplejson"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 var (
@@ -165,6 +166,15 @@ func (api *ZabbixAPI) Authenticate(ctx context.Context, username string, passwor
 	}
 
 	api.SetAuth(auth)
+	return nil
+}
+
+// AuthenticateWithToken performs authentication with API token.
+func (api *ZabbixAPI) AuthenticateWithToken(ctx context.Context, token string) error {
+	if token == "" {
+		return errors.New("API token is empty")
+	}
+	api.SetAuth(token)
 	return nil
 }
 
