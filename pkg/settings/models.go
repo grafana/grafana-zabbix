@@ -2,8 +2,14 @@ package settings
 
 import "time"
 
+const (
+	AuthTypeUserLogin = "userLogin"
+	AuthTypeToken     = "token"
+)
+
 // ZabbixDatasourceSettingsDTO model
 type ZabbixDatasourceSettingsDTO struct {
+	AuthType    string      `json:"authType"`
 	Trends      bool        `json:"trends"`
 	TrendsFrom  string      `json:"trendsFrom"`
 	TrendsRange string      `json:"trendsRange"`
@@ -16,6 +22,7 @@ type ZabbixDatasourceSettingsDTO struct {
 
 // ZabbixDatasourceSettings model
 type ZabbixDatasourceSettings struct {
+	AuthType    string
 	Trends      bool
 	TrendsFrom  time.Duration
 	TrendsRange time.Duration

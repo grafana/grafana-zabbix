@@ -2,12 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { getDataSourceSrv, config } from '@grafana/runtime';
 import { DataSourcePluginOptionsEditorProps, DataSourceSettings, SelectableValue } from '@grafana/data';
 import { Button, DataSourceHttpSettings, InlineFormLabel, LegacyForms, Select } from '@grafana/ui';
-import { ZabbixDSOptions, ZabbixSecureJSONData } from '../types';
+import { ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types';
 import { gte } from 'semver';
 
 const { FormField, Switch } = LegacyForms;
 
 const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
+
+const authOptions: Array<SelectableValue<ZabbixAuthType>> = [
+  { label: 'User and password', value: ZabbixAuthType.UserLogin },
+  { label: 'API token', value: ZabbixAuthType.Token },
+];
 
 export type Props = DataSourcePluginOptionsEditorProps<ZabbixDSOptions, ZabbixSecureJSONData>;
 export const ConfigEditor = (props: Props) => {
@@ -32,6 +37,7 @@ export const ConfigEditor = (props: Props) => {
     onOptionsChange({
       ...options,
       jsonData: {
+        authType: ZabbixAuthType.UserLogin,
         trends: true,
         trendsFrom: '',
         trendsRange: '',
@@ -82,41 +88,84 @@ export const ConfigEditor = (props: Props) => {
 
       <div className="gf-form-group">
         <h3 className="page-heading">Zabbix API details</h3>
-        <div className="gf-form max-width-25">
-          <FormField
-            labelWidth={7}
-            inputWidth={15}
-            label="Username"
-            value={options.jsonData.username || ''}
-            onChange={jsonDataChangeHandler('username', options, onOptionsChange)}
-            required
+        <div className="gf-form">
+          <InlineFormLabel width={7} tooltip="Token authentication available in Zabbix version 5.4 and higher.">
+            Auth type
+          </InlineFormLabel>
+          <Select
+            width={30}
+            options={authOptions}
+            value={options.jsonData.authType}
+            onChange={jsonDataSelectHandler('authType', options, onOptionsChange)}
           />
         </div>
-        <div className="gf-form max-width-25">
-          {options.secureJsonFields?.password ? (
-            <>
+        {options.jsonData?.authType === ZabbixAuthType.Token ? (
+          <>
+            <div className="gf-form max-width-25">
+              {options.secureJsonFields?.apiToken ? (
+                <>
+                  <FormField
+                    labelWidth={7}
+                    inputWidth={15}
+                    label="API token"
+                    disabled={true}
+                    value=""
+                    placeholder="Configured"
+                  />
+                  <Button onClick={resetSecureJsonField('apiToken', options, onOptionsChange)}>Reset</Button>
+                </>
+              ) : (
+                <FormField
+                  labelWidth={7}
+                  inputWidth={15}
+                  label="API token"
+                  type="password"
+                  value={options.secureJsonData?.apiToken || ''}
+                  onChange={secureJsonDataChangeHandler('apiToken', options, onOptionsChange)}
+                  required
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="gf-form max-width-25">
               <FormField
                 labelWidth={7}
                 inputWidth={15}
-                label="Password"
-                disabled={true}
-                value=""
-                placeholder="Configured"
+                label="Username"
+                value={options.jsonData.username || ''}
+                onChange={jsonDataChangeHandler('username', options, onOptionsChange)}
+                required
               />
-              <Button onClick={resetSecureJsonField('password', options, onOptionsChange)}>Reset</Button>
-            </>
-          ) : (
-            <FormField
-              labelWidth={7}
-              inputWidth={15}
-              label="Password"
-              type="password"
-              value={options.secureJsonData?.password || options.jsonData.password || ''}
-              onChange={secureJsonDataChangeHandler('password', options, onOptionsChange)}
-              required
-            />
-          )}
-        </div>
+            </div>
+            <div className="gf-form max-width-25">
+              {options.secureJsonFields?.password ? (
+                <>
+                  <FormField
+                    labelWidth={7}
+                    inputWidth={15}
+                    label="Password"
+                    disabled={true}
+                    value=""
+                    placeholder="Configured"
+                  />
+                  <Button onClick={resetSecureJsonField('password', options, onOptionsChange)}>Reset</Button>
+                </>
+              ) : (
+                <FormField
+                  labelWidth={7}
+                  inputWidth={15}
+                  label="Password"
+                  type="password"
+                  value={options.secureJsonData?.password || options.jsonData.password || ''}
+                  onChange={secureJsonDataChangeHandler('password', options, onOptionsChange)}
+                  required
+                />
+              )}
+            </div>
+          </>
+        )}
         <Switch
           label="Trends"
           labelClass="width-7"
@@ -222,7 +271,7 @@ export const ConfigEditor = (props: Props) => {
         )}
       </div>
 
-     <div className="gf-form-group">
+      <div className="gf-form-group">
         <h3 className="page-heading">Other</h3>
         <Switch
           label="Disable acknowledges for read-only users"
@@ -251,7 +300,7 @@ export const ConfigEditor = (props: Props) => {
             tooltip="Enable proxying the datasource connection through the secure socks proxy to a different network."
             onChange={jsonDataSwitchHandler('enableSecureSocksProxy', options, onOptionsChange)}
           />
-        </div>  
+        </div>
       )}
     </>
   );
@@ -269,6 +318,22 @@ const jsonDataChangeHandler =
       jsonData: {
         ...value.jsonData,
         [key]: event.currentTarget.value,
+      },
+    });
+  };
+
+const jsonDataSelectHandler =
+  (
+    key: keyof ZabbixDSOptions,
+    value: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
+    onChange: Props['onOptionsChange']
+  ) =>
+  (option: SelectableValue) => {
+    onChange({
+      ...value,
+      jsonData: {
+        ...value.jsonData,
+        [key]: option.value,
       },
     });
   };
@@ -291,7 +356,7 @@ const jsonDataSwitchHandler =
 
 const secureJsonDataChangeHandler =
   (
-    key: keyof ZabbixDSOptions,
+    key: keyof ZabbixSecureJSONData,
     value: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
     onChange: Props['onOptionsChange']
   ) =>
@@ -307,7 +372,7 @@ const secureJsonDataChangeHandler =
 
 const resetSecureJsonField =
   (
-    key: keyof ZabbixDSOptions,
+    key: keyof ZabbixSecureJSONData,
     value: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
     onChange: Props['onOptionsChange']
   ) =>

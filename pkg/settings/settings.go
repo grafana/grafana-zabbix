@@ -3,10 +3,12 @@ package settings
 import (
 	"encoding/json"
 	"errors"
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"strconv"
 	"time"
+
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) (*ZabbixDatasourceSettings, error) {
@@ -15,6 +17,10 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 	err := json.Unmarshal(dsInstanceSettings.JSONData, &zabbixSettingsDTO)
 	if err != nil {
 		return nil, err
+	}
+
+	if zabbixSettingsDTO.AuthType == "" {
+		zabbixSettingsDTO.AuthType = AuthTypeUserLogin
 	}
 
 	if zabbixSettingsDTO.TrendsFrom == "" {
@@ -65,6 +71,7 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 	}
 
 	zabbixSettings := &ZabbixDatasourceSettings{
+		AuthType:                zabbixSettingsDTO.AuthType,
 		Trends:                  zabbixSettingsDTO.Trends,
 		TrendsFrom:              trendsFrom,
 		TrendsRange:             trendsRange,

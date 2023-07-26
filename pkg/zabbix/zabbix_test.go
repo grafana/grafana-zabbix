@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 var basicDatasourceInfo = &backend.DataSourceInstanceSettings{
@@ -19,7 +20,7 @@ var emptyParams = map[string]interface{}{}
 
 func TestLogin(t *testing.T) {
 	zabbixClient, _ := MockZabbixClient(basicDatasourceInfo, `{"result":"secretauth"}`, 200)
-	err := zabbixClient.Login(context.Background())
+	err := zabbixClient.Authenticate(context.Background())
 
 	assert.NoError(t, err)
 	assert.Equal(t, "secretauth", zabbixClient.api.GetAuth())
@@ -27,7 +28,7 @@ func TestLogin(t *testing.T) {
 
 func TestLoginError(t *testing.T) {
 	zabbixClient, _ := MockZabbixClient(basicDatasourceInfo, `{"result":""}`, 500)
-	err := zabbixClient.Login(context.Background())
+	err := zabbixClient.Authenticate(context.Background())
 
 	assert.Error(t, err)
 	assert.Equal(t, "", zabbixClient.api.GetAuth())
