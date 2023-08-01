@@ -8,7 +8,7 @@ import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery } from '../../types';
+import { ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types';
 
 const showProblemsOptions: Array<SelectableValue<string>> = [
   { label: 'Problems', value: 'problems' },
@@ -23,6 +23,11 @@ const severityOptions: Array<SelectableValue<number>> = [
   { value: 3, label: 'Average' },
   { value: 4, label: 'High' },
   { value: 5, label: 'Disaster' },
+];
+
+const evaltypeOptions: Array<SelectableValue<ZabbixTagEvalType>> = [
+  { label: 'AND/OR', value: ZabbixTagEvalType.AndOr },
+  { label: 'OR', value: ZabbixTagEvalType.Or },
 ];
 
 export interface Props {
@@ -204,6 +209,15 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             defaultValue={query.tags?.filter}
             placeholder="tag1:value1, tag2:value2"
             onBlur={onTextFilterChange('tags')}
+          />
+        </InlineField>
+        <InlineField>
+          <Select
+            isSearchable={false}
+            width={15}
+            value={query.evaltype}
+            options={evaltypeOptions}
+            onChange={onPropChange('evaltype')}
           />
         </InlineField>
       </QueryEditorRow>

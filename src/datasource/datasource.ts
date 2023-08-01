@@ -675,6 +675,10 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       problemsOptions.tags = tags;
     }
 
+    if (target?.evaltype) {
+      problemsOptions.evaltype = target?.evaltype;
+    }
+
     if (target.options?.acknowledged === 0 || target.options?.acknowledged === 1) {
       problemsOptions.acknowledged = !!target.options?.acknowledged;
     }

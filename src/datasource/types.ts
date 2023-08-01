@@ -59,6 +59,7 @@ export interface ZabbixMetricsQuery extends DataQuery {
   tags?: { filter: string };
   triggers?: { minSeverity: number; acknowledged: number; count: boolean };
   countTriggersBy?: 'problems' | 'items' | '';
+  evaltype?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
   // Problems
@@ -414,4 +415,9 @@ export class ZBXQueryUpdatedEvent extends BusEventWithPayload<any> {
 export enum ZabbixAuthType {
   UserLogin = 'userLogin',
   Token = 'token',
+}
+
+export enum ZabbixTagEvalType {
+  AndOr = '0',
+  Or = '2',
 }

@@ -481,7 +481,7 @@ export class ZabbixAPIConnector {
   }
 
   getProblems(groupids, hostids, applicationids, options): Promise<ZBXProblem[]> {
-    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags } = options;
+    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype } = options;
 
     const params: any = {
       output: 'extend',
@@ -492,7 +492,7 @@ export class ZabbixAPIConnector {
       object: '0',
       sortfield: ['eventid'],
       sortorder: 'DESC',
-      evaltype: '2',
+      evaltype: '0',
       // preservekeys: '1',
       groupids,
       hostids,
@@ -510,6 +510,10 @@ export class ZabbixAPIConnector {
 
     if (tags) {
       params.tags = tags;
+    }
+
+    if (evaltype) {
+      params.evaltype = evaltype;
     }
 
     if (limit) {

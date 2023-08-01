@@ -4,7 +4,7 @@ import { InlineField, InlineFieldRow, Select } from '@grafana/ui';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
-import { ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions } from '../types';
+import { ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions, ZabbixTagEvalType } from '../types';
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
@@ -68,6 +68,7 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
   tags: { filter: '' },
   proxy: { filter: '' },
   textFilter: '',
+  evaltype: ZabbixTagEvalType.AndOr,
   options: {
     showDisabledItems: false,
     skipEmptyValues: false,
