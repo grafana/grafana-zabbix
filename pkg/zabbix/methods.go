@@ -150,7 +150,7 @@ func (ds *Zabbix) GetItemsBefore54(
 	var allItems []*Item
 	if len(appids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "")
-	} else if len(hostids) > 0 {
+	} else if appFilter == "" && len(hostids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
 	}
 
