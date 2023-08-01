@@ -211,6 +211,10 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     }
   };
 
+  const onPageSizeChange = (pageSize: number, pageIndex?: number) => {
+    onOptionsChange({ ...options, pageSize });
+  };
+
   const onColumnResize = (newResized: RTResized) => {
     onOptionsChange({ ...options, resizedColumns: newResized });
   };
@@ -258,6 +262,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
         onExecuteScript={onExecuteScript}
         onProblemAck={onProblemAck}
         onColumnResize={onColumnResize}
+        onPageSizeChange={onPageSizeChange}
         onTagClick={onTagClick}
       />
     );
