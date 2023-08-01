@@ -715,7 +715,7 @@ export class ZabbixAPIConnector {
   }
 
   async getHostAlerts(hostids, applicationids, options): Promise<ZBXTrigger[]> {
-    const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
+    const { minSeverity, acknowledged, tags, count, timeFrom, timeTo } = options;
     const params: any = {
       output: 'extend',
       hostids: hostids,
@@ -745,6 +745,11 @@ export class ZabbixAPIConnector {
     if (timeFrom || timeTo) {
       params.lastChangeSince = timeFrom;
       params.lastChangeTill = timeTo;
+    }
+
+    if (tags) {
+      params.tags = tags;
+      params.evaltype = 0;
     }
 
     let triggers = await this.request('trigger.get', params);
