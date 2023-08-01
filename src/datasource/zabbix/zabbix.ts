@@ -3,7 +3,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import semver from 'semver';
 import * as utils from '../utils';
-import responseHandler, { handleServiceResponse, handleSLIResponse } from '../responseHandler';
+import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { CachingProxy } from './proxy/cachingProxy';
 import { DBConnector } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
@@ -667,9 +667,15 @@ export class Zabbix implements ZabbixConnector {
     }
 
     const slaIds = slas.map((s) => s.slaid);
-    const slaId = slaIds?.length > 0 ? slaIds[0] : undefined;
-    const result = await this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options);
-    return handleSLIResponse(result, itservices, target);
+    if (slaIds.length > 1) {
+      const sliQueries = slaIds?.map((slaId) => this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options));
+      const results = await Promise.all(sliQueries);
+      return handleMultiSLIResponse(results, itservices, slas, target);
+    } else {
+      const slaId = slaIds?.length > 0 ? slaIds[0] : undefined;
+      const result = await this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options);
+      return handleSLIResponse(result, itservices, target);
+    }
   }
 
   async getSLA(itservices, timeRange, target, options) {
