@@ -9,6 +9,7 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
