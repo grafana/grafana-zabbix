@@ -154,6 +154,8 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
     }
   };
 
+  const supportsApplications = datasource.zabbix.supportsApplications();
+
   return (
     <>
       <QueryEditorRow>
@@ -186,15 +188,17 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
-        <InlineField label="Application" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.application?.filter}
-            options={appOptions}
-            isLoading={appsLoading}
-            onChange={onFilterChange('application')}
-          />
-        </InlineField>
+        {supportsApplications && (
+          <InlineField label="Application" labelWidth={12}>
+            <MetricPicker
+              width={24}
+              value={query.application?.filter}
+              options={appOptions}
+              isLoading={appsLoading}
+              onChange={onFilterChange('application')}
+            />
+          </InlineField>
+        )}
         <InlineField label="Problem" labelWidth={12}>
           <Input
             width={24}
@@ -205,7 +209,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
         </InlineField>
         <InlineField label="Tags" labelWidth={12}>
           <Input
-            width={24}
+            width={36}
             defaultValue={query.tags?.filter}
             placeholder="tag1:value1, tag2:value2"
             onBlur={onTextFilterChange('tags')}

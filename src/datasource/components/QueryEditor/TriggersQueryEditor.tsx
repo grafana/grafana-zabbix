@@ -260,7 +260,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
         )}
       </QueryEditorRow>
       <QueryEditorRow>
-        {(supportsApplications || query.countTriggersBy !== 'items') && (
+        {supportsApplications && (
           <InlineField label="Application" labelWidth={12}>
             <MetricPicker
               width={24}
@@ -292,14 +292,6 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
                 onBlur={onTextFilterChange('trigger')}
               />
             </InlineField>
-            <InlineField label="Tags" labelWidth={12}>
-              <Input
-                width={24}
-                defaultValue={query.tags?.filter}
-                placeholder="tag1:value1, tag2:value2"
-                onBlur={onTextFilterChange('tags')}
-              />
-            </InlineField>
           </>
         )}
         {query.countTriggersBy === 'items' && (
@@ -310,6 +302,16 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={itemOptions}
               isLoading={itemsLoading}
               onChange={onFilterChange('item')}
+            />
+          </InlineField>
+        )}
+        {!supportsApplications && (
+          <InlineField label="Tags" labelWidth={12}>
+            <Input
+              width={24}
+              defaultValue={query.tags?.filter}
+              placeholder="tag1:value1, tag2:value2"
+              onBlur={onTextFilterChange('tags')}
             />
           </InlineField>
         )}
