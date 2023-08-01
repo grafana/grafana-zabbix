@@ -125,10 +125,10 @@
             <name>Zabbix server</name>
             <templates>
                 <template>
-                    <name>Linux by Zabbix agent</name>
+                    <name>Template OS Linux by Zabbix agent</name>
                 </template>
                 <template>
-                    <name>Zabbix Server</name>
+                    <name>Template App Zabbix Server</name>
                 </template>
             </templates>
             <groups>
