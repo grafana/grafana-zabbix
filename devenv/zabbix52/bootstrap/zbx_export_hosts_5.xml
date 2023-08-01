@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>5.0</version>
+    <date>2021-09-10T12:42:13Z</date>
+    <groups>
+        <group>
+            <name>Backend</name>
+        </group>
+        <group>
+            <name>Database</name>
+        </group>
+        <group>
+            <name>Frontend</name>
+        </group>
+        <group>
+            <name>Linux servers</name>
+        </group>
+        <group>
+            <name>Zabbix servers</name>
+        </group>
+    </groups>
+    <hosts>
+        <host>
+            <host>backend01</host>
+            <name>backend01</name>
+            <templates>
+                <template>
+                    <name>Template ZAS Agent</name>
+                </template>
+            </templates>
+            <groups>
+                <group>
+                    <name>Backend</name>
+                </group>
+                <group>
+                    <name>Linux servers</name>
+                </group>
+            </groups>
+            <interfaces>
+                <interface>
+                    <useip>NO</useip>
+                    <dns>zas_backend_01</dns>
+                    <interface_ref>if1</interface_ref>
+                </interface>
+            </interfaces>
+            <inventory_mode>DISABLED</inventory_mode>
+        </host>
+        <host>
+            <host>backend02</host>
+            <name>backend02</name>
+            <templates>
+                <template>
+                    <name>Template ZAS Agent</name>
+                </template>
+            </templates>
+            <groups>
+                <group>
+                    <name>Backend</name>
+                </group>
+                <group>
+                    <name>Linux servers</name>
+                </group>
+            </groups>
+            <interfaces>
+                <interface>
+                    <useip>NO</useip>
+                    <dns>zas_backend_02</dns>
+                    <interface_ref>if1</interface_ref>
+                </interface>
+            </interfaces>
+            <inventory_mode>DISABLED</inventory_mode>
+        </host>
+        <host>
+            <host>frontend01</host>
+            <name>frontend01</name>
+            <templates>
+                <template>
+                    <name>Template ZAS Agent</name>
+                </template>
+            </templates>
+            <groups>
+                <group>
+                    <name>Frontend</name>
+                </group>
+                <group>
+                    <name>Linux servers</name>
+                </group>
+            </groups>
+            <interfaces>
+                <interface>
+                    <useip>NO</useip>
+                    <dns>zas_frontend_01</dns>
+                    <interface_ref>if1</interface_ref>
+                </interface>
+            </interfaces>
+            <inventory_mode>DISABLED</inventory_mode>
+        </host>
+        <host>
+            <host>frontend02</host>
+            <name>frontend02</name>
+            <templates>
+                <template>
+                    <name>Template ZAS Agent</name>
+                </template>
+            </templates>
+            <groups>
+                <group>
+                    <name>Frontend</name>
+                </group>
+                <group>
+                    <name>Linux servers</name>
+                </group>
+            </groups>
+            <interfaces>
+                <interface>
+                    <useip>NO</useip>
+                    <dns>zas_frontend_02</dns>
+                    <interface_ref>if1</interface_ref>
+                </interface>
+            </interfaces>
+            <inventory_mode>DISABLED</inventory_mode>
+        </host>
+        <host>
+            <host>Zabbix server</host>
+            <name>Zabbix server</name>
+            <templates>
+                <template>
+                    <name>Linux by Zabbix agent</name>
+                </template>
+                <template>
+                    <name>Zabbix Server</name>
+                </template>
+            </templates>
+            <groups>
+                <group>
+                    <name>Zabbix servers</name>
+                </group>
+            </groups>
+            <interfaces>
+                <interface>
+                    <interface_ref>if1</interface_ref>
+                </interface>
+            </interfaces>
+            <inventory_mode>DISABLED</inventory_mode>
+        </host>
+    </hosts>
+    <templates>
+        <template>
+            <template>Template ZAS Agent</template>
+            <name>Template ZAS Agent</name>
+            <templates>
+                <template>
+                    <name>Template App Zabbix Agent</name>
+                </template>
+            </templates>
+            <groups>
+                <group>
+                    <name>Templates</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>CPU</name>
+                </application>
+                <application>
+                    <name>Filesystems</name>
+                </application>
+                <application>
+                    <name>General</name>
+                </application>
+                <application>
+                    <name>Memory</name>
+                </application>
+                <application>
+                    <name>Network interfaces</name>
+                </application>
+                <application>
+                    <name>OS</name>
+                </application>
+                <application>
+                    <name>Performance</name>
+                </application>
+                <application>
+                    <name>Processes</name>
+                </application>
+                <application>
+                    <name>Security</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>Incoming network traffic on eth0</name>
+                    <key>net.if.in[eth0]</key>
+                    <history>1d</history>
+                    <units>bps</units>
+                    <applications>
+                        <application>
+                            <name>Network interfaces</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                </item>
+                <item>
+                    <name>Outgoing network traffic on eth0</name>
+                    <key>net.if.out[eth0]</key>
+                    <history>1d</history>
+                    <units>bps</units>
+                    <applications>
+                        <application>
+                            <name>Network interfaces</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                </item>
+                <item>
+                    <name>Processor load (1 min average per core)</name>
+                    <key>system.cpu.load[percpu,avg1]</key>
+                    <history>1d</history>
+                    <value_type>FLOAT</value_type>
+                    <description>The processor load is calculated as system CPU load divided by number of CPU cores.</description>
+                    <applications>
+                        <application>
+                            <name>CPU</name>
+                        </application>
+                        <application>
+                            <name>Performance</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                    <triggers>
+                        <trigger>
+                            <expression>{last(0)}&gt;2</expression>
+                            <name>Processor load is too high on {HOST.NAME}</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Processor load (15 min average per core)</name>
+                    <key>system.cpu.load[percpu,avg15]</key>
+                    <history>1d</history>
+                    <value_type>FLOAT</value_type>
+                    <description>The processor load is calculated as system CPU load divided by number of CPU cores.</description>
+                    <applications>
+                        <application>
+                            <name>CPU</name>
+                        </application>
+                        <application>
+                            <name>Performance</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                </item>
+                <item>
+                    <name>CPU $2 time</name>
+                    <key>system.cpu.util[,iowait]</key>
+                    <history>1d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <description>Amount of time the CPU has been waiting for I/O to complete.</description>
+                    <applications>
+                        <application>
+                            <name>CPU</name>
+                        </application>
+                        <application>
+                            <name>Performance</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                    <triggers>
+                        <trigger>
+                            <expression>{avg(5m)}&gt;20</expression>
+                            <name>Disk I/O is overloaded on {HOST.NAME}</name>
+                            <priority>WARNING</priority>
+                            <description>OS spends significant time waiting for I/O (input/output) operations. It could be indicator of performance issues with storage system.</description>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>CPU $2 time</name>
+                    <key>system.cpu.util[,system]</key>
+                    <history>1d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <description>The time the CPU has spent running the kernel and its processes.</description>
+                    <applications>
+                        <application>
+                            <name>CPU</name>
+                        </application>
+                        <application>
+                            <name>Performance</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                </item>
+                <item>
+                    <name>CPU $2 time</name>
+                    <key>system.cpu.util[,user]</key>
+                    <history>1d</history>
+                    <value_type>FLOAT</value_type>
+                    <units>%</units>
+                    <description>The time the CPU has spent running users' processes that are not niced.</description>
+                    <applications>
+                        <application>
+                            <name>CPU</name>
+                        </application>
+                        <application>
+                            <name>Performance</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                </item>
+            </items>
+        </template>
+        <template>
+            <template>Template App Zabbix Agent</template>
+            <name>Template App Zabbix Agent</name>
+            <groups>
+                <group>
+                    <name>Templates</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>Zabbix agent</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>Host name of zabbix_agentd running</name>
+                    <key>agent.hostname</key>
+                    <delay>1h</delay>
+                    <history>1w</history>
+                    <trends>0</trends>
+                    <value_type>CHAR</value_type>
+                    <applications>
+                        <application>
+                            <name>Zabbix agent</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                    <triggers>
+                        <trigger>
+                            <expression>{diff(0)}&gt;0</expression>
+                            <name>Host name of zabbix_agentd was changed on {HOST.NAME}</name>
+                            <priority>INFO</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Agent ping</name>
+                    <key>agent.ping</key>
+                    <history>1w</history>
+                    <description>The agent always returns 1 for this item. It could be used in combination with nodata() for availability check.</description>
+                    <applications>
+                        <application>
+                            <name>Zabbix agent</name>
+                        </application>
+                    </applications>
+                    <valuemap>
+                        <name>Zabbix agent ping status</name>
+                    </valuemap>
+                    <request_method>POST</request_method>
+                    <triggers>
+                        <trigger>
+                            <expression>{nodata(5m)}=1</expression>
+                            <name>Zabbix agent on {HOST.NAME} is unreachable for 5 minutes</name>
+                            <priority>AVERAGE</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Version of zabbix_agent(d) running</name>
+                    <key>agent.version</key>
+                    <delay>1h</delay>
+                    <history>1w</history>
+                    <trends>0</trends>
+                    <value_type>CHAR</value_type>
+                    <applications>
+                        <application>
+                            <name>Zabbix agent</name>
+                        </application>
+                    </applications>
+                    <request_method>POST</request_method>
+                    <triggers>
+                        <trigger>
+                            <expression>{diff(0)}&gt;0</expression>
+                            <name>Version of zabbix_agent(d) was changed on {HOST.NAME}</name>
+                            <priority>INFO</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+            </items>
+        </template>
+    </templates>
+    <value_maps>
+        <value_map>
+            <name>Zabbix agent ping status</name>
+            <mappings>
+                <mapping>
+                    <value>1</value>
+                    <newvalue>Up</newvalue>
+                </mapping>
+            </mappings>
+        </value_map>
+    </value_maps>
+</zabbix_export>
