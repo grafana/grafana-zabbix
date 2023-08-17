@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.4.0] - Unreleased
+## [4.4.0] - 2023-08-17
 
 ### Added
 
