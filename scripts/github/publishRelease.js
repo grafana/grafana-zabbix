@@ -2,7 +2,7 @@ const GithubClient = require('./githubClient');
 const fs = require('fs');
 const path = require('path');
 
-const GRAFANA_ZABBIX_OWNER = 'alexanderzobnin';
+const GRAFANA_ZABBIX_OWNER = 'grafana';
 const GRAFANA_ZABBIX_REPO = 'grafana-zabbix';
 
 const github = new GithubClient(GRAFANA_ZABBIX_OWNER, GRAFANA_ZABBIX_REPO, true);
@@ -49,7 +49,7 @@ async function main() {
     let releaseCommitHash;
     try {
       const tags = await github.client.get(`tags`);
-      const releaseTag = tags.data.find(t => t.name === `v${releaseVersion}`);
+      const releaseTag = tags.data.find((t) => t.name === `v${releaseVersion}`);
       releaseCommitHash = releaseTag.commit.sha;
       console.log('Tag found', releaseTag.name, releaseCommitHash);
     } catch (reason) {
