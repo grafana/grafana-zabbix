@@ -6,6 +6,15 @@
 
 - Support for secure socks proxy, [#1653](https://github.com/alexanderzobnin/grafana-zabbix/issues/1653)
 - Able to use API tokens for authentication, [#1513](https://github.com/alexanderzobnin/grafana-zabbix/issues/1513)
+- Problems: Able to select AND/OR tag evaluation rule, [#1600](https://github.com/alexanderzobnin/grafana-zabbix/issues/1600)
+
+### Fixed
+
+- Application filter does not work in some cases, [#1597](https://github.com/alexanderzobnin/grafana-zabbix/issues/1597)
+- Application filter in the triggers query, [#1643](https://github.com/alexanderzobnin/grafana-zabbix/issues/1643)
+- Problems: pagination on footer doesn't work [#1649](https://github.com/alexanderzobnin/grafana-zabbix/issues/1649)
+- Single host items contain the hostname in the legend, [#1335](https://github.com/alexanderzobnin/grafana-zabbix/issues/1335)
+- IT Services: displaying multiple SLA, [#1603](https://github.com/alexanderzobnin/grafana-zabbix/issues/1603)
 
 ## [4.3.1] - 2023-03-23
 
