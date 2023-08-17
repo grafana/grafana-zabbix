@@ -51,8 +51,8 @@
         "path": "img/screenshot-triggers.png"
       }
     ],
-    "version": "4.3.1",
-    "updated": "2023-03-23"
+    "version": "4.4.0",
+    "updated": "2023-08-17"
   },
   "includes": [
     {
@@ -65,8 +65,8 @@
     }
   ],
   "dependencies": {
-    "grafanaDependency": ">=9.0.0",
-    "grafanaVersion": "9.0",
+    "grafanaDependency": ">=9.3.0",
+    "grafanaVersion": "9.3",
     "plugins": []
   }
 }
