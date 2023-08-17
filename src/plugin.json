@@ -18,15 +18,15 @@
     "links": [
       {
         "name": "GitHub",
-        "url": "https://github.com/alexanderzobnin/grafana-zabbix"
+        "url": "https://github.com/grafana/grafana-zabbix"
       },
       {
         "name": "Docs",
-        "url": "https://alexanderzobnin.github.io/grafana-zabbix"
+        "url": "https://grafana.github.io/grafana-zabbix"
       },
       {
         "name": "License",
-        "url": "https://github.com/alexanderzobnin/grafana-zabbix/blob/master/LICENSE"
+        "url": "https://github.com/grafana/grafana-zabbix/blob/master/LICENSE"
       }
     ],
     "screenshots": [
