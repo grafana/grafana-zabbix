@@ -1,12 +1,8 @@
 # Zabbix plugin for Grafana
 
-[![Version](https://badge.fury.io/gh/alexanderzobnin%2Fgrafana-zabbix.svg)](https://github.com/alexanderzobnin/grafana-zabbix/releases)
-[![codecov](https://codecov.io/gh/alexanderzobnin/grafana-zabbix/branch/master/graph/badge.svg)](https://codecov.io/gh/alexanderzobnin/grafana-zabbix)
-[![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/alexanderzobnin/grafana-zabbix/blob/master/CHANGELOG.md)
+[![Version](https://badge.fury.io/gh/grafana%2Fgrafana-zabbix.svg)](https://github.com/grafana/grafana-zabbix/releases)
+[![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/grafana/grafana-zabbix/blob/master/CHANGELOG.md)
 [![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](https://grafana.github.io/grafana-zabbix)
-[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Follow)](https://twitter.com/alexanderzobnin)
-
-Visualize your Zabbix metrics with the leading open source software for time series analytics.
 
 ![Dashboard](https://user-images.githubusercontent.com/4932851/53799185-e1cdc700-3f4a-11e9-9cb4-8330f501b32e.png)
 
@@ -49,11 +45,5 @@ First, [configure](https://grafana.github.io/grafana-zabbix/configuration/) Zabb
 
 ## Community Resources, Feedback, and Support
 
-- Found a bug? Want a new feature? Feel free to open an [issue](https://github.com/alexanderzobnin/grafana-zabbix/issues/new).
+- Found a bug? Want a new feature? Feel free to open an [issue](https://github.com/grafana/grafana-zabbix/issues/new).
 - Have a question? You also can open issue, but for questions, it would be better to use [Grafana Community](https://community.grafana.com/) portal.
-- Need additional support? Contact me for details [alexanderzobnin@gmail.com](mailto:alexanderzobnin@gmail.com)
-
----
-:copyright: 2015-2023 Alexander Zobnin alexanderzobnin@gmail.com
-
-Licensed under the Apache 2.0 License
