@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.4.1] - 2023-08-30
+
+### Fixed
+
+- Plugin unavailable, [#1604](https://github.com/alexanderzobnin/grafana-zabbix/issues/1604)
+
 ## [4.4.0] - 2023-08-17
 
 ### Added
