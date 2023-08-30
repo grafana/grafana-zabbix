@@ -51,8 +51,8 @@
         "path": "img/screenshot-triggers.png"
       }
     ],
-    "version": "4.4.0",
-    "updated": "2023-08-17"
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
   },
   "includes": [
     {
