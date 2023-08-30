@@ -63,7 +63,7 @@ calculation use `rate()`.
 rate()
 ```
 Calculates the per-second rate of increase of the time series. Resistant to counter reset. Suitable for converting of
-growing counters into the per-sercond rate.
+growing counters into the per-second rate.
 
 ---
 

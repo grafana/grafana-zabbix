@@ -36,7 +36,7 @@ To add new Zabbix data source open _Data Sources_ in side panel, click _Add data
     will increase Grafana performance.
   - **After**: time after which trends will be used.
         Best practice is to set this value to your history storage period (7d, 30d, etc). Default is **7d** (7 days).
-        You can set the time in Grafana format. Valid time specificators are:
+        You can set the time in Grafana format. Valid time specifiers are:
     - **h** - hours
     - **d** - days
     - **M** - months
