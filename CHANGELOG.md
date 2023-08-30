@@ -123,7 +123,7 @@
 - Different item intervals compatibility (stacked graph issue), [#1211](https://github.com/alexanderzobnin/grafana-zabbix/issues/1211)
 - Random "Failed to call resource" errors and plugin restarts, [#1269](https://github.com/alexanderzobnin/grafana-zabbix/issues/1269)
 - Top function does not work if number of series less than provided N, [#1267](https://github.com/alexanderzobnin/grafana-zabbix/issues/1267)
-- Hostnames are not displayed on multiple selection (regular expression), [#1265](https://github.com/alexanderzobnin/grafana-zabbix/issues/1265)
+- Host names are not displayed on multiple selection (regular expression), [#1265](https://github.com/alexanderzobnin/grafana-zabbix/issues/1265)
 - Cannot unmarshal number into Go struct field ZabbixDatasourceSettingsDTO.timeout of type string, [#1254](https://github.com/alexanderzobnin/grafana-zabbix/issues/1254)
 - `sortSeries()` does not sort by series name, [#1274](https://github.com/alexanderzobnin/grafana-zabbix/issues/1274)
 
@@ -244,7 +244,7 @@ Grafana-Zabbix 4.0 comes with a bunch of changes under the hood. The most import
 
 **Prerequisites**: plugin requires Grafana 7.0 to run.
 
-Use the grafana-cli tool to install Zabbix from the commandline:
+Use the grafana-cli tool to install Zabbix from the command-line:
 
 1. `grafana-cli plugins install alexanderzobnin-zabbix-app`
 1. Unsigned plugins are not loading by default, so allow it in the Grafana config file:
@@ -563,7 +563,7 @@ option description for more information.
 - PostgreSQL support for Direct DB Connection.
 - _Triggers_ query mode which allows to count active alerts by group, host and application, [#141](https://github.com/alexanderzobnin/grafana-zabbix/issues/141)
 - `sortSeries()` function that allows to sort multiple timeseries by name, [#447](https://github.com/alexanderzobnin/grafana-zabbix/issues/447), thanks to [@mdorenkamp](https://github.com/mdorenkamp)
-- `percentil()` function, thanks to [@pedrohrf](https://github.com/pedrohrf)
+- `percentile()` function, thanks to [@pedrohrf](https://github.com/pedrohrf)
 - _Zabbix System Status_ example dashboard.
 
 ### Changed
@@ -641,7 +641,7 @@ option description for more information.
 
 - **Alerting**: highlight panel contained metrics with fired triggers.
 - **Alerting**: add thresholds to panels from zabbix triggers.
-- **Docs**: add docs for setAliasByRegex() from @v-zhuravlev
+- **Docs**: add docs for setAliasByRegex() from [@v-zhuravlev](https://github.com/v-zhuravlev)
 - Support millisecond resolution on graphs. Patch from Jay Dawes <ajaxous@gmail.com>.
 - Sum and count aggregations.
 - Expand user macros in items [#212](https://github.com/alexanderzobnin/grafana-zabbix/issues/212)

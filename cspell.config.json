@@ -27,12 +27,12 @@
     "docs/**/*.yaml",
     "dashboards/**",
     "src/**",
-    "pkg/**",
-    "CHANGELOG.md"
+    "pkg/**"
   ],
   "ignoreRegExpList": [
     "import\\s*\\((.|[\r\n])*?\\)",
-    "import\\s*.*\".*?\""
+    "import\\s*.*\".*?\"",
+    "\\[@.+\\]"
   ],
   "words": [
     "grafana",
@@ -66,6 +66,12 @@
     "submatch",
     "Gleb",
     "Ivanovsky",
-    "mydomain"
+    "mydomain",
+    "struct",
+    "unmarshal",
+    "timeshift",
+    "templatig",
+    "lastvalue",
+    "typeahead"
   ]
 }
