@@ -23,6 +23,7 @@
     "devenv/**",
     "scripts/**",
     "docs/sources/css/**",
+    "docs/src/css/**",
     "docs/**/*.yml",
     "docs/**/*.yaml",
     "dashboards/**",
