@@ -2,11 +2,13 @@ package datasource
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
@@ -17,7 +19,11 @@ import (
 func (ds *ZabbixDatasource) RootHandler(rw http.ResponseWriter, req *http.Request) {
 	ds.logger.Debug("Received resource call", "url", req.URL.String(), "method", req.Method)
 
-	rw.Write([]byte("Hello from Zabbix data source!"))
+	_, err := rw.Write([]byte("Hello from Zabbix data source!"))
+	if err != nil {
+		ds.logger.Warn("Error writing response")
+	}
+
 	rw.WriteHeader(http.StatusOK)
 }
 
@@ -26,7 +32,7 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 		return
 	}
 
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	defer req.Body.Close()
 	if err != nil || len(body) == 0 {
 		writeError(rw, http.StatusBadRequest, err)
@@ -67,7 +73,7 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 		return
 	}
 
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	defer req.Body.Close()
 	if err != nil || len(body) == 0 {
 		writeError(rw, http.StatusBadRequest, err)
@@ -95,6 +101,9 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 	reqData.Query.TimeRange.To = time.Unix(reqData.TimeRange.To, 0)
 
 	frames, err := dsInstance.applyDataProcessing(req.Context(), &reqData.Query, reqData.Series, true)
+	if err != nil {
+		writeError(rw, http.StatusInternalServerError, err)
+	}
 
 	resultJson, err := json.Marshal(frames)
 	if err != nil {
@@ -103,7 +112,11 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 
 	rw.Header().Add("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
-	rw.Write(resultJson)
+
+	_, err = rw.Write(resultJson)
+	if err != nil {
+		ds.logger.Warn("Error writing response")
+	}
 
 }
 
@@ -115,7 +128,11 @@ func writeResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {
 
 	rw.Header().Add("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
-	rw.Write(resultJson)
+
+	_, err = rw.Write(resultJson)
+	if err != nil {
+		log.DefaultLogger.Warn("Error writing response")
+	}
 }
 
 func writeError(rw http.ResponseWriter, statusCode int, err error) {
@@ -132,5 +149,9 @@ func writeError(rw http.ResponseWriter, statusCode int, err error) {
 
 	rw.Header().Add("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusInternalServerError)
-	rw.Write(b)
+
+	_, err = rw.Write(b)
+	if err != nil {
+		log.DefaultLogger.Warn("Error writing response")
+	}
 }

@@ -4,8 +4,6 @@ import (
 	"math"
 	"sort"
 	"time"
-
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 func NewTimeSeriesData() *TimeSeriesData {
@@ -308,37 +306,4 @@ func findNearestLeft(series TimeSeries, pointIndex int) *TimePoint {
 		}
 	}
 	return nil
-}
-
-func getTimeFieldIndex(frame *data.Frame) int {
-	for i := 0; i < len(frame.Fields); i++ {
-		if frame.Fields[i].Type() == data.FieldTypeTime {
-			return i
-		}
-	}
-
-	return -1
-}
-
-func getTimestampAt(frame *data.Frame, index int) *time.Time {
-	timeFieldIdx := getTimeFieldIndex(frame)
-	if timeFieldIdx < 0 {
-		return nil
-	}
-
-	tsValue := frame.Fields[timeFieldIdx].At(index)
-	ts, ok := tsValue.(time.Time)
-	if !ok {
-		return nil
-	}
-
-	return &ts
-}
-
-func setTimeAt(frame *data.Frame, frameTs time.Time, index int) {
-	for _, field := range frame.Fields {
-		if field.Type() == data.FieldTypeTime {
-			field.Insert(index, frameTs)
-		}
-	}
 }

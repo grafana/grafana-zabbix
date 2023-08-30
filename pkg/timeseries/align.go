@@ -129,12 +129,11 @@ func PrepareForStack(series []*TimeSeriesData) []*TimeSeriesData {
 		p := s.TS[0]
 		pNext := s.TS[1]
 		interpolatedSeries := make([]TimePoint, 0)
-		interpolatedTS := interpolatedTimeStamps[0]
 		interpolatedTSIdx := 0
 
 		// Insert nulls before the first point
 		for i := 0; i < len(interpolatedTimeStamps); i++ {
-			interpolatedTS = interpolatedTimeStamps[i]
+			interpolatedTS := interpolatedTimeStamps[i]
 			if interpolatedTS.Before(p.Time) {
 				interpolatedSeries = append(interpolatedSeries, TimePoint{Time: interpolatedTS, Value: nil})
 			} else {

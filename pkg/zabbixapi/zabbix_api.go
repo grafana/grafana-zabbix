@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -214,7 +214,7 @@ func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Req
 		return nil, fmt.Errorf("request failed, status: %v", res.Status)
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}

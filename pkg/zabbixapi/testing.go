@@ -2,7 +2,7 @@ package zabbixapi
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -36,7 +36,7 @@ func MockZabbixAPI(body string, statusCode int) (*ZabbixAPI, error) {
 		httpClient: NewTestClient(func(req *http.Request) *http.Response {
 			return &http.Response{
 				StatusCode: statusCode,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(body)),
+				Body:       io.NopCloser(bytes.NewBufferString(body)),
 				Header:     make(http.Header),
 			}
 		}),

@@ -56,6 +56,10 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	var items []*zabbix.Item
 	var err error
 	zabbixVersion, err := ds.zabbix.GetVersion(ctx)
+	if err != nil {
+		ds.logger.Warn("Error getting Zabbix version")
+	}
+
 	if zabbixVersion >= 54 {
 		items, err = ds.zabbix.GetItems(ctx, groupFilter, hostFilter, itemTagFilter, itemFilter, "num", showDisabled)
 	} else {

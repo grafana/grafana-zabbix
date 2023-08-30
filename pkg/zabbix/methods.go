@@ -115,6 +115,9 @@ func (ds *Zabbix) GetItems(
 		itemTagFilter = strings.Join(tagStrs, ",")
 	}
 	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter)
+	if err != nil {
+		return nil, err
+	}
 
 	return filterItemsByQuery(allItems, itemFilter)
 }
@@ -152,6 +155,9 @@ func (ds *Zabbix) GetItemsBefore54(
 		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "")
 	} else if appFilter == "" && len(hostids) > 0 {
 		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return filterItemsByQuery(allItems, itemFilter)
@@ -239,7 +245,11 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 	var allItems []*Item
 	itemType := "num"
 	showDisabled := false
+
 	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+	if err != nil {
+		return nil, err
+	}
 
 	var allTags []ItemTag
 	tagsMap := make(map[string]ItemTag)
@@ -397,7 +407,7 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 		}
 	}
 
-	if showDisabled == false {
+	if !showDisabled {
 		params["monitored"] = true
 	}
 
@@ -520,13 +530,4 @@ func (ds *Zabbix) GetVersion(ctx context.Context) (int, error) {
 	version = strings.Replace(version[0:3], ".", "", 1)
 	versionNum, err := strconv.Atoi(version)
 	return versionNum, err
-}
-
-func isAppMethodNotFoundError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	message := err.Error()
-	return message == `Method not found. Incorrect API "application".`
 }

@@ -145,6 +145,10 @@ func applyFunctionsPre(query *QueryModel, items []*zabbix.Item) error {
 
 func applyGroupBy(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
 	pInterval, err := MustString(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
 	pAgg, err := MustString(params[1])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
@@ -169,6 +173,10 @@ func applyGroupBy(series timeseries.TimeSeries, params ...interface{}) (timeseri
 
 func applyPercentile(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
 	pInterval, err := MustString(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
 	percentile, err := MustFloat64(params[1])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
@@ -275,6 +283,10 @@ func applyExponentialMovingAverage(series timeseries.TimeSeries, params ...inter
 
 func applyAggregateBy(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
 	pInterval, err := MustString(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
 	pAgg, err := MustString(params[1])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
@@ -303,6 +315,10 @@ func applySumSeries(series []*timeseries.TimeSeriesData, params ...interface{}) 
 
 func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
 	pInterval, err := MustString(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
 	percentile, err := MustFloat64(params[1])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
@@ -331,6 +347,10 @@ func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface
 
 func applyTop(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
 	n, err := MustFloat64(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
 	pAgg, err := MustString(params[1])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
@@ -343,6 +363,10 @@ func applyTop(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*ti
 
 func applyBottom(series []*timeseries.TimeSeriesData, params ...interface{}) ([]*timeseries.TimeSeriesData, error) {
 	n, err := MustFloat64(params[0])
+	if err != nil {
+		return nil, errParsingFunctionParam(err)
+	}
+
 	pAgg, err := MustString(params[1])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
@@ -413,7 +437,7 @@ func applyTimeShiftPost(series timeseries.TimeSeries, params ...interface{}) (ti
 	if interval == 0 {
 		return series, nil
 	}
-	if shiftForward == true {
+	if shiftForward {
 		interval = -interval
 	}
 
