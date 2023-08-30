@@ -17,7 +17,8 @@
     "server": "docker-compose --file ./devenv/default/docker-compose.yml up --build",
     "server:stop": "docker-compose --file ./devenv/default/docker-compose.yml stop",
     "server:down": "docker-compose --file ./devenv/default/docker-compose.yml down",
-    "sign": "grafana-toolkit plugin:sign"
+    "sign": "grafana-toolkit plugin:sign",
+    "spellcheck": "cspell -c cspell.config.json \"**/*.{ts,tsx,js,go,md,mdx,yml,yaml,json,scss,css}\""
   },
   "repository": {
     "type": "git",
@@ -65,6 +66,7 @@
     "clean-webpack-plugin": "^0.1.19",
     "codecov": "^3.1.0",
     "copy-webpack-plugin": "^11.0.0",
+    "cspell": "6.13.3",
     "css-loader": "^6.7.1",
     "eslint": "8.26.0",
     "eslint-config-prettier": "^8.3.0",
