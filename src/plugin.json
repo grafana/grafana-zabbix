@@ -5,8 +5,8 @@
   "info": {
     "description": "Zabbix plugin for Grafana",
     "author": {
-      "name": "Alexander Zobnin",
-      "url": "https://github.com/alexanderzobnin"
+      "name": "Grafana Labs",
+      "url": "https://grafana.com"
     },
     "keywords": [
       "zabbix"
