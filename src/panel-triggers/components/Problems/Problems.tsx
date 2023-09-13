@@ -14,6 +14,7 @@ import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/type
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
 import { DataSourceRef, TimeRange } from '@grafana/data';
+import { reportInteraction } from '@grafana/runtime';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -77,6 +78,8 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
   };
 
   handleExpandedChange = (expanded: any, event: any) => {
+    reportInteraction('grafana_zabbix_panel_row_expanded', {});
+
     const { problems, pageSize } = this.props;
     const { page } = this.state;
     const expandedProblems = {};
@@ -259,7 +262,13 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
           )}
           expanded={this.getExpandedPage(this.state.page)}
           onExpandedChange={this.handleExpandedChange}
-          onPageChange={(page) => this.setState({ page })}
+          onPageChange={(page) => {
+            reportInteraction('grafana_zabbix_panel_page_change', {
+              action: page > this.state.page ? 'next' : 'prev',
+            });
+
+            this.setState({ page });
+          }}
           onPageSizeChange={this.handlePageSizeChange}
           onResizedChange={this.handleResizedChange}
         />
