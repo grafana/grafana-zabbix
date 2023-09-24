@@ -41,8 +41,7 @@ dist/
 ci/
 alexanderzobnin-zabbix-app.zip
 
-# Grafana toolkit configs
-# .prettierrc.js
+.eslintcache
 
 # locally required config files
 public/css/*.min.css

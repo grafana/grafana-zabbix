@@ -56,7 +56,6 @@ export class CachingProxy {
  * with same params when waiting for result.
  */
 function callOnce(func, promiseKeeper, funcScope) {
-  // tslint:disable-next-line: only-arrow-functions
   return function () {
     const hash = getRequestHash(arguments);
     if (!promiseKeeper[hash]) {
@@ -78,7 +77,6 @@ function callOnce(func, promiseKeeper, funcScope) {
 }
 
 function cacheRequest(func, funcName, funcScope, self) {
-  // tslint:disable-next-line: only-arrow-functions
   return function () {
     if (!self.cache[funcName]) {
       self.cache[funcName] = {};

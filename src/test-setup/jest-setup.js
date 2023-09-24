@@ -1,11 +1,4 @@
-// JSHint options
-/* globals global: false */
-
-import { JSDOM } from 'jsdom';
 import { PanelCtrl, MetricsPanelCtrl } from './panelStub';
-
-// Suppress messages
-console.log = () => {};
 
 jest.mock('grafana/app/features/templating/template_srv', () => {
   return {};
@@ -82,8 +75,6 @@ jest.mock('grafana/app/core/config', () => {
   };
 }, {virtual: true});
 
-jest.mock('jquery', () => 'module not found', {virtual: true});
-
 jest.mock('grafana/app/core/utils/kbn', () => {
   return {
     round_interval: n => n,
@@ -91,12 +82,6 @@ jest.mock('grafana/app/core/utils/kbn', () => {
   };
 }, {virtual: true});
 
-// Setup jsdom
-let dom = new JSDOM('<html><head><script></script></head><body></body></html>');
-global.window = dom.window;
-global.document = global.window.document;
-global.Node = window.Node;
-
 // Mock Canvas.getContext(), fixes
 // Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
-window.HTMLCanvasElement.prototype.getContext = () => {};
+// window.HTMLCanvasElement.prototype.getContext = () => {};
