@@ -2,7 +2,8 @@ import React, { PureComponent } from 'react';
 import { cx } from '@emotion/css';
 import ReactTable from 'react-table-6';
 import _ from 'lodash';
-import moment from 'moment-timezone';
+// eslint-disable-next-line
+import moment from 'moment';
 import { isNewProblem } from '../../utils';
 import { EventTag } from '../EventTag';
 import { ProblemDetails } from './ProblemDetails';
