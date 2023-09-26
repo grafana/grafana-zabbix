@@ -1,11 +1,11 @@
-version: "3"
+version: '3'
 
 services:
   # Zabbix
   zabbix-server:
     image: zabbix/zabbix-server-pgsql:alpine-5.0-latest
     ports:
-      - "10051:10051"
+      - '10051:10051'
     depends_on:
       - database
     environment:
@@ -18,8 +18,8 @@ services:
   zabbix-web:
     image: zabbix/zabbix-web-apache-pgsql:alpine-5.0-latest
     ports:
-      - "8188:8080"
-      - "8189:8443"
+      - '8188:8080'
+      - '8189:8443'
       # - "8188:80"
     depends_on:
       - database
@@ -37,9 +37,9 @@ services:
       - ./ssl:/etc/ssl/apache2:ro
 
   database:
-    image: postgres
+    image: postgres:14
     ports:
-      - "15432:5432"
+      - '15432:5432'
     environment:
       POSTGRES_USER: zabbix
       POSTGRES_PASSWORD: zabbix

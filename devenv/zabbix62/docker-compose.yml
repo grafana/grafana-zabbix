@@ -1,23 +1,23 @@
-version: "3"
+version: '3'
 
 services:
   # Grafana
   grafana:
     image: grafana/grafana:10.1.2
     ports:
-      - "3001:3000"
+      - '3001:3000'
     volumes:
       - ../..:/grafana-zabbix
       - ../dashboards:/devenv/dashboards
       - ../grafana.ini:/etc/grafana/grafana.ini:ro
-      - "../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml"
-      - "../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml"
+      - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
+      - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
 
   # Zabbix
   zabbix-server:
     image: zabbix/zabbix-server-pgsql:alpine-6.2-latest
     ports:
-      - "10051:10051"
+      - '10051:10051'
     depends_on:
       - database
     environment:
@@ -34,7 +34,7 @@ services:
   zabbix-web:
     image: zabbix/zabbix-web-apache-pgsql:alpine-6.2-latest
     ports:
-      - "8188:8080"
+      - '8188:8080'
     depends_on:
       - database
       - zabbix-server
@@ -50,7 +50,7 @@ services:
   database:
     image: postgres:15
     ports:
-      - "15432:5432"
+      - '15432:5432'
     command: postgres -c 'max_connections=1000'
     environment:
       POSTGRES_USER: zabbix
