@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, PropsWithChildren } from 'react';
 import { cx, css } from '@emotion/css';
 import { stylesFactory, useTheme, Tooltip } from '@grafana/ui';
 import { GrafanaTheme, GrafanaThemeType } from '@grafana/data';
@@ -12,7 +12,7 @@ interface Props {
   onClick(event: React.MouseEvent<HTMLButtonElement>): void;
 }
 
-export const ActionButton: FC<Props> = ({ icon, width, tooltip, className, children, onClick }) => {
+export const ActionButton: FC<PropsWithChildren<Props>> = ({ icon, width, tooltip, className, children, onClick }) => {
   const theme = useTheme();
   const styles = getStyles(theme);
   const buttonClass = cx(

@@ -60,7 +60,7 @@ A common issue found with the current jest config involves importing an npm pack
 
 ```javascript
 process.env.TZ = 'UTC';
-const { grafanaESModules, nodeModulesToTransform } = require('./jest/utils');
+const { grafanaESModules, nodeModulesToTransform } = require('./config/jest/utils');
 
 module.exports = {
   // Jest configuration provided by Grafana
@@ -139,3 +139,26 @@ We need to update the `scripts` in the `package.json` to use the extended Webpac
 -"dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
 +"dev": "webpack -w -c ./webpack.config.ts --env development",
 ```
+
+### Configure grafana image to use when running docker
+
+By default `grafana-enterprise` will be used as the docker image for all docker related commands. If you want to override this behaviour simply alter the `docker-compose.yaml` by adding the following build arg `grafana_image`.
+
+**Example:**
+
+```yaml
+version: '3.7'
+
+services:
+  grafana:
+    container_name: 'myorg-basic-app'
+    build:
+      context: ./.config
+      args:
+        grafana_version: ${GRAFANA_VERSION:-9.1.2}
+        grafana_image: ${GRAFANA_IMAGE:-grafana}
+```
+
+In this example we are assigning the environment variable `GRAFANA_IMAGE` to the build arg `grafana_image` with a default value of `grafana`. This will give you the possibility to set the value while running the docker-compose commands which might be convinent in some scenarios.
+
+---
