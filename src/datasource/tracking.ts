@@ -1,6 +1,15 @@
 import { DataQueryRequest } from '@grafana/data';
 import { ZabbixMetricsQuery } from './types';
 import { reportInteraction } from '@grafana/runtime';
+import {
+  MODE_ITEMID,
+  MODE_ITSERVICE,
+  MODE_MACROS,
+  MODE_METRICS,
+  MODE_PROBLEMS,
+  MODE_TEXT,
+  MODE_TRIGGERS,
+} from './constants';
 
 export const trackRequest = (request: DataQueryRequest<ZabbixMetricsQuery>): void => {
   request.targets.forEach((target) => {
@@ -9,54 +18,26 @@ export const trackRequest = (request: DataQueryRequest<ZabbixMetricsQuery>): voi
     };
 
     switch (target.queryType) {
-      case '0':
-      case '1':
-      case '3':
-        if (target.queryType === '0') {
-          properties.queryType = 'Metrics';
-        } else if (target.queryType === '1') {
-          properties.queryType = 'Services';
-        } else if (target.queryType === '3') {
-          properties.queryType = 'Item Id';
-        }
-        properties.trends = target.options.useTrends;
-        properties.showDisabledItems = target.options.showDisabledItems;
-        properties.useZabbixValueMapping = target.options.useZabbixValueMapping;
-        properties.disableDataAlignment = target.options.disableDataAlignment;
+      case MODE_METRICS:
+        properties.queryType = 'Metrics';
         break;
-      case '2':
+      case MODE_ITSERVICE:
+        properties.queryType = 'Services';
+        break;
+      case MODE_TEXT:
         properties.queryType = 'Text';
-        properties.showDisabledItems = target.options.showDisabledItems;
         break;
-      case '4':
+      case MODE_ITEMID:
+        properties.queryType = 'Item Id';
+        break;
+      case MODE_TRIGGERS:
         properties.queryType = 'Triggers';
-
-        if (target.options.acknowledged === 0) {
-          properties.acknowledged = 'unacknowledged';
-        } else if (target.options.acknowledged === 1) {
-          properties.acknowledged = 'acknowledged';
-        } else if (target.options.acknowledged === 2) {
-          properties.acknowledged = 'all triggers';
-        }
-
-        properties.useTimeRange = target.options.useTimeRange ?? false;
         break;
-      case '5':
+      case MODE_PROBLEMS:
         properties.queryType = 'Problems';
-
-        if (target.options.acknowledged === 0) {
-          properties.acknowledged = 'unacknowledged';
-        } else if (target.options.acknowledged === 1) {
-          properties.acknowledged = 'acknowledged';
-        } else if (target.options.acknowledged === 2) {
-          properties.acknowledged = 'all triggers';
-        }
-
-        properties.sortProblems = target.options.sortProblems;
-        properties.useTimeRange = target.options.useTimeRange;
-        properties.hostsInMaintenance = target.options.hostsInMaintenance;
-        properties.hostProxy = target.options.hostProxy;
-        properties.limit = target.options.limit;
+        break;
+      case MODE_MACROS:
+        properties.queryType = 'Macros';
         break;
     }
 
