@@ -15,6 +15,7 @@ jest.mock(
     getTemplateSrv: () => ({
       replace: jest.fn().mockImplementation((query) => query),
     }),
+    reportInteraction: jest.fn(),
   }),
   { virtual: true }
 );
