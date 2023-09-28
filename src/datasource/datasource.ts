@@ -26,6 +26,7 @@ import {
   toDataFrame,
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
+import { trackRequest } from './tracking';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -113,6 +114,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(request: DataQueryRequest<ZabbixMetricsQuery>) {
+    trackRequest(request);
+
     // Migrate old targets
     const requestTargets = request.targets.map((t) => {
       // Prevent changes of original object
