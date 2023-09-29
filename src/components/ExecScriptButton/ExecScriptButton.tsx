@@ -7,7 +7,5 @@ interface Props {
 }
 
 export const ExecScriptButton: FC<Props> = ({ className, onClick }) => {
-  return (
-    <ActionButton className={className} icon="terminal" tooltip="Execute script" onClick={onClick} />
-  );
+  return <ActionButton className={className} icon="terminal" tooltip="Execute script" onClick={onClick} />;
 };

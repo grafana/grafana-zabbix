@@ -18,8 +18,10 @@ export const ActionButton: FC<PropsWithChildren<Props>> = ({ icon, width, toolti
   const buttonClass = cx(
     'btn',
     styles.button,
-    css`width: ${width || 3}rem`,
-    className,
+    css`
+      width: ${width || 3}rem;
+    `,
+    className
   );
 
   let button = (

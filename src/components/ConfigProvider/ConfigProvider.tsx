@@ -14,16 +14,17 @@ export const provideConfig = (component: React.ComponentType<any>) => {
   return ConfigProvider;
 };
 
-export const getCurrentTheme = () => createTheme({
-  colors: {
-    mode: config.bootData.user.lightTheme ? 'light' : 'dark',
-  },
-});
+export const getCurrentTheme = () =>
+  createTheme({
+    colors: {
+      mode: config.bootData.user.lightTheme ? 'light' : 'dark',
+    },
+  });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <ConfigConsumer>
-      {config => {
+      {(config) => {
         return <ThemeContext.Provider value={getCurrentTheme()}>{children}</ThemeContext.Provider>;
       }}
     </ConfigConsumer>

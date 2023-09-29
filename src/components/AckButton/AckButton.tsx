@@ -7,7 +7,5 @@ interface Props {
 }
 
 export const AckButton: FC<Props> = ({ className, onClick }) => {
-  return (
-    <ActionButton className={className} icon="reply-all" tooltip="Acknowledge problem" onClick={onClick} />
-  );
+  return <ActionButton className={className} icon="reply-all" tooltip="Acknowledge problem" onClick={onClick} />;
 };
