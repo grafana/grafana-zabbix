@@ -281,7 +281,9 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
       border-color: ${red};
       border-radius: 2px;
       outline-offset: 2px;
-      box-shadow: 0 0 0 2px ${theme.colors.bg1}, 0 0 0px 4px ${red};
+      box-shadow:
+        0 0 0 2px ${theme.colors.bg1},
+        0 0 0px 4px ${red};
     `,
     inputHint: css`
       display: inherit;

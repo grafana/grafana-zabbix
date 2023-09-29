@@ -33,7 +33,7 @@ export class ModalController extends React.Component<Props, State> {
   showModal = (component: React.ComponentType<any>, props: any) => {
     this.setState({
       component,
-      props
+      props,
     });
   };
 
