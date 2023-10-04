@@ -32,4 +32,4 @@ Active triggers count for selected hosts or table data like Zabbix _System statu
 
 #### Documentation links:
 
-[Grafana-Zabbix Documentation](https://alexanderzobnin.github.io/grafana-zabbix)
+[Grafana-Zabbix Documentation](https://grafana.github.io/grafana-zabbix)
