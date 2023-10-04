@@ -22,9 +22,9 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		URL:      "http://another.zabbix.org/zabbix",
 		JSONData: []byte("{}"),
 	}
-	modifiedDatasource, _ := newZabbixDatasourceInstance(modifiedDatasourceSettings)
+	modifiedDatasource, _ := newZabbixDatasourceInstance(context.Background(), modifiedDatasourceSettings)
 
-	basicDS, _ := newZabbixDatasourceInstance(basicDsSettings)
+	basicDS, _ := newZabbixDatasourceInstance(context.Background(), basicDsSettings)
 
 	tests := []struct {
 		name          string
