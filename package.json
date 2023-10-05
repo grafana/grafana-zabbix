@@ -73,7 +73,7 @@
     "lodash": "4.17.21",
     "mini-css-extract-plugin": "2.6.1",
     "moment": "2.29.4",
-    "postcss": "8.4.14",
+    "postcss": "8.4.31",
     "postcss-loader": "7.0.1",
     "postcss-reporter": "7.0.5",
     "postcss-scss": "4.0.4",
