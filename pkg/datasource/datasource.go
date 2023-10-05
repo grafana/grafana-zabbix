@@ -43,7 +43,7 @@ func NewZabbixDatasource() *ZabbixDatasource {
 }
 
 // newZabbixDatasourceInstance returns an initialized zabbix datasource instance
-func newZabbixDatasourceInstance(dsSettings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func newZabbixDatasourceInstance(_ context.Context, dsSettings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	logger := log.New()
 	logger.Debug("Initializing new data source instance")
 
