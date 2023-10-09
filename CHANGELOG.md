@@ -5,6 +5,7 @@
 ### Chore
 
 - Upgrade dependencies [#1692](https://github.com/grafana/grafana-zabbix/pull/1692) [#1702](https://github.com/grafana/grafana-zabbix/pull/1702)
+- Added feature tracking [#1688](https://github.com/grafana/grafana-zabbix/pull/1688)
 
 ### Docs
 
