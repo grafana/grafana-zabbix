@@ -1,14 +1,14 @@
 {
   "name": "grafana-zabbix",
-  "version": "4.4.1",
+  "version": "4.4.2",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "bugs": {
-    "url": "https://github.com/alexanderzobnin/grafana-zabbix/issues"
+    "url": "https://github.com/grafana/grafana-zabbix/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alexanderzobnin/grafana-zabbix.git"
+    "url": "git+https://github.com/grafana/grafana-zabbix.git"
   },
   "license": "Apache-2.0",
   "author": "Alexander Zobnin",
