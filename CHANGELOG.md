@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.4.3] - 2023-10-10
+
+### Chore
+
+- Don't track requests on dashboard [#1707](https://github.com/grafana/grafana-zabbix/pull/1707)
+
 ## [4.4.2] - 2023-10-09
 
 ### Chore
