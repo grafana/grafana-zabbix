@@ -1,5 +1,16 @@
 # Change Log
 
+## [4.4.2] - 2023-10-09
+
+### Chore
+
+- Upgrade dependencies [#1692](https://github.com/grafana/grafana-zabbix/pull/1692) [#1702](https://github.com/grafana/grafana-zabbix/pull/1702)
+- Added feature tracking [#1688](https://github.com/grafana/grafana-zabbix/pull/1688)
+
+### Docs
+
+- Fix broken link in query editor and doc [#1701](https://github.com/grafana/grafana-zabbix/pull/1701)
+
 ## [4.4.1] - 2023-08-30
 
 ### Fixed
@@ -79,7 +90,7 @@
 ### Fixed
 
 - IT Services not working with Zabbix 6.0, [#1408](https://github.com/alexanderzobnin/grafana-zabbix/issues/1408)
-- Problems panel: `Cannot read properties of undefined (reading 'trim')` error when tag has only name,  [#1420](https://github.com/alexanderzobnin/grafana-zabbix/issues/1420)
+- Problems panel: `Cannot read properties of undefined (reading 'trim')` error when tag has only name, [#1420](https://github.com/alexanderzobnin/grafana-zabbix/issues/1420)
 - Dashboards not included into plugin, [#1407](https://github.com/alexanderzobnin/grafana-zabbix/issues/1407)
 - Missing labels in response, [#1352](https://github.com/alexanderzobnin/grafana-zabbix/issues/1352)
 - Query returns all application data when host not found, [#1427](https://github.com/alexanderzobnin/grafana-zabbix/issues/1427)
@@ -254,9 +265,9 @@ Use the grafana-cli tool to install Zabbix from the command-line:
 
 1. `grafana-cli plugins install alexanderzobnin-zabbix-app`
 1. Unsigned plugins are not loading by default, so allow it in the Grafana config file:
-    ```sh
-    allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
-    ```
+   ```sh
+   allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
+   ```
 1. restart Grafana server
 
 Refer to [`allow_loading_unsigned_plugins`](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins)
@@ -342,9 +353,9 @@ Version 4.0 is currently in alpha state and not published at grafana.com. In ord
 1. Download `.zip` package with plugin from release assets (asset name is `grafana-zabbix-4.0.0-<alphaX|betaX>.zip`).
 1. Unpack it and put into grafana plugins folder.
 1. Unsigned plugins are not loading by default, so allow it in config:
-    ```sh
-    allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
-    ```
+   ```sh
+   allow_loading_unsigned_plugins = alexanderzobnin-zabbix-datasource
+   ```
 1. restart Grafana server
 
 Refer to [`allow_loading_unsigned_plugins`](https://grafana.com/docs/grafana/latest/installation/configuration/#allow-loading-unsigned-plugins)
