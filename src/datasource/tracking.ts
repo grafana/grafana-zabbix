@@ -1,4 +1,4 @@
-import { DataQueryRequest } from '@grafana/data';
+import { CoreApp, DataQueryRequest } from '@grafana/data';
 import { ZabbixMetricsQuery } from './types';
 import { reportInteraction } from '@grafana/runtime';
 import {
@@ -12,6 +12,10 @@ import {
 } from './constants';
 
 export const trackRequest = (request: DataQueryRequest<ZabbixMetricsQuery>): void => {
+  if (request.app === CoreApp.Dashboard || request.app === CoreApp.PanelViewer) {
+    return;
+  }
+
   request.targets.forEach((target) => {
     const properties: any = {
       app: request.app,
