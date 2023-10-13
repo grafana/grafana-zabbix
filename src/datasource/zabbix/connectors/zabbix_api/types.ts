@@ -19,11 +19,11 @@ export interface JSONRPCError {
   data?: string;
 }
 
-export type JSONRPCRequestParams = {[key: string]: any};
+export type JSONRPCRequestParams = { [key: string]: any };
 
 export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'CONNECT' | 'OPTIONS' | 'TRACE';
 
-export type GFRequestOptions = {[key: string]: any};
+export type GFRequestOptions = { [key: string]: any };
 
 export interface ZabbixRequestResponse {
   data?: JSONRPCResponse<any>;

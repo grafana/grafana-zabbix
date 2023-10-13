@@ -6,7 +6,7 @@ const getAllMock = jest.fn().mockReturnValue([{ id: 42, name: 'foo', meta: {} }]
 jest.mock('@grafana/runtime', () => ({
   getDataSourceSrv: () => ({
     get: loadDatasourceMock,
-    getList: getAllMock
+    getList: getAllMock,
   }),
 }));
 
@@ -17,7 +17,7 @@ describe('DBConnector', () => {
     beforeEach(() => {
       ctx.options = {
         datasourceId: 42,
-        datasourceName: undefined
+        datasourceName: undefined,
       };
 
       loadDatasourceMock.mockClear();
