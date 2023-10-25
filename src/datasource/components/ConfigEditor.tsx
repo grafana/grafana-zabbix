@@ -1,11 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { getDataSourceSrv, config } from '@grafana/runtime';
-import { DataSourcePluginOptionsEditorProps, DataSourceSettings, SelectableValue } from '@grafana/data';
-import { Button, DataSourceHttpSettings, InlineFormLabel, LegacyForms, Select } from '@grafana/ui';
+import { DataSourcePluginOptionsEditorProps, DataSourceSettings, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import {
+  Field,
+  Icon,
+  Input,
+  Label,
+  SecretInput,
+  SecureSocksProxySettings,
+  Select,
+  Switch,
+  Tooltip,
+  useStyles2,
+} from '@grafana/ui';
 import { ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types';
 import { gte } from 'semver';
-
-const { FormField, Switch } = LegacyForms;
+import {
+  Auth,
+  ConfigSection,
+  ConfigSubSection,
+  Stack,
+  convertLegacyAuthProps,
+  ConnectionSettings,
+  DataSourceDescription,
+  AdvancedHttpSettings,
+} from '@grafana/experimental';
+import { Divider } from './Divider';
+import { css } from '@emotion/css';
 
 const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
 
@@ -16,6 +37,7 @@ const authOptions: Array<SelectableValue<ZabbixAuthType>> = [
 
 export type Props = DataSourcePluginOptionsEditorProps<ZabbixDSOptions, ZabbixSecureJSONData>;
 export const ConfigEditor = (props: Props) => {
+  const styles = useStyles2(getStyles);
   const { options, onOptionsChange } = props;
 
   const [selectedDBDatasource, setSelectedDBDatasource] = useState(null);
@@ -79,231 +101,298 @@ export const ConfigEditor = (props: Props) => {
 
   return (
     <>
-      <DataSourceHttpSettings
-        defaultUrl={'http://localhost/zabbix/api_jsonrpc.php'}
-        dataSourceConfig={options}
-        showAccessOptions={true}
-        onChange={onOptionsChange}
+      <DataSourceDescription
+        dataSourceName="Zabbix"
+        docsLink="https://grafana.com/docs/grafana/latest/datasources/loki/configure-loki-data-source/"
+        hasRequiredFields={false}
       />
 
-      <div className="gf-form-group">
-        <h3 className="page-heading">Zabbix API details</h3>
-        <div className="gf-form">
-          <InlineFormLabel width={7} tooltip="Token authentication available in Zabbix version 5.4 and higher.">
-            Auth type
-          </InlineFormLabel>
+      <Divider />
+
+      <ConnectionSettings
+        config={options}
+        onChange={onOptionsChange}
+        urlPlaceholder="http://localhost/zabbix/api_jsonrpc.php"
+      />
+
+      <Divider />
+
+      <Auth
+        {...convertLegacyAuthProps({
+          config: options,
+          onChange: onOptionsChange,
+        })}
+      />
+
+      <Divider />
+
+      <ConfigSection title="Zabbix Connection">
+        <Field label="Auth type">
           <Select
-            width={30}
+            width={40}
             options={authOptions}
             value={options.jsonData.authType}
             onChange={jsonDataSelectHandler('authType', options, onOptionsChange)}
           />
-        </div>
-        {options.jsonData?.authType === ZabbixAuthType.Token ? (
+        </Field>
+
+        {options.jsonData?.authType === ZabbixAuthType.UserLogin && (
           <>
-            <div className="gf-form max-width-25">
-              {options.secureJsonFields?.apiToken ? (
-                <>
-                  <FormField
-                    labelWidth={7}
-                    inputWidth={15}
-                    label="API token"
-                    disabled={true}
-                    value=""
-                    placeholder="Configured"
-                  />
-                  <Button onClick={resetSecureJsonField('apiToken', options, onOptionsChange)}>Reset</Button>
-                </>
-              ) : (
-                <FormField
-                  labelWidth={7}
-                  inputWidth={15}
-                  label="API token"
-                  type="password"
-                  value={options.secureJsonData?.apiToken || ''}
-                  onChange={secureJsonDataChangeHandler('apiToken', options, onOptionsChange)}
-                  required
-                />
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="gf-form max-width-25">
-              <FormField
-                labelWidth={7}
-                inputWidth={15}
-                label="Username"
+            <Field label="Username">
+              <Input
+                width={40}
+                placeholder="Username"
                 value={options.jsonData.username || ''}
                 onChange={jsonDataChangeHandler('username', options, onOptionsChange)}
-                required
               />
-            </div>
-            <div className="gf-form max-width-25">
-              {options.secureJsonFields?.password ? (
-                <>
-                  <FormField
-                    labelWidth={7}
-                    inputWidth={15}
-                    label="Password"
-                    disabled={true}
-                    value=""
-                    placeholder="Configured"
+            </Field>
+            <Field label="Password">
+              <SecretInput
+                width={40}
+                placeholder="Password"
+                isConfigured={options.secureJsonFields && options.secureJsonFields.password}
+                onReset={() => resetSecureJsonField('password', options, onOptionsChange)}
+                onBlur={secureJsonDataChangeHandler('password', options, onOptionsChange)}
+              />
+            </Field>
+          </>
+        )}
+
+        {options.jsonData?.authType === ZabbixAuthType.Token && (
+          <>
+            <Field label="API Token">
+              <SecretInput
+                width={40}
+                placeholder="API token"
+                isConfigured={options.secureJsonFields && options.secureJsonFields.apiToken}
+                onReset={() => resetSecureJsonField('apiToken', options, onOptionsChange)}
+                onBlur={secureJsonDataChangeHandler('apiToken', options, onOptionsChange)}
+              />
+            </Field>
+          </>
+        )}
+      </ConfigSection>
+
+      <Divider />
+
+      <ConfigSection title="Additional settings" isCollapsible>
+        <AdvancedHttpSettings config={options} onChange={onOptionsChange} />
+
+        <div className={styles.space} />
+
+        <ConfigSubSection title="Zabbix API">
+          <Field
+            label={
+              <Label>
+                <Stack gap={0.5}>
+                  <span>Cache TTL</span>
+                  <Tooltip
+                    content={
+                      <span>
+                        Zabbix data source caches metric names in memory. Specify how often data will be updated.
+                      </span>
+                    }
+                  >
+                    <Icon name="info-circle" size="sm" />
+                  </Tooltip>
+                </Stack>
+              </Label>
+            }
+          >
+            <Input
+              width={40}
+              value={options.jsonData.cacheTTL || ''}
+              placeholder="1h"
+              onChange={jsonDataChangeHandler('cacheTTL', options, onOptionsChange)}
+            />
+          </Field>
+
+          <Field
+            label={
+              <Label>
+                <Stack gap={0.5}>
+                  <span>Timeout</span>
+                  <Tooltip content={<span>Zabbix API connection timeout in seconds. Default is 30.</span>}>
+                    <Icon name="info-circle" size="sm" />
+                  </Tooltip>
+                </Stack>
+              </Label>
+            }
+          >
+            <Input
+              width={40}
+              type="number"
+              value={options.jsonData.timeout}
+              placeholder="30"
+              onChange={(event) => {
+                onOptionsChange({
+                  ...options,
+                  jsonData: { ...options.jsonData, timeout: parseInt(event.currentTarget.value, 10) },
+                });
+              }}
+            />
+          </Field>
+        </ConfigSubSection>
+
+        <ConfigSubSection title="Trends">
+          <Field label="Enable Trends">
+            <Switch
+              value={options.jsonData.trends}
+              onChange={jsonDataSwitchHandler('trends', options, onOptionsChange)}
+            />
+          </Field>
+
+          {options.jsonData.trends && (
+            <>
+              <Field
+                label={
+                  <Label>
+                    <Stack gap={0.5}>
+                      <span>After</span>
+                      <Tooltip
+                        content={
+                          <span>
+                            Time after which trends will be used. Best practice is to set this value to your history
+                            storage period (7d, 30d, etc).
+                          </span>
+                        }
+                      >
+                        <Icon name="info-circle" size="sm" />
+                      </Tooltip>
+                    </Stack>
+                  </Label>
+                }
+              >
+                <Input
+                  width={40}
+                  placeholder="7d"
+                  value={options.jsonData.trendsFrom || ''}
+                  onChange={jsonDataChangeHandler('trendsFrom', options, onOptionsChange)}
+                />
+              </Field>
+              <Field
+                label={
+                  <Label>
+                    <Stack gap={0.5}>
+                      <span>Range</span>
+                      <Tooltip
+                        content={
+                          <span>
+                            Time range width after which trends will be used instead of history. It&aposs better to set
+                            this value in range of 4 to 7 days to prevent loading large amount of history data.
+                          </span>
+                        }
+                      >
+                        <Icon name="info-circle" size="sm" />
+                      </Tooltip>
+                    </Stack>
+                  </Label>
+                }
+              >
+                <Input
+                  width={40}
+                  placeholder="4d"
+                  value={options.jsonData.trendsRange || ''}
+                  onChange={jsonDataChangeHandler('trendsRange', options, onOptionsChange)}
+                />
+              </Field>
+            </>
+          )}
+        </ConfigSubSection>
+
+        <ConfigSubSection title="Direct DB Connection">
+          <Field label="Enable Direct DB Connection">
+            <Switch
+              value={options.jsonData.dbConnectionEnable}
+              onChange={jsonDataSwitchHandler('dbConnectionEnable', options, onOptionsChange)}
+            />
+          </Field>
+
+          {options.jsonData.dbConnectionEnable && (
+            <>
+              <Field label="Data Source">
+                <Select
+                  width={40}
+                  value={selectedDBDatasource}
+                  options={getDirectDBDSOptions()}
+                  onChange={directDBDatasourceChanegeHandler(
+                    options,
+                    onOptionsChange,
+                    setSelectedDBDatasource,
+                    setCurrentDSType
+                  )}
+                />
+              </Field>
+
+              {currentDSType === 'influxdb' && (
+                <Field label="Retention Policy">
+                  <Input
+                    width={40}
+                    value={options.jsonData.dbConnectionRetentionPolicy || ''}
+                    placeholder="Retention policy name"
+                    onChange={jsonDataChangeHandler('dbConnectionRetentionPolicy', options, onOptionsChange)}
+                    // tooltip="Specify retention policy name for fetching long-term stored data (optional).
+                    // Leave it blank if only default retention policy used."
                   />
-                  <Button onClick={resetSecureJsonField('password', options, onOptionsChange)}>Reset</Button>
-                </>
-              ) : (
-                <FormField
-                  labelWidth={7}
-                  inputWidth={15}
-                  label="Password"
-                  type="password"
-                  value={options.secureJsonData?.password || options.jsonData.password || ''}
-                  onChange={secureJsonDataChangeHandler('password', options, onOptionsChange)}
-                  required
-                />
+                </Field>
               )}
-            </div>
-          </>
-        )}
-        <Switch
-          label="Trends"
-          labelClass="width-7"
-          checked={options.jsonData.trends}
-          onChange={jsonDataSwitchHandler('trends', options, onOptionsChange)}
-        />
-        {options.jsonData.trends && (
-          <>
-            <div className="gf-form">
-              <FormField
-                labelWidth={7}
-                inputWidth={4}
-                label="After"
-                value={options.jsonData.trendsFrom || ''}
-                placeholder="7d"
-                onChange={jsonDataChangeHandler('trendsFrom', options, onOptionsChange)}
-                tooltip="Time after which trends will be used.
-                  Best practice is to set this value to your history storage period (7d, 30d, etc)."
-              />
-            </div>
-            <div className="gf-form">
-              <FormField
-                labelWidth={7}
-                inputWidth={4}
-                label="Range"
-                value={options.jsonData.trendsRange || ''}
-                placeholder="4d"
-                onChange={jsonDataChangeHandler('trendsRange', options, onOptionsChange)}
-                tooltip="Time range width after which trends will be used instead of history.
-                  It's better to set this value in range of 4 to 7 days to prevent loading large amount of history data."
-              />
-            </div>
-          </>
-        )}
-        <div className="gf-form">
-          <FormField
-            labelWidth={7}
-            inputWidth={4}
-            label="Cache TTL"
-            value={options.jsonData.cacheTTL || ''}
-            placeholder="1h"
-            onChange={jsonDataChangeHandler('cacheTTL', options, onOptionsChange)}
-            tooltip="Zabbix data source caches metric names in memory. Specify how often data will be updated."
-          />
-        </div>
-        <div className="gf-form">
-          <FormField
-            labelWidth={7}
-            inputWidth={4}
-            type="number"
-            label="Timeout"
-            value={options.jsonData.timeout}
-            onChange={(event) => {
-              onOptionsChange({
-                ...options,
-                jsonData: { ...options.jsonData, timeout: parseInt(event.currentTarget.value, 10) },
-              });
-            }}
-            tooltip="Zabbix API connection timeout in seconds. Default is 30."
-          />
-        </div>
-      </div>
+            </>
+          )}
+        </ConfigSubSection>
 
-      <div className="gf-form-group">
-        <h3 className="page-heading">Direct DB Connection</h3>
-        <Switch
-          label="Enable"
-          labelClass="width-9"
-          checked={options.jsonData.dbConnectionEnable}
-          onChange={jsonDataSwitchHandler('dbConnectionEnable', options, onOptionsChange)}
-        />
-        {options.jsonData.dbConnectionEnable && (
-          <>
-            <div className="gf-form">
-              <InlineFormLabel width={9}>Data Source</InlineFormLabel>
-              <Select
-                width={32}
-                options={getDirectDBDSOptions()}
-                value={selectedDBDatasource}
-                onChange={directDBDatasourceChanegeHandler(
-                  options,
-                  onOptionsChange,
-                  setSelectedDBDatasource,
-                  setCurrentDSType
-                )}
-              />
-            </div>
-            {currentDSType === 'influxdb' && (
-              <div className="gf-form">
-                <FormField
-                  labelWidth={9}
-                  inputWidth={16}
-                  label="Retention Policy"
-                  value={options.jsonData.dbConnectionRetentionPolicy || ''}
-                  placeholder="Retention policy name"
-                  onChange={jsonDataChangeHandler('dbConnectionRetentionPolicy', options, onOptionsChange)}
-                  tooltip="Specify retention policy name for fetching long-term stored data (optional).
-                    Leave it blank if only default retention policy used."
-                />
-              </div>
-            )}
-          </>
+        <ConfigSubSection title="Other">
+          <Field label="Disable acknowledges for read-only users">
+            <Switch
+              label="Disable acknowledges for read-only users"
+              value={options.jsonData.disableReadOnlyUsersAck}
+              onChange={jsonDataSwitchHandler('disableReadOnlyUsersAck', options, onOptionsChange)}
+            />
+          </Field>
+
+          <Field
+            label={
+              <Label>
+                <Stack gap={0.5}>
+                  <span>Disable data alignment</span>
+                  <Tooltip
+                    content={
+                      <span>
+                        Data alignment feature aligns points based on item update interval. For instance, if value
+                        collected once per minute, then timestamp of the each point will be set to the start of
+                        corresponding minute. This alignment required for proper work of the stacked graphs. If you
+                        don&apos;t need stacked graphs and want to get exactly the same timestamps as in Zabbix, then
+                        you can disable this feature.
+                      </span>
+                    }
+                  >
+                    <Icon name="info-circle" size="sm" />
+                  </Tooltip>
+                </Stack>
+              </Label>
+            }
+          >
+            <Switch
+              value={!!options.jsonData.disableDataAlignment}
+              onChange={jsonDataSwitchHandler('disableDataAlignment', options, onOptionsChange)}
+            />
+          </Field>
+        </ConfigSubSection>
+
+        {config.secureSocksDSProxyEnabled && gte(config.buildInfo.version, '10.0.0-0') && (
+          <SecureSocksProxySettings options={options} onOptionsChange={onOptionsChange} />
         )}
-      </div>
-
-      <div className="gf-form-group">
-        <h3 className="page-heading">Other</h3>
-        <Switch
-          label="Disable acknowledges for read-only users"
-          labelClass="width-20"
-          checked={options.jsonData.disableReadOnlyUsersAck}
-          onChange={jsonDataSwitchHandler('disableReadOnlyUsersAck', options, onOptionsChange)}
-        />
-        <Switch
-          label="Disable data alignment"
-          labelClass="width-20"
-          checked={!!options.jsonData.disableDataAlignment}
-          onChange={jsonDataSwitchHandler('disableDataAlignment', options, onOptionsChange)}
-          tooltip="Data alignment feature aligns points based on item update interval.
-            For instance, if value collected once per minute, then timestamp of the each point will be set to the start of corresponding minute.
-            This alignment required for proper work of the stacked graphs.
-            If you don't need stacked graphs and want to get exactly the same timestamps as in Zabbix, then you can disable this feature."
-        />
-      </div>
-
-      {config.featureToggles['secureSocksDSProxyEnabled'] && gte(config.buildInfo.version, '10.0.0-0') && (
-        <div className="gf-form-group">
-          <Switch
-            label="Secure Socks Proxy"
-            labelClass="width-20"
-            checked={options.jsonData.enableSecureSocksProxy}
-            tooltip="Enable proxying the datasource connection through the secure socks proxy to a different network."
-            onChange={jsonDataSwitchHandler('enableSecureSocksProxy', options, onOptionsChange)}
-          />
-        </div>
-      )}
+      </ConfigSection>
     </>
   );
+};
+
+const getStyles = (theme: GrafanaTheme2) => {
+  return {
+    space: css({
+      width: '100%',
+      height: theme.spacing(2),
+    }),
+  };
 };
 
 const jsonDataChangeHandler =
