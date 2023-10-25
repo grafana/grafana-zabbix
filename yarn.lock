@@ -897,6 +897,15 @@
     eslint-plugin-react-hooks "4.6.0"
     typescript "4.8.4"
 
+"@grafana/experimental@^1.7.4":
+  version "1.7.4"
+  resolved "https://registry.yarnpkg.com/@grafana/experimental/-/experimental-1.7.4.tgz#5b5efe89abf38b1d3358251148d42b9111de539e"
+  integrity sha512-uYkv9HRx+cqJRktsY43ApG0+kgG4fNR8lv+bkaFvGyCg46dcTeNqokujoPnHp6lt9MEn+0Y3jKEQbvCXjcz2bA==
+  dependencies:
+    "@types/uuid" "^8.3.3"
+    semver "^7.5.4"
+    uuid "^8.3.2"
+
 "@grafana/faro-core@^1.1.0":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@grafana/faro-core/-/faro-core-1.2.1.tgz#a95fd1376a928917f855068f101d356db067a0f4"
@@ -2266,6 +2275,11 @@
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/@types/tough-cookie/-/tough-cookie-4.0.3.tgz#3d06b6769518450871fbc40770b7586334bdfd90"
   integrity sha512-THo502dA5PzG/sfQH+42Lw3fvmYkceefOspdCwpHRul8ik2Jv1K8I5OZz1AT3/rs46kwgMCe9bSBmDLYkkOMGg==
+
+"@types/uuid@^8.3.3":
+  version "8.3.4"
+  resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-8.3.4.tgz#bd86a43617df0594787d38b735f55c805becf1bc"
+  integrity sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==
 
 "@types/yargs-parser@*":
   version "21.0.0"
@@ -8837,6 +8851,11 @@ uuid@9.0.0:
   version "9.0.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.0.tgz#592f550650024a38ceb0c562f2f6aa435761efb5"
   integrity sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==
+
+uuid@^8.3.2:
+  version "8.3.2"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-8.3.2.tgz#80d5b5ced271bb9af6c445f21a1a04c606cefbe2"
+  integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
 
 v8-compile-cache-lib@^3.0.1:
   version "3.0.1"
