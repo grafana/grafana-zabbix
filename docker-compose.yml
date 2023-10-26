@@ -1,0 +1,14 @@
+version: '3.0'
+
+services:
+  grafana:
+    container_name: 'grafana-zabbix'
+    build:
+      context: ./.config
+      args:
+        grafana_version: ${GRAFANA_VERSION:-10.1.5}
+    ports:
+      - 3000:3000/tcp
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/grafana-zabbix
+      - ./provisioning:/etc/grafana/provisioning
