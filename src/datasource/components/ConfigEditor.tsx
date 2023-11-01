@@ -104,7 +104,7 @@ export const ConfigEditor = (props: Props) => {
       <DataSourceDescription
         dataSourceName="Zabbix"
         docsLink="https://grafana.com/docs/grafana/latest/datasources/loki/configure-loki-data-source/"
-        hasRequiredFields={false}
+        hasRequiredFields={true}
       />
 
       <Divider />
