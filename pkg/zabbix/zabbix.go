@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
@@ -15,6 +17,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
+const AUTH_RATE_LIMIT = time.Duration(5 * time.Second)
+
 // Zabbix is a wrapper for Zabbix API. It wraps Zabbix API queries and performs authentication, adds caching,
 // deduplication and other performance optimizations.
 type Zabbix struct {
@@ -22,8 +26,10 @@ type Zabbix struct {
 	dsInfo   *backend.DataSourceInstanceSettings
 	settings *settings.ZabbixDatasourceSettings
 	cache    *ZabbixCache
-	version  int
+	version  atomic.Int32
 	logger   log.Logger
+	authLock sync.RWMutex
+	lastAuth time.Time
 }
 
 // New returns new instance of Zabbix client.
@@ -49,14 +55,14 @@ func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simpl
 	var resultJson *simplejson.Json
 	var err error
 
-	if ds.version == 0 {
+	if ds.version.Load() == 0 {
 		version, err := ds.GetVersion(ctx)
 		if err != nil {
 			ds.logger.Error("Error querying Zabbix version", "error", err)
-			ds.version = -1
+			ds.version.Store(-1)
 		} else {
 			ds.logger.Debug("Got Zabbix version", "version", version)
-			ds.version = version
+			ds.version.Store(int32(version))
 		}
 	}
 
@@ -92,14 +98,18 @@ func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixA
 		return zabbix.api.RequestUnauthenticated(ctx, method, params)
 	}
 
+	zabbix.authLock.RLock()
 	result, err := zabbix.api.Request(ctx, method, params)
+	zabbix.authLock.RUnlock()
 	notAuthorized := isNotAuthorized(err)
 	isTokenAuth := zabbix.settings.AuthType == settings.AuthTypeToken
 	if err == zabbixapi.ErrNotAuthenticated || (notAuthorized && !isTokenAuth) {
 		if notAuthorized {
 			zabbix.logger.Debug("Authentication token expired, performing re-login")
 		}
+		zabbix.authLock.Lock()
 		err = zabbix.Authenticate(ctx)
+		zabbix.authLock.Unlock()
 		if err != nil {
 			return nil, err
 		}
@@ -112,6 +122,11 @@ func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixA
 }
 
 func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
+	// check for consecutive auth calls. this is a protection against
+	// parallel api calls
+	if time.Now().Sub(zabbix.lastAuth) < AUTH_RATE_LIMIT {
+		return nil
+	}
 	jsonData, err := simplejson.NewJson(zabbix.dsInfo.JSONData)
 	if err != nil {
 		return err
@@ -129,6 +144,7 @@ func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 			return err
 		}
 		zabbix.logger.Debug("Using API token for authentication")
+		zabbix.lastAuth = time.Now()
 		return nil
 	}
 
@@ -147,6 +163,7 @@ func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 		return err
 	}
 	zabbix.logger.Debug("Successfully authenticated", "url", zabbix.api.GetUrl().String(), "user", zabbixLogin)
+	zabbix.lastAuth = time.Now()
 
 	return nil
 }

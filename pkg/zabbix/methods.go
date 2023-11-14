@@ -388,7 +388,7 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 		filter["value_type"] = []int{1, 2, 4}
 	}
 
-	if ds.version >= 54 {
+	if ds.version.Load() >= 54 {
 		params["selectTags"] = "extend"
 		if len(itemTagFilter) > 0 {
 			allTags := strings.Split(itemTagFilter, ",")
