@@ -1,13 +1,24 @@
 import React from 'react';
-import { InlineFieldRow } from '@grafana/ui';
+import { InlineFieldRow, InlineFormLabel } from '@grafana/ui';
+import { css } from '@emotion/css';
 
 export const QueryEditorRow = ({ children }: React.PropsWithChildren<{}>) => {
+  const styles = getStyles();
+
   return (
     <InlineFieldRow>
       {children}
-      <div className="gf-form gf-form--grow">
-        <div className="gf-form-label gf-form-label--grow" />
-      </div>
+      <InlineFormLabel className={styles.rowTerminator}>
+        <></>
+      </InlineFormLabel>
     </InlineFieldRow>
   );
+};
+
+const getStyles = () => {
+  return {
+    rowTerminator: css({
+      flexGrow: 1,
+    }),
+  };
 };

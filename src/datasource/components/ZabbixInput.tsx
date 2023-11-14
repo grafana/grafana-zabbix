@@ -5,7 +5,7 @@ import { GrafanaTheme2 } from '@grafana/data';
 import { isRegex, variableRegex } from '../utils';
 
 import * as grafanaUi from '@grafana/ui';
-const Input = (grafanaUi as any).LegacyForms?.Input || (grafanaUi as any).Input;
+const Input = (grafanaUi as any).Input || (grafanaUi as any).LegacyForms?.Input;
 
 const variablePattern = RegExp(`^${variableRegex.source}`);
 

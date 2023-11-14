@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
-import { cx, css } from '@emotion/css';
+import { css } from '@emotion/css';
 import { GrafanaTheme, SelectableValue } from '@grafana/data';
-import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable } from '@grafana/ui';
+import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable, ButtonGroup } from '@grafana/ui';
 import { ZBXScript, APIExecuteScriptResponse } from '../../datasource/zabbix/connectors/zabbix_api/types';
 import { FAIcon } from '../../components';
 
@@ -118,32 +118,24 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
     const { scriptOptions, selectedScript, script, result, selectError, errorMessage, error } = this.state;
 
     const styles = getStyles(theme);
-    const modalClass = cx(styles.modal);
-    const modalTitleClass = cx(styles.modalHeaderTitle);
-    const selectErrorClass = cx('gf-form-hint-text', styles.inputError);
-    const scriptCommandContainerClass = cx('gf-form', styles.scriptCommandContainer);
-    const scriptCommandClass = cx('gf-form-hint-text', styles.scriptCommand);
 
     return (
       <Modal
         isOpen={true}
         onDismiss={this.dismiss}
-        className={modalClass}
+        className={styles.modal}
         title={
-          <div className={modalTitleClass}>
+          <div className={styles.modalHeaderTitle}>
             {this.state.loading ? <Spinner size={18} /> : <FAIcon icon="terminal" />}
-            <span className="p-l-1">Execute script</span>
+            Execute script
           </div>
         }
       >
-        <div className="gf-form">
-          <label className="gf-form-hint">
-            <Select options={scriptOptions} value={selectedScript} onChange={this.onChangeSelectedScript} />
-            {selectError && <small className={selectErrorClass}>{selectError}</small>}
-          </label>
-        </div>
-        <div className={scriptCommandContainerClass}>
-          {script && <small className={scriptCommandClass}>{script.command}</small>}
+        <Select options={scriptOptions} value={selectedScript} onChange={this.onChangeSelectedScript} />
+        {selectError && <small className={styles.inputError}>{selectError}</small>}
+
+        <div className={styles.scriptCommandContainer}>
+          {script && <small className={styles.scriptCommand}>{script.command}</small>}
         </div>
 
         <div className={styles.resultContainer}>
@@ -151,14 +143,15 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
           {error && <span className={styles.execError}>{errorMessage}</span>}
         </div>
 
-        <div className="gf-form-button-row text-center">
+        <ButtonGroup className={styles.buttonGroup}>
           <Button variant="primary" onClick={this.submit}>
             Execute
           </Button>
+
           <Button variant="secondary" onClick={this.dismiss}>
             Cancel
           </Button>
-        </div>
+        </ButtonGroup>
       </Modal>
     );
   }
@@ -213,6 +206,11 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
     execResult: css``,
     execError: css`
       color: ${red};
+    `,
+    buttonGroup: css`
+      justify-content: center;
+      gap: ${theme.spacing.sm};
+      margin-top: ${theme.spacing.md};
     `,
   };
 });
