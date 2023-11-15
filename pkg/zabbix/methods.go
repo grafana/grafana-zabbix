@@ -2,6 +2,7 @@ package zabbix
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -402,6 +403,13 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 				}
 				tagsParams = append(tagsParams, tagParam)
 			}
+			// tags order should be handled for higher cache hit ratio
+			sort.Slice(tagsParams, func(i, j int) bool {
+				if tagsParams[i]["tag"] != tagsParams[j]["tag"] {
+					return tagsParams[i]["tag"] < tagsParams[j]["tag"]
+				}
+				return tagsParams[i]["value"] < tagsParams[j]["value"]
+			})
 			params["tags"] = tagsParams
 			params["evaltype"] = 2
 		}
