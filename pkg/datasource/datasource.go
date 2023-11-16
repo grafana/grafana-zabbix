@@ -43,7 +43,7 @@ func NewZabbixDatasource() *ZabbixDatasource {
 }
 
 // newZabbixDatasourceInstance returns an initialized zabbix datasource instance
-func newZabbixDatasourceInstance(_ context.Context, dsSettings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func newZabbixDatasourceInstance(ctx context.Context, dsSettings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	logger := log.New()
 	logger.Debug("Initializing new data source instance")
 
@@ -53,7 +53,7 @@ func newZabbixDatasourceInstance(_ context.Context, dsSettings backend.DataSourc
 		return nil, err
 	}
 
-	client, err := httpclient.New(&dsSettings, zabbixSettings.Timeout)
+	client, err := httpclient.New(ctx, &dsSettings, zabbixSettings.Timeout)
 	if err != nil {
 		logger.Error("Error initializing HTTP client", "error", err)
 		return nil, err

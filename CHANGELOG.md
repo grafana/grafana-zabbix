@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.4.4] - 2023-11-16
+
+### Chore
+
+- Updated grafana plugin SDK to `v0.193.0`
+
 ## [4.4.3] - 2023-10-10
 
 ### Chore

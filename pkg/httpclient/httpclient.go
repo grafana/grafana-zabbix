@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 	"time"
@@ -13,8 +14,8 @@ import (
 )
 
 // New creates new HTTP client.
-func New(dsInfo *backend.DataSourceInstanceSettings, timeout time.Duration) (*http.Client, error) {
-	clientOptions, err := dsInfo.HTTPClientOptions()
+func New(ctx context.Context, dsInfo *backend.DataSourceInstanceSettings, timeout time.Duration) (*http.Client, error) {
+	clientOptions, err := dsInfo.HTTPClientOptions(ctx)
 	if err != nil {
 		return nil, err
 	}
