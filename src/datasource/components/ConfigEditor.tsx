@@ -151,7 +151,7 @@ export const ConfigEditor = (props: Props) => {
                 width={40}
                 placeholder="Password"
                 isConfigured={options.secureJsonFields && options.secureJsonFields.password}
-                onReset={() => resetSecureJsonField('password', options, onOptionsChange)}
+                onReset={resetSecureJsonField('password', options, onOptionsChange)}
                 onBlur={secureJsonDataChangeHandler('password', options, onOptionsChange)}
               />
             </Field>
@@ -465,7 +465,7 @@ const resetSecureJsonField =
     value: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
     onChange: Props['onOptionsChange']
   ) =>
-  (event: React.SyntheticEvent<HTMLButtonElement>) => {
+  () => {
     onChange({
       ...value,
       secureJsonFields: {
