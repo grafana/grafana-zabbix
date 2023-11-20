@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { cx, css } from '@emotion/css';
+import { css } from '@emotion/css';
 import {
   ZBX_ACK_ACTION_ADD_MESSAGE,
   ZBX_ACK_ACTION_ACK,
@@ -17,6 +17,7 @@ import {
   withTheme,
   Themeable,
   TextArea,
+  ButtonGroup,
 } from '@grafana/ui';
 import { FAIcon } from '../../components';
 import { GrafanaTheme } from '@grafana/data';
@@ -200,63 +201,49 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
 
   render() {
     const { theme } = this.props;
-
     const styles = getStyles(theme);
-    const modalClass = cx(styles.modal);
-    const modalTitleClass = cx(styles.modalHeaderTitle);
-    const inputGroupClass = cx('gf-form', styles.inputGroup);
-    const inputClass = cx(this.state.error && styles.input);
-    const inputHintClass = cx('gf-form-hint-text', styles.inputHint);
-    const inputErrorClass = cx('gf-form-hint-text', styles.inputError);
 
     return (
       <Modal
         isOpen={true}
         onDismiss={this.dismiss}
-        className={modalClass}
+        className={styles.modal}
         title={
-          <div className={modalTitleClass}>
+          <div className={styles.modalHeaderTitle}>
             {this.state.loading ? <Spinner size={18} /> : <FAIcon icon="reply-all" />}
-            <span className="p-l-1">Acknowledge Problem</span>
+            Acknowledge Problem
           </div>
         }
       >
-        <div className={inputGroupClass}>
-          <label className="gf-form-hint">
-            <TextArea
-              className={inputClass}
-              type="text"
-              name="message"
-              placeholder="Message"
-              autoComplete="off"
-              autoFocus={true}
-              value={this.state.value}
-              onChange={this.handleChange}
-              onKeyDown={this.handleKeyPress}
-            ></TextArea>
-            <small className={inputHintClass}>Press Enter to submit</small>
-            {this.state.error && <small className={inputErrorClass}>{this.state.errorMessage}</small>}
-          </label>
+        <div className={styles.inputGroup}>
+          <TextArea
+            className={this.state.error && styles.input}
+            type="text"
+            name="message"
+            placeholder="Message"
+            autoComplete="off"
+            autoFocus={true}
+            value={this.state.value}
+            onChange={this.handleChange}
+            onKeyDown={this.handleKeyPress}
+          />
+          <small className={styles.inputHint}>Press Enter to submit</small>
+          {this.state.error && <small className={styles.inputError}>{this.state.errorMessage}</small>}
         </div>
 
-        <div className="gf-form">
-          <VerticalGroup>{this.renderActions()}</VerticalGroup>
-        </div>
+        <VerticalGroup>{this.renderActions()}</VerticalGroup>
 
-        {this.state.ackError && (
-          <div className="gf-form ack-request-error">
-            <span className={styles.ackError}>{this.state.ackError}</span>
-          </div>
-        )}
+        {this.state.ackError && <span className={styles.ackError}>{this.state.ackError}</span>}
 
-        <div className="gf-form-button-row text-center">
+        <ButtonGroup className={styles.buttonGroup}>
           <Button variant="primary" onClick={this.submit}>
             Update
           </Button>
+
           <Button variant="secondary" onClick={this.dismiss}>
             Cancel
           </Button>
-        </div>
+        </ButtonGroup>
       </Modal>
     );
   }
@@ -296,6 +283,11 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
     `,
     ackError: css`
       color: ${red};
+    `,
+    buttonGroup: css`
+      justify-content: center;
+      gap: ${theme.spacing.sm};
+      margin-top: ${theme.spacing.md};
     `,
   };
 });
