@@ -1,5 +1,21 @@
 # Change Log
 
+## [4.4.4] - 2023-11-21
+
+### Feature
+
+- Update configuration page to follow best practices
+
+### Fix
+
+- Dashboards not showing up in configuration
+
+### Chore
+
+- Added lint github workflow
+- Update grafana-plugin-sdk-go to latest
+- Remove legacy form styling
+
 ## [4.4.3] - 2023-10-10
 
 ### Chore
