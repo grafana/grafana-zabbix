@@ -9,13 +9,13 @@
 ### Chore
 
 - Added lint github workflow
+- Update grafana-plugin-sdk-go to latest
+- Remove legacy form styling
 
 ## [4.4.3] - 2023-10-10
 
 ### Chore
 
-- Update grafana-plugin-sdk-go to latest
-- Remove legacy form styling
 - Don't track requests on dashboard [#1707](https://github.com/grafana/grafana-zabbix/pull/1707)
 
 ## [4.4.2] - 2023-10-09
