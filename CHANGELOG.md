@@ -6,6 +6,10 @@
 
 - Update configuration page to follow best practices
 
+### Fix
+
+- Dashboards not showing up in configuration
+
 ### Chore
 
 - Added lint github workflow
