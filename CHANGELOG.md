@@ -1,9 +1,21 @@
 # Change Log
 
+## [4.4.4] - 2023-11-21
+
+### Feature
+
+- Update configuration page to follow best practices
+
+### Chore
+
+- Added lint github workflow
+
 ## [4.4.3] - 2023-10-10
 
 ### Chore
 
+- Update grafana-plugin-sdk-go to latest
+- Remove legacy form styling
 - Don't track requests on dashboard [#1707](https://github.com/grafana/grafana-zabbix/pull/1707)
 
 ## [4.4.2] - 2023-10-09
