@@ -124,7 +124,7 @@ func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixA
 func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 	// check for consecutive auth calls. this is a protection against
 	// parallel api calls
-	if time.Now().Sub(zabbix.lastAuth) < AUTH_RATE_LIMIT {
+	if time.Since(zabbix.lastAuth) < AUTH_RATE_LIMIT {
 		return nil
 	}
 	jsonData, err := simplejson.NewJson(zabbix.dsInfo.JSONData)
