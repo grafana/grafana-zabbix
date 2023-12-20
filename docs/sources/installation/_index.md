@@ -49,4 +49,4 @@ Starting from version 4.0, each plugin release on GitHub contains packaged plugi
 
 ## Building from sources
 
-If you want to build a package yourself, or contribute - read [building instructions](./run-from-main).
+If you want to build a package yourself, or contribute - read [building instructions](./building-from-sources).

@@ -1,6 +1,6 @@
 ---
-title: Run Grafana-Zabbix from main branch
-menuTitle: Run Grafana-Zabbix from main branch
+title: Building from sources
+menuTitle: Building from sources
 description: Building instructions for Grafana-Zabbix.
 aliases:
 keywords:

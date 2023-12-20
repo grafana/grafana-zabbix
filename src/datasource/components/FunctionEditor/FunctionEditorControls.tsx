@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon } from '@grafana/ui';
 import { MetricFunc } from '../../types';
 
-const DOCS_FUNC_REF_URL = 'https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/';
+const DOCS_FUNC_REF_URL = 'https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/';
 
 export interface FunctionEditorControlsProps {
   onMoveLeft: (func: MetricFunc) => void;

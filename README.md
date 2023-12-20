@@ -8,12 +8,12 @@
 
 ## Features
 
-- Select multiple metrics [by using Regex](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/gettingstarted/#multiple-items-on-one-graph)
-- Create interactive and reusable dashboards with [template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/templating/)
+- Select multiple metrics [by using Regex](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted/#multiple-items-on-one-graph)
+- Create interactive and reusable dashboards with [template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating/)
 - Show events on graphs with [Annotations](http://docs.grafana.org/reference/annotations/)
 - Display active problems with Triggers panel
-- Transform and shape your data with [metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
-- Find problems faster with [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/) feature
+- Transform and shape your data with [metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
+- Find problems faster with [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/) feature
 - Mix metrics from multiple data sources in the same dashboard or even graph
 - Discover and share [dashboards](https://grafana.com/dashboards) in the official library
 
@@ -32,16 +32,16 @@ Or see more installation options in [docs](https://grafana.com/docs/plugins/alex
 
 ## Getting started
 
-First, [configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/gettingstarted/).
+First, [configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted/).
 
 ## Documentation
 
 - [About](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
 - [Installation](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/installation)
-- [Getting Started](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/gettingstarted)
-- [Templating](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/templating)
-- [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)
-- [Metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/)
+- [Getting Started](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted)
+- [Templating](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating)
+- [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/)
+- [Metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/)
 
 ## Community Resources, Feedback, and Support
 
