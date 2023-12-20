@@ -1,7 +1,17 @@
-page_title: Grafana-Zabbix Installation
-page_description: Installation instructions for Grafana-Zabbix.
-
-# Installation
+---
+title: Installation
+menuTitle: Installation
+description: Installation instructions for Grafana-Zabbix.
+aliases:
+keywords:
+  - data source
+  - zabbix
+labels:
+  products:
+    - oss
+    - grafana cloud
+weight: 200
+---
 
 ## Choosing plugin version
 
@@ -22,6 +32,7 @@ grafana-cli plugins install alexanderzobnin-zabbix-app
 ```
 
 Restart grafana after installing plugins
+
 ```sh
 systemctl restart grafana-server
 ```

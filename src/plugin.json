@@ -8,9 +8,7 @@
       "name": "Grafana Labs",
       "url": "https://grafana.com"
     },
-    "keywords": [
-      "zabbix"
-    ],
+    "keywords": ["zabbix"],
     "logos": {
       "small": "img/icn-zabbix-app.svg",
       "large": "img/icn-zabbix-app.svg"
@@ -22,11 +20,11 @@
       },
       {
         "name": "Docs",
-        "url": "https://grafana.github.io/grafana-zabbix"
+        "url": "https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/"
       },
       {
         "name": "License",
-        "url": "https://github.com/grafana/grafana-zabbix/blob/master/LICENSE"
+        "url": "https://github.com/grafana/grafana-zabbix/blob/main/LICENSE"
       }
     ],
     "screenshots": [

@@ -1,4 +1,17 @@
-# Alerting
+---
+title: Alerting
+menuTitle: Alerting
+description: Alerting
+aliases:
+keywords:
+  - data source
+  - zabbix
+labels:
+  products:
+    - oss
+    - grafana cloud
+weight: 520
+---
 
 ## Alerting overview
 

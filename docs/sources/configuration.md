@@ -1,14 +1,24 @@
-page_title: Grafana-Zabbix Configuration
-page_description: Plugin configuration instructions for Grafana-Zabbix.
-
-# Configuration
+---
+title: Configuration
+menuTitle: Configuration
+description: Plugin configuration instructions for Grafana-Zabbix.
+aliases:
+keywords:
+  - data source
+  - zabbix
+labels:
+  products:
+    - oss
+    - grafana cloud
+weight: 300
+---
 
 ## Enable plugin
 
 Go to the plugins in Grafana side panel, select _Apps_ tab, then select _Zabbix_, open _Config_
 tab and enable plugin.
 
-![Enable Zabbix App](../img/installation-enable_app.png)
+![Enable Zabbix App](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/installation-enable_app.png)
 
 ## Configure Zabbix data source
 
@@ -16,7 +26,7 @@ After enabling plugin you can add Zabbix data source.
 
 To add new Zabbix data source open _Data Sources_ in side panel, click _Add data source_ and select _Zabbix_ from dropdown list.
 
-![Configure Zabbix data source](../img/installation-datasource_config.png)
+![Configure Zabbix data source](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/installation-datasource_config.png)
 
 ### HTTP settings
 
@@ -29,22 +39,22 @@ To add new Zabbix data source open _Data Sources_ in side panel, click _Add data
 ### Zabbix API details
 
 - **Username** and **Password**: setup login for access to Zabbix API. Also check user's permissions
-    in Zabbix if you cannot get any groups and hosts in Grafana.
+  in Zabbix if you cannot get any groups and hosts in Grafana.
 - **Trends**: enable if you use Zabbix 3.x or newer. This option is
-    strictly recommended for displaying long time periods (more than few days, depending of your item's
-    updating interval in Zabbix), because few days of item history contains tons of points. Using trends
-    will increase Grafana performance.
+  strictly recommended for displaying long time periods (more than few days, depending of your item's
+  updating interval in Zabbix), because few days of item history contains tons of points. Using trends
+  will increase Grafana performance.
   - **After**: time after which trends will be used.
-        Best practice is to set this value to your history storage period (7d, 30d, etc). Default is **7d** (7 days).
-        You can set the time in Grafana format. Valid time specifiers are:
+    Best practice is to set this value to your history storage period (7d, 30d, etc). Default is **7d** (7 days).
+    You can set the time in Grafana format. Valid time specifiers are:
     - **h** - hours
     - **d** - days
     - **M** - months
   - **Range**: Time range width after which trends will be used instead of history.
-        It's better to set this value in range of 4 to 7 days to prevent loading large amount of history data.
-        Default is 4 days.
+    It's better to set this value in range of 4 to 7 days to prevent loading large amount of history data.
+    Default is 4 days.
 - **Cache TTL**: plugin caches some api requests for increasing performance. Set this
-    value to desired cache lifetime (this option affect data like items list).
+  value to desired cache lifetime (this option affect data like items list).
 - **Timeout**: Zabbix connection timeout in seconds. Default is 30.
 
 ### Direct DB Connection
@@ -75,7 +85,7 @@ Then click _Add_ - data source will be added and you can check connection using 
 
 You can import dashboard examples from _Dashboards_ tab in the data source config.
 
-![Import dashboards](../img/installation-plugin-dashboards.png)
+![Import dashboards](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/installation-plugin-dashboards.png)
 
 ## Note about Browser Cache
 

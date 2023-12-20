@@ -1,7 +1,17 @@
-page_title: Run Grafana-Zabbix from master
-page_description: Building instructions for Grafana-Zabbix.
-
-# Run from master
+---
+title: Run Grafana-Zabbix from main branch
+menuTitle: Run Grafana-Zabbix from main branch
+description: Building instructions for Grafana-Zabbix.
+aliases:
+keywords:
+  - data source
+  - zabbix
+labels:
+  products:
+    - oss
+    - grafana cloud
+weight: 210
+---
 
 If you want to build a package yourself, or contribute - here is a guide for how to do that.
 
