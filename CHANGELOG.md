@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.4.5] - 2023-12-20
+
+- ⚙️ **Docs**: Documentation website moved from [github pages](https://grafana.github.io/grafana-zabbix) to [grafana.com/docs/plugins](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/) page
+
 ## [4.4.4] - 2023-11-21
 
 ### Feature
