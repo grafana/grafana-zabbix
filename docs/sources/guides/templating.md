@@ -13,6 +13,8 @@ labels:
 weight: 410
 ---
 
+# Templating Guide
+
 You can use template variables for creating highly reusable and interactive dashboards. General idea of templating is allow Grafana to get different metrics from data source and provide a way to change it on the fly without modifying dashboard. In case of Zabbix it means that you can get list of Host Groups, Hosts, Applications or Items and add it as a variables.
 
 ## Creating Variable

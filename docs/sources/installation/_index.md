@@ -13,6 +13,8 @@ labels:
 weight: 200
 ---
 
+# Installation
+
 ## Choosing plugin version
 
 Currently (in version `4.x.x`) Grafana-Zabbix plugin supports Zabbix versions `4.x` and `5.x`. Zabbix `3.x` is not supported anymore. Generally, latest plugin should work with latest Grafana version, but if you have any compatibility issue, try to downgrade to previous minor release of Grafana. It's also helpful to report (but use search first to avoid duplicating issues) compatibility issues to the [GitHub](https://github.com/grafana/grafana-zabbix/issues).

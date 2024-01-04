@@ -13,6 +13,8 @@ labels:
 weight: 310
 ---
 
+# Direct DB Data Source Configuration
+
 ## Security notes
 
 Grafana-Zabbix plugin can use MySQL, Postgres or InfluxDB (if Zabbix configured to store history data in InfluxDB) data sources to query history and trend data directly from Zabbix database. In order to execute queries, plugin needs only read access to the `history`, `history_uint`, `trends` and `trends_uint` tables. To make connection more secure and prevent unnecessary data disclosure, it's highly recommended to grant read access to only that tables. But if you want to use this data source for querying another data, you can

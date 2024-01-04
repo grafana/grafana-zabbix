@@ -13,6 +13,8 @@ labels:
 weight: 210
 ---
 
+# Building from sources
+
 If you want to build a package yourself, or contribute - here is a guide for how to do that.
 
 ## Prerequisites

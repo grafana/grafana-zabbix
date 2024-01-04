@@ -13,6 +13,8 @@ labels:
 weight: 110
 ---
 
+# Feature Highlights
+
 Grafana in couple with Grafana-Zabbix plugin allows to create great dashboards. There is some
 features:
 

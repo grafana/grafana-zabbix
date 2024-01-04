@@ -13,9 +13,11 @@ labels:
 weight: 320
 ---
 
+# Provisioning Grafana-Zabbix plugin
+
 It’s now possible to configure datasources using config files with Grafana’s provisioning system. You can read more about how it works and all the settings you can set for datasources on the [provisioning docs page](http://docs.grafana.org/administration/provisioning/#datasources)
 
-### Example Datasource Config File
+## Example Datasource Config File
 
 ```yaml
 apiVersion: 1

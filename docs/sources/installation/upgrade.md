@@ -13,6 +13,8 @@ labels:
 weight: 220
 ---
 
+# Upgrade
+
 ## Upgrade from 2.x
 
 After [enabling](../../configuration/#enable-plugin) Zabbix App go to _Data Sources_, open your configured Zabbix

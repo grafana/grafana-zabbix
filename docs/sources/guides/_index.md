@@ -1,6 +1,6 @@
 ---
-title: Getting Started with Grafana-Zabbix
-menuTitle: Getting Started with Grafana-Zabbix
+title: Getting Started
+menuTitle: Getting Started
 description: Getting Started with Grafana-Zabbix
 aliases:
 keywords:
@@ -12,6 +12,8 @@ labels:
     - grafana cloud
 weight: 400
 ---
+
+# Getting Started with Grafana-Zabbix
 
 After you [installed and configured](../installation/index.md) Grafana-Zabbix data source let's
 create a simple dashboard.

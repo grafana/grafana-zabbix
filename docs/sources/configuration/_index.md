@@ -13,6 +13,8 @@ labels:
 weight: 300
 ---
 
+# Configuration
+
 ## Enable plugin
 
 Go to the plugins in Grafana side panel, select _Apps_ tab, then select _Zabbix_, open _Config_

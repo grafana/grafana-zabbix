@@ -1,6 +1,6 @@
 ---
-title: Grafana Zabbix
-menuTitle: About Grafana-Zabbix
+title: Grafana Zabbix plugin
+menuTitle: Grafana Zabbix plugin
 description: Introduction to Grafana-Zabbix plugin.
 aliases:
 keywords:
@@ -12,6 +12,8 @@ labels:
     - grafana cloud
 weight: 100
 ---
+
+# Grafana Zabbix plugin
 
 Grafana-Zabbix is a plugin for Grafana allowing to visualize monitoring data from Zabbix
 and create dashboards for analyzing metrics and realtime monitoring. Main goals of this project
@@ -45,5 +47,5 @@ Triggers panel was sponsored by [Core IT Project](http://coreit.fr/)).
 
 By utilizing this software, you agree to the terms of the included license. Grafana-Zabbix plugin is
 licensed under the Apache 2.0 agreement. See
-[LICENSE](https://github.com/alexanderzobnin/grafana-zabbix/blob/min/LICENSE) for the full
+[LICENSE](https://github.com/grafana/grafana-zabbix/blob/main/LICENSE) for the full
 license terms.
