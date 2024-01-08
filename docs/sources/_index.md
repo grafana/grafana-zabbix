@@ -30,18 +30,8 @@ If you have any troubles with Grafana or you just want clarification on a featur
 a number of ways to get help:
 
 - [Troubleshooting guide](./configuration/troubleshooting/)
-- Search closed and open [issues on GitHub](https://github.com/grafana/grafana/issues)
+- Search closed and open [issues on GitHub](https://github.com/grafana/grafana-zabbix/issues)
 - [Grafana Community](https://community.grafana.com)
-- [Twitter](https://twitter.com/AlexanderZobnin)
-
-Or you can send me [email](mailto:alexanderzobnin@gmail.com).
-
-## Support Project
-
-I develop this project in my free time, but if you really find it helpful and promising, you can
-support me. There are some ways to do this. You can [donate](https://www.paypal.me/alexanderzobnin)
-any reasonable amount, or you can request a feature development, interesting for you (for example,
-Triggers panel was sponsored by [Core IT Project](http://coreit.fr/)).
 
 ## License
 
