@@ -12,7 +12,8 @@ import dbConnector, {
 
 const supportedDatabases = {
   mysql: 'mysql',
-  postgres: 'postgres',
+  postgresOld: 'postgres',
+  postgresNew: 'grafana-postgresql-datasource',
 };
 
 export class SQLConnector extends DBConnector {
@@ -31,7 +32,10 @@ export class SQLConnector extends DBConnector {
   }
 
   loadSQLDialect() {
-    if (this.datasourceTypeId === supportedDatabases.postgres) {
+    if (
+      this.datasourceTypeId === supportedDatabases.postgresOld ||
+      this.datasourceTypeId === supportedDatabases.postgresNew
+    ) {
       this.sqlDialect = postgres;
     } else {
       this.sqlDialect = mysql;
