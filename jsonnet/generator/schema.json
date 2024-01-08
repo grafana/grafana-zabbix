@@ -1,0 +1,461 @@
+{
+  "$ref": "#/definitions/ZabbixMetricsQuery",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "FuncDef": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "defaultParams": {
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "fake": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "params": {
+          "items": {
+            "$ref": "#/definitions/ParamDef"
+          },
+          "type": "array"
+        },
+        "shortName": {},
+        "unknown": {
+          "description": "True if the function was not found on the list of available function descriptions.",
+          "type": "boolean"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "params",
+        "defaultParams"
+      ],
+      "type": "object"
+    },
+    "MetricFunc": {
+      "additionalProperties": false,
+      "properties": {
+        "added": {
+          "type": "boolean"
+        },
+        "def": {
+          "$ref": "#/definitions/FuncDef"
+        },
+        "params": {
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "params",
+        "def"
+      ],
+      "type": "object"
+    },
+    "ParamDef": {
+      "additionalProperties": false,
+      "properties": {
+        "multiple": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "options": {
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "type": "array"
+        },
+        "type": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
+    "ShowProblemTypes": {
+      "enum": [
+        "problems",
+        "recent",
+        "history"
+      ],
+      "type": "string"
+    },
+    "ZabbixMetricsQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "application": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "countTriggersBy": {
+          "enum": [
+            "problems",
+            "items",
+            ""
+          ],
+          "type": "string"
+        },
+        "datasource": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "description": "The plugin type-id",
+                  "type": "string"
+                },
+                "uid": {
+                  "description": "Specific datasource instance",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For mixed data sources the selected datasource is on the query level. For non mixed scenarios this is undefined. TODO find a better way to do this ^ that's friendly to schema TODO this shouldn't be unknown but DataSourceRef | null"
+        },
+        "datasourceId": {
+          "type": "number"
+        },
+        "evaltype": {
+          "$ref": "#/definitions/ZabbixTagEvalType"
+        },
+        "functions": {
+          "items": {
+            "$ref": "#/definitions/MetricFunc"
+          },
+          "type": "array"
+        },
+        "group": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "hide": {
+          "description": "true if query is disabled (ie should not be returned to the dashboard) Note this does not always imply that the query should not be executed since the results from a hidden query may be used as the input to other queries (SSE etc)",
+          "type": "boolean"
+        },
+        "host": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "hostFilter": {
+          "type": "string"
+        },
+        "itServiceFilter": {
+          "type": "string"
+        },
+        "item": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "itemFilter": {
+          "type": "string"
+        },
+        "itemTag": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "itemids": {
+          "type": "string"
+        },
+        "key": {
+          "description": "Unique, guid like, string (used only in explore mode)",
+          "type": "string"
+        },
+        "macro": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            },
+            "macro": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "macroFilter": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "number"
+        },
+        "options": {
+          "$ref": "#/definitions/ZabbixQueryOptions"
+        },
+        "proxy": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "queryType": {
+          "description": "Specify the query flavor TODO make this required and give it a default",
+          "type": "string"
+        },
+        "refId": {
+          "description": "A unique identifier for the query within the list of targets. In server side expressions, the refId is used as a variable name to identify results. By default, the UI will assign A->Z; however setting meaningful names may be useful.",
+          "type": "string"
+        },
+        "schema": {
+          "type": "number"
+        },
+        "showProblems": {
+          "$ref": "#/definitions/ShowProblemTypes"
+        },
+        "slaFilter": {
+          "type": "string"
+        },
+        "slaInterval": {
+          "type": "string"
+        },
+        "slaProperty": {},
+        "tags": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "textFilter": {
+          "type": "string"
+        },
+        "trigger": {
+          "additionalProperties": false,
+          "properties": {
+            "filter": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "filter"
+          ],
+          "type": "object"
+        },
+        "triggers": {
+          "additionalProperties": false,
+          "properties": {
+            "acknowledged": {
+              "type": "number"
+            },
+            "count": {
+              "type": "boolean"
+            },
+            "minSeverity": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "minSeverity",
+            "acknowledged",
+            "count"
+          ],
+          "type": "object"
+        },
+        "useCaptureGroups": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "application",
+        "datasourceId",
+        "group",
+        "host",
+        "item",
+        "itemTag",
+        "itemids",
+        "macro",
+        "mode",
+        "queryType",
+        "refId",
+        "schema",
+        "textFilter",
+        "useCaptureGroups"
+      ],
+      "type": "object"
+    },
+    "ZabbixQueryOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "acknowledged": {
+          "type": "number"
+        },
+        "count": {
+          "type": "boolean"
+        },
+        "disableDataAlignment": {
+          "type": "boolean"
+        },
+        "hideAcknowledged": {
+          "type": "boolean"
+        },
+        "hostProxy": {
+          "type": "boolean"
+        },
+        "hostsInMaintenance": {
+          "type": "boolean"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "minSeverity": {
+          "type": "number"
+        },
+        "severities": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "showDisabledItems": {
+          "type": "boolean"
+        },
+        "showHostname": {
+          "type": "boolean"
+        },
+        "showOkEvents": {
+          "type": "boolean"
+        },
+        "skipEmptyValues": {
+          "type": "boolean"
+        },
+        "sortProblems": {
+          "type": "string"
+        },
+        "useTimeRange": {
+          "type": "boolean"
+        },
+        "useTrends": {
+          "enum": [
+            "default",
+            "true",
+            "false"
+          ],
+          "type": "string"
+        },
+        "useZabbixValueMapping": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ZabbixTagEvalType": {
+      "enum": [
+        "0",
+        "2"
+      ],
+      "type": "string"
+    }
+  }
+}
