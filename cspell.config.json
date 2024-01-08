@@ -28,7 +28,11 @@
     "docs/**/*.yaml",
     "dashboards/**",
     "src/**",
-    "pkg/**"
+    "pkg/**",
+    "jsonnet/generator/jsonnetfile.json",
+    "jsonnet/generator/jsonnetfile.lock.json",
+    "jsonnet/generator/schema.json",
+    "jsonnet/zabbix-query-libsonnet/docs/**"
   ],
   "ignoreRegExpList": [
     "import\\s*\\((.|[\r\n])*?\\)",
@@ -73,6 +77,7 @@
     "timeshift",
     "templatig",
     "lastvalue",
-    "typeahead"
+    "typeahead",
+    "jsonnet"
   ]
 }
