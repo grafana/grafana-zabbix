@@ -28,7 +28,8 @@ import {
 import { Divider } from './Divider';
 import { css } from '@emotion/css';
 
-const SUPPORTED_SQL_DS = ['mysql', 'postgres', 'influxdb'];
+// the postgres-plugin changed it's id, so we list both the old name and the new name
+const SUPPORTED_SQL_DS = ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb'];
 
 const authOptions: Array<SelectableValue<ZabbixAuthType>> = [
   { label: 'User and password', value: ZabbixAuthType.UserLogin },
