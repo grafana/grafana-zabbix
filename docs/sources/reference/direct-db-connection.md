@@ -1,4 +1,17 @@
-# Direct DB Connection
+---
+title: Direct DB Connection
+menuTitle: Direct DB Connection
+description: Direct DB Connection
+aliases:
+keywords:
+  - data source
+  - zabbix
+labels:
+  products:
+    - oss
+    - grafana cloud
+weight: 530
+---
 
 Since version 4.3 Grafana can use MySQL as a native data source. The idea of Direct DB Connection is that Grafana-Zabbix plugin can use this data source for querying data directly from a Zabbix database.
 
@@ -18,13 +31,14 @@ This chart illustrates how the plugin uses both Zabbix API and the MySQL data so
 of data from Zabbix. MySQL data source is used only for pulling history and trend data instead of `history.get`
 and `trend.get` API calls.
 
-[![Direct DB Connection](../img/reference-direct-db-connection.svg)](../img/reference-direct-db-connection.svg)
+[![Direct DB Connection](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/reference-direct-db-connection.svg)](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/reference-direct-db-connection.svg)
 
 ## Query structure
 
 Below is an example query for getting history in the Grafana-Zabbix Plugin:
 
 **MySQL**:
+
 ```sql
 SELECT itemid AS metric, clock AS time_sec, {aggFunc}(value) as value
 FROM {historyTable}
@@ -35,9 +49,10 @@ ORDER BY time_sec ASC
 ```
 
 **PostgreSQL**:
+
 ```sql
-SELECT to_char(itemid, 'FM99999999999999999999') AS metric, 
-  clock / {intervalSec} * {intervalSec} AS time, 
+SELECT to_char(itemid, 'FM99999999999999999999') AS metric,
+  clock / {intervalSec} * {intervalSec} AS time,
   {aggFunc}(value) AS value
 FROM {historyTable}
 WHERE itemid IN ({itemids})
@@ -53,6 +68,7 @@ When getting trends, the plugin additionally queries a particular value column (
 depends on `consolidateBy` function value:
 
 **MySQL**:
+
 ```sql
 SELECT itemid AS metric, clock AS time_sec, {aggFunc}({valueColumn}) as value
 FROM {trendsTable}
@@ -63,9 +79,10 @@ ORDER BY time_sec ASC
 ```
 
 **PostgreSQL**:
+
 ```sql
-SELECT to_char(itemid, 'FM99999999999999999999') AS metric, 
-  clock / {intervalSec} * {intervalSec} AS time, 
+SELECT to_char(itemid, 'FM99999999999999999999') AS metric,
+  clock / {intervalSec} * {intervalSec} AS time,
   {aggFunc}({valueColumn}) AS value
 FROM {trendsTable}
 WHERE itemid IN ({itemids})
@@ -79,9 +96,11 @@ ORDER BY time ASC
 As you can see, the Grafana-Zabbix plugin uses aggregation by a given time interval. This interval is provided by Grafana and depends on the panel width in pixels. Thus, Grafana displays the data in the proper resolution.
 
 ## InfluxDB
+
 Zabbix supports loadable modules which makes possible to write history data into an external database. There's a [module](https://github.com/i-ky/effluence) for InfluxDB written by [Gleb Ivanovsky](https://github.com/i-ky) which can export history into InfluxDB in real-time.
 
-#### InfluxDB retention policy
+### InfluxDB retention policy
+
 In order to keep database size under control, you should use InfluxDB retention policy mechanism. It's possible to create retention policy for long-term data and write aggregated data in the same manner as Zabbix does (trends). Then this retention policy can be used in plugin for getting data after a certain period ([Retention Policy](../../configuration/#direct-db-connection) option in data source config). Read more about how to configure retention policy for using with plugin in effluence module [docs](https://github.com/i-ky/effluence#database-sizing).
 
 #### InfluxDB Query
@@ -98,6 +117,6 @@ GROUP BY time(10s), "itemid" fill(none)
 
 ## Functions usage with Direct DB Connection
 
-There's only one function that directly affects the backend data. This function is `consolidateBy`. Other functions work on the client side and transform data that comes from the backend. So you should clearly understand that this is pre-aggregated data (by AVG, MAX, MIN, etc). 
+There's only one function that directly affects the backend data. This function is `consolidateBy`. Other functions work on the client side and transform data that comes from the backend. So you should clearly understand that this is pre-aggregated data (by AVG, MAX, MIN, etc).
 
 For example, say you want to group values by 1 hour interval and `max` function. If you just apply `groupBy(10m, max)` function, your result will be wrong, because you would transform data aggregated by default `AVG` function. You should use `consolidateBy(max)` coupled with `groupBy(10m, max)` in order to get a precise result.

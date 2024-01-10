@@ -1,5 +1,17 @@
-page_title: Feature Highlights
-page_description: Grafana-Zabbix Feature Highlights.
+---
+title: Feature Highlights
+menuTitle: Feature Highlights
+description: Grafana-Zabbix Feature Highlights.
+aliases:
+keywords:
+  - data source
+  - zabbix
+labels:
+  products:
+    - oss
+    - grafana cloud
+weight: 110
+---
 
 # Feature Highlights
 

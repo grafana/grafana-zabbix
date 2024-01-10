@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.4.5] - 2024-01-10
+
+- ⚙️ **Docs**: Documentation website moved from [github pages](https://grafana.github.io/grafana-zabbix) to [grafana.com/docs/plugins](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/) page
+
 ## [4.4.4] - 2023-11-21
 
 ### Feature
@@ -661,7 +665,7 @@ option description for more information.
 ### Changed
 
 - Template query format. New format is `{group}{host}{app}{item}`. It allows to use names with dot. Updated
-  [templating docs](https://alexanderzobnin.github.io/grafana-zabbix/guides/templating/#query-format),
+  [templating docs](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/templating#query-format),
   [#254](https://github.com/alexanderzobnin/grafana-zabbix/issues/254)
 - Update included dashboards. Add templated zabbix datasource and use it for all metrics.
 - Improved performance of groupBy() functions (at 6-10x faster than old).

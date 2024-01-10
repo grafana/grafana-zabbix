@@ -1,19 +1,19 @@
 # Zabbix plugin for Grafana
 
 [![Version](https://badge.fury.io/gh/grafana%2Fgrafana-zabbix.svg)](https://github.com/grafana/grafana-zabbix/releases)
-[![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/grafana/grafana-zabbix/blob/master/CHANGELOG.md)
-[![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](https://grafana.github.io/grafana-zabbix)
+[![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/grafana/grafana-zabbix/blob/main/CHANGELOG.md)
+[![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
 
 ![Dashboard](https://user-images.githubusercontent.com/4932851/53799185-e1cdc700-3f4a-11e9-9cb4-8330f501b32e.png)
 
 ## Features
 
-- Select multiple metrics [by using Regex](https://grafana.github.io/grafana-zabbix/guides/gettingstarted/#multiple-items-on-one-graph)
-- Create interactive and reusable dashboards with [template variables](https://grafana.github.io/grafana-zabbix/guides/templating/)
+- Select multiple metrics [by using Regex](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted/#multiple-items-on-one-graph)
+- Create interactive and reusable dashboards with [template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating/)
 - Show events on graphs with [Annotations](http://docs.grafana.org/reference/annotations/)
 - Display active problems with Triggers panel
-- Transform and shape your data with [metric processing functions](https://grafana.github.io/grafana-zabbix/reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
-- Find problems faster with [Alerting](https://grafana.github.io/grafana-zabbix/reference/alerting/) feature
+- Transform and shape your data with [metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
+- Find problems faster with [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/) feature
 - Mix metrics from multiple data sources in the same dashboard or even graph
 - Discover and share [dashboards](https://grafana.com/dashboards) in the official library
 
@@ -28,20 +28,20 @@ Install by using `grafana-cli`
 grafana-cli plugins install alexanderzobnin-zabbix-app
 ```
 
-Or see more installation options in [docs](https://grafana.github.io/grafana-zabbix/installation/).
+Or see more installation options in [docs](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/installation/).
 
 ## Getting started
 
-First, [configure](https://grafana.github.io/grafana-zabbix/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://grafana.github.io/grafana-zabbix/guides/gettingstarted/).
+First, [configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted/).
 
 ## Documentation
 
-- [About](https://grafana.github.io/grafana-zabbix)
-- [Installation](https://grafana.github.io/grafana-zabbix/installation)
-- [Getting Started](https://grafana.github.io/grafana-zabbix/guides/gettingstarted)
-- [Templating](https://grafana.github.io/grafana-zabbix/guides/templating)
-- [Alerting](https://grafana.github.io/grafana-zabbix/reference/alerting/)
-- [Metric processing functions](https://grafana.github.io/grafana-zabbix/reference/functions/)
+- [About](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
+- [Installation](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/installation)
+- [Getting Started](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted)
+- [Templating](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating)
+- [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/)
+- [Metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/)
 
 ## Community Resources, Feedback, and Support
 

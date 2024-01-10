@@ -1,7 +1,19 @@
-page_title: Run Grafana-Zabbix from master
-page_description: Building instructions for Grafana-Zabbix.
+---
+title: Building from sources
+menuTitle: Building from sources
+description: Building instructions for Grafana-Zabbix.
+aliases:
+keywords:
+  - data source
+  - zabbix
+labels:
+  products:
+    - oss
+    - grafana cloud
+weight: 210
+---
 
-# Run from master
+# Building from sources
 
 If you want to build a package yourself, or contribute - here is a guide for how to do that.
 
