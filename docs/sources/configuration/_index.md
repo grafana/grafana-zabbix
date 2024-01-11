@@ -20,7 +20,7 @@ weight: 300
 Go to the plugins in Grafana side panel, select _Apps_ tab, then select _Zabbix_, open _Config_
 tab and enable plugin.
 
-![Enable Zabbix App](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/installation-enable_app.png)
+![Enable Zabbix App](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/installation-enable_app.png)
 
 ## Configure Zabbix data source
 
@@ -28,7 +28,7 @@ After enabling plugin you can add Zabbix data source.
 
 To add new Zabbix data source open _Data Sources_ in side panel, click _Add data source_ and select _Zabbix_ from dropdown list.
 
-![Configure Zabbix data source](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/installation-datasource_config.png)
+![Configure Zabbix data source](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/installation-datasource_config.png)
 
 ### HTTP settings
 
@@ -87,7 +87,7 @@ Then click _Add_ - data source will be added and you can check connection using 
 
 You can import dashboard examples from _Dashboards_ tab in the data source config.
 
-![Import dashboards](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/installation-plugin-dashboards.png)
+![Import dashboards](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/installation-plugin-dashboards.png)
 
 ## Note about Browser Cache
 

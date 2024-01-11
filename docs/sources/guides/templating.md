@@ -21,11 +21,11 @@ You can use template variables for creating highly reusable and interactive dash
 
 To create template variable click the cog icon on the top navigation bar and choose _Templating_.
 
-![Templating menu](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/templating-menu.png)
+![Templating menu](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/templating-menu.png)
 
 When you click _New_ button, you'll see template variable editor. It contains these sections:
 
-![Variable editor](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/templating-variable_editor.png)
+![Variable editor](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/templating-variable_editor.png)
 
 ### Variable
 
@@ -96,7 +96,7 @@ host groups and want to use it for querying hosts in selected group only. Here's
 
 When you create a variable, you can use it as a part of data source query. Grafana also supports variables in different places like panel's and row's titles, Text panel's content, etc.
 
-![Query with variables](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/templating-query_with_variables.png)
+![Query with variables](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/templating-query_with_variables.png)
 
 > Note, that you should add `$` sign before variable's name (**$host** for _host_ variable).
 

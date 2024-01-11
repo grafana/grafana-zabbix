@@ -28,7 +28,7 @@ GRANT SELECT ON zabbix.* TO 'grafana'@'grafana-host' identified by 'password';
 
 In order to use _Direct DB Connection_ feature you should configure SQL data source first.
 
-![Configure MySQL data source](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/installation-mysql_ds_config.png)
+![Configure MySQL data source](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/installation-mysql_ds_config.png)
 
 Select _MySQL_ data source type and provide your database host address and port (3306 is default for MySQL). Fill
 database name (usually, `zabbix`) and specify credentials.
@@ -38,11 +38,11 @@ database name (usually, `zabbix`) and specify credentials.
 Select _PostgreSQL_ data source type and provide your database host address and port (5432 is default). Fill
 database name (usually, `zabbix`) and specify credentials.
 
-![Configure PostgreSQL data source](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/installation-postgres_ds_config.png)
+![Configure PostgreSQL data source](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/installation-postgres_ds_config.png)
 
 ## InfluxDB
 
 Select _InfluxDB_ data source type and provide your InfluxDB instance host address and port (8086 is default). Fill
 database name you configured in the [effluence](https://github.com/i-ky/effluence) module config (usually, `zabbix`) and specify credentials.
 
-![Configure InfluxDB data source](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/configuration-influxdb_ds_config.png)
+![Configure InfluxDB data source](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/configuration-influxdb_ds_config.png)
