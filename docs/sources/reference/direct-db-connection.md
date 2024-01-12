@@ -31,7 +31,7 @@ This chart illustrates how the plugin uses both Zabbix API and the MySQL data so
 of data from Zabbix. MySQL data source is used only for pulling history and trend data instead of `history.get`
 and `trend.get` API calls.
 
-[![Direct DB Connection](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/reference-direct-db-connection.svg)](https://raw.githubusercontent.com/grafana/alexanderzobnin-zabbix-app/main/docs/images/reference-direct-db-connection.svg)
+[![Direct DB Connection](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/reference-direct-db-connection.svg)](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/reference-direct-db-connection.svg)
 
 ## Query structure
 
