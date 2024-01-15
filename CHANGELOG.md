@@ -3,6 +3,7 @@
 ## [4.4.5] - 2024-01-10
 
 - ⚙️ **Docs**: Documentation website moved from [github pages](https://grafana.github.io/grafana-zabbix) to [grafana.com/docs/plugins](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/) page
+- Handle changed PostgreSQL plugin id [#1771](https://github.com/grafana/grafana-zabbix/pull/1771)
 
 ## [4.4.4] - 2023-11-21
 
