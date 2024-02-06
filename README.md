@@ -8,7 +8,7 @@
 
 ## Features
 
-- Select multiple metrics [by using Regex](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted/#multiple-items-on-one-graph)
+- Select multiple metrics [by using Regex](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/#multiple-items-on-one-graph)
 - Create interactive and reusable dashboards with [template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating/)
 - Show events on graphs with [Annotations](http://docs.grafana.org/reference/annotations/)
 - Display active problems with Triggers panel
@@ -32,13 +32,13 @@ Or see more installation options in [docs](https://grafana.com/docs/plugins/alex
 
 ## Getting started
 
-First, [configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted/).
+First, [configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/).
 
 ## Documentation
 
 - [About](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
 - [Installation](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/installation)
-- [Getting Started](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/gettingstarted)
+- [Getting Started](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides)
 - [Templating](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating)
 - [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/)
 - [Metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/)
