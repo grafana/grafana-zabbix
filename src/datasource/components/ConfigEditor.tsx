@@ -166,7 +166,7 @@ export const ConfigEditor = (props: Props) => {
                 width={40}
                 placeholder="API token"
                 isConfigured={options.secureJsonFields && options.secureJsonFields.apiToken}
-                onReset={() => resetSecureJsonField('apiToken', options, onOptionsChange)}
+                onReset={resetSecureJsonField('apiToken', options, onOptionsChange)}
                 onBlur={secureJsonDataChangeHandler('apiToken', options, onOptionsChange)}
               />
             </Field>
