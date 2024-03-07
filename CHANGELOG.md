@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.4.6] - 2024-03-07
+
+- Fix: API token reset not working (#1797)
+- Chore: Build with go 1.22
+
 ## [4.4.5] - 2024-01-10
 
 - ⚙️ **Docs**: Documentation website moved from [github pages](https://grafana.github.io/grafana-zabbix) to [grafana.com/docs/plugins](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/) page
