@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { ZabbixMetricsQuery } from './types';
+import { ZabbixMetricsQuery } from './types/query';
 import * as c from './constants';
 
 export const DS_QUERY_SCHEMA = 12;

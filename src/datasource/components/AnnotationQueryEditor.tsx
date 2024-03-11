@@ -3,7 +3,7 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 import { AnnotationQuery, SelectableValue } from '@grafana/data';
 import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
-import { ZabbixMetricsQuery } from '../types';
+import { ZabbixMetricsQuery } from '../types/query';
 import { ZabbixQueryEditorProps } from './QueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 import { MetricPicker } from '../../components';

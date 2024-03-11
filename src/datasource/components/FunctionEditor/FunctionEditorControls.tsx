@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from '@grafana/ui';
-import { MetricFunc } from '../../types';
+import { MetricFunc } from '../../types/query';
 
 const DOCS_FUNC_REF_URL = 'https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/';
 

@@ -16,7 +16,8 @@ import {
   TIME_SERIES_TIME_FIELD_NAME,
   TIME_SERIES_VALUE_FIELD_NAME,
 } from '@grafana/data';
-import { ZabbixMetricsQuery, ZBXGroup, ZBXTrigger } from './types';
+import { ZabbixMetricsQuery } from './types/query';
+import { ZBXGroup, ZBXTrigger } from './types';
 
 /**
  * Convert Zabbix API history.get response to Grafana format

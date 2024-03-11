@@ -4,7 +4,7 @@ import { InlineField, Select } from '@grafana/ui';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
-import { ShowProblemTypes, ZabbixMetricsQuery, ZabbixQueryOptions, ZabbixTagEvalType, QueryType } from '../types';
+import { ShowProblemTypes, ZabbixMetricsQuery, ZabbixQueryOptions, ZabbixTagEvalType, QueryType } from '../types/query';
 import { ZabbixDSOptions } from '../types/config';
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';

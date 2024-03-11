@@ -1,7 +1,7 @@
 import React from 'react';
 import { swap } from '../../utils';
 import { createFuncInstance } from '../../metricFunctions';
-import { FuncDef, MetricFunc, ZabbixMetricsQuery } from '../../types';
+import { FuncDef, MetricFunc, ZabbixMetricsQuery } from '../../types/query';
 import { QueryEditorRow } from './QueryEditorRow';
 import { InlineFormLabel } from '@grafana/ui';
 import { ZabbixFunctionEditor } from '../FunctionEditor/ZabbixFunctionEditor';

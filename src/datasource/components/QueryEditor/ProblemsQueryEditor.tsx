@@ -8,7 +8,7 @@ import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types';
+import { ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
 
 const showProblemsOptions: Array<SelectableValue<string>> = [
   { label: 'Problems', value: 'problems' },

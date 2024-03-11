@@ -1,6 +1,6 @@
 import React, { FormEvent } from 'react';
 import { InlineField, Input } from '@grafana/ui';
-import { ZabbixMetricsQuery } from '../../types';
+import { ZabbixMetricsQuery } from '../../types/query';
 import { QueryEditorRow } from './QueryEditorRow';
 
 export interface Props {

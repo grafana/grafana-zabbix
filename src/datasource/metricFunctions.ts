@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { FuncDef } from './types';
+import { FuncDef } from './types/query';
 import { isNumeric } from './utils';
 
 const index = {};

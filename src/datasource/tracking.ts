@@ -1,6 +1,6 @@
 import { CoreApp, DataQueryRequest } from '@grafana/data';
-import { ZabbixMetricsQuery } from './types';
 import { reportInteraction } from '@grafana/runtime';
+import { ZabbixMetricsQuery } from './types/query';
 import {
   MODE_ITEMID,
   MODE_ITSERVICE,
