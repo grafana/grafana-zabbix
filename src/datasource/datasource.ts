@@ -11,7 +11,8 @@ import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
-import { ProblemDTO, ShowProblemTypes, VariableQueryTypes, ZabbixDSOptions, ZabbixMetricsQuery } from './types';
+import { ProblemDTO, ShowProblemTypes, VariableQueryTypes, ZabbixMetricsQuery } from './types';
+import { ZabbixDSOptions } from './types/config';
 import { BackendSrvRequest, getBackendSrv, getTemplateSrv, toDataQueryResponse } from '@grafana/runtime';
 import {
   DataFrame,

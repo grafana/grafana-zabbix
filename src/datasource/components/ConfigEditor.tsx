@@ -13,7 +13,7 @@ import {
   Tooltip,
   useStyles2,
 } from '@grafana/ui';
-import { ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types';
+import { ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types/config';
 import { gte } from 'semver';
 import {
   Auth,

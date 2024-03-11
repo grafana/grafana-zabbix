@@ -1,44 +1,18 @@
-import { BusEventWithPayload, DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from '@grafana/data';
+import { BusEventWithPayload, DataQuery, DataSourceRef, SelectableValue } from '@grafana/data';
+import * as c from './constants';
 
-export interface ZabbixDSOptions extends DataSourceJsonData {
-  authType?: ZabbixAuthType;
-  username: string;
-  password?: string;
-  trends: boolean;
-  trendsFrom: string;
-  trendsRange: string;
-  cacheTTL: string;
-  timeout?: number;
-  dbConnectionEnable: boolean;
-  dbConnectionDatasourceId?: number;
-  dbConnectionDatasourceName?: string;
-  dbConnectionRetentionPolicy?: string;
-  disableReadOnlyUsersAck: boolean;
-  disableDataAlignment: boolean;
-  enableSecureSocksProxy?: boolean;
-}
-
-export interface ZabbixSecureJSONData {
-  password?: string;
-  apiToken?: string;
-}
-
-export interface ZabbixConnectionInfo {
-  zabbixVersion: string;
-  dbConnectorStatus: {
-    dsType: string;
-    dsName: string;
-  };
-}
-
-export interface ZabbixConnectionTestQuery {
-  datasourceId: number;
-  queryType: string;
-}
+export type QueryType =
+  | typeof c.MODE_METRICS
+  | typeof c.MODE_ITSERVICE
+  | typeof c.MODE_TEXT
+  | typeof c.MODE_ITEMID
+  | typeof c.MODE_TRIGGERS
+  | typeof c.MODE_PROBLEMS
+  | typeof c.MODE_MACROS;
 
 export interface ZabbixMetricsQuery extends DataQuery {
   schema: number;
-  queryType: string;
+  queryType: QueryType;
   datasourceId: number;
   group: { filter: string; name?: string };
   host: { filter: string; name?: string };
@@ -410,11 +384,6 @@ export interface ZBXAlert {
 
 export class ZBXQueryUpdatedEvent extends BusEventWithPayload<any> {
   static type = 'zbx-query-updated';
-}
-
-export enum ZabbixAuthType {
-  UserLogin = 'userLogin',
-  Token = 'token',
 }
 
 export enum ZabbixTagEvalType {
