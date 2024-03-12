@@ -8,7 +8,7 @@ services:
       - 3000:3000/tcp
     volumes:
       - ./dist:/var/lib/grafana/plugins/grafana-zabbix
-      - ./provisioning:/etc/grafana/provisioningdatasource
+      - ./provisioning:/etc/grafana/provisioning
     environment:
       - TERM=linux
       - GF_DEFAULT_APP_MODE=development
