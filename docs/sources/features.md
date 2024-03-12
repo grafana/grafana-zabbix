@@ -19,7 +19,7 @@ Grafana in couple with Grafana-Zabbix plugin allows to create great dashboards. 
 features:
 
 - Rich graphing features
-- Select multiple metrics [by using Regex](../guides/gettingstarted/#multiple-items-on-one-graph)
+- Select multiple metrics [by using Regex](../guides/#multiple-items-on-one-graph)
 - Create interactive and reusable dashboards with [template variables](../guides/templating/)
 - Show events on graphs with [Annotations](http://docs.grafana.org/reference/annotations/)
 - Transform and shape your data with [metric processing functions](../reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
