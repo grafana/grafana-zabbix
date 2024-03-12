@@ -65,7 +65,7 @@ Direct DB Connection allows plugin to use existing SQL data source for querying 
 database. This way usually faster than pulling data from Zabbix API, especially on the wide time ranges, and reduces
 amount of data transferred.
 
-Read [how to configure](./direct_db_datasource) SQL data source in Grafana.
+Read [how to configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/direct-db-datasource/) SQL data source in Grafana.
 
 - **Enable**: enable Direct DB Connection.
 - **Data Source**: Select Data Source for Zabbix history database.
