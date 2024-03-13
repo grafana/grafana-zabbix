@@ -11,10 +11,10 @@
     "url": "git+https://github.com/grafana/grafana-zabbix.git"
   },
   "license": "Apache-2.0",
-  "author": "Alexander Zobnin",
+  "author": "Grafana Labs",
   "scripts": {
-    "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
-    "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
+    "build": "webpack -c ./webpack.config.ts --env production",
+    "dev": "webpack -w -c ./webpack.config.ts --env development",
     "e2e": "yarn exec cypress install && yarn exec grafana-e2e run",
     "e2e:update": "yarn exec cypress install && yarn exec grafana-e2e run --update-screenshots",
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
