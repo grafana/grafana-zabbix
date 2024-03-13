@@ -2,7 +2,7 @@ import { css, cx } from '@emotion/css';
 import React, { useMemo, useState } from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { Button, ClickOutsideWrapper, Icon, Input, Menu, useStyles2, useTheme2 } from '@grafana/ui';
-import { FuncDef } from '../../types';
+import { FuncDef } from '../../types/query';
 import { getCategories } from '../../metricFunctions';
 
 // import { mapFuncDefsToSelectables } from './helpers';

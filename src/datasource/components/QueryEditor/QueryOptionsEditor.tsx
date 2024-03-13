@@ -12,7 +12,7 @@ import {
   useStyles2,
 } from '@grafana/ui';
 import * as c from '../../constants';
-import { ZabbixQueryOptions } from '../../types';
+import { ZabbixQueryOptions } from '../../types/query';
 
 const ackOptions: Array<SelectableValue<number>> = [
   { label: 'all triggers', value: 2 },

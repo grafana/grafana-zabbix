@@ -9,7 +9,8 @@ import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { itemTagToString } from '../../utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery, ZBXItem, ZBXItemTag } from '../../types';
+import { ZabbixMetricsQuery } from '../../types/query';
+import { ZBXItem, ZBXItemTag } from '../../types';
 
 const countByOptions: Array<SelectableValue<string>> = [
   { value: '', label: 'All triggers' },

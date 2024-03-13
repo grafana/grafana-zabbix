@@ -29,8 +29,8 @@
   },
   "info": {
     "author": {
-      "name": "Alexander Zobnin",
-      "url": "https://github.com/alexanderzobnin/grafana-zabbix"
+      "name": "Grafana Labs",
+      "url": "https://grafana.com"
     },
     "logos": {
       "small": "img/icn-zabbix-datasource.svg",

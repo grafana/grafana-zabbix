@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import * as utils from './utils';
 import { DataFrame, Field, FieldType, ArrayVector, dateTime } from '@grafana/data';
-import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent, ZabbixMetricsQuery } from './types';
+import { ZabbixMetricsQuery } from './types/query';
+import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent } from './types';
 
 export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTrigger[]): ProblemDTO[] {
   const problemDTOList: ProblemDTO[] = [];

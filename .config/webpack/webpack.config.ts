@@ -82,7 +82,7 @@ const config = async (env): Promise<Configuration> => {
             loader: 'swc-loader',
             options: {
               jsc: {
-                baseUrl: './src',
+                baseUrl: path.resolve(__dirname, 'src'),
                 target: 'es2015',
                 loose: false,
                 parser: {
@@ -110,7 +110,7 @@ const config = async (env): Promise<Configuration> => {
             // Keep publicPath relative for host.com/grafana/ deployments
             publicPath: `public/plugins/${pluginJson.id}/img/`,
             outputPath: 'img/',
-            filename: Boolean(env.production) ? '[hash][ext]' : '[name][ext]',
+            filename: Boolean(env.production) ? '[hash][ext]' : '[file]',
           },
         },
         {
@@ -135,7 +135,8 @@ const config = async (env): Promise<Configuration> => {
         type: 'amd',
       },
       path: path.resolve(process.cwd(), DIST_DIR),
-      publicPath: '/',
+      publicPath: `public/plugins/${pluginJson.id}/`,
+      uniqueName: pluginJson.id,
     },
 
     plugins: [
@@ -154,6 +155,7 @@ const config = async (env): Promise<Configuration> => {
           { from: 'img/**/*', to: '.', noErrorOnMissing: true }, // Optional
           { from: 'libs/**/*', to: '.', noErrorOnMissing: true }, // Optional
           { from: 'static/**/*', to: '.', noErrorOnMissing: true }, // Optional
+          { from: '**/query_help.md', to: '.', noErrorOnMissing: true }, // Optional
         ],
       }),
       // Replace certain template-variables in the README and plugin.json
@@ -177,18 +179,22 @@ const config = async (env): Promise<Configuration> => {
           ],
         },
       ]),
-      new ForkTsCheckerWebpackPlugin({
-        async: Boolean(env.development),
-        issue: {
-          include: [{ file: '**/*.{ts,tsx}' }],
-        },
-        typescript: { configFile: path.join(process.cwd(), 'tsconfig.json') },
-      }),
-      new ESLintPlugin({
-        extensions: ['.ts', '.tsx'],
-        lintDirtyModulesOnly: Boolean(env.development), // don't lint on start, only lint changed files
-      }),
-      ...(env.development ? [new LiveReloadPlugin()] : []),
+      ...(env.development
+        ? [
+            new LiveReloadPlugin(),
+            new ForkTsCheckerWebpackPlugin({
+              async: Boolean(env.development),
+              issue: {
+                include: [{ file: '**/*.{ts,tsx}' }],
+              },
+              typescript: { configFile: path.join(process.cwd(), 'tsconfig.json') },
+            }),
+            new ESLintPlugin({
+              extensions: ['.ts', '.tsx'],
+              lintDirtyModulesOnly: Boolean(env.development), // don't lint on start, only lint changed files
+            }),
+          ]
+        : []),
     ],
 
     resolve: {

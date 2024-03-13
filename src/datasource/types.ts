@@ -1,128 +1,4 @@
-import { BusEventWithPayload, DataQuery, DataSourceJsonData, DataSourceRef, SelectableValue } from '@grafana/data';
-
-export interface ZabbixDSOptions extends DataSourceJsonData {
-  authType?: ZabbixAuthType;
-  username: string;
-  password?: string;
-  trends: boolean;
-  trendsFrom: string;
-  trendsRange: string;
-  cacheTTL: string;
-  timeout?: number;
-  dbConnectionEnable: boolean;
-  dbConnectionDatasourceId?: number;
-  dbConnectionDatasourceName?: string;
-  dbConnectionRetentionPolicy?: string;
-  disableReadOnlyUsersAck: boolean;
-  disableDataAlignment: boolean;
-  enableSecureSocksProxy?: boolean;
-}
-
-export interface ZabbixSecureJSONData {
-  password?: string;
-  apiToken?: string;
-}
-
-export interface ZabbixConnectionInfo {
-  zabbixVersion: string;
-  dbConnectorStatus: {
-    dsType: string;
-    dsName: string;
-  };
-}
-
-export interface ZabbixConnectionTestQuery {
-  datasourceId: number;
-  queryType: string;
-}
-
-export interface ZabbixMetricsQuery extends DataQuery {
-  schema: number;
-  queryType: string;
-  datasourceId: number;
-  group: { filter: string; name?: string };
-  host: { filter: string; name?: string };
-  application: { filter: string; name?: string };
-  itemTag: { filter: string; name?: string };
-  item: { filter: string; name?: string };
-  macro: { filter: string; macro?: string };
-  textFilter: string;
-  mode: number;
-  itemids: string;
-  useCaptureGroups: boolean;
-  proxy?: { filter: string };
-  trigger?: { filter: string };
-  itServiceFilter?: string;
-  slaFilter?: string;
-  slaProperty?: any;
-  slaInterval?: string;
-  tags?: { filter: string };
-  triggers?: { minSeverity: number; acknowledged: number; count: boolean };
-  countTriggersBy?: 'problems' | 'items' | '';
-  evaltype?: ZabbixTagEvalType;
-  functions?: MetricFunc[];
-  options?: ZabbixQueryOptions;
-  // Problems
-  showProblems?: ShowProblemTypes;
-  // Deprecated
-  hostFilter?: string;
-  itemFilter?: string;
-  macroFilter?: string;
-}
-
-export interface ZabbixQueryOptions {
-  showDisabledItems?: boolean;
-  skipEmptyValues?: boolean;
-  disableDataAlignment?: boolean;
-  useZabbixValueMapping?: boolean;
-  useTrends?: 'default' | 'true' | 'false';
-  // Problems options
-  minSeverity?: number;
-  sortProblems?: string;
-  acknowledged?: number;
-  hostsInMaintenance?: boolean;
-  hostProxy?: boolean;
-  limit?: number;
-  useTimeRange?: boolean;
-  severities?: number[];
-  count?: boolean;
-
-  // Annotations
-  showOkEvents?: boolean;
-  hideAcknowledged?: boolean;
-  showHostname?: boolean;
-}
-
-export interface MetricFunc {
-  text: string;
-  params: Array<string | number>;
-  def: FuncDef;
-  added?: boolean;
-}
-
-export interface FuncDef {
-  name: string;
-  params: ParamDef[];
-  defaultParams: Array<string | number>;
-  category?: string;
-  shortName?: any;
-  fake?: boolean;
-  version?: string;
-  description?: string;
-  /**
-   * True if the function was not found on the list of available function descriptions.
-   */
-  unknown?: boolean;
-}
-
-export type ParamDef = {
-  name: string;
-  type: string;
-  options?: Array<string | number>;
-  multiple?: boolean;
-  optional?: boolean;
-  version?: string;
-};
+import { BusEventWithPayload, DataSourceRef, SelectableValue } from '@grafana/data';
 
 // The paths of these files have moved around in Grafana and they don't resolve properly
 // either. Safer not to bother trying to import them just for type hinting.
@@ -208,12 +84,6 @@ export enum VariableQueryTypes {
   ItemTag = 'itemTag',
   Item = 'item',
   ItemValues = 'itemValues',
-}
-
-export enum ShowProblemTypes {
-  Problems = 'problems',
-  Recent = 'recent',
-  History = 'history',
 }
 
 export interface ProblemDTO {
@@ -410,14 +280,4 @@ export interface ZBXAlert {
 
 export class ZBXQueryUpdatedEvent extends BusEventWithPayload<any> {
   static type = 'zbx-query-updated';
-}
-
-export enum ZabbixAuthType {
-  UserLogin = 'userLogin',
-  Token = 'token',
-}
-
-export enum ZabbixTagEvalType {
-  AndOr = '0',
-  Or = '2',
 }

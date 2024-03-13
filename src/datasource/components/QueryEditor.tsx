@@ -4,7 +4,8 @@ import { InlineField, Select } from '@grafana/ui';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
-import { ShowProblemTypes, ZabbixDSOptions, ZabbixMetricsQuery, ZabbixQueryOptions, ZabbixTagEvalType } from '../types';
+import { ShowProblemTypes, ZabbixMetricsQuery, ZabbixQueryOptions, ZabbixTagEvalType, QueryType } from '../types/query';
+import { ZabbixDSOptions } from '../types/config';
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
@@ -16,7 +17,7 @@ import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 
-const zabbixQueryTypeOptions: Array<SelectableValue<string>> = [
+const zabbixQueryTypeOptions: Array<SelectableValue<QueryType>> = [
   {
     value: c.MODE_METRICS,
     label: 'Metrics',
@@ -200,7 +201,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
     <>
       <QueryEditorRow>
         <InlineField label="Query type" labelWidth={12}>
-          <Select
+          <Select<QueryType>
             isSearchable={false}
             width={24}
             value={queryType}

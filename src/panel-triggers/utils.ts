@@ -1,5 +1,6 @@
 import _ from 'lodash';
-import { DataQuery, dateMath } from '@grafana/data';
+import { dateMath } from '@grafana/data';
+import { DataQuery } from '@grafana/schema';
 import * as utils from '../datasource/utils';
 import { ProblemDTO } from 'datasource/types';
 

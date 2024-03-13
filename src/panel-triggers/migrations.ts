@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { getNextRefIdChar } from './utils';
-import { ShowProblemTypes } from '../datasource/types';
+import { ShowProblemTypes } from '../datasource/types/query';
 import { ProblemsPanelOptions } from './types';
 import { PanelModel } from '@grafana/data';
 

@@ -8,7 +8,7 @@ import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery } from '../../types';
+import { ZabbixMetricsQuery } from '../../types/query';
 
 export interface Props {
   query: ZabbixMetricsQuery;
