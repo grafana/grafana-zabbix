@@ -8,7 +8,7 @@
       "name": "Grafana Labs",
       "url": "https://grafana.com"
     },
-    "keywords": ["zabbix"],
+    "keywords": ["zabbix", "servers and vms"],
     "logos": {
       "small": "img/icn-zabbix-app.svg",
       "large": "img/icn-zabbix-app.svg"

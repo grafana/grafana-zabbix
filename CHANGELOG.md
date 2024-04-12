@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.4.7] - 2024-04-08
+
+- Chore: Bump grafana-plugin-sdk-go from `v0.193.0` to `v0.220.0`
+- Chore: Update plugin keywords
+
 ## [4.4.6] - 2024-03-07
 
 - Fix: API token reset not working (#1797)
