@@ -1,6 +1,6 @@
 {
   "name": "grafana-zabbix",
-  "version": "4.4.7",
+  "version": "4.4.8",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "bugs": {
@@ -30,11 +30,11 @@
   },
   "dependencies": {
     "@emotion/css": "11.10.6",
-    "@grafana/data": "10.1.2",
+    "@grafana/data": "10.4.2",
     "@grafana/experimental": "^1.7.4",
-    "@grafana/runtime": "10.1.2",
-    "@grafana/schema": "10.1.2",
-    "@grafana/ui": "10.1.2",
+    "@grafana/runtime": "10.4.2",
+    "@grafana/schema": "10.4.2",
+    "@grafana/ui": "10.4.2",
     "react-dom": "18.2.0",
     "react-router-dom": "^5.2.0",
     "react": "18.2.0",
