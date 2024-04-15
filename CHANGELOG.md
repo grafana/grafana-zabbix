@@ -2,6 +2,10 @@
 
 ## [4.4.7] - 2024-04-08
 
+- Chore: Update dependencies
+
+## [4.4.7] - 2024-04-08
+
 - Chore: Bump grafana-plugin-sdk-go from `v0.193.0` to `v0.220.0`
 - Chore: Update plugin keywords
 
