@@ -73,7 +73,7 @@ func (ts TimeSeries) ExponentialMovingAverage(an float64) TimeSeries {
 	an = math.Min(float64(ts.Len()), an)
 
 	// alpha coefficient should be between 0 and 1. If provided n <= 1, then use it as alpha directly. Otherwise, it's a
-	// number of points in the window and alpha calculted from this information.
+	// number of points in the window and alpha calculated from this information.
 	var a float64
 	var n int
 	ema := []TimePoint{ts[0]}

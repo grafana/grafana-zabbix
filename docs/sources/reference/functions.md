@@ -423,7 +423,7 @@ replaceAlias(/(.*): CPU (.*) time/, $1 - $2) -> backend01 - system
 consolidateBy(consolidationFunc)
 ```
 
-When a graph is drawn where width of the graph size in pixels is smaller than the number of datapoints to be graphed, plugin consolidates the values to to prevent line overlap. The consolidateBy() function changes the consolidation function from the default of average to one of `sum`, `min`, `max` or `count`.
+When a graph is drawn where width of the graph size in pixels is smaller than the number of datapoints to be graphed, plugin consolidates the values to prevent line overlap. The consolidateBy() function changes the consolidation function from the default of average to one of `sum`, `min`, `max` or `count`.
 
 Valid function names are `sum`, `avg`, `min`, `max` and `count`.
 
