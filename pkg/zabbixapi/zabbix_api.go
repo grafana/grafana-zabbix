@@ -137,7 +137,7 @@ func (api *ZabbixAPI) Login(ctx context.Context, username string, password strin
 	return auth.MustString(), nil
 }
 
-// Login methid for Zabbix prior to 5.4
+// Login method for Zabbix prior to 5.4
 func (api *ZabbixAPI) LoginDeprecated(ctx context.Context, username string, password string) (string, error) {
 	params := ZabbixAPIParams{
 		"user":     username,
