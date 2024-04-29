@@ -2,7 +2,7 @@
 
 ## [4.4.9] - 2024-04-30
 
-- Fix: Improve compoatibility with the scenes framework (#1822)
+- Fix: Improve compatibility with the scenes framework (#1822)
 - Chore: Update dependencies
 
 ## [4.4.8] - 2024-04-15
