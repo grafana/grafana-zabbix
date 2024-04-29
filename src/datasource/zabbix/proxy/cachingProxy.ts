@@ -100,9 +100,18 @@ function cacheRequest(func, funcName, funcScope, self) {
   };
 }
 
+//TODO: add type for the args
 function getRequestHash(args) {
-  const argsJson = JSON.stringify(args);
-  return getHash(argsJson);
+  try {
+    if (typeof args === 'object') {
+      args = Array.from(args || {}).filter((arg: any) => !Boolean(arg?.scopedVars?.__sceneObject));
+    }
+    const argsJson = JSON.stringify(args);
+    return getHash(argsJson);
+  } catch (ex) {
+    console.error(`failing to get the request hash for caching. type of args ${typeof args}`);
+    return getHash(crypto.randomUUID());
+  }
 }
 
 function getHash(str: string): number {
