@@ -530,7 +530,7 @@ export class ZabbixAPIConnector {
   }
 
   getTriggersByIds(triggerids: string[]) {
-    const params: any = {
+    const params = {
       output: 'extend',
       triggerids: triggerids,
       expandDescription: true,
@@ -540,12 +540,19 @@ export class ZabbixAPIConnector {
       monitored: true,
       skipDependent: true,
       selectGroups: ['name', 'groupid'],
-      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid', 'description'],
+      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'description'],
       selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       // selectLastEvent: 'extend',
       // selectTags: 'extend',
       preservekeys: '1',
     };
+
+    // Before version 7.0.0 proxy_hostid was used, after - proxyid
+    if (semver.lte(this.version, '7.0.0')) {
+      params.selectHosts.push('proxy_hostid');
+    } else {
+      params.selectHosts.push('proxyid');
+    }
 
     return this.request('trigger.get', params).then(utils.mustArray);
   }
@@ -568,11 +575,18 @@ export class ZabbixAPIConnector {
         value: 1,
       },
       selectGroups: ['groupid', 'name'],
-      selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'proxy_hostid'],
+      selectHosts: ['hostid', 'name', 'host', 'maintenance_status'],
       selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       selectLastEvent: 'extend',
       selectTags: 'extend',
     };
+
+    // Before version 7.0.0 proxy_hostid was used, after - proxyid
+    if (semver.lte(this.version, '7.0.0')) {
+      params.selectHosts.push('proxy_hostid');
+    } else {
+      params.selectHosts.push('proxyid');
+    }
 
     if (showTriggers === ShowProblemTypes.Problems) {
       params.filter.value = 1;
@@ -674,7 +688,7 @@ export class ZabbixAPIConnector {
     const params = {
       eventids: eventids,
       output: ['alertid', 'eventid', 'message', 'clock', 'error'],
-      selectUsers: true,
+      selectUsers: 'extend',
     };
 
     return this.request('alert.get', params);
@@ -861,8 +875,13 @@ export class ZabbixAPIConnector {
 
   getProxies() {
     const params = {
-      output: ['proxyid', 'host'],
+      output: ['proxyid'],
     };
+    if (semver.lte(this.version, '7.0.0')) {
+      params.output.push('name');
+    } else {
+      params.output.push('host');
+    }
 
     return this.request('proxy.get', params);
   }

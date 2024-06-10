@@ -599,7 +599,9 @@ export class Zabbix implements ZabbixConnector {
         triggers = triggers.filter((trigger) => {
           for (let i = 0; i < trigger.hosts.length; i++) {
             const host = trigger.hosts[i];
-            if (proxy_ids.includes(host.proxy_hostid)) {
+            // Before version 7.0.0 proxy_hostid was used, after - proxyid
+            const proxyId = host.proxyid || host.proxy_hostid;
+            if (proxy_ids.includes(proxyId)) {
               return true;
             }
           }

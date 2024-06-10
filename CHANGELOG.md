@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.5.0] - 2024-06-10
+
+- Add support for Zabbix version 7
+
 ## [4.4.9] - 2024-04-30
 
 - Fix: Improve compatibility with the scenes framework (#1822)

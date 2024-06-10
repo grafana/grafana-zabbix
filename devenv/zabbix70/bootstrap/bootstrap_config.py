@@ -1,27 +1,20 @@
 import os
-from time import sleep
-from pyzabbix import ZabbixAPI, ZabbixAPIException
+from zabbix_utils import ZabbixAPI
 
 zabbix_url = os.environ['ZBX_API_URL']
 zabbix_user = os.environ['ZBX_API_USER']
 zabbix_password = os.environ['ZBX_API_PASSWORD']
 print(zabbix_url, zabbix_user, zabbix_password)
 
-zapi = ZabbixAPI(zabbix_url, timeout=5)
+zapi = ZabbixAPI(zabbix_url)
 
 for i in range(10):
-  print("Trying to connected to Zabbix API %s" % zabbix_url)
   try:
-    zapi.login(zabbix_user, zabbix_password)
+    zapi.login(user=zabbix_user, password=zabbix_password)
     print("Connected to Zabbix API Version %s" % zapi.api_version())
     break
-  except ZabbixAPIException as e:
-    print e
-    sleep(5)
-  except:
-    print("Waiting")
-    sleep(5)
-
+  except Exception as e:
+    print(e)
 
 config_path = os.environ['ZBX_CONFIG']
 import_rules = {
@@ -70,11 +63,13 @@ with open(config_path, 'r') as f:
   config = f.read()
 
   try:
-    # https://github.com/lukecyca/pyzabbix/issues/62
-    import_result = zapi.confimport("xml", config, import_rules)
-    print(import_result)
-  except ZabbixAPIException as e:
-    print e
+    import_result = zapi.configuration.import_(source=config, format="json", rules=import_rules)
+    if import_result == True:
+      print("Zabbix config imported successfully")
+    else:
+      print("Failed to import Zabbix config")      
+  except Exception as e:
+    print(e)
 
 for h in zapi.host.get(output="extend"):
     print(h['name'])

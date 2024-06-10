@@ -128,8 +128,10 @@ export function addTriggerHostProxy(triggers, proxies) {
   triggers.forEach((trigger) => {
     if (trigger.hosts && trigger.hosts.length) {
       const host = trigger.hosts[0];
-      if (host.proxy_hostid !== '0') {
-        const hostProxy = proxies[host.proxy_hostid];
+      // Before version 7.0.0 proxy_hostid was used, after - proxyid
+      const proxyId = host.proxyid || host.proxy_hostid;
+      if (proxyId !== '0') {
+        const hostProxy = proxies[proxyId];
         host.proxy = hostProxy ? hostProxy.host : '';
       }
     }
