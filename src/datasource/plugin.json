@@ -6,7 +6,7 @@
   "annotations": true,
   "backend": true,
   "alerting": true,
-  "executable": "../gpx_zabbix-plugin",
+  "executable": "gpx_zabbix-plugin",
   "includes": [
     {
       "type": "dashboard",
