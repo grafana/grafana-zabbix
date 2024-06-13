@@ -28,7 +28,7 @@ export class ZabbixAPIConnector {
   getVersionPromise: Promise<string>;
   datasourceId: number;
 
-  constructor(basicAuth: any, withCredentials: boolean, datasourceId: number, zabbixVersion?: string) {
+  constructor(basicAuth: any, withCredentials: boolean, datasourceId: number) {
     this.datasourceId = datasourceId;
     this.backendAPIUrl = `/api/datasources/${this.datasourceId}/resources/zabbix-api`;
 
@@ -36,8 +36,6 @@ export class ZabbixAPIConnector {
       basicAuth: basicAuth,
       withCredentials: withCredentials,
     };
-
-    this.version = zabbixVersion || null;
 
     this.getTrend = this.getTrend_ZBXNEXT1193;
     //getTrend = getTrend_30;
