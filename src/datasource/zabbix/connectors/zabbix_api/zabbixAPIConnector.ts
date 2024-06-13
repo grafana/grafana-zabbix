@@ -548,7 +548,7 @@ export class ZabbixAPIConnector {
     };
 
     // Before version 7.0.0 proxy_hostid was used, after - proxyid
-    if (semver.lte(this.version, '7.0.0')) {
+    if (semver.lt(this.version, '7.0.0')) {
       params.selectHosts.push('proxy_hostid');
     } else {
       params.selectHosts.push('proxyid');
@@ -582,7 +582,7 @@ export class ZabbixAPIConnector {
     };
 
     // Before version 7.0.0 proxy_hostid was used, after - proxyid
-    if (semver.lte(this.version, '7.0.0')) {
+    if (semver.lt(this.version, '7.0.0')) {
       params.selectHosts.push('proxy_hostid');
     } else {
       params.selectHosts.push('proxyid');
@@ -877,10 +877,10 @@ export class ZabbixAPIConnector {
     const params = {
       output: ['proxyid'],
     };
-    if (semver.lte(this.version, '7.0.0')) {
-      params.output.push('name');
-    } else {
+    if (semver.lt(this.version, '7.0.0')) {
       params.output.push('host');
+    } else {
+      params.output.push('name');
     }
 
     return this.request('proxy.get', params);
