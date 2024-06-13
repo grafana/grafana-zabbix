@@ -28,7 +28,7 @@ export class ZabbixAPIConnector {
   getVersionPromise: Promise<string>;
   datasourceId: number;
 
-  constructor(basicAuth: any, withCredentials: boolean, datasourceId: number) {
+  constructor(basicAuth: any, withCredentials: boolean, datasourceId: number, zabbixVersion?: string) {
     this.datasourceId = datasourceId;
     this.backendAPIUrl = `/api/datasources/${this.datasourceId}/resources/zabbix-api`;
 
@@ -36,6 +36,8 @@ export class ZabbixAPIConnector {
       basicAuth: basicAuth,
       withCredentials: withCredentials,
     };
+
+    this.version = zabbixVersion || null;
 
     this.getTrend = this.getTrend_ZBXNEXT1193;
     //getTrend = getTrend_30;
@@ -877,6 +879,7 @@ export class ZabbixAPIConnector {
     const params = {
       output: ['proxyid'],
     };
+    // Before version 7.0.0 host was used, after - name
     if (semver.lt(this.version, '7.0.0')) {
       params.output.push('host');
     } else {
