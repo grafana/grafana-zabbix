@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.5.1] - 2024-06-14
+
+- Fix: Problems queries not working before zabbix version 7
+
 ## [4.5.0] - 2024-06-10
 
 - Add support for Zabbix version 7
