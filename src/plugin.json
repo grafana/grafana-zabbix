@@ -55,11 +55,13 @@
   "includes": [
     {
       "type": "datasource",
-      "name": "Zabbix data source"
+      "name": "Zabbix data source",
+      "path": "datasource/plugin.json"
     },
     {
       "type": "panel",
-      "name": "Problems panel"
+      "name": "Problems panel",
+      "path": "panel-triggers/plugin.json"
     }
   ],
   "dependencies": {
