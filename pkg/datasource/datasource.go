@@ -2,7 +2,9 @@ package datasource
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"sync"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
@@ -113,31 +115,49 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		return nil, err
 	}
 
+	responseLock := new(sync.Mutex)
+	wg := new(sync.WaitGroup)
 	for _, q := range req.Queries {
-		res := backend.DataResponse{}
-		query, err := ReadQuery(q)
-		ds.logger.Debug("DS query", "query", q)
-		if err != nil {
-			res.Error = err
-		} else if query.QueryType == MODE_METRICS {
-			frames, err := zabbixDS.queryNumericItems(ctx, &query)
-			if err != nil {
-				res.Error = err
-			} else {
-				res.Frames = append(res.Frames, frames...)
-			}
-		} else if query.QueryType == MODE_ITEMID {
-			frames, err := zabbixDS.queryItemIdData(ctx, &query)
-			if err != nil {
-				res.Error = err
-			} else {
-				res.Frames = append(res.Frames, frames...)
-			}
-		} else {
-			res.Error = ErrNonMetricQueryNotSupported
+		wg.Add(1)
+		qCopy := backend.DataQuery{
+			RefID:         q.RefID,
+			QueryType:     q.QueryType,
+			MaxDataPoints: q.MaxDataPoints,
+			Interval:      q.Interval,
+			TimeRange:     q.TimeRange,
+			JSON:          make(json.RawMessage, len(q.JSON)),
 		}
-		qdr.Responses[q.RefID] = res
+		copy(qCopy.JSON, q.JSON)
+		go func() {
+			defer wg.Done()
+			res := backend.DataResponse{}
+			query, err := ReadQuery(qCopy)
+			ds.logger.Debug("DS query", "query", qCopy)
+			if err != nil {
+				res.Error = err
+			} else if query.QueryType == MODE_METRICS {
+				frames, err := zabbixDS.queryNumericItems(ctx, &query)
+				if err != nil {
+					res.Error = err
+				} else {
+					res.Frames = append(res.Frames, frames...)
+				}
+			} else if query.QueryType == MODE_ITEMID {
+				frames, err := zabbixDS.queryItemIdData(ctx, &query)
+				if err != nil {
+					res.Error = err
+				} else {
+					res.Frames = append(res.Frames, frames...)
+				}
+			} else {
+				res.Error = ErrNonMetricQueryNotSupported
+			}
+			responseLock.Lock()
+			qdr.Responses[qCopy.RefID] = res
+			responseLock.Unlock()
+		}()
 	}
+	wg.Wait()
 
 	return qdr, nil
 }
