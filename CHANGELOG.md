@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.5.2] - 2024-07-01
+
+- Chore: Changes required for nested plugins
+- Chore: Updated the executable path
+
 ## [4.5.1] - 2024-06-14
 
 - Fix: Problems queries not working before zabbix version 7
