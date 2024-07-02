@@ -1,8 +1,6 @@
 module github.com/alexanderzobnin/grafana-zabbix
 
-go 1.22
-
-toolchain go1.22.1
+go 1.22.1
 
 require (
 	github.com/bitly/go-simplejson v0.5.1
