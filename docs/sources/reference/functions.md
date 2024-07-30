@@ -397,6 +397,13 @@ Replace metric name using pattern. Pattern is regex or regular string. If regex 
 
 For more details see [String.prototype.replace()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace) function.
 
+**NOTE:** Other transforms in Grafana Dashboard, like ["Join by label"](https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/#join-by-labels) will overwrite the alias functions.
+This will happen because the Grafana Dashboard transforms will be applied on the raw data returned by a query.
+If such issues arise, you can always use other Dashboard transforms, like:
+* [Rename by regex](https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/#rename-by-regex) for fields names
+* [Value mappings > Regex ](https://grafana.com/docs/grafana/latest/panels-visualizations/configure-value-mappings/#regex) for cell values
+
+
 Examples:
 
 ```sh
