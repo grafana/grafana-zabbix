@@ -511,7 +511,12 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       const slaFilter = this.replaceTemplateVars(target.slaFilter, request.scopedVars);
       const slas = await this.zabbix.getSLAs(slaFilter);
       const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
-      return result;
+
+      const frame = result;
+      frame.refId = target.refId;
+      const resp = { data: [frame] };
+      this.applyFrontendFunctions(resp, request);
+      return resp.data;
     }
     const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
     const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
