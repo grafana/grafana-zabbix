@@ -13,7 +13,9 @@ function setAlias(alias: string, frame: DataFrame) {
       valueField.config.displayNameFromDS = alias;
     }
     frame.name = alias;
-    return frame;
+    if (valueField) {
+      return frame;
+    }
   }
 
   for (let fieldIndex = 0; fieldIndex < frame.fields.length; fieldIndex++) {
