@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.5.3] - 2024-09-03
+
+- Chore: Bump fast-loops from 1.1.3 to 1.1.4
+- Chore: Bump webpack from 5.88.2 to 5.94.0
+- Chore: Bump micromatch from 4.0.5 to 4.0.8
+- Docs: Update documentation about Alias functions
+
 ## [4.5.2] - 2024-07-01
 
 - Chore: Changes required for nested plugins
