@@ -1,0 +1,72 @@
+{
+  "type": "app",
+  "name": "Zabbix",
+  "id": "alexanderzobnin-zabbix-app",
+  "info": {
+    "description": "Zabbix plugin for Grafana",
+    "author": {
+      "name": "Grafana Labs",
+      "url": "https://grafana.com"
+    },
+    "keywords": ["zabbix", "servers and vms"],
+    "logos": {
+      "small": "img/icn-zabbix-app.svg",
+      "large": "img/icn-zabbix-app.svg"
+    },
+    "links": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/grafana/grafana-zabbix"
+      },
+      {
+        "name": "Docs",
+        "url": "https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/grafana/grafana-zabbix/blob/main/LICENSE"
+      }
+    ],
+    "screenshots": [
+      {
+        "name": "Showcase",
+        "path": "img/screenshot-showcase.png"
+      },
+      {
+        "name": "Dashboard",
+        "path": "img/screenshot-dashboard01.png"
+      },
+      {
+        "name": "Annotations",
+        "path": "img/screenshot-annotations.png"
+      },
+      {
+        "name": "Metric Editor",
+        "path": "img/screenshot-metric_editor.png"
+      },
+      {
+        "name": "Triggers",
+        "path": "img/screenshot-triggers.png"
+      }
+    ],
+    "version": "4.5.3",
+    "updated": "2024-09-03"
+  },
+  "includes": [
+    {
+      "type": "datasource",
+      "name": "Zabbix data source",
+      "path": "datasource/plugin.json"
+    },
+    {
+      "type": "panel",
+      "name": "Problems panel",
+      "path": "panel-triggers/plugin.json"
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=9.3.0",
+    "grafanaVersion": "9.3",
+    "plugins": []
+  }
+}
