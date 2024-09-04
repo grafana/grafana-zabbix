@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      # Keep the sdk modules up-to-date
+      - dependency-name: "github.com/grafana/grafana-plugin-sdk-go"
+        dependency-type: "all"
+    commit-message:
+      prefix: "Upgrade grafana-plugin-sdk-go "
+      include: "scope"
+    reviewers:
+      - "grafana/oss-big-tent"
