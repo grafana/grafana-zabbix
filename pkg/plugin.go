@@ -22,7 +22,7 @@ func main() {
 
 	pluginLogger.Debug("Starting Zabbix datasource")
 
-	err := backend.Serve(backend.ServeOpts{
+	err := backend.Manage(ZABBIX_PLUGIN_ID, backend.ServeOpts{
 		CallResourceHandler: httpResourceHandler,
 		QueryDataHandler:    ds,
 		CheckHealthHandler:  ds,
