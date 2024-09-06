@@ -8,8 +8,8 @@ import (
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
 // Resource handler describes handlers for the resources populated by plugin in plugin.go, like:
@@ -48,7 +48,7 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	}
 
 	ctx := req.Context()
-	pluginCxt := httpadapter.PluginConfigFromContext(ctx)
+	pluginCxt := backend.PluginConfigFromContext(ctx)
 	dsInstance, err := ds.getDSInstance(ctx, pluginCxt)
 	if err != nil {
 		ds.logger.Error("Error loading datasource", "error", err)
@@ -89,7 +89,7 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 	}
 
 	ctx := req.Context()
-	pluginCxt := httpadapter.PluginConfigFromContext(ctx)
+	pluginCxt := backend.PluginConfigFromContext(ctx)
 	dsInstance, err := ds.getDSInstance(ctx, pluginCxt)
 	if err != nil {
 		ds.logger.Error("Error loading datasource", "error", err)
