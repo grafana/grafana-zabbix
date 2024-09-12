@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.5.4] - 2024-09-12
+
+- Chore: Bump path-to-regexp from 1.8.0 to 1.9.0
+- Chore: Bump grafana-plugin-sdk-go from 0.236.0 to 0.247.0
+
 ## [4.5.3] - 2024-09-03
 
 - Chore: Bump fast-loops from 1.1.3 to 1.1.4
