@@ -3,7 +3,10 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -21,7 +24,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -30,6 +32,10 @@
       "ackField": true,
       "ageField": false,
       "customLastChangeFormat": false,
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "PCAF1C06DCF802728"
+      },
       "descriptionAtNewLine": false,
       "descriptionField": true,
       "fontSize": "100%",
@@ -51,7 +57,82 @@
       "layout": "table",
       "markAckEvents": false,
       "okEventColor": "rgb(56, 189, 113)",
+      "options": {
+        "ackEventColor": "rgb(56, 219, 156)",
+        "ackField": true,
+        "ageField": false,
+        "allowDangerousHTML": false,
+        "customLastChangeFormat": false,
+        "descriptionAtNewLine": false,
+        "descriptionField": true,
+        "fontSize": "100%",
+        "highlightBackground": false,
+        "highlightNewEvents": false,
+        "highlightNewerThan": "1h",
+        "hostField": true,
+        "hostGroups": false,
+        "hostProxy": false,
+        "hostTechNameField": false,
+        "lastChangeFormat": "",
+        "layout": "table",
+        "markAckEvents": false,
+        "okEventColor": "rgb(56, 189, 113)",
+        "opdataField": false,
+        "pageSize": 10,
+        "problemTimeline": true,
+        "resizedColumns": [],
+        "severityField": true,
+        "showTags": true,
+        "sortProblems": "lastchange",
+        "statusField": true,
+        "statusIcon": false,
+        "triggerSeverity": [
+          {
+            "$$hashKey": "object:127",
+            "color": "rgb(108, 108, 108)",
+            "priority": 0,
+            "severity": "Not classified",
+            "show": true
+          },
+          {
+            "$$hashKey": "object:128",
+            "color": "rgb(120, 158, 183)",
+            "priority": 1,
+            "severity": "Information",
+            "show": true
+          },
+          {
+            "$$hashKey": "object:129",
+            "color": "rgb(175, 180, 36)",
+            "priority": 2,
+            "severity": "Warning",
+            "show": true
+          },
+          {
+            "$$hashKey": "object:130",
+            "color": "rgb(255, 137, 30)",
+            "priority": 3,
+            "severity": "Average",
+            "show": true
+          },
+          {
+            "$$hashKey": "object:131",
+            "color": "rgb(255, 101, 72)",
+            "priority": 4,
+            "severity": "High",
+            "show": true
+          },
+          {
+            "$$hashKey": "object:132",
+            "color": "rgb(215, 0, 0)",
+            "priority": 5,
+            "severity": "Disaster",
+            "show": true
+          }
+        ]
+      },
       "pageSize": 10,
+      "pluginVersion": "10.1.2",
       "problemTimeline": true,
       "resizedColumns": [],
       "schemaVersion": 8,
@@ -65,10 +146,12 @@
           "application": {
             "filter": ""
           },
+          "countTriggersBy": "",
           "datasource": {
             "type": "alexanderzobnin-zabbix-datasource",
             "uid": "PCAF1C06DCF802728"
           },
+          "evaltype": "0",
           "functions": [],
           "group": {
             "filter": ""
@@ -82,16 +165,22 @@
           "itemTag": {
             "filter": ""
           },
+          "macro": {
+            "filter": ""
+          },
           "options": {
             "acknowledged": 2,
+            "count": true,
             "disableDataAlignment": false,
             "hostProxy": false,
             "hostsInMaintenance": false,
             "limit": 1001,
-            "minSeverity": 0,
+            "minSeverity": 3,
             "showDisabledItems": false,
             "skipEmptyValues": false,
             "sortProblems": "default",
+            "useTimeRange": false,
+            "useTrends": "default",
             "useZabbixValueMapping": false
           },
           "proxy": {
@@ -100,6 +189,7 @@
           "queryType": "5",
           "refId": "A",
           "resultFormat": "time_series",
+          "schema": 12,
           "showProblems": "problems",
           "table": {
             "skipEmptyValues": false
@@ -107,13 +197,12 @@
           "tags": {
             "filter": ""
           },
+          "textFilter": "",
           "trigger": {
             "filter": ""
           },
           "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
+            "acknowledged": 2
           }
         }
       ],
@@ -165,6 +254,10 @@
       "type": "alexanderzobnin-zabbix-triggers-panel"
     },
     {
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "PCAF1C06DCF802728"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -200,24 +293,24 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "/^Host$/",
           "values": false
         },
         "textMode": "value"
       },
-      "pluginVersion": "8.4.7",
+      "pluginVersion": "10.1.2",
       "targets": [
         {
           "application": {
             "filter": ""
           },
+          "countTriggersBy": "",
           "datasource": {
             "type": "alexanderzobnin-zabbix-datasource",
             "uid": "PCAF1C06DCF802728"
           },
+          "evaltype": "0",
           "functions": [],
           "group": {
             "filter": "Linux servers"
@@ -231,10 +324,16 @@
           "itemTag": {
             "filter": ""
           },
+          "macro": {
+            "filter": ""
+          },
           "options": {
+            "count": true,
             "disableDataAlignment": false,
+            "minSeverity": 3,
             "showDisabledItems": false,
             "skipEmptyValues": false,
+            "useTrends": "default",
             "useZabbixValueMapping": false
           },
           "proxy": {
@@ -243,19 +342,19 @@
           "queryType": "2",
           "refId": "A",
           "resultFormat": "table",
+          "schema": 12,
           "table": {
             "skipEmptyValues": false
           },
           "tags": {
             "filter": ""
           },
+          "textFilter": "",
           "trigger": {
             "filter": ""
           },
           "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
+            "acknowledged": 2
           }
         }
       ],
@@ -263,6 +362,10 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "PCAF1C06DCF802728"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -298,24 +401,24 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
         "textMode": "auto"
       },
-      "pluginVersion": "8.4.7",
+      "pluginVersion": "10.1.2",
       "targets": [
         {
           "application": {
             "filter": ""
           },
+          "countTriggersBy": "",
           "datasource": {
             "type": "alexanderzobnin-zabbix-datasource",
             "uid": "PCAF1C06DCF802728"
           },
+          "evaltype": "0",
           "functions": [],
           "group": {
             "filter": "Zabbix servers"
@@ -329,10 +432,16 @@
           "itemTag": {
             "filter": "component: cpu"
           },
+          "macro": {
+            "filter": ""
+          },
           "options": {
+            "count": true,
             "disableDataAlignment": false,
+            "minSeverity": 3,
             "showDisabledItems": false,
             "skipEmptyValues": false,
+            "useTrends": "default",
             "useZabbixValueMapping": false
           },
           "proxy": {
@@ -341,19 +450,19 @@
           "queryType": "0",
           "refId": "A",
           "resultFormat": "time_series",
+          "schema": 12,
           "table": {
             "skipEmptyValues": false
           },
           "tags": {
             "filter": ""
           },
+          "textFilter": "",
           "trigger": {
             "filter": ""
           },
           "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
+            "acknowledged": 2
           }
         }
       ],
@@ -361,12 +470,18 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "PCAF1C06DCF802728"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -378,6 +493,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -422,7 +538,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -434,10 +551,12 @@
           "application": {
             "filter": ""
           },
+          "countTriggersBy": "",
           "datasource": {
             "type": "alexanderzobnin-zabbix-datasource",
             "uid": "PCAF1C06DCF802728"
           },
+          "evaltype": "0",
           "functions": [],
           "group": {
             "filter": "Linux servers"
@@ -451,10 +570,16 @@
           "itemTag": {
             "filter": ""
           },
+          "macro": {
+            "filter": ""
+          },
           "options": {
+            "count": true,
             "disableDataAlignment": false,
+            "minSeverity": 3,
             "showDisabledItems": false,
             "skipEmptyValues": false,
+            "useTrends": "default",
             "useZabbixValueMapping": false
           },
           "proxy": {
@@ -463,19 +588,19 @@
           "queryType": "0",
           "refId": "A",
           "resultFormat": "time_series",
+          "schema": 12,
           "table": {
             "skipEmptyValues": false
           },
           "tags": {
             "filter": ""
           },
+          "textFilter": "",
           "trigger": {
             "filter": ""
           },
           "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
+            "acknowledged": 2
           }
         }
       ],
@@ -483,12 +608,18 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "PCAF1C06DCF802728"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -500,6 +631,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -579,7 +711,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -630,28 +763,25 @@
             "filter": ""
           },
           "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
+            "acknowledged": 2
           }
         },
         {
           "application": {
             "filter": ""
           },
+          "countTriggersBy": "",
           "datasource": {
             "type": "alexanderzobnin-zabbix-datasource",
             "uid": "PCAF1C06DCF802728"
           },
+          "evaltype": "0",
           "functions": [
             {
               "$$hashKey": "object:577",
               "def": {
                 "category": "Aggregate",
-                "defaultParams": [
-                  "1m",
-                  "avg"
-                ],
+                "defaultParams": ["1m", "avg"],
                 "name": "aggregateBy",
                 "params": [
                   {
@@ -660,24 +790,12 @@
                   },
                   {
                     "name": "function",
-                    "options": [
-                      "avg",
-                      "min",
-                      "max",
-                      "sum",
-                      "count",
-                      "median",
-                      "first",
-                      "last"
-                    ],
+                    "options": ["avg", "min", "max", "sum", "count", "median", "first", "last"],
                     "type": "string"
                   }
                 ]
               },
-              "params": [
-                "5m",
-                "median"
-              ],
+              "params": ["5m", "median"],
               "text": "aggregateBy(5m, median)"
             },
             {
@@ -693,9 +811,7 @@
                   }
                 ]
               },
-              "params": [
-                "median"
-              ],
+              "params": ["median"],
               "text": "setAlias(median)"
             }
           ],
@@ -712,10 +828,16 @@
           "itemTag": {
             "filter": ""
           },
+          "macro": {
+            "filter": ""
+          },
           "options": {
+            "count": true,
             "disableDataAlignment": false,
+            "minSeverity": 3,
             "showDisabledItems": false,
             "skipEmptyValues": false,
+            "useTrends": "default",
             "useZabbixValueMapping": false
           },
           "proxy": {
@@ -724,19 +846,19 @@
           "queryType": "0",
           "refId": "B",
           "resultFormat": "time_series",
+          "schema": 12,
           "table": {
             "skipEmptyValues": false
           },
           "tags": {
             "filter": ""
           },
+          "textFilter": "",
           "trigger": {
             "filter": ""
           },
           "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
+            "acknowledged": 2
           }
         }
       ],
@@ -744,6 +866,10 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "PCAF1C06DCF802728"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -751,6 +877,8 @@
             "seriesBy": "last"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
@@ -763,6 +891,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
@@ -807,7 +936,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -819,10 +949,12 @@
           "application": {
             "filter": ""
           },
+          "countTriggersBy": "",
           "datasource": {
             "type": "alexanderzobnin-zabbix-datasource",
             "uid": "PCAF1C06DCF802728"
           },
+          "evaltype": "0",
           "functions": [],
           "group": {
             "filter": "Zabbix servers"
@@ -836,10 +968,16 @@
           "itemTag": {
             "filter": "component: cpu"
           },
+          "macro": {
+            "filter": ""
+          },
           "options": {
+            "count": true,
             "disableDataAlignment": false,
+            "minSeverity": 3,
             "showDisabledItems": false,
             "skipEmptyValues": false,
+            "useTrends": "default",
             "useZabbixValueMapping": false
           },
           "proxy": {
@@ -848,19 +986,19 @@
           "queryType": "0",
           "refId": "A",
           "resultFormat": "time_series",
+          "schema": 12,
           "table": {
             "skipEmptyValues": false
           },
           "tags": {
             "filter": ""
           },
+          "textFilter": "",
           "trigger": {
             "filter": ""
           },
           "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
+            "acknowledged": 2
           }
         }
       ],
@@ -868,6 +1006,10 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "PCAF1C06DCF802728"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -875,6 +1017,8 @@
             "seriesBy": "last"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "axisSoftMin": 0,
@@ -887,6 +1031,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
@@ -947,8 +1092,9 @@
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "hidden",
-          "placement": "bottom"
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
         },
         "tooltip": {
           "mode": "single",
@@ -960,10 +1106,12 @@
           "application": {
             "filter": ""
           },
+          "countTriggersBy": "",
           "datasource": {
             "type": "alexanderzobnin-zabbix-datasource",
             "uid": "PCAF1C06DCF802728"
           },
+          "evaltype": "0",
           "functions": [],
           "group": {
             "filter": "Linux servers"
@@ -977,10 +1125,16 @@
           "itemTag": {
             "filter": ""
           },
+          "macro": {
+            "filter": ""
+          },
           "options": {
+            "count": true,
             "disableDataAlignment": false,
+            "minSeverity": 3,
             "showDisabledItems": false,
             "skipEmptyValues": false,
+            "useTrends": "default",
             "useZabbixValueMapping": false
           },
           "proxy": {
@@ -989,19 +1143,19 @@
           "queryType": "0",
           "refId": "A",
           "resultFormat": "time_series",
+          "schema": 12,
           "table": {
             "skipEmptyValues": false
           },
           "tags": {
             "filter": ""
           },
+          "textFilter": "",
           "trigger": {
             "filter": ""
           },
           "triggers": {
-            "acknowledged": 2,
-            "count": true,
-            "minSeverity": 3
+            "acknowledged": 2
           }
         }
       ],
@@ -1009,7 +1163,8 @@
       "type": "timeseries"
     }
   ],
-  "schemaVersion": 35,
+  "refresh": "",
+  "schemaVersion": 38,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -1023,6 +1178,6 @@
   "timezone": "",
   "title": "Zabbix data source features",
   "uid": "u9mWZdlnk",
-  "version": 6,
+  "version": 1,
   "weekStart": ""
 }
