@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.5.6] - 2024-10-21
+
+- Fix: AlertList styling issues in grafana 11.0.0
+- Chore: Migrate example dashboards from deprecated panels
+
 ## [4.5.5] - 2024-09-30
 
 - Chore: Bump dompurify from 3.1.0 to 3.1.6
