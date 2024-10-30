@@ -30,7 +30,11 @@
     "src/**",
     "pkg/**"
   ],
-  "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
+  "ignoreRegExpList": [
+    "import\\s*\\((.|[\r\n])*?\\)",
+    "import\\s*.*\".*?\"",
+    "\\[@.+\\]"
+  ],
   "words": [
     "alexanderzobnin",
     "datapoint",
@@ -67,6 +71,7 @@
     "triggerids",
     "typeahead",
     "unmarshal",
+    "uplot",
     "zabbix",
     "Zobnin"
   ]

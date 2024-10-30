@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.5.7] - 2024-10-30
+
+- Chore: Bump uplot to 1.6.31
+- Chore: Bump grafana-plugin-sdk-go from 0.250.0 to 0.251.0
+
 ## [4.5.6] - 2024-10-21
 
 - Fix: AlertList styling issues in grafana 11.0.0

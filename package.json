@@ -1,6 +1,6 @@
 {
   "name": "grafana-zabbix",
-  "version": "4.5.6",
+  "version": "4.5.7",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "bugs": {
@@ -73,7 +73,6 @@
     "eslint": "8.42.0",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
     "glob": "^10.2.7",
-    "html-loader": "0.5.5",
     "identity-obj-proxy": "3.0.0",
     "jest-environment-jsdom": "^29.5.0",
     "jest": "^29.5.0",
@@ -103,6 +102,7 @@
     "webpack": "^5.94.0"
   },
   "resolutions": {
+    "uplot": "1.6.31",
     "jackspeak": "2.1.1"
   },
   "packageManager": "yarn@1.22.19"
