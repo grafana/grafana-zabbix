@@ -12,6 +12,9 @@ jest.mock(
         toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } }),
       }),
     }),
+    getDataSourceSrv: () => ({
+      getInstanceSettings: jest.fn().mockResolvedValue({}),
+    }),
     getTemplateSrv: () => ({
       replace: jest.fn().mockImplementation((query) => query),
     }),

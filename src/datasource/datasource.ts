@@ -14,7 +14,13 @@ import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnecto
 import { ProblemDTO, VariableQueryTypes } from './types';
 import { ZabbixMetricsQuery, ShowProblemTypes } from './types/query';
 import { ZabbixDSOptions } from './types/config';
-import { BackendSrvRequest, getBackendSrv, getTemplateSrv, toDataQueryResponse } from '@grafana/runtime';
+import {
+  BackendSrvRequest,
+  getBackendSrv,
+  getTemplateSrv,
+  toDataQueryResponse,
+  getDataSourceSrv,
+} from '@grafana/runtime';
 import {
   DataFrame,
   dataFrameFromJSON,
@@ -119,11 +125,19 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     trackRequest(request);
 
     // Migrate old targets
-    const requestTargets = request.targets.map((t) => {
-      // Prevent changes of original object
-      const target = _.cloneDeep(t);
-      return migrations.migrate(target);
-    });
+    const requestTargets = request.targets
+      .map((t) => {
+        // Prevent changes of original object
+        const target = _.cloneDeep(t);
+        return migrations.migrate(target);
+      })
+      .map((target) => {
+        let ds = getDataSourceSrv().getInstanceSettings(target?.datasource);
+        if (ds?.rawRef?.uid) {
+          return { ...target, datasource: { ...target?.datasource, uid: ds.rawRef?.uid } };
+        }
+        return target;
+      });
 
     const backendResponsePromise = this.backendQuery({ ...request, targets: requestTargets });
     const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: requestTargets });
