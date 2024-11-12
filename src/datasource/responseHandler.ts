@@ -377,7 +377,10 @@ export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
   const fields: MutableField[] = [timeField];
 
   for (let i = 0; i < data.length; i++) {
-    const valueField = data[i].fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    let valueField = data[i].fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    if (data[i].name === 'SLI') {
+      valueField = data[i].fields.find((f) => f.type === FieldType.number);
+    }
     if (!valueField) {
       continue;
     }
