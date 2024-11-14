@@ -59,6 +59,7 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
       const host = _.find(hosts, { hostid: item.hostid });
       scopedVars['__zbx_host'] = { value: host.host };
       scopedVars['__zbx_host_name'] = { value: host.name };
+      scopedVars['__zbx_host_id'] = { value: host.id };
 
       // Only add host when multiple hosts selected
       if (_.keys(hosts).length > 1 && addHostName) {
