@@ -24,13 +24,10 @@ apiVersion: 1
 datasources:
   - name: Zabbix
     type: alexanderzobnin-zabbix-datasource
-    access: proxy
     url: http://localhost/zabbix/api_jsonrpc.php
-    isDefault: true
     jsonData:
       # Zabbix API credentials
       username: zabbix
-      password: zabbix
       # Trends options
       trends: true
       trendsFrom: '7d'
@@ -54,13 +51,28 @@ datasources:
       disableDataAlignment: false
       # Use value mapping from Zabbix
       useZabbixValueMapping: true
+    secureJsonData:
+      password: zabbix
     version: 1
     editable: false
 
   - name: MySQL Zabbix
     type: mysql
     url: localhost:3306
-    database: zabbix
     user: grafana
-    password: password
+    jsonData:
+      database: zabbix
+    secureJsonData:
+      password: password
+
+  - name: PostgreSQL Zabbix
+    type: grafana-postgresql-datasource
+    url: localhost:5432
+    user: grafana
+    jsonData:
+      database: zabbix
+    secureJsonData:
+      password: password
 ```
+
+For detailed provisioning configuration for mysql / postgres in direct db connection mode, refer [mysql plugin documentation](https://grafana.com/docs/grafana/latest/datasources/mysql/#provision-the-data-source) / [postgresql plugin documentation](https://grafana.com/docs/grafana/latest/datasources/postgres/#provision-the-data-source).
