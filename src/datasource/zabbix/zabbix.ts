@@ -33,6 +33,9 @@ const REQUESTS_TO_PROXYFY = [
   'getAlerts',
   'getHostAlerts',
   'getUserMacros',
+  'getUMacrosVariable',
+  'getUserMacrosNames',
+  'getUserMacrosValues',
   'getHostICAlerts',
   'getHostPCAlerts',
   'getAcknowledges',
@@ -58,6 +61,7 @@ const REQUESTS_TO_CACHE = [
   'getItems',
   'getMacros',
   'getUMacros',
+  'getUserMacros',
   'getItemsByIDs',
   'getITService',
   'getProxies',
@@ -206,7 +210,7 @@ export class Zabbix implements ZabbixConnector {
    *      }
    *    }
    * ```
-   */
+   n*/
   testDataSource() {
     let zabbixVersion;
     let dbConnectorStatus;
@@ -314,9 +318,7 @@ export class Zabbix implements ZabbixConnector {
     return this.getAllGroups().then((groups) => findByFilter(groups, groupFilter));
   }
 
-  /**
-   * Get list of host belonging to given groups.
-   */
+
   getAllHosts(groupFilter): Promise<any[]> {
     return this.getGroups(groupFilter).then((groups) => {
       const groupids = _.map(groups, 'groupid');
@@ -324,9 +326,83 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getHosts(groupFilter?, hostFilter?): Promise<any[]> {
-    return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
+  async getAllMacros(groupFilter, hostFilter?) {
+    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hostids = hosts?.map((h) => h.hostid);
+    return this.zabbixAPI.getMacros(hostids);
   }
+
+  getAllMacrosByGroup(groupFilter): Promise<any[]> {
+    return this.getGroups(groupFilter).then((groups) => {
+      const groupids = _.map(groups, 'groupid');
+      return this.zabbixAPI.getMacrosByGroup(groupids);
+    });
+  }
+
+
+
+  async getUMacrosVariable(groupFilter, macroFilter?
+  ) {
+    const allMacros = await this.getAllMacrosByGroup(groupFilter);
+    const filteredMacros = filterByMQuery(allMacros, macroFilter);
+    console.log('Filtered Macros:', filteredMacros);
+
+    return filteredMacros;
+  }
+
+  getUserMacrosNames(groupFilter, userMacroName?) {
+    return this.getUMacrosVariable(groupFilter, userMacroName).then((macros) => {
+      const names = _.map(macros, 'macro');
+      return _.uniq(names).map((name) => ({ name }));
+    });
+
+  }
+
+  getUserMacrosValues(groupFilter, userMacroName?, userMacroValue?) {
+    return this.getUMacrosVariable(groupFilter, { name: userMacroName, value: userMacroValue }).then((macros) => {
+      const values = _.map(macros, 'value');
+      return _.uniq(values).map((value) => ({ name: value }));
+    });
+  }
+
+
+  async getUMacros(groupFilter?, hostFilter?, macroFilter?) {
+    const allMacros = await this.getAllMacros(groupFilter, hostFilter);
+    return filterByMQuery(allMacros, macroFilter);
+  }
+
+  // getHosts now supports filtering on user macros (name,value)
+
+  async getHosts(groupFilter?: string, hostFilter?: string, userMacroName?: string, userMacroValue?: string): Promise<any[]> {
+    // Ensure userMacroName and userMacroValue are not empty or undefined
+    const macroFilter = (userMacroName && userMacroName.trim() !== '') || (userMacroValue && userMacroValue.trim() !== '')
+      ? { name: userMacroName || '', value: userMacroValue || '' }
+      : null;
+
+    // console.log("macroFilter before getAllHosts: ", macroFilter);
+
+    const hosts = await this.getAllHosts(groupFilter);
+
+    if (macroFilter) {
+      const macros = await this.getUMacrosVariable(groupFilter, macroFilter);
+      // console.log('Macros:', macros);
+      // console.log('Macro Filter:', macroFilter);
+
+      const filteredHosts = hosts.filter((host) => {
+        const hostMacros = macros.filter((macro) => macro.hostid === host.hostid);
+        // console.log('Host Macros:', hostMacros);
+        return filterByMQuery(hostMacros, macroFilter).length > 0;
+      });
+      console.log('Filtered Hosts:', filteredHosts);
+      return findByFilter(filteredHosts, hostFilter);
+    }
+
+    return findByFilter(hosts, hostFilter);
+
+  }
+
+
+
 
   /**
    * Get list of applications belonging to given groups and hosts.
@@ -360,16 +436,7 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  async getAllMacros(groupFilter, hostFilter) {
-    const hosts = await this.getHosts(groupFilter, hostFilter);
-    const hostids = hosts?.map((h) => h.hostid);
-    return this.zabbixAPI.getMacros(hostids);
-  }
 
-  async getUMacros(groupFilter?, hostFilter?, macroFilter?) {
-    const allMacros = await this.getAllMacros(groupFilter, hostFilter);
-    return filterByMQuery(allMacros, macroFilter);
-  }
 
   async getItemTags(groupFilter?, hostFilter?, itemTagFilter?) {
     const items = await this.getAllItems(groupFilter, hostFilter, null, null, {});
@@ -732,12 +799,22 @@ function filterByName(list, name) {
   }
 }
 
-function filterByMacro(list, name) {
-  const finded = _.filter(list, { macro: name });
-  if (finded) {
-    return finded;
+
+
+function filterByMacro(list, filter) {
+  if (typeof filter === 'string') {
+    // Filter is a macro name (string)
+    return _.filter(list, (zbx_obj) => zbx_obj.macro === filter);
+  } else if (typeof filter === 'object' && filter !== null) {
+    // Filter is an object { name, value }
+    return _.filter(list, (zbx_obj) => {
+      const nameMatch = filter.name !== undefined && filter.name !== '' ? zbx_obj.macro === filter.name : true;
+      const valueMatch = filter.value !== undefined && filter.value !== '' ? zbx_obj.value === filter.value : true;
+      return nameMatch && valueMatch;
+    });
   } else {
-    return [];
+    // Invalid or empty filter, return the entire list
+    return list;
   }
 }
 
@@ -748,12 +825,6 @@ function filterByRegex(list, regex) {
   });
 }
 
-function filterByMRegex(list, regex) {
-  const filterPattern = utils.buildRegex(regex);
-  return _.filter(list, (zbx_obj) => {
-    return filterPattern.test(zbx_obj?.macro);
-  });
-}
 
 function findByFilter(list, filter) {
   if (utils.isRegex(filter)) {
@@ -771,11 +842,53 @@ function filterByQuery(list, filter) {
   }
 }
 
-function filterByMQuery(list, filter) {
-  if (utils.isRegex(filter)) {
-    return filterByMRegex(list, filter);
+
+function filterByMRegex(list, filter) {
+  if (typeof filter === 'string') {
+    // Filter is a macro name regex
+    const namePattern = utils.buildRegex(filter);
+    return _.filter(list, (zbx_obj) => namePattern.test(zbx_obj.macro));
+  } else if (typeof filter === 'object' && filter !== null) {
+    // Filter is an object { name, value }
+    return _.filter(list, (zbx_obj) => {
+      const nameMatch = filter.name !== undefined && filter.name !== ''
+        ? utils.isRegex(filter.name)
+          ? utils.buildRegex(filter.name).test(zbx_obj.macro)
+          : zbx_obj.macro === filter.name
+        : true;
+
+      const valueMatch = filter.value !== undefined && filter.value !== ''
+        ? utils.isRegex(filter.value)
+          ? utils.buildRegex(filter.value).test(zbx_obj.value)
+          : zbx_obj.value === filter.value
+        : true;
+
+      return nameMatch && valueMatch;
+    });
   } else {
-    return filterByMacro(list, filter);
+    // Invalid or empty filter, return the entire list
+    return list;
+  }
+}
+
+function filterByMQuery(list, filter) {
+  if (typeof filter === 'string') {
+    // Filter is a string (macro name or regex)
+    return utils.isRegex(filter) ? filterByMRegex(list, filter) : filterByMacro(list, filter);
+  } else if (typeof filter === 'object' && filter !== null) {
+    // Filter is an object { name, value }
+    const isNameRegex = filter.name && utils.isRegex(filter.name);
+    const isValueRegex = filter.value && utils.isRegex(filter.value);
+
+    if ((filter.name && filter.name !== '') || (filter.value && filter.value !== '')) {
+      return isNameRegex || isValueRegex ? filterByMRegex(list, filter) : filterByMacro(list, filter);
+    } else {
+      // Both name and value are empty strings, return the entire list
+      return list;
+    }
+  } else {
+    // Invalid or empty filter, return the entire list
+    return list;
   }
 }
 

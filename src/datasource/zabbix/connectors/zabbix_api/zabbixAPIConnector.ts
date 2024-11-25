@@ -148,6 +148,15 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
+  getUserMacrosByGroup(groupids) {
+    const params = {
+      output: ['hostmacroid', 'macro', 'value', 'hostid'],
+      groupids: groupids,
+    };
+
+    return this.request('usermacro.get', params);
+  } 
+
   getHosts(groupids): Promise<any[]> {
     const params: any = {
       output: ['hostid', 'name', 'host'],
@@ -240,6 +249,15 @@ export class ZabbixAPIConnector {
     const params = {
       output: 'extend',
       hostids: hostids,
+    };
+
+    return this.request('usermacro.get', params);
+  }
+
+  getMacrosByGroup(groupids) {
+    const params = {
+      output: 'extend',
+      groupids: groupids,
     };
 
     return this.request('usermacro.get', params);

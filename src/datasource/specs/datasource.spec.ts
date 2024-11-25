@@ -259,15 +259,15 @@ describe('ZabbixDatasource', () => {
 
     it('should return hosts', (done) => {
       const tests = [
-        { query: '*.*', expect: ['/.*/', '/.*/'] },
-        { query: '.', expect: ['', ''] },
-        { query: 'Backend.*', expect: ['Backend', '/.*/'] },
-        { query: 'Back*.', expect: ['Back*', ''] },
+        { query: '*.*', expect: ['/.*/', '/.*/',null, null] },
+        { query: '.', expect: ['', '', null,null] },
+        { query: 'Backend.*', expect: ['Backend', '/.*/', null,null] },
+        { query: 'Back*.', expect: ['Back*', '',null,null] },
       ];
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(ctx.ds.zabbix.getHosts).toBeCalledWith(test.expect[0], test.expect[1]);
+        expect(ctx.ds.zabbix.getHosts).toBeCalledWith(test.expect[0], test.expect[1],test.expect[2],test.expect[3]);
         ctx.ds.zabbix.getHosts.mockClear();
       }
       done();
@@ -315,7 +315,7 @@ describe('ZabbixDatasource', () => {
       let query = '*.*';
 
       ctx.ds.metricFindQuery(query);
-      expect(ctx.ds.zabbix.getHosts).toBeCalledWith('/.*/', '/.*/');
+      expect(ctx.ds.zabbix.getHosts).toBeCalledWith('/.*/','/.*/',null,null);
       done();
     });
   });

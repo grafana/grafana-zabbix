@@ -54,6 +54,9 @@ type QueryModel struct {
 	Application QueryFilter `json:"application"`
 	ItemTag     QueryFilter `json:"itemTag"`
 	Item        QueryFilter `json:"item"`
+	UserMacro   QueryFilter `json:"userMacro"`
+
+
 
 	// Item ID mode
 	ItemIDs string `json:"itemids,omitempty"`

@@ -13,6 +13,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     { value: VariableQueryTypes.ItemTag, label: 'Item tag' },
     { value: VariableQueryTypes.Item, label: 'Item' },
     { value: VariableQueryTypes.ItemValues, label: 'Item values' },
+    { value: VariableQueryTypes.UserMacroName, label: 'User macro Name' },
+    { value: VariableQueryTypes.UserMacroValue, label: 'User macro Value' },
   ];
 
   defaults: VariableQueryData = {
@@ -23,6 +25,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     application: '',
     itemTag: '',
     item: '',
+    userMacroName: '',
+    userMacroValue: '',
   };
 
   constructor(props: VariableQueryProps) {
@@ -69,8 +73,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   };
 
   handleQueryChange = () => {
-    const { queryType, group, host, application, itemTag, item } = this.state;
-    const queryModel = { queryType, group, host, application, itemTag, item };
+    const { queryType, group, host, application, itemTag, item, userMacroName , userMacroValue } = this.state;
+    const queryModel = { queryType, group, host, application, itemTag, item, userMacroName, userMacroValue };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
@@ -81,14 +85,14 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
       queryType: selectedItem.value,
     });
 
-    const { group, host, application, itemTag, item } = this.state;
+    const { group, host, application, itemTag, item, userMacroName, userMacroValue } = this.state;
     const queryType = selectedItem.value;
-    const queryModel = { queryType, group, host, application, itemTag, item };
+    const queryModel = { queryType, group, host, application, itemTag, item, userMacroName, userMacroValue };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
   render() {
-    const { selectedQueryType, legacyQuery, group, host, application, itemTag, item } = this.state;
+    const { selectedQueryType, legacyQuery, group, host, application, itemTag, item,userMacroName, userMacroValue } = this.state;
     const { datasource } = this.props;
     const supportsItemTags = datasource?.zabbix?.isZabbix54OrHigherSync() || false;
 
@@ -116,7 +120,11 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           </InlineField>
         </InlineFieldRow>
 
-        {selectedQueryType.value !== VariableQueryTypes.Group && (
+        {( selectedQueryType.value === VariableQueryTypes.Application ||
+          selectedQueryType.value === VariableQueryTypes.ItemTag ||
+          selectedQueryType.value === VariableQueryTypes.Item ||
+          selectedQueryType.value === VariableQueryTypes.ItemValues ||
+          selectedQueryType.value === VariableQueryTypes.Host ) && (
           <InlineFieldRow>
             <InlineField label="Host" labelWidth={16}>
               <ZabbixInput
@@ -129,10 +137,12 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           </InlineFieldRow>
         )}
 
+      
+
         {(selectedQueryType.value === VariableQueryTypes.Application ||
           selectedQueryType.value === VariableQueryTypes.ItemTag ||
           selectedQueryType.value === VariableQueryTypes.Item ||
-          selectedQueryType.value === VariableQueryTypes.ItemValues) && (
+          selectedQueryType.value === VariableQueryTypes.ItemValues ) && (
           <>
             {supportsItemTags && (
               <InlineFieldRow>
@@ -173,6 +183,75 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
                 </InlineField>
               </InlineFieldRow>
             )}
+
+          </>
+        )}
+
+        {selectedQueryType.value === VariableQueryTypes.UserMacroName && (
+          <InlineFieldRow>
+            <InlineField label="Macro Name" labelWidth={16}>
+              <Input
+                width={30}
+                value={userMacroName}
+                onChange={(evt) => this.handleQueryUpdate(evt, 'userMacroName')}
+                onBlur={this.handleQueryChange}
+              />
+            </InlineField>
+          </InlineFieldRow>
+        )}
+
+        {selectedQueryType.value === VariableQueryTypes.UserMacroValue && (
+          <>
+
+          <InlineFieldRow>
+            <InlineField label="Macro Name" labelWidth={16}>
+              <Input
+                width={30}
+                value={userMacroName}
+                onChange={(evt) => this.handleQueryUpdate(evt, 'userMacroName')}
+                onBlur={this.handleQueryChange}
+              />
+            </InlineField>
+          </InlineFieldRow>
+
+          <InlineFieldRow>
+            <InlineField label="Macro Value" labelWidth={16}>
+              <Input
+                width={30}
+                value={userMacroValue}
+                onChange={(evt) => this.handleQueryUpdate(evt, 'userMacroValue')}
+                onBlur={this.handleQueryChange}
+              />
+            </InlineField>
+          </InlineFieldRow>
+
+          </>
+
+        )}
+
+        {selectedQueryType.value === VariableQueryTypes.Host && (
+          <>
+            <InlineFieldRow>
+              <InlineField label="Macro Name" labelWidth={16}>
+                <Input
+                  width={30}
+                  value={userMacroName}
+                  onChange={(evt) => this.handleQueryUpdate(evt, 'userMacroName')}
+                  onBlur={this.handleQueryChange}
+                />
+              </InlineField>
+            </InlineFieldRow>
+
+            <InlineFieldRow>
+              <InlineField label="Macro Value" labelWidth={16}>
+                <Input
+                  width={30}
+                  value={userMacroValue}
+                  onChange={(evt) => this.handleQueryUpdate(evt, 'userMacroValue')}
+                  onBlur={this.handleQueryChange}
+                />
+              </InlineField>
+            </InlineFieldRow>
           </>
         )}
 
@@ -188,3 +267,4 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     );
   }
 }
+
