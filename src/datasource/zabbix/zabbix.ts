@@ -345,8 +345,6 @@ export class Zabbix implements ZabbixConnector {
   ) {
     const allMacros = await this.getAllMacrosByGroup(groupFilter);
     const filteredMacros = filterByMQuery(allMacros, macroFilter);
-    console.log('Filtered Macros:', filteredMacros);
-
     return filteredMacros;
   }
 
