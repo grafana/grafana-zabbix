@@ -141,11 +141,20 @@ func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 		zabbixPassword = jsonData.Get("password").MustString()
 	}
 
-	err = zabbix.api.Authenticate(ctx, zabbixLogin, zabbixPassword)
+	var auth string
+
+	if zabbix.version >= 54 {
+		auth, err = zabbix.api.Login(ctx, zabbixLogin, zabbixPassword)
+	} else {
+		auth, err = zabbix.api.LoginDeprecated(ctx, zabbixLogin, zabbixPassword)
+	}
+
 	if err != nil {
 		zabbix.logger.Error("Zabbix authentication error", "error", err)
 		return err
 	}
+
+	zabbix.api.SetAuth(auth)
 	zabbix.logger.Debug("Successfully authenticated", "url", zabbix.api.GetUrl().String(), "user", zabbixLogin)
 
 	return nil
