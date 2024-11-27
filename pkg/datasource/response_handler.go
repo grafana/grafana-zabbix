@@ -94,6 +94,7 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 
 	if len(item.Hosts) > 0 {
 		scopedVars["__zbx_host"] = ScopedVar{Value: item.Hosts[0].Name}
+		scopedVars["__zbx_host_id"] = ScopedVar{Value: item.Hosts[0].ID}
 		scopedVars["__zbx_host_name"] = ScopedVar{Value: item.Hosts[0].Name}
 		valueField.Labels["host"] = item.Hosts[0].Name
 	}

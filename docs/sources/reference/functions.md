@@ -337,6 +337,7 @@ Following template variables available for using in `setAlias()` and `replaceAli
 - `$__zbx_item`, `$__zbx_item_name` - item name
 - `$__zbx_item_key` - item key
 - `$__zbx_host_name` - visible name of the host
+- `$__zbx_host_id` - id of the host
 - `$__zbx_host` - technical name of the host
 
 Examples:
@@ -400,9 +401,9 @@ For more details see [String.prototype.replace()](https://developer.mozilla.org/
 **NOTE:** Other transforms in Grafana Dashboard, like ["Join by label"](https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/#join-by-labels) will overwrite the alias functions.
 This will happen because the Grafana Dashboard transforms will be applied on the raw data returned by a query.
 If such issues arise, you can always use other Dashboard transforms, like:
-* [Rename by regex](https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/#rename-by-regex) for fields names
-* [Value mappings > Regex ](https://grafana.com/docs/grafana/latest/panels-visualizations/configure-value-mappings/#regex) for cell values
 
+- [Rename by regex](https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/#rename-by-regex) for fields names
+- [Value mappings > Regex ](https://grafana.com/docs/grafana/latest/panels-visualizations/configure-value-mappings/#regex) for cell values
 
 Examples:
 
