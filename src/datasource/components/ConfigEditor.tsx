@@ -19,12 +19,12 @@ import {
   Auth,
   ConfigSection,
   ConfigSubSection,
-  Stack,
+  EditorStack,
   convertLegacyAuthProps,
   ConnectionSettings,
   DataSourceDescription,
   AdvancedHttpSettings,
-} from '@grafana/experimental';
+} from '@grafana/plugin-ui';
 import { Divider } from './Divider';
 import { css } from '@emotion/css';
 
@@ -185,7 +185,7 @@ export const ConfigEditor = (props: Props) => {
           <Field
             label={
               <Label>
-                <Stack gap={0.5}>
+                <EditorStack gap={0.5}>
                   <span>Cache TTL</span>
                   <Tooltip
                     content={
@@ -196,7 +196,7 @@ export const ConfigEditor = (props: Props) => {
                   >
                     <Icon name="info-circle" size="sm" />
                   </Tooltip>
-                </Stack>
+                </EditorStack>
               </Label>
             }
           >
@@ -211,12 +211,12 @@ export const ConfigEditor = (props: Props) => {
           <Field
             label={
               <Label>
-                <Stack gap={0.5}>
+                <EditorStack gap={0.5}>
                   <span>Timeout</span>
                   <Tooltip content={<span>Zabbix API connection timeout in seconds. Default is 30.</span>}>
                     <Icon name="info-circle" size="sm" />
                   </Tooltip>
-                </Stack>
+                </EditorStack>
               </Label>
             }
           >
@@ -248,7 +248,7 @@ export const ConfigEditor = (props: Props) => {
               <Field
                 label={
                   <Label>
-                    <Stack gap={0.5}>
+                    <EditorStack gap={0.5}>
                       <span>After</span>
                       <Tooltip
                         content={
@@ -260,7 +260,7 @@ export const ConfigEditor = (props: Props) => {
                       >
                         <Icon name="info-circle" size="sm" />
                       </Tooltip>
-                    </Stack>
+                    </EditorStack>
                   </Label>
                 }
               >
@@ -274,7 +274,7 @@ export const ConfigEditor = (props: Props) => {
               <Field
                 label={
                   <Label>
-                    <Stack gap={0.5}>
+                    <EditorStack gap={0.5}>
                       <span>Range</span>
                       <Tooltip
                         content={
@@ -286,7 +286,7 @@ export const ConfigEditor = (props: Props) => {
                       >
                         <Icon name="info-circle" size="sm" />
                       </Tooltip>
-                    </Stack>
+                    </EditorStack>
                   </Label>
                 }
               >
@@ -353,7 +353,7 @@ export const ConfigEditor = (props: Props) => {
           <Field
             label={
               <Label>
-                <Stack gap={0.5}>
+                <EditorStack gap={0.5}>
                   <span>Disable data alignment</span>
                   <Tooltip
                     content={
@@ -368,7 +368,7 @@ export const ConfigEditor = (props: Props) => {
                   >
                     <Icon name="info-circle" size="sm" />
                   </Tooltip>
-                </Stack>
+                </EditorStack>
               </Label>
             }
           >
