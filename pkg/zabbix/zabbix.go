@@ -121,12 +121,12 @@ func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 	if authType == settings.AuthTypeToken {
 		token, exists := zabbix.dsInfo.DecryptedSecureJSONData["apiToken"]
 		if !exists {
-			return errors.New("cannot find Zabbix API token")
+			return backend.DownstreamError(errors.New("cannot find Zabbix API token"))
 		}
 		err = zabbix.api.AuthenticateWithToken(ctx, token)
 		if err != nil {
 			zabbix.logger.Error("Zabbix authentication error", "error", err)
-			return err
+			return backend.DownstreamError(err)
 		}
 		zabbix.logger.Debug("Using API token for authentication")
 		return nil

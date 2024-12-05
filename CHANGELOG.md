@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.5.8] - 2024-12-05
+
+- Chore: Fix error source for invalid or missing authentication token
+
 ## [4.5.7] - 2024-10-30
 
 - Chore: Bump uplot to 1.6.31
