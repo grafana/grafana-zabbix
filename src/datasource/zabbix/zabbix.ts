@@ -377,21 +377,15 @@ export class Zabbix implements ZabbixConnector {
       ? { name: userMacroName || '', value: userMacroValue || '' }
       : null;
 
-    // console.log("macroFilter before getAllHosts: ", macroFilter);
 
     const hosts = await this.getAllHosts(groupFilter);
 
     if (macroFilter) {
       const macros = await this.getUMacrosVariable(groupFilter, macroFilter);
-      // console.log('Macros:', macros);
-      // console.log('Macro Filter:', macroFilter);
-
       const filteredHosts = hosts.filter((host) => {
         const hostMacros = macros.filter((macro) => macro.hostid === host.hostid);
-        // console.log('Host Macros:', hostMacros);
         return filterByMQuery(hostMacros, macroFilter).length > 0;
       });
-      console.log('Filtered Hosts:', filteredHosts);
       return findByFilter(filteredHosts, hostFilter);
     }
 

@@ -6,7 +6,7 @@ install:
 	yarn install --pure-lockfile
 	# Backend
 	go install -v ./pkg/
-        # GO111MODULE=off go get -u golang.org/x/lint/golint
+	# GO111MODULE=off go get -u golang.org/x/lint/golint
 
 deps-go:
 	go install -v ./pkg/
