@@ -18,7 +18,7 @@ export interface ZabbixConnector {
   getVersion: () => Promise<string>;
 
   getGroups: (groupFilter?) => any;
-  getHosts: (groupFilter?, hostFilter?) => any;
+  getHosts: (groupFilter?, hostFilter?, userMacroName?, userMacroValue?) => any;
   getApps: (groupFilter?, hostFilter?, appFilter?) => any;
   getUMacros: (groupFilter?, hostFilter?, macroFilter?) => any;
   getItems: (groupFilter?, hostFilter?, appFilter?, itemTagFilter?, itemFilter?, options?) => any;
