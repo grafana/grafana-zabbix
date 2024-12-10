@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 
 # Run redis server first
 # cd /zas/redis-3.2.9/src/
