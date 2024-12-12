@@ -622,10 +622,10 @@ export class ZabbixAPIConnector {
       time_from: timeFrom,
       time_till: timeTo,
       objectids: objectids,
-      select_acknowledges: 'extend',
       selectHosts: 'extend',
       value: showEvents,
     };
+    params[getSelectAcknowledgesKey(this.version)] = 'extend';
 
     if (limit) {
       params.limit = limit;
@@ -649,13 +649,13 @@ export class ZabbixAPIConnector {
       evaltype: '0',
       sortfield: ['eventid'],
       sortorder: 'DESC',
-      select_acknowledges: 'extend',
       selectTags: 'extend',
       selectSuppressionData: ['maintenanceid', 'suppress_until'],
       groupids,
       hostids,
       applicationids,
     };
+    params[getSelectAcknowledgesKey(this.version)] = 'extend';
 
     if (limit) {
       params.limit = limit;
@@ -685,11 +685,12 @@ export class ZabbixAPIConnector {
       output: 'extend',
       eventids: eventids,
       preservekeys: true,
-      select_acknowledges: 'extend',
       selectTags: 'extend',
       sortfield: 'clock',
       sortorder: 'DESC',
     };
+
+    params[getSelectAcknowledgesKey(this.version)] = 'extend';
 
     return this.request('event.get', params);
   }
@@ -709,10 +710,10 @@ export class ZabbixAPIConnector {
       output: 'extend',
       eventids: eventids,
       preservekeys: true,
-      select_acknowledges: 'extend',
       sortfield: 'clock',
       sortorder: 'DESC',
     };
+    params[getSelectAcknowledgesKey(this.version)] = 'extend';
 
     return this.request('event.get', params).then((events) => {
       return _.filter(events, (event) => event.acknowledges.length);
@@ -985,4 +986,8 @@ export class ZabbixAPIError {
   toString() {
     return this.name + ' ' + this.data;
   }
+}
+
+function getSelectAcknowledgesKey(version: string) {
+  return semver.gte(version, '7.0.0') ? 'selectAcknowledges' : 'select_acknowledges';
 }
