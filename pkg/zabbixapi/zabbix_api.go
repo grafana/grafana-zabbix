@@ -95,9 +95,9 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		"params":  params,
 	}
 
-	// Zabbix v7.2 and later removed `auth` parameter and replaced it with using Auth header
-	// `auth` parameter throws an error in Zabbix v7.2 and later so we need to add it only for older versions
-	if auth != "" && version < 72 {
+	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
+	// `auth` parameter throws an error in new versions so we need to add it only for older versions
+	if auth != "" && version < 70 {
 		apiRequest["auth"] = auth
 	}
 

@@ -148,8 +148,8 @@ export class ZabbixAPIConnector {
       sortfield: 'name',
     };
 
-    // Zabbix v7.2 and later removed `real_hosts` parameter and replaced it with `with_hosts`
-    if (this.isZabbix72OrHigher()) {
+    // Zabbix v7.0 and later deprecated `real_hosts` parameter and replaced it with `with_hosts`
+    if (semver.gte(this.version, '7.0.0')) {
       params['with_hosts'] = true;
     } else {
       params['real_hosts'] = true;

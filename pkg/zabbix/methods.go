@@ -496,8 +496,8 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 		"sortfield":  "name",
 	}
 
-	// Zabbix v7.2 and later removed `real_hosts` parameter and replaced it with `with_hosts`
-	if ds.version < 72 {
+	// Zabbix v7.0 and later removed `real_hosts` parameter and replaced it with `with_hosts`
+	if ds.version < 70 {
 		params["real_hosts"] = true
 	} else {
 		params["with_hosts"] = true

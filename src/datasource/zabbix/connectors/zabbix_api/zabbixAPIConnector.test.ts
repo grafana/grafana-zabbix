@@ -24,9 +24,9 @@ describe('Zabbix API connector', () => {
       expect(zabbixAPIConnector.request).toHaveBeenCalledWith('proxy.get', { output: ['proxyid', 'host'] });
     });
 
-    it('should send the with_hosts parameter when version is 7.2+', () => {
+    it('should send the with_hosts parameter when version is 7.0+', () => {
       const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
-      zabbixAPIConnector.version = '7.2.0';
+      zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn();
 
       zabbixAPIConnector.getGroups();
@@ -37,9 +37,9 @@ describe('Zabbix API connector', () => {
       });
     });
 
-    it('should send the real_hosts parameter when version is <7.2', () => {
+    it('should send the real_hosts parameter when version is <7.0', () => {
       const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
-      zabbixAPIConnector.version = '7.1.0';
+      zabbixAPIConnector.version = '6.5.0';
       zabbixAPIConnector.request = jest.fn();
 
       zabbixAPIConnector.getGroups();
