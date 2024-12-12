@@ -116,10 +116,6 @@ export class ZabbixAPIConnector {
     return semver.gte(this.version, '5.4.0');
   }
 
-  isZabbix72OrHigher() {
-    return semver.gte(this.version, '7.2.0');
-  }
-
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
