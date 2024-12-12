@@ -494,7 +494,13 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	params := ZabbixAPIParams{
 		"output":     []string{"name", "groupid"},
 		"sortfield":  "name",
-		"real_hosts": true,
+	}
+
+	// Zabbix v7.2 and later removed `real_hosts` parameter and replaced it with `with_hosts`
+	if ds.version < 72 {
+		params["real_hosts"] = true
+	} else {
+		params["with_hosts"] = true
 	}
 
 	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "hostgroup.get", Params: params})

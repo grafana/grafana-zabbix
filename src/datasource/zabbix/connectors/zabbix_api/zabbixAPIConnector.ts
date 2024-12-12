@@ -116,6 +116,10 @@ export class ZabbixAPIConnector {
     return semver.gte(this.version, '5.4.0');
   }
 
+  isZabbix72OrHigher() {
+    return semver.gte(this.version, '7.2.0');
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
@@ -142,8 +146,14 @@ export class ZabbixAPIConnector {
     const params = {
       output: ['name', 'groupid'],
       sortfield: 'name',
-      real_hosts: true,
     };
+
+    // Zabbix v7.2 and later removed `real_hosts` parameter and replaced it with `with_hosts`
+    if (this.isZabbix72OrHigher()) {
+      params['with_hosts'] = true;
+    } else {
+      params['real_hosts'] = true;
+    }
 
     return this.request('hostgroup.get', params);
   }

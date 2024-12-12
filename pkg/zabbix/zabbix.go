@@ -89,10 +89,10 @@ func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixA
 
 	// Skip auth for methods that are not required it
 	if method == "apiinfo.version" {
-		return zabbix.api.RequestUnauthenticated(ctx, method, params)
+		return zabbix.api.RequestUnauthenticated(ctx, method, params, zabbix.version)
 	}
 
-	result, err := zabbix.api.Request(ctx, method, params)
+	result, err := zabbix.api.Request(ctx, method, params, zabbix.version)
 	notAuthorized := isNotAuthorized(err)
 	isTokenAuth := zabbix.settings.AuthType == settings.AuthTypeToken
 	if err == zabbixapi.ErrNotAuthenticated || (notAuthorized && !isTokenAuth) {
@@ -141,7 +141,7 @@ func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 		zabbixPassword = jsonData.Get("password").MustString()
 	}
 
-	err = zabbix.api.Authenticate(ctx, zabbixLogin, zabbixPassword)
+	err = zabbix.api.Authenticate(ctx, zabbixLogin, zabbixPassword, zabbix.version)
 	if err != nil {
 		zabbix.logger.Error("Zabbix authentication error", "error", err)
 		return err

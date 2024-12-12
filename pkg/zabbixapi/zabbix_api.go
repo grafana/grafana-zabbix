@@ -74,20 +74,20 @@ func (api *ZabbixAPI) SetAuth(auth string) {
 }
 
 // Request performs API request
-func (api *ZabbixAPI) Request(ctx context.Context, method string, params ZabbixAPIParams) (*simplejson.Json, error) {
+func (api *ZabbixAPI) Request(ctx context.Context, method string, params ZabbixAPIParams, version int) (*simplejson.Json, error) {
 	if api.auth == "" {
 		return nil, ErrNotAuthenticated
 	}
 
-	return api.request(ctx, method, params, api.auth)
+	return api.request(ctx, method, params, api.auth, version)
 }
 
 // Request performs API request without authentication token
-func (api *ZabbixAPI) RequestUnauthenticated(ctx context.Context, method string, params ZabbixAPIParams) (*simplejson.Json, error) {
-	return api.request(ctx, method, params, "")
+func (api *ZabbixAPI) RequestUnauthenticated(ctx context.Context, method string, params ZabbixAPIParams, version int) (*simplejson.Json, error) {
+	return api.request(ctx, method, params, "", version)
 }
 
-func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixAPIParams, auth string) (*simplejson.Json, error) {
+func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixAPIParams, auth string, version int) (*simplejson.Json, error) {
 	apiRequest := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"id":      2,
@@ -95,7 +95,9 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		"params":  params,
 	}
 
-	if auth != "" {
+	// Zabbix v7.2 and later removed `auth` parameter and replaced it with using Auth header
+	// `auth` parameter throws an error in Zabbix v7.2 and later so we need to add it only for older versions
+	if auth != "" && version < 72 {
 		apiRequest["auth"] = auth
 	}
 
@@ -111,6 +113,9 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
 
+	if auth != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+	} 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
 
@@ -123,13 +128,13 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 }
 
 // Login performs API authentication and returns authentication token.
-func (api *ZabbixAPI) Login(ctx context.Context, username string, password string) (string, error) {
+func (api *ZabbixAPI) Login(ctx context.Context, username string, password string, version int) (string, error) {
 	params := ZabbixAPIParams{
 		"username": username,
 		"password": password,
 	}
 
-	auth, err := api.request(ctx, "user.login", params, "")
+	auth, err := api.request(ctx, "user.login", params, "", version)
 	if err != nil {
 		return "", err
 	}
@@ -138,13 +143,13 @@ func (api *ZabbixAPI) Login(ctx context.Context, username string, password strin
 }
 
 // Login method for Zabbix prior to 5.4
-func (api *ZabbixAPI) LoginDeprecated(ctx context.Context, username string, password string) (string, error) {
+func (api *ZabbixAPI) LoginDeprecated(ctx context.Context, username string, password string, version int) (string, error) {
 	params := ZabbixAPIParams{
 		"user":     username,
 		"password": password,
 	}
 
-	auth, err := api.request(ctx, "user.login", params, "")
+	auth, err := api.request(ctx, "user.login", params, "", version)
 	if err != nil {
 		return "", err
 	}
@@ -153,11 +158,11 @@ func (api *ZabbixAPI) LoginDeprecated(ctx context.Context, username string, pass
 }
 
 // Authenticate performs API authentication and sets authentication token.
-func (api *ZabbixAPI) Authenticate(ctx context.Context, username string, password string) error {
-	auth, err := api.Login(ctx, username, password)
+func (api *ZabbixAPI) Authenticate(ctx context.Context, username string, password string, version int) error {
+	auth, err := api.Login(ctx, username, password, version)
 	if isDeprecatedUserParamError(err) {
 		api.logger.Debug("user.login method error, switching to deprecated user parameter", "error", err)
-		auth, err = api.LoginDeprecated(ctx, username, password)
+		auth, err = api.LoginDeprecated(ctx, username, password, version)
 		if err != nil {
 			return err
 		}
