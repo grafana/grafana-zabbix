@@ -17,7 +17,9 @@ func TestZabbixAPIUnauthenticatedQuery(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	zabbixApi, _ := MockZabbixAPI(`{"result":"secretauth"}`, 200)
-	err := zabbixApi.Authenticate(context.Background(), "user", "password")
+	auth, err := zabbixApi.Login(context.Background(), "user", "password")
+
+	zabbixApi.SetAuth(auth)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "secretauth", zabbixApi.auth)
