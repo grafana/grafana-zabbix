@@ -7,9 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var version = 65
+
+
 func TestZabbixAPIUnauthenticatedQuery(t *testing.T) {
 	zabbixApi, _ := MockZabbixAPI(`{"result":"sampleResult"}`, 200)
-	resp, err := zabbixApi.RequestUnauthenticated(context.Background(), "test.get", map[string]interface{}{})
+	resp, err := zabbixApi.RequestUnauthenticated(context.Background(), "test.get", map[string]interface{}{}, version)
 
 	assert.Equal(t, "sampleResult", resp.MustString())
 	assert.Nil(t, err)
@@ -17,7 +20,7 @@ func TestZabbixAPIUnauthenticatedQuery(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	zabbixApi, _ := MockZabbixAPI(`{"result":"secretauth"}`, 200)
-	err := zabbixApi.Authenticate(context.Background(), "user", "password")
+	err := zabbixApi.Authenticate(context.Background(), "user", "password", version)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "secretauth", zabbixApi.auth)
@@ -31,6 +34,7 @@ func TestZabbixAPI(t *testing.T) {
 		mockApiResponseCode int
 		expectedResult      string
 		expectedError       error
+		version 					  int
 	}{
 		{
 			name:                "Simple request",
@@ -54,7 +58,7 @@ func TestZabbixAPI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			zabbixApi, _ := MockZabbixAPI(tt.mockApiResponse, tt.mockApiResponseCode)
 			zabbixApi.auth = tt.auth
-			resp, err := zabbixApi.Request(context.Background(), "test.get", map[string]interface{}{})
+			resp, err := zabbixApi.Request(context.Background(), "test.get", map[string]interface{}{}, version)
 
 			if tt.expectedError != nil {
 				assert.Equal(t, err, tt.expectedError)
