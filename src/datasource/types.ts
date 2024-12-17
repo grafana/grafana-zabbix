@@ -72,6 +72,9 @@ export interface VariableQuery {
   itemTag?: string;
   item?: string;
   macro?: string;
+  userMacro?: String;
+  userMacroName?: string;
+  userMacroValue?: string;
 }
 
 export type LegacyVariableQuery = VariableQuery | string;
@@ -84,6 +87,10 @@ export enum VariableQueryTypes {
   ItemTag = 'itemTag',
   Item = 'item',
   ItemValues = 'itemValues',
+  UserMacro = 'userMacro',
+  UserMacroName = 'userMacroName',
+  UserMacroValue = 'userMacroValue',
+
 }
 
 export interface ProblemDTO {
