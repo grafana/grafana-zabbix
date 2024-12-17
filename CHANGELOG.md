@@ -1,5 +1,13 @@
 # Change Log
 
+## [4.6.0] - 2024-12-16
+
+- Feature: Added support for Zabbix 7. ( Fixes [#1914](https://github.com/grafana/grafana-zabbix/issues/1914) )
+- Feature: Host ID alias function `$__zbx_host_id` ([#1913](https://github.com/grafana/grafana-zabbix/pull/1913))
+- Bug Fix: Fixed a bug where mixed datasource with variable ref were not working #1909
+- Bug Fix: Fixed a bug where multiple SLA queries not handled correctly #1910
+- Chore: Updated grafana plugin SDK
+
 ## [4.5.7] - 2024-10-30
 
 - Chore: Bump uplot to 1.6.31
