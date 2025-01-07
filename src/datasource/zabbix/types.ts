@@ -1,3 +1,27 @@
+export type zabbixMethodName =
+  | 'alert.get'
+  | 'apiinfo.version'
+  | 'application.get'
+  | 'event.acknowledge'
+  | 'event.get'
+  | 'history.get'
+  | 'host.get'
+  | 'hostgroup.get'
+  | 'item.get'
+  | 'problem.get'
+  | 'proxy.get'
+  | 'script.execute'
+  | 'script.get'
+  | 'service.get'
+  | 'service.getsla'
+  | 'sla.get'
+  | 'sla.getsli'
+  | 'trend.get'
+  | 'trigger.get'
+  | 'user.get'
+  | 'usermacro.get'
+  | 'valuemap.get';
+
 export interface ZabbixConnector {
   getHistory: (items, timeFrom, timeTill) => Promise<any>;
   getTrend: (items, timeFrom, timeTill) => Promise<any>;

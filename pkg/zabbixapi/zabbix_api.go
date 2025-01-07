@@ -92,7 +92,7 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		"jsonrpc": "2.0",
 		"id":      2,
 		"method":  method,
-		"params":  params,
+		"params":  normalizeParams(ctx, method, params, version),
 	}
 
 	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
@@ -115,7 +115,7 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	if auth != "" {
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
-	} 
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
 

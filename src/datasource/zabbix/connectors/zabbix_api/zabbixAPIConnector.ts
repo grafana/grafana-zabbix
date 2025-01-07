@@ -9,6 +9,7 @@ import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
 import { parseItemTag } from '../../../utils';
+import { zabbixMethodName } from 'datasource/zabbix/types';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
@@ -47,7 +48,7 @@ export class ZabbixAPIConnector {
   // Core method wrappers //
   //////////////////////////
 
-  request(method: string, params?: any) {
+  request(method: zabbixMethodName, params?: any) {
     if (!this.version) {
       return this.initVersion().then(() => this.request(method, params));
     }
@@ -55,7 +56,7 @@ export class ZabbixAPIConnector {
     return this.backendAPIRequest(method, params);
   }
 
-  async backendAPIRequest(method: string, params: any = {}) {
+  async backendAPIRequest(method: zabbixMethodName, params: any = {}) {
     const requestOptions: BackendSrvRequest = {
       url: this.backendAPIUrl,
       method: 'POST',
@@ -142,14 +143,8 @@ export class ZabbixAPIConnector {
     const params = {
       output: ['name', 'groupid'],
       sortfield: 'name',
+      [getParamsKeyByVersion('with_hosts', this.version, 'hostgroup.get')]: true,
     };
-
-    // Zabbix v7.0 and later deprecated `real_hosts` parameter and replaced it with `with_hosts`
-    if (semver.gte(this.version, '7.0.0')) {
-      params['with_hosts'] = true;
-    } else {
-      params['real_hosts'] = true;
-    }
 
     return this.request('hostgroup.get', params);
   }
@@ -545,7 +540,7 @@ export class ZabbixAPIConnector {
       expandExpression: true,
       monitored: true,
       skipDependent: true,
-      selectGroups: ['name', 'groupid'],
+      [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: ['name', 'groupid'],
       selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'description'],
       selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       // selectLastEvent: 'extend',
@@ -580,7 +575,7 @@ export class ZabbixAPIConnector {
       filter: {
         value: 1,
       },
-      selectGroups: ['groupid', 'name'],
+      [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: ['groupid', 'name'],
       selectHosts: ['hostid', 'name', 'host', 'maintenance_status'],
       selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
       selectLastEvent: 'extend',
@@ -619,9 +614,9 @@ export class ZabbixAPIConnector {
       time_till: timeTo,
       objectids: objectids,
       selectHosts: 'extend',
+      [getParamsKeyByVersion('selectAcknowledges', this.version, 'event.get')]: 'extend',
       value: showEvents,
     };
-    params[getSelectAcknowledgesKey(this.version)] = 'extend';
 
     if (limit) {
       params.limit = limit;
@@ -646,12 +641,12 @@ export class ZabbixAPIConnector {
       sortfield: ['eventid'],
       sortorder: 'DESC',
       selectTags: 'extend',
+      [getParamsKeyByVersion('selectAcknowledges', this.version, 'event.get')]: 'extend',
       selectSuppressionData: ['maintenanceid', 'suppress_until'],
       groupids,
       hostids,
       applicationids,
     };
-    params[getSelectAcknowledgesKey(this.version)] = 'extend';
 
     if (limit) {
       params.limit = limit;
@@ -682,11 +677,10 @@ export class ZabbixAPIConnector {
       eventids: eventids,
       preservekeys: true,
       selectTags: 'extend',
+      [getParamsKeyByVersion('selectAcknowledges', this.version, 'event.get')]: 'extend',
       sortfield: 'clock',
       sortorder: 'DESC',
     };
-
-    params[getSelectAcknowledgesKey(this.version)] = 'extend';
 
     return this.request('event.get', params);
   }
@@ -708,8 +702,8 @@ export class ZabbixAPIConnector {
       preservekeys: true,
       sortfield: 'clock',
       sortorder: 'DESC',
+      [getParamsKeyByVersion('selectAcknowledges', this.version, 'event.get')]: 'extend',
     };
-    params[getSelectAcknowledgesKey(this.version)] = 'extend';
 
     return this.request('event.get', params).then((events) => {
       return _.filter(events, (event) => event.acknowledges.length);
@@ -753,7 +747,7 @@ export class ZabbixAPIConnector {
       monitored: true,
       skipDependent: true,
       selectLastEvent: 'extend',
-      selectGroups: 'extend',
+      [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: 'extend',
       selectHosts: ['hostid', 'host', 'name'],
     };
 
@@ -801,7 +795,7 @@ export class ZabbixAPIConnector {
       monitored: true,
       skipDependent: true,
       selectLastEvent: 'extend',
-      selectGroups: 'extend',
+      [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: 'extend',
       selectHosts: ['host', 'name'],
       selectItems: ['name', 'key_'],
     };
@@ -851,7 +845,7 @@ export class ZabbixAPIConnector {
       monitored: true,
       skipDependent: true,
       selectLastEvent: 'extend',
-      selectGroups: 'extend',
+      [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: 'extend',
       selectHosts: ['host', 'name'],
       selectItems: ['name', 'key_'],
     };
@@ -984,6 +978,23 @@ export class ZabbixAPIError {
   }
 }
 
-function getSelectAcknowledgesKey(version: string) {
-  return semver.gte(version, '7.0.0') ? 'selectAcknowledges' : 'select_acknowledges';
+function getParamsKeyByVersion(
+  key: 'selectAcknowledges' | 'with_hosts' | 'selectHostGroups',
+  version: string,
+  event_name?: zabbixMethodName
+): string {
+  if (!version) {
+    console.log(`Version not detected`, 'key', key, 'event_name', event_name);
+    version = '0.0.0';
+  }
+  switch (key) {
+    case 'selectHostGroups':
+      return semver.gte(version, '7.0.0') ? 'selectHostGroups' : 'selectGroups';
+    case 'selectAcknowledges':
+      return semver.gte(version, '7.0.0') ? 'selectAcknowledges' : 'select_acknowledges';
+    case 'with_hosts':
+      return semver.gte(version, '7.0.0') ? 'with_hosts' : 'real_hosts';
+    default:
+      return '';
+  }
 }
