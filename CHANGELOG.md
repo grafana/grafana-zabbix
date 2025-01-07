@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.6.1] - 2025-01-07
+
+- Bug fix: Fixed a compatibility issue with zabbix 7. ( Fixes [#1935](https://github.com/grafana/grafana-zabbix/issues/1935) )
+
 ## [4.6.0] - 2024-12-16
 
 - Feature: Added support for Zabbix 7. ( Fixes [#1914](https://github.com/grafana/grafana-zabbix/issues/1914) )
