@@ -828,18 +828,24 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       queryModel = utils.parseLegacyVariableQuery(query);
     }
 
-    for (const prop of ['group', 'host', 'application', 'itemTag', 'item']) {
+    for (const prop of ['group', 'host', 'application', 'itemTag', 'item', 'userMacroName', 'userMacroValue']) {
       queryModel[prop] = this.replaceTemplateVars(queryModel[prop], {});
     }
 
-    const { group, host, application, item } = queryModel;
+    const { group, host, application, item ,userMacroName, userMacroValue} = queryModel;
 
     switch (queryModel.queryType) {
       case VariableQueryTypes.Group:
         resultPromise = this.zabbix.getGroups(queryModel.group);
         break;
+      case VariableQueryTypes.UserMacroName: 
+        resultPromise = this.zabbix.getUserMacrosNames(queryModel.group,queryModel.userMacroName);
+        break;
+      case VariableQueryTypes.UserMacroValue:
+        resultPromise = this.zabbix.getUserMacrosValues(queryModel.group,queryModel.userMacroName, queryModel.userMacroValue);
+        break;
       case VariableQueryTypes.Host:
-        resultPromise = this.zabbix.getHosts(queryModel.group, queryModel.host);
+        resultPromise = this.zabbix.getHosts(queryModel.group, queryModel.host,userMacroName || null , userMacroValue || null);
         break;
       case VariableQueryTypes.Application:
         resultPromise = this.zabbix.getApps(queryModel.group, queryModel.host, queryModel.application);
@@ -856,6 +862,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
           queryModel.item
         );
         break;
+      
       case VariableQueryTypes.ItemValues:
         const range = options?.range;
         resultPromise = this.zabbix.getItemValues(group, host, application, item, { range });
