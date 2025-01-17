@@ -28,9 +28,13 @@ coverage/
 
 artifacts/
 work/
-e2e-results/
-**/cypress/videos
-**/cypress/report.json
+
+# playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
 
 # Tools logs
 npm-debug.log
