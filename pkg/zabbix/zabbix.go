@@ -95,7 +95,7 @@ func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixA
 	result, err := zabbix.api.Request(ctx, method, params, zabbix.version)
 	notAuthorized := isNotAuthorized(err)
 	isTokenAuth := zabbix.settings.AuthType == settings.AuthTypeToken
-	if err == zabbixapi.ErrNotAuthenticated || (notAuthorized && !isTokenAuth) {
+	if err == backend.DownstreamError(zabbixapi.ErrNotAuthenticated) || (notAuthorized && !isTokenAuth) {
 		if notAuthorized {
 			zabbix.logger.Debug("Authentication token expired, performing re-login")
 		}
@@ -121,7 +121,7 @@ func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 	if authType == settings.AuthTypeToken {
 		token, exists := zabbix.dsInfo.DecryptedSecureJSONData["apiToken"]
 		if !exists {
-			return errors.New("cannot find Zabbix API token")
+			return backend.DownstreamError(errors.New("cannot find Zabbix API token"))
 		}
 		err = zabbix.api.AuthenticateWithToken(ctx, token)
 		if err != nil {

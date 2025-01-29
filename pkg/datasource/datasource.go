@@ -16,7 +16,6 @@ import (
 )
 
 var (
-	ErrFunctionsNotSupported      = errors.New("zabbix queries with functions are not supported")
 	ErrNonMetricQueryNotSupported = errors.New("non-metrics queries are not supported")
 )
 
@@ -134,7 +133,7 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 				res.Frames = append(res.Frames, frames...)
 			}
 		} else {
-			res.Error = ErrNonMetricQueryNotSupported
+			res.Error = backend.DownstreamError(ErrNonMetricQueryNotSupported)
 		}
 		qdr.Responses[q.RefID] = res
 	}

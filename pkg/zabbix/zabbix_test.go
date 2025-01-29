@@ -2,8 +2,9 @@ package zabbix
 
 import (
 	"context"
-	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"testing"
+
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 
 	"github.com/stretchr/testify/assert"
 

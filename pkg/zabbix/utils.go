@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dlclark/regexp2"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 func (item *Item) ExpandItemName() string {
@@ -79,7 +80,7 @@ func parseFilter(filter string) (*regexp2.Regexp, error) {
 		if flagRE.MatchString(matches[2]) {
 			pattern += "(?" + matches[2] + ")"
 		} else {
-			return nil, fmt.Errorf("error parsing regexp: unsupported flags `%s` (expected [%s])", matches[2], vaildREModifiers)
+			return nil, backend.DownstreamError(fmt.Errorf("error parsing regexp: unsupported flags `%s` (expected [%s])", matches[2], vaildREModifiers))
 		}
 	}
 	pattern += matches[1]

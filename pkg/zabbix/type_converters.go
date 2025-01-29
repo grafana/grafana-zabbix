@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/bitly/go-simplejson"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 func convertTo(value *simplejson.Json, result interface{}) error {
@@ -14,6 +15,7 @@ func convertTo(value *simplejson.Json, result interface{}) error {
 
 	err = json.Unmarshal(valueJSON, result)
 	if err != nil {
+		backend.Logger.Debug("Error unmarshalling JSON", "error", err, "result", result)
 		return err
 	}
 

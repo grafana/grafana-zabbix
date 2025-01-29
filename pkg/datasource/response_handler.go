@@ -10,6 +10,7 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -154,19 +155,19 @@ func getTrendPointValue(point zabbix.TrendPoint, valueType string) (float64, err
 
 		value, err := strconv.ParseFloat(valueStr, 64)
 		if err != nil {
-			return 0, fmt.Errorf("error parsing trend value: %s", err)
+			return 0, backend.DownstreamError(fmt.Errorf("error parsing trend value: %s", err))
 		}
 		return value, nil
 	} else if valueType == "sum" {
 		avgStr := point.ValueAvg
 		avg, err := strconv.ParseFloat(avgStr, 64)
 		if err != nil {
-			return 0, fmt.Errorf("error parsing trend value: %s", err)
+			return 0, backend.DownstreamError(fmt.Errorf("error parsing trend value: %s", err))
 		}
 		countStr := point.Num
 		count, err := strconv.ParseFloat(countStr, 64)
 		if err != nil {
-			return 0, fmt.Errorf("error parsing trend value: %s", err)
+			return 0, backend.DownstreamError(fmt.Errorf("error parsing trend value: %s", err))
 		}
 		if count > 0 {
 			return avg * count, nil
@@ -175,7 +176,7 @@ func getTrendPointValue(point zabbix.TrendPoint, valueType string) (float64, err
 		}
 	}
 
-	return 0, fmt.Errorf("failed to get trend value, unknown value type: %s", valueType)
+	return 0, backend.DownstreamError(fmt.Errorf("failed to get trend value, unknown value type: %s", valueType))
 }
 
 var fixedUpdateIntervalPattern = regexp.MustCompile(`^(\d+)([smhdw]?)$`)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +51,7 @@ func TestZabbixAPI(t *testing.T) {
 			mockApiResponse:     `{"result":"sampleResult"}`,
 			mockApiResponseCode: 200,
 			expectedResult:      "",
-			expectedError:       ErrNotAuthenticated,
+			expectedError:       backend.DownstreamError(ErrNotAuthenticated),
 		},
 	}
 
