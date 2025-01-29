@@ -1,5 +1,9 @@
 # Change Log
 
+## [5.0.0] - 2025-01-10
+
+- Plugin now requires Grafana 10.4.8 or newer
+
 ## [4.6.1] - 2025-01-07
 
 - Bug fix: Fixed a compatibility issue with zabbix 7. ( Fixes [#1935](https://github.com/grafana/grafana-zabbix/issues/1935) )
