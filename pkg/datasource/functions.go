@@ -8,6 +8,7 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 const RANGE_VARIABLE_VALUE = "range_series"
@@ -103,26 +104,26 @@ func applyFunctions(series []*timeseries.TimeSeriesData, functions []QueryFuncti
 			for _, s := range series {
 				result, err := applyFunc(s.TS, f.Params...)
 				if err != nil {
-					return nil, err
+					return nil, backend.DownstreamError(err)
 				}
 				s.TS = result
 			}
 		} else if applyAggFunc, ok := aggFuncMap[f.Def.Name]; ok {
 			result, err := applyAggFunc(series, f.Params...)
 			if err != nil {
-				return nil, err
+				return nil, backend.DownstreamError(err)
 			}
 			series = result
 		} else if applyFilterFunc, ok := filterFuncMap[f.Def.Name]; ok {
 			result, err := applyFilterFunc(series, f.Params...)
 			if err != nil {
-				return nil, err
+				return nil, backend.DownstreamError(err)
 			}
 			series = result
 		} else if _, ok := skippedFuncMap[f.Def.Name]; ok {
 			continue
 		} else {
-			err := errFunctionNotSupported(f.Def.Name)
+			err := backend.DownstreamError(errFunctionNotSupported(f.Def.Name))
 			return series, err
 		}
 	}
@@ -135,7 +136,7 @@ func applyFunctionsPre(query *QueryModel, items []*zabbix.Item) error {
 		if applyFunc, ok := timeFuncMap[f.Def.Name]; ok {
 			err := applyFunc(query, items, f.Params...)
 			if err != nil {
-				return err
+				return backend.DownstreamError(err)
 			}
 		}
 	}

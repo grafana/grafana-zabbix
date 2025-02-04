@@ -15,6 +15,7 @@ import (
 	"github.com/bitly/go-simplejson"
 	"golang.org/x/net/context/ctxhttp"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
@@ -76,7 +77,7 @@ func (api *ZabbixAPI) SetAuth(auth string) {
 // Request performs API request
 func (api *ZabbixAPI) Request(ctx context.Context, method string, params ZabbixAPIParams, version int) (*simplejson.Json, error) {
 	if api.auth == "" {
-		return nil, ErrNotAuthenticated
+		return nil, backend.DownstreamError(ErrNotAuthenticated)
 	}
 
 	return api.request(ctx, method, params, api.auth, version)
@@ -177,7 +178,7 @@ func (api *ZabbixAPI) Authenticate(ctx context.Context, username string, passwor
 // AuthenticateWithToken performs authentication with API token.
 func (api *ZabbixAPI) AuthenticateWithToken(ctx context.Context, token string) error {
 	if token == "" {
-		return errors.New("API token is empty")
+		return backend.DownstreamError(errors.New("API token is empty"))
 	}
 	api.SetAuth(token)
 	return nil
@@ -198,8 +199,8 @@ func handleAPIResult(response []byte) (*simplejson.Json, error) {
 		return nil, err
 	}
 	if errJSON, isError := jsonResp.CheckGet("error"); isError {
-		errMessage := fmt.Sprintf("%s %s", errJSON.Get("message").MustString(), errJSON.Get("data").MustString())
-		return nil, errors.New(errMessage)
+		errMessage := fmt.Errorf("%s %s", errJSON.Get("message").MustString(), errJSON.Get("data").MustString())
+		return nil, backend.DownstreamError(errMessage)
 	}
 	jsonResult := jsonResp.Get("result")
 	return jsonResult, nil
@@ -211,12 +212,20 @@ func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Req
 
 	res, err := ctxhttp.Do(ctx, httpClient, req)
 	if err != nil {
+		if backend.IsDownstreamHTTPError(err) {
+			return nil, backend.DownstreamError(err)
+		}
 		return nil, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("request failed, status: %v", res.Status)
+		err = fmt.Errorf("request failed, status: %v", res.Status)
+		if backend.ErrorSourceFromHTTPStatus(res.StatusCode) == backend.ErrorSourceDownstream {
+			return nil, backend.DownstreamError(err)
+		}
+
+		return nil, err
 	}
 
 	body, err := io.ReadAll(res.Body)
