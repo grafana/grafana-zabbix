@@ -530,7 +530,7 @@ export class ZabbixAPIConnector {
     return this.request('problem.get', params).then(utils.mustArray);
   }
 
-  getTriggersByIds(triggerids: string[]) {
+  async getTriggersByIds(triggerids: string[]) {
     const params = {
       output: 'extend',
       triggerids: triggerids,
@@ -555,10 +555,17 @@ export class ZabbixAPIConnector {
       params.selectHosts.push('proxyid');
     }
 
-    return this.request('trigger.get', params).then(utils.mustArray);
+    const triggers = await this.request('trigger.get', params);
+    // When version is 7.0.0 or higher, groups are returned as hostgroups
+    if (semver.gte(this.version, '7.0.0')) {
+      Object.keys(triggers).forEach((trigger) => {
+        triggers[trigger].groups = triggers[trigger].hostgroups;
+      });
+    }
+    return triggers;
   }
 
-  getTriggers(groupids, hostids, applicationids, options) {
+  async getTriggers(groupids, hostids, applicationids, options) {
     const { showTriggers, maintenance, timeFrom, timeTo } = options;
 
     const params: any = {
@@ -604,7 +611,14 @@ export class ZabbixAPIConnector {
       params.lastChangeTill = timeTo;
     }
 
-    return this.request('trigger.get', params);
+    const triggers = await this.request('trigger.get', params);
+    // When version is 7.0.0 or higher, groups are returned as hostgroups
+    if (semver.gte(this.version, '7.0.0')) {
+      triggers.forEach((trigger) => {
+        trigger.groups = trigger.hostgroups;
+      });
+    }
+    return triggers;
   }
 
   getEvents(objectids, timeFrom, timeTo, showEvents, limit) {
@@ -778,7 +792,14 @@ export class ZabbixAPIConnector {
       if (count) {
         triggers = triggers.length;
       }
+      // When version is 7.0.0 or higher, groups are returned as hostgroups
+      if (semver.gte(this.version, '7.0.0')) {
+        triggers.forEach((trigger) => {
+          trigger.groups = trigger.hostgroups;
+        });
+      }
     }
+
     return triggers;
   }
 
@@ -826,6 +847,12 @@ export class ZabbixAPIConnector {
         if (count) {
           triggers = triggers.length;
         }
+        // When version is 7.0.0 or higher, groups are returned as hostgroups
+        if (semver.gte(this.version, '7.0.0')) {
+          triggers.forEach((trigger) => {
+            trigger.groups = trigger.hostgroups;
+          });
+        }
       }
       return triggers;
     });
@@ -868,6 +895,12 @@ export class ZabbixAPIConnector {
         triggers = filterTriggersByAcknowledge(triggers, acknowledged);
         if (count) {
           triggers = triggers.length;
+        }
+        // When version is 7.0.0 or higher, groups are returned as hostgroups
+        if (semver.gte(this.version, '7.0.0')) {
+          triggers.forEach((trigger) => {
+            trigger.groups = trigger.hostgroups;
+          });
         }
       }
       return triggers;
