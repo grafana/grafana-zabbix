@@ -63,7 +63,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     // Filter triggers by severity
     problemsList = problemsList.filter((problem) => {
       const severity = problem.severity !== undefined ? Number(problem.severity) : Number(problem.priority);
-      return triggerSeverity[severity].show;
+      return triggerSeverity[severity]?.show;
     });
 
     return problemsList;
@@ -100,8 +100,9 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     if (trigger.comments && options.allowDangerousHTML) {
       trigger.comments = trigger.comments.replace('\n', '<br>');
     }
-
-    trigger.lastchangeUnix = Number(trigger.lastchange);
+    if (trigger && typeof trigger === 'object') {
+      trigger.lastchangeUnix = Number(trigger.lastchange);
+    }
     return trigger;
   };
 
