@@ -1,12 +1,5 @@
 # Change Log
 
-## 5.0.2
-
-### Patch Changes
-
-🐛 Fix problems panel not showing host groups
-🐛 Fix problems panel broken when selecting triggers
-
 ## [5.0.1] - 2025-02-24
 
 - Bug fix: Fixed host groups not showing in problems panel
