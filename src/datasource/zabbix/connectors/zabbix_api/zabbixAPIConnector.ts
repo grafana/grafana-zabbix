@@ -2,6 +2,7 @@ import _ from 'lodash';
 import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
+import config from 'grafana/app/core/config';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
 import { ShowProblemTypes } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
@@ -41,7 +42,10 @@ export class ZabbixAPIConnector {
     this.getTrend = this.getTrend_ZBXNEXT1193;
     //getTrend = getTrend_30;
 
-    this.initVersion();
+    // Prevent pinging FORBIDDEN on public dashboard load
+    if (!config.publicDashboardAccessToken) {
+      this.initVersion();
+    }
   }
 
   //////////////////////////

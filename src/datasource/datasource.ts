@@ -209,11 +209,15 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       body.to = range.to.valueOf().toString();
     }
 
+    const url = config.publicDashboardAccessToken
+      ? `/api/public/dashboards/${config.publicDashboardAccessToken!}/panels/${request.panelId}/query`
+      : '/api/ds/query';
+
     let rsp: any;
     try {
       rsp = await getBackendSrv()
         .fetch({
-          url: '/api/ds/query',
+          url: url,
           method: 'POST',
           data: body,
           requestId,
