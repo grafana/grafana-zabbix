@@ -1,5 +1,13 @@
 # Change Log
 
+## [5.0.1] - 2025-02-24
+
+- Bug fix: Fixed host groups not showing in problems panel
+- Bug fix: Fixed problems panel broken when selecting triggers
+- Chore: Update github.com/grafana/grafana-plugin-sdk-go to v0.266.0
+- Chore: Update frontend dependencies
+- Chore: Implement error source
+
 ## [5.0.0] - 2025-01-10
 
 - Plugin now requires Grafana 10.4.8 or newer
