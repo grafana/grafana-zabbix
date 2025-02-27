@@ -117,23 +117,23 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		query, err := ReadQuery(q)
 		ds.logger.Debug("DS query", "query", q)
 		if err != nil {
-			res.Error = err
+			res = backend.ErrorResponseWithErrorSource(err)
 		} else if query.QueryType == MODE_METRICS {
 			frames, err := zabbixDS.queryNumericItems(ctx, &query)
 			if err != nil {
-				res.Error = err
+				res = backend.ErrorResponseWithErrorSource(err)
 			} else {
 				res.Frames = append(res.Frames, frames...)
 			}
 		} else if query.QueryType == MODE_ITEMID {
 			frames, err := zabbixDS.queryItemIdData(ctx, &query)
 			if err != nil {
-				res.Error = err
+				res = backend.ErrorResponseWithErrorSource(err)
 			} else {
 				res.Frames = append(res.Frames, frames...)
 			}
 		} else {
-			res.Error = backend.DownstreamError(ErrNonMetricQueryNotSupported)
+			res = backend.ErrorResponseWithErrorSource(backend.DownstreamError(ErrNonMetricQueryNotSupported))
 		}
 		qdr.Responses[q.RefID] = res
 	}

@@ -1,5 +1,10 @@
 # Change Log
 
+## [5.0.2] - 2025-02-27
+
+- Chore: Fix error source for parsing of invalid json response
+- Chore: Update github.com/grafana/grafana-plugin-sdk-go to v0.268.0
+
 ## [5.0.1] - 2025-02-24
 
 - Bug fix: Fixed host groups not showing in problems panel

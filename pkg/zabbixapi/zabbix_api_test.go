@@ -71,3 +71,54 @@ func TestZabbixAPI(t *testing.T) {
 		})
 	}
 }
+
+func TestHandleAPIResult(t *testing.T) {
+	tests := []struct {
+		name          string
+		response      string
+		expectedData  interface{}
+		expectedError string
+		isDownstream  bool
+	}{
+		{
+			name:         "Valid JSON with result",
+			response:     `{"result": {"data": "test"}}`,
+			expectedData: map[string]interface{}{"data": "test"},
+		},
+		{
+			name:          "Invalid JSON",
+			response:     `{"result": invalid}`,
+			expectedError: "invalid character 'i' looking for beginning of value",
+			isDownstream:  true,
+		},
+		{
+			name:          "API error response",
+			response:     `{"error": {"message": "Authentication failed", "data": "Session terminated"}}`,
+			expectedError: "Authentication failed Session terminated",
+			isDownstream:  true,
+		},
+		{
+			name:         "Empty result",
+			response:     `{"result": []}`,
+			expectedData: []interface{}{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := handleAPIResult([]byte(tt.response))
+
+			if tt.expectedError != "" {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError, err.Error())
+				if tt.isDownstream {
+					assert.True(t, backend.IsDownstreamError(err), "error should be a downstream error")
+				}
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedData, result.Interface())
+		})
+	}
+}

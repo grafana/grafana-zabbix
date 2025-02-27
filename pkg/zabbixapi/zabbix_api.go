@@ -196,7 +196,8 @@ func isDeprecatedUserParamError(err error) bool {
 func handleAPIResult(response []byte) (*simplejson.Json, error) {
 	jsonResp, err := simplejson.NewJson([]byte(response))
 	if err != nil {
-		return nil, err
+		// Response is not valid JSON
+		return nil, backend.DownstreamError(err)
 	}
 	if errJSON, isError := jsonResp.CheckGet("error"); isError {
 		errMessage := fmt.Errorf("%s %s", errJSON.Get("message").MustString(), errJSON.Get("data").MustString())
