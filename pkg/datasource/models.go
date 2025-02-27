@@ -118,13 +118,13 @@ func ReadQuery(query backend.DataQuery) (QueryModel, error) {
 		Interval:      query.Interval,
 	}
 	if err := json.Unmarshal(query.JSON, &model); err != nil {
-		return model, fmt.Errorf("could not read query: %w", err)
+		return model, backend.DownstreamError(fmt.Errorf("could not read query: %w", err))
 	}
 
 	if model.QueryType == "" {
 		queryJSON, err := simplejson.NewJson(query.JSON)
 		if err != nil {
-			return model, fmt.Errorf("could not read query JSON: %w", err)
+			return model, backend.DownstreamError(fmt.Errorf("could not read query JSON: %w", err))
 		}
 
 		queryType, err := queryJSON.Get("queryType").Int64()

@@ -125,7 +125,7 @@ func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 		}
 		err = zabbix.api.AuthenticateWithToken(ctx, token)
 		if err != nil {
-			zabbix.logger.Error("Zabbix authentication error", "error", err)
+			zabbix.logger.Error("Zabbix authentication token error", "error", err)
 			return err
 		}
 		zabbix.logger.Debug("Using API token for authentication")
