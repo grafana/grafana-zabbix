@@ -5,7 +5,7 @@ go 1.23.5
 require (
 	github.com/bitly/go-simplejson v0.5.1
 	github.com/dlclark/regexp2 v1.10.0
-	github.com/grafana/grafana-plugin-sdk-go v0.269.0
+	github.com/grafana/grafana-plugin-sdk-go v0.269.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
@@ -23,7 +23,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20230914224007-a15a36ccbc2e // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/elazarl/goproxy v1.7.1 // indirect
+	github.com/elazarl/goproxy v1.7.2 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/getkin/kin-openapi v0.129.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
