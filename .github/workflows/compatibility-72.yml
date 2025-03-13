@@ -23,10 +23,10 @@ jobs:
 
       - name: Run integration tests
         env:
-          INTEGRATION_TEST: "true"
-          ZABBIX_URL: "http://localhost:8188/api_jsonrpc.php"
-          ZABBIX_USER: "Admin"
-          ZABBIX_PASSWORD: "zabbix"
+          INTEGRATION_TEST: 'true'
+          ZABBIX_URL: 'http://localhost:8188/api_jsonrpc.php'
+          ZABBIX_USER: 'Admin'
+          ZABBIX_PASSWORD: 'zabbix'
         run: go test -v ./pkg/zabbixapi/...
 
       - name: Cleanup
