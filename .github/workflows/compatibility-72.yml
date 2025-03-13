@@ -31,4 +31,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: docker compose -f .github/docker-compose.yml down -v
+        run: docker compose -f devenv/zabbix72/docker-compose.yml down -v
