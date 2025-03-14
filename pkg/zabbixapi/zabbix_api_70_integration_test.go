@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,11 +20,12 @@ import (
 // ZABBIX_URL - URL of the Zabbix server (e.g., http://localhost/zabbix/api_jsonrpc.php)
 // ZABBIX_USER - Username for authentication
 // ZABBIX_PASSWORD - Password for authentication
-// To run locally, start devenv/zabbix72 and run INTEGRATION_TEST72=true ZABBIX_URL="http://localhost:8188/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" go test -v ./pkg/zabbixapi/...
+// ZABBIX_VERSION - Zabbix API version (e.g., 65 for 6.5)
+// To run locally, start devenv/zabbix70 and run INTEGRATION_TEST70=true ZABBIX_URL="https://localhost/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" go test -v ./pkg/zabbixapi/...
 
-func TestIntegrationZabbixAPI72(t *testing.T) {
+func TestIntegrationZabbixAPI70(t *testing.T) {
 	// Skip if not running integration tests
-	if os.Getenv("INTEGRATION_TEST72") != "true" {
+	if os.Getenv("INTEGRATION_TEST70") != "true" {
 		t.Skip("Skipping integration test")
 	}
 
@@ -30,18 +33,30 @@ func TestIntegrationZabbixAPI72(t *testing.T) {
 	zabbixURL := os.Getenv("ZABBIX_URL")
 	zabbixUser := os.Getenv("ZABBIX_USER")
 	zabbixPassword := os.Getenv("ZABBIX_PASSWORD")
-	zabbixVersion := 72
+	zabbixVersion := 70
 
 	// Validate required environment variables
 	require.NotEmpty(t, zabbixURL, "ZABBIX_URL environment variable is required")
 	require.NotEmpty(t, zabbixUser, "ZABBIX_USER environment variable is required")
 	require.NotEmpty(t, zabbixPassword, "ZABBIX_PASSWORD environment variable is required")
 
-	// Create new Zabbix API instance
 	dsSettings := backend.DataSourceInstanceSettings{
-		URL: zabbixURL,
+		URL:              zabbixURL,
+		BasicAuthEnabled: true,
+		BasicAuthUser:    "admin",
+		DecryptedSecureJSONData: map[string]string{
+			"basicAuthPassword": "secret",
+		},
+		JSONData: json.RawMessage(`{"tlsSkipVerify": true}`),
 	}
-	api, err := New(dsSettings, nil)
+
+	// Create HTTP client with TLS skip verify and basic auth
+	httpClient, err := httpclient.New(context.Background(), &dsSettings, 10*time.Second)
+	require.NoError(t, err)
+	require.NotNil(t, httpClient)
+
+	// Create new Zabbix API instance with basic auth client
+	api, err := New(dsSettings, httpClient)
 	require.NoError(t, err)
 	require.NotNil(t, api)
 
@@ -92,8 +107,8 @@ func TestIntegrationZabbixAPI72(t *testing.T) {
 		assert.True(t, backend.IsDownstreamError(err))
 	})
 
-	// Test auth parameter is not in request body for v7.2+
-	t.Run("Auth Parameter Not In Request Body", func(t *testing.T) {
+	// Test auth parameter is in request body for v7.0
+	t.Run("Auth Parameter In Request Body", func(t *testing.T) {
 		// First authenticate
 		err := api.Authenticate(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
 		require.NoError(t, err)
@@ -107,8 +122,8 @@ func TestIntegrationZabbixAPI72(t *testing.T) {
 			err = json.Unmarshal(body, &requestBody)
 			require.NoError(t, err)
 
-			// Verify auth header is present
-			assert.Equal(t, "Bearer "+api.GetAuth(), req.Header.Get("Authorization"), "Authorization header should be present with Bearer token")
+			// Verify auth header is not present
+			assert.Empty(t, req.Header.Get("Authorization"), "Authorization header should not be present for v7.0")
 
 			// Return a mock response
 			return &http.Response{
@@ -126,36 +141,9 @@ func TestIntegrationZabbixAPI72(t *testing.T) {
 		_, err = apiWithTestClient.Request(context.Background(), "test.get", map[string]interface{}{}, zabbixVersion)
 		require.NoError(t, err)
 
-		// Verify auth parameter is not in the request body
-		_, hasAuth := requestBody["auth"]
-		assert.False(t, hasAuth, "Auth parameter should not be present in request body for v7.2+")
-	})
-
-	// Test basic auth is not supported in v7.2+
-	t.Run("Basic Auth Not Supported", func(t *testing.T) {
-		// Create settings with basic auth enabled
-		dsSettingsWithBasicAuth := backend.DataSourceInstanceSettings{
-			URL:              zabbixURL,
-			BasicAuthEnabled: true,
-			BasicAuthUser:    zabbixUser,
-		}
-
-		// Create a new API instance with basic auth enabled
-		apiWithBasicAuth, err := New(dsSettingsWithBasicAuth, nil)
-		require.NoError(t, err)
-		require.NotNil(t, apiWithBasicAuth)
-
-		// Get host groups
-		params := map[string]interface{}{
-			"output": "extend",
-		}
-
-		apiWithBasicAuth.SetAuth("something")
-
-		// Try to authenticate
-		_, err = apiWithBasicAuth.Request(context.Background(), "hostgroup.get", params, zabbixVersion)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Basic Auth is not supported for Zabbix v7.2 and later")
-		assert.True(t, backend.IsDownstreamError(err))
+		// Verify auth parameter is in the request body
+		auth, hasAuth := requestBody["auth"]
+		assert.True(t, hasAuth, "Auth parameter should be present in request body for v7.0")
+		assert.Equal(t, api.GetAuth(), auth, "Auth parameter should match the set auth token")
 	})
 }
