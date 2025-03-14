@@ -1,17 +1,16 @@
-version: '3'
-
 services:
   # Grafana
-  # grafana:
-  #   image: grafana/grafana:10.1.2
-  #   ports:
-  #     - '3001:3000'
-  #   volumes:
-  #     - ../..:/grafana-zabbix
-  #     - ../dashboards:/devenv/dashboards
-  #     - ../grafana.ini:/etc/grafana/grafana.ini:ro
-  #     - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
-  #     - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
+  grafana:
+    image: grafana/grafana:main
+    ports:
+      - '3001:3000'
+    volumes:
+      - ../..:/grafana-zabbix
+      - ../dashboards:/devenv/dashboards
+      - ../grafana.ini:/etc/grafana/grafana.ini:ro
+      - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
+      - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
+
   # Zabbix
   zabbix-server:
     image: zabbix/zabbix-server-pgsql:alpine-7.2-latest
