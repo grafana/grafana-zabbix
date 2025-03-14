@@ -210,7 +210,7 @@ export class Zabbix implements ZabbixConnector {
    *      }
    *    }
    * ```
-   n*/
+   */
   testDataSource() {
     let zabbixVersion;
     let dbConnectorStatus;
