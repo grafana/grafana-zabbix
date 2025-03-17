@@ -1,15 +1,15 @@
 module github.com/alexanderzobnin/grafana-zabbix
 
-go 1.23.5
+go 1.24
 
 require (
 	github.com/bitly/go-simplejson v0.5.1
 	github.com/dlclark/regexp2 v1.10.0
-	github.com/grafana/grafana-plugin-sdk-go v0.270.0
+	github.com/grafana/grafana-plugin-sdk-go v0.274.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/net v0.35.0
+	golang.org/x/net v0.37.0
 	gotest.tools v2.2.0+incompatible
 )
 
@@ -91,9 +91,9 @@ require (
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250115164207-1a7da9e5054f // indirect
