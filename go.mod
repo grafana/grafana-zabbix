@@ -2,14 +2,16 @@ module github.com/alexanderzobnin/grafana-zabbix
 
 go 1.23.5
 
+toolchain go1.24.1
+
 require (
 	github.com/bitly/go-simplejson v0.5.1
 	github.com/dlclark/regexp2 v1.10.0
-	github.com/grafana/grafana-plugin-sdk-go v0.270.0
+	github.com/grafana/grafana-plugin-sdk-go v0.274.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/net v0.35.0
+	golang.org/x/net v0.36.0
 	gotest.tools v2.2.0+incompatible
 )
 
