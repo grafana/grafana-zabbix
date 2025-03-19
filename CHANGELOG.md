@@ -1,5 +1,14 @@
 # Change Log
 
+## 5.0.3
+
+### Patch Changes
+
+🐛 Security: Update golang.org/x/net from v0.35.0 to v0.37.0
+⚙️ Chore: Build plugin with go 1.24.1
+🐛 Fix: Basic authentication in zabbix <7.2
+⚙️ Chore: Bump grafana-plugin-sdk-go from 0.270.0 to 0.274.0
+
 ## [5.0.2] - 2025-02-27
 
 - Chore: Fix error source for parsing of invalid json response
