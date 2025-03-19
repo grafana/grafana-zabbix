@@ -26,6 +26,7 @@ var (
 // ZabbixAPI is a simple client responsible for making request to Zabbix API
 type ZabbixAPI struct {
 	url        *url.URL
+	dsSettings backend.DataSourceInstanceSettings
 	httpClient *http.Client
 	logger     log.Logger
 	auth       string
@@ -34,15 +35,16 @@ type ZabbixAPI struct {
 type ZabbixAPIParams = map[string]interface{}
 
 // New returns new ZabbixAPI instance initialized with given URL or error.
-func New(apiURL string, client *http.Client) (*ZabbixAPI, error) {
+func New(dsSettings backend.DataSourceInstanceSettings, client *http.Client) (*ZabbixAPI, error) {
 	apiLogger := log.New()
-	zabbixURL, err := url.Parse(apiURL)
+	zabbixURL, err := url.Parse(dsSettings.URL)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ZabbixAPI{
 		url:        zabbixURL,
+		dsSettings: dsSettings,
 		logger:     apiLogger,
 		httpClient: client,
 	}, nil
@@ -98,7 +100,7 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
 	// `auth` parameter throws an error in new versions so we need to add it only for older versions
-	if auth != "" && version < 70 {
+	if auth != "" && version < 72 {
 		apiRequest["auth"] = auth
 	}
 
@@ -114,7 +116,10 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
 
-	if auth != "" {
+	if auth != "" && version >= 72 {
+		if api.dsSettings.BasicAuthEnabled {
+			return nil, backend.DownstreamError(errors.New("Basic Auth is not supported for Zabbix v7.2 and later"))
+		}
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
 	}
 	req.Header.Set("Content-Type", "application/json")

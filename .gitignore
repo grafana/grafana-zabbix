@@ -51,3 +51,7 @@ alexanderzobnin-zabbix-app.zip
 public/css/*.min.css
 
 provisioning/
+
+# SSL certificates
+devenv/nginx/nginx.crt
+devenv/nginx/nginx.key

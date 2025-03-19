@@ -1,0 +1,35 @@
+name: zabbix_70
+run-name: Compatibility with Zabbix 7.0 test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  compatibility-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5.3.0
+
+      - name: Start Zabbix environment
+        run: |
+          docker compose -f devenv/zabbix70/docker-compose.yml up -d
+          # Wait for Zabbix to be ready
+          sleep 30
+
+      - name: Run integration tests
+        env:
+          INTEGRATION_TEST70: 'true'
+          ZABBIX_URL: 'https://localhost/api_jsonrpc.php'
+          ZABBIX_USER: 'Admin'
+          ZABBIX_PASSWORD: 'zabbix'
+        run: go test -v ./pkg/zabbixapi/...
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f devenv/zabbix70/docker-compose.yml down -v
