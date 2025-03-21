@@ -20,6 +20,7 @@ import {
   getTemplateSrv,
   toDataQueryResponse,
   getDataSourceSrv,
+  HealthCheckError,
 } from '@grafana/runtime';
 import {
   DataFrame,
@@ -775,30 +776,29 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       };
     } catch (error: any) {
       if (error instanceof ZabbixAPIError) {
-        return {
+        return Promise.reject({
           status: 'error',
-          title: error.message,
           message: error.message,
-        };
+          error: new HealthCheckError(error.message, {}),
+        });
       } else if (error.data && error.data.message) {
-        return {
+        return Promise.reject({
           status: 'error',
-          title: 'Zabbix Client Error',
           message: error.data.message,
-        };
+          error: new HealthCheckError(error.data.message, {}),
+        });
       } else if (typeof error === 'string') {
-        return {
+        return Promise.reject({
           status: 'error',
-          title: 'Unknown Error',
           message: error,
-        };
+          error: new HealthCheckError(error, {}),
+        });
       } else {
-        console.log(error);
-        return {
+        return Promise.reject({
           status: 'error',
-          title: 'Connection failed',
           message: 'Could not connect to given url',
-        };
+          error: new HealthCheckError('Could not connect to given url', {}),
+        });
       }
     }
   }
