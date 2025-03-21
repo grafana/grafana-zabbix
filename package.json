@@ -105,6 +105,7 @@
   },
   "resolutions": {
     "uplot": "1.6.31",
+    "prismjs": "1.30.0",
     "jackspeak": "2.1.1"
   },
   "packageManager": "yarn@1.22.19"
