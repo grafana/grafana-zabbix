@@ -2,6 +2,12 @@ module github.com/alexanderzobnin/grafana-zabbix
 
 go 1.24
 
+// Go 1.24 enabled the post-quantum key exchange mechanism
+// X25519MLKEM768 by default. It can cause issues with some TLS servers
+// that do not handle large records correctly.
+// It can be disabled using the following command:
+godebug tlsmlkem=0
+
 require (
 	github.com/bitly/go-simplejson v0.5.1
 	github.com/dlclark/regexp2 v1.10.0

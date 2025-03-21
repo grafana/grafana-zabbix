@@ -2,8 +2,6 @@
 
 ## 5.0.3
 
-### Patch Changes
-
 🐛 Security: Update golang.org/x/net from v0.35.0 to v0.37.0
 ⚙️ Chore: Build plugin with go 1.24.1
 🐛 Fix: Basic authentication in zabbix <7.2
