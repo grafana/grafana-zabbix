@@ -1,5 +1,9 @@
 # Change Log
 
+## 5.0.4
+
+🐛 Fix: TLS handshake timeout issues by disabling post-quantum key exchange mechanism in go
+
 ## 5.0.3
 
 🐛 Security: Update golang.org/x/net from v0.35.0 to v0.37.0
