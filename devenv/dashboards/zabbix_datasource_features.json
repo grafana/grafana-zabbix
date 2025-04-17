@@ -37,6 +37,7 @@
         "uid": "PCAF1C06DCF802728"
       },
       "descriptionAtNewLine": false,
+      "showDatasourceName": false,
       "descriptionField": true,
       "fontSize": "100%",
       "gridPos": {
@@ -64,6 +65,7 @@
         "allowDangerousHTML": false,
         "customLastChangeFormat": false,
         "descriptionAtNewLine": false,
+        "showDatasourceName": false,
         "descriptionField": true,
         "fontSize": "100%",
         "highlightBackground": false,

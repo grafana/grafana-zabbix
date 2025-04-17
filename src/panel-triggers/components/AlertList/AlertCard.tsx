@@ -36,7 +36,6 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
 
   render() {
     const { problem, panelOptions } = this.props;
-    const showDatasourceName = panelOptions.targets && panelOptions.targets.length > 1;
     const cardClass = cx('alert-rule-item', 'zbx-trigger-card', {
       'zbx-trigger-highlighted': panelOptions.highlightBackground,
     });
@@ -153,7 +152,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
           </div>
         </div>
 
-        {showDatasourceName && (
+        {panelOptions.showDatasourceName && (
           <div className="alert-rule-item__time zabbix-trigger-source">
             <span>
               <i className="fa fa-database"></i>
