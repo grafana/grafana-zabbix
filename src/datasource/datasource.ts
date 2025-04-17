@@ -852,7 +852,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
           queryModel.group,
           queryModel.host,
           queryModel.application,
-          null,
+          queryModel.itemTag,
           queryModel.item
         );
         break;
