@@ -1,5 +1,6 @@
 name: Plugins - CD
 run-name: Deploy ${{ inputs.branch }} to ${{ inputs.environment }} by @${{ github.actor }}
+permissions: {}
 
 on:
   workflow_dispatch:
