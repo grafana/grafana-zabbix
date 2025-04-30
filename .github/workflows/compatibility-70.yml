@@ -1,6 +1,8 @@
 name: zabbix_70
 run-name: Compatibility with Zabbix 7.0 test
-permissions: {}
+permissions:
+  contents: read
+  id-token: read
 
 on:
   push:
