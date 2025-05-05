@@ -2,7 +2,6 @@ name: zabbix_60
 run-name: Compatibility with Zabbix 6.0 test
 permissions:
   contents: read
-  id-token: read
 
 on:
   push:
