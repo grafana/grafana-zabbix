@@ -291,10 +291,10 @@ describe('ZabbixDatasource', () => {
 
     it('should return items', (done) => {
       const tests = [
-        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', null, '/.*/'] },
-        { query: '.*.*.*', expect: ['', '/.*/', '', null, '/.*/'] },
-        { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', null, '/.*/'] },
-        { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu', null, '/.*/'] },
+        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', undefined, '/.*/'] },
+        { query: '.*.*.*', expect: ['', '/.*/', '', undefined, '/.*/'] },
+        { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', undefined, '/.*/'] },
+        { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu', undefined, '/.*/'] },
       ];
 
       for (const test of tests) {
