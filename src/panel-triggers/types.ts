@@ -19,6 +19,7 @@ export interface ProblemsPanelOptions {
   opdataField?: boolean;
   descriptionField?: boolean;
   descriptionAtNewLine?: boolean;
+  showDatasourceName?: boolean;
   // Options
   hostsInMaintenance?: boolean;
   showTriggers?: 'all triggers' | 'unacknowledged' | 'acknowledged';
@@ -70,6 +71,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   opdataField: false,
   descriptionField: true,
   descriptionAtNewLine: false,
+  showDatasourceName: false,
   // Options
   sortProblems: 'lastchange',
   limit: undefined,
