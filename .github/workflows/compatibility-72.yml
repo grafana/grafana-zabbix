@@ -1,5 +1,8 @@
 name: zabbix_72
 run-name: Compatibility with Zabbix 7.2 test
+permissions:
+  contents: read
+  id-token: read
 
 on:
   push:
@@ -13,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-go@v5.3.0
 
