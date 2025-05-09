@@ -214,6 +214,12 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         defaultValue: defaultPanelOptions.descriptionAtNewLine,
         showIf: (options) => options.layout === 'list',
         category: ['Fields'],
+      })
+      .addBooleanSwitch({
+        path: 'showDatasourceName',
+        name: 'Datasource name',
+        defaultValue: defaultPanelOptions.showDatasourceName,
+        category: ['Fields'],
       });
   });
 

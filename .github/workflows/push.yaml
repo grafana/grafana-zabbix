@@ -1,4 +1,7 @@
 name: Plugins - CI
+permissions:
+  contents: read
+  id-token: write
 
 on:
   push:

@@ -205,6 +205,7 @@ export const problemsPanelMigrationHandler = (panel: PanelModel<Partial<Problems
     ageField: panel.ageField,
     descriptionField: panel.descriptionField,
     descriptionAtNewLine: panel.descriptionAtNewLine,
+    showDatasourceName: panel.showDatasourceName,
     hostsInMaintenance: panel.hostsInMaintenance,
     showTriggers: panel.showTriggers,
     sortProblems: panel.sortProblems,
