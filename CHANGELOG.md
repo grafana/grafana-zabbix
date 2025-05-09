@@ -1,5 +1,17 @@
 # Change Log
 
+## 5.1.0
+
+### Minor Changes
+
+🚀 Problems Panel: Add option to show data source name
+
+### Patch Changes
+
+🐛 Variables: Fix item tag filtering in Items type
+🐛 Fix: frontend error when running count triggers
+⚙️ Chore: Bump grafana-plugin-sdk-go from 0.274.0 to 0.277.0
+
 ## 5.0.4
 
 🐛 Fix: TLS handshake timeout issues by disabling post-quantum key exchange mechanism in go
