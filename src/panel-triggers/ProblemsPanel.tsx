@@ -192,8 +192,26 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
 
   const onExecuteScript = async (problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse> => {
     const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
+    const eventid = problem.eventid && problem.eventid.trim() !== "" ? problem.eventid : undefined;
     const ds: any = await getDataSourceSrv().get(problem.datasource);
-    return ds.zabbix.executeScript(hostid, scriptid);
+
+    const scriptsResponse = await ds.zabbix.getScripts(hostid ? [hostid] : undefined);
+    const targetScript = scriptsResponse.find(script => script.scriptid === scriptid);
+
+    if (!targetScript) {
+      throw new Error(`Script with ID ${scriptid} not found`);
+    }
+
+    switch (targetScript.scope) {
+      case "4": // Event action
+        if (!eventid) throw new Error("EventID required for this script");
+        return ds.zabbix.executeScript(scriptid, undefined, eventid);
+      case "2": // Host action
+        if (!hostid) throw new Error("HostID required for this script");
+        return ds.zabbix.executeScript(scriptid, hostid, undefined);
+      default:
+        throw new Error(`Unsupported script scope: ${targetScript.scope}`);
+    }
   };
 
   const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
