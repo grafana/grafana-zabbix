@@ -1,7 +1,8 @@
-import _ from 'lodash';
-import { templateSrvMock, datasourceSrvMock } from '../../test-setup/mocks';
-import { replaceTemplateVars, ZabbixDatasource, zabbixTemplateFormat } from '../datasource';
 import { dateMath } from '@grafana/data';
+import _ from 'lodash';
+import { datasourceSrvMock, templateSrvMock } from '../../test-setup/mocks';
+import { replaceTemplateVars, ZabbixDatasource, zabbixTemplateFormat } from '../datasource';
+import { VariableQueryTypes } from '../types';
 
 jest.mock(
   '@grafana/runtime',
@@ -317,6 +318,129 @@ describe('ZabbixDatasource', () => {
       ctx.ds.metricFindQuery(query);
       expect(ctx.ds.zabbix.getHosts).toBeCalledWith('/.*/', '/.*/');
       done();
+    });
+
+    describe('When invoking metricFindQuery()', () => {
+      beforeEach(() => {
+        ctx.ds.replaceTemplateVars = (str) => str;
+        ctx.ds.zabbix = {
+          getGroups: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Group1' }, { name: 'Group2' }])),
+          getHosts: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Host1' }, { name: 'Host2' }])),
+          getApps: jest.fn().mockReturnValue(Promise.resolve([{ name: 'App1' }, { name: 'App2' }])),
+          getItems: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Item1' }, { name: 'Item2' }])),
+          getItemTags: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Tag1' }, { name: 'Tag2' }])),
+          getItemValues: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Value1' }, { name: 'Value2' }])),
+        };
+      });
+
+      it('should return groups when queryType is Group', async () => {
+        const query = { queryType: VariableQueryTypes.Group, group: 'GroupFilter' };
+        const result = await ctx.ds.metricFindQuery(query, {});
+        expect(ctx.ds.zabbix.getGroups).toHaveBeenCalledWith('GroupFilter');
+        expect(result).toEqual([
+          { text: 'Group1', expandable: false },
+          { text: 'Group2', expandable: false },
+        ]);
+      });
+
+      it('should return hosts when queryType is Host', async () => {
+        const query = { queryType: VariableQueryTypes.Host, group: 'GroupFilter', host: 'HostFilter' };
+        const result = await ctx.ds.metricFindQuery(query, {});
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', 'HostFilter');
+        expect(result).toEqual([
+          { text: 'Host1', expandable: false },
+          { text: 'Host2', expandable: false },
+        ]);
+      });
+
+      it('should return applications when queryType is Application', async () => {
+        const query = {
+          queryType: VariableQueryTypes.Application,
+          group: 'GroupFilter',
+          host: 'HostFilter',
+          application: 'AppFilter',
+        };
+        const result = await ctx.ds.metricFindQuery(query, {});
+        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'AppFilter');
+        expect(result).toEqual([
+          { text: 'App1', expandable: false },
+          { text: 'App2', expandable: false },
+        ]);
+      });
+
+      it('should return items when queryType is Item', async () => {
+        const query = {
+          queryType: VariableQueryTypes.Item,
+          group: 'GroupFilter',
+          host: 'HostFilter',
+          application: 'AppFilter',
+          itemTag: 'TagFilter',
+          item: 'ItemFilter',
+        };
+        const result = await ctx.ds.metricFindQuery(query, {});
+        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'AppFilter',
+          'TagFilter',
+          'ItemFilter'
+        );
+        expect(result).toEqual([
+          { text: 'Item1', expandable: false },
+          { text: 'Item2', expandable: false },
+        ]);
+      });
+
+      it('should return item tags when queryType is ItemTag', async () => {
+        const query = {
+          queryType: VariableQueryTypes.ItemTag,
+          group: 'GroupFilter',
+          host: 'HostFilter',
+          itemTag: 'TagFilter',
+        };
+        const result = await ctx.ds.metricFindQuery(query, {});
+        expect(ctx.ds.zabbix.getItemTags).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'TagFilter');
+        expect(result).toEqual([
+          { text: 'Tag1', expandable: false },
+          { text: 'Tag2', expandable: false },
+        ]);
+      });
+
+      it('should return item values when queryType is ItemValues', async () => {
+        const query = {
+          queryType: VariableQueryTypes.ItemValues,
+          group: 'GroupFilter',
+          host: 'HostFilter',
+          application: 'AppFilter',
+          item: 'ItemFilter',
+        };
+        const options = { range: { from: 'now-1h', to: 'now' } };
+        const result = await ctx.ds.metricFindQuery(query, options);
+        expect(ctx.ds.zabbix.getItemValues).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'AppFilter',
+          'ItemFilter',
+          {
+            range: options.range,
+          }
+        );
+        expect(result).toEqual([
+          { text: 'Value1', expandable: false },
+          { text: 'Value2', expandable: false },
+        ]);
+      });
+
+      it('should return an empty array for an unknown queryType', async () => {
+        const query = { queryType: 'UnknownType' };
+        const result = await ctx.ds.metricFindQuery(query, {});
+        expect(result).toEqual([]);
+      });
+
+      it('should return an empty array for an empty query', async () => {
+        const result = await ctx.ds.metricFindQuery('', {});
+        expect(result).toEqual([]);
+      });
     });
   });
 });
