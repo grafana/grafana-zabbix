@@ -1026,7 +1026,7 @@ function getParamsKeyByVersion(
     case 'selectAcknowledges':
       return semver.gte(version, '7.0.0') ? 'selectAcknowledges' : 'select_acknowledges';
     case 'with_hosts':
-      return semver.gte(version, '7.0.0') ? 'with_hosts' : 'real_hosts';
+      return semver.gte(version, '6.2.0') ? 'with_hosts' : 'real_hosts';
     default:
       return '';
   }
