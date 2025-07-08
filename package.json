@@ -1,6 +1,6 @@
 {
   "name": "grafana-zabbix",
-  "version": "5.0.4",
+  "version": "5.1.0",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "bugs": {

@@ -343,7 +343,7 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
   for (let i = 0; i < data.length; i++) {
     const frame = data[i];
     const timeField = frame.fields.find((f) => f.name === TIME_SERIES_TIME_FIELD_NAME);
-    const valueField = frame.fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
+    const valueField = frame.fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME || f.type === 'number');
     const firstTs = timeField.values.get(0);
 
     if (firstTs > minTimestamp) {
