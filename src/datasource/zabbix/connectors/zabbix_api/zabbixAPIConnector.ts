@@ -931,11 +931,13 @@ export class ZabbixAPIConnector {
   }
 
   executeScript(scriptid: string, hostid?: string, eventid?: string): Promise<APIExecuteScriptResponse> {
-    const params = {
-      scriptid,
-      ...(hostid && { hostid }),
-      ...(eventid && { eventid }),
-    };
+    const params: { scriptid: string; hostid?: string; eventid?: string } = { scriptid };
+    if (hostid) {
+      params.hostid = hostid;
+    }
+    if (eventid) {
+      params.eventid = eventid;
+    }
 
     return this.request('script.execute', params);
   }

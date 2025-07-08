@@ -29,7 +29,7 @@ interface Props extends RTRow<ProblemDTO> {
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
   getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
-  onExecuteScript(problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse>;
+  onExecuteScript(problem: ProblemDTO, scriptid: string, scope: string): Promise<APIExecuteScriptResponse>;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
@@ -90,9 +90,9 @@ export const ProblemDetails = ({
     return getScripts(problem);
   };
 
-  const onExecuteScriptInternal = (data: ExecScriptData) => {
+  const onExecuteScriptInternal = ({ scriptid, scope }: ExecScriptData) => {
     const problem = original as ProblemDTO;
-    return onExecuteScript(problem, data.scriptid);
+    return onExecuteScript(problem, scriptid, scope);
   };
 
   const problem = original as ProblemDTO;

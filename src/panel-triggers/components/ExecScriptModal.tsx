@@ -24,6 +24,7 @@ interface State {
 
 export interface ExecScriptData {
   scriptid: string;
+  scope: string;
 }
 
 export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
@@ -83,6 +84,7 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
 
     const data: ExecScriptData = {
       scriptid: selectedScript.value,
+      scope: this.state.script.scope,
     };
 
     this.props

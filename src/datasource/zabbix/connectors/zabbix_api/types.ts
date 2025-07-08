@@ -44,6 +44,7 @@ export interface ZBXScript {
   confirmation?: string;
   type?: string;
   execute_on?: string;
+  scope?: string;
 }
 
 export interface APIExecuteScriptResponse {
