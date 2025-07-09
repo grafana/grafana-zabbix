@@ -1,0 +1,427 @@
+{
+  "zabbix_export": {
+    "version": "7.0",
+    "host_groups": [
+      {
+        "uuid": "2e427c268ac1468b9add94b65e2d6c14",
+        "name": "Backend"
+      },
+      {
+        "uuid": "d97ba66b283544339628b71975a6e68d",
+        "name": "Frontend"
+      },
+      {
+        "uuid": "dc579cd7a1a34222933f24f52a68bcd8",
+        "name": "Linux servers"
+      },
+      {
+        "uuid": "6f6799aa69e844b4b3918f779f2abf08",
+        "name": "Zabbix servers"
+      }
+    ],
+    "hosts": [
+      {
+        "host": "backend01",
+        "name": "backend01",
+        "templates": [
+          {
+            "name": "Template ZAS Agent"
+          }
+        ],
+        "groups": [
+          {
+            "name": "Backend"
+          },
+          {
+            "name": "Linux servers"
+          }
+        ],
+        "interfaces": [
+          {
+            "useip": "NO",
+            "dns": "zas_backend_01",
+            "interface_ref": "if1"
+          }
+        ],
+        "tags": [
+          {
+            "tag": "backend"
+          },
+          {
+            "tag": "service",
+            "value": "backend"
+          }
+        ],
+        "inventory_mode": "DISABLED"
+      },
+      {
+        "host": "backend02",
+        "name": "backend02",
+        "templates": [
+          {
+            "name": "Template ZAS Agent"
+          }
+        ],
+        "groups": [
+          {
+            "name": "Backend"
+          },
+          {
+            "name": "Linux servers"
+          }
+        ],
+        "interfaces": [
+          {
+            "useip": "NO",
+            "dns": "zas_backend_02",
+            "interface_ref": "if1"
+          }
+        ],
+        "tags": [
+          {
+            "tag": "backend"
+          },
+          {
+            "tag": "service",
+            "value": "backend"
+          }
+        ],
+        "inventory_mode": "DISABLED"
+      },
+      {
+        "host": "frontend01",
+        "name": "frontend01",
+        "templates": [
+          {
+            "name": "Template ZAS Agent"
+          }
+        ],
+        "groups": [
+          {
+            "name": "Frontend"
+          },
+          {
+            "name": "Linux servers"
+          }
+        ],
+        "interfaces": [
+          {
+            "useip": "NO",
+            "dns": "zas_frontend_01",
+            "interface_ref": "if1"
+          }
+        ],
+        "tags": [
+          {
+            "tag": "frontend"
+          },
+          {
+            "tag": "service",
+            "value": "frontend"
+          }
+        ],
+        "inventory_mode": "DISABLED"
+      },
+      {
+        "host": "frontend02",
+        "name": "frontend02",
+        "templates": [
+          {
+            "name": "Template ZAS Agent"
+          }
+        ],
+        "groups": [
+          {
+            "name": "Frontend"
+          },
+          {
+            "name": "Linux servers"
+          }
+        ],
+        "interfaces": [
+          {
+            "useip": "NO",
+            "dns": "zas_frontend_02",
+            "interface_ref": "if1"
+          }
+        ],
+        "tags": [
+          {
+            "tag": "frontend"
+          },
+          {
+            "tag": "service",
+            "value": "frontend"
+          }
+        ],
+        "inventory_mode": "DISABLED"
+      },
+      {
+        "host": "Zabbix server",
+        "name": "Zabbix server",
+        "templates": [
+          {
+            "name": "Linux by Zabbix agent"
+          },
+          {
+            "name": "Zabbix server health"
+          }
+        ],
+        "groups": [
+          {
+            "name": "Zabbix servers"
+          }
+        ],
+        "interfaces": [
+          {
+            "useip": "NO",
+            "dns": "zabbix-agent",
+            "interface_ref": "if1"
+          }
+        ],
+        "inventory_mode": "DISABLED"
+      }
+    ],
+    "template_groups": [
+      {
+        "uuid": "7df96b18c230490a9a0a9e2307226338",
+        "name": "Templates"
+      }
+    ],
+    "templates": [
+      {
+        "uuid": "2d7a65bb369c48199361913b223b1695",
+        "template": "Template ZAS Agent",
+        "name": "Template ZAS Agent",
+        "templates": [
+          {
+            "name": "Zabbix agent"
+          }
+        ],
+        "groups": [
+          {
+            "name": "Templates"
+          }
+        ],
+        "items": [
+          {
+            "uuid": "e79d4215ec014b74923b905bb8f82410",
+            "name": "Incoming network traffic on eth0",
+            "key": "net.if.in[eth0]",
+            "history": "1d",
+            "units": "bps",
+            "tags": [
+              {
+                "tag": "Application",
+                "value": "Network interfaces"
+              }
+            ]
+          },
+          {
+            "uuid": "18b377dae9fe48d093c16ee7a7c93320",
+            "name": "Outgoing network traffic on eth0",
+            "key": "net.if.out[eth0]",
+            "history": "1d",
+            "units": "bps",
+            "tags": [
+              {
+                "tag": "Application",
+                "value": "Network interfaces"
+              }
+            ]
+          },
+          {
+            "uuid": "2479e055e91c476f9be93b5f363cfa2f",
+            "name": "Processor load (1 min average per core)",
+            "key": "system.cpu.load[percpu,avg1]",
+            "history": "1d",
+            "value_type": "FLOAT",
+            "description": "The processor load is calculated as system CPU load divided by number of CPU cores.",
+            "tags": [
+              {
+                "tag": "Application",
+                "value": "CPU"
+              },
+              {
+                "tag": "Application",
+                "value": "Performance"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "60e5484b60ca4061b21bd23f8364bd6e",
+                "expression": "last(/Template ZAS Agent/system.cpu.load[percpu,avg1])>2",
+                "name": "Processor load is too high on {HOST.NAME}",
+                "priority": "WARNING",
+                "tags": [
+                  {
+                    "tag": "app",
+                    "value": "performance"
+                  },
+                  {
+                    "tag": "type",
+                    "value": "cpu"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "uuid": "f0dd4221793c49889cf2789806afa597",
+            "name": "Processor load (15 min average per core)",
+            "key": "system.cpu.load[percpu,avg15]",
+            "history": "1d",
+            "value_type": "FLOAT",
+            "description": "The processor load is calculated as system CPU load divided by number of CPU cores.",
+            "tags": [
+              {
+                "tag": "Application",
+                "value": "CPU"
+              },
+              {
+                "tag": "Application",
+                "value": "Performance"
+              }
+            ]
+          },
+          {
+            "uuid": "9a8b4a1f173b4f209723d820dc2e054a",
+            "name": "CPU $2 time",
+            "key": "system.cpu.util[,iowait]",
+            "history": "1d",
+            "value_type": "FLOAT",
+            "units": "%",
+            "description": "Amount of time the CPU has been waiting for I/O to complete.",
+            "tags": [
+              {
+                "tag": "Application",
+                "value": "CPU"
+              },
+              {
+                "tag": "Application",
+                "value": "Performance"
+              }
+            ],
+            "triggers": [
+              {
+                "uuid": "ceb468b9eb434fa6bd4c8a5d7507fd87",
+                "expression": "avg(/Template ZAS Agent/system.cpu.util[,iowait],5m)>20",
+                "name": "Disk I/O is overloaded on {HOST.NAME}",
+                "priority": "WARNING",
+                "description": "OS spends significant time waiting for I/O (input/output) operations. It could be indicator of performance issues with storage system.",
+                "tags": [
+                  {
+                    "tag": "disk"
+                  },
+                  {
+                    "tag": "type",
+                    "value": "disk"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "uuid": "e6d19d47cf60452ead1e791da2d5c0dc",
+            "name": "CPU $2 time",
+            "key": "system.cpu.util[,system]",
+            "history": "1d",
+            "value_type": "FLOAT",
+            "units": "%",
+            "description": "The time the CPU has spent running the kernel and its processes.",
+            "tags": [
+              {
+                "tag": "Application",
+                "value": "CPU"
+              },
+              {
+                "tag": "Application",
+                "value": "Performance"
+              }
+            ]
+          },
+          {
+            "uuid": "2d81fbc139774306959712a627c99b9a",
+            "name": "CPU $2 time",
+            "key": "system.cpu.util[,user]",
+            "history": "1d",
+            "value_type": "FLOAT",
+            "units": "%",
+            "description": "The time the CPU has spent running users' processes that are not niced.",
+            "tags": [
+              {
+                "tag": "Application",
+                "value": "CPU"
+              },
+              {
+                "tag": "Application",
+                "value": "Performance"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "graphs": [
+      {
+        "uuid": "7aac0ec0c0e04b7a8bb6472d1faa7a09",
+        "name": "CPU load",
+        "ymin_type_1": "FIXED",
+        "graph_items": [
+          {
+            "color": "009900",
+            "item": {
+              "host": "Template ZAS Agent",
+              "key": "system.cpu.load[percpu,avg1]"
+            }
+          },
+          {
+            "sortorder": "2",
+            "color": "990000",
+            "item": {
+              "host": "Template ZAS Agent",
+              "key": "system.cpu.load[percpu,avg15]"
+            }
+          }
+        ]
+      },
+      {
+        "uuid": "f25064d88b964a678fac7ea6095b238a",
+        "name": "CPU utilization",
+        "show_triggers": "NO",
+        "type": "STACKED",
+        "ymin_type_1": "FIXED",
+        "ymax_type_1": "FIXED",
+        "graph_items": [
+          {
+            "sortorder": "4",
+            "drawtype": "FILLED_REGION",
+            "color": "999900",
+            "item": {
+              "host": "Template ZAS Agent",
+              "key": "system.cpu.util[,iowait]"
+            }
+          },
+          {
+            "sortorder": "5",
+            "drawtype": "FILLED_REGION",
+            "color": "990000",
+            "item": {
+              "host": "Template ZAS Agent",
+              "key": "system.cpu.util[,system]"
+            }
+          },
+          {
+            "sortorder": "6",
+            "drawtype": "FILLED_REGION",
+            "color": "000099",
+            "item": {
+              "host": "Template ZAS Agent",
+              "key": "system.cpu.util[,user]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
