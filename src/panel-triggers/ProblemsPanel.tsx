@@ -190,10 +190,22 @@ export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
     return ds.zabbix.getScripts([hostid]);
   };
 
-  const onExecuteScript = async (problem: ProblemDTO, scriptid: string): Promise<APIExecuteScriptResponse> => {
+  const onExecuteScript = async (
+    problem: ProblemDTO,
+    scriptid: string,
+    scope: string
+  ): Promise<APIExecuteScriptResponse> => {
     const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
     const ds: any = await getDataSourceSrv().get(problem.datasource);
-    return ds.zabbix.executeScript(hostid, scriptid);
+
+    switch (scope) {
+      case '4': // Event action
+        return ds.zabbix.executeScript(scriptid, undefined, problem.eventid);
+      case '2': // Host action
+        return ds.zabbix.executeScript(scriptid, hostid, undefined);
+      default:
+        return ds.zabbix.executeScript(scriptid);
+    }
   };
 
   const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
