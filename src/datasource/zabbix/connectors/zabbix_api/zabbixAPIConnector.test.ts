@@ -37,9 +37,9 @@ describe('Zabbix API connector', () => {
       });
     });
 
-    it('should send the real_hosts parameter when version is <7.0', () => {
+    it('should send the real_hosts parameter when version is <=6.0', () => {
       const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
-      zabbixAPIConnector.version = '6.5.0';
+      zabbixAPIConnector.version = '6.0.0';
       zabbixAPIConnector.request = jest.fn();
 
       zabbixAPIConnector.getGroups();
@@ -47,6 +47,19 @@ describe('Zabbix API connector', () => {
         output: ['name', 'groupid'],
         sortfield: 'name',
         real_hosts: true,
+      });
+    });
+
+    it('should send the with_hosts parameter when version is >=6.2', () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.version = '6.2.0';
+      zabbixAPIConnector.request = jest.fn();
+
+      zabbixAPIConnector.getGroups();
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('hostgroup.get', {
+        output: ['name', 'groupid'],
+        sortfield: 'name',
+        with_hosts: true,
       });
     });
   });
