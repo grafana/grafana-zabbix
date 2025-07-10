@@ -1,13 +1,15 @@
 # Change Log
 
+## 5.2.0
+
+🚀 Add possibility to run "Manual event actions"
+🐛 Fix: `real_hosts` deprecated in version 6.2 and 6.4
+🐛 Fix: handle multiple service status
+⚙️ Chore: Bump grafana-plugin-sdk-go from 0.277.1 to 0.278.0
+
 ## 5.1.0
 
-### Minor Changes
-
 🚀 Problems Panel: Add option to show data source name
-
-### Patch Changes
-
 🐛 Variables: Fix item tag filtering in Items type
 🐛 Fix: frontend error when running count triggers
 ⚙️ Chore: Bump grafana-plugin-sdk-go from 0.274.0 to 0.277.0
