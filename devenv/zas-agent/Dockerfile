@@ -8,6 +8,11 @@ ENV ZAS_ARC_NAME=zas_agent-redis-dependency
 ENV ZAS_ARC_FILE=${ZAS_ARC_NAME}.zip
 ENV ZAS_WORKDIR="/zas-agent"
 
+# Fix repository sources to use archive.debian.org for Debian Buster
+RUN sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list
+RUN sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list
+RUN sed -i '/stretch-updates/d' /etc/apt/sources.list
+
 RUN apt-get update && apt-get install -y ca-certificates
 RUN apt-get install -y unzip wget
 
