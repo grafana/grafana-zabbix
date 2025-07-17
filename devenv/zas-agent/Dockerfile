@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bullseye
+FROM python:2.7
 
 # ENV ZAS_SOURCE_URL=https://github.com/vulogov/zas_agent/archive/master.zip
 # ENV ZAS_ARC_NAME=zas_agent-master
@@ -8,22 +8,23 @@ ENV ZAS_ARC_NAME=zas_agent-redis-dependency
 ENV ZAS_ARC_FILE=${ZAS_ARC_NAME}.zip
 ENV ZAS_WORKDIR="/zas-agent"
 
-RUN apt-get update && apt-get install -y ca-certificates unzip wget
+# Fix repository sources to use archive.debian.org for Debian Buster
+RUN sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list
+RUN sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list
+RUN sed -i '/stretch-updates/d' /etc/apt/sources.list
 
-# Install common Python packages that zas_agent typically needs
-RUN pip install redis pyzabbix
+RUN apt-get update && apt-get install -y ca-certificates
+RUN apt-get install -y unzip wget
 
 # Download and extract
 WORKDIR ${ZAS_WORKDIR}
 RUN wget ${ZAS_SOURCE_URL} -O ${ZAS_ARC_FILE}
 RUN unzip ${ZAS_ARC_FILE}
 
-# Skip the Python 2 syntax check and install directly
+# Install zas_agent
+WORKDIR ${ZAS_WORKDIR}/${ZAS_ARC_NAME}/install
+RUN python ./check_python_packages.py
 WORKDIR ${ZAS_WORKDIR}/${ZAS_ARC_NAME}
-
-# Fix Python 2 print statements in setup.py and source files
-RUN find . -name "*.py" -exec sed -i 's/print \([^(].*\)$/print(\1)/g' {} \;
-
 RUN python setup.py build
 RUN python setup.py install
 
