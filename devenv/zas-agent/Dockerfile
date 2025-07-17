@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:3.11-slim-bullseye
 
 # ENV ZAS_SOURCE_URL=https://github.com/vulogov/zas_agent/archive/master.zip
 # ENV ZAS_ARC_NAME=zas_agent-master
