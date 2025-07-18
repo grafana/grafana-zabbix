@@ -50,11 +50,11 @@ export const ConfigEditor = (props: Props) => {
 
     // Set secureJsonFields.password to password and then remove it from config
     const { password, ...restJsonData } = jsonData;
+
+    // Create new secureJsonData object
+    const newSecureJsonData = { ...options.secureJsonData };
     if (!secureJsonFields?.password) {
-      if (!options.secureJsonData) {
-        options.secureJsonData = {};
-      }
-      options.secureJsonData.password = password;
+      newSecureJsonData.password = password;
     }
 
     onOptionsChange({
@@ -69,6 +69,7 @@ export const ConfigEditor = (props: Props) => {
         disableDataAlignment: false,
         ...restJsonData,
       },
+      secureJsonData: { ...newSecureJsonData },
     });
 
     if (options.jsonData.dbConnectionEnable) {

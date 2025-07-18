@@ -1,4 +1,7 @@
 import { PanelCtrl, MetricsPanelCtrl } from './panelStub';
+import { TextEncoder, TextDecoder } from 'util';
+
+Object.assign(global, { TextDecoder, TextEncoder });
 
 jest.mock(
   'grafana/app/features/templating/template_srv',
