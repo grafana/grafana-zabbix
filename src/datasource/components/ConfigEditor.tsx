@@ -378,6 +378,53 @@ export const ConfigEditor = (props: Props) => {
               onChange={jsonDataSwitchHandler('disableDataAlignment', options, onOptionsChange)}
             />
           </Field>
+
+          <Field
+            label={
+              <Label>
+                <EditorStack gap={0.5}>
+                  <span>Enable per-user authentication</span>
+                  <Tooltip
+                    content={
+                      <span>
+                        Enable this option if you want to use per-user authentication. This will map Grafana users to
+                        Zabbix users respecting the RBAC already setup in Zabbix.
+                      </span>
+                    }
+                  >
+                    <Icon name="info-circle" size="sm" />
+                  </Tooltip>
+                </EditorStack>
+              </Label>
+            }
+          >
+            <Switch
+              value={!!options.jsonData.perUserAuth}
+              onChange={jsonDataSwitchHandler('perUserAuth', options, onOptionsChange)}
+            />
+          </Field>
+
+          {options.jsonData.perUserAuth && (
+            <Field
+              label={
+                <Label>
+                  <EditorStack gap={0.5}>
+                    <span>User identity field</span>
+                    <Select
+                      width={40}
+                      options={[
+                        { label: 'Username', value: 'username' },
+                        { label: 'Email', value: 'email' },
+                      ]}
+                      value={options.jsonData.perUserAuthField || 'username' }
+                      onChange={jsonDataSelectHandler('perUserAuthField', options, onOptionsChange)}
+                    />
+                  </EditorStack>
+                </Label>
+              }
+            >
+            </Field>
+          )}
         </ConfigSubSection>
 
         {config.secureSocksDSProxyEnabled && gte(config.buildInfo.version, '10.0.0-0') && (
