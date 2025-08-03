@@ -30,12 +30,14 @@ func TestIntegrationZabbixAPI72(t *testing.T) {
 	zabbixURL := os.Getenv("ZABBIX_URL")
 	zabbixUser := os.Getenv("ZABBIX_USER")
 	zabbixPassword := os.Getenv("ZABBIX_PASSWORD")
+	targetUsername := os.Getenv("ZABBIX_TARGET_USER")
 	zabbixVersion := 72
 
 	// Validate required environment variables
 	require.NotEmpty(t, zabbixURL, "ZABBIX_URL environment variable is required")
 	require.NotEmpty(t, zabbixUser, "ZABBIX_USER environment variable is required")
 	require.NotEmpty(t, zabbixPassword, "ZABBIX_PASSWORD environment variable is required")
+	require.NotEmpty(t, targetUsername, "ZABBIX_TARGET_USER environment variable is required")
 
 	// Create new Zabbix API instance
 	dsSettings := backend.DataSourceInstanceSettings{
@@ -157,5 +159,37 @@ func TestIntegrationZabbixAPI72(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Basic Auth is not supported for Zabbix v7.2 and later")
 		assert.True(t, backend.IsDownstreamError(err))
+	})
+
+	// Test per-user authentication
+	t.Run("Per-User Authentication", func(t *testing.T) {
+		// First authenticate
+		err := api.Authenticate(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
+		require.NoError(t, err)
+
+		// Query Zabbix for the target user
+		zabbixUserResp, err := api.GetUserByIdentity(context.Background(), "username", targetUsername, zabbixVersion)
+		require.NoError(t, err)
+		require.NotNil(t, zabbixUserResp)
+
+		if len(zabbixUserResp.MustArray()) == 0 {
+			t.Skipf("User %s not found in Zabbix. Skipping per-user auth test.", targetUsername)
+		}
+
+		userId := zabbixUserResp.GetIndex(0).Get("userid").MustString()
+
+		// Generate or retrieve Zabbix API token for the user
+		token, err := api.GenerateUserAPIToken(context.Background(), userId, zabbixVersion)
+		require.NoError(t, err)
+		assert.NotEmpty(t, token, "Generated token should not be empty")
+
+		api.SetAuth(token)
+
+		// Optionally, perform a simple API call as the user
+		resp, err := api.Request(context.Background(), "hostgroup.get", map[string]interface{}{"output": "extend"}, zabbixVersion)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		t.Logf("Per-user authentication successful for identity %s (userId %s)", targetUsername, userId)
 	})
 }
