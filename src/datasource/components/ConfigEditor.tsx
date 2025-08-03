@@ -410,19 +410,19 @@ export const ConfigEditor = (props: Props) => {
                 <Label>
                   <EditorStack gap={0.5}>
                     <span>User identity field</span>
-                    <Select
-                      width={40}
-                      options={[
-                        { label: 'Username', value: 'username' },
-                        { label: 'Email', value: 'email' },
-                      ]}
-                      value={options.jsonData.perUserAuthField || 'username' }
-                      onChange={jsonDataSelectHandler('perUserAuthField', options, onOptionsChange)}
-                    />
                   </EditorStack>
                 </Label>
               }
             >
+              <Select
+                width={40}
+                options={[
+                  { label: 'Username', value: 'username' },
+                  { label: 'Email', value: 'email' },
+                ]}
+                value={options.jsonData.perUserAuthField || 'username' }
+                onChange={jsonDataSelectHandler('perUserAuthField', options, onOptionsChange)}
+              />
             </Field>
           )}
         </ConfigSubSection>
