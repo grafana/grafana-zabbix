@@ -189,6 +189,70 @@ func (api *ZabbixAPI) AuthenticateWithToken(ctx context.Context, token string) e
 	return nil
 }
 
+// GetUserByIdentity queries Zabbix for a user by username or email
+func (api *ZabbixAPI) GetUserByIdentity(ctx context.Context, field, value string, version int) (*simplejson.Json, error) {
+	params := map[string]interface{}{
+		"filter": map[string]interface{}{
+			field: value,
+		},
+		"output": "extend",
+	}
+	return api.Request(ctx, "user.get", params, version)
+}
+
+// GenerateUserAPIToken generates or retrieves a Zabbix API token for a user
+func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, version int) (string, error) {
+	// Check for existing token with the desired name
+	getParams := map[string]interface{}{
+		"userids": userId,
+		"output":  "extend",
+		"filter": map[string]interface{}{
+			"name": "Zabbix-Grafana-Session-Token",
+		},
+	}
+	resp, err := api.Request(ctx, "token.get", getParams, version)
+	if err != nil {
+		return "", err
+	}
+
+	var tokenId string
+	if resp != nil && len(resp.MustArray()) > 0 {
+		// Token exists, use its tokenid
+		tokenId = resp.GetIndex(0).Get("tokenid").MustString()
+	} else {
+		// Token does not exist, create a new one
+		createParams := map[string]interface{}{
+			"userid": userId,
+			"name":   "Zabbix-Grafana-Session-Token",
+		}
+
+		createResp, err := api.Request(ctx, "token.create", createParams, version)
+		if err != nil {
+			return "", err
+		}
+
+		tokenId := createResp.GetIndex(0).Get("tokenid").MustString()
+		if tokenId == "" {
+			return "", errors.New("failed to create Zabbix API token, token ID is empty")
+		}
+	}
+
+	// Generate the actual token value
+
+	genParams := map[string]interface{}{
+		"tokenids": []string{tokenId},
+	}
+	genResp, err := api.Request(ctx, "token.generate", genParams, version)
+	if err != nil {
+		return "", err
+	}
+	token := genResp.GetIndex(0).Get("token").MustString()
+	if token == "" {
+		return "", errors.New("failed to generate Zabbix API token, token is empty")
+	}
+	return token, nil
+}
+
 func isDeprecatedUserParamError(err error) bool {
 	if err == nil {
 		return false
