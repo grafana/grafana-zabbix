@@ -20,7 +20,8 @@ import (
 // ZABBIX_URL - URL of the Zabbix server (e.g., http://localhost/zabbix/api_jsonrpc.php)
 // ZABBIX_USER - Username for authentication
 // ZABBIX_PASSWORD - Password for authentication
-// To run locally, start devenv/zabbix60 and run INTEGRATION_TEST60=true ZABBIX_URL="https://localhost/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" go test -v ./pkg/zabbixapi/...
+// ZABBIX_TARGET_USER - Username for per-user authentication
+// To run locally, start devenv/zabbix60 and run INTEGRATION_TEST60=true ZABBIX_URL="https://localhost/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" ZABBIX_TARGET_USER="grafana_test" go test -v ./pkg/zabbixapi/...
 func TestIntegrationZabbixAPI60(t *testing.T) {
 	// Skip if not running integration tests
 	if os.Getenv("INTEGRATION_TEST60") != "true" {
