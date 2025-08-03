@@ -112,6 +112,49 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		return nil, err
 	}
 
+	// --- Per-user authentication logic START ---
+	if zabbixDS.Settings.PerUserAuth {
+		user := backend.UserFromContext(ctx)
+		if user == nil {
+			return nil, errors.New("no Grafana user found in request context")
+		}
+
+		var identity string
+		switch zabbixDS.Settings.PerUserAuthField {
+		case "email":
+			identity = user.Email
+		default:
+			identity = user.Login
+		}
+
+		zabbixVersion, err := zabbixDS.zabbix.GetVersion(ctx)
+		if err != nil {
+			return nil, errors.New("error getting Zabbix version: " + err.Error())
+		}
+
+		// Query Zabbix for the user
+		zabbixUser, err := zabbixDS.zabbix.GetAPI().GetUserByIdentity(ctx, zabbixDS.Settings.PerUserAuthField, identity, zabbixVersion)
+		if err != nil {
+			return nil, errors.New("error querying Zabbix for user: " + err.Error())
+		}
+		if zabbixUser == nil || len(zabbixUser.MustArray()) == 0 {
+			return nil, errors.New("user " + identity + " not found in Zabbix. Contact your administrator to provision access")
+		}
+		userId := zabbixUser.GetIndex(0).Get("userid").MustString()
+
+		// Generate or retrieve Zabbix API token
+		token, err := zabbixDS.zabbix.GetAPI().GenerateUserAPIToken(ctx, userId, zabbixVersion)
+		if err != nil {
+			return nil, errors.New("failed to generate Zabbix API token for user: " + err.Error())
+		}
+
+		zabbixDS.zabbix.GetAPI().SetAuth(token)
+
+		ds.logger.Debug("Per-user authentication enabled", "identity", identity)
+	}
+
+	// --- Per-user authentication logic END ---
+
 	for _, q := range req.Queries {
 		res := backend.DataResponse{}
 		query, err := ReadQuery(q)
