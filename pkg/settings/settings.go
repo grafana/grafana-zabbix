@@ -79,6 +79,8 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		Timeout:                 time.Duration(timeout) * time.Second,
 		DisableDataAlignment:    zabbixSettingsDTO.DisableDataAlignment,
 		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
+		PerUserAuth:             zabbixSettingsDTO.PerUserAuth,
+		PerUserAuthField:        zabbixSettingsDTO.PerUserAuthField,
 	}
 
 	return zabbixSettings, nil
