@@ -21,6 +21,8 @@ export type ZabbixDSOptions = {
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
   enableSecureSocksProxy?: boolean;
+  perUserAuth?: boolean;
+  perUserAuthField?: 'username' | 'email';
 } & DataSourceJsonData;
 
 type ZabbixSecureJSONDataKeys = 'password' | 'apiToken';
