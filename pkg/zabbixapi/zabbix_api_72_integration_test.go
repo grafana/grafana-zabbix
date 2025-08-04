@@ -178,9 +178,10 @@ func TestIntegrationZabbixAPI72(t *testing.T) {
 		}
 
 		userId := zabbixUserResp.GetIndex(0).Get("userid").MustString()
+		userName := zabbixUserResp.GetIndex(0).Get("username").MustString()
 
 		// Generate or retrieve Zabbix API token for the user
-		token, err := api.GenerateUserAPIToken(context.Background(), userId, zabbixVersion)
+		token, err := api.GenerateUserAPIToken(context.Background(), userId, userName, zabbixVersion)
 		require.NoError(t, err)
 		assert.NotEmpty(t, token, "Generated token should not be empty")
 
