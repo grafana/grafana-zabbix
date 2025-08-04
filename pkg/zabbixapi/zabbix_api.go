@@ -85,6 +85,14 @@ func (api *ZabbixAPI) Request(ctx context.Context, method string, params ZabbixA
 	return api.request(ctx, method, params, api.auth, version)
 }
 
+func (api *ZabbixAPI) RequestWithArrayParams(ctx context.Context, method string, params []interface{}, version int) (*simplejson.Json, error) {
+	if api.auth == "" {
+		return nil, backend.DownstreamError(ErrNotAuthenticated)
+	}
+
+	return api.requestWithArrayParams(ctx, method, params, api.auth, version)
+}
+
 // Request performs API request without authentication token
 func (api *ZabbixAPI) RequestUnauthenticated(ctx context.Context, method string, params ZabbixAPIParams, version int) (*simplejson.Json, error) {
 	return api.request(ctx, method, params, "", version)
@@ -118,7 +126,53 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	if auth != "" && version >= 72 {
 		if api.dsSettings.BasicAuthEnabled {
-			return nil, backend.DownstreamError(errors.New("Basic Auth is not supported for Zabbix v7.2 and later"))
+			return nil, backend.DownstreamError(errors.New("basic Auth is not supported for Zabbix v7.2 and later"))
+		}
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
+
+	response, err := makeHTTPRequest(ctx, api.httpClient, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return handleAPIResult(response)
+}
+
+// requestWithArrayParams performs API request with parameters as an array
+// This is used for methods that require an array of parameters instead of a map
+// currently `token.generate` method
+func (api *ZabbixAPI) requestWithArrayParams(ctx context.Context, method string, params []interface{}, auth string, version int) (*simplejson.Json, error) {
+	apiRequest := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      2,
+		"method":  method,
+		"params":  params,
+	}
+
+	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
+	// `auth` parameter throws an error in new versions so we need to add it only for older versions
+	if auth != "" && version < 72 {
+		apiRequest["auth"] = auth
+	}
+
+	reqBodyJSON, err := json.Marshal(apiRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, api.url.String(), bytes.NewBuffer(reqBodyJSON))
+	if err != nil {
+		return nil, err
+	}
+
+	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
+
+	if auth != "" && version >= 72 {
+		if api.dsSettings.BasicAuthEnabled {
+			return nil, backend.DownstreamError(errors.New("basic Auth is not supported for Zabbix v7.2 and later"))
 		}
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
 	}
@@ -201,13 +255,13 @@ func (api *ZabbixAPI) GetUserByIdentity(ctx context.Context, field, value string
 }
 
 // GenerateUserAPIToken generates or retrieves a Zabbix API token for a user
-func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, version int) (string, error) {
+func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, userName string, version int) (string, error) {
 	// Check for existing token with the desired name
 	getParams := map[string]interface{}{
 		"userids": userId,
 		"output":  "extend",
 		"filter": map[string]interface{}{
-			"name": "Zabbix-Grafana-Session-Token",
+			"name": "Zabbix-Grafana-Token_" + userName,
 		},
 	}
 	resp, err := api.Request(ctx, "token.get", getParams, version)
@@ -223,7 +277,7 @@ func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, v
 		// Token does not exist, create a new one
 		createParams := map[string]interface{}{
 			"userid": userId,
-			"name":   "Zabbix-Grafana-Session-Token",
+			"name":   "Zabbix-Grafana-Token_" + userName,
 		}
 
 		createResp, err := api.Request(ctx, "token.create", createParams, version)
@@ -238,11 +292,10 @@ func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, v
 	}
 
 	// Generate the actual token value
-
-	genParams := map[string]interface{}{
-		"tokenids": []string{tokenId},
+	genParams := []interface{}{
+		tokenId,
 	}
-	genResp, err := api.Request(ctx, "token.generate", genParams, version)
+	genResp, err := api.RequestWithArrayParams(ctx, "token.generate", genParams, version)
 	if err != nil {
 		return "", err
 	}
