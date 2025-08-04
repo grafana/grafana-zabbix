@@ -16,10 +16,11 @@ type ZabbixDatasourceSettingsDTO struct {
 	CacheTTL    string      `json:"cacheTTL"`
 	Timeout     interface{} `json:"timeout"`
 
-	DisableDataAlignment    bool   `json:"disableDataAlignment"`
-	DisableReadOnlyUsersAck bool   `json:"disableReadOnlyUsersAck"`
-	PerUserAuth             bool   `json:"perUserAuth"`
-	PerUserAuthField        string `json:"perUserAuthField"` // "username" or "email"
+	DisableDataAlignment    bool     `json:"disableDataAlignment"`
+	DisableReadOnlyUsersAck bool     `json:"disableReadOnlyUsersAck"`
+	PerUserAuth             bool     `json:"perUserAuth"`
+	PerUserAuthField        string   `json:"perUserAuthField"`
+	PerUserAuthExcludeUsers []string `json:"perUserAuthExcludeUsers"`
 }
 
 // ZabbixDatasourceSettings model
@@ -31,8 +32,9 @@ type ZabbixDatasourceSettings struct {
 	CacheTTL    time.Duration
 	Timeout     time.Duration
 
-	DisableDataAlignment    bool   `json:"disableDataAlignment"`
-	DisableReadOnlyUsersAck bool   `json:"disableReadOnlyUsersAck"`
-	PerUserAuth             bool   `json:"perUserAuth"`
-	PerUserAuthField        string `json:"perUserAuthField"` // "username"
+	DisableDataAlignment    bool     `json:"disableDataAlignment"`
+	DisableReadOnlyUsersAck bool     `json:"disableReadOnlyUsersAck"`
+	PerUserAuth             bool     `json:"perUserAuth"`
+	PerUserAuthField        string   `json:"perUserAuthField"`
+	PerUserAuthExcludeUsers []string `json:"perUserAuthExcludeUsers"`
 }

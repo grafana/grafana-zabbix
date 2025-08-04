@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
@@ -127,30 +128,48 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 			identity = user.Login
 		}
 
-		zabbixVersion, err := zabbixDS.zabbix.GetVersion(ctx)
-		if err != nil {
-			return nil, errors.New("error getting Zabbix version: " + err.Error())
+		// Check if the user is excluded from per-user auth
+		excluded := false
+		exclusionList := zabbixDS.Settings.PerUserAuthExcludeUsers
+		if exclusionList == nil {
+			exclusionList = []string{"admin"} // Default exclusion
+		}
+		for _, excludedUser := range exclusionList {
+			if strings.EqualFold(identity, excludedUser) {
+				excluded = true
+				break
+			}
 		}
 
-		// Query Zabbix for the user
-		zabbixUser, err := zabbixDS.zabbix.GetAPI().GetUserByIdentity(ctx, zabbixDS.Settings.PerUserAuthField, identity, zabbixVersion)
-		if err != nil {
-			return nil, errors.New("error querying Zabbix for user: " + err.Error())
-		}
-		if zabbixUser == nil || len(zabbixUser.MustArray()) == 0 {
-			return nil, errors.New("user " + identity + " not found in Zabbix. Contact your administrator to provision access")
-		}
-		userId := zabbixUser.GetIndex(0).Get("userid").MustString()
+		if excluded {
+			ds.logger.Debug("User is excluded from per-user authentication", "identity", identity)
+		} else {
+			zabbixVersion, err := zabbixDS.zabbix.GetVersion(ctx)
+			if err != nil {
+				return nil, errors.New("error getting Zabbix version: " + err.Error())
+			}
 
-		// Generate or retrieve Zabbix API token
-		token, err := zabbixDS.zabbix.GetAPI().GenerateUserAPIToken(ctx, userId, zabbixVersion)
-		if err != nil {
-			return nil, errors.New("failed to generate Zabbix API token for user: " + err.Error())
+			// Query Zabbix for the user
+			zabbixUser, err := zabbixDS.zabbix.GetAPI().GetUserByIdentity(ctx, zabbixDS.Settings.PerUserAuthField, identity, zabbixVersion)
+			if err != nil {
+				return nil, errors.New("error querying Zabbix for user: " + err.Error())
+			}
+			if zabbixUser == nil || len(zabbixUser.MustArray()) == 0 {
+				return nil, errors.New("user " + identity + " not found in Zabbix. Contact your administrator to provision access")
+			}
+			userId := zabbixUser.GetIndex(0).Get("userid").MustString()
+			userName := zabbixUser.GetIndex(0).Get("username").MustString()
+
+			// Generate or retrieve Zabbix API token
+			token, err := zabbixDS.zabbix.GetAPI().GenerateUserAPIToken(ctx, userId, userName, zabbixVersion)
+			if err != nil {
+				return nil, errors.New("failed to generate Zabbix API token for user: " + err.Error())
+			}
+
+			zabbixDS.zabbix.GetAPI().SetAuth(token)
+
+			ds.logger.Debug("Per-user authentication enabled", "identity", identity)
 		}
-
-		zabbixDS.zabbix.GetAPI().SetAuth(token)
-
-		ds.logger.Debug("Per-user authentication enabled", "identity", identity)
 	}
 
 	// --- Per-user authentication logic END ---
