@@ -35,6 +35,7 @@ export type ZabbixDSOptions = {
   schema?: number;
   perUserAuth?: boolean;
   perUserAuthField?: 'username' | 'email';
+  perUserAuthExcludeUsers?: string[];
 } & DataSourceJsonData;
 
 /** @deprecated

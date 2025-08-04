@@ -22,10 +22,11 @@ type ZabbixDatasourceSettingsDTO struct {
 	// Queries exceeding this limit will be automatically terminated. Default is 60 seconds.
 	QueryTimeout interface{} `json:"queryTimeout"`
 
-	DisableDataAlignment    bool   `json:"disableDataAlignment"`
-	DisableReadOnlyUsersAck bool   `json:"disableReadOnlyUsersAck"`
-	PerUserAuth             bool   `json:"perUserAuth"`
-	PerUserAuthField        string `json:"perUserAuthField"` // "username" or "email"
+	DisableDataAlignment    bool     `json:"disableDataAlignment"`
+	DisableReadOnlyUsersAck bool     `json:"disableReadOnlyUsersAck"`
+	PerUserAuth             bool     `json:"perUserAuth"`
+	PerUserAuthField        string   `json:"perUserAuthField"`
+	PerUserAuthExcludeUsers []string `json:"perUserAuthExcludeUsers"`
 }
 
 // ZabbixDatasourceSettings model
@@ -43,8 +44,9 @@ type ZabbixDatasourceSettings struct {
 	// Queries exceeding this limit will be automatically terminated. Default is 60 seconds.
 	QueryTimeout time.Duration
 
-	DisableDataAlignment    bool   `json:"disableDataAlignment"`
-	DisableReadOnlyUsersAck bool   `json:"disableReadOnlyUsersAck"`
-	PerUserAuth             bool   `json:"perUserAuth"`
-	PerUserAuthField        string `json:"perUserAuthField"` // "username"
+	DisableDataAlignment    bool     `json:"disableDataAlignment"`
+	DisableReadOnlyUsersAck bool     `json:"disableReadOnlyUsersAck"`
+	PerUserAuth             bool     `json:"perUserAuth"`
+	PerUserAuthField        string   `json:"perUserAuthField"`
+	PerUserAuthExcludeUsers []string `json:"perUserAuthExcludeUsers"`
 }
