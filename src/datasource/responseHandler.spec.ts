@@ -6,6 +6,7 @@ describe('convertToWide', () => {
     let frames = convertToWide([
       new MutableDataFrame({
         name: 'SLI',
+        refId: 'A',
         fields: [
           { name: TIME_SERIES_TIME_FIELD_NAME, values: [1], type: FieldType.time },
           { name: TIME_SERIES_TIME_FIELD_NAME, values: [1.1], type: FieldType.number },
@@ -13,6 +14,7 @@ describe('convertToWide', () => {
       }),
       new MutableDataFrame({
         name: 'SLI',
+        refId: 'B',
         fields: [
           { name: TIME_SERIES_TIME_FIELD_NAME, values: [1], type: FieldType.time },
           { name: TIME_SERIES_TIME_FIELD_NAME, values: [1.2], type: FieldType.number },
@@ -24,5 +26,6 @@ describe('convertToWide', () => {
     expect(frames[0].fields[0].values.at(0)).toStrictEqual(1);
     expect(frames[0].fields[1].values.at(0)).toStrictEqual(1.1);
     expect(frames[0].fields[2].values.at(0)).toStrictEqual(1.2);
+    expect(frames[0].refId).toStrictEqual('A');
   });
 });
