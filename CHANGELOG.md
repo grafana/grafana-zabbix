@@ -1,5 +1,11 @@
 # Change Log
 
+## 5.2.1
+
+🐛 Fix: Remove props mutation in config editor
+
+🐛 Fix: Missing refID in `wide` format
+
 ## 5.2.0
 
 🚀 Add possibility to run "Manual event actions"
