@@ -105,7 +105,7 @@ export const ConfigEditor = (props: Props) => {
     <>
       <DataSourceDescription
         dataSourceName="Zabbix"
-        docsLink="https://grafana.com/docs/grafana/latest/datasources/loki/configure-loki-data-source/"
+        docsLink="https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/"
         hasRequiredFields={true}
       />
 
