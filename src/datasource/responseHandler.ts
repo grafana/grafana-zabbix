@@ -396,6 +396,7 @@ export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
   }
 
   const frame: DataFrame = {
+    refId: data[maxLengthIndex].refId,
     name: 'wide',
     fields,
     length: timeField.values.length,
