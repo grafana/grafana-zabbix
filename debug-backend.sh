@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 if [ "$1" == "-h" ]; then
   echo "Usage: ${BASH_SOURCE[0]} [plugin process name] [port]"
   exit
