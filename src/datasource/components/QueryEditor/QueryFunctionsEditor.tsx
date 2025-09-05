@@ -72,7 +72,6 @@ export const QueryFunctionsEditor = ({ query, onChange }: Props) => {
 function moveAliasFuncLast(functions: MetricFunc[]) {
   const aliasFuncIndex = functions.findIndex((func) => func.def.category === 'Alias');
 
-  console.log(aliasFuncIndex);
   if (aliasFuncIndex >= 0) {
     const aliasFunc = functions[aliasFuncIndex];
     functions.splice(aliasFuncIndex, 1);
