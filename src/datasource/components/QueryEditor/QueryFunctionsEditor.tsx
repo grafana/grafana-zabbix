@@ -70,12 +70,7 @@ export const QueryFunctionsEditor = ({ query, onChange }: Props) => {
 };
 
 function moveAliasFuncLast(functions: MetricFunc[]) {
-  const aliasFuncIndex = functions.findIndex((func) => func.def.category === 'Alias');
-
-  if (aliasFuncIndex >= 0) {
-    const aliasFunc = functions[aliasFuncIndex];
-    functions.splice(aliasFuncIndex, 1);
-    functions.push(aliasFunc);
-  }
-  return functions;
+  const aliasFuncs = functions.filter((func) => func.def.category === 'Alias');
+  const nonAliasFuncs = functions.filter((func) => func.def.category !== 'Alias');
+  return [...nonAliasFuncs, ...aliasFuncs];
 }
