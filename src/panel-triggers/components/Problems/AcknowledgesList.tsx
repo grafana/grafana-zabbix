@@ -42,25 +42,24 @@ function formatUserName(ack: ZBXAcknowledge): string {
   }
 }
 
-function formatAckMessage(ack: ZBXAcknowledge): string 
-{
+function formatAckMessage(ack: ZBXAcknowledge): string {
   let msg = ack.message;
   if ((ack.action & 2) !== 0) {
-    msg = "(Acknowledged) ";
+    msg = '(Acknowledged) ';
   } else if ((ack.action & 16) !== 0) {
-    msg = "(Unacknowledged) ";
+    msg = '(Unacknowledged) ';
   }
 
   if ((ack.action & 32) !== 0) {
-    msg = msg + "(Suppressed) ";
+    msg = msg + '(Suppressed) ';
   } else if ((ack.action & 64) !== 0) {
-    msg = msg + "(Unsuppressed) ";
+    msg = msg + '(Unsuppressed) ';
   }
-  
+
   if ((ack.action & 8) !== 0) {
-    msg = msg + "(Changed severity) ";
+    msg = msg + '(Changed severity) ';
   }
-  
-  msg = msg + ack.message
+
+  msg = msg + ack.message;
   return msg.trim();
 }
