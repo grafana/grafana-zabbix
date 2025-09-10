@@ -44,7 +44,7 @@ function formatUserName(ack: ZBXAcknowledge): string {
 
 function formatAckMessage(ack: ZBXAcknowledge): string {
   let msg = '';
-  let action = parseInt(ack.action);
+  let action = parseInt(ack.action, 10);
 
   if ((action & 2) !== 0) {
     msg = msg + '(Acknowledged) ';
