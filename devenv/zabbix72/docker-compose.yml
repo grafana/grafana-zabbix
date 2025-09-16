@@ -70,6 +70,8 @@ services:
       ZBX_API_URL: http://zabbix-web:8080
       ZBX_API_USER: Admin
       ZBX_API_PASSWORD: zabbix
+      ZBX_TEST_USER: grafana_test
+      ZBX_TEST_PASS: grafana_test_pass
     depends_on:
       - database
       - zabbix-server
