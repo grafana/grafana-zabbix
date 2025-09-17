@@ -383,9 +383,10 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 	}
 
 	filter := params["filter"].(map[string]interface{})
-	if itemtype == "num" {
+	switch itemtype {
+	case "num":
 		filter["value_type"] = []int{0, 3}
-	} else if itemtype == "text" {
+	case "text":
 		filter["value_type"] = []int{1, 2, 4}
 	}
 

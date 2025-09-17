@@ -12,7 +12,7 @@ interface Props {
   selected?: number;
 }
 
-export const MetricPickerMenu = ({ options, offset, minWidth, selected, onSelect }: Props): JSX.Element => {
+export const MetricPickerMenu = ({ options, offset, minWidth, selected, onSelect }: Props) => {
   const theme = useTheme2();
   const styles = getSelectStyles(theme);
   const customStyles = useStyles2(getStyles(minWidth));
