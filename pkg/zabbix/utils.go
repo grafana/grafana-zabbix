@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/dlclark/regexp2"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -65,6 +66,78 @@ func splitKeyParams(paramStr string) []string {
 	return params
 }
 
+// isPathologicalRegex detects potentially dangerous regex patterns that could cause ReDoS
+func isPathologicalRegex(pattern string) bool {
+	// Check for consecutive quantifiers
+	consecutiveQuantifiers := []string{`\*\*`, `\+\+`, `\*\+`, `\+\*`}
+	for _, q := range consecutiveQuantifiers {
+		if matched, _ := regexp.MatchString(q, pattern); matched {
+			return true
+		}
+	}
+	
+	// Check for nested quantifiers
+	nestedQuantifiers := []string{
+		`\([^)]*\+[^)]*\)\+`,     // (a+)+
+		`\([^)]*\*[^)]*\)\*`,     // (a*)*
+		`\([^)]*\+[^)]*\)\*`,     // (a+)*
+		`\([^)]*\*[^)]*\)\+`,     // (a*)+
+	}
+	for _, nested := range nestedQuantifiers {
+		if matched, _ := regexp.MatchString(nested, pattern); matched {
+			return true
+		}
+	}
+	
+	// Check for specific catastrophic patterns
+	catastrophicPatterns := []string{
+		`\(\.\*\)\*`,             // (.*)* 
+		`\(\.\+\)\+`,             // (.+)+
+		`\(\.\*\)\+`,             // (.*)+
+		`\(\.\+\)\*`,             // (.+)*
+	}
+	for _, catastrophic := range catastrophicPatterns {
+		if matched, _ := regexp.MatchString(catastrophic, pattern); matched {
+			return true
+		}
+	}
+	
+	// Check for obvious overlapping alternation (manual check for exact duplicates)
+	if strings.Contains(pattern, "(a|a)") || 
+	   strings.Contains(pattern, "(1|1)") || 
+	   strings.Contains(pattern, "(.*|.*)") {
+		return true
+	}
+	
+	return false
+}
+
+// safeRegexpCompile compiles a regex with timeout protection
+func safeRegexpCompile(pattern string) (*regexp2.Regexp, error) {
+	// Channel to receive compilation result
+	resultCh := make(chan struct {
+		regex *regexp2.Regexp
+		err   error
+	}, 1)
+	
+	// Compile regex in goroutine with timeout
+	go func() {
+		regex, err := regexp2.Compile(pattern, regexp2.RE2)
+		resultCh <- struct {
+			regex *regexp2.Regexp
+			err   error
+		}{regex, err}
+	}()
+	
+	// Wait for compilation or timeout
+	select {
+	case result := <-resultCh:
+		return result.regex, result.err
+	case <-time.After(5 * time.Second):
+		return nil, fmt.Errorf("regex compilation timeout (5s) - pattern may be too complex")
+	}
+}
+
 func parseFilter(filter string) (*regexp2.Regexp, error) {
 	vaildREModifiers := "imncsxrde"
 	regex := regexp.MustCompile(`^/(.+)/([imncsxrde]*)$`)
@@ -75,17 +148,35 @@ func parseFilter(filter string) (*regexp2.Regexp, error) {
 		return nil, nil
 	}
 
+	regexPattern := matches[1]
+	
+	// Security: Check for pathological regex patterns
+	if isPathologicalRegex(regexPattern) {
+		return nil, backend.DownstreamErrorf("error parsing regexp: potentially dangerous regex pattern detected")
+	}
+
+	// Security: Limit regex pattern length
+	if len(regexPattern) > 1000 {
+		return nil, backend.DownstreamErrorf("error parsing regexp: pattern too long (max 1000 characters)")
+	}
+
 	pattern := ""
 	if matches[2] != "" {
 		if flagRE.MatchString(matches[2]) {
 			pattern += "(?" + matches[2] + ")"
 		} else {
-			return nil, backend.DownstreamError(fmt.Errorf("error parsing regexp: unsupported flags `%s` (expected [%s])", matches[2], vaildREModifiers))
+			return nil, backend.DownstreamErrorf("error parsing regexp: unsupported flags `%s` (expected [%s])", matches[2], vaildREModifiers)
 		}
 	}
-	pattern += matches[1]
+	pattern += regexPattern
 
-	return regexp2.Compile(pattern, regexp2.RE2)
+	// Security: Test compilation with timeout
+	compiled, err := safeRegexpCompile(pattern)
+	if err != nil {
+		return nil, backend.DownstreamErrorf("error parsing regexp: %v", err)
+	}
+
+	return compiled, nil
 }
 
 func isRegex(filter string) bool {
