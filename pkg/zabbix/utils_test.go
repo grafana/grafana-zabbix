@@ -2,6 +2,7 @@ package zabbix
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/dlclark/regexp2"
@@ -95,6 +96,48 @@ func TestParseFilter(t *testing.T) {
 			expectNoError: false,
 			expectedError: "",
 		},
+		{
+			name:          "Pathological regex - nested quantifiers (a+)+",
+			filter:        "/^(a+)+$/",
+			want:          nil,
+			expectNoError: false,
+			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
+		},
+		{
+			name:          "Pathological regex - (.*)* pattern",
+			filter:        "/(.*)*/",
+			want:          nil,
+			expectNoError: false,
+			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
+		},
+		{
+			name:          "Pathological regex - overlapping alternation",
+			filter:        "/(a|a)*/",
+			want:          nil,
+			expectNoError: false,
+			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
+		},
+		{
+			name:          "Pathological regex - consecutive quantifiers",
+			filter:        "/a**/",
+			want:          nil,
+			expectNoError: false,
+			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
+		},
+		{
+			name:          "Pattern too long",
+			filter:        "/" + strings.Repeat("a", 1001) + "/",
+			want:          nil,
+			expectNoError: false,
+			expectedError: "error parsing regexp: pattern too long (max 1000 characters)",
+		},
+		{
+			name:          "Safe complex regex",
+			filter:        "/^[a-zA-Z0-9_-]+\\.[a-zA-Z]{2,}$/",
+			want:          regexp2.MustCompile("^[a-zA-Z0-9_-]+\\.[a-zA-Z]{2,}$", regexp2.RE2),
+			expectNoError: true,
+			expectedError: "",
+		},
 	}
 
 	for _, tt := range tests {
@@ -110,6 +153,72 @@ func TestParseFilter(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("parseFilter() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestIsPathologicalRegex(t *testing.T) {
+	tests := []struct {
+		name     string
+		pattern  string
+		expected bool
+	}{
+		{
+			name:     "Safe pattern",
+			pattern:  "^[a-zA-Z0-9]+$",
+			expected: false,
+		},
+		{
+			name:     "Nested quantifiers (a+)+",
+			pattern:  "^(a+)+$",
+			expected: true,
+		},
+		{
+			name:     "Nested quantifiers (a*)*",
+			pattern:  "(a*)*",
+			expected: true,
+		},
+		{
+			name:     "Overlapping alternation (a|a)*",
+			pattern:  "(a|a)*",
+			expected: true,
+		},
+		{
+			name:     "Consecutive quantifiers **",
+			pattern:  "a**",
+			expected: true,
+		},
+		{
+			name:     "Consecutive quantifiers ++",
+			pattern:  "a++",
+			expected: true,
+		},
+		{
+			name:     "Catastrophic (.*)* pattern",
+			pattern:  "(.*)*",
+			expected: true,
+		},
+		{
+			name:     "Catastrophic (.+)+ pattern",
+			pattern:  "(.+)+",
+			expected: true,
+		},
+		{
+			name:     "Safe alternation with different patterns",
+			pattern:  "(cat|dog)*",
+			expected: false,
+		},
+		{
+			name:     "Safe quantifier usage",
+			pattern:  "[0-9]+\\.[0-9]*",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isPathologicalRegex(tt.pattern)
+			assert.Equal(t, tt.expected, result, "Pattern: %s", tt.pattern)
 		})
 	}
 }
