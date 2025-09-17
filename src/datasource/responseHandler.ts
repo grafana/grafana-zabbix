@@ -1,9 +1,4 @@
-import _ from 'lodash';
-import TableModel from 'grafana/app/core/table_model';
-import * as c from './constants';
-import * as utils from './utils';
 import {
-  ArrayVector,
   DataFrame,
   dataFrameFromJSON,
   DataFrameJSON,
@@ -16,8 +11,12 @@ import {
   TIME_SERIES_TIME_FIELD_NAME,
   TIME_SERIES_VALUE_FIELD_NAME,
 } from '@grafana/data';
-import { ZabbixMetricsQuery } from './types/query';
+import TableModel from 'grafana/app/core/table_model';
+import _ from 'lodash';
+import * as c from './constants';
 import { ZBXGroup, ZBXTrigger } from './types';
+import { ZabbixMetricsQuery } from './types/query';
+import * as utils from './utils';
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -113,14 +112,14 @@ export function seriesToDataFrame(
     config: {
       custom: {},
     },
-    values: new ArrayVector<number>(datapoints.map((p) => p[c.DATAPOINT_TS])),
+    values: datapoints.map((p) => p[c.DATAPOINT_TS]),
   };
 
-  let values: ArrayVector<number> | ArrayVector<string>;
+  let values: number[] | string[];
   if (fieldType === FieldType.string) {
-    values = new ArrayVector<string>(datapoints.map((p) => p[c.DATAPOINT_VALUE]));
+    values = datapoints.map((p) => p[c.DATAPOINT_VALUE]);
   } else {
-    values = new ArrayVector<number>(datapoints.map((p) => p[c.DATAPOINT_VALUE]));
+    values = datapoints.map((p) => p[c.DATAPOINT_VALUE]);
   }
 
   const valueFiled: Field = {
@@ -360,8 +359,8 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
 
       timestamps = missingTimestamps.concat(timestamps);
       values = missingValues.concat(values);
-      timeField.values = new ArrayVector(timestamps);
-      valueField.values = new ArrayVector(values);
+      timeField.values = timestamps;
+      valueField.values = values;
     }
   }
 
@@ -509,7 +508,7 @@ export function handleSLIResponse(response: any, itservices: any[], target: Zabb
     config: {
       custom: {},
     },
-    values: new ArrayVector<number>(timestamps),
+    values: timestamps,
   };
 
   const valueFields: Field[] = [];
@@ -535,7 +534,7 @@ export function handleSLIResponse(response: any, itservices: any[], target: Zabb
       name: service ? service.name : serviceId,
       type: FieldType.number,
       config: {},
-      values: new ArrayVector<number>(values[i]),
+      values: values[i],
     });
   }
 
@@ -568,7 +567,7 @@ export function handleMultiSLIResponse(response: any[], itservices: any[], slas:
     config: {
       custom: {},
     },
-    values: new ArrayVector<number>(timestamps),
+    values: timestamps,
   };
 
   const valueFields: Field[] = [];
@@ -602,7 +601,7 @@ export function handleMultiSLIResponse(response: any[], itservices: any[], slas:
         name,
         type: FieldType.number,
         config: {},
-        values: new ArrayVector<number>(values[i]),
+        values: values[i],
       });
     }
   }
@@ -636,7 +635,7 @@ export function handleServiceResponse(response: any, itservices: any[], target: 
       name: service ? service.name : i,
       type: FieldType.number,
       config: {},
-      values: new ArrayVector<number>([status]),
+      values: [status],
     });
   }
 
@@ -646,7 +645,7 @@ export function handleServiceResponse(response: any, itservices: any[], target: 
     config: {
       custom: {},
     },
-    values: new ArrayVector<number>([Date.now()]),
+    values: [Date.now()],
   };
 
   return new MutableDataFrame({
@@ -694,8 +693,8 @@ function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], time
       name: `Count ${target.refId}`,
       refId: target.refId,
       fields: [
-        { name: TIME_SERIES_TIME_FIELD_NAME, type: FieldType.time, values: new ArrayVector([timeRange[1] * 1000]) },
-        { name: TIME_SERIES_VALUE_FIELD_NAME, type: FieldType.number, values: new ArrayVector([triggersCount]) },
+        { name: TIME_SERIES_TIME_FIELD_NAME, type: FieldType.time, values: [timeRange[1] * 1000] },
+        { name: TIME_SERIES_VALUE_FIELD_NAME, type: FieldType.number, values: [triggersCount] },
       ],
       length: 1,
     });
@@ -706,7 +705,7 @@ function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], time
     const frame = new MutableDataFrame({
       name: `Triggers ${target.refId}`,
       refId: target.refId,
-      fields: [{ name: 'Host group', type: FieldType.string, values: new ArrayVector() }],
+      fields: [{ name: 'Host group', type: FieldType.string, values: [] }],
     });
 
     for (let i = c.TRIGGER_SEVERITY.length - 1; i >= 0; i--) {
@@ -714,7 +713,7 @@ function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], time
         name: c.TRIGGER_SEVERITY[i].text,
         type: FieldType.number,
         config: { unit: 'none', decimals: 0 },
-        values: new ArrayVector(),
+        values: [],
       });
     }
 

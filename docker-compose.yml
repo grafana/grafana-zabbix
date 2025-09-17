@@ -1,17 +1,5 @@
-version: '3.0'
-
 services:
   grafana:
-    container_name: 'grafana-zabbix'
-    image: grafana/grafana-enterprise:${GF_VERSION:-main}
-    ports:
-      - 3000:3000/tcp
-    volumes:
-      - ./dist:/var/lib/grafana/plugins/grafana-zabbix
-      - ./provisioning:/etc/grafana/provisioning
-    environment:
-      - TERM=linux
-      - GF_DEFAULT_APP_MODE=development
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_ENTERPRISE_LICENSE_TEXT=$GF_ENTERPRISE_LICENSE_TEXT
+    extends:
+      file: .config/docker-compose-base.yaml
+      service: grafana

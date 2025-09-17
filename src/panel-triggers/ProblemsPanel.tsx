@@ -15,7 +15,7 @@ const PROBLEM_EVENTS_LIMIT = 100;
 
 interface ProblemsPanelProps extends PanelProps<ProblemsPanelOptions> {}
 
-export const ProblemsPanel = (props: ProblemsPanelProps): JSX.Element => {
+export const ProblemsPanel = (props: ProblemsPanelProps) => {
   const { data, options, timeRange, onOptionsChange } = props;
   const { layout, showTriggers, triggerSeverity, sortProblems } = options;
 

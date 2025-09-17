@@ -29,9 +29,10 @@ jobs:
     name: CD
     uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@main
     with:
-      go-version: '1.24'
-      golangci-lint-version: '1.64.6'
+      go-version: '1.25'
+      golangci-lint-version: '2.4.0'
       branch: ${{ github.event.inputs.branch }}
       environment: ${{ github.event.inputs.environment }}
       docs-only: ${{ fromJSON(github.event.inputs.docs-only) }}
+      github-draft-release: false
       run-playwright: true

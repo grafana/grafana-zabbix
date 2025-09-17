@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, ReactNode } from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
   HorizontalGroup,
@@ -71,7 +71,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
   };
 
   const renderOptions = () => {
-    const elements: JSX.Element[] = [];
+    const elements: ReactNode[] = [];
     for (const key in queryOptions) {
       if (queryOptions.hasOwnProperty(key)) {
         const value = queryOptions[key];

@@ -15,13 +15,12 @@ services:
 
   # Grafana
   grafana:
-    image: grafana/grafana:main
-    ports:
-      - '3001:3000'
+    extends:
+      file: .config/docker-compose-base.yaml
+      service: grafana
     volumes:
       - ../..:/grafana-zabbix
       - ../dashboards:/devenv/dashboards
-      - ../grafana.ini:/etc/grafana/grafana.ini:ro
       - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
       - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
 
