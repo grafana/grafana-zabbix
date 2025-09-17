@@ -155,7 +155,7 @@ func TestIntegrationZabbixAPI74(t *testing.T) {
 		// Try to authenticate
 		_, err = apiWithBasicAuth.Request(context.Background(), "hostgroup.get", params, zabbixVersion)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Basic Auth is not supported for Zabbix v7.2 and later")
+		assert.Contains(t, err.Error(), "basic auth is not supported for Zabbix v7.2 and later")
 		assert.True(t, backend.IsDownstreamError(err))
 	})
 }
