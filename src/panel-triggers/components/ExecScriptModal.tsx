@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, { PureComponent, ReactNode } from 'react';
 import { css } from '@emotion/css';
 import { GrafanaTheme, SelectableValue } from '@grafana/data';
 import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable, ButtonGroup } from '@grafana/ui';
@@ -16,8 +16,8 @@ interface State {
   scriptOptions: Array<SelectableValue<string>>;
   script: ZBXScript;
   error: boolean;
-  errorMessage: string | JSX.Element;
-  result: string | JSX.Element;
+  errorMessage: string | ReactNode;
+  result: string | ReactNode;
   selectError: string;
   loading: boolean;
 }

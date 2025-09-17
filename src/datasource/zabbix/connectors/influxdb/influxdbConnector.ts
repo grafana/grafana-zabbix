@@ -1,5 +1,4 @@
 import {
-  ArrayVector,
   DataFrame,
   dataFrameToJSON,
   Field,
@@ -142,14 +141,14 @@ function handleInfluxHistoryResponse(results) {
         name: TIME_SERIES_TIME_FIELD_NAME,
         type: FieldType.time,
         config: {},
-        values: new ArrayVector(tsBuffer),
+        values: tsBuffer,
       };
 
       const valueFiled: Field<number | null> = {
         name: influxSeries?.tags?.itemid,
         type: FieldType.number,
         config: {},
-        values: new ArrayVector(valuesBuffer),
+        values: valuesBuffer,
       };
 
       frames.push(

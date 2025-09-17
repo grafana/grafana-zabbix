@@ -526,6 +526,9 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       const slaFilter = this.replaceTemplateVars(target.slaFilter, request.scopedVars);
       const slas = await this.zabbix.getSLAs(slaFilter);
       const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
+      // Apply alias functions
+      const aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
+      utils.sequence(aliasFunctions)(result);
       return result;
     }
     const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
@@ -1023,7 +1026,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 function bindFunctionDefs(functionDefs, category) {
   const aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
   const aggFuncDefs = _.filter(functionDefs, (func) => {
-    return _.includes(aggregationFunctions, func.def.name);
+    return _.includes(aggregationFunctions, func.def.name) && func.params.length > 0;
   });
 
   return _.map(aggFuncDefs, (func) => {

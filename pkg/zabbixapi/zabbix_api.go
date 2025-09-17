@@ -118,7 +118,7 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	if auth != "" && version >= 72 {
 		if api.dsSettings.BasicAuthEnabled {
-			return nil, backend.DownstreamError(errors.New("Basic Auth is not supported for Zabbix v7.2 and later"))
+			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
 		}
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
 	}
@@ -223,7 +223,11 @@ func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Req
 		}
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.DefaultLogger.Warn("Error closing response body", "error", err)
+		}
+	}()
 
 	if res.StatusCode != http.StatusOK {
 		err = fmt.Errorf("request failed, status: %v", res.Status)

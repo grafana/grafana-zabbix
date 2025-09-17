@@ -670,6 +670,9 @@ export class Zabbix implements ZabbixConnector {
     }
 
     const slaIds = slas.map((s) => s.slaid);
+    if (slaIds.length === 0) {
+      return [];
+    }
     if (slaIds.length > 1) {
       const sliQueries = slaIds?.map((slaId) => this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options));
       const results = await Promise.all(sliQueries);

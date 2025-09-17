@@ -1,0 +1,25 @@
+services:
+  grafana:
+    user: root
+    container_name: 'alexanderzobnin-zabbix-app'
+
+    build:
+      context: .
+      args:
+        grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
+        grafana_version: ${GRAFANA_VERSION:-12.1.1}
+        development: ${DEVELOPMENT:-false}
+        anonymous_auth_enabled: ${ANONYMOUS_AUTH_ENABLED:-true}
+    ports:
+      - 3000:3000/tcp
+    volumes:
+      - ../dist:/var/lib/grafana/plugins/alexanderzobnin-zabbix-app
+      - ../provisioning:/etc/grafana/provisioning
+      - ..:/root/alexanderzobnin-zabbix-app
+
+    environment:
+      NODE_ENV: development
+      GF_LOG_FILTERS: plugin.alexanderzobnin-zabbix-app:debug
+      GF_LOG_LEVEL: debug
+      GF_DATAPROXY_LOGGING: 1
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: alexanderzobnin-zabbix-app
