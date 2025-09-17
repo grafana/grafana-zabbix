@@ -1,4 +1,5 @@
 {
+  "$schema": "https://github.com/grafana/grafana/raw/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
   "name": "Zabbix",
   "id": "alexanderzobnin-zabbix-app",
@@ -65,8 +66,6 @@
     }
   ],
   "dependencies": {
-    "grafanaDependency": ">=10.4.8",
-    "grafanaVersion": "10.4",
-    "plugins": []
+    "grafanaDependency": ">=11.6.0"
   }
 }
