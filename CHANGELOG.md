@@ -1,5 +1,19 @@
 # Change Log
 
+## 6.0.0
+
+🎉 Bump grafana dependency to 11.6.0
+
+🚀 Feat: Show details about acknowledge actions
+
+🐛 Fix: Functions dropdown positioning
+
+🐛 Fix: alias functions in Services query type
+
+🐛 Fix CVE-2025-10630 by implementing regex scanner for exploits and adding timeout to compilation
+
+🐛 Fix: slaid is missing error
+
 ## 5.2.1
 
 🐛 Fix: Remove props mutation in config editor
