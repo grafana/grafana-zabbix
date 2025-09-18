@@ -10,7 +10,7 @@
 
 🐛 Fix: alias functions in Services query type
 
-🐛 Fix CVE-2025-10630 by implementing regex scanner for exploits and adding timeout to compilation
+🔒 Fix CVE-2025-10630: Implement regex timeout to compilation
 
 🐛 Fix: slaid is missing error
 
