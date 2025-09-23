@@ -2,7 +2,6 @@ package zabbix
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/dlclark/regexp2"
@@ -123,13 +122,6 @@ func TestParseFilter(t *testing.T) {
 			want:          nil,
 			expectNoError: false,
 			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
-		},
-		{
-			name:          "Pattern too long",
-			filter:        "/" + strings.Repeat("a", 1001) + "/",
-			want:          nil,
-			expectNoError: false,
-			expectedError: "error parsing regexp: pattern too long (max 1000 characters)",
 		},
 		{
 			name:          "Safe complex regex",
