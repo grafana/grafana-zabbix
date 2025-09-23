@@ -155,11 +155,6 @@ func parseFilter(filter string) (*regexp2.Regexp, error) {
 		return nil, backend.DownstreamErrorf("error parsing regexp: potentially dangerous regex pattern detected")
 	}
 
-	// Security: Limit regex pattern length
-	if len(regexPattern) > 1000 {
-		return nil, backend.DownstreamErrorf("error parsing regexp: pattern too long (max 1000 characters)")
-	}
-
 	pattern := ""
 	if matches[2] != "" {
 		if flagRE.MatchString(matches[2]) {
