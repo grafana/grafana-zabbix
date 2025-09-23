@@ -1,5 +1,9 @@
 # Change Log
 
+## 6.0.1
+
+🐛 Fix: Remove regex pattern length restriction
+
 ## 6.0.0
 
 🎉 Bump grafana dependency to 11.6.0
