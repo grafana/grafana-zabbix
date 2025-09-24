@@ -66,51 +66,6 @@ func splitKeyParams(paramStr string) []string {
 	return params
 }
 
-// isPathologicalRegex detects potentially dangerous regex patterns that could cause ReDoS
-func isPathologicalRegex(pattern string) bool {
-	// Check for consecutive quantifiers
-	consecutiveQuantifiers := []string{`\*\*`, `\+\+`, `\*\+`, `\+\*`}
-	for _, q := range consecutiveQuantifiers {
-		if matched, _ := regexp.MatchString(q, pattern); matched {
-			return true
-		}
-	}
-	
-	// Check for nested quantifiers
-	nestedQuantifiers := []string{
-		`\([^)]*\+[^)]*\)\+`,     // (a+)+
-		`\([^)]*\*[^)]*\)\*`,     // (a*)*
-		`\([^)]*\+[^)]*\)\*`,     // (a+)*
-		`\([^)]*\*[^)]*\)\+`,     // (a*)+
-	}
-	for _, nested := range nestedQuantifiers {
-		if matched, _ := regexp.MatchString(nested, pattern); matched {
-			return true
-		}
-	}
-	
-	// Check for specific catastrophic patterns
-	catastrophicPatterns := []string{
-		`\(\.\*\)\*`,             // (.*)* 
-		`\(\.\+\)\+`,             // (.+)+
-		`\(\.\*\)\+`,             // (.*)+
-		`\(\.\+\)\*`,             // (.+)*
-	}
-	for _, catastrophic := range catastrophicPatterns {
-		if matched, _ := regexp.MatchString(catastrophic, pattern); matched {
-			return true
-		}
-	}
-	
-	// Check for obvious overlapping alternation (manual check for exact duplicates)
-	if strings.Contains(pattern, "(a|a)") || 
-	   strings.Contains(pattern, "(1|1)") || 
-	   strings.Contains(pattern, "(.*|.*)") {
-		return true
-	}
-	
-	return false
-}
 
 // safeRegexpCompile compiles a regex with timeout protection
 func safeRegexpCompile(pattern string) (*regexp2.Regexp, error) {
@@ -149,11 +104,6 @@ func parseFilter(filter string) (*regexp2.Regexp, error) {
 	}
 
 	regexPattern := matches[1]
-	
-	// Security: Check for pathological regex patterns
-	if isPathologicalRegex(regexPattern) {
-		return nil, backend.DownstreamErrorf("error parsing regexp: potentially dangerous regex pattern detected")
-	}
 
 	pattern := ""
 	if matches[2] != "" {
@@ -165,11 +115,14 @@ func parseFilter(filter string) (*regexp2.Regexp, error) {
 	}
 	pattern += regexPattern
 
-	// Security: Test compilation with timeout
+	// Security: Compile regex with timeout protection
 	compiled, err := safeRegexpCompile(pattern)
 	if err != nil {
 		return nil, backend.DownstreamErrorf("error parsing regexp: %v", err)
 	}
+
+	// Set match timeout for runtime DoS protection (5 second timeout)
+	compiled.MatchTimeout = 5 * time.Second
 
 	return compiled, nil
 }
