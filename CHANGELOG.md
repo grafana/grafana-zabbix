@@ -1,5 +1,9 @@
 # Change Log
 
+## 6.0.2
+
+⚙️ Chore: Refactor regex pattern validation to use timeout-based approach
+
 ## 6.0.1
 
 🐛 Fix: Remove regex pattern length restriction
