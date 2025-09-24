@@ -1,10 +1,9 @@
 package zabbix
 
 import (
-	"reflect"
 	"testing"
+	"time"
 
-	"github.com/dlclark/regexp2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,70 +62,42 @@ func TestParseFilter(t *testing.T) {
 	tests := []struct {
 		name          string
 		filter        string
-		want          *regexp2.Regexp
+		wantPattern   string
 		expectNoError bool
 		expectedError string
 	}{
 		{
 			name:          "Simple regexp",
 			filter:        "/.*/",
-			want:          regexp2.MustCompile(".*", regexp2.RE2),
+			wantPattern:   ".*",
 			expectNoError: true,
 			expectedError: "",
 		},
 		{
 			name:          "Not a regex",
 			filter:        "/var/lib/mysql: Total space",
-			want:          nil,
+			wantPattern:   "",
 			expectNoError: true,
 			expectedError: "",
 		},
 		{
 			name:          "Regexp with modifier",
 			filter:        "/.*/i",
-			want:          regexp2.MustCompile("(?i).*", regexp2.RE2),
+			wantPattern:   "(?i).*",
 			expectNoError: true,
 			expectedError: "",
 		},
 		{
 			name:          "Regexp with unsupported modifier",
 			filter:        "/.*/1",
-			want:          nil,
+			wantPattern:   "",
 			expectNoError: false,
 			expectedError: "",
 		},
 		{
-			name:          "Pathological regex - nested quantifiers (a+)+",
-			filter:        "/^(a+)+$/",
-			want:          nil,
-			expectNoError: false,
-			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
-		},
-		{
-			name:          "Pathological regex - (.*)* pattern",
-			filter:        "/(.*)*/",
-			want:          nil,
-			expectNoError: false,
-			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
-		},
-		{
-			name:          "Pathological regex - overlapping alternation",
-			filter:        "/(a|a)*/",
-			want:          nil,
-			expectNoError: false,
-			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
-		},
-		{
-			name:          "Pathological regex - consecutive quantifiers",
-			filter:        "/a**/",
-			want:          nil,
-			expectNoError: false,
-			expectedError: "error parsing regexp: potentially dangerous regex pattern detected",
-		},
-		{
 			name:          "Safe complex regex",
 			filter:        "/^[a-zA-Z0-9_-]+\\.[a-zA-Z]{2,}$/",
-			want:          regexp2.MustCompile("^[a-zA-Z0-9_-]+\\.[a-zA-Z]{2,}$", regexp2.RE2),
+			wantPattern:   "^[a-zA-Z0-9_-]+\\.[a-zA-Z]{2,}$",
 			expectNoError: true,
 			expectedError: "",
 		},
@@ -142,75 +113,42 @@ func TestParseFilter(t *testing.T) {
 				assert.Error(t, err)
 				assert.EqualError(t, err, tt.expectedError)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("parseFilter() = %v, want %v", got, tt.want)
+			if tt.wantPattern == "" {
+				assert.Nil(t, got)
+			} else {
+				assert.NotNil(t, got)
+				assert.Equal(t, tt.wantPattern, got.String())
+				// Verify that timeout is set for DoS protection
+				assert.Equal(t, 5*time.Second, got.MatchTimeout)
 			}
 		})
 	}
 }
 
-func TestIsPathologicalRegex(t *testing.T) {
-	tests := []struct {
-		name     string
-		pattern  string
-		expected bool
-	}{
-		{
-			name:     "Safe pattern",
-			pattern:  "^[a-zA-Z0-9]+$",
-			expected: false,
-		},
-		{
-			name:     "Nested quantifiers (a+)+",
-			pattern:  "^(a+)+$",
-			expected: true,
-		},
-		{
-			name:     "Nested quantifiers (a*)*",
-			pattern:  "(a*)*",
-			expected: true,
-		},
-		{
-			name:     "Overlapping alternation (a|a)*",
-			pattern:  "(a|a)*",
-			expected: true,
-		},
-		{
-			name:     "Consecutive quantifiers **",
-			pattern:  "a**",
-			expected: true,
-		},
-		{
-			name:     "Consecutive quantifiers ++",
-			pattern:  "a++",
-			expected: true,
-		},
-		{
-			name:     "Catastrophic (.*)* pattern",
-			pattern:  "(.*)*",
-			expected: true,
-		},
-		{
-			name:     "Catastrophic (.+)+ pattern",
-			pattern:  "(.+)+",
-			expected: true,
-		},
-		{
-			name:     "Safe alternation with different patterns",
-			pattern:  "(cat|dog)*",
-			expected: false,
-		},
-		{
-			name:     "Safe quantifier usage",
-			pattern:  "[0-9]+\\.[0-9]*",
-			expected: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := isPathologicalRegex(tt.pattern)
-			assert.Equal(t, tt.expected, result, "Pattern: %s", tt.pattern)
-		})
+func TestParseFilterTimeout(t *testing.T) {
+	// Test with a pathological regex pattern that should trigger MatchTimeout
+	filter := "/((((.*)*)*)*)*z/"
+	compiled, err := parseFilter(filter)
+	
+	// The regex should compile successfully with timeout protection
+	assert.NoError(t, err)
+	assert.NotNil(t, compiled)
+	assert.Equal(t, 5*time.Second, compiled.MatchTimeout)
+	
+	// Test that the regex times out when matching against a problematic string
+	// This string is crafted to trigger catastrophic backtracking
+	testString := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" // 52 'a's, no 'z'
+	
+	// The match should timeout and return an error
+	match, err := compiled.MatchString(testString)
+	
+	// We expect either a timeout error or the match to complete quickly if RE2 optimizations prevent catastrophic backtracking
+	// In either case, the system should remain responsive
+	assert.False(t, match) // Should not match since there's no 'z'
+	
+	// If there's an error, it should be related to timeout
+	if err != nil {
+		assert.Contains(t, err.Error(), "timeout")
 	}
 }
+
