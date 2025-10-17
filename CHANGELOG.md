@@ -1,5 +1,11 @@
 # Change Log
 
+## 6.0.3
+
+### Patch Changes
+
+🐛 Set grpc limits explicitly
+
 ## 6.0.2
 
 ⚙️ Chore: Refactor regex pattern validation to use timeout-based approach
