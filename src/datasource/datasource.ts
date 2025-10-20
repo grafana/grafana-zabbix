@@ -856,7 +856,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
           queryModel.host,
           queryModel.application,
           queryModel.itemTag,
-          queryModel.item
+          queryModel.item,
+          { showDisabledItems: queryModel.showDisabledItems }
         );
         break;
       case VariableQueryTypes.ItemValues:
