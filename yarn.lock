@@ -3543,12 +3543,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/testing-library__jest-dom@npm:5.14.8":
-  version: 5.14.8
-  resolution: "@types/testing-library__jest-dom@npm:5.14.8"
+"@types/testing-library__jest-dom@npm:5.14.9":
+  version: 5.14.9
+  resolution: "@types/testing-library__jest-dom@npm:5.14.9"
   dependencies:
     "@types/jest": "npm:*"
-  checksum: 10c0/83b9e7470da50d1a594c0afd999f689955e61cb8d9a8a32582ca14f73cc8503428376f98414becc1dc9e712f3de8ee2e49f41ed0117ab6a382c79988682e857e
+  checksum: 10c0/91f7b15e8813b515912c54da44464fb60ecf21162b7cae2272fcb3918074f4e1387dc2beca1f5041667e77b76b34253c39675ea4e0b3f28f102d8cc87fdba9fa
   languageName: node
   linkType: hard
 
@@ -7366,7 +7366,7 @@ __metadata:
     "@types/node": "npm:^20.8.7"
     "@types/react": "npm:^18.2.25"
     "@types/react-router-dom": "npm:^5.2.0"
-    "@types/testing-library__jest-dom": "npm:5.14.8"
+    "@types/testing-library__jest-dom": "npm:5.14.9"
     "@typescript-eslint/eslint-plugin": "npm:^8.3.0"
     "@typescript-eslint/parser": "npm:^8.3.0"
     autoprefixer: "npm:10.4.7"
