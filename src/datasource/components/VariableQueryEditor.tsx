@@ -3,7 +3,7 @@ import { parseLegacyVariableQuery } from '../utils';
 import { SelectableValue } from '@grafana/data';
 import { VariableQuery, VariableQueryData, VariableQueryProps, VariableQueryTypes } from '../types';
 import { ZabbixInput } from './ZabbixInput';
-import { InlineField, InlineFieldRow, InlineFormLabel, Input, Select } from '@grafana/ui';
+import { InlineField, InlineFieldRow, InlineFormLabel, Input, Select, Switch } from '@grafana/ui';
 
 export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryData> {
   queryTypes: Array<SelectableValue<VariableQueryTypes>> = [
@@ -23,6 +23,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     application: '',
     itemTag: '',
     item: '',
+    showDisabledItems: false,
   };
 
   constructor(props: VariableQueryProps) {
@@ -87,15 +88,22 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
+  handleShowDisabledItemsChange = (evt: React.FormEvent<HTMLInputElement>) => {
+    this.setState({
+      ...this.state,
+      showDisabledItems: (evt.target as any).checked,
+    });
+  };
+
   render() {
-    const { selectedQueryType, legacyQuery, group, host, application, itemTag, item } = this.state;
+    const { selectedQueryType, legacyQuery, group, host, application, itemTag, item, showDisabledItems } = this.state;
     const { datasource } = this.props;
     const supportsItemTags = datasource?.zabbix?.isZabbix54OrHigherSync() || false;
 
     return (
       <>
         <InlineFieldRow>
-          <InlineField label="Query Type" labelWidth={16}>
+          <InlineField label="Query Type" labelWidth={18}>
             <Select
               width={30}
               value={selectedQueryType}
@@ -106,7 +114,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
         </InlineFieldRow>
 
         <InlineFieldRow>
-          <InlineField label="Group" labelWidth={16}>
+          <InlineField label="Group" labelWidth={18}>
             <ZabbixInput
               width={30}
               value={group}
@@ -118,7 +126,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
 
         {selectedQueryType.value !== VariableQueryTypes.Group && (
           <InlineFieldRow>
-            <InlineField label="Host" labelWidth={16}>
+            <InlineField label="Host" labelWidth={18}>
               <ZabbixInput
                 width={30}
                 value={host}
@@ -136,7 +144,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           <>
             {supportsItemTags && (
               <InlineFieldRow>
-                <InlineField label="Item Tag" labelWidth={16}>
+                <InlineField label="Item Tag" labelWidth={18}>
                   <ZabbixInput
                     width={30}
                     value={itemTag}
@@ -149,7 +157,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
 
             {!supportsItemTags && (
               <InlineFieldRow>
-                <InlineField label="Application" labelWidth={16}>
+                <InlineField label="Application" labelWidth={18}>
                   <ZabbixInput
                     width={30}
                     value={application}
@@ -163,7 +171,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
             {(selectedQueryType.value === VariableQueryTypes.Item ||
               selectedQueryType.value === VariableQueryTypes.ItemValues) && (
               <InlineFieldRow>
-                <InlineField label="Item" labelWidth={16}>
+                <InlineField label="Item" labelWidth={18}>
                   <ZabbixInput
                     width={30}
                     value={item}
@@ -182,6 +190,15 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
               Legacy Query
             </InlineFormLabel>
             <Input value={legacyQuery} readOnly={true} />
+          </>
+        )}
+        {selectedQueryType.value === VariableQueryTypes.Item && (
+          <>
+            <InlineFieldRow>
+              <InlineField label="Show disabled items" labelWidth={18} style={{ alignItems: 'center' }}>
+                <Switch value={showDisabledItems} onChange={this.handleShowDisabledItemsChange} />
+              </InlineField>
+            </InlineFieldRow>
           </>
         )}
       </>
