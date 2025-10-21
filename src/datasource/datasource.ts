@@ -11,7 +11,7 @@ import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
-import { ProblemDTO, VariableQueryTypes } from './types';
+import { LegacyVariableQuery, ProblemDTO, VariableQuery, VariableQueryTypes } from './types';
 import { ZabbixMetricsQuery, ShowProblemTypes } from './types/query';
 import { ZabbixDSOptions } from './types/config';
 import {
@@ -813,12 +813,12 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Find metrics from templated request.
    *
-   * @param  {string} query Query from Templating
+   * @param  {LegacyVariableQuery} query Query from Templating
    * @param options
    * @return {string}       Metric name - group, host, app or item or list
    *                        of metrics in "{metric1, metric2,..., metricN}" format.
    */
-  metricFindQuery(query, options) {
+  metricFindQuery(query: LegacyVariableQuery, options) {
     let resultPromise;
     let queryModel = _.cloneDeep(query);
 
@@ -835,6 +835,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       queryModel[prop] = this.replaceTemplateVars(queryModel[prop], {});
     }
 
+    queryModel = queryModel as VariableQuery;
     const { group, host, application, item } = queryModel;
 
     switch (queryModel.queryType) {
