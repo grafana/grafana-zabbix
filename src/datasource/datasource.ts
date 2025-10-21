@@ -36,6 +36,7 @@ import {
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
+import { lastValueFrom } from 'rxjs';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -212,14 +213,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     let rsp: any;
     try {
-      rsp = await getBackendSrv()
-        .fetch({
+      rsp = await lastValueFrom(
+        getBackendSrv().fetch({
           url: '/api/ds/query',
           method: 'POST',
           data: body,
           requestId,
         })
-        .toPromise();
+      );
     } catch (err) {
       return toDataQueryResponse(err);
     }
@@ -404,7 +405,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       },
     };
 
-    const response: any = await getBackendSrv().fetch<any>(requestOptions).toPromise();
+    const response: any = await lastValueFrom(getBackendSrv().fetch<any>(requestOptions));
     return response.data;
   }
 
