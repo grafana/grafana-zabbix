@@ -292,10 +292,16 @@ describe('ZabbixDatasource', () => {
 
     it('should return items', (done) => {
       const tests = [
-        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', undefined, '/.*/'] },
-        { query: '.*.*.*', expect: ['', '/.*/', '', undefined, '/.*/'] },
-        { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', undefined, '/.*/'] },
-        { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu', undefined, '/.*/'] },
+        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', undefined, '/.*/', { showDisabledItems: undefined }] },
+        { query: '.*.*.*', expect: ['', '/.*/', '', undefined, '/.*/', { showDisabledItems: undefined }] },
+        {
+          query: 'Backend.backend01.*.*',
+          expect: ['Backend', 'backend01', '', undefined, '/.*/', { showDisabledItems: undefined }],
+        },
+        {
+          query: 'Back*.*.cpu.*',
+          expect: ['Back*', '/.*/', 'cpu', undefined, '/.*/', { showDisabledItems: undefined }],
+        },
       ];
 
       for (const test of tests) {
@@ -305,7 +311,8 @@ describe('ZabbixDatasource', () => {
           test.expect[1],
           test.expect[2],
           test.expect[3],
-          test.expect[4]
+          test.expect[4],
+          test.expect[5]
         );
         ctx.ds.zabbix.getItems.mockClear();
       }
@@ -383,7 +390,33 @@ describe('ZabbixDatasource', () => {
           'HostFilter',
           'AppFilter',
           'TagFilter',
-          'ItemFilter'
+          'ItemFilter',
+          { showDisabledItems: undefined }
+        );
+        expect(result).toEqual([
+          { text: 'Item1', expandable: false },
+          { text: 'Item2', expandable: false },
+        ]);
+      });
+
+      it('should return disabled items when queryType is Item and show disabled items is turned on', async () => {
+        const query = {
+          queryType: VariableQueryTypes.Item,
+          group: 'GroupFilter',
+          host: 'HostFilter',
+          application: 'AppFilter',
+          itemTag: 'TagFilter',
+          item: 'ItemFilter',
+          showDisabledItems: true,
+        };
+        const result = await ctx.ds.metricFindQuery(query, {});
+        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'AppFilter',
+          'TagFilter',
+          'ItemFilter',
+          { showDisabledItems: true }
         );
         expect(result).toEqual([
           { text: 'Item1', expandable: false },
