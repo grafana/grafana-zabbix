@@ -1,12 +1,11 @@
 import React, { PureComponent } from 'react';
 import { parseLegacyVariableQuery } from '../utils';
-import { SelectableValue } from '@grafana/data';
 import { VariableQuery, VariableQueryData, VariableQueryProps, VariableQueryTypes } from '../types';
 import { ZabbixInput } from './ZabbixInput';
-import { InlineField, InlineFieldRow, InlineFormLabel, Input, Select, Switch } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField, InlineFieldRow, InlineFormLabel, Input, Switch } from '@grafana/ui';
 
 export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryData> {
-  queryTypes: Array<SelectableValue<VariableQueryTypes>> = [
+  queryTypes: Array<ComboboxOption<VariableQueryTypes>> = [
     { value: VariableQueryTypes.Group, label: 'Group' },
     { value: VariableQueryTypes.Host, label: 'Host' },
     { value: VariableQueryTypes.Application, label: 'Application' },
@@ -70,29 +69,40 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   };
 
   handleQueryChange = () => {
-    const { queryType, group, host, application, itemTag, item } = this.state;
-    const queryModel = { queryType, group, host, application, itemTag, item };
+    const { queryType, group, host, application, itemTag, item, showDisabledItems } = this.state;
+    const queryModel = { queryType, group, host, application, itemTag, item, showDisabledItems };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
-  handleQueryTypeChange = (selectedItem: SelectableValue<VariableQueryTypes>) => {
+  handleQueryTypeChange = (selectedItem: ComboboxOption<VariableQueryTypes>) => {
     this.setState({
       ...this.state,
       selectedQueryType: selectedItem,
       queryType: selectedItem.value,
     });
 
-    const { group, host, application, itemTag, item } = this.state;
+    const { group, host, application, itemTag, item, showDisabledItems } = this.state;
     const queryType = selectedItem.value;
-    const queryModel = { queryType, group, host, application, itemTag, item };
+    const queryModel = { queryType, group, host, application, itemTag, item, showDisabledItems };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
   handleShowDisabledItemsChange = (evt: React.FormEvent<HTMLInputElement>) => {
-    this.setState({
-      ...this.state,
-      showDisabledItems: (evt.target as any).checked,
+    const showDisabledItems = (evt.target as any).checked;
+    this.setState((prevState: VariableQueryData) => {
+      const newQuery = {
+        ...prevState,
+        showDisabledItems: showDisabledItems,
+      };
+
+      return {
+        ...newQuery,
+      };
     });
+
+    const { queryType, group, host, application, itemTag, item } = this.state;
+    const queryModel = { queryType, group, host, application, itemTag, item, showDisabledItems };
+    this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
   render() {
@@ -100,11 +110,12 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     const { datasource } = this.props;
     const supportsItemTags = datasource?.zabbix?.isZabbix54OrHigherSync() || false;
 
+    console.log(this.state);
     return (
       <>
         <InlineFieldRow>
           <InlineField label="Query Type" labelWidth={18}>
-            <Select
+            <Combobox
               width={30}
               value={selectedQueryType}
               options={this.queryTypes}
