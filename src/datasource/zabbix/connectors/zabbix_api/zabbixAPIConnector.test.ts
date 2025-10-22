@@ -94,7 +94,6 @@ describe('Zabbix API connector', () => {
       const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve(triggers));
-      // zabbixAPIConnector.initVersion = jest.fn(() => Promise.resolve('7.0.0'));
 
       const result = await zabbixAPIConnector.getHostPCAlerts(undefined, undefined, undefined, {
         count: true,
