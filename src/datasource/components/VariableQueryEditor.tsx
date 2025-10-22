@@ -90,13 +90,9 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   handleShowDisabledItemsChange = (evt: React.FormEvent<HTMLInputElement>) => {
     const showDisabledItems = (evt.target as any).checked;
     this.setState((prevState: VariableQueryData) => {
-      const newQuery = {
+      return {
         ...prevState,
         showDisabledItems: showDisabledItems,
-      };
-
-      return {
-        ...newQuery,
       };
     });
 
