@@ -110,7 +110,6 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     const { datasource } = this.props;
     const supportsItemTags = datasource?.zabbix?.isZabbix54OrHigherSync() || false;
 
-    console.log(this.state);
     return (
       <>
         <InlineFieldRow>
