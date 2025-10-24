@@ -201,8 +201,11 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
           if (!problem.tags || !options.customTagColumn) {
             return '';
           }
-          const tag = problem.tags.find((t) => t.tag === options.customTagColumn);
-          return tag ? tag.value : '';
+          // There are cases where multiple tags with same name
+          const matchingTags = problem.tags.filter((t) => t.tag === options.customTagColumn);
+          // Extract values and join with comma
+          const values = matchingTags.map((t) => t.value).filter((v) => v);
+          return values.length > 0 ? values.join(', ') : '';
         },
         Cell: (props) => {
           const tagValue = props.value || '';
