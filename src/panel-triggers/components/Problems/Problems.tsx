@@ -193,6 +193,27 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         Cell: (props) => <TagCell {...props} onTagClick={this.handleTagClick} />,
       },
       {
+        Header: options.customTagColumn || 'Custom Tag',
+        id: 'customTag',
+        show: options.customTagColumn && options.customTagColumn.length > 0,
+        width: 150,
+        accessor: (problem) => {
+          if (!problem.tags || !options.customTagColumn) {
+            return '';
+          }
+          const tag = problem.tags.find((t) => t.tag === options.customTagColumn);
+          return tag ? tag.value : '';
+        },
+        Cell: (props) => {
+          const tagValue = props.value || '';
+          return (
+            <div>
+              <span>{tagValue}</span>
+            </div>
+          );
+        },
+      },
+      {
         Header: 'Age',
         className: 'problem-age',
         width: 100,

@@ -220,7 +220,20 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         name: 'Datasource name',
         defaultValue: defaultPanelOptions.showDatasourceName,
         category: ['Fields'],
-      });
+      })
+      
+      // Select tag name to display as column
+      .addTextInput({
+        path: 'customTagColumn',
+        name: 'Custom tag column',
+        defaultValue: '',
+        description: 'Tag name to display',
+        settings: {
+          placeholder: 'Specify the key of the tag you need to show. eg. component:interface'
+        },
+        category: ['Fields'],
+      })
+      ;
   });
 
 const fontSizeOptions = [
