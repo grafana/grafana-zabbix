@@ -224,12 +224,12 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
       
       // Select tag name to display as column
       .addTextInput({
-        path: 'customTagColumn',
-        name: 'Custom tag column',
+        path: 'customTagColumns',
+        name: 'Tags to columns',
         defaultValue: '',
-        description: 'Tag name to display',
+        description: 'Comma-separated list of tag names to display as columns (e.g., component, scope, environment)',
         settings: {
-          placeholder: 'Specify the key of the tag you need to show. eg. component:interface'
+          placeholder: 'component, scope, target'
         },
         category: ['Fields'],
       })

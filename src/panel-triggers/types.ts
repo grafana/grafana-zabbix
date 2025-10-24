@@ -42,8 +42,8 @@ export interface ProblemsPanelOptions {
   okEventColor: TriggerColor;
   ackEventColor: TriggerColor;
   markAckEvents?: boolean;
-  // Custom tag name to display as column
-  customTagColumn?: string;
+  // Custom tag names to display as column
+  customTagColumns?: string;
 }
 
 export const DEFAULT_SEVERITY: TriggerSeverity[] = [
