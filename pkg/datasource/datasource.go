@@ -7,19 +7,17 @@ import (
 	"net/http"
 	"time"
 
-	"strings"
-
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 var (
@@ -27,8 +25,9 @@ var (
 )
 
 type ZabbixDatasource struct {
-	im     instancemgmt.InstanceManager
-	logger log.Logger
+	im         instancemgmt.InstanceManager
+	logger     log.Logger
+	tokenCache *cache.TokenCache
 }
 
 // ZabbixDatasourceInstance stores state about a specific datasource
@@ -41,10 +40,26 @@ type ZabbixDatasourceInstance struct {
 }
 
 func NewZabbixDatasource() *ZabbixDatasource {
-	im := datasource.NewInstanceManager(newZabbixDatasourceInstance)
-	return &ZabbixDatasource{
-		im:     im,
-		logger: log.New(),
+	ds := &ZabbixDatasource{
+		im:         datasource.NewInstanceManager(newZabbixDatasourceInstance),
+		logger:     log.New(),
+		tokenCache: cache.NewTokenCache(),
+	}
+
+	go ds.startTokenCleanup()
+
+	return ds
+}
+
+func (ds *ZabbixDatasource) startTokenCleanup() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		cleaned := ds.tokenCache.CleanupExpired()
+		if cleaned > 0 {
+			ds.logger.Info("Cleaned up expired Zabbix authentication tokens", "count", cleaned)
+		}
 	}
 }
 
@@ -124,66 +139,11 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		queryTimeout = 60 * time.Second // Default to 60 seconds if not configured
 	}
 
-	// --- Per-user authentication logic START ---
-	if zabbixDS.Settings.PerUserAuth {
-		user := backend.UserFromContext(ctx)
-		if user == nil {
-			return nil, errors.New("no Grafana user found in request context")
-		}
-
-		var identity string
-		switch zabbixDS.Settings.PerUserAuthField {
-		case "email":
-			identity = user.Email
-		default:
-			identity = user.Login
-		}
-
-		// Check if the user is excluded from per-user auth
-		excluded := false
-		exclusionList := zabbixDS.Settings.PerUserAuthExcludeUsers
-		if exclusionList == nil {
-			exclusionList = []string{"admin"} // Default exclusion
-		}
-		for _, excludedUser := range exclusionList {
-			if strings.EqualFold(identity, excludedUser) {
-				excluded = true
-				break
-			}
-		}
-
-		if excluded {
-			ds.logger.Debug("User is excluded from per-user authentication", "identity", identity)
-		} else {
-			zabbixVersion, err := zabbixDS.zabbix.GetVersion(ctx)
-			if err != nil {
-				return nil, errors.New("error getting Zabbix version: " + err.Error())
-			}
-
-			// Query Zabbix for the user
-			zabbixUser, err := zabbixDS.zabbix.GetAPI().GetUserByIdentity(ctx, zabbixDS.Settings.PerUserAuthField, identity, zabbixVersion)
-			if err != nil {
-				return nil, errors.New("error querying Zabbix for user: " + err.Error())
-			}
-			if zabbixUser == nil || len(zabbixUser.MustArray()) == 0 {
-				return nil, errors.New("user " + identity + " not found in Zabbix. Contact your administrator to provision access")
-			}
-			userId := zabbixUser.GetIndex(0).Get("userid").MustString()
-			userName := zabbixUser.GetIndex(0).Get("username").MustString()
-
-			// Generate or retrieve Zabbix API token
-			token, err := zabbixDS.zabbix.GetAPI().GenerateUserAPIToken(ctx, userId, userName, zabbixVersion)
-			if err != nil {
-				return nil, errors.New("failed to generate Zabbix API token for user: " + err.Error())
-			}
-
-			zabbixDS.zabbix.GetAPI().SetAuth(token)
-
-			ds.logger.Debug("Per-user authentication enabled", "identity", identity)
-		}
+	// Apply per-user authentication
+	err = ds.applyPerUserAuth(ctx, zabbixDS, req.PluginContext.DataSourceInstanceSettings.UID)
+	if err != nil {
+		return nil, err
 	}
-
-	// --- Per-user authentication logic END ---
 
 	for _, q := range req.Queries {
 		res := backend.DataResponse{}
