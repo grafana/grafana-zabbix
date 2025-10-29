@@ -32,6 +32,9 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 	if zabbixSettingsDTO.CacheTTL == "" {
 		zabbixSettingsDTO.CacheTTL = "1h"
 	}
+	if zabbixSettingsDTO.PerUserAuth && zabbixSettingsDTO.PerUserAuthField == "" {
+		zabbixSettingsDTO.PerUserAuthField = "username"
+	}
 
 	//if zabbixSettingsDTO.Timeout == 0 {
 	//	zabbixSettingsDTO.Timeout = 30
