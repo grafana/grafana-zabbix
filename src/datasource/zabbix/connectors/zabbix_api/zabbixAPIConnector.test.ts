@@ -102,6 +102,58 @@ describe('Zabbix API connector', () => {
       expect(result).toBe(0);
     });
   });
+
+  describe('getProblems', () => {
+    it('sends full filter payload with application ids when supported', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([{ eventid: '1' }]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], true, {
+        timeFrom: 100,
+        timeTo: 200,
+        recent: 'true',
+        severities: [3, 4],
+        limit: 50,
+        acknowledged: 0,
+        tags: [{ tag: 'service', value: 'foo' }],
+        evaltype: 1,
+      });
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('problem.get', {
+        output: 'extend',
+        selectAcknowledges: 'extend',
+        selectSuppressionData: 'extend',
+        selectTags: 'extend',
+        source: '0',
+        object: '0',
+        sortfield: ['eventid'],
+        sortorder: 'DESC',
+        evaltype: 1,
+        groupids: ['21'],
+        hostids: ['31'],
+        applicationids: ['41'],
+        recent: 'true',
+        severities: [3, 4],
+        acknowledged: 0,
+        tags: [{ tag: 'service', value: 'foo' }],
+        limit: 50,
+        time_from: 100,
+        time_till: 200,
+      });
+    });
+
+    it('omits applicationids when applications are unsupported', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([{ eventid: '1' }]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.applicationids).toBeUndefined();
+    });
+  });
 });
 
 const triggers = [
