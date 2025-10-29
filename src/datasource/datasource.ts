@@ -11,7 +11,7 @@ import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
-import { ProblemDTO, VariableQueryTypes } from './types';
+import { LegacyVariableQuery, ProblemDTO, VariableQuery, VariableQueryTypes } from './types';
 import { ZabbixMetricsQuery, ShowProblemTypes } from './types/query';
 import { ZabbixDSOptions } from './types/config';
 import {
@@ -36,6 +36,7 @@ import {
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
+import { lastValueFrom } from 'rxjs';
 
 export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -212,14 +213,14 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
 
     let rsp: any;
     try {
-      rsp = await getBackendSrv()
-        .fetch({
+      rsp = await lastValueFrom(
+        getBackendSrv().fetch({
           url: '/api/ds/query',
           method: 'POST',
           data: body,
           requestId,
         })
-        .toPromise();
+      );
     } catch (err) {
       return toDataQueryResponse(err);
     }
@@ -404,7 +405,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       },
     };
 
-    const response: any = await getBackendSrv().fetch<any>(requestOptions).toPromise();
+    const response: any = await lastValueFrom(getBackendSrv().fetch<any>(requestOptions));
     return response.data;
   }
 
@@ -813,12 +814,12 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   /**
    * Find metrics from templated request.
    *
-   * @param  {string} query Query from Templating
+   * @param  {LegacyVariableQuery} query Query from Templating
    * @param options
    * @return {string}       Metric name - group, host, app or item or list
    *                        of metrics in "{metric1, metric2,..., metricN}" format.
    */
-  metricFindQuery(query, options) {
+  metricFindQuery(query: LegacyVariableQuery, options) {
     let resultPromise;
     let queryModel = _.cloneDeep(query);
 
@@ -835,6 +836,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
       queryModel[prop] = this.replaceTemplateVars(queryModel[prop], {});
     }
 
+    queryModel = queryModel as VariableQuery;
     const { group, host, application, item } = queryModel;
 
     switch (queryModel.queryType) {
@@ -856,7 +858,8 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
           queryModel.host,
           queryModel.application,
           queryModel.itemTag,
-          queryModel.item
+          queryModel.item,
+          { showDisabledItems: queryModel.showDisabledItems }
         );
         break;
       case VariableQueryTypes.ItemValues:

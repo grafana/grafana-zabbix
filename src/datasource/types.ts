@@ -1,4 +1,6 @@
-import { BusEventWithPayload, DataSourceRef, SelectableValue } from '@grafana/data';
+import { BusEventWithPayload } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
+import { ComboboxOption } from '@grafana/ui';
 
 // The paths of these files have moved around in Grafana and they don't resolve properly
 // either. Safer not to bother trying to import them just for type hinting.
@@ -60,7 +62,7 @@ export interface VariableQueryProps {
 }
 
 export interface VariableQueryData extends VariableQuery {
-  selectedQueryType: SelectableValue<VariableQueryTypes>;
+  selectedQueryType: ComboboxOption<VariableQueryTypes>;
   legacyQuery?: string;
 }
 
@@ -72,6 +74,7 @@ export interface VariableQuery {
   itemTag?: string;
   item?: string;
   macro?: string;
+  showDisabledItems?: boolean;
 }
 
 export type LegacyVariableQuery = VariableQuery | string;

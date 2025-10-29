@@ -56,8 +56,8 @@ describe('ZabbixDatasource', () => {
         },
       ],
       range: {
-        from: dateMath.parse('now-1h'),
-        to: dateMath.parse('now'),
+        from: dateMath.toDateTime('now-1h', {}),
+        to: dateMath.toDateTime('now', {}),
       },
     };
 
@@ -242,7 +242,7 @@ describe('ZabbixDatasource', () => {
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(ctx.ds.zabbix.getGroups).toBeCalledWith(test.expect);
+        expect(ctx.ds.zabbix.getGroups).toHaveBeenCalledWith(test.expect);
         ctx.ds.zabbix.getGroups.mockClear();
       }
       done();
@@ -250,7 +250,7 @@ describe('ZabbixDatasource', () => {
 
     it('should return empty list for empty query', (done) => {
       ctx.ds.metricFindQuery('').then((result) => {
-        expect(ctx.ds.zabbix.getGroups).toBeCalledTimes(0);
+        expect(ctx.ds.zabbix.getGroups).toHaveBeenCalledTimes(0);
         ctx.ds.zabbix.getGroups.mockClear();
 
         expect(result).toEqual([]);
@@ -268,7 +268,7 @@ describe('ZabbixDatasource', () => {
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(ctx.ds.zabbix.getHosts).toBeCalledWith(test.expect[0], test.expect[1]);
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(test.expect[0], test.expect[1]);
         ctx.ds.zabbix.getHosts.mockClear();
       }
       done();
@@ -284,7 +284,7 @@ describe('ZabbixDatasource', () => {
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(ctx.ds.zabbix.getApps).toBeCalledWith(test.expect[0], test.expect[1], test.expect[2]);
+        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith(test.expect[0], test.expect[1], test.expect[2]);
         ctx.ds.zabbix.getApps.mockClear();
       }
       done();
@@ -292,20 +292,27 @@ describe('ZabbixDatasource', () => {
 
     it('should return items', (done) => {
       const tests = [
-        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', undefined, '/.*/'] },
-        { query: '.*.*.*', expect: ['', '/.*/', '', undefined, '/.*/'] },
-        { query: 'Backend.backend01.*.*', expect: ['Backend', 'backend01', '', undefined, '/.*/'] },
-        { query: 'Back*.*.cpu.*', expect: ['Back*', '/.*/', 'cpu', undefined, '/.*/'] },
+        { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', undefined, '/.*/', { showDisabledItems: undefined }] },
+        { query: '.*.*.*', expect: ['', '/.*/', '', undefined, '/.*/', { showDisabledItems: undefined }] },
+        {
+          query: 'Backend.backend01.*.*',
+          expect: ['Backend', 'backend01', '', undefined, '/.*/', { showDisabledItems: undefined }],
+        },
+        {
+          query: 'Back*.*.cpu.*',
+          expect: ['Back*', '/.*/', 'cpu', undefined, '/.*/', { showDisabledItems: undefined }],
+        },
       ];
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(ctx.ds.zabbix.getItems).toBeCalledWith(
+        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
           test.expect[0],
           test.expect[1],
           test.expect[2],
           test.expect[3],
-          test.expect[4]
+          test.expect[4],
+          test.expect[5]
         );
         ctx.ds.zabbix.getItems.mockClear();
       }
@@ -316,7 +323,7 @@ describe('ZabbixDatasource', () => {
       let query = '*.*';
 
       ctx.ds.metricFindQuery(query);
-      expect(ctx.ds.zabbix.getHosts).toBeCalledWith('/.*/', '/.*/');
+      expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('/.*/', '/.*/');
       done();
     });
 
@@ -383,7 +390,33 @@ describe('ZabbixDatasource', () => {
           'HostFilter',
           'AppFilter',
           'TagFilter',
-          'ItemFilter'
+          'ItemFilter',
+          { showDisabledItems: undefined }
+        );
+        expect(result).toEqual([
+          { text: 'Item1', expandable: false },
+          { text: 'Item2', expandable: false },
+        ]);
+      });
+
+      it('should return disabled items when queryType is Item and show disabled items is turned on', async () => {
+        const query = {
+          queryType: VariableQueryTypes.Item,
+          group: 'GroupFilter',
+          host: 'HostFilter',
+          application: 'AppFilter',
+          itemTag: 'TagFilter',
+          item: 'ItemFilter',
+          showDisabledItems: true,
+        };
+        const result = await ctx.ds.metricFindQuery(query, {});
+        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'AppFilter',
+          'TagFilter',
+          'ItemFilter',
+          { showDisabledItems: true }
         );
         expect(result).toEqual([
           { text: 'Item1', expandable: false },
