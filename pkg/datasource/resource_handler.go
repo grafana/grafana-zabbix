@@ -56,6 +56,14 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 		return
 	}
 
+	// Apply per-user authentication with caching
+	err = ds.applyPerUserAuth(ctx, dsInstance, pluginCxt.DataSourceInstanceSettings.UID)
+	if err != nil {
+		ds.logger.Error("Per-user authentication failed", "error", err)
+		writeError(rw, http.StatusForbidden, err)
+		return
+	}
+
 	apiReq := &zabbix.ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
 
 	result, err := dsInstance.ZabbixAPIQuery(req.Context(), apiReq)
@@ -94,6 +102,14 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 	if err != nil {
 		ds.logger.Error("Error loading datasource", "error", err)
 		writeError(rw, http.StatusInternalServerError, err)
+		return
+	}
+
+	// Apply per-user authentication with caching
+	err = ds.applyPerUserAuth(ctx, dsInstance, pluginCxt.DataSourceInstanceSettings.UID)
+	if err != nil {
+		ds.logger.Error("Per-user authentication failed", "error", err)
+		writeError(rw, http.StatusForbidden, err)
 		return
 	}
 
