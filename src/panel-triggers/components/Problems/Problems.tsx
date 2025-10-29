@@ -185,6 +185,49 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         width: 70,
         Cell: (props) => <AckCell {...props} />,
       },
+    ];
+    // CUSTOM TAGS ARE ADDED HERE, BEFORE THE ORIGINAL TAGS COLUMN
+    if (options.customTagColumns && options.customTagColumns.trim().length > 0) {
+      const tagNames = options.customTagColumns
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+
+      // Helper function to capitalize first letter for uniformity
+      const capitalizeFirstLetter = (str: string) => {
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      }
+
+      // Create a column for each tag
+      tagNames.forEach((tagName) => {
+        columns.push({
+          Header: capitalizeFirstLetter(tagName),
+          id: `customTag_${tagName}`,
+          className: `customTag_${tagName}`,
+          show: true,
+          width: 150,
+          accessor: (problem) => {
+            if (!problem) {
+              return '';
+            }
+            // There are cases where multiple tags with same name
+            const matchingTags = problem.tags.filter((t) => t.tag === tagName);
+            const values = matchingTags.map((t) => t.value).filter((v) => v);
+            return values.length > 0 ? values.join(', ') : '';
+          },
+          Cell: (props) => {
+            const tagValue = props.value || '';
+            return (
+              <div>
+                <span>{tagValue}</span>
+              </div>
+            );
+          },
+        });
+      });
+    }
+
+    columns.push(
       {
         Header: 'Tags',
         accessor: 'tags',
@@ -210,7 +253,8 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         Cell: (props) => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
       },
       { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
-    ];
+    );
+
     for (const column of columns) {
       if (column.show || column.show === undefined) {
         delete column.show;
