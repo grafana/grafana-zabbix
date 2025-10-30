@@ -126,7 +126,7 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	if auth != "" && version >= 72 {
 		if api.dsSettings.BasicAuthEnabled {
-			return nil, backend.DownstreamError(errors.New("basic auth is not supported for Zabbix v7.2 and later"))
+			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
 		}
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
 	}
@@ -172,7 +172,7 @@ func (api *ZabbixAPI) requestWithArrayParams(ctx context.Context, method string,
 
 	if auth != "" && version >= 72 {
 		if api.dsSettings.BasicAuthEnabled {
-			return nil, backend.DownstreamError(errors.New("basic Auth is not supported for Zabbix v7.2 and later"))
+			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
 		}
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
 	}
