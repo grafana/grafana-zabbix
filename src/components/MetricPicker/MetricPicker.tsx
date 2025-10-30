@@ -13,7 +13,7 @@ export interface Props {
   onChange: (value: string) => void;
 }
 
-export const MetricPicker = ({ value, options, isLoading, width, onChange }: Props): JSX.Element => {
+export const MetricPicker = ({ value, options, isLoading, width, onChange }: Props) => {
   const [isOpen, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
   const [filteredOptions, setFilteredOptions] = useState(options);

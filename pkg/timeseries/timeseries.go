@@ -46,7 +46,7 @@ func (ts TimeSeries) GroupBy(interval time.Duration, aggFunc AggFunc) TimeSeries
 		pointFrameTs = point.GetTimeFrame(interval)
 
 		// Iterate over points and push it into the frame if point time stamp fit the frame
-		if pointFrameTs == frameTS {
+		if pointFrameTs.Equal(frameTS) {
 			frame = append(frame, point)
 		} else if pointFrameTs.After(frameTS) {
 			// If point outside frame, then we've done with current frame
@@ -137,9 +137,10 @@ func Filter(series []*TimeSeriesData, n int, order string, aggFunc AggFunc) []*T
 	maxN := int(math.Min(float64(n), float64(len(series))))
 	filteredSeries := make([]*TimeSeriesData, maxN)
 	for i := 0; i < maxN; i++ {
-		if order == "top" {
+		switch order {
+		case "top":
 			filteredSeries[i] = series[len(series)-1-i]
-		} else if order == "bottom" {
+		case "bottom":
 			filteredSeries[i] = series[i]
 		}
 	}

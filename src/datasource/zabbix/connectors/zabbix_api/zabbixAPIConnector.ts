@@ -482,7 +482,7 @@ export class ZabbixAPIConnector {
     return sliResponse;
   }
 
-  getProblems(groupids, hostids, applicationids, options): Promise<ZBXProblem[]> {
+  getProblems(groupids, hostids, applicationids, supportsApplications, options): Promise<ZBXProblem[]> {
     const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype } = options;
 
     const params: any = {
@@ -498,7 +498,6 @@ export class ZabbixAPIConnector {
       // preservekeys: '1',
       groupids,
       hostids,
-      applicationids,
       recent,
     };
 
@@ -525,6 +524,10 @@ export class ZabbixAPIConnector {
     if (timeFrom || timeTo) {
       params.time_from = timeFrom;
       params.time_till = timeTo;
+    }
+
+    if (supportsApplications) {
+      params.applicationids = applicationids;
     }
 
     return this.request('problem.get', params).then(utils.mustArray);

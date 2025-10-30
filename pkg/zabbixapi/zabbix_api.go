@@ -354,7 +354,11 @@ func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Req
 		}
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			log.DefaultLogger.Warn("Error closing response body", "error", err)
+		}
+	}()
 
 	if res.StatusCode != http.StatusOK {
 		err = fmt.Errorf("request failed, status: %v", res.Status)

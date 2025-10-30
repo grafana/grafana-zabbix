@@ -142,7 +142,8 @@ func convertTrendToHistory(trend zabbix.Trend, valueType string) (zabbix.History
 }
 
 func getTrendPointValue(point zabbix.TrendPoint, valueType string) (float64, error) {
-	if valueType == "avg" || valueType == "min" || valueType == "max" || valueType == "count" {
+	switch valueType {
+	case "avg", "min", "max", "count":
 		valueStr := point.ValueAvg
 		switch valueType {
 		case "min":
@@ -158,7 +159,7 @@ func getTrendPointValue(point zabbix.TrendPoint, valueType string) (float64, err
 			return 0, backend.DownstreamError(fmt.Errorf("error parsing trend value: %s", err))
 		}
 		return value, nil
-	} else if valueType == "sum" {
+	case "sum":
 		avgStr := point.ValueAvg
 		avg, err := strconv.ParseFloat(avgStr, 64)
 		if err != nil {

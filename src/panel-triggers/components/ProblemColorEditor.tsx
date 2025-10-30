@@ -5,7 +5,7 @@ import { TriggerSeverity } from '../types';
 
 type Props = StandardEditorProps<TriggerSeverity[]>;
 
-export const ProblemColorEditor = ({ value, onChange }: Props): JSX.Element => {
+export const ProblemColorEditor = ({ value, onChange }: Props) => {
   const onSeverityItemChange = (severity: TriggerSeverity) => {
     value.forEach((v, i) => {
       if (v.priority === severity.priority) {
@@ -33,7 +33,7 @@ interface ProblemColorEditorRowProps {
   onChange: (value?: TriggerSeverity) => void;
 }
 
-export const ProblemColorEditorRow = ({ value, onChange }: ProblemColorEditorRowProps): JSX.Element => {
+export const ProblemColorEditorRow = ({ value, onChange }: ProblemColorEditorRowProps) => {
   const onSeverityNameChange = (v: FormEvent<HTMLInputElement>) => {
     const newValue = v?.currentTarget?.value;
     if (newValue !== null) {

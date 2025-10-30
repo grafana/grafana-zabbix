@@ -33,7 +33,11 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	}
 
 	body, err := io.ReadAll(req.Body)
-	defer req.Body.Close()
+	defer func() {
+		if err := req.Body.Close(); err != nil {
+			log.DefaultLogger.Warn("Error closing request body", "error", err)
+		}
+	}()
 	if err != nil || len(body) == 0 {
 		writeError(rw, http.StatusBadRequest, err)
 		return
@@ -82,7 +86,11 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 	}
 
 	body, err := io.ReadAll(req.Body)
-	defer req.Body.Close()
+	defer func() {
+		if err := req.Body.Close(); err != nil {
+			log.DefaultLogger.Warn("Error closing request body", "error", err)
+		}
+	}()
 	if err != nil || len(body) == 0 {
 		writeError(rw, http.StatusBadRequest, err)
 		return

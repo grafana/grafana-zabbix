@@ -1,8 +1,8 @@
+import { DataFrame, dateTime, Field, FieldType } from '@grafana/data';
 import _ from 'lodash';
-import * as utils from './utils';
-import { DataFrame, Field, FieldType, ArrayVector, dateTime } from '@grafana/data';
+import { ProblemDTO, ZBXEvent, ZBXProblem, ZBXTrigger } from './types';
 import { ZabbixMetricsQuery } from './types/query';
-import { ZBXProblem, ZBXTrigger, ProblemDTO, ZBXEvent } from './types';
+import * as utils from './utils';
 
 export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTrigger[]): ProblemDTO[] {
   const problemDTOList: ProblemDTO[] = [];
@@ -210,7 +210,7 @@ export function toDataFrame(problems: any[], query: ZabbixMetricsQuery): DataFra
   const problemsField: Field<any> = {
     name: 'Problems',
     type: FieldType.other,
-    values: new ArrayVector(problems),
+    values: problems,
     config: {
       custom: {
         type: 'problems',

@@ -26,7 +26,7 @@ export default function AcknowledgesList(props: AcknowledgesListProps) {
       <div className="problem-ack-col problem-ack-message">
         {acknowledges.map((ack) => (
           <span key={ack.acknowledgeid} className="problem-ack-message">
-            {ack.message}
+            {formatAckMessage(ack)}
           </span>
         ))}
       </div>
@@ -40,4 +40,28 @@ function formatUserName(ack: ZBXAcknowledge): string {
   } else {
     return `${ack.name} ${ack.surname}`.trim();
   }
+}
+
+function formatAckMessage(ack: ZBXAcknowledge): string {
+  let msg = '';
+  let action = parseInt(ack.action, 10);
+
+  if ((action & 2) !== 0) {
+    msg = msg + '(Acknowledged) ';
+  } else if ((action & 16) !== 0) {
+    msg = msg + '(Unacknowledged) ';
+  }
+
+  if ((action & 32) !== 0) {
+    msg = msg + '(Suppressed) ';
+  } else if ((action & 64) !== 0) {
+    msg = msg + '(Unsuppressed) ';
+  }
+
+  if ((action & 8) !== 0) {
+    msg = msg + '(Changed severity) ';
+  }
+
+  msg = msg + ack.message;
+  return msg.trim();
 }

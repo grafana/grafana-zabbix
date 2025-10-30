@@ -117,8 +117,8 @@ export class SQLConnector extends DBConnector {
         },
       })
       .then((response) => {
-        const results = response.data.results;
-        if (results['A']) {
+        const results = (response.data as { results?: any }).results;
+        if (results && results['A']) {
           return results['A'].frames;
         } else {
           return null;

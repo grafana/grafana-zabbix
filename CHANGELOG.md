@@ -1,5 +1,39 @@
 # Change Log
 
+## 6.0.3
+
+### Patch Changes
+
+🐛 Set grpc limits explicitly
+
+## 6.0.2
+
+⚙️ Chore: Refactor regex pattern validation to use timeout-based approach
+
+## 6.0.1
+
+🐛 Fix: Remove regex pattern length restriction
+
+## 6.0.0
+
+🎉 Bump grafana dependency to 11.6.0
+
+🚀 Feat: Show details about acknowledge actions
+
+🐛 Fix: Functions dropdown positioning
+
+🐛 Fix: alias functions in Services query type
+
+🔒 Fix CVE-2025-10630: Implement regex timeout to compilation
+
+🐛 Fix: slaid is missing error
+
+## 5.2.1
+
+🐛 Fix: Remove props mutation in config editor
+
+🐛 Fix: Missing refID in `wide` format
+
 ## 5.2.0
 
 🚀 Add possibility to run "Manual event actions"

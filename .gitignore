@@ -55,3 +55,11 @@ provisioning/
 # SSL certificates
 devenv/nginx/nginx.crt
 devenv/nginx/nginx.key
+
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

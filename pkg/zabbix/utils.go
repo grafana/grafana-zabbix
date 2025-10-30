@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/dlclark/regexp2"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -65,6 +66,33 @@ func splitKeyParams(paramStr string) []string {
 	return params
 }
 
+
+// safeRegexpCompile compiles a regex with timeout protection
+func safeRegexpCompile(pattern string) (*regexp2.Regexp, error) {
+	// Channel to receive compilation result
+	resultCh := make(chan struct {
+		regex *regexp2.Regexp
+		err   error
+	}, 1)
+	
+	// Compile regex in goroutine with timeout
+	go func() {
+		regex, err := regexp2.Compile(pattern, regexp2.RE2)
+		resultCh <- struct {
+			regex *regexp2.Regexp
+			err   error
+		}{regex, err}
+	}()
+	
+	// Wait for compilation or timeout
+	select {
+	case result := <-resultCh:
+		return result.regex, result.err
+	case <-time.After(5 * time.Second):
+		return nil, fmt.Errorf("regex compilation timeout (5s) - pattern may be too complex")
+	}
+}
+
 func parseFilter(filter string) (*regexp2.Regexp, error) {
 	vaildREModifiers := "imncsxrde"
 	regex := regexp.MustCompile(`^/(.+)/([imncsxrde]*)$`)
@@ -75,17 +103,28 @@ func parseFilter(filter string) (*regexp2.Regexp, error) {
 		return nil, nil
 	}
 
+	regexPattern := matches[1]
+
 	pattern := ""
 	if matches[2] != "" {
 		if flagRE.MatchString(matches[2]) {
 			pattern += "(?" + matches[2] + ")"
 		} else {
-			return nil, backend.DownstreamError(fmt.Errorf("error parsing regexp: unsupported flags `%s` (expected [%s])", matches[2], vaildREModifiers))
+			return nil, backend.DownstreamErrorf("error parsing regexp: unsupported flags `%s` (expected [%s])", matches[2], vaildREModifiers)
 		}
 	}
-	pattern += matches[1]
+	pattern += regexPattern
 
-	return regexp2.Compile(pattern, regexp2.RE2)
+	// Security: Compile regex with timeout protection
+	compiled, err := safeRegexpCompile(pattern)
+	if err != nil {
+		return nil, backend.DownstreamErrorf("error parsing regexp: %v", err)
+	}
+
+	// Set match timeout for runtime DoS protection (5 second timeout)
+	compiled.MatchTimeout = 5 * time.Second
+
+	return compiled, nil
 }
 
 func isRegex(filter string) bool {

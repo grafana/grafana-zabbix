@@ -509,7 +509,15 @@ export class Zabbix implements ZabbixConnector {
 
         return query;
       })
-      .then((query) => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
+      .then((query) =>
+        this.zabbixAPI.getProblems(
+          query.groupids,
+          query.hostids,
+          query.applicationids,
+          this.supportsApplications(),
+          options
+        )
+      )
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
         return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
@@ -533,7 +541,7 @@ export class Zabbix implements ZabbixConnector {
         const [filteredGroups, filteredHosts, filteredApps] = results;
         const query: any = {};
 
-        if (appFilter) {
+        if (appFilter && this.supportsApplications()) {
           query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
         }
         if (hostFilter) {
@@ -579,7 +587,15 @@ export class Zabbix implements ZabbixConnector {
 
         return query;
       })
-      .then((query) => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
+      .then((query) =>
+        this.zabbixAPI.getProblems(
+          query.groupids,
+          query.hostids,
+          query.applicationids,
+          this.supportsApplications(),
+          options
+        )
+      )
       .then((problems) => findByFilter(problems, triggerFilter))
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
@@ -670,6 +686,9 @@ export class Zabbix implements ZabbixConnector {
     }
 
     const slaIds = slas.map((s) => s.slaid);
+    if (slaIds.length === 0) {
+      return [];
+    }
     if (slaIds.length > 1) {
       const sliQueries = slaIds?.map((slaId) => this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options));
       const results = await Promise.all(sliQueries);
