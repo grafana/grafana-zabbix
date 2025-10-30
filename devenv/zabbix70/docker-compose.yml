@@ -1,6 +1,6 @@
 services:
   ssl-cert:
-    image: alpine:latest
+    image: alpine:latest@sha256:4b7ce07002c69e8f3d704a9c5d6fd3053be500b7f1c69fc0d80990c2ad8dd412
     command: |
       sh -c "if [ ! -f /certs/nginx.crt ] || [ ! -f /certs/nginx.key ]; then
                apk add --no-cache openssl &&
@@ -26,7 +26,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
+    image: zabbix/zabbix-server-pgsql:alpine-7.0-latest@sha256:6e25ef650710d7d4903c7b4217dfd64b711404132561261a15dd9882f0d5476c
     ports:
       - '10051:10051'
     depends_on:
@@ -43,7 +43,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest@sha256:1f91b01f6b4171bd672205d3d4d4e0b71684aadc3947e01364f183eacece46e7
     ports:
       - '443:443'
       - '8188:8080'
@@ -64,7 +64,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:16
+    image: postgres:16@sha256:4eb532412200f7fbbf15d62ee0d96e020a9eae9eaed76066692474a7371c4d83
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'
@@ -73,7 +73,7 @@ services:
       POSTGRES_PASSWORD: zabbix
 
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-7.0-latest
+    image: zabbix/zabbix-agent:alpine-7.0-latest@sha256:5fcc87448910942359cbc7f1da517908de5d746122054a7b7896398e8b00ae0d
     environment:
       ZBX_SERVER_HOST: zabbix-server
       ZBX_SERVER_PORT: 10051
@@ -99,7 +99,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine
+    image: redis:alpine@sha256:59b6e694653476de2c992937ebe1c64182af4728e54bb49e9b7a6c26614d8933
 
   zas_backend_01:
     build: ../zas-agent
@@ -118,7 +118,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine
+    image: redis:alpine@sha256:59b6e694653476de2c992937ebe1c64182af4728e54bb49e9b7a6c26614d8933
 
   zas_frontend_01:
     build: ../zas-agent
