@@ -16,8 +16,11 @@ type ZabbixDatasourceSettingsDTO struct {
 	CacheTTL    string      `json:"cacheTTL"`
 	Timeout     interface{} `json:"timeout"`
 
-	DisableDataAlignment    bool `json:"disableDataAlignment"`
-	DisableReadOnlyUsersAck bool `json:"disableReadOnlyUsersAck"`
+	DisableDataAlignment     	bool 	`json:"disableDataAlignment"`
+	DisableReadOnlyUsersAck  	bool 	`json:"disableReadOnlyUsersAck"`
+	EnableDirectDBConnection 	bool 	`json:"enableDirectDBConnection"`
+	DBConnectionDatasourceType	string	`json:"dbConnectionDatasourceType"`
+	DBConnectionDatasourceUID	string	`json:"dbConnectionDatasourceUid"`
 }
 
 // ZabbixDatasourceSettings model
@@ -29,6 +32,7 @@ type ZabbixDatasourceSettings struct {
 	CacheTTL    time.Duration
 	Timeout     time.Duration
 
-	DisableDataAlignment    bool `json:"disableDataAlignment"`
-	DisableReadOnlyUsersAck bool `json:"disableReadOnlyUsersAck"`
+	DisableDataAlignment     bool `json:"disableDataAlignment"`
+	DisableReadOnlyUsersAck  bool `json:"disableReadOnlyUsersAck"`
+	EnableDirectDBConnection bool `json:"enableDirectDBConnection"`
 }
