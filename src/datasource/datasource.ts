@@ -21,6 +21,7 @@ import {
   toDataQueryResponse,
   getDataSourceSrv,
   HealthCheckError,
+  DataSourceWithBackend,
 } from '@grafana/runtime';
 import {
   DataFrame,
@@ -55,6 +56,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   dbConnectionRetentionPolicy: string;
   enableDebugLog: boolean;
   datasourceId: number;
+  instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>;
   zabbix: Zabbix;
 
   replaceTemplateVars: (target: any, scopedVars?: any) => any;
@@ -62,6 +64,7 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   constructor(instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>) {
     super(instanceSettings);
 
+    this.instanceSettings = instanceSettings;
     this.enableDebugLog = config.buildInfo.env === 'development';
 
     this.annotations = {
@@ -767,17 +770,21 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    * Test connection to Zabbix API and external history DB.
    */
   async testDatasource() {
+    const backendDS = new DataSourceWithBackend(this.instanceSettings);
     try {
-      const { zabbixVersion, dbConnectorStatus } = await this.zabbix.testDataSource();
-      let message = `Zabbix API version: ${zabbixVersion}`;
-      if (dbConnectorStatus) {
-        message += `, DB connector type: ${dbConnectorStatus.dsType}`;
-      }
-      return {
-        status: 'success',
-        title: 'Success',
-        message: message,
-      };
+      return backendDS.testDatasource().then((testResult) => {
+        return this.zabbix.testDataSource().then((dbConnectorStatus) => {
+          let message = testResult.message;
+          if (dbConnectorStatus) {
+            message += `, DB connector type: ${dbConnectorStatus.dsType}`;
+          }
+          return {
+            status: testResult.status,
+            message: message,
+            title: testResult.status,
+          };
+        });
+      });
     } catch (error: any) {
       if (error instanceof ZabbixAPIError) {
         return Promise.reject({
