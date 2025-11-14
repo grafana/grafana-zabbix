@@ -89,7 +89,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
     this.trendsFrom = jsonData.trendsFrom || '7d';
     this.trendsRange = jsonData.trendsRange || '4d';
 
-    console.log('jsonData: ', jsonData);
     // Set cache update interval
     const ttl = jsonData.cacheTTL || '1h';
     this.cacheTTL = utils.parseInterval(ttl);
@@ -772,7 +771,6 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
    */
   async testDatasource() {
     const backendDS = new DataSourceWithBackend(this.instanceSettings);
-    console.log(this.trends, this.enableDirectDBConnection);
     try {
       const testResult = await backendDS.testDatasource();
       return this.zabbix.testDataSource().then((dbConnectorStatus) => {
