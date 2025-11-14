@@ -18,9 +18,6 @@ type ZabbixDatasourceSettingsDTO struct {
 
 	DisableDataAlignment     	bool 	`json:"disableDataAlignment"`
 	DisableReadOnlyUsersAck  	bool 	`json:"disableReadOnlyUsersAck"`
-	EnableDirectDBConnection 	bool 	`json:"enableDirectDBConnection"`
-	DBConnectionDatasourceType	string	`json:"dbConnectionDatasourceType"`
-	DBConnectionDatasourceUID	string	`json:"dbConnectionDatasourceUid"`
 }
 
 // ZabbixDatasourceSettings model
@@ -34,5 +31,4 @@ type ZabbixDatasourceSettings struct {
 
 	DisableDataAlignment     bool `json:"disableDataAlignment"`
 	DisableReadOnlyUsersAck  bool `json:"disableReadOnlyUsersAck"`
-	EnableDirectDBConnection bool `json:"enableDirectDBConnection"`
 }

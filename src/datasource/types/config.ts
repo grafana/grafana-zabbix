@@ -17,8 +17,6 @@ export type ZabbixDSOptions = {
   dbConnectionEnable: boolean;
   dbConnectionDatasourceId?: number;
   dbConnectionDatasourceName?: string;
-  dbConnectionDatasourceType?: string;
-  dbConnectionDatasourceUid?: string;
   dbConnectionRetentionPolicy?: string;
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;

@@ -493,8 +493,6 @@ const directDBDatasourceChanegeHandler =
       jsonData: {
         ...options.jsonData,
         dbConnectionDatasourceId: value.value,
-        dbConnectionDatasourceType: selectedDs.type,
-        dbConnectionDatasourceUid: selectedDs.uid,
       },
     });
   };
@@ -507,7 +505,6 @@ const getDirectDBDatasources = () => {
 
 const getDirectDBDSOptions = () => {
   const dsList = getDirectDBDatasources();
-  console.log(dsList);
   const dsOpts: Array<SelectableValue<number>> = dsList.map((ds) => ({
     label: ds.name,
     value: ds.id,
