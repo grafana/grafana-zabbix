@@ -36,13 +36,12 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string,
 		return "", err
 	}
 
-	response, err := ds.zabbix.Request(ctx, &zabbix.ZabbixAPIRequest{Method: "apiinfo.version"})
+	zabbixVersion, err := ds.zabbix.GetFullVersion(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	resultByte, _ := response.MarshalJSON()
-	return string(resultByte), nil
+	return zabbixVersion, nil
 }
 
 func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) ([]*data.Frame, error) {
