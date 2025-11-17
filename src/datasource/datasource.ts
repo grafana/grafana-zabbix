@@ -6,7 +6,6 @@ import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
 import * as c from './constants';
-import dataProcessor from './dataProcessor';
 import responseHandler from './responseHandler';
 import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
@@ -35,6 +34,7 @@ import {
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
 import { lastValueFrom, map, Observable } from 'rxjs';
+import { replaceTemplateVars } from './utils';
 
 export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -257,7 +257,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     let timeTo = Math.ceil(dateMath.parse(request.range.to) / 1000);
 
     // Apply Time-related functions (timeShift(), etc)
-    const timeFunctions = bindFunctionDefs(target.functions, 'Time');
+    const timeFunctions = utils.bindFunctionDefs(target.functions, 'Time');
     if (timeFunctions.length) {
       const [time_from, time_to] = utils.sequence(timeFunctions)([timeFrom, timeTo]);
       timeFrom = time_from;
@@ -293,7 +293,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async queryNumericDataForItems(items, target: ZabbixMetricsQuery, timeRange, useTrends, request) {
     let history;
     request.valueType = this.getTrendValueType(target);
-    request.consolidateBy = getConsolidateBy(target) || request.valueType;
+    request.consolidateBy = utils.getConsolidateBy(target) || request.valueType;
 
     if (useTrends) {
       history = await this.zabbix.getTrends(items, timeRange, request);
@@ -370,10 +370,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   applyFrontendFunctions(response: DataQueryResponse, request: DataQueryRequest<any>) {
     for (let i = 0; i < response.data.length; i++) {
       const frame: DataFrame = response.data[i];
-      const target = getRequestTarget(request, frame.refId);
+      const target = utils.getRequestTarget(request, frame.refId);
 
       // Apply alias functions
-      const aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
+      const aliasFunctions = utils.bindFunctionDefs(target.functions, 'Alias');
       utils.sequence(aliasFunctions)(frame);
     }
     return response;
@@ -405,7 +405,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   queryItemIdData(target, timeRange, useTrends, options) {
     let itemids = target.itemids;
     const templateSrv = getTemplateSrv();
-    itemids = templateSrv.replace(itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
+    itemids = templateSrv.replace(itemids, options.scopedVars, utils.zabbixItemIdsTemplateFormat);
     itemids = _.map(itemids.split(','), (itemid) => itemid.trim());
 
     if (!itemids) {
@@ -447,7 +447,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       const slas = await this.zabbix.getSLAs(slaFilter);
       const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
       // Apply alias functions
-      const aliasFunctions = bindFunctionDefs(target.functions, 'Alias');
+      const aliasFunctions = utils.bindFunctionDefs(target.functions, 'Alias');
       utils.sequence(aliasFunctions)(result);
       return result;
     }
@@ -484,7 +484,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     const hostids = hosts?.map((h) => h.hostid);
     const appids = apps?.map((a) => a.applicationid);
-    const options = getTriggersOptions(target, timeRange);
+    const options = utils.getTriggersOptions(target, timeRange);
 
     const tagsFilter = this.replaceTemplateVars(target.tags?.filter, request.scopedVars);
     // replaceTemplateVars() builds regex-like string, so we should trim it.
@@ -519,7 +519,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       return Promise.resolve([]);
     }
 
-    const options = getTriggersOptions(target, timeRange);
+    const options = utils.getTriggersOptions(target, timeRange);
     const alerts = await this.zabbix.getHostICAlerts(hostids, appids, itemids, options);
     return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
@@ -791,7 +791,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
 
     return resultPromise.then((metrics) => {
-      return _.map(metrics, formatMetric);
+      return _.map(metrics, utils.formatMetric);
     });
   }
 
@@ -905,7 +905,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
 
     if (target.itemids) {
-      target.itemids = templateSrv.replace(target.itemids, options.scopedVars, zabbixItemIdsTemplateFormat);
+      target.itemids = templateSrv.replace(target.itemids, options.scopedVars, utils.zabbixItemIdsTemplateFormat);
     }
 
     _.forEach(target.functions, (func) => {
@@ -973,107 +973,3 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return response;
   }
 }
-
-function bindFunctionDefs(functionDefs, category) {
-  const aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
-  const aggFuncDefs = _.filter(functionDefs, (func) => {
-    return _.includes(aggregationFunctions, func.def.name) && func.params.length > 0;
-  });
-
-  return _.map(aggFuncDefs, (func) => {
-    const funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
-    return funcInstance.bindFunction(dataProcessor.metricFunctions);
-  });
-}
-
-function getConsolidateBy(target) {
-  let consolidateBy;
-  const funcDef = _.find(target.functions, (func) => {
-    return func.def.name === 'consolidateBy';
-  });
-  if (funcDef && funcDef.params && funcDef.params.length) {
-    consolidateBy = funcDef.params[0];
-  }
-  return consolidateBy;
-}
-
-function formatMetric(metricObj) {
-  return {
-    text: metricObj.name,
-    expandable: false,
-  };
-}
-
-/**
- * Custom formatter for template variables.
- * Default Grafana "regex" formatter returns
- * value1|value2
- * This formatter returns
- * (value1|value2)
- * This format needed for using in complex regex with
- * template variables, for example
- * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
- */
-export function zabbixTemplateFormat(value) {
-  if (typeof value === 'string') {
-    return utils.escapeRegex(value);
-  }
-
-  const escapedValues = _.map(value, utils.escapeRegex);
-  return '(' + escapedValues.join('|') + ')';
-}
-
-function zabbixItemIdsTemplateFormat(value) {
-  if (typeof value === 'string') {
-    return value;
-  }
-  return value.join(',');
-}
-
-/**
- * If template variables are used in request, replace it using regex format
- * and wrap with '/' for proper multi-value work. Example:
- * $variable selected as a, b, c
- * We use filter $variable
- * $variable    -> a|b|c    -> /a|b|c/
- * /$variable/  -> /a|b|c/  -> /a|b|c/
- */
-export function replaceTemplateVars(templateSrv, target, scopedVars) {
-  let replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
-  if (target && target !== replacedTarget && !utils.isRegex(replacedTarget)) {
-    replacedTarget = '/^' + replacedTarget + '$/';
-  }
-  return replacedTarget;
-}
-
-export function base64StringToArrowTable(text: string) {
-  const b64 = atob(text);
-  const arr = Uint8Array.from(b64, (c) => {
-    return c.charCodeAt(0);
-  });
-  return arr;
-}
-
-function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
-  for (let i = 0; i < request.targets.length; i++) {
-    const target = request.targets[i];
-    if (target.refId === refId) {
-      return target;
-    }
-  }
-  return null;
-}
-
-const getTriggersOptions = (target: ZabbixMetricsQuery, timeRange) => {
-  const [timeFrom, timeTo] = timeRange;
-  const options: any = {
-    minSeverity: target.options?.minSeverity,
-    acknowledged: target.options?.acknowledged,
-    count: target.options?.count,
-  };
-  if (target.options?.useTimeRange) {
-    options.timeFrom = timeFrom;
-    options.timeTo = timeTo;
-  }
-  return options;
-};

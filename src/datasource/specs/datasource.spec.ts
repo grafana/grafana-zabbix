@@ -1,8 +1,9 @@
 import { dateMath } from '@grafana/data';
 import _ from 'lodash';
 import { datasourceSrvMock, templateSrvMock } from '../../test-setup/mocks';
-import { replaceTemplateVars, ZabbixDatasource, zabbixTemplateFormat } from '../datasource';
+import { replaceTemplateVars, zabbixTemplateFormat } from '../utils';
 import { VariableQueryTypes } from '../types';
+import { ZabbixDatasource } from 'datasource/datasource';
 
 jest.mock(
   '@grafana/runtime',

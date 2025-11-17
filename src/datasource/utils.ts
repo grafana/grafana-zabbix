@@ -5,6 +5,7 @@ import * as c from './constants';
 import { VariableQuery, VariableQueryTypes, ZBXItemTag } from './types';
 import {
   DataFrame,
+  DataQueryRequest,
   FieldType,
   getValueFormats,
   MappingType,
@@ -12,6 +13,9 @@ import {
   TIME_SERIES_TIME_FIELD_NAME,
   ValueMapping,
 } from '@grafana/data';
+import * as metricFunctions from './metricFunctions';
+import dataProcessor from './dataProcessor';
+import { ZabbixMetricsQuery } from './types/query';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier
@@ -479,3 +483,99 @@ export function swap<T>(list: T[], n: number, k: number): T[] {
   }
   return newList;
 }
+
+export function bindFunctionDefs(functionDefs, category) {
+  const aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
+  const aggFuncDefs = _.filter(functionDefs, (func) => {
+    return _.includes(aggregationFunctions, func.def.name) && func.params.length > 0;
+  });
+
+  return _.map(aggFuncDefs, (func) => {
+    const funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
+    return funcInstance.bindFunction(dataProcessor.metricFunctions);
+  });
+}
+
+export function getConsolidateBy(target) {
+  let consolidateBy;
+  const funcDef = _.find(target.functions, (func) => {
+    return func.def.name === 'consolidateBy';
+  });
+  if (funcDef && funcDef.params && funcDef.params.length) {
+    consolidateBy = funcDef.params[0];
+  }
+  return consolidateBy;
+}
+
+export function formatMetric(metricObj) {
+  return {
+    text: metricObj.name,
+    expandable: false,
+  };
+}
+
+/**
+ * Custom formatter for template variables.
+ * Default Grafana "regex" formatter returns
+ * value1|value2
+ * This formatter returns
+ * (value1|value2)
+ * This format needed for using in complex regex with
+ * template variables, for example
+ * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
+ */
+export function zabbixTemplateFormat(value) {
+  if (typeof value === 'string') {
+    return escapeRegex(value);
+  }
+
+  const escapedValues = _.map(value, escapeRegex);
+  return '(' + escapedValues.join('|') + ')';
+}
+
+export function zabbixItemIdsTemplateFormat(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.join(',');
+}
+
+/**
+ * If template variables are used in request, replace it using regex format
+ * and wrap with '/' for proper multi-value work. Example:
+ * $variable selected as a, b, c
+ * We use filter $variable
+ * $variable    -> a|b|c    -> /a|b|c/
+ * /$variable/  -> /a|b|c/  -> /a|b|c/
+ */
+export function replaceTemplateVars(templateSrv, target, scopedVars) {
+  let replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
+  if (target && target !== replacedTarget && !isRegex(replacedTarget)) {
+    replacedTarget = '/^' + replacedTarget + '$/';
+  }
+  return replacedTarget;
+}
+
+export function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
+  for (let i = 0; i < request.targets.length; i++) {
+    const target = request.targets[i];
+    if (target.refId === refId) {
+      return target;
+    }
+  }
+  return null;
+}
+
+export const getTriggersOptions = (target: ZabbixMetricsQuery, timeRange) => {
+  const [timeFrom, timeTo] = timeRange;
+  const options: any = {
+    minSeverity: target.options?.minSeverity,
+    acknowledged: target.options?.acknowledged,
+    count: target.options?.count,
+  };
+  if (target.options?.useTimeRange) {
+    options.timeFrom = timeFrom;
+    options.timeTo = timeTo;
+  }
+  return options;
+};
