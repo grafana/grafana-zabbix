@@ -18,27 +18,25 @@ import {
   BackendSrvRequest,
   getBackendSrv,
   getTemplateSrv,
-  toDataQueryResponse,
   getDataSourceSrv,
   HealthCheckError,
+  DataSourceWithBackend,
 } from '@grafana/runtime';
 import {
   DataFrame,
   dataFrameFromJSON,
   DataQueryRequest,
   DataQueryResponse,
-  DataSourceApi,
   DataSourceInstanceSettings,
   FieldType,
   isDataFrame,
-  LoadingState,
   toDataFrame,
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, map, Observable } from 'rxjs';
 
-export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDSOptions> {
+export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
   basicAuth: any;
   withCredentials: any;
@@ -117,13 +115,12 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   ////////////////////////
   // Datasource methods //
   ////////////////////////
-
   /**
    * Query panel data. Calls for each panel in dashboard.
    * @param  {Object} request   Contains time range, targets and other info.
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
-  query(request: DataQueryRequest<ZabbixMetricsQuery>) {
+  query(request: DataQueryRequest<ZabbixMetricsQuery>): Observable<DataQueryResponse> {
     trackRequest(request);
 
     // Migrate old targets
@@ -141,100 +138,22 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
         return target;
       });
 
-    const backendResponsePromise = this.backendQuery({ ...request, targets: requestTargets });
+    const backendResponse = super.query({ ...request, targets: requestTargets.filter(this.isBackendTarget) });
     const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: requestTargets });
     const frontendResponsePromise = this.frontendQuery({ ...request, targets: requestTargets });
     const annotationResposePromise = this.annotationRequest({ ...request, targets: requestTargets });
 
-    return Promise.all([
-      backendResponsePromise,
-      dbConnectionResponsePromise,
-      frontendResponsePromise,
-      annotationResposePromise,
-    ]).then((rsp) => {
-      // Merge backend and frontend queries results
-      const [backendRes, dbConnectionRes, frontendRes, annotationRes] = rsp;
-      if (dbConnectionRes.data) {
-        backendRes.data = backendRes.data.concat(dbConnectionRes.data);
-      }
-      if (frontendRes.data) {
-        backendRes.data = backendRes.data.concat(frontendRes.data);
-      }
+    const applyMergeQueries = (queryResponse: DataQueryResponse) =>
+      this.mergeQueries(queryResponse, dbConnectionResponsePromise, frontendResponsePromise, annotationResposePromise);
+    const applyFEFuncs = (queryResponse: DataQueryResponse) =>
+      this.applyFrontendFunctions(queryResponse, { ...request, targets: requestTargets.filter(this.isBackendTarget) });
 
-      if (annotationRes.data) {
-        backendRes.data = backendRes.data.concat(annotationRes.data);
-      }
-
-      return {
-        data: backendRes.data,
-        state: LoadingState.Done,
-        key: request.requestId,
-      };
-    });
-  }
-
-  async backendQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
-    const { intervalMs, maxDataPoints, range, requestId } = request;
-    const targets = request.targets.filter(this.isBackendTarget);
-
-    // Add range variables
-    request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
-
-    const queries = _.compact(
-      targets.map((query) => {
-        // Don't request for hidden targets
-        if (query.hide) {
-          return null;
-        }
-
-        this.replaceTargetVariables(query, request);
-
-        return {
-          ...query,
-          datasourceId: this.datasourceId,
-          intervalMs,
-          maxDataPoints,
-        };
-      })
+    return backendResponse.pipe(
+      map(applyFEFuncs),
+      map(responseHandler.convertZabbixUnits),
+      map(this.convertToWide),
+      map(applyMergeQueries)
     );
-
-    // Return early if no queries exist
-    if (!queries.length) {
-      return Promise.resolve({ data: [] });
-    }
-
-    const body: any = { queries };
-
-    if (range) {
-      body.range = range;
-      body.from = range.from.valueOf().toString();
-      body.to = range.to.valueOf().toString();
-    }
-
-    let rsp: any;
-    try {
-      rsp = await lastValueFrom(
-        getBackendSrv().fetch({
-          url: '/api/ds/query',
-          method: 'POST',
-          data: body,
-          requestId,
-        })
-      );
-    } catch (err) {
-      return toDataQueryResponse(err);
-    }
-
-    const resp = toDataQueryResponse(rsp);
-    this.sortByRefId(resp);
-    this.applyFrontendFunctions(resp, request);
-    responseHandler.convertZabbixUnits(resp);
-    if (responseHandler.isConvertibleToWide(resp.data)) {
-      console.log('Converting response to the wide format');
-      resp.data = responseHandler.convertToWide(resp.data);
-    }
-
-    return resp;
   }
 
   async frontendQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
@@ -1024,6 +943,35 @@ export class ZabbixDatasource extends DataSourceApi<ZabbixMetricsQuery, ZabbixDS
   isDBConnectionTarget = (target: any): boolean => {
     return this.enableDirectDBConnection && (target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID);
   };
+
+  mergeQueries(
+    queryResponse: DataQueryResponse,
+    dbConnectionResponsePromise: Promise<DataQueryResponse>,
+    frontendResponsePromise: Promise<DataQueryResponse>,
+    annotationResposePromise: Promise<DataQueryResponse>
+  ): DataQueryResponse {
+    Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResposePromise]).then((resp) => {
+      const [dbConnectionRes, frontendRes, annotationRes] = resp;
+      if (dbConnectionRes.data) {
+        queryResponse.data = queryResponse.data.concat(dbConnectionRes.data);
+      }
+      if (frontendRes.data) {
+        queryResponse.data = queryResponse.data.concat(frontendRes.data);
+      }
+
+      if (annotationRes.data) {
+        queryResponse.data = queryResponse.data.concat(annotationRes.data);
+      }
+    });
+    return queryResponse;
+  }
+
+  convertToWide(response: DataQueryResponse) {
+    if (responseHandler.isConvertibleToWide(response.data)) {
+      response.data = responseHandler.convertToWide(response.data);
+    }
+    return response;
+  }
 }
 
 function bindFunctionDefs(functionDefs, category) {
