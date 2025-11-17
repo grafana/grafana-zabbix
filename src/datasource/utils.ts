@@ -200,22 +200,10 @@ function isContainsBraces(query) {
 }
 
 // Pattern for testing regex
-export const regexPattern = /^\/(.*)\/([gmi]*)$/m;
+const regexPattern = /^\/(.*)\/([gmi]*)$/m;
 
 export function isRegex(str) {
   return regexPattern.test(str);
-}
-
-export function isTemplateVariable(str, templateVariables) {
-  const variablePattern = /^\$\w+/;
-  if (variablePattern.test(str)) {
-    const variables = _.map(templateVariables, (variable) => {
-      return '$' + variable.name;
-    });
-    return _.includes(variables, str);
-  } else {
-    return false;
-  }
 }
 
 export function getRangeScopedVars(range) {
@@ -254,7 +242,7 @@ export function parseItemInterval(interval: string): number {
   return 0;
 }
 
-export function normalizeZabbixInterval(interval: string): string {
+function normalizeZabbixInterval(interval: string): string {
   const intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)?/g;
   const parsedInterval = intervalPattern.exec(interval);
   if (!parsedInterval || !interval || (parsedInterval.length > 2 && !parsedInterval[2])) {
@@ -324,40 +312,6 @@ export function formatAcknowledges(acknowledges) {
   }
 }
 
-export function convertToZabbixAPIUrl(url) {
-  const zabbixAPIUrlPattern = /.*api_jsonrpc.php$/;
-  const trimSlashPattern = /(.*?)[\/]*$/;
-  if (url.match(zabbixAPIUrlPattern)) {
-    return url;
-  } else {
-    return url.replace(trimSlashPattern, '$1');
-  }
-}
-
-/**
- * Wrap function to prevent multiple calls
- * when waiting for result.
- */
-export function callOnce(func, promiseKeeper) {
-  return function () {
-    if (!promiseKeeper) {
-      promiseKeeper = Promise.resolve(
-        func
-          .apply(this, arguments)
-          .then((result) => {
-            promiseKeeper = null;
-            return result;
-          })
-          .catch((err) => {
-            promiseKeeper = null;
-            throw err;
-          })
-      );
-    }
-    return promiseKeeper;
-  };
-}
-
 /**
  * Apply function one by one: `sequence([a(), b(), c()]) = c(b(a()))`
  * @param {*} funcsArray functions to apply
@@ -369,24 +323,6 @@ export function sequence(funcsArray) {
     }
     return result;
   };
-}
-
-const versionPattern = /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z\.]+))?/;
-
-export function isValidVersion(version) {
-  return versionPattern.exec(version);
-}
-
-export function parseVersion(version: string) {
-  const match = versionPattern.exec(version);
-  if (!match) {
-    return null;
-  }
-  const major = Number(match[1]);
-  const minor = Number(match[2] || 0);
-  const patch = Number(match[3] || 0);
-  const meta = match[4];
-  return { major, minor, patch, meta };
 }
 
 /**
