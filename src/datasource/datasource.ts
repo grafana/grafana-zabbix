@@ -949,35 +949,35 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         functions: utils.replaceVariablesInFuncParams(this.templateSrv, query.functions, scopedVars),
         tags: {
           ...query.tags,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.tags.filter, scopedVars),
+          filter: utils.replaceTemplateVars(this.templateSrv, query.tags?.filter, scopedVars),
         },
         group: {
           ...query.group,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.group.filter, scopedVars),
+          filter: utils.replaceTemplateVars(this.templateSrv, query.group?.filter, scopedVars),
         },
         host: {
           ...query.host,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.host.filter, scopedVars),
+          filter: utils.replaceTemplateVars(this.templateSrv, query.host?.filter, scopedVars),
         },
         application: {
           ...query.application,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.application.filter, scopedVars),
+          filter: utils.replaceTemplateVars(this.templateSrv, query.application?.filter, scopedVars),
         },
         proxy: {
           ...query.proxy,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.proxy.filter, scopedVars),
+          filter: utils.replaceTemplateVars(this.templateSrv, query.proxy?.filter, scopedVars),
         },
         trigger: {
           ...query.trigger,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.trigger.filter, scopedVars),
+          filter: utils.replaceTemplateVars(this.templateSrv, query.trigger?.filter, scopedVars),
         },
         itemTag: {
           ...query.itemTag,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.itemTag.filter, scopedVars),
+          filter: utils.replaceTemplateVars(this.templateSrv, query.itemTag?.filter, scopedVars),
         },
         item: {
           ...query.item,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.item.filter, scopedVars),
+          filter: utils.replaceTemplateVars(this.templateSrv, query.item?.filter, scopedVars),
         },
       };
     });
