@@ -172,57 +172,6 @@ describe('ZabbixDatasource', () => {
     });
   });
 
-  describe('When replacing template variables', () => {
-    function testReplacingVariable(target, varValue, expectedResult, done) {
-      ctx.ds.replaceTemplateVars = _.partial(replaceTemplateVars, {
-        replace: jest.fn((target) => zabbixTemplateFormat(varValue)),
-      });
-
-      let result = ctx.ds.replaceTemplateVars(target);
-      expect(result).toBe(expectedResult);
-      done();
-    }
-
-    /*
-     * Alphanumerics, spaces, dots, dashes and underscores
-     * are allowed in Zabbix host name.
-     * 'AaBbCc0123 .-_'
-     */
-    it('should return properly escaped regex', (done) => {
-      let target = '$host';
-      let template_var_value = 'AaBbCc0123 .-_';
-      let expected_result = '/^AaBbCc0123 \\.-_$/';
-
-      testReplacingVariable(target, template_var_value, expected_result, done);
-    });
-
-    /*
-     * Single-value variable
-     * $host = backend01
-     * $host => /^backend01|backend01$/
-     */
-    it('should return proper regex for single value', (done) => {
-      let target = '$host';
-      let template_var_value = 'backend01';
-      let expected_result = '/^backend01$/';
-
-      testReplacingVariable(target, template_var_value, expected_result, done);
-    });
-
-    /*
-     * Multi-value variable
-     * $host = [backend01, backend02]
-     * $host => /^(backend01|backend01)$/
-     */
-    it('should return proper regex for multi-value', (done) => {
-      let target = '$host';
-      let template_var_value = ['backend01', 'backend02'];
-      let expected_result = '/^(backend01|backend02)$/';
-
-      testReplacingVariable(target, template_var_value, expected_result, done);
-    });
-  });
-
   describe('When invoking metricFindQuery() with legacy query', () => {
     beforeEach(() => {
       ctx.ds.replaceTemplateVars = (str) => str;

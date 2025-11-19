@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import * as utils from '../utils';
+import { replaceTemplateVars, zabbixTemplateFormat } from '../utils';
 
 describe('Utils', () => {
   describe('expandItemName()', () => {
@@ -172,6 +173,60 @@ describe('Utils', () => {
       for (const test_case of test_cases) {
         expect(utils.getArrayDepth(test_case.array)).toBe(test_case.depth);
       }
+    });
+  });
+
+  describe('replaceTemplateVars()', () => {
+    function testReplacingVariable(target, varValue, expectedResult, done) {
+      const templateSrv = {
+        replace: jest.fn((target) => zabbixTemplateFormat(varValue)),
+        getVariables: jest.fn(),
+        containsTemplate: jest.fn(),
+        updateTimeRange: jest.fn(),
+      };
+
+      let result = replaceTemplateVars(templateSrv, target, {});
+      expect(result).toBe(expectedResult);
+      done();
+    }
+
+    /*
+     * Alphanumerics, spaces, dots, dashes and underscores
+     * are allowed in Zabbix host name.
+     * 'AaBbCc0123 .-_'
+     */
+    it('should return properly escaped regex', (done) => {
+      let target = '$host';
+      let template_var_value = 'AaBbCc0123 .-_';
+      let expected_result = '/^AaBbCc0123 \\.-_$/';
+
+      testReplacingVariable(target, template_var_value, expected_result, done);
+    });
+
+    /*
+     * Single-value variable
+     * $host = backend01
+     * $host => /^backend01|backend01$/
+     */
+    it('should return proper regex for single value', (done) => {
+      let target = '$host';
+      let template_var_value = 'backend01';
+      let expected_result = '/^backend01$/';
+
+      testReplacingVariable(target, template_var_value, expected_result, done);
+    });
+
+    /*
+     * Multi-value variable
+     * $host = [backend01, backend02]
+     * $host => /^(backend01|backend01)$/
+     */
+    it('should return proper regex for multi-value', (done) => {
+      let target = '$host';
+      let template_var_value = ['backend01', 'backend02'];
+      let expected_result = '/^(backend01|backend02)$/';
+
+      testReplacingVariable(target, template_var_value, expected_result, done);
     });
   });
 });
