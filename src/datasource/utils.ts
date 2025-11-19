@@ -10,12 +10,14 @@ import {
   getValueFormats,
   MappingType,
   rangeUtil,
+  ScopedVars,
   TIME_SERIES_TIME_FIELD_NAME,
   ValueMapping,
 } from '@grafana/data';
 import * as metricFunctions from './metricFunctions';
 import dataProcessor from './dataProcessor';
-import { ZabbixMetricsQuery } from './types/query';
+import { MetricFunc, ZabbixMetricsQuery } from './types/query';
+import { TemplateSrv } from '@grafana/runtime';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier
@@ -548,12 +550,38 @@ export function zabbixItemIdsTemplateFormat(value) {
  * $variable    -> a|b|c    -> /a|b|c/
  * /$variable/  -> /a|b|c/  -> /a|b|c/
  */
-export function replaceTemplateVars(templateSrv, target, scopedVars) {
-  let replacedTarget = templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
+export function replaceTemplateVars(
+  templateSrv: TemplateSrv,
+  target: string,
+  scopedVars: ScopedVars,
+  format: any = zabbixTemplateFormat
+) {
+  let replacedTarget = templateSrv.replace(target, scopedVars, format);
   if (target && target !== replacedTarget && !isRegex(replacedTarget)) {
     replacedTarget = '/^' + replacedTarget + '$/';
   }
   return replacedTarget;
+}
+
+export function replaceVariablesInFuncParams(
+  templateSrv: TemplateSrv,
+  functions: MetricFunc[],
+  scopedVars: ScopedVars
+) {
+  return functions.map((func) => {
+    const interpolatedParams = func.params.map((param) => {
+      if (typeof param === 'number') {
+        return +templateSrv.replace(param.toString(), scopedVars);
+      } else {
+        return templateSrv.replace(param, scopedVars);
+      }
+    });
+
+    return {
+      ...func,
+      params: interpolatedParams,
+    };
+  });
 }
 
 export function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {

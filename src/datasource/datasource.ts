@@ -20,6 +20,7 @@ import {
   getDataSourceSrv,
   HealthCheckError,
   DataSourceWithBackend,
+  TemplateSrv,
 } from '@grafana/runtime';
 import {
   DataFrame,
@@ -29,12 +30,12 @@ import {
   DataSourceInstanceSettings,
   FieldType,
   isDataFrame,
+  ScopedVars,
   toDataFrame,
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
 import { lastValueFrom, map, Observable } from 'rxjs';
-import { replaceTemplateVars } from './utils';
 
 export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -55,9 +56,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   datasourceId: number;
   zabbix: Zabbix;
 
-  replaceTemplateVars: (target: any, scopedVars?: any) => any;
-
-  constructor(instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>) {
+  constructor(
+    instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>,
+    private readonly templateSrv: TemplateSrv = getTemplateSrv()
+  ) {
     super(instanceSettings);
 
     this.enableDebugLog = config.buildInfo.env === 'development';
@@ -66,10 +68,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       QueryEditor: AnnotationQueryEditor,
       prepareAnnotation: migrations.prepareAnnotation,
     };
-
-    // Use custom format for template variables
-    const templateSrv = getTemplateSrv();
-    this.replaceTemplateVars = _.partial(replaceTemplateVars, templateSrv);
 
     // General data source settings
     this.datasourceId = instanceSettings.id;
@@ -156,9 +154,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     );
   }
 
-  async frontendQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
+  async frontendQuery(request: DataQueryRequest<ZabbixMetricsQuery>): Promise<DataQueryResponse> {
     const frontendTargets = request.targets.filter((t) => !(this.isBackendTarget(t) || this.isDBConnectionTarget(t)));
-    const promises = _.map(frontendTargets, (target) => {
+    const oldVersionTargets = frontendTargets
+      .filter((target) => (target as any).itservice && !target.itServiceFilter)
+      .map((t) => t.refId);
+    const interpolatedTargets = this.interpolateVariablesInQueries(frontendTargets, request.scopedVars);
+    const promises = _.map(interpolatedTargets, (target) => {
       // Don't request for hidden targets
       if (target.hide) {
         return [];
@@ -166,7 +168,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
       // Add range variables
       request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
-      this.replaceTargetVariables(target, request);
       const timeRange = this.buildTimeRange(request, target);
 
       if (target.queryType === c.MODE_TEXT) {
@@ -178,7 +179,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         return this.queryTextData(target, timeRange);
       } else if (target.queryType === c.MODE_ITSERVICE) {
         // IT services query
-        return this.queryITServiceData(target, timeRange, request);
+        const isOldVersion = oldVersionTargets.includes(target.refId);
+        return this.queryITServiceData(target, timeRange, request, isOldVersion);
       } else if (target.queryType === c.MODE_TRIGGERS) {
         // Triggers query
         return this.queryTriggersData(target, timeRange, request);
@@ -217,9 +219,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   async dbConnectionQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
     const targets = request.targets.filter(this.isDBConnectionTarget);
+    const interpolatedTargets = this.interpolateVariablesInQueries(targets, request.scopedVars);
 
     const queries = _.compact(
-      targets.map((target) => {
+      interpolatedTargets.map((target) => {
         // Don't request for hidden targets
         if (target.hide) {
           return [];
@@ -227,7 +230,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
         // Add range variables
         request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
-        this.replaceTargetVariables(target, request);
         const timeRange = this.buildTimeRange(request, target);
         const useTrends = this.isUseTrends(timeRange, target);
 
@@ -420,31 +422,23 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   /**
    * Query target data for IT Services
    */
-  async queryITServiceData(target: ZabbixMetricsQuery, timeRange, request) {
+  async queryITServiceData(
+    target: ZabbixMetricsQuery,
+    timeRange: number[],
+    request: DataQueryRequest<ZabbixMetricsQuery>,
+    isOldVersion: boolean
+  ) {
     // Don't show undefined and hidden targets
     if (target.hide || (!(target as any).itservice && !target.itServiceFilter) || !target.slaProperty) {
       return [];
     }
 
-    let itServiceFilter;
-    request.isOldVersion = (target as any).itservice && !target.itServiceFilter;
-
-    if (request.isOldVersion) {
-      // Backward compatibility
-      itServiceFilter = '/.*/';
-    } else {
-      itServiceFilter = this.replaceTemplateVars(target.itServiceFilter, request.scopedVars);
-    }
-
-    request.slaInterval = target.slaInterval;
-
-    let itservices = await this.zabbix.getITServices(itServiceFilter);
-    if (request.isOldVersion) {
+    let itservices = await this.zabbix.getITServices(target.itServiceFilter);
+    if (isOldVersion) {
       itservices = _.filter(itservices, { serviceid: (target as any).itservice?.serviceid });
     }
     if (target.slaFilter !== undefined) {
-      const slaFilter = this.replaceTemplateVars(target.slaFilter, request.scopedVars);
-      const slas = await this.zabbix.getSLAs(slaFilter);
+      const slas = await this.zabbix.getSLAs(target.slaFilter);
       const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
       // Apply alias functions
       const aliasFunctions = utils.bindFunctionDefs(target.functions, 'Alias');
@@ -486,9 +480,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const appids = apps?.map((a) => a.applicationid);
     const options = utils.getTriggersOptions(target, timeRange);
 
-    const tagsFilter = this.replaceTemplateVars(target.tags?.filter, request.scopedVars);
-    // replaceTemplateVars() builds regex-like string, so we should trim it.
-    const tagsFilterStr = tagsFilter.replace('/^', '').replace('$/', '');
+    // variable interpolation builds regex-like string, so we should trim it.
+    const tagsFilterStr = target.tags.filter.replace('/^', '').replace('$/', '');
     const tags = utils.parseTags(tagsFilterStr);
     tags.forEach((tag) => {
       // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
@@ -526,9 +519,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   async queryTriggersPCData(target: ZabbixMetricsQuery, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
-    const tagsFilter = this.replaceTemplateVars(target.tags?.filter, request.scopedVars);
-    // replaceTemplateVars() builds regex-like string, so we should trim it.
-    const tagsFilterStr = tagsFilter.replace('/^', '').replace('$/', '');
+    // variable interpolation builds regex-like string, so we should trim it.
+    const tagsFilterStr = target.tags.filter.replace('/^', '').replace('$/', '');
     const tags = utils.parseTags(tagsFilterStr);
     tags.forEach((tag) => {
       // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
@@ -598,23 +590,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const getProxiesPromise = showProxy ? this.zabbix.getProxies() : () => [];
     showAckButton = !this.disableReadOnlyUsersAck || userIsEditor;
 
-    // Replace template variables
-    const groupFilter = this.replaceTemplateVars(target.group?.filter, options.scopedVars);
-    const hostFilter = this.replaceTemplateVars(target.host?.filter, options.scopedVars);
-    const appFilter = this.replaceTemplateVars(target.application?.filter, options.scopedVars);
-    const proxyFilter = this.replaceTemplateVars(target.proxy?.filter, options.scopedVars);
-
-    const triggerFilter = this.replaceTemplateVars(target.trigger?.filter, options.scopedVars);
-    const tagsFilter = this.replaceTemplateVars(target.tags?.filter, options.scopedVars);
-
-    const replacedTarget = {
-      ...target,
-      trigger: { filter: triggerFilter },
-      tags: { filter: tagsFilter },
-    };
-
     // replaceTemplateVars() builds regex-like string, so we should trim it.
-    const tagsFilterStr = tagsFilter.replace('/^', '').replace('$/', '');
+    const tagsFilterStr = target.tags.filter.replace('/^', '').replace('$/', '');
     const tags = utils.parseTags(tagsFilterStr);
     tags.forEach((tag) => {
       // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
@@ -649,14 +626,20 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       problemsOptions.timeFrom = timeFrom;
       problemsOptions.timeTo = timeTo;
       getProblemsPromise = this.zabbix.getProblemsHistory(
-        groupFilter,
-        hostFilter,
-        appFilter,
-        proxyFilter,
+        target.group.filter,
+        target.host.filter,
+        target.application.filter,
+        target.proxy.filter,
         problemsOptions
       );
     } else {
-      getProblemsPromise = this.zabbix.getProblems(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions);
+      getProblemsPromise = this.zabbix.getProblems(
+        target.group.filter,
+        target.host.filter,
+        target.application.filter,
+        target.proxy.filter,
+        problemsOptions
+      );
     }
     const getUsersPromise = this.zabbix.getUsers();
 
@@ -670,7 +653,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       })
       .then((problems) => problemsHandler.setMaintenanceStatus(problems))
       .then((problems) => problemsHandler.setAckButtonStatus(problems, showAckButton))
-      .then((problems) => problemsHandler.filterTriggersPre(problems, replacedTarget))
+      .then((problems) => problemsHandler.filterTriggersPre(problems, target))
       .then((problems) => problemsHandler.sortProblems(problems, target))
       .then((problems) => problemsHandler.addTriggerDataSource(problems, target))
       .then((problems) => problemsHandler.formatAcknowledges(problems, zabbixUsers))
@@ -752,7 +735,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
 
     for (const prop of ['group', 'host', 'application', 'itemTag', 'item']) {
-      queryModel[prop] = this.replaceTemplateVars(queryModel[prop], {});
+      queryModel[prop] = utils.replaceTemplateVars(this.templateSrv, queryModel[prop], {});
     }
 
     queryModel = queryModel as VariableQuery;
@@ -844,16 +827,16 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       problemsOptions.severities = severities;
     }
 
-    const groupFilter = this.replaceTemplateVars(annotation.group.filter, {});
-    const hostFilter = this.replaceTemplateVars(annotation.host.filter, {});
-    const appFilter = this.replaceTemplateVars(annotation.application.filter, {});
+    const groupFilter = utils.replaceTemplateVars(this.templateSrv, annotation.group.filter, {});
+    const hostFilter = utils.replaceTemplateVars(this.templateSrv, annotation.host.filter, {});
+    const appFilter = utils.replaceTemplateVars(this.templateSrv, annotation.application.filter, {});
     const proxyFilter = undefined;
 
     return this.zabbix
       .getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions)
       .then((problems) => {
         // Filter triggers by description
-        const problemName = this.replaceTemplateVars(annotation.trigger.filter, {});
+        const problemName = utils.replaceTemplateVars(this.templateSrv, annotation.trigger.filter, {});
         if (utils.isRegex(problemName)) {
           problems = _.filter(problems, (p) => {
             return utils.buildRegex(problemName).test(p.description);
@@ -888,35 +871,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           };
         });
       });
-  }
-
-  // Replace template variables
-  replaceTargetVariables(target, options) {
-    const templateSrv = getTemplateSrv();
-    const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    _.forEach(parts, (p) => {
-      if (target[p] && target[p].filter) {
-        target[p].filter = this.replaceTemplateVars(target[p].filter, options.scopedVars);
-      }
-    });
-
-    if (target.textFilter) {
-      target.textFilter = this.replaceTemplateVars(target.textFilter, options.scopedVars);
-    }
-
-    if (target.itemids) {
-      target.itemids = templateSrv.replace(target.itemids, options.scopedVars, utils.zabbixItemIdsTemplateFormat);
-    }
-
-    _.forEach(target.functions, (func) => {
-      func.params = _.map(func.params, (param) => {
-        if (typeof param === 'number') {
-          return +templateSrv.replace(param.toString(), options.scopedVars);
-        } else {
-          return templateSrv.replace(param, options.scopedVars);
-        }
-      });
-    });
   }
 
   isUseTrends(timeRange, target: ZabbixMetricsQuery) {
@@ -971,5 +925,61 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       response.data = responseHandler.convertToWide(response.data);
     }
     return response;
+  }
+  interpolateVariablesInQueries(queries: ZabbixMetricsQuery[], scopedVars: ScopedVars): ZabbixMetricsQuery[] {
+    if (!queries || queries.length === 0) {
+      return [];
+    }
+    return queries.map((query) => {
+      // backwardsCompatibility
+      const isOldVersion: boolean = (query as any).itservice && !query.itServiceFilter;
+      return {
+        ...query,
+        itServiceFilter: isOldVersion
+          ? '/.*/'
+          : utils.replaceTemplateVars(this.templateSrv, query.itServiceFilter, scopedVars),
+        slaFilter: utils.replaceTemplateVars(this.templateSrv, query.slaFilter, scopedVars),
+        itemids: utils.replaceTemplateVars(
+          this.templateSrv,
+          query.itemids,
+          scopedVars,
+          utils.zabbixItemIdsTemplateFormat
+        ),
+        textFilter: utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        functions: utils.replaceVariablesInFuncParams(this.templateSrv, query.functions, scopedVars),
+        tags: {
+          ...query.tags,
+          filter: utils.replaceTemplateVars(this.templateSrv, query.tags.filter, scopedVars),
+        },
+        group: {
+          ...query.group,
+          filter: utils.replaceTemplateVars(this.templateSrv, query.group.filter, scopedVars),
+        },
+        host: {
+          ...query.host,
+          filter: utils.replaceTemplateVars(this.templateSrv, query.host.filter, scopedVars),
+        },
+        application: {
+          ...query.application,
+          filter: utils.replaceTemplateVars(this.templateSrv, query.application.filter, scopedVars),
+        },
+        proxy: {
+          ...query.proxy,
+          filter: utils.replaceTemplateVars(this.templateSrv, query.proxy.filter, scopedVars),
+        },
+        trigger: {
+          ...query.trigger,
+          filter: utils.replaceTemplateVars(this.templateSrv, query.trigger.filter, scopedVars),
+        },
+        itemTag: {
+          ...query.itemTag,
+          filter: utils.replaceTemplateVars(this.templateSrv, query.itemTag.filter, scopedVars),
+        },
+        item: {
+          ...query.item,
+          filter: utils.replaceTemplateVars(this.templateSrv, query.item.filter, scopedVars),
+        },
+      };
+    });
   }
 }
