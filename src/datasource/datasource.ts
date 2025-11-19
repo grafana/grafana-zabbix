@@ -136,15 +136,19 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         return target;
       });
 
-    const backendResponse = super.query({ ...request, targets: requestTargets.filter(this.isBackendTarget) });
-    const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: requestTargets });
-    const frontendResponsePromise = this.frontendQuery({ ...request, targets: requestTargets });
-    const annotationResposePromise = this.annotationRequest({ ...request, targets: requestTargets });
+    const interpolatedTargets = this.interpolateVariablesInQueries(requestTargets, request.scopedVars);
+    const backendResponse = super.query({ ...request, targets: interpolatedTargets.filter(this.isBackendTarget) });
+    const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: interpolatedTargets });
+    const frontendResponsePromise = this.frontendQuery({ ...request, targets: interpolatedTargets });
+    const annotationResposePromise = this.annotationRequest({ ...request, targets: interpolatedTargets });
 
     const applyMergeQueries = (queryResponse: DataQueryResponse) =>
       this.mergeQueries(queryResponse, dbConnectionResponsePromise, frontendResponsePromise, annotationResposePromise);
     const applyFEFuncs = (queryResponse: DataQueryResponse) =>
-      this.applyFrontendFunctions(queryResponse, { ...request, targets: requestTargets.filter(this.isBackendTarget) });
+      this.applyFrontendFunctions(queryResponse, {
+        ...request,
+        targets: interpolatedTargets.filter(this.isBackendTarget),
+      });
 
     return backendResponse.pipe(
       map(applyFEFuncs),
@@ -159,8 +163,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const oldVersionTargets = frontendTargets
       .filter((target) => (target as any).itservice && !target.itServiceFilter)
       .map((t) => t.refId);
-    const interpolatedTargets = this.interpolateVariablesInQueries(frontendTargets, request.scopedVars);
-    const promises = _.map(interpolatedTargets, (target) => {
+    const promises = _.map(frontendTargets, (target) => {
       // Don't request for hidden targets
       if (target.hide) {
         return [];
@@ -219,10 +222,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   async dbConnectionQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
     const targets = request.targets.filter(this.isDBConnectionTarget);
-    const interpolatedTargets = this.interpolateVariablesInQueries(targets, request.scopedVars);
 
     const queries = _.compact(
-      interpolatedTargets.map((target) => {
+      targets.map((target) => {
         // Don't request for hidden targets
         if (target.hide) {
           return [];
@@ -827,16 +829,16 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       problemsOptions.severities = severities;
     }
 
-    const groupFilter = utils.replaceTemplateVars(this.templateSrv, annotation.group.filter, {});
-    const hostFilter = utils.replaceTemplateVars(this.templateSrv, annotation.host.filter, {});
-    const appFilter = utils.replaceTemplateVars(this.templateSrv, annotation.application.filter, {});
+    const groupFilter = annotation.group.filter;
+    const hostFilter = annotation.host.filter;
+    const appFilter = annotation.application.filter;
     const proxyFilter = undefined;
 
     return this.zabbix
       .getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions)
       .then((problems) => {
         // Filter triggers by description
-        const problemName = utils.replaceTemplateVars(this.templateSrv, annotation.trigger.filter, {});
+        const problemName = annotation.trigger.filter;
         if (utils.isRegex(problemName)) {
           problems = _.filter(problems, (p) => {
             return utils.buildRegex(problemName).test(p.description);
