@@ -524,19 +524,28 @@ func (ds *Zabbix) GetValueMappings(ctx context.Context) ([]ValueMap, error) {
 	return valuemaps, err
 }
 
-func (ds *Zabbix) GetVersion(ctx context.Context) (int, error) {
+func (ds *Zabbix) GetFullVersion(ctx context.Context) (string, error) {
 	result, err := ds.request(ctx, "apiinfo.version", ZabbixAPIParams{})
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	var version string
 	err = convertTo(result, &version)
 	if err != nil {
+		return "", err
+	}
+	
+	return version, nil
+}
+
+func (ds *Zabbix) GetVersion(ctx context.Context) (int, error) {
+	fullStringVersion, err := ds.GetFullVersion(ctx)
+	if err != nil {
 		return 0, err
 	}
 
-	version = strings.Replace(version[0:3], ".", "", 1)
+	version := strings.Replace(fullStringVersion[0:3], ".", "", 1)
 	versionNum, err := strconv.Atoi(version)
 	return versionNum, err
 }

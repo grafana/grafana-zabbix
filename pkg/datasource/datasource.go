@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
@@ -99,7 +100,7 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 	}
 
 	res.Status = backend.HealthStatusOk
-	res.Message = message
+	res.Message = fmt.Sprintf("Zabbix API version %s", message)
 	return res, nil
 }
 
