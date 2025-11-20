@@ -568,8 +568,8 @@ export function replaceVariablesInFuncParams(
   functions: MetricFunc[],
   scopedVars: ScopedVars
 ) {
-  return functions.map((func) => {
-    const interpolatedParams = func.params.map((param) => {
+  return functions?.map((func) => {
+    const interpolatedParams = func?.params?.map((param) => {
       if (typeof param === 'number') {
         return +templateSrv.replace(param.toString(), scopedVars);
       } else {

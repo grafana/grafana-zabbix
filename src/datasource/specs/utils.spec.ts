@@ -229,4 +229,36 @@ describe('Utils', () => {
       testReplacingVariable(target, template_var_value, expected_result, done);
     });
   });
+
+  describe('replaceVariablesInFuncParams()', () => {
+    it('should interpolate numeric and string params with templateSrv', () => {
+      const replaceMock = jest
+        .fn()
+        .mockImplementation((value) => (value === '42' ? '100' : value.replace('$var', 'result')));
+      const templateSrv = { replace: replaceMock };
+      const scopedVars = { some: 'var' } as any;
+      const functions = [
+        {
+          def: { name: 'test' },
+          params: [42, '$var'],
+        },
+      ];
+
+      const [fn] = utils.replaceVariablesInFuncParams(templateSrv as any, functions as any, scopedVars);
+
+      expect(replaceMock).toHaveBeenCalledWith('42', scopedVars);
+      expect(replaceMock).toHaveBeenCalledWith('$var', scopedVars);
+      expect(fn.params).toEqual([100, 'result']);
+    });
+
+    it('should keep params undefined when function has none', () => {
+      const templateSrv = { replace: jest.fn() };
+      const functions = [{ def: { name: 'noop' } }];
+
+      const [fn] = utils.replaceVariablesInFuncParams(templateSrv as any, functions as any, {} as any);
+
+      expect(fn.params).toBeUndefined();
+      expect(templateSrv.replace).not.toHaveBeenCalled();
+    });
+  });
 });
