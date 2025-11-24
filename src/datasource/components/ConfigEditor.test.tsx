@@ -7,7 +7,22 @@ jest.mock('@grafana/runtime', () => ({
   config: {},
 }));
 
+jest.mock('@grafana/ui', () => ({
+  ...jest.requireActual('@grafana/ui'),
+  config: {},
+}));
+
 describe('ConfigEditor', () => {
+  beforeAll(() => {
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+      value: () => ({
+        measureText: () => ({ width: 0 }),
+        font: '',
+        textAlign: '',
+      }),
+    });
+  });
+
   describe('on initial render', () => {
     it('should not mutate the options object', () => {
       const options = Object.freeze({ ...getDefaultOptions() }); // freezing the options to prevent mutations
@@ -27,7 +42,7 @@ describe('ConfigEditor', () => {
       const onOptionsChangeSpy = jest.fn();
 
       expect(() => render(<ConfigEditor options={options} onOptionsChange={onOptionsChangeSpy} />)).not.toThrow();
-      expect(onOptionsChangeSpy).toBeCalledTimes(1);
+      expect(onOptionsChangeSpy).toHaveBeenCalledTimes(1);
       expect(onOptionsChangeSpy).toHaveBeenCalledWith({
         ...getDefaultOptions(),
         jsonData: {
@@ -51,7 +66,7 @@ describe('ConfigEditor', () => {
       const onOptionsChangeSpy = jest.fn();
 
       expect(() => render(<ConfigEditor options={options} onOptionsChange={onOptionsChangeSpy} />)).not.toThrow();
-      expect(onOptionsChangeSpy).toBeCalledTimes(1);
+      expect(onOptionsChangeSpy).toHaveBeenCalledTimes(1);
       expect(onOptionsChangeSpy).toHaveBeenCalledWith({
         ...getDefaultOptions(),
         jsonData: {

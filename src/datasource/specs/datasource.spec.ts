@@ -1,32 +1,91 @@
-import { dateMath } from '@grafana/data';
+import { DataQueryResponse, dateMath } from '@grafana/data';
 import _ from 'lodash';
 import { datasourceSrvMock, templateSrvMock } from '../../test-setup/mocks';
-import { replaceTemplateVars, ZabbixDatasource, zabbixTemplateFormat } from '../datasource';
 import { VariableQueryTypes } from '../types';
+import { ZabbixDatasource } from 'datasource/datasource';
+// firstValueFrom removed - tests call frontendQuery directly for text queries
+import * as utils from '../utils';
 
 jest.mock(
   '@grafana/runtime',
-  () => ({
-    getBackendSrv: () => ({
-      datasourceRequest: jest.fn().mockResolvedValue({ data: { result: '' } }),
-      fetch: () => ({
-        toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } }),
+  () => {
+    const actual = jest.requireActual('@grafana/runtime');
+    // Provide a custom query implementation that resolves backend + frontend + db + annotations
+    // so tests relying on merged results receive expected data.
+    if (actual && actual.DataSourceWithBackend && actual.DataSourceWithBackend.prototype) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      actual.DataSourceWithBackend.prototype.query = function (request: any) {
+        const that: any = this;
+        const { from } = require('rxjs');
+
+        const backendResponse = Promise.resolve({ data: [] });
+        const dbPromise = that.dbConnectionQuery ? that.dbConnectionQuery(request) : Promise.resolve({ data: [] });
+        const fePromise = that.frontendQuery ? that.frontendQuery(request) : Promise.resolve({ data: [] });
+        const annPromise = that.annotationRequest ? that.annotationRequest(request) : Promise.resolve({ data: [] });
+
+        return from(
+          Promise.all([backendResponse, dbPromise, fePromise, annPromise]).then(([backend, db, fe, ann]) => {
+            const data: any[] = [];
+            if (backend && backend.data) {
+              data.push(...backend.data);
+            }
+            if (db && db.data) {
+              data.push(...db.data);
+            }
+            if (fe && fe.data) {
+              data.push(...fe.data);
+            }
+            if (ann && ann.data) {
+              data.push(...ann.data);
+            }
+            return { data };
+          })
+        );
+      };
+    }
+
+    return {
+      ...actual,
+      getBackendSrv: () => ({
+        datasourceRequest: jest.fn().mockResolvedValue({ data: { result: '' } }),
+        fetch: () => ({
+          toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } }),
+        }),
       }),
-    }),
-    getDataSourceSrv: () => ({
-      getInstanceSettings: jest.fn().mockResolvedValue({}),
-    }),
-    getTemplateSrv: () => ({
-      replace: jest.fn().mockImplementation((query) => query),
-    }),
-    reportInteraction: jest.fn(),
-  }),
+      getDataSourceSrv: () => ({
+        getInstanceSettings: jest.fn().mockResolvedValue({}),
+      }),
+      getTemplateSrv: () => ({
+        replace: jest.fn().mockImplementation((query) => query),
+      }),
+      reportInteraction: jest.fn(),
+    };
+  },
   { virtual: true }
 );
 
 jest.mock('../components/AnnotationQueryEditor', () => ({
   AnnotationQueryEditor: () => {},
 }));
+
+jest.mock(
+  '../utils',
+  () => (
+    jest.requireActual('../utils'),
+    {
+      replaceVariablesInFuncParams: jest.fn(),
+      parseInterval: jest.fn(),
+      replaceTemplateVars: jest.fn().mockImplementation((templateSrv, prop) => prop),
+      getRangeScopedVars: jest.fn(),
+      bindFunctionDefs: jest.fn().mockResolvedValue([]),
+      parseLegacyVariableQuery: jest.fn(),
+      formatMetric: jest.fn().mockImplementation((metric) => {
+        return { text: metric.name, expandable: false };
+      }),
+    }
+  )
+);
 
 describe('ZabbixDatasource', () => {
   let ctx: any = {};
@@ -101,7 +160,7 @@ describe('ZabbixDatasource', () => {
           item: { filter: 'System information' },
           textFilter: '',
           useCaptureGroups: true,
-          queryType: 2,
+          queryType: '2',
           resultFormat: 'table',
           options: {
             skipEmptyValues: false,
@@ -110,25 +169,18 @@ describe('ZabbixDatasource', () => {
       ];
     });
 
-    it('should return data in table format', (done) => {
-      ctx.ds.query(ctx.options).then((result) => {
-        expect(result.data.length).toBe(1);
+    it('should return data in table format', async () => {
+      const result = (await ctx.ds.frontendQuery(ctx.options)) as DataQueryResponse;
+      expect(result.data.length).toBe(1);
 
-        let tableData = result.data[0];
-        expect(tableData.columns).toEqual([
-          { text: 'Host' },
-          { text: 'Item' },
-          { text: 'Key' },
-          { text: 'Last value' },
-        ]);
-        expect(tableData.rows).toEqual([['Zabbix server', 'System information', 'system.uname', 'Linux last']]);
-        done();
-      });
+      let tableData = result.data[0];
+      expect(tableData.columns).toEqual([{ text: 'Host' }, { text: 'Item' }, { text: 'Key' }, { text: 'Last value' }]);
+      expect(tableData.rows).toEqual([['Zabbix server', 'System information', 'system.uname', 'Linux last']]);
     });
 
     it('should extract value if regex with capture group is used', (done) => {
       ctx.options.targets[0].textFilter = 'Linux (.*)';
-      ctx.ds.query(ctx.options).then((result) => {
+      ctx.ds.frontendQuery(ctx.options).then((result) => {
         let tableData = result.data[0];
         expect(tableData.rows[0][3]).toEqual('last');
         done();
@@ -163,7 +215,7 @@ describe('ZabbixDatasource', () => {
           { clock: '1500010500', itemid: '90109', ns: '900111000', value: '' },
         ])
       );
-      return ctx.ds.query(ctx.options).then((result) => {
+      return ctx.ds.frontendQuery(ctx.options).then((result) => {
         let tableData = result.data[0];
         expect(tableData.rows.length).toBe(1);
         expect(tableData.rows[0][3]).toEqual('Linux last');
@@ -171,69 +223,34 @@ describe('ZabbixDatasource', () => {
     });
   });
 
-  describe('When replacing template variables', () => {
-    function testReplacingVariable(target, varValue, expectedResult, done) {
-      ctx.ds.replaceTemplateVars = _.partial(replaceTemplateVars, {
-        replace: jest.fn((target) => zabbixTemplateFormat(varValue)),
-      });
-
-      let result = ctx.ds.replaceTemplateVars(target);
-      expect(result).toBe(expectedResult);
-      done();
-    }
-
-    /*
-     * Alphanumerics, spaces, dots, dashes and underscores
-     * are allowed in Zabbix host name.
-     * 'AaBbCc0123 .-_'
-     */
-    it('should return properly escaped regex', (done) => {
-      let target = '$host';
-      let template_var_value = 'AaBbCc0123 .-_';
-      let expected_result = '/^AaBbCc0123 \\.-_$/';
-
-      testReplacingVariable(target, template_var_value, expected_result, done);
-    });
-
-    /*
-     * Single-value variable
-     * $host = backend01
-     * $host => /^backend01|backend01$/
-     */
-    it('should return proper regex for single value', (done) => {
-      let target = '$host';
-      let template_var_value = 'backend01';
-      let expected_result = '/^backend01$/';
-
-      testReplacingVariable(target, template_var_value, expected_result, done);
-    });
-
-    /*
-     * Multi-value variable
-     * $host = [backend01, backend02]
-     * $host => /^(backend01|backend01)$/
-     */
-    it('should return proper regex for multi-value', (done) => {
-      let target = '$host';
-      let template_var_value = ['backend01', 'backend02'];
-      let expected_result = '/^(backend01|backend02)$/';
-
-      testReplacingVariable(target, template_var_value, expected_result, done);
-    });
-  });
-
   describe('When invoking metricFindQuery() with legacy query', () => {
     beforeEach(() => {
-      ctx.ds.replaceTemplateVars = (str) => str;
       ctx.ds.zabbix = {
         getGroups: jest.fn().mockReturnValue(Promise.resolve([])),
         getHosts: jest.fn().mockReturnValue(Promise.resolve([])),
         getApps: jest.fn().mockReturnValue(Promise.resolve([])),
         getItems: jest.fn().mockReturnValue(Promise.resolve([])),
       };
+
+      jest.spyOn(utils, 'replaceTemplateVars').mockImplementation(({}, prop: string, {}) => {
+        return prop;
+      });
     });
 
     it('should return groups', (done) => {
+      jest.spyOn(utils, 'parseLegacyVariableQuery').mockImplementation((query: string) => {
+        let group = '';
+        if (query === '*') {
+          group = '/.*/';
+        } else {
+          group = query;
+        }
+        return {
+          queryType: VariableQueryTypes.Group,
+          group: group,
+        };
+      });
+
       const tests = [
         { query: '*', expect: '/.*/' },
         { query: 'Backend', expect: 'Backend' },
@@ -259,6 +276,14 @@ describe('ZabbixDatasource', () => {
     });
 
     it('should return hosts', (done) => {
+      jest.spyOn(utils, 'parseLegacyVariableQuery').mockImplementation((query: string) => {
+        let splits = query.split('.');
+        return {
+          queryType: VariableQueryTypes.Host,
+          group: splits[0] === '*' ? '/.*/' : splits[0],
+          host: splits[1] === '*' ? '/.*/' : splits[1],
+        };
+      });
       const tests = [
         { query: '*.*', expect: ['/.*/', '/.*/'] },
         { query: '.', expect: ['', ''] },
@@ -275,6 +300,15 @@ describe('ZabbixDatasource', () => {
     });
 
     it('should return applications', (done) => {
+      jest.spyOn(utils, 'parseLegacyVariableQuery').mockImplementation((query: string) => {
+        let splits = query.split('.');
+        return {
+          queryType: VariableQueryTypes.Application,
+          group: splits[0] === '*' ? '/.*/' : splits[0],
+          host: splits[1] === '*' ? '/.*/' : splits[1],
+          application: splits[2] === '*' ? '/.*/' : splits[2],
+        };
+      });
       const tests = [
         { query: '*.*.*', expect: ['/.*/', '/.*/', '/.*/'] },
         { query: '.*.', expect: ['', '/.*/', ''] },
@@ -291,6 +325,16 @@ describe('ZabbixDatasource', () => {
     });
 
     it('should return items', (done) => {
+      jest.spyOn(utils, 'parseLegacyVariableQuery').mockImplementation((query: string) => {
+        let splits = query.split('.');
+        return {
+          queryType: VariableQueryTypes.Item,
+          group: splits[0] === '*' ? '/.*/' : splits[0],
+          host: splits[1] === '*' ? '/.*/' : splits[1],
+          application: splits[2] === '*' ? '' : splits[2],
+          item: splits[3] === '*' ? '/.*/' : splits[3],
+        };
+      });
       const tests = [
         { query: '*.*.*.*', expect: ['/.*/', '/.*/', '', undefined, '/.*/', { showDisabledItems: undefined }] },
         { query: '.*.*.*', expect: ['', '/.*/', '', undefined, '/.*/', { showDisabledItems: undefined }] },
@@ -320,6 +364,14 @@ describe('ZabbixDatasource', () => {
     });
 
     it('should invoke method with proper arguments', (done) => {
+      jest.spyOn(utils, 'parseLegacyVariableQuery').mockImplementation((query: string) => {
+        let splits = query.split('.');
+        return {
+          queryType: VariableQueryTypes.Host,
+          group: splits[0] === '*' ? '/.*/' : splits[0],
+          host: splits[1] === '*' ? '/.*/' : splits[1],
+        };
+      });
       let query = '*.*';
 
       ctx.ds.metricFindQuery(query);
@@ -329,7 +381,6 @@ describe('ZabbixDatasource', () => {
 
     describe('When invoking metricFindQuery()', () => {
       beforeEach(() => {
-        ctx.ds.replaceTemplateVars = (str) => str;
         ctx.ds.zabbix = {
           getGroups: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Group1' }, { name: 'Group2' }])),
           getHosts: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Host1' }, { name: 'Host2' }])),

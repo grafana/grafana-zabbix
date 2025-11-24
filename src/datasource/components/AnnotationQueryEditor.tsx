@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import React, { useEffect, FormEvent } from 'react';
+import React, { useEffect, FormEvent, useState } from 'react';
 import { useAsyncFn } from 'react-use';
 import { AnnotationQuery, SelectableValue } from '@grafana/data';
-import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
 import { ZabbixMetricsQuery } from '../types/query';
 import { ZabbixQueryEditorProps } from './QueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
@@ -10,7 +10,7 @@ import { MetricPicker } from '../../components';
 import { getVariableOptions } from './QueryEditor/utils';
 import { prepareAnnotation } from '../migrations';
 
-const severityOptions: Array<SelectableValue<number>> = [
+const severityOptions: Array<ComboboxOption<number>> = [
   { value: 0, label: 'Not classified' },
   { value: 1, label: 'Information' },
   { value: 2, label: 'Warning' },
@@ -27,6 +27,12 @@ type Props = ZabbixQueryEditorProps & {
 export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasource }: Props) => {
   annotation = prepareAnnotation(annotation);
   const query = annotation.target;
+  // interpolate variables in the query
+  const [interpolatedQuery, setInterpolatedQuery] = useState<ZabbixMetricsQuery>(query);
+  useEffect(() => {
+    const replacedQuery = datasource.interpolateVariablesInQueries([query], {})[0];
+    setInterpolatedQuery(replacedQuery);
+  }, [query]);
 
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
@@ -44,8 +50,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
   }, []);
 
   const loadHostOptions = async (group: string) => {
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hosts = await datasource.zabbix.getAllHosts(groupFilter);
+    const hosts = await datasource.zabbix.getAllHosts(group);
     let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
@@ -57,14 +62,12 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
   };
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
-    const options = await loadHostOptions(query.group.filter);
+    const options = await loadHostOptions(interpolatedQuery.group.filter);
     return options;
-  }, [query.group.filter]);
+  }, [interpolatedQuery.group.filter]);
 
   const loadAppOptions = async (group: string, host: string) => {
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hostFilter = datasource.replaceTemplateVars(host);
-    const apps = await datasource.zabbix.getAllApps(groupFilter, hostFilter);
+    const apps = await datasource.zabbix.getAllApps(group, host);
     let options: Array<SelectableValue<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
@@ -75,13 +78,13 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
   };
 
   const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
-    const options = await loadAppOptions(query.group.filter, query.host.filter);
+    const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
     return options;
-  }, [query.group.filter, query.host.filter]);
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
   // Update suggestions on every metric change
-  const groupFilter = datasource.replaceTemplateVars(query.group?.filter);
-  const hostFilter = datasource.replaceTemplateVars(query.host?.filter);
+  const groupFilter = interpolatedQuery.group?.filter;
+  const hostFilter = interpolatedQuery.host?.filter;
 
   useEffect(() => {
     fetchGroups();
@@ -172,8 +175,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
       </QueryEditorRow>
       <>
         <InlineField label="Min severity" labelWidth={12}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={query.options?.minSeverity}
             options={severityOptions}
