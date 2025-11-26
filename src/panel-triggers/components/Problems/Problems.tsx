@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { cx } from '@emotion/css';
 import _ from 'lodash';
-import { ProblemDetails } from './ProblemDetails';
+import ReactTable from 'react-table-6';
+import { ProblemsTable } from './ProblemsTable';
 import { AckProblemData } from '../AckModal';
 import { ProblemsPanelOptions, RTCell, RTResized } from '../../types';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
@@ -20,6 +21,7 @@ import { GroupCell } from './Cells/GroupCell';
 import { StatusCell } from './Cells/StatusCell';
 import { StatusIconCell } from './Cells/StatusIconCell';
 import { HostCell } from './Cells/HostCell';
+import { ProblemDetails } from './ProblemDetails';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -225,9 +227,12 @@ export const ProblemList = (props: ProblemListProps) => {
     }
     return options;
   }, [pageSize]);
-
+  // console.log('Panel Options', panelOptions);
   return (
     <div className={cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize })} ref={rootRef}>
+      <div style={{ border: 'solid 1px red', marginBottom: '10px', padding: '5px' }}>
+        <ProblemsTable problems={problems} panelOptions={panelOptions} />
+      </div>
       <ReactTable
         data={problems}
         columns={columns}

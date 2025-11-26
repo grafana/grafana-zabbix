@@ -3,6 +3,17 @@ import { ProblemDTO } from '../../../../datasource/types';
 import _ from 'lodash';
 import React from 'react';
 import { DEFAULT_OK_COLOR } from '../constants';
+import { ColumnDefTemplate, CellContext } from '@tanstack/react-table';
+
+export function SeverityCellV8(
+  cell: ColumnDefTemplate<CellContext<ProblemDTO, string>>,
+  problemSeverityDesc: TriggerSeverity[],
+  markAckEvents?: boolean,
+  ackEventColor?: string,
+  okColor = DEFAULT_OK_COLOR
+) {
+  return <span></span>;
+}
 
 export function SeverityCell(
   props: RTCell<ProblemDTO>,

@@ -7452,6 +7452,7 @@ __metadata:
     react: "npm:18.2.0"
     react-dom: "npm:18.2.0"
     react-router-dom: "npm:^6.22.0"
+    react-table-6: "npm:6.11.0"
     react-use: "npm:17.4.0"
     replace-in-file-webpack-plugin: "npm:^1.0.6"
     rxjs: "npm:7.8.2"
@@ -11388,6 +11389,19 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
   checksum: 10c0/0d10a249b96150bd648f2575d59c848b8fac7f4d368a97ae84e4aaba5bbc1035deba4cdc82e49a43904b79ec50494505809618b0e98022b2d51e7629551912ed
+  languageName: node
+  linkType: hard
+
+"react-table-6@npm:6.11.0":
+  version: 6.11.0
+  resolution: "react-table-6@npm:6.11.0"
+  dependencies:
+    classnames: "npm:^2.2.5"
+  peerDependencies:
+    prop-types: ^15.5.0
+    react: ^16.x.x
+    react-dom: ^16.x.x
+  checksum: 10c0/4b65f88320f00bcbf4782cb95a4413c549330dbdbc79d6432f9d6800453f9db376a086a162e464b4d1cddf9e1b9a692b0a777d79a85aa4b1e1661bf2caaad7e1
   languageName: node
   linkType: hard
 

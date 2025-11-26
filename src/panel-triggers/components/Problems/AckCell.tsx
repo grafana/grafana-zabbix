@@ -1,9 +1,9 @@
 import React from 'react';
 import { css } from '@emotion/css';
 import { RTCell } from '../../types';
-import { ProblemDTO } from '../../../datasource/types';
+import { ProblemDTO, ZBXAcknowledge } from '../../../datasource/types';
 import { FAIcon } from '../../../components';
-import { useTheme, stylesFactory } from '@grafana/ui';
+import { stylesFactory, useTheme } from '@grafana/ui';
 import { GrafanaTheme } from '@grafana/data';
 
 const getStyles = stylesFactory((theme: GrafanaTheme) => {
@@ -13,6 +13,23 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
     `,
   };
 });
+
+export const AckCellV8 = (props: { acknowledges?: ZBXAcknowledge[] }) => {
+  const acknowledges = props.acknowledges || [];
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
+  return (
+    <div>
+      {acknowledges?.length > 0 && (
+        <>
+          <FAIcon icon="comments" />
+          <span className={styles.countLabel}> ({acknowledges?.length})</span>
+        </>
+      )}
+    </div>
+  );
+};
 
 export const AckCell: React.FC<RTCell<ProblemDTO>> = (props: RTCell<ProblemDTO>) => {
   const problem = props.original;
