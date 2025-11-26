@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, { PureComponent, useRef, useState, useMemo } from 'react';
 import { cx } from '@emotion/css';
 import ReactTable from 'react-table-6';
 import _ from 'lodash';
@@ -13,7 +13,8 @@ import { ProblemsPanelOptions, RTCell, RTResized, TriggerSeverity } from '../../
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
-import { DataSourceRef, TimeRange } from '@grafana/data';
+import { TimeRange } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
 import { reportInteraction } from '@grafana/runtime';
 
 export interface ProblemListProps {
@@ -35,93 +36,81 @@ export interface ProblemListProps {
   onColumnResize?: (newResized: RTResized) => void;
 }
 
-interface ProblemListState {
-  expanded: any;
-  expandedProblems: any;
-  page: number;
-}
+export const ProblemList = (props: ProblemListProps) => {
+  const {
+    pageSize,
+    fontSize,
+    problems,
+    panelOptions,
+    onProblemAck,
+    onPageSizeChange,
+    onColumnResize,
+    onTagClick,
+    loading,
+    timeRange,
+    panelId,
+    getProblemEvents,
+    getProblemAlerts,
+    getScripts,
+    onExecuteScript,
+  } = props;
 
-export default class ProblemList extends PureComponent<ProblemListProps, ProblemListState> {
-  rootWidth: number;
-  rootRef: any;
+  const [expanded, setExpanded] = useState({});
+  const [expandedProblems, setExpandedProblems] = useState({});
+  const [page, setPage] = useState(0);
+  const rootRef = useRef(null);
+  
+  // Default pageSize to 10 if not provided
+  const effectivePageSize = pageSize || 10;
 
-  constructor(props: ProblemListProps) {
-    super(props);
-    this.rootWidth = 0;
-    this.state = {
-      expanded: {},
-      expandedProblems: {},
-      page: 0,
-    };
-  }
-
-  setRootRef = (ref: any) => {
-    this.rootRef = ref;
+  const handleProblemAck = (problem: ProblemDTO, data: AckProblemData) => {
+    return onProblemAck!(problem, data);
   };
 
-  handleProblemAck = (problem: ProblemDTO, data: AckProblemData) => {
-    return this.props.onProblemAck!(problem, data);
+  const handlePageSizeChange = (pageSize, pageIndex) => {
+    onPageSizeChange?.(pageSize, pageIndex);
   };
 
-  onExecuteScript = (problem: ProblemDTO, data: AckProblemData) => {};
-
-  handlePageSizeChange = (pageSize, pageIndex) => {
-    if (this.props.onPageSizeChange) {
-      this.props.onPageSizeChange(pageSize, pageIndex);
-    }
+  const handleResizedChange = (newResized, event) => {
+    onColumnResize?.(newResized);
   };
 
-  handleResizedChange = (newResized, event) => {
-    if (this.props.onColumnResize) {
-      this.props.onColumnResize(newResized);
-    }
-  };
-
-  handleExpandedChange = (expanded: any, event: any) => {
+  const handleExpandedChange = (expandedChange: any, event: any) => {
     reportInteraction('grafana_zabbix_panel_row_expanded', {});
+    const newExpandedProblems = {};
 
-    const { problems, pageSize } = this.props;
-    const { page } = this.state;
-    const expandedProblems = {};
-
-    for (const row in expanded) {
+    for (const row in expandedChange) {
       const rowId = Number(row);
-      const problemIndex = pageSize * page + rowId;
-      if (expanded[row] && problemIndex < problems.length) {
+      const problemIndex = effectivePageSize * page + rowId;
+      if (expandedChange[row] && problemIndex < problems.length) {
         const expandedProblem = problems[problemIndex].eventid;
         if (expandedProblem) {
-          expandedProblems[expandedProblem] = true;
+          newExpandedProblems[expandedProblem] = true;
         }
       }
     }
 
-    const nextExpanded = { ...this.state.expanded };
-    nextExpanded[page] = expanded;
+    const nextExpanded = { ...expanded };
+    nextExpanded[page] = expandedChange;
 
-    const nextExpandedProblems = { ...this.state.expandedProblems };
-    nextExpandedProblems[page] = expandedProblems;
+    const nextExpandedProblems = { ...expandedProblems };
+    nextExpandedProblems[page] = newExpandedProblems;
 
-    this.setState({
-      expanded: nextExpanded,
-      expandedProblems: nextExpandedProblems,
-    });
+    setExpanded(nextExpanded);
+    setExpandedProblems(nextExpandedProblems);
   };
 
-  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
-    if (this.props.onTagClick) {
-      this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
-    }
+  const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
+    onTagClick?.(tag, datasource, ctrlKey, shiftKey);
   };
 
-  getExpandedPage = (page: number) => {
-    const { problems, pageSize } = this.props;
-    const { expandedProblems } = this.state;
+  const getExpandedPage = (page: number) => {
     const expandedProblemsPage = expandedProblems[page] || {};
     const expandedPage = {};
 
     // Go through the page and search for expanded problems
-    const startIndex = pageSize * page;
-    const endIndex = Math.min(startIndex + pageSize, problems.length);
+    const startIndex = effectivePageSize * page;
+    const endIndex = Math.min(startIndex + effectivePageSize, problems.length);
     for (let i = startIndex; i < endIndex; i++) {
       const problem = problems[i];
       if (expandedProblemsPage[problem.eventid]) {
@@ -132,10 +121,9 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     return expandedPage;
   };
 
-  buildColumns() {
+  const columns = useMemo(() => {
     const result = [];
-    const options = this.props.panelOptions;
-    const highlightNewerThan = options.highlightNewEvents && options.highlightNewerThan;
+    const highlightNewerThan = panelOptions.highlightNewEvents && panelOptions.highlightNewerThan;
     const statusCell = (props) => StatusCell(props, highlightNewerThan);
     const statusIconCell = (props) => StatusIconCell(props, highlightNewerThan);
     const hostNameCell = (props) => (
@@ -145,14 +133,19 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
       <HostCell name={props.original.hostTechName} maintenance={props.original.hostInMaintenance} />
     );
 
-    const columns = [
-      { Header: 'Host', id: 'host', show: options.hostField, Cell: hostNameCell },
-      { Header: 'Host (Technical Name)', id: 'hostTechName', show: options.hostTechNameField, Cell: hostTechNameCell },
-      { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
-      { Header: 'Proxy', accessor: 'proxy', show: options.hostProxy },
+    const allColumns = [
+      { Header: 'Host', id: 'host', show: panelOptions.hostField, Cell: hostNameCell },
+      {
+        Header: 'Host (Technical Name)',
+        id: 'hostTechName',
+        show: panelOptions.hostTechNameField,
+        Cell: hostTechNameCell,
+      },
+      { Header: 'Host Groups', accessor: 'groups', show: panelOptions.hostGroups, Cell: GroupCell },
+      { Header: 'Proxy', accessor: 'proxy', show: panelOptions.hostProxy },
       {
         Header: 'Severity',
-        show: options.severityField,
+        show: panelOptions.severityField,
         className: 'problem-severity',
         width: 120,
         accessor: (problem) => problem.priority,
@@ -160,43 +153,43 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         Cell: (props) =>
           SeverityCell(
             props,
-            options.triggerSeverity,
-            options.markAckEvents,
-            options.ackEventColor,
-            options.okEventColor
+            panelOptions.triggerSeverity,
+            panelOptions.markAckEvents,
+            panelOptions.ackEventColor,
+            panelOptions.okEventColor
           ),
       },
       {
         Header: '',
         id: 'statusIcon',
-        show: options.statusIcon,
+        show: panelOptions.statusIcon,
         className: 'problem-status-icon',
         width: 50,
         accessor: 'value',
         Cell: statusIconCell,
       },
-      { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
+      { Header: 'Status', accessor: 'value', show: panelOptions.statusField, width: 100, Cell: statusCell },
       { Header: 'Problem', accessor: 'name', minWidth: 200, Cell: ProblemCell },
-      { Header: 'Operational data', accessor: 'opdata', show: options.opdataField, width: 150, Cell: OpdataCell },
+      { Header: 'Operational data', accessor: 'opdata', show: panelOptions.opdataField, width: 150, Cell: OpdataCell },
       {
         Header: 'Ack',
         id: 'ack',
-        show: options.ackField,
+        show: panelOptions.ackField,
         width: 70,
         Cell: (props) => <AckCell {...props} />,
       },
       {
         Header: 'Tags',
         accessor: 'tags',
-        show: options.showTags,
+        show: panelOptions.showTags,
         className: 'problem-tags',
-        Cell: (props) => <TagCell {...props} onTagClick={this.handleTagClick} />,
+        Cell: (props) => <TagCell {...props} onTagClick={handleTagClick} />,
       },
       {
         Header: 'Age',
         className: 'problem-age',
         width: 100,
-        show: options.ageField,
+        show: panelOptions.ageField,
         accessor: 'timestamp',
         id: 'age',
         Cell: AgeCell,
@@ -207,75 +200,72 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         width: 150,
         accessor: 'timestamp',
         id: 'lastchange',
-        Cell: (props) => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
+        Cell: (props) => LastChangeCell(props, panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat),
       },
       { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
     ];
-    for (const column of columns) {
+    for (const column of allColumns) {
       if (column.show || column.show === undefined) {
         delete column.show;
         result.push(column);
       }
     }
     return result;
-  }
+  }, [panelOptions, handleTagClick]);
 
-  render() {
-    const columns = this.buildColumns();
-    this.rootWidth = this.rootRef && this.rootRef.clientWidth;
-    const { pageSize, fontSize, panelOptions } = this.props;
-    const panelClass = cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize });
-    let pageSizeOptions = [5, 10, 20, 25, 50, 100];
+  const pageSizeOptions = useMemo(() => {
+    let options = [5, 10, 20, 25, 50, 100];
     if (pageSize) {
-      pageSizeOptions.push(pageSize);
-      pageSizeOptions = _.uniq(_.sortBy(pageSizeOptions));
+      options.push(pageSize);
+      options = _.uniq(_.sortBy(options));
     }
+    return options;
+  }, [pageSize]);
 
-    return (
-      <div className={panelClass} ref={this.setRootRef}>
-        <ReactTable
-          data={this.props.problems}
-          columns={columns}
-          defaultPageSize={10}
-          pageSize={pageSize}
-          pageSizeOptions={pageSizeOptions}
-          resized={panelOptions.resizedColumns}
-          minRows={0}
-          loading={this.props.loading}
-          noDataText="No problems found"
-          SubComponent={(props) => (
-            <ProblemDetails
-              {...props}
-              rootWidth={this.rootWidth}
-              timeRange={this.props.timeRange}
-              showTimeline={panelOptions.problemTimeline}
-              allowDangerousHTML={panelOptions.allowDangerousHTML}
-              panelId={this.props.panelId}
-              getProblemEvents={this.props.getProblemEvents}
-              getProblemAlerts={this.props.getProblemAlerts}
-              getScripts={this.props.getScripts}
-              onProblemAck={this.handleProblemAck}
-              onExecuteScript={this.props.onExecuteScript}
-              onTagClick={this.handleTagClick}
-              subRows={false}
-            />
-          )}
-          expanded={this.getExpandedPage(this.state.page)}
-          onExpandedChange={this.handleExpandedChange}
-          onPageChange={(page) => {
-            reportInteraction('grafana_zabbix_panel_page_change', {
-              action: page > this.state.page ? 'next' : 'prev',
-            });
+  return (
+    <div className={cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize })} ref={rootRef}>
+      <ReactTable
+        data={problems}
+        columns={columns}
+        defaultPageSize={10}
+        pageSize={effectivePageSize}
+        pageSizeOptions={pageSizeOptions}
+        resized={panelOptions.resizedColumns}
+        minRows={0}
+        loading={loading}
+        noDataText="No problems found"
+        SubComponent={(props) => (
+          <ProblemDetails
+            {...props}
+            rootWidth={rootRef?.current?.clientWidth || 0}
+            timeRange={timeRange}
+            showTimeline={panelOptions.problemTimeline}
+            allowDangerousHTML={panelOptions.allowDangerousHTML}
+            panelId={panelId}
+            getProblemEvents={getProblemEvents}
+            getProblemAlerts={getProblemAlerts}
+            getScripts={getScripts}
+            onProblemAck={handleProblemAck}
+            onExecuteScript={onExecuteScript}
+            onTagClick={handleTagClick}
+            subRows={false}
+          />
+        )}
+        expanded={getExpandedPage(page)}
+        onExpandedChange={handleExpandedChange}
+        onPageChange={(newPage) => {
+          reportInteraction('grafana_zabbix_panel_page_change', {
+            action: newPage > page ? 'next' : 'prev',
+          });
 
-            this.setState({ page });
-          }}
-          onPageSizeChange={this.handlePageSizeChange}
-          onResizedChange={this.handleResizedChange}
-        />
-      </div>
-    );
-  }
-}
+          setPage(newPage);
+        }}
+        onPageSizeChange={handlePageSizeChange}
+        onResizedChange={handleResizedChange}
+      />
+    </div>
+  );
+};
 
 interface HostCellProps {
   name: string;

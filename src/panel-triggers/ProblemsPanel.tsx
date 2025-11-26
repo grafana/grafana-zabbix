@@ -8,7 +8,7 @@ import { ProblemsPanelOptions, RTResized } from './types';
 import { ZabbixMetricsQuery } from '../datasource/types/query';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
 import { APIExecuteScriptResponse } from '../datasource/zabbix/connectors/zabbix_api/types';
-import ProblemList from './components/Problems/Problems';
+import { ProblemList } from './components/Problems/Problems';
 import { AckProblemData } from './components/AckModal';
 import AlertList from './components/AlertList/AlertList';
 
