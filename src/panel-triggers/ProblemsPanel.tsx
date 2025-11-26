@@ -1,6 +1,7 @@
 import React from 'react';
 import _ from 'lodash';
-import { DataSourceRef, dateMath, PanelProps } from '@grafana/data';
+import { dateMath, PanelProps } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { contextSrv } from 'grafana/app/core/core';
 import { ProblemsPanelOptions, RTResized } from './types';
