@@ -59,7 +59,7 @@ export const ProblemList = (props: ProblemListProps) => {
   const [expandedProblems, setExpandedProblems] = useState({});
   const [page, setPage] = useState(0);
   const rootRef = useRef(null);
-  
+
   // Default pageSize to 10 if not provided
   const effectivePageSize = pageSize || 10;
 
