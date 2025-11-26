@@ -1,21 +1,25 @@
-import React, { PureComponent, useRef, useState, useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { cx } from '@emotion/css';
-import ReactTable from 'react-table-6';
 import _ from 'lodash';
-// eslint-disable-next-line
-import moment from 'moment';
-import { isNewProblem } from '../../utils';
-import { EventTag } from '../EventTag';
 import { ProblemDetails } from './ProblemDetails';
 import { AckProblemData } from '../AckModal';
-import { FAIcon, GFHeartIcon } from '../../../components';
-import { ProblemsPanelOptions, RTCell, RTResized, TriggerSeverity } from '../../types';
+import { ProblemsPanelOptions, RTCell, RTResized } from '../../types';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckCell } from './AckCell';
 import { TimeRange } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { reportInteraction } from '@grafana/runtime';
+import { LastChangeCell } from './Cells/LastChangeCell';
+import { AgeCell } from './Cells/AgeCell';
+import { TagCell } from './Cells/TagCell';
+import { ProblemCell } from './Cells/ProblemCell';
+import { OpdataCell } from './Cells/OpdataCell';
+import { SeverityCell } from './Cells/SeverityCell';
+import { GroupCell } from './Cells/GroupCell';
+import { StatusCell } from './Cells/StatusCell';
+import { StatusIconCell } from './Cells/StatusIconCell';
+import { HostCell } from './Cells/HostCell';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -266,152 +270,6 @@ export const ProblemList = (props: ProblemListProps) => {
     </div>
   );
 };
-
-interface HostCellProps {
-  name: string;
-  maintenance: boolean;
-}
-
-const HostCell: React.FC<HostCellProps> = ({ name, maintenance }) => {
-  return (
-    <div>
-      <span style={{ paddingRight: '0.4rem' }}>{name}</span>
-      {maintenance && <FAIcon customClass="fired" icon="wrench" />}
-    </div>
-  );
-};
-
-function SeverityCell(
-  props: RTCell<ProblemDTO>,
-  problemSeverityDesc: TriggerSeverity[],
-  markAckEvents?: boolean,
-  ackEventColor?: string,
-  okColor = DEFAULT_OK_COLOR
-) {
-  const problem = props.original;
-  let color: string;
-
-  let severityDesc: TriggerSeverity;
-  const severity = Number(problem.severity);
-  severityDesc = _.find(problemSeverityDesc, (s) => s.priority === severity);
-  if (problem.severity && problem.value === '1') {
-    severityDesc = _.find(problemSeverityDesc, (s) => s.priority === severity);
-  }
-
-  color = problem.value === '0' ? okColor : severityDesc.color;
-
-  // Mark acknowledged triggers with different color
-  if (markAckEvents && problem.acknowledged === '1') {
-    color = ackEventColor;
-  }
-
-  return (
-    <div className="severity-cell" style={{ background: color }}>
-      {severityDesc.severity}
-    </div>
-  );
-}
-
-const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
-const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
-
-function StatusCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {
-  const status = props.value === '0' ? 'RESOLVED' : 'PROBLEM';
-  const color = props.value === '0' ? DEFAULT_OK_COLOR : DEFAULT_PROBLEM_COLOR;
-  let newProblem = false;
-  if (highlightNewerThan) {
-    newProblem = isNewProblem(props.original, highlightNewerThan);
-  }
-  return (
-    <span className={newProblem ? 'problem-status--new' : ''} style={{ color }}>
-      {status}
-    </span>
-  );
-}
-
-function StatusIconCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {
-  const status = props.value === '0' ? 'ok' : 'problem';
-  let newProblem = false;
-  if (highlightNewerThan) {
-    newProblem = isNewProblem(props.original, highlightNewerThan);
-  }
-  const className = cx(
-    'zbx-problem-status-icon',
-    { 'problem-status--new': newProblem },
-    { 'zbx-problem': props.value === '1' },
-    { 'zbx-ok': props.value === '0' }
-  );
-  return <GFHeartIcon status={status} className={className} />;
-}
-
-function GroupCell(props: RTCell<ProblemDTO>) {
-  let groups = '';
-  if (props.value && props.value.length) {
-    groups = props.value.map((g) => g.name).join(', ');
-  }
-  return <span>{groups}</span>;
-}
-
-function ProblemCell(props: RTCell<ProblemDTO>) {
-  // const comments = props.original.comments;
-  return (
-    <div>
-      <span className="problem-description">{props.value}</span>
-      {/* {comments && <FAIcon icon="file-text-o" customClass="comments-icon" />} */}
-    </div>
-  );
-}
-
-function OpdataCell(props: RTCell<ProblemDTO>) {
-  const problem = props.original;
-  return (
-    <div>
-      <span>{problem.opdata}</span>
-    </div>
-  );
-}
-
-function AgeCell(props: RTCell<ProblemDTO>) {
-  const problem = props.original;
-  const timestamp = moment.unix(problem.timestamp);
-  const age = timestamp.fromNow(true);
-  return <span>{age}</span>;
-}
-
-function LastChangeCell(props: RTCell<ProblemDTO>, customFormat?: string) {
-  const DEFAULT_TIME_FORMAT = 'DD MMM YYYY HH:mm:ss';
-  const problem = props.original;
-  const timestamp = moment.unix(problem.timestamp);
-  const format = customFormat || DEFAULT_TIME_FORMAT;
-  const lastchange = timestamp.format(format);
-  return <span>{lastchange}</span>;
-}
-
-interface TagCellProps extends RTCell<ProblemDTO> {
-  onTagClick: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
-}
-
-class TagCell extends PureComponent<TagCellProps> {
-  handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
-    if (this.props.onTagClick) {
-      this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
-    }
-  };
-
-  render() {
-    const tags = this.props.value || [];
-    return [
-      tags.map((tag) => (
-        <EventTag
-          key={tag.tag + tag.value}
-          tag={tag}
-          datasource={this.props.original.datasource}
-          onClick={this.handleTagClick}
-        />
-      )),
-    ];
-  }
-}
 
 function CustomExpander(props: RTCell<any>) {
   return (
