@@ -49,8 +49,8 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     super(props);
     this.rootWidth = 0;
     this.state = {
-      expanded: {},
       expandedProblems: {},
+      expanded: {},
       page: 0,
     };
   }
@@ -139,7 +139,7 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
     const statusCell = (props) => StatusCell(props, highlightNewerThan);
     const statusIconCell = (props) => StatusIconCell(props, highlightNewerThan);
     const hostNameCell = (props) => (
-      <HostCell name={props.original.host} maintenance={props.original.hostInMaintenance} />
+       <HostCell name={props.original.host} maintenance={props.original.hostInMaintenance} />
     );
     const hostTechNameCell = (props) => (
       <HostCell name={props.original.hostTechName} maintenance={props.original.hostInMaintenance} />
@@ -209,6 +209,14 @@ export default class ProblemList extends PureComponent<ProblemListProps, Problem
         id: 'lastchange',
         Cell: (props) => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
       },
+      { 
+        Header: 'Datasource', 
+        className: 'data-source', 
+        width: 200, 
+        accessor: 'datasource', 
+        show: options.showDatasourceName, 
+        Cell: (props) => DataSourceCell(props) 
+      }, 
       { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
     ];
     for (const column of columns) {
@@ -338,6 +346,16 @@ function StatusCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {
     </span>
   );
 }
+
+function DataSourceCell(props: RTCell<ProblemDTO>) {
+    const { getDataSourceSrv } = require('@grafana/runtime');
+    let dsName: string = props.original.datasource as string;
+    if ((props.original.datasource as DataSourceRef)?.uid) {
+      const dsInstance = getDataSourceSrv().getInstanceSettings((props.original.datasource as DataSourceRef).uid);
+      dsName = dsInstance.name;
+    }
+    return <span>{dsName}</span>;
+  };
 
 function StatusIconCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {
   const status = props.value === '0' ? 'ok' : 'problem';
