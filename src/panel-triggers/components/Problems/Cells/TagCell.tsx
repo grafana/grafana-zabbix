@@ -8,6 +8,31 @@ interface TagCellProps extends RTCell<ProblemDTO> {
   onTagClick: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
 
+export const TagCellV8 = (props: {
+  tags?: ZBXTag[];
+  dataSource: DataSourceRef;
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+  handleTagClick: (tag: ZBXTag, datasource?: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
+}) => {
+  const { tags, dataSource, handleTagClick } = props;
+
+  return (
+    <div className="problem-tags">
+      {[
+        (tags ?? []).map((tag) => (
+          <EventTag
+            key={tag.tag + tag.value}
+            tag={tag}
+            datasource={dataSource}
+            onClick={() => handleTagClick?.(tag, dataSource)}
+          />
+        )),
+      ]}
+    </div>
+  );
+};
+
 export class TagCell extends PureComponent<TagCellProps> {
   handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
