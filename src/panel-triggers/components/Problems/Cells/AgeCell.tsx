@@ -7,7 +7,11 @@ import { ProblemDTO } from '../../../../datasource/types';
 export function AgeCellV8(props: { timestamp: number }) {
   const timestamp = moment.unix(props.timestamp);
   const age = timestamp.fromNow(true);
-  return <span>{age}</span>;
+  return (
+    <div className="problem-age">
+      <span>{age}</span>
+    </div>
+  );
 }
 
 export function AgeCell(props: RTCell<ProblemDTO>) {

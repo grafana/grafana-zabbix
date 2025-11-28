@@ -66,8 +66,10 @@ export function SeverityCell(
   }
 
   return (
-    <div className="severity-cell" style={{ background: color }}>
-      {severityDesc.severity}
+    <div className="problem-severity">
+      <div className="severity-cell" style={{ background: color }}>
+        {severityDesc.severity}
+      </div>
     </div>
   );
 }

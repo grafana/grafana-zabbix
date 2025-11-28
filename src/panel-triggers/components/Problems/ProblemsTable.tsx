@@ -40,8 +40,9 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
       columnHelper.accessor('proxy', {
         header: 'Proxy',
       }),
-      columnHelper.accessor('severity', {
+      columnHelper.accessor('priority', {
         header: 'Severity',
+        size: 120,
         cell: ({ cell }) => (
           <SeverityCellV8
             cell={cell}
@@ -55,6 +56,7 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
       columnHelper.display({
         id: 'statusIcon',
         header: 'Status Icon',
+        size: 50,
         cell: ({ cell }) => (
           <StatusIconCellV8
             cellValue={cell.row.original.value}
@@ -65,10 +67,12 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
       }),
       columnHelper.accessor('value', {
         header: 'Status',
+        size: 100,
         cell: ({ cell }) => <StatusCellV8 cell={cell} highlightNewerThan={highlightNewerThan} />,
       }),
       columnHelper.accessor('name', {
         header: 'Problem',
+        minSize: 200,
         cell: ({ cell }) => (
           <div>
             <span className="problem-description">{cell.getValue()}</span>
@@ -77,6 +81,7 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
       }),
       columnHelper.accessor('opdata', {
         header: 'Operational data',
+        size: 150,
         cell: ({ cell }) => (
           <div>
             <span>{cell.getValue()}</span>
@@ -85,6 +90,7 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
       }),
       columnHelper.accessor('acknowledged', {
         header: 'Ack',
+        size: 70,
         cell: ({ cell }) => <AckCellV8 acknowledges={cell.row.original.acknowledges} />,
       }),
       columnHelper.accessor('tags', {
@@ -100,16 +106,28 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
       columnHelper.accessor('timestamp', {
         id: 'age',
         header: 'Age',
+        size: 100,
         cell: ({ cell }) => <AgeCellV8 timestamp={cell.row.original.timestamp} />,
       }),
       columnHelper.accessor('timestamp', {
         id: 'lastchange',
         header: 'Time',
+        size: 150,
         cell: ({ cell }) => (
           <LastChangeCellV8
             original={cell.row.original}
             customFormat={panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat}
           />
+        ),
+      }),
+      columnHelper.display({
+        header: '',
+        id: 'expander',
+        size: 60,
+        cell: ({ row }) => (
+          <span className={row.getIsExpanded() ? 'expanded' : ''}>
+            <i className="fa fa-info-circle" />
+          </span>
         ),
       }),
     ];

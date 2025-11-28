@@ -19,7 +19,11 @@ export function StatusIconCellV8(props: { cellValue: string; row: Row<ProblemDTO
     { 'zbx-problem': cellValue === '1' },
     { 'zbx-ok': cellValue === '0' }
   );
-  return <GFHeartIcon status={status} className={className} />;
+  return (
+    <div className="problem-status-icon">
+      <GFHeartIcon status={status} className={className} />
+    </div>
+  );
 }
 
 export function StatusIconCell(props: RTCell<ProblemDTO>, highlightNewerThan?: string) {

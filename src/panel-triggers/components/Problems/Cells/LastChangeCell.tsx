@@ -10,7 +10,11 @@ export function LastChangeCellV8(props: { original: ProblemDTO; customFormat?: s
   const timestamp = moment.unix(original.timestamp);
   const format = customFormat || DEFAULT_TIME_FORMAT;
   const lastchange = timestamp.format(format);
-  return <span>{lastchange}</span>;
+  return (
+    <div className="last-change">
+      <span>{lastchange}</span>
+    </div>
+  );
 }
 
 export function LastChangeCell(props: RTCell<ProblemDTO>, customFormat?: string) {
