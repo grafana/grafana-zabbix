@@ -11,7 +11,7 @@ import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
 import { ProblemDTO, ZBXTag } from '../../../datasource/types';
 import { ModalController } from '../../../components';
-import { DataSourceRef } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
 import { Tooltip } from '@grafana/ui';
 import { getDataSourceSrv } from '@grafana/runtime';
 
