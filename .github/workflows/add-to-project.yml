@@ -24,7 +24,7 @@ jobs:
             GITHUB_APP_PRIVATE_KEY=grafana-oss-big-tent:private-key
       - name: Generate a token
         id: generate-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         with:
           app-id: ${{ env.GITHUB_APP_ID }}
           private-key: ${{ env.GITHUB_APP_PRIVATE_KEY }}
