@@ -1,5 +1,11 @@
-import React from 'react';
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import React, { Fragment } from 'react';
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getExpandedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
 import { ProblemDTO, ZBXTag } from '../../../datasource/types';
 import { ProblemListProps } from './Problems';
 import { HostCell } from './Cells/HostCell';
@@ -11,11 +17,38 @@ import { StatusIconCellV8 } from './Cells/StatusIconCell';
 import { LastChangeCellV8 } from './Cells/LastChangeCell';
 import { DataSourceRef } from '@grafana/schema';
 import { TagCellV8 } from './Cells/TagCell';
+import { ProblemDetailsV8 } from './ProblemDetails';
 
 const columnHelper = createColumnHelper<ProblemDTO>();
 
-export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelOptions' | 'onTagClick'>) => {
-  const { problems, panelOptions, onTagClick } = props;
+export const ProblemsTable = (
+  props: Pick<
+    ProblemListProps,
+    | 'problems'
+    | 'panelOptions'
+    | 'onTagClick'
+    | 'timeRange'
+    | 'panelId'
+    | 'getProblemEvents'
+    | 'getProblemAlerts'
+    | 'getScripts'
+    | 'onExecuteScript'
+    | 'onProblemAck'
+  > & { rootWidth: number }
+) => {
+  const {
+    problems,
+    panelOptions,
+    onTagClick,
+    timeRange,
+    panelId,
+    getProblemEvents,
+    getProblemAlerts,
+    getScripts,
+    onExecuteScript,
+    onProblemAck,
+    rootWidth,
+  } = props;
 
   // Define columns inside component to access props via closure
   const columns = React.useMemo(() => {
@@ -121,13 +154,17 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
         ),
       }),
       columnHelper.display({
-        header: '',
+        header: null,
         id: 'expander',
         size: 60,
         cell: ({ row }) => (
-          <span className={row.getIsExpanded() ? 'expanded' : ''}>
+          <button
+            onClick={row.getToggleExpandedHandler()}
+            style={{ cursor: 'pointer' }}
+            className={row.getIsExpanded() ? 'expanded' : ''}
+          >
             <i className="fa fa-info-circle" />
-          </span>
+          </button>
         ),
       }),
     ];
@@ -154,7 +191,9 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
         age: panelOptions.ageField,
       },
     },
+    getRowCanExpand: () => true,
     getCoreRowModel: getCoreRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
   });
 
   const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
@@ -176,15 +215,35 @@ export const ProblemsTable = (props: Pick<ProblemListProps, 'problems' | 'panelO
       </thead>
       <tbody>
         {table.getRowModel().rows.map((row) => (
-          <tr key={row.id}>
-            {row.getVisibleCells().map((cell) => {
-              // if cell.id
-              console.log('--------------------------------------------------');
-              console.log(cell.column.columnDef.cell, cell.getContext());
-              console.log('--------------------------------------------------');
-              return <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>;
-            })}
-          </tr>
+          <Fragment key={row.id}>
+            <tr>
+              {row.getVisibleCells().map((cell) => {
+                console.log(cell.column.columnDef.cell, cell.getContext());
+                console.log('--------------------------------------------------');
+                return <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>;
+              })}
+            </tr>
+            {row.getIsExpanded() && (
+              <tr>
+                <td colSpan={row.getVisibleCells().length}>
+                  <ProblemDetailsV8
+                    original={row.original}
+                    rootWidth={rootWidth}
+                    timeRange={timeRange}
+                    showTimeline={panelOptions.problemTimeline}
+                    allowDangerousHTML={panelOptions.allowDangerousHTML}
+                    panelId={panelId}
+                    getProblemEvents={getProblemEvents}
+                    getProblemAlerts={getProblemAlerts}
+                    getScripts={getScripts}
+                    onProblemAck={onProblemAck}
+                    onExecuteScript={onExecuteScript}
+                    onTagClick={handleTagClick}
+                  />
+                </td>
+              </tr>
+            )}
+          </Fragment>
         ))}
       </tbody>
       {/*<tfoot>*/}
