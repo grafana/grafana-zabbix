@@ -17,20 +17,16 @@ export const TagCellV8 = (props: {
 }) => {
   const { tags, dataSource, handleTagClick } = props;
 
-  return (
-    <div>
-      {[
-        (tags ?? []).map((tag) => (
-          <EventTag
-            key={tag.tag + tag.value}
-            tag={tag}
-            datasource={dataSource}
-            onClick={() => handleTagClick?.(tag, dataSource)}
-          />
-        )),
-      ]}
-    </div>
-  );
+  return [
+    (tags ?? []).map((tag) => (
+      <EventTag
+        key={tag.tag + tag.value}
+        tag={tag}
+        datasource={dataSource}
+        onClick={() => handleTagClick?.(tag, dataSource)}
+      />
+    )),
+  ];
 };
 
 export class TagCell extends PureComponent<TagCellProps> {

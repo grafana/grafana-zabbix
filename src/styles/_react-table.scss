@@ -77,6 +77,7 @@
   border: none;
   border-collapse: separate;
   border-spacing: 0;
+  table-layout: fixed;
 
   // Header styles
   thead {
@@ -104,6 +105,9 @@
     td {
       padding: 0.45em 0 0.45em 1.1em;
       border-bottom: 2px solid $body-bg;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
 
       &:last-child {
         border-right: none;
@@ -127,6 +131,21 @@
         font-weight: 500;
         display: flex;
         align-items: center;
+      }
+    }
+
+    // Tags column styling
+    td.problem-tags {
+      padding-left: 0.6rem;
+
+      .label-tag,
+      .zbx-tag {
+        cursor: pointer;
+        margin-right: 0.6rem;
+
+        &.highlighted {
+          box-shadow: 0 0 10px $orange;
+        }
       }
     }
 
