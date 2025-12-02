@@ -226,7 +226,7 @@ export const ProblemsTable = (
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th key={header.id}>
+                <th key={header.id} style={{ width: `${header.getSize()}px` }}>
                   {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
@@ -249,7 +249,7 @@ export const ProblemsTable = (
                     console.log('--------------------------------------------------');
                     const className = (cell.column.columnDef.meta as any)?.className;
                     return (
-                      <td key={cell.id} className={className}>
+                      <td key={cell.id} className={className} style={{ width: `${cell.column.getSize()}px` }}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     );

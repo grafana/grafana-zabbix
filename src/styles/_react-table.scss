@@ -149,20 +149,34 @@
 
     td.custom-expander {
       text-align: center;
+      padding: 0;
       
       button {
         background: none;
         border: none;
         padding: 0;
-        color: $blue;
-        font-size: 1.2em;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         
-        &:hover {
-          color: lighten($blue, 10%);
+        i {
+          color: #676767;
+          font-size: 1.2rem;
         }
 
         &.expanded i {
-          transform: rotate(180deg);
+          color: $problem-expander-expanded-color;
+        }
+      }
+
+      &:hover {
+        background-color: $problem-expander-highlighted-background;
+
+        button i {
+          color: $problem-expander-highlighted-color;
         }
       }
     }
