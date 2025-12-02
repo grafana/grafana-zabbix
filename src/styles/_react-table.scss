@@ -142,7 +142,7 @@
         }
       }
 
-      &:hover:not(.no-data-row) td {
+      &:hover:not(.no-data-row) td:not(.custom-expander) {
         background: $problems-table-row-hovered;
       }
     }
@@ -150,9 +150,10 @@
     td.custom-expander {
       text-align: center;
       padding: 0;
+      position: relative;
       
       button {
-        background: none;
+        background: transparent;
         border: none;
         padding: 0;
         cursor: pointer;
@@ -161,6 +162,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         
         i {
           color: #676767;
@@ -170,13 +176,13 @@
         &.expanded i {
           color: $problem-expander-expanded-color;
         }
-      }
-
-      &:hover {
-        background-color: $problem-expander-highlighted-background;
-
-        button i {
-          color: $problem-expander-highlighted-color;
+        
+        &:hover {
+          background-color: $problem-expander-highlighted-background;
+          
+          i {
+            color: $problem-expander-highlighted-color;
+          }
         }
       }
     }
