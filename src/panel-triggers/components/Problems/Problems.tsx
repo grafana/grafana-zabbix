@@ -235,6 +235,7 @@ export const ProblemList = (props: ProblemListProps) => {
           rootWidth={rootRef?.current?.clientWidth || 0}
           problems={problems}
           panelOptions={panelOptions}
+          timeRange={timeRange}
           getProblemEvents={getProblemEvents}
           getProblemAlerts={getProblemAlerts}
           getScripts={getScripts}
