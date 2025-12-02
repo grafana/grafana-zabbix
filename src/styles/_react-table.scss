@@ -180,7 +180,7 @@
         }
       }
 
-      &:hover:not(.no-data-row) td:not(.custom-expander) {
+      &:hover:not(.no-data-row) td {
         background: $problems-table-row-hovered;
       }
     }
