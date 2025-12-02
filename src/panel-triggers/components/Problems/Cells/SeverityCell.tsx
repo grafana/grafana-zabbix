@@ -34,7 +34,7 @@ export function SeverityCellV8(props: {
     color = ackEventColor;
   }
 
-  return <div style={{ background: color }}>{severityDesc.severity}</div>;
+  return <div className="severity-cell" style={{ background: color }}>{severityDesc.severity}</div>;
 }
 
 export function SeverityCell(
