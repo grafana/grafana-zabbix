@@ -582,6 +582,17 @@
     }
   }
 
+  // <react-table-v8 /> styles
+  .react-table-v8 {
+    tbody tr {
+      border-bottom: solid 1px $problems-border-color;
+
+      &:last-child {
+        border-bottom: solid 1px $problems-border-color;
+      }
+    }
+  }
+
   @for $i from 8 through 9 {
     .item-#{$i} {
       width: 2em * $i;
