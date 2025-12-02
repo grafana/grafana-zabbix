@@ -20,7 +20,7 @@ export function StatusIconCellV8(props: { cellValue: string; row: Row<ProblemDTO
     { 'zbx-ok': cellValue === '0' }
   );
   return (
-    <div className="problem-status-icon">
+    <div>
       <GFHeartIcon status={status} className={className} />
     </div>
   );

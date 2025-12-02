@@ -8,7 +8,7 @@ export function AgeCellV8(props: { timestamp: number }) {
   const timestamp = moment.unix(props.timestamp);
   const age = timestamp.fromNow(true);
   return (
-    <div className="problem-age">
+    <div>
       <span>{age}</span>
     </div>
   );

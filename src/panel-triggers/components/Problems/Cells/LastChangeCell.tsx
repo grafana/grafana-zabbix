@@ -11,7 +11,7 @@ export function LastChangeCellV8(props: { original: ProblemDTO; customFormat?: s
   const format = customFormat || DEFAULT_TIME_FORMAT;
   const lastchange = timestamp.format(format);
   return (
-    <div className="last-change">
+    <div>
       <span>{lastchange}</span>
     </div>
   );

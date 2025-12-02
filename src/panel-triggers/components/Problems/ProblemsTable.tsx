@@ -76,6 +76,9 @@ export const ProblemsTable = (
       columnHelper.accessor('priority', {
         header: 'Severity',
         size: 120,
+        meta: {
+          className: 'problem-severity',
+        },
         cell: ({ cell }) => (
           <SeverityCellV8
             cell={cell}
@@ -90,6 +93,9 @@ export const ProblemsTable = (
         id: 'statusIcon',
         header: 'Status Icon',
         size: 50,
+        meta: {
+          className: 'problem-status-icon',
+        },
         cell: ({ cell }) => (
           <StatusIconCellV8
             cellValue={cell.row.original.value}
@@ -128,6 +134,9 @@ export const ProblemsTable = (
       }),
       columnHelper.accessor('tags', {
         header: 'Tags',
+        meta: {
+          className: 'problem-tags',
+        },
         cell: ({ cell }) => (
           <TagCellV8
             tags={cell.getValue()}
@@ -140,12 +149,18 @@ export const ProblemsTable = (
         id: 'age',
         header: 'Age',
         size: 100,
+        meta: {
+          className: 'problem-age',
+        },
         cell: ({ cell }) => <AgeCellV8 timestamp={cell.row.original.timestamp} />,
       }),
       columnHelper.accessor('timestamp', {
         id: 'lastchange',
         header: 'Time',
         size: 150,
+        meta: {
+          className: 'last-change',
+        },
         cell: ({ cell }) => (
           <LastChangeCellV8
             original={cell.row.original}
@@ -157,6 +172,9 @@ export const ProblemsTable = (
         header: null,
         id: 'expander',
         size: 60,
+        meta: {
+          className: 'custom-expander',
+        },
         cell: ({ row }) => (
           <button
             onClick={row.getToggleExpandedHandler()}
@@ -202,62 +220,66 @@ export const ProblemsTable = (
   };
 
   return (
-    <table className="react-table-v8">
-      <thead>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <tr key={headerGroup.id}>
-            {headerGroup.headers.map((header) => (
-              <th key={header.id}>
-                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-              </th>
-            ))}
-          </tr>
-        ))}
-      </thead>
-      <tbody>
-        {table.getRowModel().rows.map((row) => (
-          <Fragment key={row.id}>
-            <tr>
-              {row.getVisibleCells().map((cell) => {
-                console.log(cell.column.columnDef.cell, cell.getContext());
-                console.log('--------------------------------------------------');
-                return <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>;
-              })}
+    <div className="react-table-v8-wrapper">
+      <table className="react-table-v8">
+        <thead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <th key={header.id}>
+                  {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                </th>
+              ))}
             </tr>
-            {row.getIsExpanded() && (
-              <tr>
-                <td colSpan={row.getVisibleCells().length}>
-                  <ProblemDetailsV8
-                    original={row.original}
-                    rootWidth={rootWidth}
-                    timeRange={timeRange}
-                    showTimeline={panelOptions.problemTimeline}
-                    allowDangerousHTML={panelOptions.allowDangerousHTML}
-                    panelId={panelId}
-                    getProblemEvents={getProblemEvents}
-                    getProblemAlerts={getProblemAlerts}
-                    getScripts={getScripts}
-                    onProblemAck={onProblemAck}
-                    onExecuteScript={onExecuteScript}
-                    onTagClick={handleTagClick}
-                  />
-                </td>
-              </tr>
-            )}
-          </Fragment>
-        ))}
-      </tbody>
-      {/*<tfoot>*/}
-      {/*  {table.getFooterGroups().map((footerGroup) => (*/}
-      {/*    <tr key={footerGroup.id}>*/}
-      {/*      {footerGroup.headers.map((header) => (*/}
-      {/*        <th key={header.id}>*/}
-      {/*          {header.isPlaceholder ? null : flexRender(header.column.columnDef.footer, header.getContext())}*/}
-      {/*        </th>*/}
-      {/*      ))}*/}
-      {/*    </tr>*/}
-      {/*  ))}*/}
-      {/*</tfoot>*/}
-    </table>
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.length === 0 ? (
+            <tr>
+              <td colSpan={table.getAllColumns().length} className="no-data-cell">
+                <div className="rt-noData">No problems found</div>
+              </td>
+            </tr>
+          ) : (
+            table.getRowModel().rows.map((row, rowIndex) => (
+              <Fragment key={row.id}>
+                <tr className={rowIndex % 2 === 1 ? 'even-row' : 'odd-row'}>
+                  {row.getVisibleCells().map((cell) => {
+                    console.log(cell.column.columnDef.cell, cell.getContext());
+                    console.log('--------------------------------------------------');
+                    const className = (cell.column.columnDef.meta as any)?.className;
+                    return (
+                      <td key={cell.id} className={className}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    );
+                  })}
+                </tr>
+                {row.getIsExpanded() && (
+                  <tr className={rowIndex % 2 === 1 ? 'even-row-expanded' : 'odd-row-expanded'}>
+                    <td colSpan={row.getVisibleCells().length}>
+                      <ProblemDetailsV8
+                        original={row.original}
+                        rootWidth={rootWidth}
+                        timeRange={timeRange}
+                        showTimeline={panelOptions.problemTimeline}
+                        allowDangerousHTML={panelOptions.allowDangerousHTML}
+                        panelId={panelId}
+                        getProblemEvents={getProblemEvents}
+                        getProblemAlerts={getProblemAlerts}
+                        getScripts={getScripts}
+                        onProblemAck={onProblemAck}
+                        onExecuteScript={onExecuteScript}
+                        onTagClick={handleTagClick}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 };

@@ -18,7 +18,7 @@ export const TagCellV8 = (props: {
   const { tags, dataSource, handleTagClick } = props;
 
   return (
-    <div className="problem-tags">
+    <div>
       {[
         (tags ?? []).map((tag) => (
           <EventTag

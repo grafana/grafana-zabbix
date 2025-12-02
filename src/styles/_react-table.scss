@@ -65,3 +65,106 @@
   top: 60px;
   z-index: inherit;
 }
+
+// ReactTable v8 styles (native table elements)
+.react-table-v8-wrapper {
+  position: relative;
+  min-height: 90px;
+}
+
+.react-table-v8 {
+  width: 100%;
+  border: none;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  // Header styles
+  thead {
+    tr {
+      box-shadow: none;
+      background: $list-item-bg;
+      border-top: 2px solid $body-bg;
+      border-bottom: 2px solid $body-bg;
+      height: 2em;
+    }
+
+    th {
+      text-align: left;
+      color: $blue;
+      font-weight: 500;
+      padding: 0.45em 0 0.45em 1.1em;
+      border-right: none;
+      box-shadow: none;
+      background: transparent;
+    }
+  }
+
+  // Body styles
+  tbody {
+    td {
+      padding: 0.45em 0 0.45em 1.1em;
+      border-bottom: 2px solid $body-bg;
+
+      &:last-child {
+        border-right: none;
+        text-align: right;
+      }
+    }
+
+    // No data cell styling
+    td.no-data-cell {
+      text-align: center;
+      padding: 0;
+      background: transparent;
+      border: none;
+
+      .rt-noData {
+        position: relative;
+        top: 0;
+        left: 0;
+        z-index: 2;
+        background: unset;
+        color: $text-muted;
+        padding: 2rem 0;
+      }
+    }
+
+    tr {
+      background: transparent;
+
+      // Alternating row colors (stripe even rows with solid color)
+      &.even-row,
+      &.even-row-expanded {
+        background: $problems-table-stripe;
+        
+        td {
+          background: inherit;
+        }
+      }
+
+      &:hover:not(.no-data-row) td {
+        background: $problems-table-row-hovered;
+      }
+    }
+
+    td.custom-expander {
+      text-align: center;
+      
+      button {
+        background: none;
+        border: none;
+        padding: 0;
+        color: $blue;
+        font-size: 1.2em;
+        
+        &:hover {
+          color: lighten($blue, 10%);
+        }
+
+        &.expanded i {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
+}
