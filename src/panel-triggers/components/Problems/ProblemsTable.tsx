@@ -195,7 +195,6 @@ export const ProblemsTable = (
     meta: {
       panelOptions,
     },
-    renderFallbackValue: 'No problems found',
     initialState: {
       columnVisibility: {
         host: panelOptions.hostField,
