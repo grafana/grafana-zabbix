@@ -245,8 +245,6 @@ export const ProblemsTable = (
               <Fragment key={row.id}>
                 <tr className={rowIndex % 2 === 1 ? 'even-row' : 'odd-row'}>
                   {row.getVisibleCells().map((cell) => {
-                    console.log(cell.column.columnDef.cell, cell.getContext());
-                    console.log('--------------------------------------------------');
                     const className = (cell.column.columnDef.meta as any)?.className;
                     return (
                       <td key={cell.id} className={className} style={{ width: `${cell.column.getSize()}px` }}>
