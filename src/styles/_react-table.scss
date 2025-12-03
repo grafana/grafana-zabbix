@@ -73,6 +73,48 @@
   overflow-x: auto;
   width: 100%;
   flex-grow: 1;
+
+  // Loading overlay (same as v6)
+  .-loading {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: $input-bg;
+    transition: all 0.3s ease;
+    z-index: -1;
+    opacity: 0;
+    pointer-events: none;
+
+    &.-active {
+      opacity: 0.8;
+      z-index: 10;
+      pointer-events: all;
+    }
+
+    > div {
+      position: absolute;
+      display: block;
+      text-align: center;
+      width: 100%;
+      top: 50%;
+      left: 0;
+      font-size: 15px;
+      color: $input-color;
+      transform: translateY(-50%);
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+  }
+
+  // Reduce table opacity when loading
+  &.is-loading {
+    .react-table-v8 {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+  }
 }
 
 .react-table-v8 {
