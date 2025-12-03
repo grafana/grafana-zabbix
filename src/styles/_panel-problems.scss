@@ -18,14 +18,393 @@
   }
 
   // <react-table-v8 /> styles
+  .react-table-v8-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
   .react-table-v8 {
     tbody tr {
       border-bottom: solid 1px $problems-border-color;
 
       &:last-child {
         border-bottom: solid 1px $problems-border-color;
+        text-align: left;
       }
     }
+
+    // Problem details container styles for react-table-v8
+    .problem-details-container {
+      display: flex;
+      flex-direction: column;
+      padding-top: 4px;
+      background-color: $problem-details-background;
+      border-bottom-width: 0px;
+
+      max-height: 0px;
+      opacity: 0;
+      overflow: hidden;
+      transition-duration: 0.3s;
+      transition-timing-function: ease-out;
+      transition-property: opacity, max-height;
+
+      &.show {
+        max-height: 40rem;
+        opacity: 1;
+        box-shadow: inset -3px 3px 5px #33b5ec4f;
+      }
+
+      .problem-details-row {
+        display: flex;
+        margin-bottom: 0.6rem;
+        min-height: 3rem;
+
+        .problem-value-container {
+          display: flex;
+          flex-direction: column;
+          flex: 1 1 auto;
+        }
+      }
+
+      .problem-details-head {
+        display: flex;
+      }
+
+      .problem-details-body {
+        display: flex;
+      }
+
+      .problem-details {
+        position: relative;
+        flex: 10 1 auto;
+        padding: 0.5rem 1rem 0.5rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        white-space: pre-line;
+      }
+
+      .problem-description-row {
+
+        .problem-description {
+          position: relative;
+          max-height: 4.5rem;
+          min-height: 3rem;
+          overflow: hidden;
+
+          &:after {
+            content: "";
+            text-align: right;
+            position: inherit;
+            bottom: 0;
+            right: 0;
+            width: 70%;
+            height: 1.5rem;
+            background: linear-gradient(to right, rgba($problem-details-background, 0), rgba($problem-details-background, 1) 50%);
+          }
+        }
+
+        .description-label {
+          font-weight: 500;
+          color: $text-muted;
+          cursor: pointer;
+        }
+
+        .description-delimiter {
+          border-bottom: solid 2px #f9f9f91c;
+          margin-top: 10px;
+        }
+
+        .description-expression {
+          white-space: normal;
+        }
+      }
+
+      .problem-age {
+        font-weight: 500;
+      }
+
+      .problem-tags {
+        padding-top: 0.8rem;
+        padding-bottom: 0.8rem;
+        margin-top: auto;
+        position: relative;
+      }
+
+      .problem-items-row {
+        position: inherit;
+        overflow: hidden;
+
+        &:after {
+          content: "";
+          text-align: right;
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 70%;
+          height: 1.5rem;
+          background: linear-gradient(to right, rgba($problem-details-background, 0), rgba($problem-details-background, 1) 50%);
+        }
+      }
+
+      .problem-item {
+        display: inherit;
+
+        .problem-item-name {
+          color: $text-muted;
+        }
+
+        .problem-item-value {
+          font-weight: 500;
+          overflow: auto;
+          display: -webkit-box;
+          max-height: 60px;
+        }
+      }
+
+      .problem-statusbar {
+        margin-bottom: 0.6rem;
+        display: flex;
+        flex-direction: row;
+
+        &.compact .problem-statusbar-item {
+          width: 2.5rem;
+          padding: 0.4rem 0.4rem 0.4rem 0.8rem;
+        }
+
+        .problem-statusbar-item {
+          width: 3rem;
+          height: 2rem;
+          padding: 0.4rem 0.4rem 0.4rem 1rem;
+          background: $problem-statusbar-background;
+          margin-right: 2px;
+          border-radius: 2px;
+
+          &:hover {
+            background: darken($problem-statusbar-background, 2%);
+          }
+
+          &.muted {
+            .fa-icon-container {
+              color: $problem-statusbar-muted;
+            }
+          }
+
+          &.fired {
+            box-shadow: $problem-statusbar-glow;
+
+            .fa-icon-container {
+              color: $problem-statusbar-fired;
+              text-shadow: 0px 0px 10px rgba($problem-statusbar-fired, 0.5);
+            }
+          }
+        }
+      }
+
+      .problem-actions {
+        display: flex;
+        margin-right: 1.6rem;
+      }
+
+      .problem-action-button {
+        margin-right: 0.2rem;
+      }
+
+      .problem-actions-left {
+        margin-right: 1.6rem;
+      }
+
+      .problem-details-middle {
+        flex: 1 0 auto;
+        overflow: auto;
+
+        .problem-ack-container {
+          margin: 0.5rem 0.4rem;
+          padding: 0.6rem 0.6rem;
+        }
+      }
+
+      .problem-ack-container {
+        max-height: 8rem;
+        margin-top: 0.6rem;
+        margin-left: -0.6rem;
+        padding: 1.2rem 0.6rem;
+        overflow: auto;
+        box-shadow: $porblem-ack-shadow;
+      }
+
+      .problem-ack-list {
+        display: flex;
+        overflow: auto;
+        white-space: pre-line;
+
+        .problem-ack-col {
+          display: flex;
+          flex-direction: column;
+          padding-right: 0.8rem;
+        }
+
+        .problem-ack-time,
+        .problem-ack-user {
+          color: $text-muted;
+        }
+      }
+
+      .problem-details-right {
+        flex: 0 0 auto;
+        padding: 0.5rem 2rem;
+        color: $text-muted;
+
+        &.compact {
+          padding: 0.5rem 1rem;
+        }
+
+        .problem-details-right-item {
+          margin-bottom: 0.2rem;
+
+          &:hover {
+            color: $text-color-emphasis;
+
+            .fa-icon-container {
+              color: $text-color-emphasis;
+            }
+          }
+        }
+      }
+
+      .problem-maintenance {
+        .fa-icon-container {
+          color: $orange;
+        }
+      }
+
+      .problem-multi-event-type {
+        i {
+          color: $orange;
+          text-shadow: 0px 0px 10px $orange;
+          animation: blink-shadow 2s ease-out infinite;
+        }
+      }
+
+      .event-timeline {
+        position: relative;
+        margin: 0.2rem 0;
+        padding-top: 2.6rem;
+
+        .timeline-info-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          transition: all 0.2s ease-out;
+
+          .event-timestamp {
+            font-weight: 500;
+
+            .event-timestamp-label {
+              color: $text-muted;
+            }
+
+            .event-timestamp-value {
+              float: right;
+            }
+          }
+        }
+
+        .problem-event-region {
+
+          &.problem-event {
+            &--ok {
+              fill: $problem-event-ok-color;
+            }
+
+            &--problem {
+              fill: $problem-event-problem-color;
+            }
+          }
+
+          &:hover,
+          &.highlighted {
+            stroke: $problem-event-highlighted;
+            filter: url(#glowShadow);
+          }
+        }
+
+        .problem-event-item {
+          circle {
+            transition: all 0.2s ease-out;
+          }
+
+          &.problem-event {
+            &--ok .point-border {
+              fill: $problem-event-ok-color;
+            }
+
+            &--problem .point-border {
+              fill: $problem-event-problem-color;
+            }
+          }
+
+          .point-core {
+            fill: $problem-event-core;
+          }
+
+          &:hover,
+          &.highlighted {
+            circle.point-border {
+              stroke: $problem-event-highlighted;
+              stroke-width: 1;
+              filter: url(#glowShadow);
+            }
+
+            .point-core {
+              fill: $problem-event-core-highlighted;
+            }
+          }
+        }
+
+        .problem-event-ack {
+          circle {
+            transition: all 0.2s ease-out;
+          }
+
+          .point-border {
+            fill: $blue;
+          }
+
+          .point-core {
+            fill: $problem-event-core;
+          }
+
+          &:hover,
+          &.highlighted {
+            circle.point-border {
+              stroke: $problem-event-highlighted;
+              stroke-width: 1;
+              filter: url(#glowShadow);
+            }
+
+            .point-core {
+              fill: $problem-event-core-highlighted;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Pagination v8 styles for panel-problems
+  .pagination-v8 {
+    margin-top: auto;
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 4px;
+    margin-left: -10px;
+    margin-right: -10px;
+    box-shadow: 0px -2px 5px $problems-footer-shadow;
+    z-index: 1;
   }
 }
 

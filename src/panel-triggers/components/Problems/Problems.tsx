@@ -1,4 +1,20 @@
 import React, { Fragment, useEffect, useMemo, useRef } from 'react';
+import moment from 'moment/moment';
+import { cx } from '@emotion/css';
+// import { ProblemsTable } from './ProblemsTable';
+import { AckProblemData } from '../AckModal';
+import { ProblemsPanelOptions, RTResized } from '../../types';
+import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
+import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
+import { TimeRange } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
+import { HostCell } from './Cells/HostCell';
+import { SeverityCell } from './Cells/SeverityCell';
+import { StatusIconCellV8 } from './Cells/StatusIconCell';
+import { StatusCellV8 } from './Cells/StatusCell';
+import { AckCell } from './Cells/AckCell';
+import { TagCell } from './Cells/TagCell';
+import { LastChangeCell } from './Cells/LastChangeCell';
 import {
   ColumnResizeMode,
   createColumnHelper,
@@ -8,24 +24,8 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
-import { HostCell } from './Cells/HostCell';
-import { AckCell } from './Cells/AckCell';
-import { SeverityCell } from './Cells/SeverityCell';
-import { StatusCellV8 } from './Cells/StatusCell';
-import { StatusIconCellV8 } from './Cells/StatusIconCell';
-import { LastChangeCell } from './Cells/LastChangeCell';
-import { DataSourceRef } from '@grafana/schema';
-import { TagCell } from './Cells/TagCell';
-import { ProblemDetails } from './ProblemDetails';
-import { ProblemsPanelOptions, RTResized } from '../../types';
 import { reportInteraction } from '@grafana/runtime';
-import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
-import { AckProblemData } from '../AckModal';
-import { TimeRange } from '@grafana/data';
-import moment from 'moment/moment';
-
-const columnHelper = createColumnHelper<ProblemDTO>();
+import { ProblemDetails } from './ProblemDetails';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -34,6 +34,7 @@ export interface ProblemListProps {
   timeRange?: TimeRange;
   range?: TimeRange;
   pageSize?: number;
+  fontSize?: number;
   panelId?: number;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
@@ -45,9 +46,12 @@ export interface ProblemListProps {
   onColumnResize?: (newResized: RTResized) => void;
 }
 
+const columnHelper = createColumnHelper<ProblemDTO>();
+
 export const ProblemList = (props: ProblemListProps) => {
   const {
     pageSize,
+    fontSize,
     problems,
     panelOptions,
     onProblemAck,
@@ -279,6 +283,10 @@ export const ProblemList = (props: ProblemListProps) => {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
+    onTagClick?.(tag, datasource, ctrlKey, shiftKey);
+  };
+
   // Helper functions for pagination interactions
   const reportPageChange = (action: 'next' | 'prev') => {
     reportInteraction('grafana_zabbix_panel_page_change', { action });
@@ -347,7 +355,7 @@ export const ProblemList = (props: ProblemListProps) => {
   }, [pageSize]);
 
   return (
-    <div className="react-table-v8-container">
+    <div className={cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize })} ref={rootRef}>
       <div className={`react-table-v8-wrapper ${loading ? 'is-loading' : ''}`}>
         {loading && (
           <div className="-loading -active">
@@ -377,7 +385,7 @@ export const ProblemList = (props: ProblemListProps) => {
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td colSpan={table.getAllColumns().length} className="no-data-cell">
-                  <div className="no-data-text">No problems found</div>
+                  <div className="rt-noData">No problems found</div>
                 </td>
               </tr>
             ) : (
@@ -408,7 +416,7 @@ export const ProblemList = (props: ProblemListProps) => {
                           getScripts={getScripts}
                           onProblemAck={onProblemAck}
                           onExecuteScript={onExecuteScript}
-                          onTagClick={onTagClick}
+                          onTagClick={handleTagClick}
                         />
                       </td>
                     </tr>
@@ -458,6 +466,23 @@ export const ProblemList = (props: ProblemListProps) => {
           </button>
         </div>
       </div>
+      {/*<ProblemsTable*/}
+      {/*  rootWidth={rootRef?.current?.clientWidth || 0}*/}
+      {/*  panelId={panelId}*/}
+      {/*  problems={problems}*/}
+      {/*  panelOptions={panelOptions}*/}
+      {/*  timeRange={timeRange}*/}
+      {/*  getProblemEvents={getProblemEvents}*/}
+      {/*  getProblemAlerts={getProblemAlerts}*/}
+      {/*  getScripts={getScripts}*/}
+      {/*  onProblemAck={onProblemAck}*/}
+      {/*  onExecuteScript={onExecuteScript}*/}
+      {/*  onTagClick={onTagClick}*/}
+      {/*  onColumnResize={onColumnResize}*/}
+      {/*  pageSize={pageSize || 10}*/}
+      {/*  onPageSizeChange={onPageSizeChange}*/}
+      {/*  loading={loading}*/}
+      {/*/>*/}
     </div>
   );
 };
