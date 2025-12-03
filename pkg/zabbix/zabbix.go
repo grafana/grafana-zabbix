@@ -48,16 +48,14 @@ func (zabbix *Zabbix) GetAPI() *zabbixapi.ZabbixAPI {
 func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simplejson.Json, error) {
 	var resultJson *simplejson.Json
 	var err error
-
-	if ds.version == 0 {
-		version, err := ds.GetVersion(ctx)
-		if err != nil {
-			ds.logger.Error("Error querying Zabbix version", "error", err)
-			ds.version = -1
-		} else {
-			ds.logger.Debug("Got Zabbix version", "version", version)
-			ds.version = version
-		}
+	
+	version, err := ds.GetVersion(ctx)
+	if err != nil {
+		ds.logger.Error("Error querying Zabbix version", "error", err)
+		ds.version = -1
+	} else {
+		ds.logger.Debug("Got Zabbix version", "version", version)
+		ds.version = version
 	}
 
 	cachedResult, queryExistInCache := ds.cache.GetAPIRequest(apiReq)
