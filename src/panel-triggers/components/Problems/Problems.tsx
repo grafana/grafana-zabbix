@@ -235,6 +235,7 @@ export const ProblemList = (props: ProblemListProps) => {
       {!selected ? (
         <ProblemsTable
           rootWidth={rootRef?.current?.clientWidth || 0}
+          panelId={panelId}
           problems={problems}
           panelOptions={panelOptions}
           timeRange={timeRange}
