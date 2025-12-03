@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useMemo } from 'react';
 import {
   ColumnResizeMode,
   createColumnHelper,
@@ -11,17 +11,17 @@ import {
 import { ProblemDTO, ZBXTag } from '../../../datasource/types';
 import { ProblemListProps } from './Problems';
 import { HostCell } from './Cells/HostCell';
-import { AckCellV8 } from './AckCell';
-import { AgeCellV8 } from './Cells/AgeCell';
-import { SeverityCellV8 } from './Cells/SeverityCell';
+import { AckCell } from './Cells/AckCell';
+import { SeverityCell } from './Cells/SeverityCell';
 import { StatusCellV8 } from './Cells/StatusCell';
 import { StatusIconCellV8 } from './Cells/StatusIconCell';
-import { LastChangeCellV8 } from './Cells/LastChangeCell';
+import { LastChangeCell } from './Cells/LastChangeCell';
+import { TagCell } from './Cells/TagCell';
 import { DataSourceRef } from '@grafana/schema';
-import { TagCellV8 } from './Cells/TagCell';
 import { ProblemDetailsV8 } from './ProblemDetails';
 import { RTResized } from '../../types';
 import { reportInteraction } from '@grafana/runtime';
+import moment from 'moment/moment';
 
 const columnHelper = createColumnHelper<ProblemDTO>();
 
@@ -63,7 +63,7 @@ export const ProblemsTable = (
   } = props;
 
   // Define columns inside component to access props via closure
-  const columns = React.useMemo(() => {
+  const columns = useMemo(() => {
     const highlightNewerThan = panelOptions.highlightNewEvents && panelOptions.highlightNewerThan;
 
     return [
@@ -96,7 +96,7 @@ export const ProblemsTable = (
           className: 'problem-severity',
         },
         cell: ({ cell }) => (
-          <SeverityCellV8
+          <SeverityCell
             cell={cell}
             problemSeverityDesc={panelOptions.triggerSeverity}
             markAckEvents={panelOptions.markAckEvents}
@@ -129,25 +129,16 @@ export const ProblemsTable = (
         header: 'Problem',
         size: 300,
         minSize: 200,
-        cell: ({ cell }) => (
-          <div>
-            <span className="problem-description">{cell.getValue()}</span>
-          </div>
-        ),
+        cell: ({ cell }) => <span className="problem-description">{cell.getValue()}</span>,
       }),
       columnHelper.accessor('opdata', {
         header: 'Operational data',
         size: 150,
-        cell: ({ cell }) => (
-          <div>
-            <span>{cell.getValue()}</span>
-          </div>
-        ),
       }),
       columnHelper.accessor('acknowledged', {
         header: 'Ack',
         size: 70,
-        cell: ({ cell }) => <AckCellV8 acknowledges={cell.row.original.acknowledges} />,
+        cell: ({ cell }) => <AckCell acknowledges={cell.row.original.acknowledges} />,
       }),
       columnHelper.accessor('tags', {
         header: 'Tags',
@@ -156,10 +147,10 @@ export const ProblemsTable = (
           className: 'problem-tags',
         },
         cell: ({ cell }) => (
-          <TagCellV8
+          <TagCell
             tags={cell.getValue()}
             dataSource={cell.row.original.datasource as DataSourceRef}
-            handleTagClick={handleTagClick}
+            handleTagClick={onTagClick}
           />
         ),
       }),
@@ -170,7 +161,7 @@ export const ProblemsTable = (
         meta: {
           className: 'problem-age',
         },
-        cell: ({ cell }) => <AgeCellV8 timestamp={cell.row.original.timestamp} />,
+        cell: ({ cell }) => moment.unix(cell.row.original.timestamp),
       }),
       columnHelper.accessor('timestamp', {
         id: 'lastchange',
@@ -180,7 +171,7 @@ export const ProblemsTable = (
           className: 'last-change',
         },
         cell: ({ cell }) => (
-          <LastChangeCellV8
+          <LastChangeCell
             original={cell.row.original}
             customFormat={panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat}
           />
