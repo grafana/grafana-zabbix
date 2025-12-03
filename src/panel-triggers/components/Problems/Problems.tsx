@@ -230,20 +230,18 @@ export const ProblemList = (props: ProblemListProps) => {
   // console.log('Panel Options', panelOptions);
   return (
     <div className={cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize })} ref={rootRef}>
-      <div style={{ border: 'solid 1px red', marginBottom: '50px', padding: '5px' }}>
-        <ProblemsTable
-          rootWidth={rootRef?.current?.clientWidth || 0}
-          problems={problems}
-          panelOptions={panelOptions}
-          timeRange={timeRange}
-          getProblemEvents={getProblemEvents}
-          getProblemAlerts={getProblemAlerts}
-          getScripts={getScripts}
-          onProblemAck={handleProblemAck}
-          onExecuteScript={onExecuteScript}
-          onTagClick={handleTagClick}
-        />
-      </div>
+      <ProblemsTable
+        rootWidth={rootRef?.current?.clientWidth || 0}
+        problems={problems}
+        panelOptions={panelOptions}
+        timeRange={timeRange}
+        getProblemEvents={getProblemEvents}
+        getProblemAlerts={getProblemAlerts}
+        getScripts={getScripts}
+        onProblemAck={handleProblemAck}
+        onExecuteScript={onExecuteScript}
+        onTagClick={handleTagClick}
+      />
       <ReactTable
         data={problems}
         columns={columns}

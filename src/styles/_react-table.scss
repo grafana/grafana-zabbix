@@ -97,6 +97,10 @@
       border-right: none;
       box-shadow: none;
       background: transparent;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      box-sizing: border-box;
     }
   }
 
@@ -108,6 +112,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      box-sizing: border-box;
 
       &:last-child {
         border-right: none;
