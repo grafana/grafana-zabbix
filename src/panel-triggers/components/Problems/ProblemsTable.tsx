@@ -21,6 +21,7 @@ import { DataSourceRef } from '@grafana/schema';
 import { TagCellV8 } from './Cells/TagCell';
 import { ProblemDetailsV8 } from './ProblemDetails';
 import { RTResized } from '../../types';
+import { reportInteraction } from '@grafana/runtime';
 
 const columnHelper = createColumnHelper<ProblemDTO>();
 
@@ -286,6 +287,63 @@ export const ProblemsTable = (
     onTagClick?.(tag, datasource, ctrlKey, shiftKey);
   };
 
+  // Helper functions for pagination interactions
+  const reportPageChange = (action: 'next' | 'prev') => {
+    reportInteraction('grafana_zabbix_panel_page_change', { action });
+  };
+
+  const reportPageSizeChange = (pageSize: number) => {
+    reportInteraction('grafana_zabbix_panel_page_size_change', { pageSize });
+  };
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    if (!inputValue) {
+      return;
+    }
+    const pageNumber = Number(inputValue);
+    const maxPage = table.getPageCount();
+
+    // Clamp the value between 1 and maxPage
+    const clampedPage = Math.max(1, Math.min(pageNumber, maxPage));
+    const newPageIndex = clampedPage - 1;
+
+    if (newPageIndex !== table.getState().pagination.pageIndex) {
+      reportPageChange(newPageIndex > table.getState().pagination.pageIndex ? 'next' : 'prev');
+      table.setPageIndex(newPageIndex);
+    }
+  };
+
+  const handlePageInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // On blur, ensure the input shows a valid value
+    const inputValue = e.target.value;
+    if (!inputValue) {
+      e.target.value = String(table.getState().pagination.pageIndex + 1);
+      return;
+    }
+    const pageNumber = Number(inputValue);
+    const maxPage = table.getPageCount();
+    const clampedPage = Math.max(1, Math.min(pageNumber, maxPage));
+    e.target.value = String(clampedPage);
+  };
+
+  const handlePreviousPage = () => {
+    reportPageChange('prev');
+    table.previousPage();
+  };
+
+  const handleNextPage = () => {
+    reportPageChange('next');
+    table.nextPage();
+  };
+
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPageSize = Number(e.target.value);
+    reportPageSizeChange(newPageSize);
+    table.setPageSize(newPageSize);
+    onPageSizeChange?.(newPageSize, table.getState().pagination.pageIndex);
+  };
+
   // Calculate page size options
   const pageSizeOptions = React.useMemo(() => {
     let options = [5, 10, 20, 25, 50, 100];
@@ -369,7 +427,7 @@ export const ProblemsTable = (
         <div className="pagination-v8-controls">
           <button
             className="pagination-v8-btn -btn"
-            onClick={() => table.previousPage()}
+            onClick={handlePreviousPage}
             disabled={!table.getCanPreviousPage()}
           >
             Previous
@@ -380,10 +438,8 @@ export const ProblemsTable = (
               type="number"
               className="pagination-v8-page-input"
               value={table.getState().pagination.pageIndex + 1}
-              onChange={(e) => {
-                const page = e.target.value ? Number(e.target.value) - 1 : 0;
-                table.setPageIndex(page);
-              }}
+              onChange={handlePageInputChange}
+              onBlur={handlePageInputBlur}
               min={1}
               max={table.getPageCount()}
             />{' '}
@@ -393,11 +449,7 @@ export const ProblemsTable = (
             name="pagination-v8-select"
             className="pagination-v8-select"
             value={table.getState().pagination.pageSize}
-            onChange={(e) => {
-              const newPageSize = Number(e.target.value);
-              table.setPageSize(newPageSize);
-              onPageSizeChange?.(newPageSize, table.getState().pagination.pageIndex);
-            }}
+            onChange={handlePageSizeChange}
           >
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>
@@ -405,11 +457,7 @@ export const ProblemsTable = (
               </option>
             ))}
           </select>
-          <button
-            className="pagination-v8-btn -btn"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
+          <button className="pagination-v8-btn -btn" onClick={handleNextPage} disabled={!table.getCanNextPage()}>
             Next
           </button>
         </div>
