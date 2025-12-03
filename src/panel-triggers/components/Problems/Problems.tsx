@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useRef } from 'react';
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment/moment';
 import { cx } from '@emotion/css';
 // import { ProblemsTable } from './ProblemsTable';
@@ -216,16 +216,16 @@ export const ProblemList = (props: ProblemListProps) => {
     return sizing;
   };
 
-  const [columnSizing, setColumnSizing] = React.useState<Record<string, number>>(
+  const [columnSizing, setColumnSizing] = useState<Record<string, number>>(
     getColumnSizingFromResized(panelOptions.resizedColumns)
   );
-  const [columnResizeMode] = React.useState<ColumnResizeMode>('onChange');
+  const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
 
   // Default pageSize to 10 if not provided
   const effectivePageSize = pageSize || 10;
 
   // Pagination state
-  const [pagination, setPagination] = React.useState({
+  const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: effectivePageSize,
   });
