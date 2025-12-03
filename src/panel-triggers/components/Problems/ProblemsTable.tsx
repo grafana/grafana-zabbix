@@ -18,7 +18,7 @@ import { StatusIconCellV8 } from './Cells/StatusIconCell';
 import { LastChangeCell } from './Cells/LastChangeCell';
 import { TagCell } from './Cells/TagCell';
 import { DataSourceRef } from '@grafana/schema';
-import { ProblemDetailsV8 } from './ProblemDetails';
+import { ProblemDetails } from './ProblemDetails';
 import { RTResized } from '../../types';
 import { reportInteraction } from '@grafana/runtime';
 import moment from 'moment/moment';
@@ -397,7 +397,7 @@ export const ProblemsTable = (
                   {row.getIsExpanded() && (
                     <tr className={rowIndex % 2 === 1 ? 'even-row-expanded' : 'odd-row-expanded'}>
                       <td colSpan={row.getVisibleCells().length}>
-                        <ProblemDetailsV8
+                        <ProblemDetails
                           original={row.original}
                           rootWidth={rootWidth}
                           timeRange={timeRange}

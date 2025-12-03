@@ -406,47 +406,6 @@
     box-shadow: 0px -2px 5px $problems-footer-shadow;
     z-index: 1;
   }
-
-  @for $i from 8 through 9 {
-    .item-#{$i} {
-      width: 2em * $i;
-    }
-    &.font-size--#{$i * 10} .rt-table {
-      font-size: 1% * $i * 10;
-
-      & .rt-tr .rt-td.custom-expander i {
-        font-size: calc(1.2rem * $i / 10);
-      }
-
-      .problem-details-container.show {
-        font-size: 13px;
-      }
-    }
-  }
-
-  @for $i from 11 through 25 {
-    .item-#{$i} {
-      width: 2em * $i;
-    }
-    &.font-size--#{$i * 10} {
-      .rt-table {
-        font-size: 1% * $i * 10;
-
-        & .rt-tr .rt-td.custom-expander i {
-          font-size: calc(1.2rem * $i / 10);
-        }
-
-        .problem-details-container.show {
-          font-size: 13px;
-        }
-      }
-
-      .rt-noData {
-        top: 4.5em;
-        font-size: 1% * $i * 10;
-      }
-    }
-  }
 }
 
 .zbx-ack-modal {
