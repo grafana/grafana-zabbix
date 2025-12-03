@@ -261,15 +261,12 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
 
   const renderTable = () => {
     const problems = prepareProblems();
-    const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
-    const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
     return (
       <ProblemList
         problems={problems}
         panelOptions={options}
         pageSize={options.pageSize}
-        fontSize={fontSizeProp}
         timeRange={timeRange}
         getProblemEvents={getProblemEvents}
         getProblemAlerts={getProblemAlerts}
