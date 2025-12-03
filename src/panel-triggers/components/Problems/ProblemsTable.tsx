@@ -297,72 +297,74 @@ export const ProblemsTable = (
   }, [pageSize]);
 
   return (
-    <div className="react-table-v8-wrapper">
-      <table className="react-table-v8">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id} style={{ width: `${header.getSize()}px` }}>
-                  {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  {header.column.getCanResize() && (
-                    <div
-                      onMouseDown={header.getResizeHandler()}
-                      onTouchStart={header.getResizeHandler()}
-                      className={`resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`}
-                    />
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.length === 0 ? (
-            <tr>
-              <td colSpan={table.getAllColumns().length} className="no-data-cell">
-                <div className="rt-noData">No problems found</div>
-              </td>
-            </tr>
-          ) : (
-            table.getRowModel().rows.map((row, rowIndex) => (
-              <Fragment key={row.id}>
-                <tr className={rowIndex % 2 === 1 ? 'even-row' : 'odd-row'}>
-                  {row.getVisibleCells().map((cell) => {
-                    const className = (cell.column.columnDef.meta as any)?.className;
-                    return (
-                      <td key={cell.id} className={className} style={{ width: `${cell.column.getSize()}px` }}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    );
-                  })}
-                </tr>
-                {row.getIsExpanded() && (
-                  <tr className={rowIndex % 2 === 1 ? 'even-row-expanded' : 'odd-row-expanded'}>
-                    <td colSpan={row.getVisibleCells().length}>
-                      <ProblemDetailsV8
-                        original={row.original}
-                        rootWidth={rootWidth}
-                        timeRange={timeRange}
-                        showTimeline={panelOptions.problemTimeline}
-                        allowDangerousHTML={panelOptions.allowDangerousHTML}
-                        panelId={panelId}
-                        getProblemEvents={getProblemEvents}
-                        getProblemAlerts={getProblemAlerts}
-                        getScripts={getScripts}
-                        onProblemAck={onProblemAck}
-                        onExecuteScript={onExecuteScript}
-                        onTagClick={handleTagClick}
+    <>
+      <div className="react-table-v8-wrapper">
+        <table className="react-table-v8">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} style={{ width: `${header.getSize()}px` }}>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    {header.column.getCanResize() && (
+                      <div
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        className={`resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`}
                       />
-                    </td>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={table.getAllColumns().length} className="no-data-cell">
+                  <div className="rt-noData">No problems found</div>
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row, rowIndex) => (
+                <Fragment key={row.id}>
+                  <tr className={rowIndex % 2 === 1 ? 'even-row' : 'odd-row'}>
+                    {row.getVisibleCells().map((cell) => {
+                      const className = (cell.column.columnDef.meta as any)?.className;
+                      return (
+                        <td key={cell.id} className={className} style={{ width: `${cell.column.getSize()}px` }}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      );
+                    })}
                   </tr>
-                )}
-              </Fragment>
-            ))
-          )}
-        </tbody>
-      </table>
-      {/* Pagination Controls */}
+                  {row.getIsExpanded() && (
+                    <tr className={rowIndex % 2 === 1 ? 'even-row-expanded' : 'odd-row-expanded'}>
+                      <td colSpan={row.getVisibleCells().length}>
+                        <ProblemDetailsV8
+                          original={row.original}
+                          rootWidth={rootWidth}
+                          timeRange={timeRange}
+                          showTimeline={panelOptions.problemTimeline}
+                          allowDangerousHTML={panelOptions.allowDangerousHTML}
+                          panelId={panelId}
+                          getProblemEvents={getProblemEvents}
+                          getProblemAlerts={getProblemAlerts}
+                          getScripts={getScripts}
+                          onProblemAck={onProblemAck}
+                          onExecuteScript={onExecuteScript}
+                          onTagClick={handleTagClick}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))
+            )}
+          </tbody>
+        </table>
+        {/* Pagination Controls */}
+      </div>
       <div className="pagination-v8">
         <div className="pagination-v8-controls">
           <button
@@ -426,6 +428,6 @@ export const ProblemsTable = (
           </select>
         </div>
       </div>
-    </div>
+    </>
   );
 };
