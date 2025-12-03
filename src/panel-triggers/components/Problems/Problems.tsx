@@ -356,7 +356,7 @@ export const ProblemList = (props: ProblemListProps) => {
   }, [pageSize]);
 
   return (
-    <>
+    <div className="react-table-v8-container">
       <div className={`react-table-v8-wrapper ${loading ? 'is-loading' : ''}`}>
         {loading && (
           <div className="-loading -active">
@@ -467,6 +467,6 @@ export const ProblemList = (props: ProblemListProps) => {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
