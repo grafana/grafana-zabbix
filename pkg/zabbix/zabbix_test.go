@@ -83,15 +83,23 @@ func TestNonCachedQuery(t *testing.T) {
 }
 
 func TestItemTagCache(t *testing.T) {
-	zabbixClient, _ := MockZabbixClient(
-		BasicDatasourceInfo,
-		`{"result":[{"itemid":"1","name":"test1"}]}`,
-		200,
-	)
+	callCount := 0
+	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		switch payload.Method {
+		case "apiinfo.version":
+			return `{"result":"6.4.0"}`
+		case "item.get":
+			callCount++
+			if callCount == 1 {
+				return `{"result":[{"itemid":"1","name":"test1"}]}`
+			}
+			return `{"result":[{"itemid":"2","name":"test2"}]}`
+		default:
+			return `{"result":null}`
+		}
+	})
 	// tag filtering is on >= 54 version
-	zabbixClient.version = 64
 	zabbixClient.settings.AuthType = settings.AuthTypeToken
-	zabbixClient.api.SetAuth("test")
 	items, err := zabbixClient.GetAllItems(
 		context.Background(),
 		nil,

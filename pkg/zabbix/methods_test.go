@@ -53,6 +53,9 @@ func TestGetHistory(t *testing.T) {
 			historyCalls = append(historyCalls, int(payload.Params["history"].(float64)))
 			return `{"result":[{"itemid":"1","clock":"1","value":"1.2","ns":"0"}]}`
 		}
+		if payload.Method ==  "apiinfo.version" {
+			return `{"result":"6.4.0"}`
+		}
 		return `{"result":null}`
 	})
 
@@ -80,6 +83,10 @@ func TestGetTrend(t *testing.T) {
 			}
 			return `{"result":[{"itemid":"1","clock":"1","value_min":"0","value_avg":"1","value_max":"2"}]}`
 		}
+
+		if payload.Method ==  "apiinfo.version" {
+			return `{"result":"6.4.0"}`
+		}
 		return `{"result":null}`
 	})
 
@@ -105,6 +112,7 @@ func TestGetItems(t *testing.T) {
 				{"itemid":"200","name":"Memory usage"}
 			]
 		}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	items, err := client.GetItems(context.Background(), "Servers", "web01", "", "/CPU/", "num", false)
@@ -130,6 +138,7 @@ func TestGetItemsBefore54(t *testing.T) {
 				{"itemid":"600","name":"API latency"}
 			]
 		}`,
+		"apiinfo.version": `{"result":"5.0.0"}`,
 	})
 
 	items, err := client.GetItemsBefore54(context.Background(), "Servers", "web01", "Databases", "/DB/", "num", false)
@@ -166,6 +175,7 @@ func TestGetApps(t *testing.T) {
 				{"applicationid":"60","name":"DB"}
 			]
 		}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	apps, err := client.GetApps(context.Background(), "Servers", "web01", "/^API/")
@@ -202,6 +212,7 @@ func TestGetItemTags(t *testing.T) {
 				{"itemid":"2","name":"Mem","tags":[{"tag":"Env","value":"stage"},{"tag":"Env","value":"prod"}]}
 			]
 		}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	tags, err := client.GetItemTags(context.Background(), "Servers", "web01", "/^Env/")
@@ -238,6 +249,7 @@ func TestGetHosts(t *testing.T) {
 				{"hostid":"20","name":"db01"}
 			]
 		}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	hosts, err := client.GetHosts(context.Background(), "Servers", "/web/")
@@ -267,6 +279,7 @@ func TestFilterHostsByQuery(t *testing.T) {
 func TestGetGroups(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
 		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"},{"groupid":"2","name":"Apps"}]}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	groups, err := client.GetGroups(context.Background(), "/Apps/")
@@ -300,6 +313,11 @@ func TestGetAllItemsBuildsParams(t *testing.T) {
 			lastRequest = payload
 			return `{"result":[{"itemid":"1","name":"CPU $1","key_":"system.cpu[user]","value_type":"0","hosts":[{"hostid":"10","name":"web"}]}]}`
 		}
+
+		if payload.Method ==  "apiinfo.version" {
+			return `{"result":"6.4.0"}`
+		}
+
 		return `{"result":null}`
 	})
 
@@ -338,6 +356,11 @@ func TestGetItemsByIDs(t *testing.T) {
 			lastRequest = payload
 			return `{"result":[{"itemid":"1","name":"CPU"}]}`
 		}
+
+		if payload.Method ==  "apiinfo.version" {
+			return `{"result":"6.4.0"}`
+		}
+
 		return `{"result":null}`
 	})
 
@@ -350,6 +373,7 @@ func TestGetItemsByIDs(t *testing.T) {
 func TestGetAllApps(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
 		"application.get": `{"result":[{"applicationid":"10","name":"API"}]}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	apps, err := client.GetAllApps(context.Background(), []string{"1"})
@@ -361,6 +385,7 @@ func TestGetAllApps(t *testing.T) {
 func TestGetAllHosts(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
 		"host.get": `{"result":[{"hostid":"10","name":"web01"}]}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	hosts, err := client.GetAllHosts(context.Background(), []string{"1"})
@@ -372,6 +397,7 @@ func TestGetAllHosts(t *testing.T) {
 func TestGetAllGroups(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
 		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"}]}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	groups, err := client.GetAllGroups(context.Background())
@@ -391,6 +417,7 @@ func TestGetValueMappings(t *testing.T) {
 				}
 			]
 		}`,
+		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
 	valueMaps, err := client.GetValueMappings(context.Background())
