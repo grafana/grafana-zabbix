@@ -673,9 +673,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
    * Test connection to Zabbix API and external history DB.
    */
   async testDatasource() {
-    const backendDS = new DataSourceWithBackend(this.instanceSettings);
     try {
-      const testResult = await backendDS.testDatasource();
+      const testResult = await super.testDatasource();
       return this.zabbix.testDataSource().then((dbConnectorStatus) => {
         let message = testResult.message;
         if (dbConnectorStatus) {
