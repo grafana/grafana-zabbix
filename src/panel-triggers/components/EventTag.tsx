@@ -1,7 +1,8 @@
 import React from 'react';
 import { css } from '@emotion/css';
 import { Icon, Tooltip, useStyles2 } from '@grafana/ui';
-import { DataSourceRef, GrafanaTheme2 } from '@grafana/data';
+import { GrafanaTheme2 } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
 import { ZBXTag } from '../../datasource/types';
 
 const TAG_COLORS = [

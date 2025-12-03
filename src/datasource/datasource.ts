@@ -54,6 +54,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   dbConnectionRetentionPolicy: string;
   enableDebugLog: boolean;
   datasourceId: number;
+  instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>;
   zabbix: Zabbix;
 
   constructor(
@@ -62,6 +63,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   ) {
     super(instanceSettings);
 
+    this.instanceSettings = instanceSettings;
     this.enableDebugLog = config.buildInfo.env === 'development';
 
     this.annotations = {
@@ -671,17 +673,20 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
    * Test connection to Zabbix API and external history DB.
    */
   async testDatasource() {
+    const backendDS = new DataSourceWithBackend(this.instanceSettings);
     try {
-      const { zabbixVersion, dbConnectorStatus } = await this.zabbix.testDataSource();
-      let message = `Zabbix API version: ${zabbixVersion}`;
-      if (dbConnectorStatus) {
-        message += `, DB connector type: ${dbConnectorStatus.dsType}`;
-      }
-      return {
-        status: 'success',
-        title: 'Success',
-        message: message,
-      };
+      const testResult = await backendDS.testDatasource();
+      return this.zabbix.testDataSource().then((dbConnectorStatus) => {
+        let message = testResult.message;
+        if (dbConnectorStatus) {
+          message += `, DB connector type: ${dbConnectorStatus.dsType}`;
+        }
+        return {
+          status: testResult.status,
+          message: message,
+          title: testResult.status,
+        };
+      });
     } catch (error: any) {
       if (error instanceof ZabbixAPIError) {
         return Promise.reject({
