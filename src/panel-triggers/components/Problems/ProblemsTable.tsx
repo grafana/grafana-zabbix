@@ -5,6 +5,7 @@ import {
   flexRender,
   getCoreRowModel,
   getExpandedRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { ProblemDTO, ZBXTag } from '../../../datasource/types';
@@ -37,6 +38,8 @@ export const ProblemsTable = (
     | 'onExecuteScript'
     | 'onProblemAck'
     | 'onColumnResize'
+    | 'pageSize'
+    | 'onPageSizeChange'
   > & { rootWidth: number }
 ) => {
   const {
@@ -52,6 +55,8 @@ export const ProblemsTable = (
     onProblemAck,
     onColumnResize,
     rootWidth,
+    pageSize,
+    onPageSizeChange,
   } = props;
 
   // Define columns inside component to access props via closure
@@ -215,6 +220,23 @@ export const ProblemsTable = (
   );
   const [columnResizeMode] = React.useState<ColumnResizeMode>('onChange');
 
+  // Default pageSize to 10 if not provided
+  const effectivePageSize = pageSize || 10;
+
+  // Pagination state
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: effectivePageSize,
+  });
+
+  // Update pagination when pageSize prop changes
+  React.useEffect(() => {
+    setPagination((prev) => ({
+      ...prev,
+      pageSize: effectivePageSize,
+    }));
+  }, [effectivePageSize]);
+
   const table = useReactTable({
     data: problems,
     columns,
@@ -222,7 +244,9 @@ export const ProblemsTable = (
     columnResizeMode,
     state: {
       columnSizing,
+      pagination,
     },
+    onPaginationChange: setPagination,
     meta: {
       panelOptions,
     },
@@ -255,11 +279,22 @@ export const ProblemsTable = (
     getRowCanExpand: () => true,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
     onTagClick?.(tag, datasource, ctrlKey, shiftKey);
   };
+
+  // Calculate page size options
+  const pageSizeOptions = React.useMemo(() => {
+    let options = [5, 10, 20, 25, 50, 100];
+    if (pageSize) {
+      options.push(pageSize);
+      options = Array.from(new Set(options)).sort((a, b) => a - b);
+    }
+    return options;
+  }, [pageSize]);
 
   return (
     <div className="react-table-v8-wrapper">
@@ -327,6 +362,70 @@ export const ProblemsTable = (
           )}
         </tbody>
       </table>
+      {/* Pagination Controls */}
+      <div className="pagination-v8">
+        <div className="pagination-v8-controls">
+          <button
+            className="pagination-v8-btn"
+            onClick={() => table.setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<<'}
+          </button>
+          <button
+            className="pagination-v8-btn"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<'}
+          </button>
+          <button className="pagination-v8-btn" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+            {'>'}
+          </button>
+          <button
+            className="pagination-v8-btn"
+            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>>'}
+          </button>
+          <span className="pagination-v8-info">
+            Page{' '}
+            <strong>
+              {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            </strong>
+          </span>
+          <span className="pagination-v8-info">
+            | Go to page:{' '}
+            <input
+              type="number"
+              value={table.getState().pagination.pageIndex + 1}
+              onChange={(e) => {
+                const page = e.target.value ? Number(e.target.value) - 1 : 0;
+                table.setPageIndex(page);
+              }}
+              className="pagination-v8-input"
+              min={1}
+              max={table.getPageCount()}
+            />
+          </span>
+          <select
+            className="pagination-v8-select"
+            value={table.getState().pagination.pageSize}
+            onChange={(e) => {
+              const newPageSize = Number(e.target.value);
+              table.setPageSize(newPageSize);
+              onPageSizeChange?.(newPageSize, table.getState().pagination.pageIndex);
+            }}
+          >
+            {pageSizeOptions.map((size) => (
+              <option key={size} value={size}>
+                Show {size}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
     </div>
   );
 };
