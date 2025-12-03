@@ -266,52 +266,50 @@
   margin-top: $panel-margin;
   border-top: none;
   box-shadow: none;
-  padding: 0.5rem 0;
 }
 
 .pagination-v8-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
 .pagination-v8-btn {
-  color: $blue;
-  background: $list-item-bg;
-  border: 1px solid $input-border-color;
-  padding: 0.25rem 0.5rem;
-  cursor: pointer;
-  border-radius: 3px;
-  font-size: 0.875rem;
-  
-  &:hover:not(:disabled) {
-    background: $input-bg;
-    border-color: $blue;
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &.-btn {
+    color: $blue;
+    background: $list-item-bg;
+    border: 1px solid transparent;
+    padding: 0.5rem 1.5rem;
+    cursor: pointer;
+    border-radius: 3px;
+
+    &:hover:not(:disabled) {
+      opacity: 0.8;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 }
 
 .pagination-v8-info {
-  font-size: 0.875rem;
   color: $text-color;
   margin: 0 0.25rem;
+  text-align: center;
 }
 
-.pagination-v8-input {
+.pagination-v8-page-input {
   width: 50px;
   color: $input-color;
   background-color: $input-bg;
-  border: 1px solid $input-border-color;
-  padding: 0.25rem;
+  padding: 0.5rem;
   border-radius: 3px;
   text-align: center;
-  
+
   &:focus {
     outline: none;
     border-color: $blue;
@@ -322,11 +320,13 @@
   color: $input-color;
   background-color: $input-bg;
   border: 1px solid $input-border-color;
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 0.5rem;
   border-radius: 3px;
   cursor: pointer;
   height: auto;
   line-height: normal;
+  width: auto;
+  min-width: 80px;
   
   &:focus {
     outline: none;
@@ -334,7 +334,6 @@
   }
   
   option {
-    padding: 0.5rem;
     background-color: $input-bg;
     color: $input-color;
   }

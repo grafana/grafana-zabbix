@@ -232,7 +232,7 @@ export const ProblemList = (props: ProblemListProps) => {
   return (
     <div className={cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize })} ref={rootRef}>
       <button onClick={() => setSelected(!selected)}>Change rendered table</button>
-      {selected ? (
+      {!selected ? (
         <ProblemsTable
           rootWidth={rootRef?.current?.clientWidth || 0}
           problems={problems}

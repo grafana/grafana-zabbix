@@ -368,50 +368,29 @@ export const ProblemsTable = (
       <div className="pagination-v8">
         <div className="pagination-v8-controls">
           <button
-            className="pagination-v8-btn"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {'<<'}
-          </button>
-          <button
-            className="pagination-v8-btn"
+            className="pagination-v8-btn -btn"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            {'<'}
-          </button>
-          <button className="pagination-v8-btn" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-            {'>'}
-          </button>
-          <button
-            className="pagination-v8-btn"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-          >
-            {'>>'}
+            Previous
           </button>
           <span className="pagination-v8-info">
             Page{' '}
-            <strong>
-              {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-            </strong>
-          </span>
-          <span className="pagination-v8-info">
-            | Go to page:{' '}
             <input
               type="number"
+              className="pagination-v8-page-input"
               value={table.getState().pagination.pageIndex + 1}
               onChange={(e) => {
                 const page = e.target.value ? Number(e.target.value) - 1 : 0;
                 table.setPageIndex(page);
               }}
-              className="pagination-v8-input"
               min={1}
               max={table.getPageCount()}
-            />
+            />{' '}
+            of <strong>{table.getPageCount()}</strong>
           </span>
           <select
+            name="pagination-v8-select"
             className="pagination-v8-select"
             value={table.getState().pagination.pageSize}
             onChange={(e) => {
@@ -422,10 +401,17 @@ export const ProblemsTable = (
           >
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>
-                Show {size}
+                {size} rows
               </option>
             ))}
           </select>
+          <button
+            className="pagination-v8-btn -btn"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </button>
         </div>
       </div>
     </>
