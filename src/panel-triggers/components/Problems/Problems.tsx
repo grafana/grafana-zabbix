@@ -14,7 +14,7 @@ import { AckCell } from './Cells/AckCell';
 import { SeverityCell } from './Cells/SeverityCell';
 import { StatusCellV8 } from './Cells/StatusCell';
 import { StatusIconCellV8 } from './Cells/StatusIconCell';
-import { LastChangeCellV8 } from './Cells/LastChangeCell';
+import { LastChangeCell } from './Cells/LastChangeCell';
 import { DataSourceRef } from '@grafana/schema';
 import { TagCell } from './Cells/TagCell';
 import { ProblemDetails } from './ProblemDetails';
@@ -177,7 +177,7 @@ export const ProblemList = (props: ProblemListProps) => {
           className: 'last-change',
         },
         cell: ({ cell }) => (
-          <LastChangeCellV8
+          <LastChangeCell
             original={cell.row.original}
             customFormat={panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat}
           />
