@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import React, { useEffect, FormEvent, useState } from 'react';
+import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
@@ -9,6 +9,7 @@ import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
+import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 const showProblemsOptions: Array<ComboboxOption<string>> = [
   { label: 'Problems', value: 'problems' },
@@ -37,12 +38,7 @@ export interface Props {
 }
 
 export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
-  // interpolate variables in the query
-  const [interpolatedQuery, setInterpolatedQuery] = useState<ZabbixMetricsQuery>(query);
-  useEffect(() => {
-    const replacedQuery = datasource.interpolateVariablesInQueries([query], {})[0];
-    setInterpolatedQuery(replacedQuery);
-  }, [query]);
+  const interpolatedQuery = useInterpolatedQuery(datasource, query);
 
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();

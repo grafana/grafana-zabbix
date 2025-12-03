@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import React, { useEffect, FormEvent, useState } from 'react';
+import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
@@ -11,6 +11,7 @@ import { itemTagToString } from '../../utils';
 import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
+import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 const countByOptions: Array<ComboboxOption<string>> = [
   { value: '', label: 'All triggers' },
@@ -34,12 +35,7 @@ export interface Props {
 }
 
 export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
-  // interpolate variables in the query
-  const [interpolatedQuery, setInterpolatedQuery] = useState<ZabbixMetricsQuery>(query);
-  useEffect(() => {
-    const replacedQuery = datasource.interpolateVariablesInQueries([query], {})[0];
-    setInterpolatedQuery(replacedQuery);
-  }, [query]);
+  const interpolatedQuery = useInterpolatedQuery(datasource, query);
 
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import React, { useEffect, FormEvent, useState } from 'react';
+import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 import { AnnotationQuery, SelectableValue } from '@grafana/data';
 import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
@@ -9,6 +9,7 @@ import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 import { MetricPicker } from '../../components';
 import { getVariableOptions } from './QueryEditor/utils';
 import { prepareAnnotation } from '../migrations';
+import { useInterpolatedQuery } from '../hooks/useInterpolatedQuery';
 
 const severityOptions: Array<ComboboxOption<number>> = [
   { value: 0, label: 'Not classified' },
@@ -27,12 +28,7 @@ type Props = ZabbixQueryEditorProps & {
 export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasource }: Props) => {
   annotation = prepareAnnotation(annotation);
   const query = annotation.target;
-  // interpolate variables in the query
-  const [interpolatedQuery, setInterpolatedQuery] = useState<ZabbixMetricsQuery>(query);
-  useEffect(() => {
-    const replacedQuery = datasource.interpolateVariablesInQueries([query], {})[0];
-    setInterpolatedQuery(replacedQuery);
-  }, [query]);
+  const interpolatedQuery = useInterpolatedQuery(datasource, query);
 
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
