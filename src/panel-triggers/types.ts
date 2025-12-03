@@ -125,50 +125,6 @@ export interface TriggerSeverity {
 
 export type TriggerColor = string;
 
-export interface RTRow<T> {
-  /** the materialized row of data */
-  row: any;
-  /** the original row of data */
-  original: T;
-  /** the index of the row in the original array */
-  index: number;
-  /** the index of the row relative to the current view */
-  viewIndex: number;
-  /** the nesting level of this row */
-  level: number;
-  /** the nesting path of this row */
-  nestingPath: number[];
-  /** true if this row's values were aggregated */
-  aggregated?: boolean;
-  /** true if this row was produced by a pivot */
-  groupedByPivot?: boolean;
-  /** any sub rows defined by the `subRowKey` prop */
-  subRows?: boolean;
-}
-
-export interface RTCell<T> extends RTRow<T> {
-  /** true if this row is expanded */
-  isExpanded?: boolean;
-  /** the materialized value of this cell */
-  value: any;
-  /** the resize information for this cell's column */
-  resized: any[];
-  /** true if the column is visible */
-  show?: boolean;
-  /** the resolved width of this cell */
-  width: number;
-  /** the resolved maxWidth of this cell */
-  maxWidth: number;
-  /** the resolved tdProps from `getTdProps` for this cell */
-  tdProps: any;
-  /** the resolved column props from 'getProps' for this cell's column */
-  columnProps: any;
-  /** the resolved array of classes for this cell */
-  classes: string[];
-  /** the resolved styles for this cell */
-  styles: any;
-}
-
 export interface RTResize {
   id: string;
   value: number;

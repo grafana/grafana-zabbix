@@ -10,20 +10,20 @@ import {
 } from '@tanstack/react-table';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
 import { HostCell } from './Cells/HostCell';
-import { AckCellV8 } from './AckCell';
-import { AgeCellV8 } from './Cells/AgeCell';
-import { SeverityCellV8 } from './Cells/SeverityCell';
+import { AckCell } from './Cells/AckCell';
+import { SeverityCell } from './Cells/SeverityCell';
 import { StatusCellV8 } from './Cells/StatusCell';
 import { StatusIconCellV8 } from './Cells/StatusIconCell';
 import { LastChangeCellV8 } from './Cells/LastChangeCell';
 import { DataSourceRef } from '@grafana/schema';
-import { TagCellV8 } from './Cells/TagCell';
-import { ProblemDetailsV8 } from './ProblemDetails';
+import { TagCell } from './Cells/TagCell';
+import { ProblemDetails } from './ProblemDetails';
 import { ProblemsPanelOptions, RTResized } from '../../types';
 import { reportInteraction } from '@grafana/runtime';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckProblemData } from '../AckModal';
 import { TimeRange } from '@grafana/data';
+import moment from 'moment/moment';
 
 const columnHelper = createColumnHelper<ProblemDTO>();
 
@@ -99,7 +99,7 @@ export const ProblemList = (props: ProblemListProps) => {
           className: 'problem-severity',
         },
         cell: ({ cell }) => (
-          <SeverityCellV8
+          <SeverityCell
             cell={cell}
             problemSeverityDesc={panelOptions.triggerSeverity}
             markAckEvents={panelOptions.markAckEvents}
@@ -132,25 +132,16 @@ export const ProblemList = (props: ProblemListProps) => {
         header: 'Problem',
         size: 300,
         minSize: 200,
-        cell: ({ cell }) => (
-          <div>
-            <span className="problem-description">{cell.getValue()}</span>
-          </div>
-        ),
+        cell: ({ cell }) => <span className="problem-description">{cell.getValue()}</span>,
       }),
       columnHelper.accessor('opdata', {
         header: 'Operational data',
         size: 150,
-        cell: ({ cell }) => (
-          <div>
-            <span>{cell.getValue()}</span>
-          </div>
-        ),
       }),
       columnHelper.accessor('acknowledged', {
         header: 'Ack',
         size: 70,
-        cell: ({ cell }) => <AckCellV8 acknowledges={cell.row.original.acknowledges} />,
+        cell: ({ cell }) => <AckCell acknowledges={cell.row.original.acknowledges} />,
       }),
       columnHelper.accessor('tags', {
         header: 'Tags',
@@ -159,7 +150,7 @@ export const ProblemList = (props: ProblemListProps) => {
           className: 'problem-tags',
         },
         cell: ({ cell }) => (
-          <TagCellV8
+          <TagCell
             tags={cell.getValue()}
             dataSource={cell.row.original.datasource as DataSourceRef}
             handleTagClick={onTagClick}
@@ -173,7 +164,10 @@ export const ProblemList = (props: ProblemListProps) => {
         meta: {
           className: 'problem-age',
         },
-        cell: ({ cell }) => <AgeCellV8 timestamp={cell.row.original.timestamp} />,
+        cell: ({ cell }) => {
+          const timestamp = moment.unix(cell.row.original.timestamp);
+          return timestamp.fromNow(true);
+        },
       }),
       columnHelper.accessor('timestamp', {
         id: 'lastchange',
@@ -405,7 +399,7 @@ export const ProblemList = (props: ProblemListProps) => {
                   {row.getIsExpanded() && (
                     <tr className={rowIndex % 2 === 1 ? 'even-row-expanded' : 'odd-row-expanded'}>
                       <td colSpan={row.getVisibleCells().length}>
-                        <ProblemDetailsV8
+                        <ProblemDetails
                           original={row.original}
                           rootWidth={rootRef?.current?.clientWidth || 0}
                           timeRange={timeRange}
