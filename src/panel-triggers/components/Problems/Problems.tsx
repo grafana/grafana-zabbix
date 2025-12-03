@@ -164,10 +164,7 @@ export const ProblemList = (props: ProblemListProps) => {
         meta: {
           className: 'problem-age',
         },
-        cell: ({ cell }) => {
-          const timestamp = moment.unix(cell.row.original.timestamp);
-          return timestamp.fromNow(true);
-        },
+        cell: ({ cell }) => moment.unix(cell.row.original.timestamp),
       }),
       columnHelper.accessor('timestamp', {
         id: 'lastchange',
