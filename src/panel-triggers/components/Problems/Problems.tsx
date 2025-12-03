@@ -241,7 +241,9 @@ export const ProblemList = (props: ProblemListProps) => {
         onProblemAck={handleProblemAck}
         onExecuteScript={onExecuteScript}
         onTagClick={handleTagClick}
+        onColumnResize={onColumnResize}
       />
+  
       <ReactTable
         data={problems}
         columns={columns}

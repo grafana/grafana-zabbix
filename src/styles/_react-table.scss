@@ -70,6 +70,8 @@
 .react-table-v8-wrapper {
   position: relative;
   min-height: 90px;
+  overflow-x: auto;
+  width: 100%;
 }
 
 .react-table-v8 {
@@ -101,6 +103,32 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       box-sizing: border-box;
+      position: relative;
+
+      .resizer {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background: rgba(0, 0, 0, 0.1);
+        cursor: col-resize;
+        user-select: none;
+        touch-action: none;
+        opacity: 0;
+        z-index: 1;
+        transition: opacity 0.2s;
+
+        &:hover,
+        &.isResizing {
+          opacity: 1;
+          background: $blue;
+        }
+      }
+
+      &:hover .resizer {
+        opacity: 0.5;
+      }
     }
   }
 

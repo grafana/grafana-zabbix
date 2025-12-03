@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react';
 import {
+  ColumnResizeMode,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
@@ -18,6 +19,7 @@ import { LastChangeCellV8 } from './Cells/LastChangeCell';
 import { DataSourceRef } from '@grafana/schema';
 import { TagCellV8 } from './Cells/TagCell';
 import { ProblemDetailsV8 } from './ProblemDetails';
+import { RTResized } from '../../types';
 
 const columnHelper = createColumnHelper<ProblemDTO>();
 
@@ -34,6 +36,7 @@ export const ProblemsTable = (
     | 'getScripts'
     | 'onExecuteScript'
     | 'onProblemAck'
+    | 'onColumnResize'
   > & { rootWidth: number }
 ) => {
   const {
@@ -47,6 +50,7 @@ export const ProblemsTable = (
     getScripts,
     onExecuteScript,
     onProblemAck,
+    onColumnResize,
     rootWidth,
   } = props;
 
@@ -57,14 +61,17 @@ export const ProblemsTable = (
     return [
       columnHelper.accessor('host', {
         header: 'Host',
+        size: 150,
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('hostTechName', {
         header: 'Host (Technical Name)',
+        size: 200,
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('groups', {
         header: 'Host Groups',
+        size: 150,
         cell: ({ cell }) => {
           const groups = cell.getValue() ?? [];
           return <span>{groups.map((g) => g.name).join(', ')}</span>;
@@ -72,6 +79,7 @@ export const ProblemsTable = (
       }),
       columnHelper.accessor('proxy', {
         header: 'Proxy',
+        size: 120,
       }),
       columnHelper.accessor('priority', {
         header: 'Severity',
@@ -111,6 +119,7 @@ export const ProblemsTable = (
       }),
       columnHelper.accessor('name', {
         header: 'Problem',
+        size: 300,
         minSize: 200,
         cell: ({ cell }) => (
           <div>
@@ -134,6 +143,7 @@ export const ProblemsTable = (
       }),
       columnHelper.accessor('tags', {
         header: 'Tags',
+        size: 150,
         meta: {
           className: 'problem-tags',
         },
@@ -188,10 +198,31 @@ export const ProblemsTable = (
     ];
   }, [panelOptions]);
 
-  console.log('ProblemsTable', problems);
+  // Convert resizedColumns from old format to column sizing state
+  const getColumnSizingFromResized = (resized?: RTResized): Record<string, number> => {
+    if (!resized || resized.length === 0) {
+      return {};
+    }
+    const sizing: Record<string, number> = {};
+    resized.forEach((col) => {
+      sizing[col.id] = col.value;
+    });
+    return sizing;
+  };
+
+  const [columnSizing, setColumnSizing] = React.useState<Record<string, number>>(
+    getColumnSizingFromResized(panelOptions.resizedColumns)
+  );
+  const [columnResizeMode] = React.useState<ColumnResizeMode>('onChange');
+
   const table = useReactTable({
     data: problems,
     columns,
+    enableColumnResizing: true,
+    columnResizeMode,
+    state: {
+      columnSizing,
+    },
     meta: {
       panelOptions,
     },
@@ -208,6 +239,18 @@ export const ProblemsTable = (
         tags: panelOptions.showTags,
         age: panelOptions.ageField,
       },
+    },
+    onColumnSizingChange: (updater) => {
+      const newSizing = typeof updater === 'function' ? updater(columnSizing) : updater;
+      setColumnSizing(newSizing);
+
+      // Convert to old format for compatibility
+      const resized: RTResized = Object.entries(newSizing).map(([id, value]) => ({
+        id,
+        value: value as number,
+      }));
+
+      onColumnResize?.(resized);
     },
     getRowCanExpand: () => true,
     getCoreRowModel: getCoreRowModel(),
@@ -227,6 +270,13 @@ export const ProblemsTable = (
               {headerGroup.headers.map((header) => (
                 <th key={header.id} style={{ width: `${header.getSize()}px` }}>
                   {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  {header.column.getCanResize() && (
+                    <div
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      className={`resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`}
+                    />
+                  )}
                 </th>
               ))}
             </tr>
