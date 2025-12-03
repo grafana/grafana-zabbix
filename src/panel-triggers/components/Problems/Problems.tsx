@@ -386,7 +386,7 @@ export const ProblemList = (props: ProblemListProps) => {
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td colSpan={table.getAllColumns().length} className="no-data-cell">
-                  <div className="rt-noData">No problems found</div>
+                  <div className="no-data-text">No problems found</div>
                 </td>
               </tr>
             ) : (

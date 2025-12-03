@@ -1,4 +1,4 @@
-// ReactTable v8 styles (native table elements)
+// TanStack React Table v8 styles (native table elements)
 .react-table-v8-container{
   display: flex;
   flex-direction: column;
@@ -170,7 +170,7 @@
       background: transparent;
       border: none;
 
-      .rt-noData {
+      .no-data-text {
         position: relative;
         top: 0;
         left: 0;
