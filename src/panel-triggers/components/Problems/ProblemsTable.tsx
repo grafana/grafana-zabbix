@@ -41,6 +41,7 @@ export const ProblemsTable = (
     | 'onColumnResize'
     | 'pageSize'
     | 'onPageSizeChange'
+    | 'loading'
   > & { rootWidth: number }
 ) => {
   const {
@@ -58,6 +59,7 @@ export const ProblemsTable = (
     rootWidth,
     pageSize,
     onPageSizeChange,
+    loading,
   } = props;
 
   // Define columns inside component to access props via closure
@@ -356,7 +358,12 @@ export const ProblemsTable = (
 
   return (
     <>
-      <div className="react-table-v8-wrapper">
+      <div className={`react-table-v8-wrapper ${loading ? 'is-loading' : ''}`}>
+        {loading && (
+          <div className="-loading -active">
+            <div className="-loading-inner">Loading...</div>
+          </div>
+        )}
         <table className="react-table-v8">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -421,7 +428,6 @@ export const ProblemsTable = (
             )}
           </tbody>
         </table>
-        {/* Pagination Controls */}
       </div>
       <div className="pagination-v8">
         <div className="pagination-v8-controls">

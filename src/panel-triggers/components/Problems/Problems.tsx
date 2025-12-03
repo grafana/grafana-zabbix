@@ -248,6 +248,7 @@ export const ProblemList = (props: ProblemListProps) => {
           onColumnResize={onColumnResize}
           pageSize={effectivePageSize}
           onPageSizeChange={handlePageSizeChange}
+          loading={loading}
         />
       ) : (
         <ReactTable
