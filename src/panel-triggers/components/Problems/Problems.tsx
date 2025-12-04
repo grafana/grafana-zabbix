@@ -1,7 +1,6 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment/moment';
 import { cx } from '@emotion/css';
-// import { ProblemsTable } from './ProblemsTable';
 import { AckProblemData } from '../AckModal';
 import { ProblemsPanelOptions, RTResized } from '../../types';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
@@ -466,23 +465,6 @@ export const ProblemList = (props: ProblemListProps) => {
           </button>
         </div>
       </div>
-      {/*<ProblemsTable*/}
-      {/*  rootWidth={rootRef?.current?.clientWidth || 0}*/}
-      {/*  panelId={panelId}*/}
-      {/*  problems={problems}*/}
-      {/*  panelOptions={panelOptions}*/}
-      {/*  timeRange={timeRange}*/}
-      {/*  getProblemEvents={getProblemEvents}*/}
-      {/*  getProblemAlerts={getProblemAlerts}*/}
-      {/*  getScripts={getScripts}*/}
-      {/*  onProblemAck={onProblemAck}*/}
-      {/*  onExecuteScript={onExecuteScript}*/}
-      {/*  onTagClick={onTagClick}*/}
-      {/*  onColumnResize={onColumnResize}*/}
-      {/*  pageSize={pageSize || 10}*/}
-      {/*  onPageSizeChange={onPageSizeChange}*/}
-      {/*  loading={loading}*/}
-      {/*/>*/}
     </div>
   );
 };
