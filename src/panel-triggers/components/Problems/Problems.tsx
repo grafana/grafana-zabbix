@@ -75,12 +75,12 @@ export const ProblemList = (props: ProblemListProps) => {
     return [
       columnHelper.accessor('host', {
         header: 'Host',
-        size: 150,
+        size: 120,
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('hostTechName', {
         header: 'Host (Technical Name)',
-        size: 200,
+        size: 170,
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('groups', {
@@ -97,7 +97,7 @@ export const ProblemList = (props: ProblemListProps) => {
       }),
       columnHelper.accessor('priority', {
         header: 'Severity',
-        size: 120,
+        size: 80,
         meta: {
           className: 'problem-severity',
         },
@@ -128,12 +128,12 @@ export const ProblemList = (props: ProblemListProps) => {
       }),
       columnHelper.accessor('value', {
         header: 'Status',
-        size: 100,
+        size: 70,
         cell: ({ cell }) => <StatusCellV8 cell={cell} highlightNewerThan={highlightNewerThan} />,
       }),
       columnHelper.accessor('name', {
         header: 'Problem',
-        size: 300,
+        size: 250,
         minSize: 200,
         cell: ({ cell }) => <span className="problem-description">{cell.getValue()}</span>,
       }),
