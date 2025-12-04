@@ -54,7 +54,6 @@ func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simpl
 		ds.logger.Error("Error querying Zabbix version", "error", err)
 		ds.version = -1
 	} else {
-		ds.logger.Debug("Got Zabbix version", "version", version)
 		ds.version = version
 	}
 
@@ -66,7 +65,7 @@ func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simpl
 		}
 
 		if IsCachedRequest(apiReq.Method) {
-			ds.logger.Debug("Writing result to cache", "method", apiReq.Method)
+			ds.logger.Debug("Writing result to cache", "method", apiReq.Method, "version", ds.version)
 			ds.cache.SetAPIRequest(apiReq, resultJson)
 		}
 	} else {
@@ -83,7 +82,7 @@ func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simpl
 
 // request checks authentication and makes a request to the Zabbix API.
 func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixAPIParams) (*simplejson.Json, error) {
-	zabbix.logger.Debug("Zabbix request", "method", method)
+	zabbix.logger.Debug("Zabbix request", "method", method, "version", zabbix.version)
 
 	// Skip auth for methods that are not required it
 	if method == "apiinfo.version" {
