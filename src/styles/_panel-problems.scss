@@ -1,4 +1,6 @@
 .panel-problems {
+  display: flex;
+  flex-direction: column;
   height: 100%;
 
   .fa-icon-container {
@@ -15,213 +17,26 @@
     }
   }
 
-  // <ReactTable /> styles
-  .ReactTable {
+  // <react-table-v8 /> styles
+  .react-table-v8-wrapper {
     height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: auto;
+  }
 
-    .rt-table {
-      height: 100%;
-    }
-
-    .rt-thead {
-      &.-header {
-        height: 2.4em;
-      }
-
-      .rt-th {
-        &.-sort-desc {
-          box-shadow: inset 0 -3px 0 0 $blue;
-        }
-
-        &.-sort-asc {
-          box-shadow: inset 0 3px 0 0 $blue;
-        }
-      }
-    }
-
-    .rt-tr-group {
-      flex: 0 0 auto;
+  .react-table-v8 {
+    tbody tr {
       border-bottom: solid 1px $problems-border-color;
-      // border-left: solid 2px transparent;
 
       &:last-child {
         border-bottom: solid 1px $problems-border-color;
-      }
-
-      &:hover {
-
-        .rt-tr {
-          background: $problems-table-row-hovered;
-          z-index: 1;
-        }
-
-        .rt-tr.-even {
-          background: $problems-table-row-hovered;
-        }
-      }
-
-      .rt-tr {
-        .rt-td {
-          border: 0;
-          transition: 0s;
-        }
-
-        &.-even {
-          background: $problems-table-stripe;
-        }
-      }
-    }
-
-    .rt-noData {
-      z-index: 2;
-      background: unset;
-      color: $text-muted;
-    }
-
-    .pagination-bottom {
-      margin-top: auto;
-      flex: 1 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      $footer-height: 30px;
-      padding-top: 4px;
-      margin-left: -10px;
-      margin-right: -10px;
-      box-shadow: 0px -2px 5px $problems-footer-shadow;
-      z-index: 1;
-
-      .-pagination {
-        margin-top: auto;
-        align-items: center;
-        padding: 0px;
-
-        .-previous {
-          flex: 1;
-          height: $footer-height;
-        }
-
-        .-center {
-          flex: 3;
-          width: 32rem;
-
-          .-pageJump {
-            margin: 0px 0.4rem;
-
-            input {
-              height: $footer-height;
-            }
-          }
-
-          .select-wrap.-pageSizeOptions select {
-            width: 8rem;
-            height: $footer-height;
-          }
-        }
-
-        .-next {
-          flex: 1;
-          height: $footer-height;
-        }
-      }
-    }
-
-    .problem-severity {
-
-      &.rt-td {
-        padding: 0px;
-      }
-
-      .severity-cell {
-        width: 100%;
-        height: 100%;
-        padding: 0.45em 0 0.45em 1.1em;
-        color: $white;
-        font-weight: 500;
-      }
-    }
-
-    .problem-status--new {
-      animation: blink-opacity 2s ease-in-out infinite;
-    }
-
-    .rt-tr .rt-td {
-      &.custom-expander {
-        text-align: center;
-        padding: 0.6em 0 0 0;
-
-        i {
-          color: #676767;
-          font-size: 1.2rem;
-        }
-
-        & .expanded {
-          i {
-            color: $problem-expander-expanded-color;
-          }
-        }
-      }
-
-      &.custom-expander:hover {
-        background-color: $problem-expander-highlighted-background;
-
-        i {
-          color: $problem-expander-highlighted-color;
-        }
-      }
-
-      &.last-change {
         text-align: left;
       }
-
-      &.problem-status-icon {
-        padding: 0;
-        margin-top: 0;
-        font-size: 1.5em;
-
-        i {
-          width: 100%;
-          padding-left: 0.6em;
-          text-align: center;
-
-          &.zbx-problem {
-            color: $problem-icon-problem-color;
-          }
-
-          &.zbx-ok {
-            color: $problem-icon-ok-color;
-          }
-        }
-      }
     }
 
-    .comments-icon {
-      float: right;
-      padding-right: 0.6rem;
-
-      i {
-        color: $gray-2;
-      }
-    }
-
-    .problem-tags {
-      &.rt-td {
-        padding-left: 0.6rem;
-      }
-
-      .label-tag, .zbx-tag {
-        cursor: pointer;
-        margin-right: 0.6rem;
-
-        &.highlighted {
-          box-shadow: 0 0 10px $orange;
-        }
-      }
-    }
-
+    // Problem details container styles for react-table-v8
     .problem-details-container {
       display: flex;
       flex-direction: column;
@@ -293,7 +108,6 @@
 
         .description-label {
           font-weight: 500;
-          // font-style: italic;
           color: $text-muted;
           cursor: pointer;
         }
@@ -344,12 +158,11 @@
 
         .problem-item-value {
           font-weight: 500;
-	  overflow: auto;
-	  display: -webkit-box;
-	  max-height: 60px;
+          overflow: auto;
+          display: -webkit-box;
+          max-height: 60px;
         }
       }
-
 
       .problem-statusbar {
         margin-bottom: 0.6rem;
@@ -438,7 +251,6 @@
           color: $text-muted;
         }
       }
-
 
       .problem-details-right {
         flex: 0 0 auto;
@@ -582,45 +394,18 @@
     }
   }
 
-  @for $i from 8 through 9 {
-    .item-#{$i} {
-      width: 2em * $i;
-    }
-    &.font-size--#{$i * 10} .rt-table {
-      font-size: 1% * $i * 10;
-
-      & .rt-tr .rt-td.custom-expander i {
-        font-size: calc(1.2rem * $i / 10);
-      }
-
-      .problem-details-container.show {
-        font-size: 13px;
-      }
-    }
-  }
-
-  @for $i from 11 through 25 {
-    .item-#{$i} {
-      width: 2em * $i;
-    }
-    &.font-size--#{$i * 10} {
-      .rt-table {
-        font-size: 1% * $i * 10;
-
-        & .rt-tr .rt-td.custom-expander i {
-          font-size: calc(1.2rem * $i / 10);
-        }
-
-        .problem-details-container.show {
-          font-size: 13px;
-        }
-      }
-
-      .rt-noData {
-        top: 4.5em;
-        font-size: 1% * $i * 10;
-      }
-    }
+  // Pagination v8 styles for panel-problems
+  .pagination-v8 {
+    margin-top: auto;
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 4px;
+    margin-left: -10px;
+    margin-right: -10px;
+    box-shadow: 0px -2px 5px $problems-footer-shadow;
+    z-index: 1;
   }
 }
 

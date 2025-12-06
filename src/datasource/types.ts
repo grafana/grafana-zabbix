@@ -108,6 +108,7 @@ export interface ProblemDTO {
   datasource?: DataSourceRef | string;
   comments?: string;
   host?: string;
+  hostInMaintenance?: boolean;
   hostTechName?: string;
   proxy?: string;
   severity?: string;

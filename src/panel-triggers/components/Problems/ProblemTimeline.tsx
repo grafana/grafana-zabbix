@@ -2,15 +2,16 @@ import React, { PureComponent } from 'react';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
-import { ZBXEvent, ZBXAcknowledge } from '../../../datasource/types';
+import { ZBXAcknowledge, ZBXEvent } from '../../../datasource/types';
 import { TimeRange } from '@grafana/data';
-
-const DEFAULT_OK_COLOR = 'rgb(56, 189, 113)';
-const DEFAULT_PROBLEM_COLOR = 'rgb(215, 0, 0)';
-const EVENT_POINT_SIZE = 16;
-const INNER_POINT_SIZE = 0.6;
-const HIGHLIGHTED_POINT_SIZE = 1.1;
-const EVENT_REGION_HEIGHT = Math.round(EVENT_POINT_SIZE * 0.6);
+import {
+  DEFAULT_OK_COLOR,
+  DEFAULT_PROBLEM_COLOR,
+  EVENT_POINT_SIZE,
+  EVENT_REGION_HEIGHT,
+  HIGHLIGHTED_POINT_SIZE,
+  INNER_POINT_SIZE,
+} from './constants';
 
 export interface ProblemTimelineProps {
   events: ZBXEvent[];
