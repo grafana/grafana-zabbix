@@ -5,13 +5,19 @@ import * as c from './constants';
 import { VariableQuery, VariableQueryTypes, ZBXItemTag } from './types';
 import {
   DataFrame,
+  DataQueryRequest,
   FieldType,
   getValueFormats,
   MappingType,
   rangeUtil,
+  ScopedVars,
   TIME_SERIES_TIME_FIELD_NAME,
   ValueMapping,
 } from '@grafana/data';
+import * as metricFunctions from './metricFunctions';
+import dataProcessor from './dataProcessor';
+import { MetricFunc, ZabbixMetricsQuery } from './types/query';
+import { TemplateSrv } from '@grafana/runtime';
 
 /*
  * This regex matches 3 types of variable reference with an optional format specifier
@@ -200,22 +206,10 @@ function isContainsBraces(query) {
 }
 
 // Pattern for testing regex
-export const regexPattern = /^\/(.*)\/([gmi]*)$/m;
+const regexPattern = /^\/(.*)\/([gmi]*)$/m;
 
 export function isRegex(str) {
   return regexPattern.test(str);
-}
-
-export function isTemplateVariable(str, templateVariables) {
-  const variablePattern = /^\$\w+/;
-  if (variablePattern.test(str)) {
-    const variables = _.map(templateVariables, (variable) => {
-      return '$' + variable.name;
-    });
-    return _.includes(variables, str);
-  } else {
-    return false;
-  }
 }
 
 export function getRangeScopedVars(range) {
@@ -254,7 +248,7 @@ export function parseItemInterval(interval: string): number {
   return 0;
 }
 
-export function normalizeZabbixInterval(interval: string): string {
+function normalizeZabbixInterval(interval: string): string {
   const intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)?/g;
   const parsedInterval = intervalPattern.exec(interval);
   if (!parsedInterval || !interval || (parsedInterval.length > 2 && !parsedInterval[2])) {
@@ -324,40 +318,6 @@ export function formatAcknowledges(acknowledges) {
   }
 }
 
-export function convertToZabbixAPIUrl(url) {
-  const zabbixAPIUrlPattern = /.*api_jsonrpc.php$/;
-  const trimSlashPattern = /(.*?)[\/]*$/;
-  if (url.match(zabbixAPIUrlPattern)) {
-    return url;
-  } else {
-    return url.replace(trimSlashPattern, '$1');
-  }
-}
-
-/**
- * Wrap function to prevent multiple calls
- * when waiting for result.
- */
-export function callOnce(func, promiseKeeper) {
-  return function () {
-    if (!promiseKeeper) {
-      promiseKeeper = Promise.resolve(
-        func
-          .apply(this, arguments)
-          .then((result) => {
-            promiseKeeper = null;
-            return result;
-          })
-          .catch((err) => {
-            promiseKeeper = null;
-            throw err;
-          })
-      );
-    }
-    return promiseKeeper;
-  };
-}
-
 /**
  * Apply function one by one: `sequence([a(), b(), c()]) = c(b(a()))`
  * @param {*} funcsArray functions to apply
@@ -369,24 +329,6 @@ export function sequence(funcsArray) {
     }
     return result;
   };
-}
-
-const versionPattern = /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z\.]+))?/;
-
-export function isValidVersion(version) {
-  return versionPattern.exec(version);
-}
-
-export function parseVersion(version: string) {
-  const match = versionPattern.exec(version);
-  if (!match) {
-    return null;
-  }
-  const major = Number(match[1]);
-  const minor = Number(match[2] || 0);
-  const patch = Number(match[3] || 0);
-  const meta = match[4];
-  return { major, minor, patch, meta };
 }
 
 /**
@@ -543,3 +485,125 @@ export function swap<T>(list: T[], n: number, k: number): T[] {
   }
   return newList;
 }
+
+export function bindFunctionDefs(functionDefs, category) {
+  const aggregationFunctions = _.map(metricFunctions.getCategories()[category], 'name');
+  const aggFuncDefs = _.filter(functionDefs, (func) => {
+    return _.includes(aggregationFunctions, func.def.name) && func.params.length > 0;
+  });
+
+  return _.map(aggFuncDefs, (func) => {
+    const funcInstance = metricFunctions.createFuncInstance(func.def, func.params);
+    return funcInstance.bindFunction(dataProcessor.metricFunctions);
+  });
+}
+
+export function getConsolidateBy(target) {
+  let consolidateBy;
+  const funcDef = _.find(target.functions, (func) => {
+    return func.def.name === 'consolidateBy';
+  });
+  if (funcDef && funcDef.params && funcDef.params.length) {
+    consolidateBy = funcDef.params[0];
+  }
+  return consolidateBy;
+}
+
+export function formatMetric(metricObj) {
+  return {
+    text: metricObj.name,
+    expandable: false,
+  };
+}
+
+/**
+ * Custom formatter for template variables.
+ * Default Grafana "regex" formatter returns
+ * value1|value2
+ * This formatter returns
+ * (value1|value2)
+ * This format needed for using in complex regex with
+ * template variables, for example
+ * /CPU $cpu_item.*time/ where $cpu_item is system,user,iowait
+ */
+export function zabbixTemplateFormat(value) {
+  if (typeof value === 'string') {
+    return escapeRegex(value);
+  }
+
+  const escapedValues = _.map(value, escapeRegex);
+  return '(' + escapedValues.join('|') + ')';
+}
+
+export function zabbixItemIdsTemplateFormat(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.join(',');
+}
+
+/**
+ * If template variables are used in request, replace it using regex format
+ * and wrap with '/' for proper multi-value work. Example:
+ * $variable selected as a, b, c
+ * We use filter $variable
+ * $variable    -> a|b|c    -> /a|b|c/
+ * /$variable/  -> /a|b|c/  -> /a|b|c/
+ */
+export function replaceTemplateVars(
+  templateSrv: TemplateSrv,
+  target: string,
+  scopedVars: ScopedVars,
+  format: any = zabbixTemplateFormat
+) {
+  let replacedTarget = templateSrv.replace(target, scopedVars, format);
+  if (target && target !== replacedTarget && !isRegex(replacedTarget)) {
+    replacedTarget = '/^' + replacedTarget + '$/';
+  }
+  return replacedTarget;
+}
+
+export function replaceVariablesInFuncParams(
+  templateSrv: TemplateSrv,
+  functions: MetricFunc[],
+  scopedVars: ScopedVars
+) {
+  return functions?.map((func) => {
+    const interpolatedParams = func?.params?.map((param) => {
+      if (typeof param === 'number') {
+        return +templateSrv.replace(param.toString(), scopedVars);
+      } else {
+        return templateSrv.replace(param, scopedVars);
+      }
+    });
+
+    return {
+      ...func,
+      params: interpolatedParams,
+    };
+  });
+}
+
+export function getRequestTarget(request: DataQueryRequest<any>, refId: string): any {
+  for (let i = 0; i < request.targets.length; i++) {
+    const target = request.targets[i];
+    if (target.refId === refId) {
+      return target;
+    }
+  }
+  return null;
+}
+
+export const getTriggersOptions = (target: ZabbixMetricsQuery, timeRange) => {
+  const [timeFrom, timeTo] = timeRange;
+  const options: any = {
+    minSeverity: target.options?.minSeverity,
+    acknowledged: target.options?.acknowledged,
+    count: target.options?.count,
+  };
+  if (target.options?.useTimeRange) {
+    options.timeFrom = timeFrom;
+    options.timeTo = timeTo;
+  }
+  return options;
+};
