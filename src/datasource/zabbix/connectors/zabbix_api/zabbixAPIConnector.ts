@@ -149,13 +149,18 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
-  getHosts(groupids): Promise<any[]> {
+  getHosts(groupids: string[], getHostTags?: boolean): Promise<any[]> {
     const params: any = {
       output: ['hostid', 'name', 'host'],
       sortfield: 'name',
     };
     if (groupids) {
       params.groupids = groupids;
+    }
+
+    if (getHostTags) {
+      params.output.push('tags');
+      params.selectTags = 'extend';
     }
 
     return this.request('host.get', params);
