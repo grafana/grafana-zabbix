@@ -144,6 +144,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -153,6 +154,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -164,6 +166,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={appOptions}
             isLoading={appsLoading}
             onChange={onFilterChange('application')}
+            placeholder="Application name"
           />
         </InlineField>
         <InlineField label="Item" labelWidth={12}>
@@ -173,6 +176,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={itemOptions}
             isLoading={itemsLoading}
             onChange={onFilterChange('item')}
+            placeholder="Item name"
           />
         </InlineField>
       </QueryEditorRow>

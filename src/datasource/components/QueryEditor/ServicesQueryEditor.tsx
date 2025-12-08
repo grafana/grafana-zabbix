@@ -96,6 +96,7 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={itServicesOptions}
             isLoading={itServicesLoading}
             onChange={onStringPropChange('itServiceFilter')}
+            placeholder="Service name"
           />
         </InlineField>
         <InlineField label="SLA" labelWidth={12}>
@@ -105,11 +106,13 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={slaOptions}
             isLoading={slaLoading}
             onChange={onStringPropChange('slaFilter')}
+            placeholder="SLA name"
           />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Property" labelWidth={12}>
+          {/* Migrate to combobox */}
           <Select
             isSearchable={false}
             width={24}

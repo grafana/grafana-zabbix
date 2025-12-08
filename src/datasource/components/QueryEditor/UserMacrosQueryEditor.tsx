@@ -101,6 +101,7 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -110,6 +111,7 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -121,6 +123,7 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
             options={macrosOptions}
             isLoading={macrosLoading}
             onChange={onFilterChange('macro')}
+            placeholder="Macro name"
           />
         </InlineField>
       </QueryEditorRow>

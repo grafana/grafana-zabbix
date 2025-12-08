@@ -138,6 +138,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -147,6 +148,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -158,6 +160,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
             options={appOptions}
             isLoading={appsLoading}
             onChange={onFilterChange('application')}
+            placeholder="Application name"
           />
         </InlineField>
         <InlineField label="Problem" labelWidth={12}>

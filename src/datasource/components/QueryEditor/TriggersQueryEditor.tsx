@@ -229,6 +229,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -238,6 +239,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
         {query.countTriggersBy === 'problems' && (
@@ -248,6 +250,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={proxiesOptions}
               isLoading={proxiesLoading}
               onChange={onFilterChange('proxy')}
+              placeholder="Proxy name"
             />
           </InlineField>
         )}
@@ -261,6 +264,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              placeholder="Application name"
             />
           </InlineField>
         )}
@@ -272,6 +276,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={tagOptions}
               isLoading={tagsLoading}
               onChange={onFilterChange('itemTag')}
+              placeholder="Item tag name"
             />
           </InlineField>
         )}
@@ -295,6 +300,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={itemOptions}
               isLoading={itemsLoading}
               onChange={onFilterChange('item')}
+              placeholder="Item name"
             />
           </InlineField>
         )}

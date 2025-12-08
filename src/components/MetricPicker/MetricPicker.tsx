@@ -5,13 +5,14 @@ import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 
 export interface Props {
   value: string;
+  placeholder: string;
   isLoading?: boolean;
   options: Array<ComboboxOption<string>>;
   width?: number;
   onChange: (value: string) => void;
 }
 
-export const MetricPicker = ({ value, options, isLoading, width, onChange }: Props) => {
+export const MetricPicker = ({ value, placeholder, options, isLoading, width, onChange }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
 
   const onMenuOptionSelect = (option: SelectableValue<string>) => {
@@ -28,6 +29,7 @@ export const MetricPicker = ({ value, options, isLoading, width, onChange }: Pro
         options={options ?? []}
         onChange={onMenuOptionSelect}
         loading={isLoading}
+        placeholder={placeholder}
       />
     </div>
   );

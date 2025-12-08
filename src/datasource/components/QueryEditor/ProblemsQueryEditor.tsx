@@ -166,6 +166,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -175,6 +176,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
         <InlineField label="Proxy" labelWidth={12}>
@@ -184,6 +186,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={proxiesOptions}
             isLoading={proxiesLoading}
             onChange={onFilterChange('proxy')}
+            placeholder="Proxy name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -196,6 +199,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              placeholder="Application name"
             />
           </InlineField>
         )}
