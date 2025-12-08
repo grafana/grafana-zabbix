@@ -2,8 +2,7 @@ import _ from 'lodash';
 import React, { useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
 
-import { SelectableValue } from '@grafana/data';
-import { InlineField } from '@grafana/ui';
+import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -36,7 +35,7 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
 
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -53,7 +52,7 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
 
   const loadMacrosOptions = async (group: string, host: string) => {
     const macros = await datasource.zabbix.getAllMacros(group, host);
-    let options: Array<SelectableValue<string>> = macros?.map((m) => ({
+    let options: Array<ComboboxOption<string>> = macros?.map((m) => ({
       value: m.macro,
       label: m.macro,
     }));

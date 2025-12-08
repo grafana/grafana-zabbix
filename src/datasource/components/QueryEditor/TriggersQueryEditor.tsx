@@ -3,7 +3,7 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
-import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
+import { ComboboxOption, InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -54,7 +54,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -71,7 +71,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
+    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -94,7 +94,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
 
     const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
-    let options: Array<SelectableValue<string>> = tagList?.map((tag) => ({
+    let options: Array<ComboboxOption<string>> = tagList?.map((tag) => ({
       value: tag,
       label: tag,
     }));
@@ -129,7 +129,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
       showDisabledItems: query.options.showDisabledItems,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
-    let itemOptions: Array<SelectableValue<string>> = items?.map((item) => ({
+    let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
     }));

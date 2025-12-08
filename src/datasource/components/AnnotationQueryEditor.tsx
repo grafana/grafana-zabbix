@@ -2,7 +2,7 @@ import _ from 'lodash';
 import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 import { AnnotationQuery, SelectableValue } from '@grafana/data';
-import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
+import { ComboboxOption, InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
 import { ZabbixMetricsQuery } from '../types/query';
 import { ZabbixQueryEditorProps } from './QueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
@@ -47,7 +47,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
 
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -64,7 +64,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
+    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));

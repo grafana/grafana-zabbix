@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { InlineField, Select } from '@grafana/ui';
+import { QueryEditorProps } from '@grafana/data';
+import { Combobox, ComboboxOption, InlineField } from '@grafana/ui';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
@@ -17,7 +17,7 @@ import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 
-const zabbixQueryTypeOptions: Array<SelectableValue<QueryType>> = [
+const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
   {
     value: c.MODE_METRICS,
     label: 'Metrics',
@@ -133,7 +133,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   }, []);
 
   const onPropChange = (prop: string) => {
-    return (option: SelectableValue) => {
+    return (option: ComboboxOption) => {
       if (option.value !== null) {
         onChangeInternal({ ...query, [prop]: option.value });
       }
@@ -201,8 +201,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
     <>
       <QueryEditorRow>
         <InlineField label="Query type" labelWidth={12}>
-          <Select<QueryType>
-            isSearchable={false}
+          <Combobox<QueryType>
             width={24}
             value={queryType}
             options={zabbixQueryTypeOptions}
