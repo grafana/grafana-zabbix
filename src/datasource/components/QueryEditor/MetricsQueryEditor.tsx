@@ -2,7 +2,7 @@ import _ from 'lodash';
 import React, { useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
 
-import { InlineField, ComboboxOption, Button } from '@grafana/ui';
+import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -10,6 +10,7 @@ import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { itemTagToString } from '../../utils';
+import { HostTagQueryEditor } from './HostTagQueryEditor';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 export interface Props {
@@ -182,7 +183,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
           />
         </InlineField>
         <InlineField label="Host tag" labelWidth={12}>
-          <Button icon="plus" variant="secondary" aria-label="Add new host tag filter" />
+          <HostTagQueryEditor />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
