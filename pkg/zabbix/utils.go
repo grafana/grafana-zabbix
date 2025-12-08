@@ -132,7 +132,7 @@ func isRegex(filter string) bool {
 	return regex.MatchString(filter)
 }
 
-func itemTagToString(tag ItemTag) string {
+func itemTagToString(tag Tag) string {
 	if tag.Value != "" {
 		return fmt.Sprintf("%s: %s", tag.Tag, tag.Value)
 	} else {
@@ -140,8 +140,8 @@ func itemTagToString(tag ItemTag) string {
 	}
 }
 
-func parseItemTag(tagStr string) ItemTag {
-	tag := ItemTag{}
+func parseItemTag(tagStr string) Tag {
+	tag := Tag{}
 	firstIdx := strings.Index(tagStr, ":")
 	if firstIdx > 0 {
 		tag.Tag = strings.TrimSpace(tagStr[:firstIdx])
