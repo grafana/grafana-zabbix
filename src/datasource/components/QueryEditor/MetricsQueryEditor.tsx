@@ -5,13 +5,14 @@ import { useAsyncFn } from 'react-use';
 import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
-import { getVariableOptions } from './utils';
+import { getVariableOptions, processHostTags } from './utils';
 import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { itemTagToString } from '../../utils';
 import { HostTagQueryEditor } from './HostTagQueryEditor';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
+import { SelectableValue } from '@grafana/data';
 
 export interface Props {
   query: ZabbixMetricsQuery;
@@ -38,8 +39,20 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   }, []);
 
+  const loadHostTagOptions = async (group: string) => {
+    const hostsWithTags = await datasource.zabbix.getAllHosts(group, true);
+    const hostTags = processHostTags(hostsWithTags ?? []);
+    let options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
+      value: tag.tag,
+      label: tag.tag,
+    }));
+    return options;
+  };
+
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
+    const hostsWithTags = await datasource.zabbix.getAllHosts(groupFilter, true);
+    console.log('Hosts with tags:', hostsWithTags);
     let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
@@ -50,8 +63,14 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   };
 
+  const [{ loading: hostTagsLoading, value: hostTagsOptions }, fetchHostTags] = useAsyncFn(async () => {
+    const options = await loadHostTagOptions(query.group.filter);
+    return options;
+  }, [query.group.filter]);
+
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
     const options = await loadHostOptions(interpolatedQuery.group.filter);
+
     return options;
   }, [interpolatedQuery.group.filter]);
 
@@ -137,6 +156,10 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, []);
 
   useEffect(() => {
+    fetchHostTags();
+  }, [groupFilter]);
+
+  useEffect(() => {
     fetchHosts();
   }, [groupFilter]);
 
@@ -175,7 +198,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
           />
         </InlineField>
         <InlineField label="Host tag" labelWidth={12}>
-          <HostTagQueryEditor />
+          <HostTagQueryEditor hostTagOptions={hostTagsOptions} hostTagOptionsLoading={hostTagsLoading} />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
           <MetricPicker

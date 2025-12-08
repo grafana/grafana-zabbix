@@ -9,7 +9,7 @@ import { DBConnector } from './connectors/dbConnector';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
-import { ZabbixConnector } from './types';
+import { Host, ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
 import { ZabbixMetricsQuery } from '../types/query';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
@@ -296,6 +296,7 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getAllGroups() {
+    console.log(this.zabbixAPI.getGroups());
     return this.zabbixAPI.getGroups();
   }
 
@@ -306,10 +307,11 @@ export class Zabbix implements ZabbixConnector {
   /**
    * Get list of host belonging to given groups.
    */
-  getAllHosts(groupFilter): Promise<any[]> {
+  getAllHosts(groupFilter: string, getHostTags?: boolean): Promise<Host[]> {
     return this.getGroups(groupFilter).then((groups) => {
       const groupids = _.map(groups, 'groupid');
-      return this.zabbixAPI.getHosts(groupids);
+      console.log(this.zabbixAPI.getHosts(groupids, getHostTags));
+      return this.zabbixAPI.getHosts(groupids, getHostTags);
     });
   }
 
