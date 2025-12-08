@@ -3,7 +3,7 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
-import { ComboboxOption, InlineField, Input, MultiSelect, Select } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField, Input, MultiSelect } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -11,7 +11,7 @@ import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
-const showProblemsOptions: Array<SelectableValue<string>> = [
+const showProblemsOptions: Array<ComboboxOption<string>> = [
   { label: 'Problems', value: 'problems' },
   { label: 'Recent problems', value: 'recent' },
   { label: 'History', value: 'history' },
@@ -26,7 +26,7 @@ const severityOptions: Array<SelectableValue<number>> = [
   { value: 5, label: 'Disaster' },
 ];
 
-const evaltypeOptions: Array<SelectableValue<ZabbixTagEvalType>> = [
+const evaltypeOptions: Array<ComboboxOption<ZabbixTagEvalType>> = [
   { label: 'AND/OR', value: ZabbixTagEvalType.AndOr },
   { label: 'OR', value: ZabbixTagEvalType.Or },
 ];
@@ -216,19 +216,12 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
           />
         </InlineField>
         <InlineField>
-          <Select
-            isSearchable={false}
-            width={15}
-            value={query.evaltype}
-            options={evaltypeOptions}
-            onChange={onPropChange('evaltype')}
-          />
+          <Combobox width={15} value={query.evaltype} options={evaltypeOptions} onChange={onPropChange('evaltype')} />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Show" labelWidth={12}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={query.showProblems}
             options={showProblemsOptions}
