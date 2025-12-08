@@ -173,6 +173,9 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             onChange={onFilterChange('group')}
           />
         </InlineField>
+        <InlineField label="Host tag" labelWidth={12}>
+          <HostTagQueryEditor />
+        </InlineField>
         <InlineField label="Host" labelWidth={12}>
           <MetricPicker
             width={24}
@@ -181,9 +184,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
           />
-        </InlineField>
-        <InlineField label="Host tag" labelWidth={12}>
-          <HostTagQueryEditor />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
