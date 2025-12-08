@@ -1,19 +1,20 @@
 import { Tooltip, Button, Combobox, ComboboxOption, Stack, Input } from '@grafana/ui';
 import React, { FormEvent, useCallback, useState } from 'react';
+import { HostTagOperators } from './types';
 
 interface HostTagFilter {
   hostTagName: string;
-  hostTagValue: string;
   operator: string;
+  hostTagValue?: string;
 }
 
 const OPERATOR_OPTIONS: ComboboxOption[] = [
-  { value: 'Exists', label: 'Exists' },
-  { value: 'Equals', label: 'Equals' },
-  { value: 'Contains', label: 'Contains' },
-  { value: 'Does not exist', label: 'Does not exist' },
-  { value: 'Does not equal', label: 'Does not equal' },
-  { value: 'Does not contain', label: 'Does not contain' },
+  { value: HostTagOperators.Exists, label: HostTagOperators.Exists },
+  { value: HostTagOperators.Equals, label: HostTagOperators.Equals },
+  { value: HostTagOperators.Contains, label: HostTagOperators.Contains },
+  { value: HostTagOperators.DoesNotExist, label: HostTagOperators.DoesNotExist },
+  { value: HostTagOperators.DoesNotEqual, label: HostTagOperators.DoesNotEqual },
+  { value: HostTagOperators.DoesNotContain, label: HostTagOperators.DoesNotContain },
 ];
 
 export const HostTagQueryEditor = () => {
@@ -60,16 +61,23 @@ export const HostTagQueryEditor = () => {
                 value={filter.hostTagName}
                 onChange={(option: ComboboxOption) => setHostTagFilterName(index, option.value)}
                 options={[]}
+                width={19}
               />
               <Combobox
                 value={filter.operator}
                 onChange={(option: ComboboxOption) => setHostTagFilterOperator(index, option.value)}
                 options={OPERATOR_OPTIONS}
+                width={19}
               />
-              <Input
-                value={filter.hostTagValue}
-                onChange={(evt: FormEvent<HTMLInputElement>) => setHostTagFilterValue(index, evt?.currentTarget?.value)}
-              />
+              {filter.operator !== HostTagOperators.Exists && filter.operator !== HostTagOperators.DoesNotExist && (
+                <Input
+                  value={filter.hostTagValue}
+                  onChange={(evt: FormEvent<HTMLInputElement>) =>
+                    setHostTagFilterValue(index, evt?.currentTarget?.value)
+                  }
+                  width={19}
+                />
+              )}
               <Tooltip content="Remove host tag filter">
                 <Button
                   key={`remove-host-tag-${index}`}

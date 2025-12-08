@@ -28,6 +28,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       value: group.name,
       label: group.name,
     }));
+    options.unshift({ value: '/.*/' });
     options.unshift(...getVariableOptions());
     return options;
   };
