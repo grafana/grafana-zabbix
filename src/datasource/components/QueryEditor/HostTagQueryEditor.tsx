@@ -1,6 +1,7 @@
 import { Tooltip, Button, Combobox, ComboboxOption, Stack, Input } from '@grafana/ui';
-import React, { FormEvent, useCallback, useState } from 'react';
-import { HostTagFilter, HostTagOperatorLabel, HostTagOperatorValue } from './types';
+import React, { FormEvent, useCallback, useEffect, useState } from 'react';
+import { HostTagOperatorLabel, HostTagOperatorValue } from './types';
+import { HostTagFilter } from 'datasource/types/query';
 
 const OPERATOR_OPTIONS: ComboboxOption[] = [
   { value: HostTagOperatorValue.Exists, label: HostTagOperatorLabel.Exists },
@@ -14,12 +15,16 @@ const OPERATOR_OPTIONS: ComboboxOption[] = [
 interface Props {
   hostTagOptions: ComboboxOption[];
   hostTagOptionsLoading: boolean;
+  onHostTagFilterChange?: (hostTags: HostTagFilter[]) => void;
 }
-export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading }: Props) => {
+export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading, onHostTagFilterChange }: Props) => {
   const [hostTagFilters, setHostTagFilters] = useState<HostTagFilter[]>([]);
 
   const onAddHostTagFilter = useCallback(() => {
-    setHostTagFilters((prevFilters) => [...prevFilters, { hostTagName: '', hostTagValue: '', operator: 'Contains' }]);
+    setHostTagFilters((prevFilters) => [
+      ...prevFilters,
+      { tag: '', value: '', operator: HostTagOperatorValue.Contains },
+    ]);
   }, []);
 
   const onRemoveHostTagFilter = useCallback((index: number) => {
@@ -28,7 +33,7 @@ export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading }: Pr
 
   const setHostTagFilterName = useCallback((index: number, name: string) => {
     setHostTagFilters((prevFilters) =>
-      prevFilters.map((filter, i) => (i === index ? { ...filter, hostTagName: name } : filter))
+      prevFilters.map((filter, i) => (i === index ? { ...filter, tag: name } : filter))
     );
   }, []);
 
@@ -40,12 +45,15 @@ export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading }: Pr
     }
   }, []);
 
-  const setHostTagFilterOperator = useCallback((index: number, operator: string) => {
+  const setHostTagFilterOperator = useCallback((index: number, operator: HostTagOperatorValue) => {
     setHostTagFilters((prevFilters) =>
       prevFilters.map((filter, i) => (i === index ? { ...filter, operator } : filter))
     );
   }, []);
 
+  useEffect(() => {
+    onHostTagFilterChange(hostTagFilters);
+  }, [hostTagFilters]);
   return (
     <div>
       <Tooltip content="Add host tag filter">
@@ -56,7 +64,7 @@ export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading }: Pr
           return (
             <Stack key={`host-tag-filter-${index}`} direction="row">
               <Combobox
-                value={filter.hostTagName}
+                value={filter.tag}
                 onChange={(option: ComboboxOption) => setHostTagFilterName(index, option.value)}
                 options={hostTagOptions ?? []}
                 width={19}
@@ -64,14 +72,16 @@ export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading }: Pr
               />
               <Combobox
                 value={filter.operator}
-                onChange={(option: ComboboxOption) => setHostTagFilterOperator(index, option.value)}
+                onChange={(option: ComboboxOption<HostTagOperatorValue>) =>
+                  setHostTagFilterOperator(index, option.value)
+                }
                 options={OPERATOR_OPTIONS}
                 width={19}
               />
               {filter.operator !== HostTagOperatorValue.Exists &&
                 filter.operator !== HostTagOperatorValue.DoesNotExist && (
                   <Input
-                    value={filter.hostTagValue}
+                    value={filter.value}
                     onChange={(evt: FormEvent<HTMLInputElement>) =>
                       setHostTagFilterValue(index, evt?.currentTarget?.value)
                     }

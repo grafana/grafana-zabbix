@@ -15,9 +15,3 @@ export enum HostTagOperatorValue {
   Exists = '4',
   DoesNotExist = '5',
 }
-
-export interface HostTagFilter {
-  hostTagName: string;
-  operator: string;
-  hostTagValue?: string;
-}
