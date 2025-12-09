@@ -49,10 +49,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   };
 
-  const loadHostOptions = async (group: string) => {
-    const hosts = await datasource.zabbix.getAllHosts(group);
-    const hostsWithTags = await datasource.zabbix.getAllHosts(groupFilter, true);
-    console.log('Hosts with tags:', hostsWithTags);
+  const loadHostOptions = async (group: string, hostTags?: HostTagFilter[]) => {
+    const hosts = await datasource.zabbix.getAllHosts(group, false, hostTags);
     let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
@@ -69,10 +67,10 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [query.group.filter]);
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
-    const options = await loadHostOptions(interpolatedQuery.group.filter);
+    const options = await loadHostOptions(interpolatedQuery.group.filter, interpolatedQuery.hostTags);
 
     return options;
-  }, [interpolatedQuery.group.filter]);
+  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags]);
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
@@ -147,6 +145,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
+  const hostTagFilters = interpolatedQuery.hostTags;
   const hostFilter = interpolatedQuery.host?.filter;
   const appFilter = interpolatedQuery.application?.filter;
   const tagFilter = interpolatedQuery.itemTag?.filter;
@@ -161,7 +160,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchHosts();
-  }, [groupFilter]);
+  }, [groupFilter, hostTagFilters]);
 
   useEffect(() => {
     fetchApps();

@@ -3,7 +3,7 @@ import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
-import { ShowProblemTypes } from '../../../types/query';
+import { HostTagFilter, ShowProblemTypes } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
@@ -149,7 +149,7 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
-  getHosts(groupids: string[], getHostTags?: boolean): Promise<any[]> {
+  getHosts(groupids: string[], getHostTags?: boolean, hostTagFilters?: HostTagFilter[]): Promise<any[]> {
     const params: any = {
       output: ['hostid', 'name', 'host'],
       sortfield: 'name',
@@ -163,6 +163,13 @@ export class ZabbixAPIConnector {
       params.selectTags = 'extend';
     }
 
+    if (hostTagFilters && hostTagFilters.length > 0) {
+      params.selectTags = 'extend';
+      params.evaltype = hostTagFilters.length > 1 ? 2 : 0; // OR : AND / OR
+      params.tags = hostTagFilters.map((tagFilter) => {
+        return { ...tagFilter, operator: +tagFilter.operator };
+      });
+    }
     return this.request('host.get', params);
   }
 
