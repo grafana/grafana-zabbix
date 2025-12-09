@@ -11,7 +11,7 @@ import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { Host, ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
-import { HostTagFilter, ZabbixMetricsQuery } from '../types/query';
+import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 
 interface AppsResponse extends Array<any> {
@@ -307,10 +307,15 @@ export class Zabbix implements ZabbixConnector {
   /**
    * Get list of host belonging to given groups.
    */
-  getAllHosts(groupFilter: string, getHostTags?: boolean, hostTagFilters?: HostTagFilter[]): Promise<Host[]> {
+  getAllHosts(
+    groupFilter: string,
+    getHostTags?: boolean,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<Host[]> {
     return this.getGroups(groupFilter).then((groups) => {
       const groupids = _.map(groups, 'groupid');
-      return this.zabbixAPI.getHosts(groupids, getHostTags, hostTagFilters);
+      return this.zabbixAPI.getHosts(groupids, getHostTags, hostTagFilters, evalType);
     });
   }
 

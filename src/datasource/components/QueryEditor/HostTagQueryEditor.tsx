@@ -1,7 +1,7 @@
-import { Tooltip, Button, Combobox, ComboboxOption, Stack, Input } from '@grafana/ui';
+import { Tooltip, Button, Combobox, ComboboxOption, Stack, Input, RadioButtonGroup } from '@grafana/ui';
 import React, { FormEvent, useCallback, useEffect, useState } from 'react';
 import { HostTagOperatorLabel, HostTagOperatorValue } from './types';
-import { HostTagFilter } from 'datasource/types/query';
+import { HostTagFilter, ZabbixTagEvalType } from 'datasource/types/query';
 
 const OPERATOR_OPTIONS: ComboboxOption[] = [
   { value: HostTagOperatorValue.Exists, label: HostTagOperatorLabel.Exists },
@@ -15,9 +15,17 @@ const OPERATOR_OPTIONS: ComboboxOption[] = [
 interface Props {
   hostTagOptions: ComboboxOption[];
   hostTagOptionsLoading: boolean;
+  evalTypeValue?: ZabbixTagEvalType;
   onHostTagFilterChange?: (hostTags: HostTagFilter[]) => void;
+  onHostTagEvalTypeChange?: (evalType: ZabbixTagEvalType) => void;
 }
-export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading, onHostTagFilterChange }: Props) => {
+export const HostTagQueryEditor = ({
+  hostTagOptions,
+  hostTagOptionsLoading,
+  evalTypeValue,
+  onHostTagFilterChange,
+  onHostTagEvalTypeChange,
+}: Props) => {
   const [hostTagFilters, setHostTagFilters] = useState<HostTagFilter[]>([]);
 
   const onAddHostTagFilter = useCallback(() => {
@@ -40,7 +48,7 @@ export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading, onHo
   const setHostTagFilterValue = useCallback((index: number, value: string) => {
     if (value !== undefined) {
       setHostTagFilters((prevFilters) =>
-        prevFilters.map((filter, i) => (i === index ? { ...filter, hostTagValue: value } : filter))
+        prevFilters.map((filter, i) => (i === index ? { ...filter, value: value } : filter))
       );
     }
   }, []);
@@ -56,9 +64,21 @@ export const HostTagQueryEditor = ({ hostTagOptions, hostTagOptionsLoading, onHo
   }, [hostTagFilters]);
   return (
     <div>
-      <Tooltip content="Add host tag filter">
-        <Button icon="plus" variant="secondary" aria-label="Add new host tag filter" onClick={onAddHostTagFilter} />
-      </Tooltip>
+      <Stack direction="row">
+        <Tooltip content="Add host tag filter">
+          <Button icon="plus" variant="secondary" aria-label="Add new host tag filter" onClick={onAddHostTagFilter} />
+        </Tooltip>
+        {hostTagFilters.length > 0 && (
+          <RadioButtonGroup
+            options={[
+              { label: 'AND/OR', value: '0' }, // Default
+              { label: 'OR', value: '2' },
+            ]}
+            onChange={onHostTagEvalTypeChange}
+            value={evalTypeValue ?? '0'}
+          />
+        )}
+      </Stack>
       <Stack direction="column">
         {hostTagFilters.map((filter, index) => {
           return (
