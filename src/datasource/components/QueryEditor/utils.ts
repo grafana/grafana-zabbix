@@ -17,6 +17,6 @@ export const getVariableOptions = () => {
 export function processHostTags(hosts: Host[]): Tag[] {
   const hostTags = hosts.map((host) => host.tags || []).flat();
   // deduplicate tags
-  const uniqueHostTags = _.uniqBy(hostTags, (tag) => `${tag.tag}:${tag.value}`);
+  const uniqueHostTags = _.uniqBy(hostTags, (tag) => `${tag.tag}`);
   return uniqueHostTags;
 }
