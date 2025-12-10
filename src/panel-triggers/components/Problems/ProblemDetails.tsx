@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { css } from '@emotion/css';
-// eslint-disable-next-line
-import moment from 'moment';
+import moment from 'moment/moment';
 import { GrafanaTheme2, TimeRange } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { Tooltip, useStyles2 } from '@grafana/ui';
@@ -15,13 +14,13 @@ import ProblemTimeline from './ProblemTimeline';
 import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController } from '../../../components';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
 import ProblemStatusBar from './ProblemStatusBar';
-import { RTRow } from '../../types';
 import { ProblemItems } from './ProblemItems';
 import { ProblemHosts, ProblemHostsDescription } from './ProblemHosts';
 import { ProblemGroups } from './ProblemGroups';
 import { ProblemExpression } from './ProblemExpression';
 
-interface Props extends RTRow<ProblemDTO> {
+interface Props {
+  original: ProblemDTO;
   rootWidth: number;
   timeRange: TimeRange;
   showTimeline?: boolean;
