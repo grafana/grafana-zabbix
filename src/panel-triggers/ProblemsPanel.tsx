@@ -210,17 +210,17 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
-    const { message, action, severity } = data;
+    const { message, action, severity, suppress_until } = data;
     const eventid = problem.eventid;
     const grafana_user = (contextSrv.user as any).name;
-    const ack_message = grafana_user + ' (Grafana): ' + message;
+    const ack_message = message && message !== '' ? grafana_user + ' (Grafana): ' + message : undefined;
     const ds: any = await getDataSourceSrv().get(problem.datasource);
     const userIsEditor = contextSrv.isEditor || contextSrv.isGrafanaAdmin;
     if (ds.disableReadOnlyUsersAck && !userIsEditor) {
       return { message: 'You have no permissions to acknowledge events.' };
     }
     if (eventid) {
-      return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity);
+      return ds.zabbix.acknowledgeEvent({ eventid, message: ack_message, action, severity, suppress_until });
     } else {
       return { message: 'Trigger has no events. Nothing to acknowledge.' };
     }
