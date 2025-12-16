@@ -3,7 +3,7 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
-import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
+import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -13,13 +13,13 @@ import { ZabbixMetricsQuery } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
-const countByOptions: Array<ComboboxOption<string>> = [
+const countByOptions: Array<SelectableValue<string>> = [
   { value: '', label: 'All triggers' },
   { value: 'problems', label: 'Problems' },
   { value: 'items', label: 'Items' },
 ];
 
-const severityOptions: Array<ComboboxOption<number>> = [
+const severityOptions: Array<SelectableValue<number>> = [
   { value: 0, label: 'Not classified' },
   { value: 1, label: 'Information' },
   { value: 2, label: 'Warning' },
@@ -218,7 +218,13 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     <>
       <QueryEditorRow>
         <InlineField label="Count by" labelWidth={12}>
-          <Combobox width={24} value={query.countTriggersBy} options={countByOptions} onChange={onCountByChange} />
+          <Select
+            isSearchable={false}
+            width={24}
+            value={query.countTriggersBy}
+            options={countByOptions}
+            onChange={onCountByChange}
+          />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
@@ -311,7 +317,8 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Min severity" labelWidth={12}>
-          <Combobox
+          <Select
+            isSearchable={false}
             width={24}
             value={query.options?.minSeverity}
             options={severityOptions}
