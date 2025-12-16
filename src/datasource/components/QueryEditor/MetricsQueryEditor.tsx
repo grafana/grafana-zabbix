@@ -11,6 +11,7 @@ import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { itemTagToString } from '../../utils';
+import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 export interface Props {
   query: ZabbixMetricsQuery;
@@ -19,6 +20,8 @@ export interface Props {
 }
 
 export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
+  const interpolatedQuery = useInterpolatedQuery(datasource, query);
+
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
     const options = groups?.map((group) => ({
@@ -35,8 +38,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, []);
 
   const loadHostOptions = async (group: string) => {
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hosts = await datasource.zabbix.getAllHosts(groupFilter);
+    const hosts = await datasource.zabbix.getAllHosts(group);
     let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
@@ -48,14 +50,12 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   };
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
-    const options = await loadHostOptions(query.group.filter);
+    const options = await loadHostOptions(interpolatedQuery.group.filter);
     return options;
-  }, [query.group.filter]);
+  }, [interpolatedQuery.group.filter]);
 
   const loadAppOptions = async (group: string, host: string) => {
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hostFilter = datasource.replaceTemplateVars(host);
-    const apps = await datasource.zabbix.getAllApps(groupFilter, hostFilter);
+    const apps = await datasource.zabbix.getAllApps(group, host);
     let options: Array<SelectableValue<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
@@ -66,9 +66,9 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   };
 
   const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
-    const options = await loadAppOptions(query.group.filter, query.host.filter);
+    const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
     return options;
-  }, [query.group.filter, query.host.filter]);
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
   const loadTagOptions = async (group: string, host: string) => {
     const tagsAvailable = await datasource.zabbix.isZabbix54OrHigher();
@@ -76,9 +76,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       return [];
     }
 
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hostFilter = datasource.replaceTemplateVars(host);
-    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, null, null, {});
+    const items = await datasource.zabbix.getAllItems(group, host, null, null, {});
     const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
     // const tags: ZBXItemTag[] = await datasource.zabbix.getItemTags(groupFilter, hostFilter, null);
 
@@ -93,20 +91,16 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   };
 
   const [{ loading: tagsLoading, value: tagOptions }, fetchTags] = useAsyncFn(async () => {
-    const options = await loadTagOptions(query.group.filter, query.host.filter);
+    const options = await loadTagOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
     return options;
-  }, [query.group.filter, query.host.filter]);
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
   const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hostFilter = datasource.replaceTemplateVars(host);
-    const appFilter = datasource.replaceTemplateVars(app);
-    const tagFilter = datasource.replaceTemplateVars(itemTag);
     const options = {
       itemtype: 'num',
       showDisabledItems: query.options.showDisabledItems,
     };
-    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, appFilter, tagFilter, options);
+    const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
     let itemOptions: Array<SelectableValue<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
@@ -118,19 +112,24 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const [{ loading: itemsLoading, value: itemOptions }, fetchItems] = useAsyncFn(async () => {
     const options = await loadItemOptions(
-      query.group.filter,
-      query.host.filter,
-      query.application.filter,
-      query.itemTag.filter
+      interpolatedQuery.group.filter,
+      interpolatedQuery.host.filter,
+      interpolatedQuery.application.filter,
+      interpolatedQuery.itemTag.filter
     );
     return options;
-  }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.application.filter,
+    interpolatedQuery.itemTag.filter,
+  ]);
 
   // Update suggestions on every metric change
-  const groupFilter = datasource.replaceTemplateVars(query.group?.filter);
-  const hostFilter = datasource.replaceTemplateVars(query.host?.filter);
-  const appFilter = datasource.replaceTemplateVars(query.application?.filter);
-  const tagFilter = datasource.replaceTemplateVars(query.itemTag?.filter);
+  const groupFilter = interpolatedQuery.group?.filter;
+  const hostFilter = interpolatedQuery.host?.filter;
+  const appFilter = interpolatedQuery.application?.filter;
+  const tagFilter = interpolatedQuery.itemTag?.filter;
 
   useEffect(() => {
     fetchGroups();
