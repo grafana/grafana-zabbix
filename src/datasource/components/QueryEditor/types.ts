@@ -15,3 +15,9 @@ export enum HostTagOperatorValue {
   Exists = '4',
   DoesNotExist = '5',
 }
+
+export enum HostTagOperatorLabelBefore70 {
+  NotExist = 'Not exists',
+  NotEqual = 'Not equal',
+  NotLike = 'Not like',
+}

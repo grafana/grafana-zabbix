@@ -2,19 +2,12 @@ import { Tooltip, Button, Combobox, ComboboxOption, Stack, Input, RadioButtonGro
 import React, { FormEvent, useCallback, useEffect, useState } from 'react';
 import { HostTagOperatorLabel, HostTagOperatorValue } from './types';
 import { HostTagFilter, ZabbixTagEvalType } from 'datasource/types/query';
-
-const OPERATOR_OPTIONS: ComboboxOption[] = [
-  { value: HostTagOperatorValue.Exists, label: HostTagOperatorLabel.Exists },
-  { value: HostTagOperatorValue.Equals, label: HostTagOperatorLabel.Equals },
-  { value: HostTagOperatorValue.Contains, label: HostTagOperatorLabel.Contains },
-  { value: HostTagOperatorValue.DoesNotExist, label: HostTagOperatorLabel.DoesNotExist },
-  { value: HostTagOperatorValue.DoesNotEqual, label: HostTagOperatorLabel.DoesNotEqual },
-  { value: HostTagOperatorValue.DoesNotContain, label: HostTagOperatorLabel.DoesNotContain },
-];
+import { getHostTagOptionLabel } from './utils';
 
 interface Props {
   hostTagOptions: ComboboxOption[];
   hostTagOptionsLoading: boolean;
+  version: string;
   evalTypeValue?: ZabbixTagEvalType;
   onHostTagFilterChange?: (hostTags: HostTagFilter[]) => void;
   onHostTagEvalTypeChange?: (evalType: ZabbixTagEvalType) => void;
@@ -22,11 +15,29 @@ interface Props {
 export const HostTagQueryEditor = ({
   hostTagOptions,
   hostTagOptionsLoading,
+  version,
   evalTypeValue,
   onHostTagFilterChange,
   onHostTagEvalTypeChange,
 }: Props) => {
   const [hostTagFilters, setHostTagFilters] = useState<HostTagFilter[]>([]);
+  const operatorOptions: ComboboxOption[] = [
+    { value: HostTagOperatorValue.Exists, label: HostTagOperatorLabel.Exists },
+    { value: HostTagOperatorValue.Equals, label: HostTagOperatorLabel.Equals },
+    { value: HostTagOperatorValue.Contains, label: HostTagOperatorLabel.Contains },
+    {
+      value: HostTagOperatorValue.DoesNotExist,
+      label: getHostTagOptionLabel(HostTagOperatorValue.DoesNotExist, version),
+    },
+    {
+      value: HostTagOperatorValue.DoesNotEqual,
+      label: getHostTagOptionLabel(HostTagOperatorValue.DoesNotEqual, version),
+    },
+    {
+      value: HostTagOperatorValue.DoesNotContain,
+      label: getHostTagOptionLabel(HostTagOperatorValue.DoesNotContain, version),
+    },
+  ];
 
   const onAddHostTagFilter = useCallback(() => {
     setHostTagFilters((prevFilters) => [
@@ -95,7 +106,7 @@ export const HostTagQueryEditor = ({
                 onChange={(option: ComboboxOption<HostTagOperatorValue>) =>
                   setHostTagFilterOperator(index, option.value)
                 }
-                options={OPERATOR_OPTIONS}
+                options={operatorOptions}
                 width={19}
               />
               {filter.operator !== HostTagOperatorValue.Exists &&

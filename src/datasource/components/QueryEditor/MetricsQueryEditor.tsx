@@ -222,6 +222,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             hostTagOptionsLoading={hostTagsLoading}
             onHostTagFilterChange={onHostTagFilterChange}
             onHostTagEvalTypeChange={onHostTagEvalTypeChange}
+            version={datasource.zabbix.version}
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
