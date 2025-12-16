@@ -171,9 +171,14 @@ export class ZabbixAPIConnector {
     if (hostTagFilters && hostTagFilters.length > 0) {
       params.selectTags = 'extend';
       params.evaltype = +evalType || 0;
-      params.tags = hostTagFilters.map((tagFilter) => {
-        return { ...tagFilter, operator: +tagFilter.operator };
-      });
+
+      // ensure only non empty tag keys are being sent
+      // convert operator to number since that is the expected type in Zabbix.
+      params.tags = hostTagFilters
+        .filter((tagFilter) => tagFilter.tag !== '')
+        .map((tagFilter) => {
+          return { ...tagFilter, operator: +tagFilter.operator };
+        });
     }
     return this.request('host.get', params);
   }

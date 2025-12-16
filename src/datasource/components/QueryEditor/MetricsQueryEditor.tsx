@@ -67,7 +67,11 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [query.group.filter]);
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
-    const options = await loadHostOptions(interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype);
+    const options = await loadHostOptions(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.hostTags,
+      interpolatedQuery.evaltype
+    );
 
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);

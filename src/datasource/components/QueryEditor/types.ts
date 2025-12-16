@@ -8,8 +8,8 @@ export enum HostTagOperatorLabel {
 }
 
 export enum HostTagOperatorValue {
-  Equals = '0',
-  Contains = '1',
+  Contains = '0', // default
+  Equals = '1',
   DoesNotContain = '2',
   DoesNotEqual = '3',
   Exists = '4',
