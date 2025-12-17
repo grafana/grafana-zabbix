@@ -1,7 +1,17 @@
 import React, { PureComponent, ReactNode } from 'react';
 import { css } from '@emotion/css';
-import { GrafanaTheme, SelectableValue } from '@grafana/data';
-import { Button, Spinner, Modal, Select, stylesFactory, withTheme, Themeable, ButtonGroup } from '@grafana/ui';
+import { GrafanaTheme } from '@grafana/data';
+import {
+  Button,
+  Spinner,
+  Modal,
+  stylesFactory,
+  withTheme,
+  Themeable,
+  ButtonGroup,
+  Combobox,
+  ComboboxOption,
+} from '@grafana/ui';
 import { ZBXScript, APIExecuteScriptResponse } from '../../datasource/zabbix/connectors/zabbix_api/types';
 import { FAIcon } from '../../components';
 
@@ -12,8 +22,8 @@ interface Props extends Themeable {
 }
 
 interface State {
-  selectedScript: SelectableValue<string>;
-  scriptOptions: Array<SelectableValue<string>>;
+  selectedScript: ComboboxOption<string>;
+  scriptOptions: Array<ComboboxOption<string>>;
   script: ZBXScript;
   error: boolean;
   errorMessage: string | ReactNode;
@@ -47,7 +57,7 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
   async componentDidMount() {
     const scripts = await this.props.getScripts();
     this.scripts = scripts;
-    const scriptOptions: Array<SelectableValue<string>> = scripts.map((s) => {
+    const scriptOptions: Array<ComboboxOption<string>> = scripts.map((s) => {
       return {
         value: s.scriptid,
         label: s.name,
@@ -61,7 +71,7 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
     this.setState({ scriptOptions, selectedScript, script });
   }
 
-  onChangeSelectedScript = (v: SelectableValue<string>) => {
+  onChangeSelectedScript = (v: ComboboxOption<string>) => {
     const script = this.scripts.find((s) => v.value === s.scriptid);
     this.setState({ selectedScript: v, script, errorMessage: '', loading: false, result: '' });
   };
@@ -133,7 +143,7 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
           </div>
         }
       >
-        <Select options={scriptOptions} value={selectedScript} onChange={this.onChangeSelectedScript} />
+        <Combobox options={scriptOptions} value={selectedScript} onChange={this.onChangeSelectedScript} />
         {selectError && <small className={styles.inputError}>{selectError}</small>}
 
         <div className={styles.scriptCommandContainer}>

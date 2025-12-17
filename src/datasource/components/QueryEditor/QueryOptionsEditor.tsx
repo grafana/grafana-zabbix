@@ -2,31 +2,32 @@ import { css } from '@emotion/css';
 import React, { useState, FormEvent, ReactNode } from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
-  HorizontalGroup,
+  Combobox,
+  ComboboxOption,
   Icon,
   InlineField,
   InlineFieldRow,
   InlineSwitch,
   Input,
-  Select,
+  Stack,
   useStyles2,
 } from '@grafana/ui';
 import * as c from '../../constants';
 import { ZabbixQueryOptions } from '../../types/query';
 
-const ackOptions: Array<SelectableValue<number>> = [
+const ackOptions: Array<ComboboxOption<number>> = [
   { label: 'all triggers', value: 2 },
   { label: 'unacknowledged', value: 0 },
   { label: 'acknowledged', value: 1 },
 ];
 
-const sortOptions: Array<SelectableValue<string>> = [
+const sortOptions: Array<ComboboxOption<string>> = [
   { label: 'Default', value: 'default' },
   { label: 'Last change', value: 'lastchange' },
   { label: 'Severity', value: 'severity' },
 ];
 
-const trendsOptions: Array<SelectableValue<string>> = [
+const trendsOptions: Array<ComboboxOption<string>> = [
   { label: 'Default', value: 'default' },
   { label: 'True', value: 'true' },
   { label: 'False', value: 'false' },
@@ -60,12 +61,12 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
   const renderClosed = () => {
     return (
       <>
-        <HorizontalGroup>
+        <Stack>
           {!isOpen && <Icon name="angle-right" />}
           {isOpen && <Icon name="angle-down" />}
           <span className={styles.label}>Options</span>
           <div className={styles.options}>{renderOptions()}</div>
-        </HorizontalGroup>
+        </Stack>
       </>
     );
   };
@@ -100,8 +101,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
     return (
       <>
         <InlineField label="Trends" labelWidth={24}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={16}
             value={queryOptions.useTrends}
             options={trendsOptions}
@@ -147,8 +147,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
     return (
       <>
         <InlineField label="Acknowledged" labelWidth={24}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={queryOptions.acknowledged}
             options={ackOptions}
@@ -156,8 +155,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
           />
         </InlineField>
         <InlineField label="Sort by" labelWidth={24}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={queryOptions.sortProblems}
             options={sortOptions}
@@ -193,8 +191,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
     return (
       <>
         <InlineField label="Acknowledged" labelWidth={24}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={queryOptions.acknowledged}
             options={ackOptions}
@@ -226,11 +223,11 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
 const getStyles = (theme: GrafanaTheme2) => ({
   container: css({
     backgroundColor: theme.colors.background.secondary,
-    borderRadius: theme.shape.borderRadius(),
+    borderRadius: theme.shape.radius.default,
     marginRight: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
     padding: `0 ${theme.spacing(1)}`,
-    height: `${theme.v1.spacing.formInputHeight}px`,
+    height: theme.spacing(4),
     width: `100%`,
   }),
   label: css({
