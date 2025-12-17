@@ -324,6 +324,7 @@ export const ConfigEditor = (props: Props) => {
                     setSelectedDBDatasource,
                     setCurrentDSType
                   )}
+                  placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB)"
                 />
               </Field>
 
