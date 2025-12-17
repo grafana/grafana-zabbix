@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { QueryEditorProps } from '@grafana/data';
-import { Combobox, ComboboxOption, InlineField } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField, Stack } from '@grafana/ui';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
@@ -171,7 +171,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
     return (
       <>
         <TextMetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
-        {/* <QueryFunctionsEditor query={query} onChange={onChangeInternal} /> */}
       </>
     );
   };
@@ -198,7 +197,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   };
 
   return (
-    <>
+    <Stack direction="column">
       <QueryEditorRow>
         <InlineField label="Query type" labelWidth={12}>
           <Combobox<QueryType>
@@ -217,6 +216,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
       {queryType === c.MODE_MACROS && renderUserMacrosEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
-    </>
+    </Stack>
   );
 };

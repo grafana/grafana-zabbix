@@ -210,7 +210,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
 
   return (
     <>
-      <InlineFieldRow>
+      <InlineFieldRow style={{ alignItems: 'center' }}>
         <div className={styles.container} onClick={() => setIsOpen(!isOpen)}>
           {renderClosed()}
         </div>
@@ -229,6 +229,8 @@ const getStyles = (theme: GrafanaTheme2) => ({
     padding: `0 ${theme.spacing(1)}`,
     height: theme.spacing(4),
     width: `100%`,
+    display: 'flex',
+    alignItems: 'center',
   }),
   label: css({
     color: theme.colors.info.text,
@@ -238,13 +240,15 @@ const getStyles = (theme: GrafanaTheme2) => ({
   options: css({
     color: theme.colors.text.disabled,
     fontSize: theme.typography.bodySmall.fontSize,
+    display: 'flex',
+    alignItems: 'center',
   }),
-  optionContainer: css`
-    margin-right: ${theme.spacing(2)};
-  `,
-  editorContainer: css`
-    display: flex;
-    flex-direction: column;
-    margin-left: ${theme.spacing(4)};
-  `,
+  optionContainer: css({
+    marginRight: theme.spacing(2),
+  }),
+  editorContainer: css({
+    display: 'flex',
+    flexDirection: 'column',
+    marginLeft: theme.spacing(4),
+  }),
 });

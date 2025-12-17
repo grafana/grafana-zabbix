@@ -182,7 +182,12 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Text filter" labelWidth={12}>
-          <Input width={24} defaultValue={query.textFilter} onBlur={onTextFilterChange} />
+          <Input
+            width={24}
+            defaultValue={query.textFilter}
+            onBlur={onTextFilterChange}
+            placeholder="Metric text filter"
+          />
         </InlineField>
         <InlineField label="Use capture groups" labelWidth={18}>
           <InlineSwitch
