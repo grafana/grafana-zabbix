@@ -170,7 +170,7 @@ export class ZabbixAPIConnector {
 
     if (hostTagFilters && hostTagFilters.length > 0) {
       params.selectTags = 'extend';
-      params.evaltype = +evalType || 0;
+      params.evaltype = evalType === ZabbixTagEvalType.Or || evalType === ZabbixTagEvalType.AndOr ? +evalType : 0;
 
       // ensure only non empty tag keys are being sent
       // convert operator to number since that is the expected type in Zabbix.
