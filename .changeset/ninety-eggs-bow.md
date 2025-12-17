@@ -2,4 +2,4 @@
 'grafana-zabbix': minor
 ---
 
-Standardize components across Zabbix UI components
+Standardization across Zabbix UI components
