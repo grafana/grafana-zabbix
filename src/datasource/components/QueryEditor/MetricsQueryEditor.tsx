@@ -53,7 +53,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadHostOptions = async (group: string, hostTags?: HostTagFilter[], evalType?: ZabbixTagEvalType) => {
     const hosts = await datasource.zabbix.getAllHosts(group, false, hostTags, evalType);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -82,7 +82,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
+    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -107,7 +107,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     // const tags: ZBXItemTag[] = await datasource.zabbix.getItemTags(groupFilter, hostFilter, null);
 
     const tagList = uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
-    let options: Array<SelectableValue<string>> = tagList?.map((tag) => ({
+    let options: Array<ComboboxOption<string>> = tagList?.map((tag) => ({
       value: tag,
       label: tag,
     }));
@@ -127,7 +127,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       showDisabledItems: query.options.showDisabledItems,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
-    let itemOptions: Array<SelectableValue<string>> = items?.map((item) => ({
+    let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
     }));
@@ -217,6 +217,17 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
+          />
+        </InlineField>
+        <InlineField label="Host tag" labelWidth={12}>
+          <HostTagQueryEditor
+            hostTagOptions={hostTagsOptions}
+            evalTypeValue={query.evaltype}
+            hostTagOptionsLoading={hostTagsLoading}
+            onHostTagFilterChange={onHostTagFilterChange}
+            onHostTagEvalTypeChange={onHostTagEvalTypeChange}
+            version={datasource.zabbix.version}
           />
         </InlineField>
         <InlineField label="Host tag" labelWidth={12}>
@@ -236,6 +247,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -248,6 +260,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              placeholder="Application name"
             />
           </InlineField>
         )}
@@ -259,6 +272,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={tagOptions}
               isLoading={tagsLoading}
               onChange={onFilterChange('itemTag')}
+              placeholder="Item tag name"
             />
           </InlineField>
         )}
@@ -269,6 +283,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={itemOptions}
             isLoading={itemsLoading}
             onChange={onFilterChange('item')}
+            placeholder="Item name"
           />
         </InlineField>
       </QueryEditorRow>

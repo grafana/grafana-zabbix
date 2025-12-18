@@ -3,7 +3,7 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
-import { InlineField, Input, MultiSelect, Select } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField, Input, MultiSelect } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -11,7 +11,7 @@ import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
-const showProblemsOptions: Array<SelectableValue<string>> = [
+const showProblemsOptions: Array<ComboboxOption<string>> = [
   { label: 'Problems', value: 'problems' },
   { label: 'Recent problems', value: 'recent' },
   { label: 'History', value: 'history' },
@@ -26,7 +26,7 @@ const severityOptions: Array<SelectableValue<number>> = [
   { value: 5, label: 'Disaster' },
 ];
 
-const evaltypeOptions: Array<SelectableValue<ZabbixTagEvalType>> = [
+const evaltypeOptions: Array<ComboboxOption<ZabbixTagEvalType>> = [
   { label: 'AND/OR', value: ZabbixTagEvalType.AndOr },
   { label: 'OR', value: ZabbixTagEvalType.Or },
 ];
@@ -57,7 +57,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -74,7 +74,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
+    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -166,6 +166,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -175,6 +176,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
         <InlineField label="Proxy" labelWidth={12}>
@@ -184,6 +186,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={proxiesOptions}
             isLoading={proxiesLoading}
             onChange={onFilterChange('proxy')}
+            placeholder="Proxy name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -196,6 +199,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              placeholder="Application name"
             />
           </InlineField>
         )}
@@ -216,19 +220,12 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
           />
         </InlineField>
         <InlineField>
-          <Select
-            isSearchable={false}
-            width={15}
-            value={query.evaltype}
-            options={evaltypeOptions}
-            onChange={onPropChange('evaltype')}
-          />
+          <Combobox width={15} value={query.evaltype} options={evaltypeOptions} onChange={onPropChange('evaltype')} />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Show" labelWidth={12}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={query.showProblems}
             options={showProblemsOptions}
