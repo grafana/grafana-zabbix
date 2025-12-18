@@ -3,7 +3,7 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { SelectableValue } from '@grafana/data';
-import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -13,13 +13,13 @@ import { ZabbixMetricsQuery } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
-const countByOptions: Array<SelectableValue<string>> = [
+const countByOptions: Array<ComboboxOption<string>> = [
   { value: '', label: 'All triggers' },
   { value: 'problems', label: 'Problems' },
   { value: 'items', label: 'Items' },
 ];
 
-const severityOptions: Array<SelectableValue<number>> = [
+const severityOptions: Array<ComboboxOption<number>> = [
   { value: 0, label: 'Not classified' },
   { value: 1, label: 'Information' },
   { value: 2, label: 'Warning' },
@@ -54,7 +54,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -71,7 +71,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
+    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -94,7 +94,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
 
     const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
-    let options: Array<SelectableValue<string>> = tagList?.map((tag) => ({
+    let options: Array<ComboboxOption<string>> = tagList?.map((tag) => ({
       value: tag,
       label: tag,
     }));
@@ -129,7 +129,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
       showDisabledItems: query.options.showDisabledItems,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
-    let itemOptions: Array<SelectableValue<string>> = items?.map((item) => ({
+    let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
     }));
@@ -218,13 +218,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     <>
       <QueryEditorRow>
         <InlineField label="Count by" labelWidth={12}>
-          <Select
-            isSearchable={false}
-            width={24}
-            value={query.countTriggersBy}
-            options={countByOptions}
-            onChange={onCountByChange}
-          />
+          <Combobox width={24} value={query.countTriggersBy} options={countByOptions} onChange={onCountByChange} />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
@@ -235,6 +229,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -244,6 +239,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
         {query.countTriggersBy === 'problems' && (
@@ -254,6 +250,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={proxiesOptions}
               isLoading={proxiesLoading}
               onChange={onFilterChange('proxy')}
+              placeholder="Proxy name"
             />
           </InlineField>
         )}
@@ -267,6 +264,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              placeholder="Application name"
             />
           </InlineField>
         )}
@@ -278,6 +276,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={tagOptions}
               isLoading={tagsLoading}
               onChange={onFilterChange('itemTag')}
+              placeholder="Item tag name"
             />
           </InlineField>
         )}
@@ -301,6 +300,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={itemOptions}
               isLoading={itemsLoading}
               onChange={onFilterChange('item')}
+              placeholder="Item name"
             />
           </InlineField>
         )}
@@ -317,8 +317,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Min severity" labelWidth={12}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={query.options?.minSeverity}
             options={severityOptions}

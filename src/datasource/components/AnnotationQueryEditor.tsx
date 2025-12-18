@@ -2,7 +2,7 @@ import _ from 'lodash';
 import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 import { AnnotationQuery, SelectableValue } from '@grafana/data';
-import { InlineField, InlineSwitch, Input, Select } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
 import { ZabbixMetricsQuery } from '../types/query';
 import { ZabbixQueryEditorProps } from './QueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
@@ -11,7 +11,7 @@ import { getVariableOptions } from './QueryEditor/utils';
 import { prepareAnnotation } from '../migrations';
 import { useInterpolatedQuery } from '../hooks/useInterpolatedQuery';
 
-const severityOptions: Array<SelectableValue<number>> = [
+const severityOptions: Array<ComboboxOption<number>> = [
   { value: 0, label: 'Not classified' },
   { value: 1, label: 'Information' },
   { value: 2, label: 'Warning' },
@@ -47,7 +47,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
 
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -64,7 +64,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
+    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -138,6 +138,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -147,6 +148,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -158,6 +160,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
             options={appOptions}
             isLoading={appsLoading}
             onChange={onFilterChange('application')}
+            placeholder="Application name"
           />
         </InlineField>
         <InlineField label="Problem" labelWidth={12}>
@@ -171,8 +174,7 @@ export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasour
       </QueryEditorRow>
       <>
         <InlineField label="Min severity" labelWidth={12}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={query.options?.minSeverity}
             options={severityOptions}

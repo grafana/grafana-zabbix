@@ -2,8 +2,7 @@ import _ from 'lodash';
 import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from 'react-use';
 
-import { SelectableValue } from '@grafana/data';
-import { InlineField, InlineSwitch, Input } from '@grafana/ui';
+import { InlineField, InlineSwitch, Input, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -37,7 +36,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
 
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -54,7 +53,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
+    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -74,7 +73,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
       showDisabledItems: query.options.showDisabledItems,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
-    let itemOptions: Array<SelectableValue<string>> = items?.map((item) => ({
+    let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
     }));
@@ -145,6 +144,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -154,6 +154,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -165,6 +166,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={appOptions}
             isLoading={appsLoading}
             onChange={onFilterChange('application')}
+            placeholder="Application name"
           />
         </InlineField>
         <InlineField label="Item" labelWidth={12}>
@@ -174,12 +176,18 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={itemOptions}
             isLoading={itemsLoading}
             onChange={onFilterChange('item')}
+            placeholder="Item name"
           />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Text filter" labelWidth={12}>
-          <Input width={24} defaultValue={query.textFilter} onBlur={onTextFilterChange} />
+          <Input
+            width={24}
+            defaultValue={query.textFilter}
+            onBlur={onTextFilterChange}
+            placeholder="Metric text filter"
+          />
         </InlineField>
         <InlineField label="Use capture groups" labelWidth={18}>
           <InlineSwitch

@@ -2,15 +2,14 @@ import _ from 'lodash';
 import React, { useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
 
-import { SelectableValue } from '@grafana/data';
-import { InlineField, Select } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery } from '../../types/query';
 
-const slaPropertyList: Array<SelectableValue<string>> = [
+const slaPropertyList: Array<ComboboxOption<string>> = [
   { label: 'Status', value: 'status' },
   { label: 'SLI', value: 'sli' },
   { label: 'Uptime', value: 'uptime' },
@@ -18,7 +17,7 @@ const slaPropertyList: Array<SelectableValue<string>> = [
   { label: 'Error budget', value: 'error_budget' },
 ];
 
-const slaIntervals: Array<SelectableValue<string>> = [
+const slaIntervals: Array<ComboboxOption<string>> = [
   { label: 'No interval', value: 'none' },
   { label: 'Auto', value: 'auto' },
   { label: '1 hour', value: '1h' },
@@ -71,7 +70,7 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, []);
 
   const onPropChange = (prop: string) => {
-    return (option: SelectableValue) => {
+    return (option: ComboboxOption) => {
       if (option.value) {
         onChange({ ...query, [prop]: option.value });
       }
@@ -96,6 +95,7 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={itServicesOptions}
             isLoading={itServicesLoading}
             onChange={onStringPropChange('itServiceFilter')}
+            placeholder="Service name"
           />
         </InlineField>
         <InlineField label="SLA" labelWidth={12}>
@@ -105,26 +105,27 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={slaOptions}
             isLoading={slaLoading}
             onChange={onStringPropChange('slaFilter')}
+            placeholder="SLA name"
           />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Property" labelWidth={12}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={query.slaProperty}
             options={slaPropertyList}
             onChange={onPropChange('slaProperty')}
+            placeholder="Property name"
           />
         </InlineField>
         <InlineField label="Interval" labelWidth={12}>
-          <Select
-            isSearchable={false}
+          <Combobox
             width={24}
             value={query.slaInterval}
             options={slaIntervals}
             onChange={onPropChange('slaInterval')}
+            placeholder="SLA interval"
           />
         </InlineField>
       </QueryEditorRow>
