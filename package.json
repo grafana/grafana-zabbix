@@ -97,7 +97,7 @@
     "react-use": "17.4.0",
     "replace-in-file-webpack-plugin": "^1.0.6",
     "sass": "1.63.2",
-    "sass-loader": "13.3.1",
+    "sass-loader": "13.3.3",
     "semver": "^7.6.3",
     "style-loader": "3.3.3",
     "swc-loader": "^0.2.3",
