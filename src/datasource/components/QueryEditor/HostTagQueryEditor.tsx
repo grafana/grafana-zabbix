@@ -119,6 +119,7 @@ export const HostTagQueryEditor = ({
                       setHostTagFilterValue(index, evt?.currentTarget?.value)
                     }
                     width={19}
+                    placeholder="Host tag value"
                   />
                 )}
               <Tooltip content="Remove host tag filter">

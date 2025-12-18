@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import { uniqBy } from 'lodash';
 import { getTemplateSrv } from '@grafana/runtime';
 import { Host, Tag } from 'datasource/zabbix/types';
 import { HostTagOperatorLabel, HostTagOperatorLabelBefore70, HostTagOperatorValue } from './types';
@@ -18,7 +18,7 @@ export const getVariableOptions = () => {
 export function processHostTags(hosts: Host[]): Tag[] {
   const hostTags = hosts.map((host) => host.tags || []).flat();
   // deduplicate tags
-  const uniqueHostTags = _.uniqBy(hostTags, (tag) => `${tag.tag}`);
+  const uniqueHostTags = uniqBy(hostTags, (tag) => tag.tag);
   return uniqueHostTags;
 }
 
