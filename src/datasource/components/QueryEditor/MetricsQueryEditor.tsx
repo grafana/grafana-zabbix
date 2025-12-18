@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import { flatten, uniqBy } from 'lodash';
 import React, { useCallback, useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
 
@@ -29,7 +29,9 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       value: group.name,
       label: group.name,
     }));
-    options.unshift({ value: '/.*/' });
+    if (options.length > 0) {
+      options.unshift({ value: '/.*/' });
+    }
     options.unshift(...getVariableOptions());
     return options;
   };
@@ -55,8 +57,10 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       value: host.name,
       label: host.name,
     }));
-    options = _.uniqBy(options, (o) => o.value);
-    options.unshift({ value: '/.*/' });
+    options = uniqBy(options, (o) => o.value);
+    if (options.length > 0) {
+      options.unshift({ value: '/.*/' });
+    }
     options.unshift(...getVariableOptions());
     return options;
   };
@@ -82,7 +86,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       value: app.name,
       label: app.name,
     }));
-    options = _.uniqBy(options, (o) => o.value);
+    options = uniqBy(options, (o) => o.value);
     options.unshift(...getVariableOptions());
     return options;
   };
@@ -99,15 +103,15 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     }
 
     const items = await datasource.zabbix.getAllItems(group, host, null, null, {});
-    const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
+    const tags: ZBXItemTag[] = flatten(items.map((item: ZBXItem) => item.tags || []));
     // const tags: ZBXItemTag[] = await datasource.zabbix.getItemTags(groupFilter, hostFilter, null);
 
-    const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
+    const tagList = uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
     let options: Array<SelectableValue<string>> = tagList?.map((tag) => ({
       value: tag,
       label: tag,
     }));
-    options = _.uniqBy(options, (o) => o.value);
+    options = uniqBy(options, (o) => o.value);
     options.unshift(...getVariableOptions());
     return options;
   };
@@ -127,7 +131,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       value: item.name,
       label: item.name,
     }));
-    itemOptions = _.uniqBy(itemOptions, (o) => o.value);
+    itemOptions = uniqBy(itemOptions, (o) => o.value);
     itemOptions.unshift(...getVariableOptions());
     return itemOptions;
   };
