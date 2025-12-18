@@ -12,6 +12,7 @@ interface Props {
   onHostTagFilterChange?: (hostTags: HostTagFilter[]) => void;
   onHostTagEvalTypeChange?: (evalType: ZabbixTagEvalType) => void;
 }
+
 export const HostTagQueryEditor = ({
   hostTagOptions,
   hostTagOptionsLoading,
