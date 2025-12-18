@@ -73,6 +73,7 @@ export const HostTagQueryEditor = ({
   useEffect(() => {
     onHostTagFilterChange(hostTagFilters);
   }, [hostTagFilters]);
+
   return (
     <div>
       <Stack direction="row">
