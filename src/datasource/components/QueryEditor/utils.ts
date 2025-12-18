@@ -24,7 +24,7 @@ export function processHostTags(hosts: Host[]): Tag[] {
 
 /**
  * Get the label for a host tag option
- * Zabbix chaneged some of the operator labels in version 7.0.0 but the value equivalents remained the same.
+ * Zabbix changed some of the operator labels in version 7.0.0 but the value equivalents remained the same.
  * this function helps fetch the right label value for those that are different.
  */
 export function getHostTagOptionLabel(value: HostTagOperatorValue, version: string): string {
