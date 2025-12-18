@@ -20,7 +20,6 @@ export const MetricPicker = ({ value, placeholder, options, isLoading, width, on
     onChange(newValue);
   };
 
-  console.log(options);
   return (
     <div data-testid="role-picker" style={{ position: 'relative' }} ref={ref}>
       <Combobox<string>
