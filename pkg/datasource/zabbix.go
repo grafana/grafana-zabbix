@@ -78,6 +78,11 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 }
 
 func (ds *ZabbixDatasourceInstance) queryItemIdData(ctx context.Context, query *QueryModel) ([]*data.Frame, error) {
+	// Validate itemids before processing
+	if err := ValidateItemIDs(query.ItemIDs); err != nil {
+		return nil, err
+	}
+
 	itemids := strings.Split(query.ItemIDs, ",")
 	for i, id := range itemids {
 		itemids[i] = strings.Trim(id, " ")

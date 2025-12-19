@@ -119,6 +119,9 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		ds.logger.Debug("DS query", "query", q)
 		if err != nil {
 			res = backend.ErrorResponseWithErrorSource(err)
+		} else if err := ValidateTimeRange(query.TimeRange); err != nil {
+			// Validate time range before processing any query
+			res = backend.ErrorResponseWithErrorSource(err)
 		} else if query.QueryType == MODE_METRICS {
 			frames, err := zabbixDS.queryNumericItems(ctx, &query)
 			if err != nil {
