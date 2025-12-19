@@ -27,12 +27,12 @@ on:
 jobs:
   cd:
     name: CD
-    uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@main
+    uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@ci-cd-workflows/v4.3.0
     with:
-      go-version: '1.25'
-      golangci-lint-version: '2.4.0'
+      golangci-lint-version: '2.7.2'
+      go-version: '1.25.5'
       branch: ${{ github.event.inputs.branch }}
       environment: ${{ github.event.inputs.environment }}
       docs-only: ${{ fromJSON(github.event.inputs.docs-only) }}
-      github-draft-release: false
       run-playwright: true
+      github-draft-release: false
