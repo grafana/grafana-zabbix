@@ -22,6 +22,7 @@ export const HostTagQueryEditor = ({
   onHostTagEvalTypeChange,
 }: Props) => {
   const [hostTagFilters, setHostTagFilters] = useState<HostTagFilter[]>([]);
+  const [hostTagValueDrafts, setHostTagValueDrafts] = useState<string[]>([]);
   const operatorOptions: ComboboxOption[] = [
     { value: HostTagOperatorValue.Exists, label: HostTagOperatorLabel.Exists },
     { value: HostTagOperatorValue.Equals, label: HostTagOperatorLabel.Equals },
@@ -45,10 +46,12 @@ export const HostTagQueryEditor = ({
       ...prevFilters,
       { tag: '', value: '', operator: HostTagOperatorValue.Contains },
     ]);
+    setHostTagValueDrafts((prevDrafts) => [...prevDrafts, '']);
   }, []);
 
   const onRemoveHostTagFilter = useCallback((index: number) => {
     setHostTagFilters((prevFilters) => prevFilters.filter((_, i) => i !== index));
+    setHostTagValueDrafts((prevDrafts) => prevDrafts.filter((_, i) => i !== index));
   }, []);
 
   const setHostTagFilterName = useCallback((index: number, name: string) => {
@@ -114,8 +117,16 @@ export const HostTagQueryEditor = ({
               {filter.operator !== HostTagOperatorValue.Exists &&
                 filter.operator !== HostTagOperatorValue.DoesNotExist && (
                   <Input
-                    value={filter.value}
-                    onChange={(evt: FormEvent<HTMLInputElement>) =>
+                    value={hostTagValueDrafts[index] ?? filter.value}
+                    onChange={(evt: FormEvent<HTMLInputElement>) => {
+                      const value = evt?.currentTarget?.value ?? '';
+                      setHostTagValueDrafts((prevDrafts) => {
+                        const nextDrafts = [...prevDrafts];
+                        nextDrafts[index] = value;
+                        return nextDrafts;
+                      });
+                    }}
+                    onBlur={(evt: FormEvent<HTMLInputElement>) =>
                       setHostTagFilterValue(index, evt?.currentTarget?.value)
                     }
                     width={19}

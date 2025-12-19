@@ -12,7 +12,6 @@ import { ZBXItem, ZBXItemTag } from '../../types';
 import { itemTagToString } from '../../utils';
 import { HostTagQueryEditor } from './HostTagQueryEditor';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
-import { SelectableValue } from '@grafana/data';
 
 export interface Props {
   query: ZabbixMetricsQuery;
@@ -218,16 +217,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
             placeholder="Group name"
-          />
-        </InlineField>
-        <InlineField label="Host tag" labelWidth={12}>
-          <HostTagQueryEditor
-            hostTagOptions={hostTagsOptions}
-            evalTypeValue={query.evaltype}
-            hostTagOptionsLoading={hostTagsLoading}
-            onHostTagFilterChange={onHostTagFilterChange}
-            onHostTagEvalTypeChange={onHostTagEvalTypeChange}
-            version={datasource.zabbix.version}
           />
         </InlineField>
         <InlineField label="Host tag" labelWidth={12}>
