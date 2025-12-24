@@ -69,7 +69,7 @@
     "autoprefixer": "10.4.7",
     "clean-webpack-plugin": "^0.1.19",
     "copy-webpack-plugin": "^11.0.0",
-    "cspell": "6.13.3",
+    "cspell": "6.31.3",
     "css-loader": "^6.7.3",
     "eslint": "8.57.1",
     "eslint-config-prettier": "^8.8.0",
