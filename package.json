@@ -46,7 +46,7 @@
     "@changesets/cli": "^2.29.7",
     "@grafana/e2e-selectors": "12.1.0",
     "@grafana/eslint-config": "^8.0.0",
-    "@grafana/plugin-e2e": "^2.1.12",
+    "@grafana/plugin-e2e": "^2.2.3",
     "@grafana/tsconfig": "^2.0.0",
     "@playwright/test": "^1.52.0",
     "@stylistic/eslint-plugin-ts": "^2.9.0",
