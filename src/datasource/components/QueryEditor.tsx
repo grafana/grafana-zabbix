@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QueryEditorProps } from '@grafana/data';
 import { Combobox, ComboboxOption, InlineField, Stack } from '@grafana/ui';
 import * as c from '../constants';
@@ -16,6 +16,7 @@ import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
+import { ItemCountWarning } from './ItemCountWarning';
 
 const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
   {
@@ -113,6 +114,7 @@ export interface ZabbixQueryEditorProps
   extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQuery, ZabbixDSOptions> {}
 
 export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQueryEditorProps) => {
+  const [itemCount, setItemCount] = useState(0);
   const queryDefaults = getDefaultQuery();
   query = { ...queryDefaults, ...query };
   query.options = { ...queryDefaults.options, ...query.options };
@@ -152,7 +154,12 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   const renderMetricsEditor = () => {
     return (
       <>
-        <MetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
+        <MetricsQueryEditor
+          query={query}
+          datasource={datasource}
+          onChange={onChangeInternal}
+          onItemCountChange={setItemCount}
+        />
         <QueryFunctionsEditor query={query} onChange={onChangeInternal} />
       </>
     );
@@ -198,6 +205,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
 
   return (
     <Stack direction="column">
+      {queryType === c.MODE_METRICS && <ItemCountWarning itemCount={itemCount} />}
       <QueryEditorRow>
         <InlineField label="Query type" labelWidth={12}>
           <Combobox<QueryType>
