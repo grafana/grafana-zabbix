@@ -33,7 +33,13 @@ export interface ZabbixConnector {
   getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
-  acknowledgeEvent: (eventid, message) => Promise<any>;
+  acknowledgeEvent: (params: {
+    eventid: string;
+    message?: string;
+    action?: number;
+    severity?: number;
+    suppress_until?: number;
+  }) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;

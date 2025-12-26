@@ -27,12 +27,17 @@ export const SHOW_ALL_TRIGGERS = [0, 1];
 export const SHOW_ALL_EVENTS = [0, 1];
 export const SHOW_OK_EVENTS = 1;
 
-// Acknowledge
+// Acknowledge actions (bitmask values)
 export const ZBX_ACK_ACTION_NONE = 0;
 export const ZBX_ACK_ACTION_CLOSE = 1;
 export const ZBX_ACK_ACTION_ACK = 2;
 export const ZBX_ACK_ACTION_ADD_MESSAGE = 4;
 export const ZBX_ACK_ACTION_CHANGE_SEVERITY = 8;
+export const ZBX_ACK_ACTION_UNACK = 16;
+export const ZBX_ACK_ACTION_SUPPRESS = 32;
+export const ZBX_ACK_ACTION_UNSUPPRESS = 64;
+export const ZBX_ACK_ACTION_RANK_TO_CAUSE = 128;
+export const ZBX_ACK_ACTION_RANK_TO_SYMPTOM = 256;
 
 export const TRIGGER_SEVERITY = [
   { val: 0, text: 'Not classified' },

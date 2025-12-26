@@ -109,7 +109,13 @@ export class Zabbix implements ZabbixConnector {
   getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
-  acknowledgeEvent: (eventid, message) => Promise<any>;
+  acknowledgeEvent: (params: {
+    eventid: string;
+    message?: string;
+    action?: number;
+    severity?: number;
+    suppress_until?: number;
+  }) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
@@ -192,6 +198,13 @@ export class Zabbix implements ZabbixConnector {
     for (const request of REQUESTS_TO_BIND) {
       this[request] = this.zabbixAPI[request].bind(this.zabbixAPI);
     }
+  }
+
+  /**
+   * Check if Zabbix version supports event suppression (added in Zabbix 6.2)
+   */
+  supportsEventSuppression(): boolean {
+    return this.zabbixAPI.supportsEventSuppression();
   }
 
   /**

@@ -51,16 +51,31 @@ export const ProblemDetails = ({
   const [events, setEvents] = useState([]);
   const [alerts, setAletrs] = useState([]);
   const [show, setShow] = useState(false);
+  const [canSuppress, setCanSuppress] = useState(false);
 
   useEffect(() => {
     if (showTimeline) {
       fetchProblemEvents();
     }
     fetchProblemAlerts();
+    checkSuppressSupport();
     requestAnimationFrame(() => {
       setShow(true);
     });
   }, []);
+
+  const checkSuppressSupport = async () => {
+    try {
+      const problem = original;
+      const ds: any = await getDataSourceSrv().get(problem.datasource);
+      if (ds?.zabbix?.supportsEventSuppression) {
+        setCanSuppress(ds.zabbix.supportsEventSuppression());
+      }
+    } catch (e) {
+      // If we can't check, default to false
+      setCanSuppress(false);
+    }
+  };
 
   const fetchProblemEvents = async () => {
     const problem = original;
@@ -147,6 +162,7 @@ export const ProblemDetails = ({
                       onClick={() => {
                         showModal(AckModal, {
                           canClose: problem.manual_close === '1',
+                          canSuppress: canSuppress,
                           severity: problemSeverity,
                           onSubmit: ackProblem,
                           onDismiss: hideModal,
