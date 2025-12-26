@@ -1,5 +1,6 @@
 import { DataQuery } from '@grafana/schema';
 import * as c from './../constants';
+import { HostTagOperatorValue } from 'datasource/components/QueryEditor/types';
 
 export type QueryType =
   | typeof c.MODE_METRICS
@@ -24,6 +25,7 @@ export type ZabbixMetricsQuery = {
   mode: number;
   itemids: string;
   useCaptureGroups: boolean;
+  hostTags?: HostTagFilter[];
   proxy?: { filter: string };
   trigger?: { filter: string };
   itServiceFilter?: string;
@@ -107,4 +109,10 @@ export enum ShowProblemTypes {
 export enum ZabbixTagEvalType {
   AndOr = '0',
   Or = '2',
+}
+
+export interface HostTagFilter {
+  tag: string;
+  value: string;
+  operator: HostTagOperatorValue;
 }
