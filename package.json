@@ -86,7 +86,7 @@
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
     "lodash": "4.17.21",
-    "mini-css-extract-plugin": "2.6.1",
+    "mini-css-extract-plugin": "2.9.4",
     "moment": "2.29.4",
     "postcss": "8.4.31",
     "postcss-loader": "7.0.1",
