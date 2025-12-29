@@ -20,6 +20,14 @@ var (
 )
 
 // Default guardrail limits
+// These limits help prevent performance issues and excessive resource consumption.
+// Based on Zabbix best practices:
+//   - Zabbix "Max period for time selector" defaults to 2 years (range: 1-10 years)
+//     See: https://www.zabbix.com/documentation/current/en/manual/web_interface/frontend_sections/administration/general
+//   - Zabbix search_limit parameter defaults to 1000 items
+//     See: https://www.zabbix.com/documentation/current/en/manual/api/reference/settings/object
+//
+// Our limits are conservative to ensure good performance:
 const (
 	DefaultMaxTimeRangeDays = 365 // 1 year
 	DefaultMaxItems         = 500
@@ -35,6 +43,7 @@ func ValidateItemIDs(itemids string) error {
 	// Split and validate each ID
 	ids := strings.Split(trimmed, ",")
 	numericPattern := regexp.MustCompile(`^\d+$`)
+	hasValidID := false
 
 	for _, id := range ids {
 		id = strings.TrimSpace(id)
@@ -44,16 +53,9 @@ func ValidateItemIDs(itemids string) error {
 		if !numericPattern.MatchString(id) {
 			return backend.DownstreamError(ErrInvalidItemID)
 		}
+		hasValidID = true
 	}
 
-	// Check if we have at least one valid ID
-	hasValidID := false
-	for _, id := range ids {
-		if strings.TrimSpace(id) != "" {
-			hasValidID = true
-			break
-		}
-	}
 	if !hasValidID {
 		return backend.DownstreamError(ErrEmptyItemIDs)
 	}
