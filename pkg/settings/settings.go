@@ -70,6 +70,33 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		timeout = 30
 	}
 
+	var queryTimeout int64
+	switch t := zabbixSettingsDTO.QueryTimeout.(type) {
+	case string:
+		if t == "" {
+			queryTimeout = 60
+			break
+		}
+		queryTimeoutInt, err := strconv.Atoi(t)
+		if err != nil {
+			return nil, errors.New("failed to parse queryTimeout: " + err.Error())
+		}
+		queryTimeout = int64(queryTimeoutInt)
+	case float64:
+		queryTimeout = int64(t)
+	case int64:
+		queryTimeout = t
+	case int:
+		queryTimeout = int64(t)
+	default:
+		queryTimeout = 60
+	}
+
+	// Default to 60 seconds if queryTimeout is 0 or negative
+	if queryTimeout <= 0 {
+		queryTimeout = 60
+	}
+
 	zabbixSettings := &ZabbixDatasourceSettings{
 		AuthType:                zabbixSettingsDTO.AuthType,
 		Trends:                  zabbixSettingsDTO.Trends,
@@ -77,6 +104,7 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		TrendsRange:             trendsRange,
 		CacheTTL:                cacheTTL,
 		Timeout:                 time.Duration(timeout) * time.Second,
+		QueryTimeout:            time.Duration(queryTimeout) * time.Second,
 		DisableDataAlignment:    zabbixSettingsDTO.DisableDataAlignment,
 		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
 	}
