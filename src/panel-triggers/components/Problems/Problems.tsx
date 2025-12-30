@@ -336,12 +336,124 @@ export const ProblemList = (props: ProblemListProps) => {
     table.nextPage();
   };
 
-  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPageSize = Number(e.target.value);
-    reportPageSizeChange(newPageSize);
-    table.setPageSize(newPageSize);
-    onPageSizeChange?.(newPageSize, table.getState().pagination.pageIndex);
-  };
+    const columns = [
+      { Header: 'Host', id: 'host', show: options.hostField, Cell: hostNameCell },
+      { Header: 'Host (Technical Name)', id: 'hostTechName', show: options.hostTechNameField, Cell: hostTechNameCell },
+      { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
+      { Header: 'Proxy', accessor: 'proxy', show: options.hostProxy },
+      {
+        Header: 'Severity',
+        show: options.severityField,
+        className: 'problem-severity',
+        width: 120,
+        accessor: (problem) => problem.priority,
+        id: 'severity',
+        Cell: (props) =>
+          SeverityCell(
+            props,
+            options.triggerSeverity,
+            options.markAckEvents,
+            options.ackEventColor,
+            options.okEventColor
+          ),
+      },
+      {
+        Header: '',
+        id: 'statusIcon',
+        show: options.statusIcon,
+        className: 'problem-status-icon',
+        width: 50,
+        accessor: 'value',
+        Cell: statusIconCell,
+      },
+      { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
+      { Header: 'Problem', accessor: 'name', minWidth: 200, Cell: ProblemCell },
+      { Header: 'Operational data', accessor: 'opdata', show: options.opdataField, width: 150, Cell: OpdataCell },
+      {
+        Header: 'Ack',
+        id: 'ack',
+        show: options.ackField,
+        width: 70,
+        Cell: (props) => <AckCell {...props} />,
+      },
+    ];
+    // CUSTOM TAGS ARE ADDED HERE, BEFORE THE ORIGINAL TAGS COLUMN
+    if (options.customTagColumns && options.customTagColumns.trim().length > 0) {
+      const tagNames = options.customTagColumns
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+
+      // Helper function to capitalize first letter for uniformity
+      const capitalizeFirstLetter = (str: string) => {
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      }
+
+      // Create a column for each tag
+      tagNames.forEach((tagName) => {
+        columns.push({
+          Header: capitalizeFirstLetter(tagName),
+          id: `customTag_${tagName}`,
+          className: `customTag_${tagName}`,
+          show: true,
+          width: 150,
+          accessor: (problem) => {
+            if (!problem) {
+              return '';
+            }
+            // There are cases where multiple tags with same name
+            const matchingTags = problem.tags.filter((t) => t.tag === tagName);
+            const values = matchingTags.map((t) => t.value).filter((v) => v);
+            return values.length > 0 ? values.join(', ') : '';
+          },
+          Cell: (props) => {
+            const tagValue = props.value || '';
+            return (
+              <div>
+                <span>{tagValue}</span>
+              </div>
+            );
+          },
+        });
+      });
+    }
+
+    columns.push(
+      {
+        Header: 'Tags',
+        accessor: 'tags',
+        show: options.showTags,
+        className: 'problem-tags',
+        Cell: (props) => <TagCell {...props} onTagClick={this.handleTagClick} />,
+      },
+      {
+        Header: 'Age',
+        className: 'problem-age',
+        width: 100,
+        show: options.ageField,
+        accessor: 'timestamp',
+        id: 'age',
+        Cell: AgeCell,
+      },
+      {
+        Header: 'Time',
+        className: 'last-change',
+        width: 150,
+        accessor: 'timestamp',
+        id: 'lastchange',
+        Cell: (props) => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
+      },
+      { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
+    );
+
+    for (const column of columns) {
+      if (column.show || column.show === undefined) {
+        delete column.show;
+        result.push(column);
+      }
+    }
+    return result;
+  }
 
   // Calculate page size options
   const pageSizeOptions = React.useMemo(() => {
