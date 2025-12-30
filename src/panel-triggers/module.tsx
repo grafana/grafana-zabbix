@@ -220,7 +220,20 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         name: 'Datasource name',
         defaultValue: defaultPanelOptions.showDatasourceName,
         category: ['Fields'],
-      });
+      })
+      
+      // Select tag name to display as column
+      .addTextInput({
+        path: 'customTagColumns',
+        name: 'Tags to columns',
+        defaultValue: '',
+        description: 'Comma-separated list of tag names to display as columns (e.g., component, scope, environment)',
+        settings: {
+          placeholder: 'component, scope, target'
+        },
+        category: ['Fields'],
+      })
+      ;
   });
 
 const fontSizeOptions = [
