@@ -17,6 +17,7 @@ import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 import { ItemCountWarning } from './ItemCountWarning';
+import { TimeRangeWarning } from './TimeRangeWarning';
 
 const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
   {
@@ -113,7 +114,7 @@ function getProblemsQueryDefaults(): Partial<ZabbixMetricsQuery> {
 export interface ZabbixQueryEditorProps
   extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQuery, ZabbixDSOptions> {}
 
-export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQueryEditorProps) => {
+export const QueryEditor = ({ query, datasource, onChange, onRunQuery, range }: ZabbixQueryEditorProps) => {
   const [itemCount, setItemCount] = useState(0);
   const queryDefaults = getDefaultQuery();
   query = { ...queryDefaults, ...query };
@@ -206,6 +207,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   return (
     <Stack direction="column">
       {queryType === c.MODE_METRICS && <ItemCountWarning itemCount={itemCount} />}
+      <TimeRangeWarning timeRange={range} />
       <QueryEditorRow>
         <InlineField label="Query type" labelWidth={12}>
           <Combobox<QueryType>
