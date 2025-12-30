@@ -1,13 +1,14 @@
 import React from 'react';
 import _ from 'lodash';
-import { DataSourceRef, dateMath, PanelProps } from '@grafana/data';
+import { dateMath, PanelProps } from '@grafana/data';
+import { DataSourceRef } from '@grafana/schema';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { contextSrv } from 'grafana/app/core/core';
 import { ProblemsPanelOptions, RTResized } from './types';
 import { ZabbixMetricsQuery } from '../datasource/types/query';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
 import { APIExecuteScriptResponse } from '../datasource/zabbix/connectors/zabbix_api/types';
-import ProblemList from './components/Problems/Problems';
+import { ProblemList } from './components/Problems/Problems';
 import { AckProblemData } from './components/AckModal';
 import AlertList from './components/AlertList/AlertList';
 

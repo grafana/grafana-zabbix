@@ -208,32 +208,21 @@ export class Zabbix implements ZabbixConnector {
    * ```
    */
   testDataSource() {
-    let zabbixVersion;
     let dbConnectorStatus;
-    return this.getVersion()
-      .then((version) => {
-        zabbixVersion = version;
-        return this.getAllGroups();
-      })
-      .then(() => {
-        if (this.enableDirectDBConnection) {
-          return this.dbConnector.testDataSource();
-        } else {
-          return Promise.resolve();
-        }
-      })
-      .catch((error) => {
-        return Promise.reject(error);
-      })
-      .then((testResult) => {
+
+    if (this.enableDirectDBConnection) {
+      return this.dbConnector.testDataSource().then((testResult) => {
         if (testResult) {
           dbConnectorStatus = {
             dsType: this.dbConnector.datasourceTypeName || this.dbConnector.datasourceTypeId,
             dsName: this.dbConnector.datasourceName,
           };
+          return dbConnectorStatus;
         }
-        return { zabbixVersion, dbConnectorStatus };
       });
+    } else {
+      return Promise.resolve();
+    }
   }
 
   async getVersion() {
@@ -509,7 +498,15 @@ export class Zabbix implements ZabbixConnector {
 
         return query;
       })
-      .then((query) => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
+      .then((query) =>
+        this.zabbixAPI.getProblems(
+          query.groupids,
+          query.hostids,
+          query.applicationids,
+          this.supportsApplications(),
+          options
+        )
+      )
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
         return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
@@ -533,7 +530,7 @@ export class Zabbix implements ZabbixConnector {
         const [filteredGroups, filteredHosts, filteredApps] = results;
         const query: any = {};
 
-        if (appFilter) {
+        if (appFilter && this.supportsApplications()) {
           query.applicationids = _.flatten(_.map(filteredApps, 'applicationid'));
         }
         if (hostFilter) {
@@ -579,7 +576,15 @@ export class Zabbix implements ZabbixConnector {
 
         return query;
       })
-      .then((query) => this.zabbixAPI.getProblems(query.groupids, query.hostids, query.applicationids, options))
+      .then((query) =>
+        this.zabbixAPI.getProblems(
+          query.groupids,
+          query.hostids,
+          query.applicationids,
+          this.supportsApplications(),
+          options
+        )
+      )
       .then((problems) => findByFilter(problems, triggerFilter))
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
