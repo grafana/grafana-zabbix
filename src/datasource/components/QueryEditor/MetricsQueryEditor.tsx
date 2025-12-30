@@ -2,8 +2,7 @@ import _ from 'lodash';
 import React, { useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
 
-import { SelectableValue } from '@grafana/data';
-import { InlineField } from '@grafana/ui';
+import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
@@ -11,14 +10,18 @@ import { ZabbixDatasource } from '../../datasource';
 import { ZabbixMetricsQuery } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { itemTagToString } from '../../utils';
+import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 export interface Props {
   query: ZabbixMetricsQuery;
   datasource: ZabbixDatasource;
   onChange: (query: ZabbixMetricsQuery) => void;
+  onItemCountChange?: (count: number) => void;
 }
 
-export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
+export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountChange }: Props) => {
+  const interpolatedQuery = useInterpolatedQuery(datasource, query);
+
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
     const options = groups?.map((group) => ({
@@ -35,9 +38,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, []);
 
   const loadHostOptions = async (group: string) => {
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hosts = await datasource.zabbix.getAllHosts(groupFilter);
-    let options: Array<SelectableValue<string>> = hosts?.map((host) => ({
+    const hosts = await datasource.zabbix.getAllHosts(group);
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
@@ -48,15 +50,13 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   };
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
-    const options = await loadHostOptions(query.group.filter);
+    const options = await loadHostOptions(interpolatedQuery.group.filter);
     return options;
-  }, [query.group.filter]);
+  }, [interpolatedQuery.group.filter]);
 
   const loadAppOptions = async (group: string, host: string) => {
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hostFilter = datasource.replaceTemplateVars(host);
-    const apps = await datasource.zabbix.getAllApps(groupFilter, hostFilter);
-    let options: Array<SelectableValue<string>> = apps?.map((app) => ({
+    const apps = await datasource.zabbix.getAllApps(group, host);
+    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
       value: app.name,
       label: app.name,
     }));
@@ -66,9 +66,9 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   };
 
   const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
-    const options = await loadAppOptions(query.group.filter, query.host.filter);
+    const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
     return options;
-  }, [query.group.filter, query.host.filter]);
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
   const loadTagOptions = async (group: string, host: string) => {
     const tagsAvailable = await datasource.zabbix.isZabbix54OrHigher();
@@ -76,14 +76,12 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       return [];
     }
 
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hostFilter = datasource.replaceTemplateVars(host);
-    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, null, null, {});
+    const items = await datasource.zabbix.getAllItems(group, host, null, null, {});
     const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
     // const tags: ZBXItemTag[] = await datasource.zabbix.getItemTags(groupFilter, hostFilter, null);
 
     const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
-    let options: Array<SelectableValue<string>> = tagList?.map((tag) => ({
+    let options: Array<ComboboxOption<string>> = tagList?.map((tag) => ({
       value: tag,
       label: tag,
     }));
@@ -93,21 +91,35 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   };
 
   const [{ loading: tagsLoading, value: tagOptions }, fetchTags] = useAsyncFn(async () => {
-    const options = await loadTagOptions(query.group.filter, query.host.filter);
+    const options = await loadTagOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
     return options;
-  }, [query.group.filter, query.host.filter]);
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
-  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
-    const groupFilter = datasource.replaceTemplateVars(group);
-    const hostFilter = datasource.replaceTemplateVars(host);
-    const appFilter = datasource.replaceTemplateVars(app);
-    const tagFilter = datasource.replaceTemplateVars(itemTag);
+  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string, itemFilter: string) => {
     const options = {
       itemtype: 'num',
       showDisabledItems: query.options.showDisabledItems,
     };
-    const items = await datasource.zabbix.getAllItems(groupFilter, hostFilter, appFilter, tagFilter, options);
-    let itemOptions: Array<SelectableValue<string>> = items?.map((item) => ({
+    const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
+
+    // Count items that match the current item filter for the warning
+    let matchingItemCount = items?.length || 0;
+    if (itemFilter && items?.length) {
+      // If there's an item filter, count how many items match it
+      const filterRegex =
+        itemFilter.startsWith('/') && itemFilter.endsWith('/') ? new RegExp(itemFilter.slice(1, -1)) : null;
+      if (filterRegex) {
+        matchingItemCount = items.filter((item) => filterRegex.test(item.name)).length;
+      } else if (itemFilter) {
+        // Exact match or partial match
+        matchingItemCount = items.filter((item) => item.name === itemFilter || item.name.includes(itemFilter)).length;
+      }
+    }
+
+    // Report the matching item count
+    onItemCountChange?.(matchingItemCount);
+
+    let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
     }));
@@ -118,19 +130,27 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const [{ loading: itemsLoading, value: itemOptions }, fetchItems] = useAsyncFn(async () => {
     const options = await loadItemOptions(
-      query.group.filter,
-      query.host.filter,
-      query.application.filter,
-      query.itemTag.filter
+      interpolatedQuery.group.filter,
+      interpolatedQuery.host.filter,
+      interpolatedQuery.application.filter,
+      interpolatedQuery.itemTag.filter,
+      interpolatedQuery.item.filter
     );
     return options;
-  }, [query.group.filter, query.host.filter, query.application.filter, query.itemTag.filter]);
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.application.filter,
+    interpolatedQuery.itemTag.filter,
+    interpolatedQuery.item.filter,
+  ]);
 
   // Update suggestions on every metric change
-  const groupFilter = datasource.replaceTemplateVars(query.group?.filter);
-  const hostFilter = datasource.replaceTemplateVars(query.host?.filter);
-  const appFilter = datasource.replaceTemplateVars(query.application?.filter);
-  const tagFilter = datasource.replaceTemplateVars(query.itemTag?.filter);
+  const groupFilter = interpolatedQuery.group?.filter;
+  const hostFilter = interpolatedQuery.host?.filter;
+  const appFilter = interpolatedQuery.application?.filter;
+  const tagFilter = interpolatedQuery.itemTag?.filter;
+  const itemFilter = interpolatedQuery.item?.filter;
 
   useEffect(() => {
     fetchGroups();
@@ -150,7 +170,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter]);
+  }, [groupFilter, hostFilter, appFilter, tagFilter, itemFilter]);
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {
@@ -172,6 +192,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            placeholder="Group name"
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -181,6 +202,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            placeholder="Host name"
           />
         </InlineField>
       </QueryEditorRow>
@@ -193,6 +215,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              placeholder="Application name"
             />
           </InlineField>
         )}
@@ -204,6 +227,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={tagOptions}
               isLoading={tagsLoading}
               onChange={onFilterChange('itemTag')}
+              placeholder="Item tag name"
             />
           </InlineField>
         )}
@@ -214,6 +238,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={itemOptions}
             isLoading={itemsLoading}
             onChange={onFilterChange('item')}
+            placeholder="Item name"
           />
         </InlineField>
       </QueryEditorRow>

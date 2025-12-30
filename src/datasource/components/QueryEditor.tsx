@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { InlineField, Select } from '@grafana/ui';
+import React, { useEffect, useState } from 'react';
+import { QueryEditorProps } from '@grafana/data';
+import { Combobox, ComboboxOption, InlineField, Stack } from '@grafana/ui';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
@@ -16,8 +16,9 @@ import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
+import { ItemCountWarning } from './ItemCountWarning';
 
-const zabbixQueryTypeOptions: Array<SelectableValue<QueryType>> = [
+const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
   {
     value: c.MODE_METRICS,
     label: 'Metrics',
@@ -113,6 +114,7 @@ export interface ZabbixQueryEditorProps
   extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQuery, ZabbixDSOptions> {}
 
 export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQueryEditorProps) => {
+  const [itemCount, setItemCount] = useState(0);
   const queryDefaults = getDefaultQuery();
   query = { ...queryDefaults, ...query };
   query.options = { ...queryDefaults.options, ...query.options };
@@ -133,7 +135,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   }, []);
 
   const onPropChange = (prop: string) => {
-    return (option: SelectableValue) => {
+    return (option: ComboboxOption) => {
       if (option.value !== null) {
         onChangeInternal({ ...query, [prop]: option.value });
       }
@@ -152,7 +154,12 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   const renderMetricsEditor = () => {
     return (
       <>
-        <MetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
+        <MetricsQueryEditor
+          query={query}
+          datasource={datasource}
+          onChange={onChangeInternal}
+          onItemCountChange={setItemCount}
+        />
         <QueryFunctionsEditor query={query} onChange={onChangeInternal} />
       </>
     );
@@ -171,7 +178,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
     return (
       <>
         <TextMetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
-        {/* <QueryFunctionsEditor query={query} onChange={onChangeInternal} /> */}
       </>
     );
   };
@@ -198,11 +204,11 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
   };
 
   return (
-    <>
+    <Stack direction="column">
+      {queryType === c.MODE_METRICS && <ItemCountWarning itemCount={itemCount} />}
       <QueryEditorRow>
         <InlineField label="Query type" labelWidth={12}>
-          <Select<QueryType>
-            isSearchable={false}
+          <Combobox<QueryType>
             width={24}
             value={queryType}
             options={zabbixQueryTypeOptions}
@@ -218,6 +224,6 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery }: ZabbixQ
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
       {queryType === c.MODE_MACROS && renderUserMacrosEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
-    </>
+    </Stack>
   );
 };

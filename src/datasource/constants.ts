@@ -49,3 +49,5 @@ export const MIN_SLA_INTERVAL = 3600;
 export const RANGE_VARIABLE_VALUE = 'range_series';
 
 export const DEFAULT_ZABBIX_PROBLEMS_LIMIT = 1001;
+
+export const ITEM_COUNT_WARNING_THRESHOLD = 500;

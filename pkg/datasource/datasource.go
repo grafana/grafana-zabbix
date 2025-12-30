@@ -118,7 +118,7 @@ func (ds *ZabbixDatasource) CheckHealth(ctx context.Context, req *backend.CheckH
 	}
 
 	res.Status = backend.HealthStatusOk
-	res.Message = message
+	res.Message = fmt.Sprintf("Zabbix API version %s", message)
 	return res, nil
 }
 
@@ -142,6 +142,9 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		query, err := ReadQuery(q)
 		ds.logger.Debug("DS query", "query", q)
 		if err != nil {
+			res = backend.ErrorResponseWithErrorSource(err)
+		} else if err := ValidateTimeRange(query.TimeRange); err != nil {
+			// Validate time range before processing any query
 			res = backend.ErrorResponseWithErrorSource(err)
 		} else if query.QueryType == MODE_METRICS {
 			frames, err := zabbixDS.queryNumericItems(ctx, &query)

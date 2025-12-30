@@ -36,13 +36,12 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string,
 		return "", err
 	}
 
-	response, err := ds.zabbix.Request(ctx, &zabbix.ZabbixAPIRequest{Method: "apiinfo.version"})
+	zabbixVersion, err := ds.zabbix.GetFullVersion(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	resultByte, _ := response.MarshalJSON()
-	return string(resultByte), nil
+	return zabbixVersion, nil
 }
 
 func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) ([]*data.Frame, error) {
@@ -79,6 +78,11 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 }
 
 func (ds *ZabbixDatasourceInstance) queryItemIdData(ctx context.Context, query *QueryModel) ([]*data.Frame, error) {
+	// Validate itemids before processing
+	if err := ValidateItemIDs(query.ItemIDs); err != nil {
+		return nil, err
+	}
+
 	itemids := strings.Split(query.ItemIDs, ",")
 	for i, id := range itemids {
 		itemids[i] = strings.Trim(id, " ")

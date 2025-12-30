@@ -16,20 +16,12 @@ jobs:
     name: Add issue to project
     runs-on: ubuntu-latest
     steps:
-      - id: get-secrets
-        uses: grafana/shared-workflows/actions/get-vault-secrets@main # zizmor: ignore[unpinned-uses]
+      - id: get-github-token
+        uses: grafana/shared-workflows/actions/create-github-app-token@ae92934a14a48b94494dbc06d74a81d47fe08a40 # create-github-app-token/v0.2.2
         with:
-          repo_secrets: |
-            GITHUB_APP_ID=grafana-oss-big-tent:app-id
-            GITHUB_APP_PRIVATE_KEY=grafana-oss-big-tent:private-key
-      - name: Generate a token
-        id: generate-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ env.GITHUB_APP_ID }}
-          private-key: ${{ env.GITHUB_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-      - uses: actions/add-to-project@main
+          github_app: grafana-oss-big-tent
+      - name: Add to project
+        uses: actions/add-to-project@main
         with:
           project-url: https://github.com/orgs/grafana/projects/457
-          github-token: ${{ steps.generate-token.outputs.token }}
+          github-token: ${{ steps.get-github-token.outputs.token }}

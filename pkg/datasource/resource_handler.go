@@ -51,6 +51,13 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 		return
 	}
 
+	// Validate API method is allowed (guardrail)
+	if err := ValidateAPIMethod(reqData.Method); err != nil {
+		ds.logger.Warn("Blocked API method", "method", reqData.Method)
+		writeError(rw, http.StatusForbidden, err)
+		return
+	}
+
 	ctx := req.Context()
 	pluginCxt := backend.PluginConfigFromContext(ctx)
 	dsInstance, err := ds.getDSInstance(ctx, pluginCxt)

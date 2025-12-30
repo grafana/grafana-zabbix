@@ -1,67 +1,314 @@
-// ReactTable basic overrides (does not include pivot/groups/filters)
-
-.ReactTable {
-  border: none;
-}
-
-.ReactTable .rt-table {
-  // Allow some space for the no-data text
+// ReactTable v8 styles (native table elements)
+.react-table-v8-wrapper {
+  position: relative;
   min-height: 90px;
+  overflow-x: auto;
+  overflow-y: auto;
+  width: 100%;
+  flex-grow: 1;
+
+  // Loading overlay (same as v6)
+  .-loading {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: $input-bg;
+    transition: all 0.3s ease;
+    z-index: -1;
+    opacity: 0;
+    pointer-events: none;
+
+    &.-active {
+      opacity: 0.8;
+      z-index: 10;
+      pointer-events: all;
+    }
+
+    > div {
+      position: absolute;
+      display: block;
+      text-align: center;
+      width: 100%;
+      top: 50%;
+      left: 0;
+      font-size: 15px;
+      color: $input-color;
+      transform: translateY(-50%);
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+  }
+
+  // Reduce table opacity when loading
+  &.is-loading {
+    .react-table-v8 {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+  }
 }
 
-.ReactTable .rt-thead.-header {
-  box-shadow: none;
-  background: $list-item-bg;
-  border-top: 2px solid $body-bg;
-  border-bottom: 2px solid $body-bg;
-  height: 2em;
+.react-table-v8 {
+  width: 100%;
+  border: none;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+
+  // Header styles
+  thead {
+    tr {
+      box-shadow: none;
+      background: $list-item-bg;
+      border-top: 2px solid $body-bg;
+      border-bottom: 2px solid $body-bg;
+      height: 2em;
+    }
+
+    th {
+      text-align: left;
+      color: $blue;
+      font-weight: 500;
+      padding: 0.45em 0 0.45em 1.1em;
+      border-right: none;
+      box-shadow: none;
+      background: transparent;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      box-sizing: border-box;
+      position: relative;
+
+      .resizer {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background: rgba(0, 0, 0, 0.1);
+        cursor: col-resize;
+        user-select: none;
+        touch-action: none;
+        opacity: 0;
+        z-index: 1;
+        transition: opacity 0.2s;
+
+        &:hover,
+        &.isResizing {
+          opacity: 1;
+          background: $blue;
+        }
+      }
+
+      &:hover .resizer {
+        opacity: 0.5;
+      }
+    }
+  }
+
+  // Body styles
+  tbody {
+    td {
+      padding: 0.45em 0 0.45em 1.1em;
+      border-bottom: solid 1px $problems-border-color;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+
+    // Severity column styling
+    td.problem-severity {
+      padding: 0;
+      position: relative;
+
+      .severity-cell {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 0.45em 0 0.45em 1.1em;
+        color: $white;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+      }
+    }
+
+    // Tags column styling
+    td.problem-tags {
+      padding-left: 0.6rem;
+
+      .label-tag,
+      .zbx-tag {
+        cursor: pointer;
+        margin-right: 0.6rem;
+
+        &.highlighted {
+          box-shadow: 0 0 10px $orange;
+        }
+      }
+    }
+
+    // No data cell styling
+    td.no-data-cell {
+      text-align: center;
+      padding: 0;
+      background: transparent;
+      border: none;
+
+      .rt-noData {
+        position: relative;
+        top: 0;
+        left: 0;
+        z-index: 2;
+        background: unset;
+        color: $text-muted;
+        padding: 2rem 0;
+      }
+    }
+
+    tr {
+      background: transparent;
+
+      // Alternating row colors (stripe even rows with solid color)
+      &.even-row,
+      &.even-row-expanded {
+        background: $problems-table-stripe;
+
+        td {
+          background: inherit;
+        }
+      }
+
+      &:hover:not(.no-data-row) td {
+        background: $problems-table-row-hovered;
+      }
+    }
+
+    td.custom-expander {
+      text-align: center;
+      padding: 0;
+      position: relative;
+
+      button {
+        background: transparent;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+
+        i {
+          color: #676767;
+          font-size: 1.2rem;
+        }
+
+        &.expanded i {
+          color: $problem-expander-expanded-color;
+        }
+
+        &:hover {
+          background-color: $problem-expander-highlighted-background;
+
+          i {
+            color: $problem-expander-highlighted-color;
+          }
+        }
+      }
+    }
+  }
 }
-.ReactTable .rt-thead.-header .rt-th {
-  text-align: left;
-  color: $blue;
-  font-weight: 500;
-}
-.ReactTable .rt-thead .rt-td,
-.ReactTable .rt-thead .rt-th {
-  padding: 0.45em 0 0.45em 1.1em;
-  border-right: none;
-  box-shadow: none;
-}
-.ReactTable .rt-tbody .rt-td {
-  padding: 0.45em 0 0.45em 1.1em;
-  border-bottom: 2px solid $body-bg;
-  border-right: 2px solid $body-bg;
-}
-.ReactTable .rt-tbody .rt-td:last-child {
-  border-right: none;
-}
-.ReactTable .-pagination {
+
+// Pagination v8 styles
+.pagination-v8 {
+  margin-top: $panel-margin;
   border-top: none;
   box-shadow: none;
-  margin-top: $panel-margin;
 }
-.ReactTable .-pagination .-btn {
-  color: $blue;
-  background: $list-item-bg;
+
+.pagination-v8-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
-.ReactTable .-pagination input,
-.ReactTable .-pagination select {
+
+.pagination-v8-btn {
+  &.-btn {
+    color: $blue;
+    background: $list-item-bg;
+    border: 1px solid transparent;
+    padding: 0.5rem 1.5rem;
+    cursor: pointer;
+    border-radius: 3px;
+
+    &:hover:not(:disabled) {
+      opacity: 0.8;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.pagination-v8-info {
+  color: $text-color;
+  margin: 0 0.25rem;
+  text-align: center;
+}
+
+.pagination-v8-page-input {
+  width: 50px;
   color: $input-color;
   background-color: $input-bg;
+  padding: 0.5rem;
+  border-radius: 3px;
+  text-align: center;
+
+  &:focus {
+    outline: none;
+    border-color: $blue;
+  }
 }
-.ReactTable .-loading {
-  background: $input-bg;
-}
-.ReactTable .-loading.-active {
-  opacity: 0.8;
-}
-.ReactTable .-loading > div {
+
+.pagination-v8-select {
   color: $input-color;
-}
-.ReactTable .rt-tr .rt-td:last-child {
-  text-align: right;
-}
-.ReactTable .rt-noData {
-  top: 60px;
-  z-index: inherit;
+  background-color: $input-bg;
+  border: 1px solid $input-border-color;
+  padding: 0.5rem 0.5rem;
+  border-radius: 3px;
+  cursor: pointer;
+  height: auto;
+  line-height: normal;
+  width: auto;
+  min-width: 80px;
+
+  &:focus {
+    outline: none;
+    border-color: $blue;
+  }
+
+  option {
+    background-color: $input-bg;
+    color: $input-color;
+  }
 }

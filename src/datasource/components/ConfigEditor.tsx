@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getDataSourceSrv, config } from '@grafana/runtime';
 import { DataSourcePluginOptionsEditorProps, DataSourceSettings, GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
+  Combobox,
+  ComboboxOption,
   Field,
   Icon,
   Input,
@@ -9,7 +11,6 @@ import {
   MultiSelect,
   SecretInput,
   SecureSocksProxySettings,
-  Select,
   Switch,
   Tooltip,
   useStyles2,
@@ -32,7 +33,7 @@ import { css } from '@emotion/css';
 // the postgres-plugin changed it's id, so we list both the old name and the new name
 const SUPPORTED_SQL_DS = ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb'];
 
-const authOptions: Array<SelectableValue<ZabbixAuthType>> = [
+const authOptions: Array<ComboboxOption<ZabbixAuthType>> = [
   { label: 'User and password', value: ZabbixAuthType.UserLogin },
   { label: 'API token', value: ZabbixAuthType.Token },
 ];
@@ -163,7 +164,7 @@ export const ConfigEditor = (props: Props) => {
 
       <ConfigSection title="Zabbix Connection">
         <Field label="Auth type">
-          <Select
+          <Combobox
             width={40}
             options={authOptions}
             value={options.jsonData.authType}
@@ -346,7 +347,7 @@ export const ConfigEditor = (props: Props) => {
           {options.jsonData.dbConnectionEnable && (
             <>
               <Field label="Data Source">
-                <Select
+                <Combobox
                   width={40}
                   value={selectedDBDatasource}
                   options={getDirectDBDSOptions()}
@@ -356,6 +357,7 @@ export const ConfigEditor = (props: Props) => {
                     setSelectedDBDatasource,
                     setCurrentDSType
                   )}
+                  placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB)"
                 />
               </Field>
 
@@ -547,7 +549,7 @@ const jsonDataSelectHandler =
     value: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
     onChange: Props['onOptionsChange']
   ) =>
-  (option: SelectableValue) => {
+  (option: ComboboxOption) => {
     onChange({
       ...value,
       jsonData: {
@@ -633,7 +635,7 @@ const getDirectDBDatasources = () => {
 
 const getDirectDBDSOptions = () => {
   const dsList = getDirectDBDatasources();
-  const dsOpts: Array<SelectableValue<number>> = dsList.map((ds) => ({
+  const dsOpts: Array<ComboboxOption<number>> = dsList.map((ds) => ({
     label: ds.name,
     value: ds.id,
     description: ds.type,
