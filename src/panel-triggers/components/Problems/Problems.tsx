@@ -72,6 +72,38 @@ export const ProblemList = (props: ProblemListProps) => {
   const columns = useMemo(() => {
     const highlightNewerThan = panelOptions.highlightNewEvents && panelOptions.highlightNewerThan;
 
+    const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
+    const customTagColumns =
+      panelOptions.customTagColumns && panelOptions.customTagColumns.trim().length > 0
+        ? panelOptions.customTagColumns
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+            .map((tagName) =>
+              columnHelper.accessor(
+                (row) => {
+                  const tags = row.tags ?? [];
+                  // match original behavior: exact tag name match, allow multiple, join values
+                  const values = tags
+                    .filter((t) => t.tag === tagName)
+                    .map((t) => t.value)
+                    .filter(Boolean);
+                  return values.length ? values.join(', ') : '';
+                },
+                {
+                  id: `customTag_${tagName}`, // important: stable id for sizing/visibility maps [web:6]
+                  header: capitalizeFirstLetter(tagName),
+                  size: 150,
+                  meta: {
+                    className: `customTag_${tagName}`,
+                  },
+                  cell: ({ getValue }) => <span>{getValue() as string}</span>,
+                }
+              )
+            )
+        : [];
+
     return [
       columnHelper.accessor('host', {
         header: 'Host',
@@ -146,6 +178,7 @@ export const ProblemList = (props: ProblemListProps) => {
         size: 70,
         cell: ({ cell }) => <AckCell acknowledges={cell.row.original.acknowledges} />,
       }),
+      ...customTagColumns,
       columnHelper.accessor('tags', {
         header: 'Tags',
         size: 150,
@@ -199,6 +232,13 @@ export const ProblemList = (props: ProblemListProps) => {
             <i className="fa fa-info-circle" />
           </button>
         ),
+      }),
+      columnHelper.display({
+        id: 'filler',
+        header: '',
+        cell: () => null,
+        meta: { className: 'filler-col' },
+        size: 0,
       }),
     ];
   }, [panelOptions]);
@@ -336,124 +376,12 @@ export const ProblemList = (props: ProblemListProps) => {
     table.nextPage();
   };
 
-    const columns = [
-      { Header: 'Host', id: 'host', show: options.hostField, Cell: hostNameCell },
-      { Header: 'Host (Technical Name)', id: 'hostTechName', show: options.hostTechNameField, Cell: hostTechNameCell },
-      { Header: 'Host Groups', accessor: 'groups', show: options.hostGroups, Cell: GroupCell },
-      { Header: 'Proxy', accessor: 'proxy', show: options.hostProxy },
-      {
-        Header: 'Severity',
-        show: options.severityField,
-        className: 'problem-severity',
-        width: 120,
-        accessor: (problem) => problem.priority,
-        id: 'severity',
-        Cell: (props) =>
-          SeverityCell(
-            props,
-            options.triggerSeverity,
-            options.markAckEvents,
-            options.ackEventColor,
-            options.okEventColor
-          ),
-      },
-      {
-        Header: '',
-        id: 'statusIcon',
-        show: options.statusIcon,
-        className: 'problem-status-icon',
-        width: 50,
-        accessor: 'value',
-        Cell: statusIconCell,
-      },
-      { Header: 'Status', accessor: 'value', show: options.statusField, width: 100, Cell: statusCell },
-      { Header: 'Problem', accessor: 'name', minWidth: 200, Cell: ProblemCell },
-      { Header: 'Operational data', accessor: 'opdata', show: options.opdataField, width: 150, Cell: OpdataCell },
-      {
-        Header: 'Ack',
-        id: 'ack',
-        show: options.ackField,
-        width: 70,
-        Cell: (props) => <AckCell {...props} />,
-      },
-    ];
-    // CUSTOM TAGS ARE ADDED HERE, BEFORE THE ORIGINAL TAGS COLUMN
-    if (options.customTagColumns && options.customTagColumns.trim().length > 0) {
-      const tagNames = options.customTagColumns
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0);
-
-      // Helper function to capitalize first letter for uniformity
-      const capitalizeFirstLetter = (str: string) => {
-        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-      }
-
-      // Create a column for each tag
-      tagNames.forEach((tagName) => {
-        columns.push({
-          Header: capitalizeFirstLetter(tagName),
-          id: `customTag_${tagName}`,
-          className: `customTag_${tagName}`,
-          show: true,
-          width: 150,
-          accessor: (problem) => {
-            if (!problem) {
-              return '';
-            }
-            // There are cases where multiple tags with same name
-            const matchingTags = problem.tags.filter((t) => t.tag === tagName);
-            const values = matchingTags.map((t) => t.value).filter((v) => v);
-            return values.length > 0 ? values.join(', ') : '';
-          },
-          Cell: (props) => {
-            const tagValue = props.value || '';
-            return (
-              <div>
-                <span>{tagValue}</span>
-              </div>
-            );
-          },
-        });
-      });
-    }
-
-    columns.push(
-      {
-        Header: 'Tags',
-        accessor: 'tags',
-        show: options.showTags,
-        className: 'problem-tags',
-        Cell: (props) => <TagCell {...props} onTagClick={this.handleTagClick} />,
-      },
-      {
-        Header: 'Age',
-        className: 'problem-age',
-        width: 100,
-        show: options.ageField,
-        accessor: 'timestamp',
-        id: 'age',
-        Cell: AgeCell,
-      },
-      {
-        Header: 'Time',
-        className: 'last-change',
-        width: 150,
-        accessor: 'timestamp',
-        id: 'lastchange',
-        Cell: (props) => LastChangeCell(props, options.customLastChangeFormat && options.lastChangeFormat),
-      },
-      { Header: '', className: 'custom-expander', width: 60, expander: true, Expander: CustomExpander },
-    );
-
-    for (const column of columns) {
-      if (column.show || column.show === undefined) {
-        delete column.show;
-        result.push(column);
-      }
-    }
-    return result;
-  }
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPageSize = Number(e.target.value);
+    reportPageSizeChange(newPageSize);
+    table.setPageSize(newPageSize);
+    onPageSizeChange?.(newPageSize, table.getState().pagination.pageIndex);
+  };
 
   // Calculate page size options
   const pageSizeOptions = React.useMemo(() => {
@@ -477,18 +405,25 @@ export const ProblemList = (props: ProblemListProps) => {
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} style={{ width: `${header.getSize()}px` }}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    {header.column.getCanResize() && (
-                      <div
-                        onMouseDown={header.getResizeHandler()}
-                        onTouchStart={header.getResizeHandler()}
-                        className={`resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`}
-                      />
-                    )}
-                  </th>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const isFiller = header.column.id === 'filler';
+
+                  return (
+                    <th
+                      key={header.id}
+                      style={isFiller ? { width: 'auto' } : { width: `${header.getSize()}px` }}
+                    >
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.column.getCanResize() && (
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          className={`resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`}
+                        />
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
@@ -505,8 +440,14 @@ export const ProblemList = (props: ProblemListProps) => {
                   <tr className={rowIndex % 2 === 1 ? 'even-row' : 'odd-row'}>
                     {row.getVisibleCells().map((cell) => {
                       const className = (cell.column.columnDef.meta as any)?.className;
+                      const isFiller = cell.column.id === 'filler';
+
                       return (
-                        <td key={cell.id} className={className} style={{ width: `${cell.column.getSize()}px` }}>
+                        <td
+                          key={cell.id}
+                          className={className}
+                          style={isFiller ? { width: 'auto' } : { width: `${cell.column.getSize()}px` }}
+                        >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       );
