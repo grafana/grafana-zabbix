@@ -1,4 +1,6 @@
 import _ from 'lodash';
+import { from } from 'rxjs';
+import { mergeMap } from 'rxjs/operators';
 import config from 'grafana/app/core/config';
 import { contextSrv } from 'grafana/app/core/core';
 import * as dateMath from 'grafana/app/core/utils/datemath';
@@ -139,6 +141,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       });
 
     const interpolatedTargets = this.interpolateVariablesInQueries(requestTargets, request.scopedVars);
+    const backendTargets = interpolatedTargets.filter(this.isBackendTarget);
     const backendResponse = super.query({ ...request, targets: interpolatedTargets.filter(this.isBackendTarget) });
     const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: interpolatedTargets });
     const frontendResponsePromise = this.frontendQuery({ ...request, targets: interpolatedTargets });
@@ -152,11 +155,15 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         targets: interpolatedTargets.filter(this.isBackendTarget),
       });
 
+    if (backendTargets.length === 0) {
+      return from(applyMergeQueries({ data: [] } as DataQueryResponse));
+    }
+
     return backendResponse.pipe(
       map(applyFEFuncs),
       map(responseHandler.convertZabbixUnits),
       map(this.convertToWide),
-      map(applyMergeQueries)
+      mergeMap((qr) => from(applyMergeQueries(qr)))
     );
   }
 
@@ -904,25 +911,28 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return this.enableDirectDBConnection && (target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID);
   };
 
-  mergeQueries(
+  async mergeQueries(
     queryResponse: DataQueryResponse,
     dbConnectionResponsePromise: Promise<DataQueryResponse>,
     frontendResponsePromise: Promise<DataQueryResponse>,
     annotationResposePromise: Promise<DataQueryResponse>
-  ): DataQueryResponse {
-    Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResposePromise]).then((resp) => {
-      const [dbConnectionRes, frontendRes, annotationRes] = resp;
-      if (dbConnectionRes.data) {
-        queryResponse.data = queryResponse.data.concat(dbConnectionRes.data);
-      }
-      if (frontendRes.data) {
-        queryResponse.data = queryResponse.data.concat(frontendRes.data);
-      }
+  ): Promise<DataQueryResponse> {
+    const [dbConnectionRes, frontendRes, annotationRes] = await Promise.all([
+      dbConnectionResponsePromise,
+      frontendResponsePromise,
+      annotationResposePromise,
+    ]);
 
-      if (annotationRes.data) {
-        queryResponse.data = queryResponse.data.concat(annotationRes.data);
-      }
-    });
+    if (dbConnectionRes.data) {
+      queryResponse.data = queryResponse.data.concat(dbConnectionRes.data);
+    }
+    if (frontendRes.data) {
+      queryResponse.data = queryResponse.data.concat(frontendRes.data);
+    }
+    if (annotationRes.data) {
+      queryResponse.data = queryResponse.data.concat(annotationRes.data);
+    }
+
     return queryResponse;
   }
 
