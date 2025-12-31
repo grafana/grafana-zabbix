@@ -217,14 +217,14 @@ func TestGetItemTags(t *testing.T) {
 
 	tags, err := client.GetItemTags(context.Background(), "Servers", "web01", "/^Env/")
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []ItemTag{
+	assert.ElementsMatch(t, []Tag{
 		{Tag: "Env", Value: "prod"},
 		{Tag: "Env", Value: "stage"},
 	}, tags)
 }
 
 func TestFilterTags(t *testing.T) {
-	tags := []ItemTag{
+	tags := []Tag{
 		{Tag: "Env", Value: "prod"},
 		{Tag: "Application", Value: "api"},
 	}

@@ -1,4 +1,6 @@
 import { ZabbixAPIConnector } from './zabbixAPIConnector';
+import { HostTagOperatorValue } from '../../../components/QueryEditor/types';
+import { ZabbixTagEvalType } from 'datasource/types/query';
 
 describe('Zabbix API connector', () => {
   describe('getProxies function', () => {
@@ -152,6 +154,80 @@ describe('Zabbix API connector', () => {
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.applicationids).toBeUndefined();
+    });
+  });
+
+  describe('getHosts', () => {
+    it('passes base params and group ids', () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.request = jest.fn();
+
+      zabbixAPIConnector.getHosts(['1', '2']);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        groupids: ['1', '2'],
+      });
+    });
+
+    it('requests tags when getHostTags is true', () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.request = jest.fn();
+
+      zabbixAPIConnector.getHosts(undefined, true);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host', 'tags'],
+        sortfield: 'name',
+        selectTags: 'extend',
+      });
+    });
+
+    it('builds tag filters with numeric operator and evaltype', () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.request = jest.fn();
+
+      zabbixAPIConnector.getHosts(
+        undefined,
+        false,
+        [
+          { tag: 'role', value: 'api', operator: HostTagOperatorValue.Contains },
+          { tag: '', value: 'ignore me', operator: HostTagOperatorValue.Equals },
+        ],
+        ZabbixTagEvalType.Or
+      );
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        selectTags: 'extend',
+        evaltype: 2,
+        tags: [{ tag: 'role', value: 'api', operator: 0 }],
+      });
+    });
+
+    it('builds tag filters with numeric operator and default evaltype when using unsupported evalType', () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.request = jest.fn();
+
+      zabbixAPIConnector.getHosts(
+        undefined,
+        false,
+        [
+          { tag: 'role', value: 'api', operator: HostTagOperatorValue.Contains },
+          { tag: '', value: 'ignore me', operator: HostTagOperatorValue.Equals },
+        ],
+        '3' as ZabbixTagEvalType
+      );
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        selectTags: 'extend',
+        evaltype: 0,
+        tags: [{ tag: 'role', value: 'api', operator: 0 }],
+      });
     });
   });
 });

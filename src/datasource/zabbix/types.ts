@@ -50,3 +50,15 @@ export interface ZabbixConnector {
 
   supportsApplications: () => boolean;
 }
+
+export interface Host {
+  host: string;
+  name: string;
+  hostid?: string;
+  tags?: Tag[];
+}
+
+export interface Tag {
+  tag: string;
+  value: string;
+}
