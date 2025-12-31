@@ -17,9 +17,10 @@ export interface Props {
   query: ZabbixMetricsQuery;
   datasource: ZabbixDatasource;
   onChange: (query: ZabbixMetricsQuery) => void;
+  onItemCountChange?: (count: number) => void;
 }
 
-export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
+export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountChange }: Props) => {
   const interpolatedQuery = useInterpolatedQuery(datasource, query);
 
   const loadGroupOptions = async () => {
@@ -120,12 +121,30 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
-  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
+  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string, itemFilter: string) => {
     const options = {
       itemtype: 'num',
       showDisabledItems: query.options.showDisabledItems,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
+
+    // Count items that match the current item filter for the warning
+    let matchingItemCount = items?.length || 0;
+    if (itemFilter && items?.length) {
+      // If there's an item filter, count how many items match it
+      const filterRegex =
+        itemFilter.startsWith('/') && itemFilter.endsWith('/') ? new RegExp(itemFilter.slice(1, -1)) : null;
+      if (filterRegex) {
+        matchingItemCount = items.filter((item) => filterRegex.test(item.name)).length;
+      } else if (itemFilter) {
+        // Exact match or partial match
+        matchingItemCount = items.filter((item) => item.name === itemFilter || item.name.includes(itemFilter)).length;
+      }
+    }
+
+    // Report the matching item count
+    onItemCountChange?.(matchingItemCount);
+
     let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
@@ -140,7 +159,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
       interpolatedQuery.group.filter,
       interpolatedQuery.host.filter,
       interpolatedQuery.application.filter,
-      interpolatedQuery.itemTag.filter
+      interpolatedQuery.itemTag.filter,
+      interpolatedQuery.item.filter
     );
     return options;
   }, [
@@ -148,6 +168,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
     interpolatedQuery.host.filter,
     interpolatedQuery.application.filter,
     interpolatedQuery.itemTag.filter,
+    interpolatedQuery.item.filter,
   ]);
 
   // Update suggestions on every metric change
@@ -157,6 +178,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
   const hostFilter = interpolatedQuery.host?.filter;
   const appFilter = interpolatedQuery.application?.filter;
   const tagFilter = interpolatedQuery.itemTag?.filter;
+  const itemFilter = interpolatedQuery.item?.filter;
 
   useEffect(() => {
     fetchGroups();
@@ -180,7 +202,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter]);
+  }, [groupFilter, hostFilter, appFilter, tagFilter, itemFilter]);
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {
