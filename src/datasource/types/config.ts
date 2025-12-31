@@ -14,6 +14,7 @@ export type ZabbixDSOptions = {
   trendsRange: string;
   cacheTTL: string;
   timeout?: number;
+  queryTimeout?: number;
   dbConnectionEnable: boolean;
   dbConnectionDatasourceId?: number;
   dbConnectionDatasourceName?: string;
