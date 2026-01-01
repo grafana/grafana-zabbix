@@ -19,6 +19,7 @@ import VirtualModulesPlugin from 'webpack-virtual-modules';
 import { BuildModeWebpackPlugin } from './BuildModeWebpackPlugin.ts';
 import { DIST_DIR, SOURCE_DIR } from './constants.ts';
 import { getCPConfigVersion, getEntries, getPackageJson, getPluginJson, hasReadme, isWSL } from './utils.ts';
+import { externals } from '../bundler/externals.ts';
 
 const pluginJson = getPluginJson();
 const cpVersion = getCPConfigVersion();
@@ -55,45 +56,7 @@ const config = async (env: Env): Promise<Configuration> => {
 
     entry: await getEntries(),
 
-    externals: [
-      // Required for dynamic publicPath resolution
-      { 'amd-module': 'module' },
-      'lodash',
-      'jquery',
-      'moment',
-      'slate',
-      'emotion',
-      '@emotion/react',
-      '@emotion/css',
-      'prismjs',
-      'slate-plain-serializer',
-      '@grafana/slate-react',
-      'react',
-      'react-dom',
-      'react-redux',
-      'redux',
-      'rxjs',
-      'i18next',
-      'react-router',
-      'd3',
-      'angular',
-      /^@grafana\/ui/i,
-      /^@grafana\/runtime/i,
-      /^@grafana\/data/i,
-
-      // Mark legacy SDK imports as external if their name starts with the "grafana/" prefix
-      ({ request }, callback) => {
-        const prefix = 'grafana/';
-        const hasPrefix = (request: string) => request.indexOf(prefix) === 0;
-        const stripPrefix = (request: string) => request.substr(prefix.length);
-
-        if (request && hasPrefix(request)) {
-          return callback(undefined, stripPrefix(request));
-        }
-
-        callback();
-      },
-    ],
+    externals,
 
     // Support WebAssembly according to latest spec - makes WebAssembly module async
     experiments: {
