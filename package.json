@@ -73,7 +73,6 @@
     "css-loader": "^6.7.3",
     "eslint": "8.57.1",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-deprecation": "^2.0.0",
     "eslint-plugin-jsdoc": "^46.8.2",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.33.2",
