@@ -22,7 +22,32 @@ interface AlertCardProps {
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
 }
 
-export default class AlertCard extends PureComponent<AlertCardProps> {
+interface AlertCardState {
+  canSuppress: boolean;
+}
+
+export default class AlertCard extends PureComponent<AlertCardProps, AlertCardState> {
+  state: AlertCardState = {
+    canSuppress: false,
+  };
+
+  componentDidMount() {
+    this.checkSuppressSupport();
+  }
+
+  checkSuppressSupport = async () => {
+    try {
+      const problem = this.props.problem;
+      const ds: any = await getDataSourceSrv().get(problem.datasource);
+      if (ds?.zabbix?.supportsEventSuppression) {
+        this.setState({ canSuppress: ds.zabbix.supportsEventSuppression() });
+      }
+    } catch (e) {
+      // If we can't check, default to false
+      this.setState({ canSuppress: false });
+    }
+  };
+
   handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
       this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
@@ -184,6 +209,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
                     onClick={() => {
                       showModal(AckModal, {
                         canClose: problem.manual_close === '1',
+                        canSuppress: this.state.canSuppress,
                         severity: problemSeverity,
                         onSubmit: this.ackProblem,
                         onDismiss: hideModal,

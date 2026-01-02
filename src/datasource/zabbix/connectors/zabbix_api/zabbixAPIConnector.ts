@@ -2,7 +2,7 @@ import _ from 'lodash';
 import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
-import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
+import { MIN_SLA_INTERVAL } from '../../../constants';
 import { ShowProblemTypes } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
@@ -117,26 +117,34 @@ export class ZabbixAPIConnector {
     return semver.gte(this.version, '5.4.0');
   }
 
+  /**
+   * Check if Zabbix version supports event suppression (added in Zabbix 6.2)
+   */
+  supportsEventSuppression() {
+    return semver.gte(this.version, '6.2.0');
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
 
-  acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number) {
-    if (!action) {
-      action = semver.gte(this.version, '4.0.0') ? ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
-    }
-
-    const params: any = {
+  acknowledgeEvent(params: {
+    eventid: string;
+    message?: string;
+    action?: number;
+    severity?: number;
+    suppress_until?: number;
+  }) {
+    const { eventid, message, action, severity, suppress_until } = params;
+    const apiParams = {
       eventids: eventid,
-      message: message,
-      action: action,
+      message,
+      action,
+      severity,
+      suppress_until,
     };
 
-    if (severity !== undefined) {
-      params.severity = severity;
-    }
-
-    return this.request('event.acknowledge', params);
+    return this.request('event.acknowledge', apiParams);
   }
 
   getGroups() {
