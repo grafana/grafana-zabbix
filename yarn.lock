@@ -7446,7 +7446,7 @@ __metadata:
     postcss: "npm:8.4.31"
     postcss-loader: "npm:7.0.1"
     postcss-reporter: "npm:7.0.5"
-    postcss-scss: "npm:4.0.4"
+    postcss-scss: "npm:4.0.9"
     prettier: "npm:^3.0.3"
     prop-types: "npm:15.7.2"
     react: "npm:18.3.1"
@@ -10487,12 +10487,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-scss@npm:4.0.4":
-  version: 4.0.4
-  resolution: "postcss-scss@npm:4.0.4"
+"postcss-scss@npm:4.0.9":
+  version: 4.0.9
+  resolution: "postcss-scss@npm:4.0.9"
   peerDependencies:
-    postcss: ^8.3.3
-  checksum: 10c0/e13b32f734686efec131e8e45a307dff750ce9775b8ca57b75aa89ebb088214f4d877d9e0fb6b8e1c0895e4603388be06d95cebf62afb237a1a6fab94be0d7f0
+    postcss: ^8.4.29
+  checksum: 10c0/f917ecfd4b9113a6648e966a41f027ff7e14238393914978d44596e227a50f084667dc8818742348dc7d8b20130b30d4259aca1d4db86754a9c141202ae03714
   languageName: node
   linkType: hard
 
