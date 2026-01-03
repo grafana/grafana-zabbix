@@ -12,7 +12,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-7.2-latest
+    image: zabbix/zabbix-server-pgsql:alpine-7.2-latest@sha256:5c1aeceb24d6a07b64667a97d42053e3421c207aec39aca86d87980a30b01f5b
     ports:
       - '10051:10051'
     depends_on:
@@ -29,7 +29,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-apache-pgsql:alpine-7.2-latest
+    image: zabbix/zabbix-web-apache-pgsql:alpine-7.2-latest@sha256:70a301e5c25b9db11bde09ec5b1ba5c25480c3c63e70f01d51534d9648627ff6
     ports:
       - '8188:8080'
     depends_on:
@@ -45,7 +45,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:16
+    image: postgres:16@sha256:056b54f00419b49289227ab12d09df508543883f407fe9935a2cec430ef8aa8d
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'
@@ -54,7 +54,7 @@ services:
       POSTGRES_PASSWORD: zabbix
 
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-7.2-latest
+    image: zabbix/zabbix-agent:alpine-7.2-latest@sha256:0bb96e2afe24c71dcd38e16f9dff6e56b4aebadff5267ce354b39a79f4a07255
     environment:
       ZBX_SERVER_HOST: zabbix-server
       ZBX_SERVER_PORT: 10051
@@ -80,7 +80,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine
+    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
 
   zas_backend_01:
     build: ../zas-agent
@@ -99,7 +99,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine
+    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
 
   zas_frontend_01:
     build: ../zas-agent
