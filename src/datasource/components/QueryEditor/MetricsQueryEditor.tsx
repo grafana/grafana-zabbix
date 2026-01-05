@@ -1,15 +1,16 @@
-import _ from 'lodash';
-import React, { useEffect } from 'react';
+import { flatten, uniqBy } from 'lodash';
+import React, { useCallback, useEffect } from 'react';
 import { useAsyncFn } from 'react-use';
 
 import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
-import { getVariableOptions } from './utils';
+import { getVariableOptions, processHostTags } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery } from '../../types/query';
+import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { itemTagToString } from '../../utils';
+import { HostTagQueryEditor } from './HostTagQueryEditor';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 export interface Props {
@@ -28,6 +29,9 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
       value: group.name,
       label: group.name,
     }));
+    if (options.length > 0) {
+      options.unshift({ value: '/.*/' });
+    }
     options.unshift(...getVariableOptions());
     return options;
   };
@@ -37,22 +41,44 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     return options;
   }, []);
 
-  const loadHostOptions = async (group: string) => {
-    const hosts = await datasource.zabbix.getAllHosts(group);
+  const loadHostTagOptions = async (group: string) => {
+    const hostsWithTags = await datasource.zabbix.getAllHosts(group, true);
+    const hostTags = processHostTags(hostsWithTags ?? []);
+    let options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
+      value: tag.tag,
+      label: tag.tag,
+    }));
+    return options;
+  };
+
+  const loadHostOptions = async (group: string, hostTags?: HostTagFilter[], evalType?: ZabbixTagEvalType) => {
+    const hosts = await datasource.zabbix.getAllHosts(group, false, hostTags, evalType);
     let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
     }));
-    options = _.uniqBy(options, (o) => o.value);
-    options.unshift({ value: '/.*/' });
+    options = uniqBy(options, (o) => o.value);
+    if (options.length > 0) {
+      options.unshift({ value: '/.*/' });
+    }
     options.unshift(...getVariableOptions());
     return options;
   };
 
-  const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
-    const options = await loadHostOptions(interpolatedQuery.group.filter);
+  const [{ loading: hostTagsLoading, value: hostTagsOptions }, fetchHostTags] = useAsyncFn(async () => {
+    const options = await loadHostTagOptions(query.group.filter);
     return options;
-  }, [interpolatedQuery.group.filter]);
+  }, [query.group.filter]);
+
+  const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
+    const options = await loadHostOptions(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.hostTags,
+      interpolatedQuery.evaltype
+    );
+
+    return options;
+  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
@@ -60,7 +86,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
       value: app.name,
       label: app.name,
     }));
-    options = _.uniqBy(options, (o) => o.value);
+    options = uniqBy(options, (o) => o.value);
     options.unshift(...getVariableOptions());
     return options;
   };
@@ -77,15 +103,15 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     }
 
     const items = await datasource.zabbix.getAllItems(group, host, null, null, {});
-    const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
+    const tags: ZBXItemTag[] = flatten(items.map((item: ZBXItem) => item.tags || []));
     // const tags: ZBXItemTag[] = await datasource.zabbix.getItemTags(groupFilter, hostFilter, null);
 
-    const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
+    const tagList = uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
     let options: Array<ComboboxOption<string>> = tagList?.map((tag) => ({
       value: tag,
       label: tag,
     }));
-    options = _.uniqBy(options, (o) => o.value);
+    options = uniqBy(options, (o) => o.value);
     options.unshift(...getVariableOptions());
     return options;
   };
@@ -123,7 +149,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
       value: item.name,
       label: item.name,
     }));
-    itemOptions = _.uniqBy(itemOptions, (o) => o.value);
+    itemOptions = uniqBy(itemOptions, (o) => o.value);
     itemOptions.unshift(...getVariableOptions());
     return itemOptions;
   };
@@ -147,6 +173,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
 
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
+  const hostTagFilters = interpolatedQuery.hostTags;
+  const evalType = interpolatedQuery.evaltype;
   const hostFilter = interpolatedQuery.host?.filter;
   const appFilter = interpolatedQuery.application?.filter;
   const tagFilter = interpolatedQuery.itemTag?.filter;
@@ -157,8 +185,12 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
   }, []);
 
   useEffect(() => {
-    fetchHosts();
+    fetchHostTags();
   }, [groupFilter]);
+
+  useEffect(() => {
+    fetchHosts();
+  }, [groupFilter, hostTagFilters, evalType]);
 
   useEffect(() => {
     fetchApps();
@@ -180,6 +212,20 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     };
   };
 
+  const onHostTagFilterChange = useCallback(
+    (hostTags: HostTagFilter[]) => {
+      onChange({ ...query, hostTags: hostTags });
+    },
+    [onChange, query]
+  );
+
+  const onHostTagEvalTypeChange = useCallback(
+    (evalType: ZabbixTagEvalType) => {
+      onChange({ ...query, evaltype: evalType });
+    },
+    [onChange, query]
+  );
+
   const supportsApplications = datasource.zabbix.supportsApplications();
 
   return (
@@ -193,6 +239,16 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
             placeholder="Group name"
+          />
+        </InlineField>
+        <InlineField label="Host tag" labelWidth={12}>
+          <HostTagQueryEditor
+            hostTagOptions={hostTagsOptions}
+            evalTypeValue={query.evaltype}
+            hostTagOptionsLoading={hostTagsLoading}
+            onHostTagFilterChange={onHostTagFilterChange}
+            onHostTagEvalTypeChange={onHostTagEvalTypeChange}
+            version={datasource.zabbix.version}
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
