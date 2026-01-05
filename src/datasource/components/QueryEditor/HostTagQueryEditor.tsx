@@ -105,6 +105,7 @@ export const HostTagQueryEditor = ({
                 options={hostTagOptions ?? []}
                 width={19}
                 loading={hostTagOptionsLoading}
+                createCustomValue={true}
               />
               <Combobox
                 value={filter.operator}

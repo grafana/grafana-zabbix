@@ -239,6 +239,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
             placeholder="Group name"
+            createCustomValue={true}
           />
         </InlineField>
         <InlineField label="Host tag" labelWidth={12}>
@@ -259,6 +260,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
             placeholder="Host name"
+            createCustomValue={true}
           />
         </InlineField>
       </QueryEditorRow>
@@ -271,6 +273,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              createCustomValue={true}
               placeholder="Application name"
             />
           </InlineField>
@@ -283,6 +286,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
               options={tagOptions}
               isLoading={tagsLoading}
               onChange={onFilterChange('itemTag')}
+              createCustomValue={true}
               placeholder="Item tag name"
             />
           </InlineField>
@@ -294,6 +298,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
             options={itemOptions}
             isLoading={itemsLoading}
             onChange={onFilterChange('item')}
+            createCustomValue={true}
             placeholder="Item name"
           />
         </InlineField>
