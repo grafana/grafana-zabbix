@@ -84,7 +84,6 @@ export const ProblemList = (props: ProblemListProps) => {
               columnHelper.accessor(
                 (row) => {
                   const tags = row.tags ?? [];
-                  // match original behavior: exact tag name match, allow multiple, join values
                   const values = tags
                     .filter((t) => t.tag === tagName)
                     .map((t) => t.value)
@@ -92,7 +91,7 @@ export const ProblemList = (props: ProblemListProps) => {
                   return values.length ? values.join(', ') : '';
                 },
                 {
-                  id: `problem-tag_${tagName}`, // important: stable id for sizing/visibility maps [web:6]
+                  id: `problem-tag_${tagName}`,
                   header: capitalizeFirstLetter(tagName),
                   size: 150,
                   meta: {
@@ -398,27 +397,18 @@ export const ProblemList = (props: ProblemListProps) => {
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  // Make 'host' and 'name' columns fluid
-                  const isFluid = header.column.id === 'host' || header.column.id === 'name';
-
-                  return (
-                    <th 
-                      key={header.id} 
-                      // If fluid, use 'auto' (or omit width). Otherwise use the calculated pixel size.
-                      style={{ width: isFluid ? 'auto' : `${header.getSize()}px` }}
-                    >
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      {header.column.getCanResize() && (
-                        <div
-                          onMouseDown={header.getResizeHandler()}
-                          onTouchStart={header.getResizeHandler()}
-                          className={`resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`}
-                        />
-                      )}
-                    </th>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <th key={header.id} style={{ width: `${header.getSize()}px` }}>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    {header.column.getCanResize() && (
+                      <div
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        className={`resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`}
+                      />
+                    )}
+                  </th>
+                ))}
               </tr>
             ))}
           </thead>
@@ -435,16 +425,8 @@ export const ProblemList = (props: ProblemListProps) => {
                   <tr className={rowIndex % 2 === 1 ? 'even-row' : 'odd-row'}>
                     {row.getVisibleCells().map((cell) => {
                       const className = (cell.column.columnDef.meta as any)?.className;
-                      // Make 'host' and 'name' columns fluid
-                      const isFluid = cell.column.id === 'host' || cell.column.id === 'name';
-                      
                       return (
-                        <td 
-                          key={cell.id} 
-                          className={className} 
-                          // Match the header logic: fluid column gets auto width
-                          style={{ width: isFluid ? 'auto' : `${cell.column.getSize()}px` }}
-                        >
+                        <td key={cell.id} className={className} style={{ width: `${cell.column.getSize()}px` }}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       );
