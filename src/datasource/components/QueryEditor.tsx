@@ -111,8 +111,11 @@ function getProblemsQueryDefaults(): Partial<ZabbixMetricsQuery> {
   };
 }
 
-export interface ZabbixQueryEditorProps
-  extends QueryEditorProps<ZabbixDatasource, ZabbixMetricsQuery, ZabbixDSOptions> {}
+export interface ZabbixQueryEditorProps extends QueryEditorProps<
+  ZabbixDatasource,
+  ZabbixMetricsQuery,
+  ZabbixDSOptions
+> {}
 
 export const QueryEditor = ({ query, datasource, onChange, onRunQuery, range }: ZabbixQueryEditorProps) => {
   const [itemCount, setItemCount] = useState(0);
