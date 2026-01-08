@@ -7396,7 +7396,7 @@ __metadata:
     moment: "npm:2.29.4"
     postcss: "npm:8.4.31"
     postcss-loader: "npm:7.0.1"
-    postcss-reporter: "npm:7.0.5"
+    postcss-reporter: "npm:7.1.0"
     postcss-scss: "npm:4.0.4"
     prettier: "npm:^3.0.3"
     prop-types: "npm:15.7.2"
@@ -10340,15 +10340,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-reporter@npm:7.0.5":
-  version: 7.0.5
-  resolution: "postcss-reporter@npm:7.0.5"
+"postcss-reporter@npm:7.1.0":
+  version: 7.1.0
+  resolution: "postcss-reporter@npm:7.1.0"
   dependencies:
     picocolors: "npm:^1.0.0"
     thenby: "npm:^1.3.4"
   peerDependencies:
     postcss: ^8.1.0
-  checksum: 10c0/5bd96e9681b0f1a557dbd8e8e802c112a220cd93951b7a3c4ddfd90be8910a9001ebef0a16c277f93c37f6710c73aeb22698165f7ec17b0d76892a691ddb38a4
+  checksum: 10c0/c58280a58efd689645a1e59e5cd31f9e8bebef0581177cbe0db23b52f2de5fdc60027ec2fa18d82f5d2d947058570f6e230dfdd88c70b0cedb45b708512f1931
   languageName: node
   linkType: hard
 
