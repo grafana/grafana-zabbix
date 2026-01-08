@@ -236,7 +236,9 @@ export const ConfigEditor = (props: Props) => {
               }}
             />
           </Field>
+        </ConfigSubSection>
 
+        <ConfigSubSection title="Query Options">
           <Field
             label={
               <Label>
