@@ -54,7 +54,7 @@
     "@swc/helpers": "0.5.18",
     "@swc/jest": "0.2.39",
     "@tanstack/react-table": "8.21.3",
-    "@testing-library/dom": "^10.4.1",
+    "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.1",
     "@types/grafana": "github:CorpGlory/types-grafana",
