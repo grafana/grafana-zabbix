@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
