@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { getDataSourceSrv, config } from '@grafana/runtime';
 import { DataSourcePluginOptionsEditorProps, DataSourceSettings, GrafanaTheme2, SelectableValue } from '@grafana/data';
 import {
@@ -42,8 +42,19 @@ export const ConfigEditor = (props: Props) => {
   const styles = useStyles2(getStyles);
   const { options, onOptionsChange } = props;
 
-  const [selectedDBDatasource, setSelectedDBDatasource] = useState(null);
-  const [currentDSType, setCurrentDSType] = useState('');
+  // Derive selectedDBDatasource and currentDSType from options
+  const { selectedDBDatasource, currentDSType } = useMemo(() => {
+    if (!options.jsonData.dbConnectionEnable || !options.jsonData.dbConnectionDatasourceId) {
+      return { selectedDBDatasource: null, currentDSType: '' };
+    }
+    const selectedDs = getDirectDBDatasources().find(
+      (dsOption) => dsOption.id === options.jsonData.dbConnectionDatasourceId
+    );
+    return {
+      selectedDBDatasource: selectedDs ? { label: selectedDs.name, value: selectedDs.id } : null,
+      currentDSType: selectedDs?.type || '',
+    };
+  }, [options.jsonData.dbConnectionEnable, options.jsonData.dbConnectionDatasourceId]);
 
   // Apply some defaults on initial render
   useEffect(() => {
@@ -73,32 +84,22 @@ export const ConfigEditor = (props: Props) => {
       secureJsonData: { ...newSecureJsonData },
     });
 
-    if (options.jsonData.dbConnectionEnable) {
-      if (!options.jsonData.dbConnectionDatasourceId) {
-        const dsName = options.jsonData.dbConnectionDatasourceName;
-        getDataSourceSrv()
-          .get(dsName)
-          .then((ds) => {
-            if (ds) {
-              const selectedDs = getDirectDBDatasources().find((dsOption) => dsOption.id === ds.id);
-              setSelectedDBDatasource({ label: selectedDs?.name, value: selectedDs?.id });
-              setCurrentDSType(selectedDs?.type);
-              onOptionsChange({
-                ...options,
-                jsonData: {
-                  ...options.jsonData,
-                  dbConnectionDatasourceId: ds.id,
-                },
-              });
-            }
-          });
-      } else {
-        const selectedDs = getDirectDBDatasources().find(
-          (dsOption) => dsOption.id === options.jsonData.dbConnectionDatasourceId
-        );
-        setSelectedDBDatasource({ label: selectedDs?.name, value: selectedDs?.id });
-        setCurrentDSType(selectedDs?.type);
-      }
+    // Handle async lookup when dbConnectionDatasourceId is not set but name is available
+    if (options.jsonData.dbConnectionEnable && !options.jsonData.dbConnectionDatasourceId) {
+      const dsName = options.jsonData.dbConnectionDatasourceName;
+      getDataSourceSrv()
+        .get(dsName)
+        .then((ds) => {
+          if (ds) {
+            onOptionsChange({
+              ...options,
+              jsonData: {
+                ...options.jsonData,
+                dbConnectionDatasourceId: ds.id,
+              },
+            });
+          }
+        });
     }
   }, []);
 
@@ -318,12 +319,7 @@ export const ConfigEditor = (props: Props) => {
                   width={40}
                   value={selectedDBDatasource}
                   options={getDirectDBDSOptions()}
-                  onChange={directDBDatasourceChanegeHandler(
-                    options,
-                    onOptionsChange,
-                    setSelectedDBDatasource,
-                    setCurrentDSType
-                  )}
+                  onChange={directDBDatasourceChanegeHandler(options, onOptionsChange)}
                   placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB)"
                 />
               </Field>
@@ -480,16 +476,8 @@ const resetSecureJsonField =
   };
 
 const directDBDatasourceChanegeHandler =
-  (
-    options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
-    onChange: Props['onOptionsChange'],
-    setSelectedDS: React.Dispatch<any>,
-    setSelectedDSType: React.Dispatch<any>
-  ) =>
+  (options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>, onChange: Props['onOptionsChange']) =>
   (value: SelectableValue<number>) => {
-    const selectedDs = getDirectDBDatasources().find((dsOption) => dsOption.id === value.value);
-    setSelectedDS({ label: selectedDs.name, value: selectedDs.id });
-    setSelectedDSType(selectedDs.type);
     onChange({
       ...options,
       jsonData: {
