@@ -92,11 +92,11 @@ export const ProblemList = (props: ProblemListProps) => {
                   return values.length ? values.join(', ') : '';
                 },
                 {
-                  id: `customTag_${tagName}`, // important: stable id for sizing/visibility maps [web:6]
+                  id: `problem-tag_${tagName}`, // important: stable id for sizing/visibility maps [web:6]
                   header: capitalizeFirstLetter(tagName),
                   size: 150,
                   meta: {
-                    className: `customTag_${tagName}`,
+                    className: `problem-tag_${tagName}`,
                   },
                   cell: ({ getValue }) => <span>{getValue() as string}</span>,
                 }
@@ -232,13 +232,6 @@ export const ProblemList = (props: ProblemListProps) => {
             <i className="fa fa-info-circle" />
           </button>
         ),
-      }),
-      columnHelper.display({
-        id: 'filler',
-        header: '',
-        cell: () => null,
-        meta: { className: 'filler-col' },
-        size: 0,
       }),
     ];
   }, [panelOptions]);
@@ -406,12 +399,14 @@ export const ProblemList = (props: ProblemListProps) => {
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                  const isFiller = header.column.id === 'filler';
+                  // Make 'host' and 'name' columns fluid
+                  const isFluid = header.column.id === 'host' || header.column.id === 'name';
 
                   return (
-                    <th
-                      key={header.id}
-                      style={isFiller ? { width: 'auto' } : { width: `${header.getSize()}px` }}
+                    <th 
+                      key={header.id} 
+                      // If fluid, use 'auto' (or omit width). Otherwise use the calculated pixel size.
+                      style={{ width: isFluid ? 'auto' : `${header.getSize()}px` }}
                     >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getCanResize() && (
@@ -440,13 +435,15 @@ export const ProblemList = (props: ProblemListProps) => {
                   <tr className={rowIndex % 2 === 1 ? 'even-row' : 'odd-row'}>
                     {row.getVisibleCells().map((cell) => {
                       const className = (cell.column.columnDef.meta as any)?.className;
-                      const isFiller = cell.column.id === 'filler';
-
+                      // Make 'host' and 'name' columns fluid
+                      const isFluid = cell.column.id === 'host' || cell.column.id === 'name';
+                      
                       return (
-                        <td
-                          key={cell.id}
-                          className={className}
-                          style={isFiller ? { width: 'auto' } : { width: `${cell.column.getSize()}px` }}
+                        <td 
+                          key={cell.id} 
+                          className={className} 
+                          // Match the header logic: fluid column gets auto width
+                          style={{ width: isFluid ? 'auto' : `${cell.column.getSize()}px` }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
