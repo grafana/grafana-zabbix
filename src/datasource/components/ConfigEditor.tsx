@@ -450,13 +450,16 @@ export const ConfigEditor = (props: Props) => {
                   </Label>
                 }
               >
-                <Select
+                <Combobox
                   width={40}
                   options={[
                     { label: 'Username', value: 'username' },
                     { label: 'Email', value: 'email' },
-                  ]}
-                  value={options.jsonData.perUserAuthField || 'username' }
+                  ]as Array<ComboboxOption<string>>}
+                  value={{
+                    label: options.jsonData.perUserAuthField === 'email' ? 'Email' : 'Username',
+                    value: options.jsonData.perUserAuthField || 'username',
+                  }}
                   onChange={jsonDataSelectHandler('perUserAuthField', options, onOptionsChange)}
                 />
               </Field>
