@@ -67,7 +67,7 @@ const buildCustomTagColumns = (customTagColumns?: string) => {
         header: capitalizeFirstLetter(tagName),
         size: 150,
         meta: {
-          className: `problem-tag_${tagName}`
+          className: `problem-tag_${tagName}`,
         },
         cell: ({ getValue }) => <span>{getValue() as string}</span>,
       }

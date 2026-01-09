@@ -25,18 +25,11 @@ describe('parseCustomTagColumns', () => {
   });
 
   it('splits comma-separated values and trims whitespace', () => {
-    expect(parseCustomTagColumns('env, region ,service')).toEqual([
-      'env',
-      'region',
-      'service',
-    ]);
+    expect(parseCustomTagColumns('env, region ,service')).toEqual(['env', 'region', 'service']);
   });
 
   it('filters out empty values', () => {
-    expect(parseCustomTagColumns('env,, ,region,')).toEqual([
-      'env',
-      'region',
-    ]);
+    expect(parseCustomTagColumns('env,, ,region,')).toEqual(['env', 'region']);
   });
 
   it('preserves order', () => {
