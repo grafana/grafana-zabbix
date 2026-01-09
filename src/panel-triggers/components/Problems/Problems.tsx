@@ -25,6 +25,7 @@ import {
 } from '@tanstack/react-table';
 import { reportInteraction } from '@grafana/runtime';
 import { ProblemDetails } from './ProblemDetails';
+import { capitalizeFirstLetter, parseCustomTagColumns } from './utils';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -46,6 +47,33 @@ export interface ProblemListProps {
 }
 
 const columnHelper = createColumnHelper<ProblemDTO>();
+
+const buildCustomTagColumns = (customTagColumns?: string) => {
+  const tagNames = parseCustomTagColumns(customTagColumns);
+
+  return tagNames.map((tagName) =>
+    columnHelper.accessor(
+      (row) => {
+        const tags = row.tags ?? [];
+        const values = tags
+          .filter((t) => t.tag === tagName)
+          .map((t) => t.value)
+          .filter(Boolean);
+
+        return values.length ? values.join(', ') : '';
+      },
+      {
+        id: `problem-tag_${tagName}`,
+        header: capitalizeFirstLetter(tagName),
+        size: 150,
+        meta: {
+          className: `problem-tag_${tagName}`
+        },
+        cell: ({ getValue }) => <span>{getValue() as string}</span>,
+      }
+    )
+  );
+};
 
 export const ProblemList = (props: ProblemListProps) => {
   const {
@@ -72,36 +100,7 @@ export const ProblemList = (props: ProblemListProps) => {
   const columns = useMemo(() => {
     const highlightNewerThan = panelOptions.highlightNewEvents && panelOptions.highlightNewerThan;
 
-    const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-
-    const customTagColumns =
-      panelOptions.customTagColumns && panelOptions.customTagColumns.trim().length > 0
-        ? panelOptions.customTagColumns
-            .split(',')
-            .map((t) => t.trim())
-            .filter(Boolean)
-            .map((tagName) =>
-              columnHelper.accessor(
-                (row) => {
-                  const tags = row.tags ?? [];
-                  const values = tags
-                    .filter((t) => t.tag === tagName)
-                    .map((t) => t.value)
-                    .filter(Boolean);
-                  return values.length ? values.join(', ') : '';
-                },
-                {
-                  id: `problem-tag_${tagName}`,
-                  header: capitalizeFirstLetter(tagName),
-                  size: 150,
-                  meta: {
-                    className: `problem-tag_${tagName}`,
-                  },
-                  cell: ({ getValue }) => <span>{getValue() as string}</span>,
-                }
-              )
-            )
-        : [];
+    const customTagColumns = buildCustomTagColumns(panelOptions.customTagColumns);
 
     return [
       columnHelper.accessor('host', {
