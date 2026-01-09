@@ -1,17 +1,24 @@
 import _ from 'lodash';
+// eslint-disable-next-line no-restricted-imports
 import moment from 'moment';
 
-var units = ['y', 'M', 'w', 'd', 'h', 'm', 's'];
+let units = ['y', 'M', 'w', 'd', 'h', 'm', 's'];
 
 export function parse(text, roundUp) {
-  if (!text) { return undefined; }
-  if (moment.isMoment(text)) { return text; }
-  if (_.isDate(text)) { return moment(text); }
+  if (!text) {
+    return undefined;
+  }
+  if (moment.isMoment(text)) {
+    return text;
+  }
+  if (_.isDate(text)) {
+    return moment(text);
+  }
 
-  var time;
-  var mathString = '';
-  var index;
-  var parseString;
+  let time;
+  let mathString = '';
+  let index;
+  let parseString;
 
   if (text.substring(0, 3) === 'now') {
     time = moment();
@@ -37,7 +44,7 @@ export function parse(text, roundUp) {
 }
 
 export function isValid(text) {
-  var date = parse(text);
+  let date = parse(text);
   if (!date) {
     return false;
   }
@@ -50,15 +57,15 @@ export function isValid(text) {
 }
 
 export function parseDateMath(mathString, time, roundUp) {
-  var dateTime = time;
-  var i = 0;
-  var len = mathString.length;
+  let dateTime = time;
+  let i = 0;
+  let len = mathString.length;
 
   while (i < len) {
-    var c = mathString.charAt(i++);
-    var type;
-    var num;
-    var unit;
+    let c = mathString.charAt(i++);
+    let type;
+    let num;
+    let unit;
 
     if (c === '/') {
       type = 0;
@@ -75,10 +82,12 @@ export function parseDateMath(mathString, time, roundUp) {
     } else if (mathString.length === 2) {
       num = mathString.charAt(i);
     } else {
-      var numFrom = i;
+      let numFrom = i;
       while (!isNaN(mathString.charAt(i))) {
         i++;
-        if (i > 10) { return undefined; }
+        if (i > 10) {
+          return undefined;
+        }
       }
       num = parseInt(mathString.substring(numFrom, i), 10);
     }

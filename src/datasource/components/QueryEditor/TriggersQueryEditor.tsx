@@ -230,6 +230,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
             placeholder="Group name"
+            createCustomValue={true}
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
@@ -239,6 +240,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            createCustomValue={true}
             placeholder="Host name"
           />
         </InlineField>
@@ -250,6 +252,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={proxiesOptions}
               isLoading={proxiesLoading}
               onChange={onFilterChange('proxy')}
+              createCustomValue={true}
               placeholder="Proxy name"
             />
           </InlineField>
@@ -264,6 +267,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              createCustomValue={true}
               placeholder="Application name"
             />
           </InlineField>
@@ -276,6 +280,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={tagOptions}
               isLoading={tagsLoading}
               onChange={onFilterChange('itemTag')}
+              createCustomValue={true}
               placeholder="Item tag name"
             />
           </InlineField>
@@ -300,6 +305,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={itemOptions}
               isLoading={itemsLoading}
               onChange={onFilterChange('item')}
+              createCustomValue={true}
               placeholder="Item name"
             />
           </InlineField>
