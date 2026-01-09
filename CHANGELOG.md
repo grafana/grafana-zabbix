@@ -1,13 +1,5 @@
 # Change Log
 
-## 6.1.0
-
-### Minor Changes
-
-🚀 Enhance the problems panel with the ability to convert specific tags to columns. Single or multiple tags supported.
-
-### Patch Changes
-
 ## 6.0.3
 
 ### Patch Changes
