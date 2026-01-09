@@ -65,7 +65,7 @@ services:
       - ../nginx/.htpasswd:/etc/nginx/.htpasswd:ro
 
   database:
-    image: postgres:14@sha256:5fd97d3efae5e17da18b5884532f07c411330253e0a864d8895f176ab4ab0f90
+    image: postgres:18@sha256:bfe50b2b0ddd9b55eadedd066fe24c7c6fe06626185b73358c480ea37868024d
     ports:
       - '15432:5432'
     environment:
