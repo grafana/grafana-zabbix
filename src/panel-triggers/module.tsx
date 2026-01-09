@@ -221,7 +221,6 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         defaultValue: defaultPanelOptions.showDatasourceName,
         category: ['Fields'],
       })
-      
       // Select tag name to display as column
       .addTextInput({
         path: 'customTagColumns',
@@ -229,11 +228,10 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         defaultValue: '',
         description: 'Comma-separated list of tag names to display as columns (e.g., component, scope, environment)',
         settings: {
-          placeholder: 'component, scope, target'
+          placeholder: 'component, scope, target',
         },
         category: ['Fields'],
-      })
-      ;
+      });
   });
 
 const fontSizeOptions = [
