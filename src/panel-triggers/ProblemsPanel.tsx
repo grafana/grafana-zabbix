@@ -29,9 +29,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     for (const dataFrame of data.series) {
       try {
         const values = dataFrame.fields[0].values;
-        if (values.toArray) {
-          problems.push(...values.toArray());
-        }
+        problems.push(...values);
       } catch (error) {
         console.log(error);
         return [];
@@ -125,7 +123,8 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const addTagFilter = (tag: ZBXTag, datasource: DataSourceRef) => {
-    const targets = data.request?.targets!;
+    const originalTargets = data.request?.targets!;
+    const targets = _.cloneDeep(originalTargets);
     let updated = false;
     for (const target of targets) {
       if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
@@ -148,7 +147,8 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
 
   const removeTagFilter = (tag: ZBXTag, datasource: DataSourceRef) => {
     const matchTag = (t: ZBXTag) => t.tag === tag.tag && t.value === tag.value;
-    const targets = data.request?.targets!;
+    const originalTargets = data.request?.targets!;
+    const targets = _.cloneDeep(originalTargets);
     let updated = false;
     for (const target of targets) {
       if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
@@ -170,8 +170,8 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
 
   const getProblemEvents = async (problem: ProblemDTO) => {
     const triggerids = [problem.triggerid];
-    const timeFrom = Math.ceil(dateMath.parse(timeRange.from)!.unix());
-    const timeTo = Math.ceil(dateMath.parse(timeRange.to)!.unix());
+    const timeFrom = Math.ceil(dateMath.toDateTime(timeRange.from, {}).unix());
+    const timeTo = Math.ceil(dateMath.toDateTime(timeRange.to, {}).unix());
     const ds: any = await getDataSourceSrv().get(problem.datasource);
     return ds.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
   };

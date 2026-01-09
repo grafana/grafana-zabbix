@@ -1,4 +1,7 @@
+import { uniqBy } from 'lodash';
 import { getTemplateSrv } from '@grafana/runtime';
+import { Host, Tag } from 'datasource/zabbix/types';
+import { HostTagOperatorLabel, HostTagOperatorLabelBefore70, HostTagOperatorValue } from './types';
 
 export const getVariableOptions = () => {
   const variables = getTemplateSrv()
@@ -11,3 +14,28 @@ export const getVariableOptions = () => {
     label: `$${v.name}`,
   }));
 };
+
+export function processHostTags(hosts: Host[]): Tag[] {
+  const hostTags = hosts.map((host) => host.tags || []).flat();
+  // deduplicate tags
+  const uniqueHostTags = uniqBy(hostTags, (tag) => tag.tag);
+  return uniqueHostTags;
+}
+
+/**
+ * Get the label for a host tag option
+ * Zabbix changed some of the operator labels in version 7.0.0 but the value equivalents remained the same.
+ * this function helps fetch the right label value for those that are different.
+ */
+export function getHostTagOptionLabel(value: HostTagOperatorValue, version: string): string {
+  switch (value) {
+    case HostTagOperatorValue.DoesNotExist:
+      return version < '7.0.0' ? HostTagOperatorLabelBefore70.NotExist : HostTagOperatorLabel.DoesNotExist;
+    case HostTagOperatorValue.DoesNotEqual:
+      return version < '7.0.0' ? HostTagOperatorLabelBefore70.NotEqual : HostTagOperatorLabel.DoesNotEqual;
+    case HostTagOperatorValue.DoesNotContain:
+      return version < '7.0.0' ? HostTagOperatorLabelBefore70.NotLike : HostTagOperatorLabel.DoesNotContain;
+    default:
+      return '';
+  }
+}

@@ -233,7 +233,7 @@ func filterAppsByQuery(items []Application, filter string) ([]Application, error
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilter string, tagFilter string) ([]ItemTag, error) {
+func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilter string, tagFilter string) ([]Tag, error) {
 	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -252,8 +252,8 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 		return nil, err
 	}
 
-	var allTags []ItemTag
-	tagsMap := make(map[string]ItemTag)
+	var allTags []Tag
+	tagsMap := make(map[string]Tag)
 	for _, item := range allItems {
 		for _, itemTag := range item.Tags {
 			tagStr := itemTagToString(itemTag)
@@ -267,13 +267,13 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 	return filterTags(allTags, tagFilter)
 }
 
-func filterTags(items []ItemTag, filter string) ([]ItemTag, error) {
+func filterTags(items []Tag, filter string) ([]Tag, error) {
 	re, err := parseFilter(filter)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredItems := make([]ItemTag, 0)
+	filteredItems := make([]Tag, 0)
 	for _, i := range items {
 		tagStr := itemTagToString(i)
 		if re != nil {

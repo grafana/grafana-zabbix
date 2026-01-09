@@ -35,7 +35,7 @@ import {
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
-import { lastValueFrom, map, Observable } from 'rxjs';
+import { from, lastValueFrom, map, Observable, switchMap } from 'rxjs';
 
 export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, ZabbixDSOptions> {
   name: string;
@@ -142,10 +142,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const backendResponse = super.query({ ...request, targets: interpolatedTargets.filter(this.isBackendTarget) });
     const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: interpolatedTargets });
     const frontendResponsePromise = this.frontendQuery({ ...request, targets: interpolatedTargets });
-    const annotationResposePromise = this.annotationRequest({ ...request, targets: interpolatedTargets });
-
-    const applyMergeQueries = (queryResponse: DataQueryResponse) =>
-      this.mergeQueries(queryResponse, dbConnectionResponsePromise, frontendResponsePromise, annotationResposePromise);
+    const annotationResponsePromise = this.annotationRequest({ ...request, targets: interpolatedTargets });
     const applyFEFuncs = (queryResponse: DataQueryResponse) =>
       this.applyFrontendFunctions(queryResponse, {
         ...request,
@@ -156,7 +153,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       map(applyFEFuncs),
       map(responseHandler.convertZabbixUnits),
       map(this.convertToWide),
-      map(applyMergeQueries)
+      switchMap((queryResponse) =>
+        from(Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResponsePromise])).pipe(
+          map(([dbConnectionRes, frontendRes, annotationRes]) =>
+            this.mergeQueries(queryResponse, dbConnectionRes, frontendRes, annotationRes)
+          )
+        )
+      )
     );
   }
 
@@ -906,24 +909,26 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   mergeQueries(
     queryResponse: DataQueryResponse,
-    dbConnectionResponsePromise: Promise<DataQueryResponse>,
-    frontendResponsePromise: Promise<DataQueryResponse>,
-    annotationResposePromise: Promise<DataQueryResponse>
+    dbConnectionResponse?: DataQueryResponse,
+    frontendResponse?: DataQueryResponse,
+    annotationResponse?: DataQueryResponse
   ): DataQueryResponse {
-    Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResposePromise]).then((resp) => {
-      const [dbConnectionRes, frontendRes, annotationRes] = resp;
-      if (dbConnectionRes.data) {
-        queryResponse.data = queryResponse.data.concat(dbConnectionRes.data);
-      }
-      if (frontendRes.data) {
-        queryResponse.data = queryResponse.data.concat(frontendRes.data);
-      }
+    const mergedResponse: DataQueryResponse = {
+      ...queryResponse,
+      data: queryResponse.data ? [...queryResponse.data] : [],
+    };
 
-      if (annotationRes.data) {
-        queryResponse.data = queryResponse.data.concat(annotationRes.data);
-      }
-    });
-    return queryResponse;
+    if (dbConnectionResponse?.data) {
+      mergedResponse.data = mergedResponse.data.concat(dbConnectionResponse.data);
+    }
+    if (frontendResponse?.data) {
+      mergedResponse.data = mergedResponse.data.concat(frontendResponse.data);
+    }
+    if (annotationResponse?.data) {
+      mergedResponse.data = mergedResponse.data.concat(annotationResponse.data);
+    }
+
+    return mergedResponse;
   }
 
   convertToWide(response: DataQueryResponse) {

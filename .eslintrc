@@ -1,9 +1,0 @@
-{
-  "extends": "./.config/.eslintrc",
-  "plugins": ["prettier"],
-  "ignorePatterns": ["/src/test-setup/**/*"],
-  "rules": {
-    "react-hooks/exhaustive-deps": "off",
-    "prettier/prettier": "error"
-  }
-}
