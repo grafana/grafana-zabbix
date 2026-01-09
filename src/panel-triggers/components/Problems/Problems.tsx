@@ -25,6 +25,7 @@ import {
 } from '@tanstack/react-table';
 import { reportInteraction } from '@grafana/runtime';
 import { ProblemDetails } from './ProblemDetails';
+import { capitalizeFirstLetter, parseCustomTagColumns } from './utils';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -46,6 +47,33 @@ export interface ProblemListProps {
 }
 
 const columnHelper = createColumnHelper<ProblemDTO>();
+
+const buildCustomTagColumns = (customTagColumns?: string) => {
+  const tagNames = parseCustomTagColumns(customTagColumns);
+
+  return tagNames.map((tagName) =>
+    columnHelper.accessor(
+      (row) => {
+        const tags = row.tags ?? [];
+        const values = tags
+          .filter((t) => t.tag === tagName)
+          .map((t) => t.value)
+          .filter(Boolean);
+
+        return values.length ? values.join(', ') : '';
+      },
+      {
+        id: `problem-tag_${tagName}`,
+        header: capitalizeFirstLetter(tagName),
+        size: 150,
+        meta: {
+          className: `problem-tag_${tagName}`,
+        },
+        cell: ({ getValue }) => <span>{getValue() as string}</span>,
+      }
+    )
+  );
+};
 
 export const ProblemList = (props: ProblemListProps) => {
   const {
@@ -71,6 +99,8 @@ export const ProblemList = (props: ProblemListProps) => {
   // Define columns inside component to access props via closure
   const columns = useMemo(() => {
     const highlightNewerThan = panelOptions.highlightNewEvents && panelOptions.highlightNewerThan;
+
+    const customTagColumns = buildCustomTagColumns(panelOptions.customTagColumns);
 
     return [
       columnHelper.accessor('host', {
@@ -146,6 +176,7 @@ export const ProblemList = (props: ProblemListProps) => {
         size: 70,
         cell: ({ cell }) => <AckCell acknowledges={cell.row.original.acknowledges} />,
       }),
+      ...customTagColumns,
       columnHelper.accessor('tags', {
         header: 'Tags',
         size: 150,
