@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -168,6 +169,7 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 						res = backend.ErrorResponseWithErrorSource(
 							backend.DownstreamError(fmt.Errorf("query timeout: %s", timeoutMsg)),
 						)
+						res.Status = http.StatusRequestTimeout
 					} else {
 						res = backend.ErrorResponseWithErrorSource(queryErr)
 					}
