@@ -95,6 +95,7 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={itServicesOptions}
             isLoading={itServicesLoading}
             onChange={onStringPropChange('itServiceFilter')}
+            createCustomValue={true}
             placeholder="Service name"
           />
         </InlineField>
@@ -105,6 +106,7 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={slaOptions}
             isLoading={slaLoading}
             onChange={onStringPropChange('slaFilter')}
+            createCustomValue={true}
             placeholder="SLA name"
           />
         </InlineField>

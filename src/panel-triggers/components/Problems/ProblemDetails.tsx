@@ -53,26 +53,22 @@ export const ProblemDetails = ({
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (showTimeline) {
-      fetchProblemEvents();
-    }
-    fetchProblemAlerts();
+    const fetchData = async () => {
+      const problem = original;
+      if (showTimeline) {
+        const eventsData = await getProblemEvents(problem);
+        setEvents(eventsData);
+      }
+      const alertsData = await getProblemAlerts(problem);
+      setAletrs(alertsData);
+    };
+
+    fetchData();
+
     requestAnimationFrame(() => {
       setShow(true);
     });
-  }, []);
-
-  const fetchProblemEvents = async () => {
-    const problem = original;
-    const events = await getProblemEvents(problem);
-    setEvents(events);
-  };
-
-  const fetchProblemAlerts = async () => {
-    const problem = original;
-    const alerts = await getProblemAlerts(problem);
-    setAletrs(alerts);
-  };
+  }, [original, showTimeline, getProblemEvents, getProblemAlerts]);
 
   const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (onTagClick) {

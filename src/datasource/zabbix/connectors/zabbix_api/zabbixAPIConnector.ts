@@ -3,7 +3,7 @@ import semver from 'semver';
 import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
-import { ShowProblemTypes } from '../../../types/query';
+import { HostTagFilter, ShowProblemTypes, ZabbixTagEvalType } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
@@ -149,7 +149,12 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
-  getHosts(groupids): Promise<any[]> {
+  getHosts(
+    groupids: string[],
+    getHostTags?: boolean,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<any[]> {
     const params: any = {
       output: ['hostid', 'name', 'host'],
       sortfield: 'name',
@@ -158,6 +163,23 @@ export class ZabbixAPIConnector {
       params.groupids = groupids;
     }
 
+    if (getHostTags) {
+      params.output.push('tags');
+      params.selectTags = 'extend';
+    }
+
+    if (hostTagFilters && hostTagFilters.length > 0) {
+      params.selectTags = 'extend';
+      params.evaltype = evalType === ZabbixTagEvalType.Or || evalType === ZabbixTagEvalType.AndOr ? +evalType : 0;
+
+      // ensure only non empty tag keys are being sent
+      // convert operator to number since that is the expected type in Zabbix.
+      params.tags = hostTagFilters
+        .filter((tagFilter) => tagFilter.tag !== '')
+        .map((tagFilter) => {
+          return { ...tagFilter, operator: +tagFilter.operator };
+        });
+    }
     return this.request('host.get', params);
   }
 

@@ -144,6 +144,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            createCustomValue={true}
             placeholder="Group name"
           />
         </InlineField>
@@ -154,6 +155,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            createCustomValue={true}
             placeholder="Host name"
           />
         </InlineField>
@@ -166,6 +168,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={appOptions}
             isLoading={appsLoading}
             onChange={onFilterChange('application')}
+            createCustomValue={true}
             placeholder="Application name"
           />
         </InlineField>
@@ -176,6 +179,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             options={itemOptions}
             isLoading={itemsLoading}
             onChange={onFilterChange('item')}
+            createCustomValue={true}
             placeholder="Item name"
           />
         </InlineField>

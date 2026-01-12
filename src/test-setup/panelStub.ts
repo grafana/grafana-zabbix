@@ -26,24 +26,19 @@ export class PanelCtrl {
     this.timing = {};
     this.events = {
       on: () => {},
-      emit: () => {}
+      emit: () => {},
     };
   }
 
-  init() {
-  }
+  init() {}
 
-  renderingCompleted() {
-  }
+  renderingCompleted() {}
 
-  refresh() {
-  }
+  refresh() {}
 
-  publishAppEvent(evtName, evt) {
-  }
+  publishAppEvent(evtName, evt) {}
 
-  changeView(fullscreen, edit) {
-  }
+  changeView(fullscreen, edit) {}
 
   viewPanel() {
     this.changeView(true, false);
@@ -57,14 +52,11 @@ export class PanelCtrl {
     this.changeView(false, false);
   }
 
-  initEditMode() {
-  }
+  initEditMode() {}
 
-  changeTab(newIndex) {
-  }
+  changeTab(newIndex) {}
 
-  addEditorTab(title, directiveFn, index) {
-  }
+  addEditorTab(title, directiveFn, index) {}
 
   getMenu() {
     return [];
@@ -78,41 +70,29 @@ export class PanelCtrl {
     return false;
   }
 
-  calculatePanelHeight() {
-  }
+  calculatePanelHeight() {}
 
-  render(payload) {
-  }
+  render(payload) {}
 
-  toggleEditorHelp(index) {
-  }
+  toggleEditorHelp(index) {}
 
-  duplicate() {
-  }
+  duplicate() {}
 
-  updateColumnSpan(span) {
-  }
+  updateColumnSpan(span) {}
 
-  removePanel() {
-  }
+  removePanel() {}
 
-  editPanelJson() {
-  }
+  editPanelJson() {}
 
-  replacePanel(newPanel, oldPanel) {
-  }
+  replacePanel(newPanel, oldPanel) {}
 
-  sharePanel() {
-  }
+  sharePanel() {}
 
-  getInfoMode() {
-  }
+  getInfoMode() {}
 
-  getInfoContent(options) {
-  }
+  getInfoContent(options) {}
 
-  openInspector() {
-  }
+  openInspector() {}
 }
 
 export class MetricsPanelCtrl extends PanelCtrl {

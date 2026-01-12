@@ -45,7 +45,7 @@ export class ModalController extends React.Component<Props, State> {
     });
   };
 
-  renderModal() {
+  renderModal(): React.ReactNode {
     const { component, props } = this.state;
     if (!component) {
       return null;
@@ -53,7 +53,7 @@ export class ModalController extends React.Component<Props, State> {
 
     this.modalRoot.appendChild(this.modalNode);
     const modal = React.createElement(provideTheme(component), props);
-    return ReactDOM.createPortal(modal, this.modalNode);
+    return ReactDOM.createPortal(modal, this.modalNode) as React.ReactNode;
   }
 
   render() {

@@ -1,6 +1,6 @@
 services:
   ssl-cert:
-    image: alpine:latest
+    image: alpine:latest@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62
     command: |
       sh -c "if [ ! -f /certs/nginx.crt ] || [ ! -f /certs/nginx.key ]; then
                apk add --no-cache openssl &&
@@ -26,7 +26,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-5.0-latest
+    image: zabbix/zabbix-server-pgsql:alpine-5.0-latest@sha256:b88c636ec3298529358914aa7fd04d3f7ae3da0eab261b405cb2a9fcb4fa5eae
     ports:
       - '10051:10051'
     depends_on:
@@ -39,7 +39,7 @@ services:
       POSTGRES_DB: zabbix
 
   zabbix-web:
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-5.0-latest
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-5.0-latest@sha256:90d9d85d42d46a4978091bd6deb405e6c8486fd53af5720a6f7a6135e6baaa4b
     ports:
       - '443:443'
       - '8188:8080'
@@ -65,7 +65,7 @@ services:
       - ../nginx/.htpasswd:/etc/nginx/.htpasswd:ro
 
   database:
-    image: postgres:14
+    image: postgres:18@sha256:bfe50b2b0ddd9b55eadedd066fe24c7c6fe06626185b73358c480ea37868024d
     ports:
       - '15432:5432'
     environment:
@@ -73,13 +73,13 @@ services:
       POSTGRES_PASSWORD: zabbix
 
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-5.0-latest
+    image: zabbix/zabbix-agent:alpine-5.0-latest@sha256:c34ca68c3120b1918bceb394f2275f6aa67ddecce641a0033fdea5c84b89731d
     environment:
       ZBX_SERVER_HOST: zabbix-server
       ZBX_SERVER_PORT: 10051
 
   zabbix-proxy:
-    image: zabbix/zabbix-proxy-sqlite3:alpine-5.0-latest
+    image: zabbix/zabbix-proxy-sqlite3:alpine-5.0-latest@sha256:a963b30b2e4352be890c93f599749d42a8e6a8e549629ccc6b30de437ecd4a5f
     environment:
       ZBX_PROXYMODE: 0
       ZBX_HOSTNAME: zabbix-proxy
@@ -87,7 +87,7 @@ services:
       ZBX_SERVER_PORT: 10051
 
   zabbix-agent-proxy:
-    image: zabbix/zabbix-agent:alpine-5.0-latest
+    image: zabbix/zabbix-agent:alpine-5.0-latest@sha256:c34ca68c3120b1918bceb394f2275f6aa67ddecce641a0033fdea5c84b89731d
     environment:
       ZBX_SERVER_HOST: zabbix-proxy
       ZBX_SERVER_PORT: 10051
@@ -117,7 +117,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine
+    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
 
   zas_backend_01:
     build: ../zas-agent
@@ -135,7 +135,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine
+    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
 
   zas_frontend_01:
     build: ../zas-agent
