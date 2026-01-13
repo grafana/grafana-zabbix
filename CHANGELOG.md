@@ -1,5 +1,27 @@
 # Change Log
 
+## 6.1.0
+
+🎉 Migrates use of DatasourceApi to DatasourceWithBackend
+
+🚀 Fix support of applicationids filters with Zabbix problems for versions older than 5.0.x
+
+🚀 Fix when to fetch Zabbix version before issuing new requests
+
+🚀 Support adding custom values in dropdowns for all query types
+
+🚀 Add support for host tags when querying metrics
+
+🚀 Add support for disabled items in Item variable type
+
+🚀 Standardization across Zabbix UI components
+
+🚀 Moves health check to the backend
+
+🚀 Fix how frontend and backend querying responses are merged
+
+🐛 Upgrade react-table to v8
+
 ## 6.0.3
 
 ### Patch Changes
