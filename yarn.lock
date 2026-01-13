@@ -3839,10 +3839,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lodash@npm:4.17.22":
-  version: 4.17.22
-  resolution: "@types/lodash@npm:4.17.22"
-  checksum: 10c0/8cef39191f00eaf5714727b1e0528f2ad89bc017e3850807de1c3c3d82716c48c2fc84d15323a904e25f8070b7e792c2cf731e4403cbb8497d1b16d5ae99b016
+"@types/lodash@npm:4.17.23":
+  version: 4.17.23
+  resolution: "@types/lodash@npm:4.17.23"
+  checksum: 10c0/9d9cbfb684e064a2b78aab9e220d398c9c2a7d36bc51a07b184ff382fa043a99b3d00c16c7f109b4eb8614118f4869678dbae7d5c6700ed16fb9340e26cc0bf6
   languageName: node
   linkType: hard
 
@@ -7584,7 +7584,7 @@ __metadata:
     "@testing-library/react": "npm:16.3.1"
     "@types/grafana": "github:CorpGlory/types-grafana"
     "@types/jest": "npm:30.0.0"
-    "@types/lodash": "npm:4.17.22"
+    "@types/lodash": "npm:4.17.23"
     "@types/node": "npm:25.0.5"
     "@types/react": "npm:18.3.27"
     "@types/react-dom": "npm:18.3.7"
