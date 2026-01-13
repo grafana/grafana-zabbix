@@ -4,7 +4,7 @@
 
 🎉 Migrates use of DatasourceApi to DatasourceWithBackend
 
-🚀 Fix support of applicationids filters with Zabbix problems for versions older than 5.0.x
+🚀 Fix support of `applicationids` filters with Zabbix problems for versions older than 5.0.x
 
 🚀 Fix when to fetch Zabbix version before issuing new requests
 
