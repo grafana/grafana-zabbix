@@ -1,5 +1,13 @@
 # Change Log
 
+## 6.1.1
+
+### Patch Changes
+
+🐛 Fix moment value rendering issue
+
+🐛 Fix proxies dropdown in ProblemsQueryEditor
+
 ## 6.1.0
 
 🎉 Migrates use of DatasourceApi to DatasourceWithBackend
