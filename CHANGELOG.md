@@ -1,8 +1,8 @@
 # Change Log
 
 ## 6.1.1
-🐛 Fix moment value rendering issue
 
+🐛 Fix moment value rendering issue
 🐛 Fix proxies dropdown in ProblemsQueryEditor
 
 ## 6.1.0
