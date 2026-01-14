@@ -12,7 +12,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest@sha256:a6f748d96bfa4d361df5e9284eba041c475e7ff26c1358f8f189969437ebdb9b
+    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest@sha256:033791214ab8146a4663c56dd6b46f742f03363e441d928216202136d094e154
     ports:
       - '10051:10051'
     depends_on:
