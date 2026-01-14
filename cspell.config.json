@@ -32,6 +32,7 @@
   "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
   "words": [
     "alexanderzobnin",
+    "applicationids",
     "datapoint",
     "datapoints",
     "datasource",
