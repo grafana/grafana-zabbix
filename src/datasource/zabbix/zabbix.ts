@@ -296,7 +296,6 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getAllGroups() {
-    console.log(this.zabbixAPI.getGroups());
     return this.zabbixAPI.getGroups();
   }
 
