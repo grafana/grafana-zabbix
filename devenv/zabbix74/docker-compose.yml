@@ -29,7 +29,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-apache-pgsql:alpine-7.4-latest@sha256:9b5ad53c684c9f5d7b15c626e22e3d2c97c2b0b2b05ce811d1a8fe42416cd01b
+    image: zabbix/zabbix-web-apache-pgsql:alpine-7.4-latest@sha256:f7357956bb66ac1c18db0b93a2af1c60ecea9f2ce6366f55bfb5cd6000415441
     ports:
       - '8188:8080'
     depends_on:
