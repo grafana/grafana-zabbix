@@ -42,7 +42,7 @@
     "tslib": "2.8.1"
   },
   "devDependencies": {
-    "@babel/core": "7.28.5",
+    "@babel/core": "7.28.6",
     "@changesets/cli": "2.29.8",
     "@grafana/e2e-selectors": "12.3.1",
     "@grafana/eslint-config": "9.0.0",
