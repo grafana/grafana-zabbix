@@ -4,7 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
@@ -12,10 +19,6 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 var (
@@ -136,6 +139,11 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 	err = ds.applyPerUserAuth(ctx, zabbixDS, req.PluginContext.DataSourceInstanceSettings.UID)
 	if err != nil {
 		return nil, err
+  }
+  
+	queryTimeout := zabbixDS.Settings.QueryTimeout
+	if queryTimeout <= 0 {
+		queryTimeout = 60 * time.Second // Default to 60 seconds if not configured
 	}
 
 	for _, q := range req.Queries {
@@ -147,22 +155,52 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		} else if err := ValidateTimeRange(query.TimeRange); err != nil {
 			// Validate time range before processing any query
 			res = backend.ErrorResponseWithErrorSource(err)
-		} else if query.QueryType == MODE_METRICS {
-			frames, err := zabbixDS.queryNumericItems(ctx, &query)
-			if err != nil {
-				res = backend.ErrorResponseWithErrorSource(err)
-			} else {
-				res.Frames = append(res.Frames, frames...)
-			}
-		} else if query.QueryType == MODE_ITEMID {
-			frames, err := zabbixDS.queryItemIdData(ctx, &query)
-			if err != nil {
-				res = backend.ErrorResponseWithErrorSource(err)
-			} else {
-				res.Frames = append(res.Frames, frames...)
-			}
 		} else {
-			res = backend.ErrorResponseWithErrorSource(backend.DownstreamError(ErrNonMetricQueryNotSupported))
+			// Create a context with timeout for this specific query
+			queryCtx, cancel := context.WithTimeout(ctx, queryTimeout)
+
+			// Execute query with timeout context in an anonymous function to ensure cancel is called after each iteration
+			func() {
+				defer cancel()
+
+				var frames []*data.Frame
+				var queryErr error
+
+				switch query.QueryType {
+				case MODE_METRICS:
+					frames, queryErr = zabbixDS.queryNumericItems(queryCtx, &query)
+				case MODE_ITEMID:
+					frames, queryErr = zabbixDS.queryItemIdData(queryCtx, &query)
+				default:
+					queryErr = backend.DownstreamError(ErrNonMetricQueryNotSupported)
+				}
+
+				// Check if query timed out
+				if queryErr != nil {
+					if errors.Is(queryCtx.Err(), context.DeadlineExceeded) {
+						// Query exceeded the configured timeout
+						timeoutMsg := fmt.Sprintf(
+							"Query execution exceeded maximum allowed time (%v). Query was automatically terminated to prevent excessive resource consumption.",
+							queryTimeout,
+						)
+						ds.logger.Warn(
+							"Query timeout exceeded",
+							"refId", q.RefID,
+							"queryType", query.QueryType,
+							"timeout", queryTimeout,
+							"datasourceId", req.PluginContext.DataSourceInstanceSettings.ID,
+						)
+						res = backend.ErrorResponseWithErrorSource(
+							backend.DownstreamError(fmt.Errorf("query timeout: %s", timeoutMsg)),
+						)
+						res.Status = http.StatusRequestTimeout
+					} else {
+						res = backend.ErrorResponseWithErrorSource(queryErr)
+					}
+				} else {
+					res.Frames = append(res.Frames, frames...)
+				}
+			}()
 		}
 		qdr.Responses[q.RefID] = res
 	}

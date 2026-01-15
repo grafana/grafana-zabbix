@@ -11,6 +11,31 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
+// parseTimeoutValue parses a timeout value from various types (string, float64, int64, int)
+// and returns it as int64. If the value is empty or invalid, it returns the default value.
+// The fieldName parameter is used for error messages.
+func parseTimeoutValue(value interface{}, defaultValue int64, fieldName string) (int64, error) {
+	switch t := value.(type) {
+	case string:
+		if t == "" {
+			return defaultValue, nil
+		}
+		timeoutInt, err := strconv.Atoi(t)
+		if err != nil {
+			return 0, errors.New("failed to parse " + fieldName + ": " + err.Error())
+		}
+		return int64(timeoutInt), nil
+	case float64:
+		return int64(t), nil
+	case int64:
+		return t, nil
+	case int:
+		return int64(t), nil
+	default:
+		return defaultValue, nil
+	}
+}
+
 func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) (*ZabbixDatasourceSettings, error) {
 	zabbixSettingsDTO := &ZabbixDatasourceSettingsDTO{}
 
@@ -36,10 +61,6 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		zabbixSettingsDTO.PerUserAuthField = "username"
 	}
 
-	//if zabbixSettingsDTO.Timeout == 0 {
-	//	zabbixSettingsDTO.Timeout = 30
-	//}
-
 	trendsFrom, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsFrom)
 	if err != nil {
 		return nil, err
@@ -55,22 +76,19 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		return nil, err
 	}
 
-	var timeout int64
-	switch t := zabbixSettingsDTO.Timeout.(type) {
-	case string:
-		if t == "" {
-			timeout = 30
-			break
-		}
-		timeoutInt, err := strconv.Atoi(t)
-		if err != nil {
-			return nil, errors.New("failed to parse timeout: " + err.Error())
-		}
-		timeout = int64(timeoutInt)
-	case float64:
-		timeout = int64(t)
-	default:
-		timeout = 30
+	timeout, err := parseTimeoutValue(zabbixSettingsDTO.Timeout, 30, "timeout")
+	if err != nil {
+		return nil, err
+	}
+
+	queryTimeout, err := parseTimeoutValue(zabbixSettingsDTO.QueryTimeout, 60, "queryTimeout")
+	if err != nil {
+		return nil, err
+	}
+
+	// Default to 60 seconds if queryTimeout is 0 or negative
+	if queryTimeout <= 0 {
+		queryTimeout = 60
 	}
 
 	zabbixSettings := &ZabbixDatasourceSettings{
@@ -80,6 +98,7 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		TrendsRange:             trendsRange,
 		CacheTTL:                cacheTTL,
 		Timeout:                 time.Duration(timeout) * time.Second,
+		QueryTimeout:            time.Duration(queryTimeout) * time.Second,
 		DisableDataAlignment:    zabbixSettingsDTO.DisableDataAlignment,
 		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
 		PerUserAuth:             zabbixSettingsDTO.PerUserAuth,

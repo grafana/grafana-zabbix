@@ -111,6 +111,7 @@ export const ConfigEditor = (props: Props) => {
         trendsRange: '',
         cacheTTL: '',
         timeout: undefined,
+        queryTimeout: undefined,
         disableDataAlignment: false,
         ...restJsonData,
       },
@@ -265,6 +266,44 @@ export const ConfigEditor = (props: Props) => {
                 onOptionsChange({
                   ...options,
                   jsonData: { ...options.jsonData, timeout: parseInt(event.currentTarget.value, 10) },
+                });
+              }}
+            />
+          </Field>
+        </ConfigSubSection>
+
+        <ConfigSubSection title="Query Options">
+          <Field
+            label={
+              <Label>
+                <EditorStack gap={0.5}>
+                  <span>Query Timeout</span>
+                  <Tooltip
+                    content={
+                      <span>
+                        Maximum execution time in seconds for database queries initiated by the plugin. Queries
+                        exceeding this limit will be automatically terminated. Default is 60 seconds.
+                      </span>
+                    }
+                  >
+                    <Icon name="info-circle" size="sm" />
+                  </Tooltip>
+                </EditorStack>
+              </Label>
+            }
+          >
+            <Input
+              width={40}
+              type="number"
+              value={options.jsonData.queryTimeout}
+              placeholder="60"
+              onChange={(event) => {
+                onOptionsChange({
+                  ...options,
+                  jsonData: {
+                    ...options.jsonData,
+                    queryTimeout: parseInt(event.currentTarget.value, 10) || undefined,
+                  },
                 });
               }}
             />
