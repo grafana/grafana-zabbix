@@ -281,6 +281,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async queryNumericData(target, timeRange, useTrends, request): Promise<any> {
     const getItemOptions = {
       itemtype: 'num',
+      showDisabledItems: target.options.showDisabledItems,
     };
 
     const items = await this.zabbix.getItemsFromTarget(target, getItemOptions);
@@ -503,7 +504,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   async queryTriggersICData(target, timeRange) {
-    const getItemOptions = { itemtype: 'num' };
+    const getItemOptions = {
+      itemtype: 'num',
+      showDisabledItems: target.options.showDisabledItems,
+    };
     const [hosts, apps, items] = await this.zabbix.getHostsFromICTarget(target, getItemOptions);
     if (!hosts.length) {
       return Promise.resolve([]);
