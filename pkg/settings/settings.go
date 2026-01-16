@@ -57,6 +57,9 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 	if zabbixSettingsDTO.CacheTTL == "" {
 		zabbixSettingsDTO.CacheTTL = "1h"
 	}
+	if zabbixSettingsDTO.PerUserAuth && zabbixSettingsDTO.PerUserAuthField == "" {
+		zabbixSettingsDTO.PerUserAuthField = "username"
+	}
 
 	trendsFrom, err := gtime.ParseInterval(zabbixSettingsDTO.TrendsFrom)
 	if err != nil {
@@ -98,6 +101,8 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		QueryTimeout:            time.Duration(queryTimeout) * time.Second,
 		DisableDataAlignment:    zabbixSettingsDTO.DisableDataAlignment,
 		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
+		PerUserAuth:             zabbixSettingsDTO.PerUserAuth,
+		PerUserAuthField:        zabbixSettingsDTO.PerUserAuthField,
 	}
 
 	return zabbixSettings, nil
