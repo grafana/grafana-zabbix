@@ -3846,12 +3846,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*, @types/node@npm:25.0.5, @types/node@npm:>=13.7.0":
-  version: 25.0.5
-  resolution: "@types/node@npm:25.0.5"
+"@types/node@npm:*, @types/node@npm:25.0.9, @types/node@npm:>=13.7.0":
+  version: 25.0.9
+  resolution: "@types/node@npm:25.0.9"
   dependencies:
     undici-types: "npm:~7.16.0"
-  checksum: 10c0/e92f8e29e17ff2d75f774233cad5b96bf7b253d24979162e1fff85993509a3511afe15a456217881f8e59fd5ff0b0d86067e33f57d599d1939a6d73c4f4806c7
+  checksum: 10c0/a757efafe303d9c8833eb53c2e9a0981cd5ac725cdc04c5612a71db86468c938778d4fa328be4231b68fffc68258638764df7b9c69e86cf55f0bb67105eb056f
   languageName: node
   linkType: hard
 
@@ -7585,7 +7585,7 @@ __metadata:
     "@types/grafana": "github:CorpGlory/types-grafana"
     "@types/jest": "npm:30.0.0"
     "@types/lodash": "npm:4.17.22"
-    "@types/node": "npm:25.0.5"
+    "@types/node": "npm:25.0.9"
     "@types/react": "npm:18.3.27"
     "@types/react-dom": "npm:18.3.7"
     "@typescript-eslint/eslint-plugin": "npm:8.52.0"
