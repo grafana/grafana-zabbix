@@ -59,7 +59,7 @@
     "@testing-library/react": "16.3.1",
     "@types/grafana": "github:CorpGlory/types-grafana",
     "@types/jest": "30.0.0",
-    "@types/lodash": "4.17.22",
+    "@types/lodash": "4.17.23",
     "@types/node": "25.0.9",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
