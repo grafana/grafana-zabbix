@@ -111,5 +111,123 @@ describe('ProblemList', () => {
 
       expect(ageHeader).toBeInTheDocument();
     });
+
+    it('should not render the age column header when ageField is disabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, ageField: false },
+        problems: [createMockProblem('1', 1609459200)],
+      };
+
+      render(<ProblemList {...props} />);
+
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      const ageHeader = headers.find((header) => header.textContent === 'Age');
+
+      expect(ageHeader).toBeUndefined();
+    });
+  });
+
+  describe('Status Field', () => {
+    it('should render the status column header when statusField is enabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, statusField: true },
+        problems: [createMockProblem('1', 1609459200)],
+      };
+
+      render(<ProblemList {...props} />);
+
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      const statusHeader = headers.find((header) => header.textContent === 'Status');
+
+      expect(statusHeader).toBeInTheDocument();
+    });
+
+    it('should not render the status column header when statusField is disabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, statusField: false },
+        problems: [createMockProblem('1', 1609459200)],
+      };
+
+      render(<ProblemList {...props} />);
+
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      const statusHeader = headers.find((header) => header.textContent === 'Status');
+
+      expect(statusHeader).toBeUndefined();
+    });
+  });
+
+  describe('Severity Field', () => {
+    it('should render the severity column header when severityField is enabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, severityField: true },
+        problems: [createMockProblem('1', 1609459200)],
+      };
+
+      render(<ProblemList {...props} />);
+
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      const severityHeader = headers.find((header) => header.textContent === 'Severity');
+
+      expect(severityHeader).toBeInTheDocument();
+    });
+
+    it('should not render the severity column header when severityField is disabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, severityField: false },
+        problems: [createMockProblem('1', 1609459200)],
+      };
+
+      render(<ProblemList {...props} />);
+
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      const severityHeader = headers.find((header) => header.textContent === 'Severity');
+
+      expect(severityHeader).toBeUndefined();
+    });
+  });
+
+  describe('Ack Field', () => {
+    it('should render the ack column header when ackField is enabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, ackField: true },
+        problems: [createMockProblem('1', 1609459200)],
+      };
+
+      render(<ProblemList {...props} />);
+
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      const ackHeader = headers.find((header) => header.textContent === 'Ack');
+
+      expect(ackHeader).toBeInTheDocument();
+    });
+
+    it('should not render the ack column header when ackField is disabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, ackField: false },
+        problems: [createMockProblem('1', 1609459200)],
+      };
+
+      render(<ProblemList {...props} />);
+
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      const ackHeader = headers.find((header) => header.textContent === 'Ack');
+
+      expect(ackHeader).toBeUndefined();
+    });
   });
 });
