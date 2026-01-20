@@ -77,6 +77,7 @@
           span {
             padding-right: 0.4em;
           }
+
         }
       }
 
@@ -172,8 +173,7 @@
   .trigger-info-block {
     display: flex;
 
-    i,
-    a {
+    i, a {
       margin-right: 0.3rem;
       color: $gray-2;
     }
@@ -230,8 +230,7 @@
   }
 
   .zbx-trigger-lastchange .trigger-info-block.zbx-status-icons {
-    a,
-    i {
+    a, i {
       color: $zbx-text-highlighted;
     }
   }
@@ -289,8 +288,7 @@
     text-align: left;
   }
 
-  table td,
-  th {
+  table td, th {
     padding-right: 1rem;
     text-align: left;
   }
