@@ -95,7 +95,7 @@
     "sass-loader": "16.0.6",
     "semver": "7.7.3",
     "style-loader": "4.0.0",
-    "swc-loader": "0.2.6",
+    "swc-loader": "0.2.7",
     "terser-webpack-plugin": "5.3.16",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
