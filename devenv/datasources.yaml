@@ -9,7 +9,7 @@ datasources:
     jsonData:
       username: Admin
       trends: true
-      trendsFrom: "7d"
-      trendsRange: "4d"
+      trendsFrom: '7d'
+      trendsRange: '4d'
     secureJsonData:
       password: zabbix

@@ -87,7 +87,6 @@
       }
 
       .problem-description-row {
-
         .problem-description {
           position: relative;
           max-height: 4.5rem;
@@ -95,14 +94,18 @@
           overflow: hidden;
 
           &:after {
-            content: "";
+            content: '';
             text-align: right;
             position: inherit;
             bottom: 0;
             right: 0;
             width: 70%;
             height: 1.5rem;
-            background: linear-gradient(to right, rgba($problem-details-background, 0), rgba($problem-details-background, 1) 50%);
+            background: linear-gradient(
+              to right,
+              rgba($problem-details-background, 0),
+              rgba($problem-details-background, 1) 50%
+            );
           }
         }
 
@@ -138,14 +141,18 @@
         overflow: hidden;
 
         &:after {
-          content: "";
+          content: '';
           text-align: right;
           position: absolute;
           bottom: 0;
           right: 0;
           width: 70%;
           height: 1.5rem;
-          background: linear-gradient(to right, rgba($problem-details-background, 0), rgba($problem-details-background, 1) 50%);
+          background: linear-gradient(
+            to right,
+            rgba($problem-details-background, 0),
+            rgba($problem-details-background, 1) 50%
+          );
         }
       }
 
@@ -313,7 +320,6 @@
         }
 
         .problem-event-region {
-
           &.problem-event {
             &--ok {
               fill: $problem-event-ok-color;
@@ -414,7 +420,9 @@
     border-color: $btn-danger-bg;
     // box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 5px $btn-danger-bg;
     outline-offset: 2px;
-    box-shadow: 0 0 0 2px #141619, 0 0 0px 4px $btn-danger-bg;
+    box-shadow:
+      0 0 0 2px #141619,
+      0 0 0px 4px $btn-danger-bg;
   }
 
   .ack-request-error {
