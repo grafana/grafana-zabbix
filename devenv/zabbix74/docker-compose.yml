@@ -12,7 +12,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest@sha256:a6f748d96bfa4d361df5e9284eba041c475e7ff26c1358f8f189969437ebdb9b
+    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest@sha256:033791214ab8146a4663c56dd6b46f742f03363e441d928216202136d094e154
     ports:
       - '10051:10051'
     depends_on:
@@ -29,7 +29,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-apache-pgsql:alpine-7.4-latest@sha256:9b5ad53c684c9f5d7b15c626e22e3d2c97c2b0b2b05ce811d1a8fe42416cd01b
+    image: zabbix/zabbix-web-apache-pgsql:alpine-7.4-latest@sha256:f7357956bb66ac1c18db0b93a2af1c60ecea9f2ce6366f55bfb5cd6000415441
     ports:
       - '8188:8080'
     depends_on:
@@ -45,7 +45,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:18@sha256:bfe50b2b0ddd9b55eadedd066fe24c7c6fe06626185b73358c480ea37868024d
+    image: postgres:18@sha256:5773fe724c49c42a7a9ca70202e11e1dff21fb7235b335a73f39297d200b73a2
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'
