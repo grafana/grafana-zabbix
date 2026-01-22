@@ -268,6 +268,24 @@ export const ProblemList = (props: ProblemListProps) => {
     }));
   }, [effectivePageSize]);
 
+  // Column visibility state derived from panelOptions
+  const columnVisibility = useMemo(
+    () => ({
+      host: panelOptions.hostField,
+      hostTechName: panelOptions.hostTechNameField,
+      groups: panelOptions.hostGroups,
+      proxy: panelOptions.hostProxy,
+      priority: panelOptions.severityField,
+      statusIcon: panelOptions.statusIcon,
+      value: panelOptions.statusField,
+      opdata: panelOptions.opdataField,
+      acknowledged: panelOptions.ackField,
+      tags: panelOptions.showTags,
+      age: panelOptions.ageField,
+    }),
+    [panelOptions]
+  );
+
   const table = useReactTable({
     data: problems,
     columns,
@@ -276,25 +294,11 @@ export const ProblemList = (props: ProblemListProps) => {
     state: {
       columnSizing,
       pagination,
+      columnVisibility,
     },
     onPaginationChange: setPagination,
     meta: {
       panelOptions,
-    },
-    initialState: {
-      columnVisibility: {
-        host: panelOptions.hostField,
-        hostTechName: panelOptions.hostTechNameField,
-        groups: panelOptions.hostGroups,
-        proxy: panelOptions.hostProxy,
-        priority: panelOptions.severityField,
-        statusIcon: panelOptions.statusIcon,
-        value: panelOptions.statusField,
-        opdata: panelOptions.opdataField,
-        acknowledged: panelOptions.ackField,
-        tags: panelOptions.showTags,
-        age: panelOptions.ageField,
-      },
     },
     onColumnSizingChange: (updater) => {
       const newSizing = typeof updater === 'function' ? updater(columnSizing) : updater;
