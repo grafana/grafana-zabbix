@@ -628,6 +628,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       problemsOptions.severities = severities;
     }
 
+    if (target.options?.symptom !== undefined && target.options?.symptom !== null) {
+      problemsOptions.symptom = target.options.symptom;
+    }
+
     let getProblemsPromise: Promise<ProblemDTO[]>;
     if (showProblems === ShowProblemTypes.History || target.options?.useTimeRange) {
       problemsOptions.timeFrom = timeFrom;
