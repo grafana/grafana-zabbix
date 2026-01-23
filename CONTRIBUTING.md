@@ -23,36 +23,22 @@ The plugin supports two debugging modes for the Go backend:
 
 ### Standalone Debug Mode
 
-This mode allows you to run and debug the plugin independently without Grafana:
+This mode allows you to run and debug the plugin locally:
 
 1. Use the **"Standalone debug mode"** configuration in VS Code (already configured in `.vscode/launch.json`)
-2. Set breakpoints in your Go code
-3. Press F5 or run the debugger from VS Code
-4. The plugin will start in standalone mode with the `-standalone` flag
+2. Set breakpoints in your Go code  
+3. The plugin will start in standalone mode with the `-standalone` flag
+4. Run your local grafana instance
 
 ### Debugging with Docker (Recommended for Grafana Integration)
 
 For debugging the backend plugin while it's running inside Grafana in Docker:
 
-1. **Start Grafana with Docker:**
-   The Docker setup automatically starts [delve](https://github.com/go-delve/delve) debugger in headless mode and attaches it to the running plugin process. The debugger listens on port `2345`.
-
-2. **Attach VS Code debugger:**
+1. Run any docker-compose file in the `devenv` folder to start grafana with the plugin and zabbix server
+2. Attach VS Code debugger:
    - Use the **"Attach to plugin backend in docker"** configuration in VS Code (already configured in `.vscode/launch.json`)
    - Set breakpoints in your Go code
-   - Press F5 or run the debugger from VS Code
    - The debugger will connect to delve running in the Docker container
-
-**Note:** The Docker configuration includes path substitution to map your local workspace to the container's path (`/root/alexanderzobnin-zabbix-app`), so breakpoints and source code navigation work correctly.
-
-### VS Code Debug Configurations
-
-The project includes pre-configured VS Code debug configurations in `.vscode/launch.json`:
-
-- **Standalone debug mode**: Launches the plugin directly for standalone testing
-- **Attach to plugin backend in docker**: Attaches to delve running in the Docker container (port 2345)
-
-You can select either configuration from the VS Code debug panel and start debugging.
 
 ## Submitting PR
 
