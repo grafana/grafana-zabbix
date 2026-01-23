@@ -23,7 +23,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { reportInteraction } from '@grafana/runtime';
+import { getDataSourceSrv, reportInteraction } from '@grafana/runtime';
 import { ProblemDetails } from './ProblemDetails';
 import { capitalizeFirstLetter, parseCustomTagColumns } from './utils';
 
@@ -191,6 +191,18 @@ export const ProblemList = (props: ProblemListProps) => {
           />
         ),
       }),
+      columnHelper.accessor('datasource', {
+        header: 'Datasource',
+        size: 120,
+        cell: ({ cell }) => {
+          let dsName: string = cell.getValue() as string;
+          if ((cell.getValue() as DataSourceRef)?.uid) {
+            const dsInstance = getDataSourceSrv().getInstanceSettings((cell.getValue() as DataSourceRef).uid);
+            dsName = dsInstance?.name || dsName;
+          }
+          return <span>{dsName}</span>;
+        },
+      }),
       columnHelper.accessor('timestamp', {
         id: 'age',
         header: 'Age',
@@ -281,6 +293,7 @@ export const ProblemList = (props: ProblemListProps) => {
       opdata: panelOptions.opdataField,
       acknowledged: panelOptions.ackField,
       tags: panelOptions.showTags,
+      datasource: panelOptions.showDatasourceName,
       age: panelOptions.ageField,
     }),
     [panelOptions]

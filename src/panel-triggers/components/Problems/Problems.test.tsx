@@ -33,10 +33,12 @@ describe('ProblemList', () => {
     hostGroups: false,
     hostProxy: false,
     severityField: true,
+    statusField: true,
     statusIcon: true,
     opdataField: false,
     ackField: true,
     showTags: true,
+    showDatasourceName: false,
     ageField: true,
     customLastChangeFormat: false,
     lastChangeFormat: '',
@@ -228,6 +230,24 @@ describe('ProblemList', () => {
       const ackHeader = headers.find((header) => header.textContent === 'Ack');
 
       expect(ackHeader).toBeUndefined();
+    });
+  });
+
+  describe('Datasource Field', () => {
+    it('should not render the datasource column header when showDatasourceName is disabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, showDatasourceName: false },
+        problems: [createMockProblem('1', 1609459200)],
+      };
+
+      render(<ProblemList {...props} />);
+
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      const datasourceHeader = headers.find((header) => header.textContent === 'Datasource');
+
+      expect(datasourceHeader).toBeUndefined();
     });
   });
 });
