@@ -4,11 +4,11 @@
 
 ```sh
 # install frontend deps
-yarn install --pure-lockfile
+yarn install
 # build frontend
 yarn build
-#build backend for current platform
-mage -v build:backend
+#build backend
+mage -v
 ```
 
 ## Rebuild backend on changes
@@ -19,31 +19,40 @@ mage watch
 
 ## Debugging backend plugin
 
-For debugging backend part written on Go, you should go through a few steps. First, build a plugin with special flags for debugging:
+The plugin supports two debugging modes for the Go backend:
 
-```sh
-make build-debug
-```
+### Standalone Debug Mode
 
-Then, configure your editor to connect to [delve](https://github.com/go-delve/delve) debugger running in headless mode. This is an example for VS Code:
+This mode allows you to run and debug the plugin independently without Grafana:
 
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug backend plugin",
-      "type": "go",
-      "request": "attach",
-      "mode": "remote",
-      "port": 3222,
-      "host": "127.0.0.1"
-    }
-  ]
-}
-```
+1. Use the **"Standalone debug mode"** configuration in VS Code (already configured in `.vscode/launch.json`)
+2. Set breakpoints in your Go code
+3. Press F5 or run the debugger from VS Code
+4. The plugin will start in standalone mode with the `-standalone` flag
 
-Finally, run grafana-server and then execute `./debug-backend.sh` from grafana-zabbix root folder. This script will attach delve to running plugin. Now you can go to the VS Code and run _Debug backend plugin_ debug config.
+### Debugging with Docker (Recommended for Grafana Integration)
+
+For debugging the backend plugin while it's running inside Grafana in Docker:
+
+1. **Start Grafana with Docker:**
+   The Docker setup automatically starts [delve](https://github.com/go-delve/delve) debugger in headless mode and attaches it to the running plugin process. The debugger listens on port `2345`.
+
+2. **Attach VS Code debugger:**
+   - Use the **"Attach to plugin backend in docker"** configuration in VS Code (already configured in `.vscode/launch.json`)
+   - Set breakpoints in your Go code
+   - Press F5 or run the debugger from VS Code
+   - The debugger will connect to delve running in the Docker container
+
+**Note:** The Docker configuration includes path substitution to map your local workspace to the container's path (`/root/alexanderzobnin-zabbix-app`), so breakpoints and source code navigation work correctly.
+
+### VS Code Debug Configurations
+
+The project includes pre-configured VS Code debug configurations in `.vscode/launch.json`:
+
+- **Standalone debug mode**: Launches the plugin directly for standalone testing
+- **Attach to plugin backend in docker**: Attaches to delve running in the Docker container (port 2345)
+
+You can select either configuration from the VS Code debug panel and start debugging.
 
 ## Submitting PR
 
