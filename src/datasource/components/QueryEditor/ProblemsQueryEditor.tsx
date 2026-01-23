@@ -31,6 +31,12 @@ const evaltypeOptions: Array<ComboboxOption<ZabbixTagEvalType>> = [
   { label: 'OR', value: ZabbixTagEvalType.Or },
 ];
 
+const symptomOptions: Array<ComboboxOption<string>> = [
+  { label: 'All Problems', value: 'all' },
+  { label: 'Cause only', value: 'false' },
+  { label: 'Symptoms only', value: 'true' },
+];
+
 export interface Props {
   query: ZabbixMetricsQuery;
   datasource: ZabbixDatasource;
@@ -244,6 +250,36 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             value={query.options?.severities}
             options={severityOptions}
             onChange={onSeveritiesChange}
+          />
+        </InlineField>
+        <InlineField label="Problem Type" labelWidth={16}>
+          <Combobox
+            width={24}
+            value={
+              query.options?.symptom === null || query.options?.symptom === undefined
+                ? 'all'
+                : query.options.symptom
+                ? 'true'
+                : 'false'
+            }
+            options={symptomOptions}
+            onChange={(option) => {
+              if (option) {
+                let symptomValue: boolean | null = null;
+                if (option.value === 'true') {
+                  symptomValue = true;
+                } else if (option.value === 'false') {
+                  symptomValue = false;
+                }
+                onChange({
+                  ...query,
+                  options: {
+                    ...query.options,
+                    symptom: symptomValue,
+                  },
+                });
+              }
+            }}
           />
         </InlineField>
       </QueryEditorRow>
