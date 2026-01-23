@@ -195,9 +195,10 @@ export const ProblemList = (props: ProblemListProps) => {
         header: 'Datasource',
         size: 120,
         cell: ({ cell }) => {
-          let dsName: string = cell.getValue() as string;
-          if ((cell.getValue() as DataSourceRef)?.uid) {
-            const dsInstance = getDataSourceSrv().getInstanceSettings((cell.getValue() as DataSourceRef).uid);
+          const datasource = cell.getValue();
+          let dsName: string = datasource as string;
+          if ((datasource as DataSourceRef)?.uid) {
+            const dsInstance = getDataSourceSrv().getInstanceSettings((datasource as DataSourceRef).uid);
             dsName = dsInstance?.name || dsName;
           }
           return <span>{dsName}</span>;
