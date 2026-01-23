@@ -300,6 +300,7 @@ export const ProblemList = (props: ProblemListProps) => {
     [panelOptions]
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable returns functions that cannot be memoized
   const table = useReactTable({
     data: problems,
     columns,
