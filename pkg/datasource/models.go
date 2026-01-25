@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	MODE_METRICS   = "0"
-	MODE_ITSERVICE = "1"
-	MODE_TEXT      = "2"
-	MODE_ITEMID    = "3"
-	MODE_TRIGGERS  = "4"
-	MODE_PROBLEMS  = "5"
+	MODE_METRICS           = "0"
+	MODE_ITSERVICE         = "1"
+	MODE_TEXT              = "2"
+	MODE_ITEMID            = "3"
+	MODE_TRIGGERS          = "4"
+	MODE_PROBLEMS          = "5"
+	MODE_MULTIMETRIC_TABLE = "7"
 )
 
 type DBConnectionPostProcessingRequest struct {
@@ -66,6 +67,9 @@ type QueryModel struct {
 	TimeRange     backend.TimeRange `json:"-"`
 	MaxDataPoints int64             `json:"-"`
 	Interval      time.Duration     `json:"-"`
+
+	// Multi-metric table mode
+	TableConfig *MultiMetricTableConfig `json:"tableConfig,omitempty"`
 }
 
 // QueryOptions model
@@ -106,6 +110,26 @@ type QueryFunctionParam = interface{}
 type ScopedVar struct {
 	Text  string `json:"text"`
 	Value string `json:"value"`
+}
+
+type MultiMetricTableConfig struct {
+	EntityPattern   EntityPatternConfig  `json:"entityPattern"`
+	Metrics         []MetricColumnConfig `json:"metrics"`
+	ShowGroupColumn bool                 `json:"showGroupColumn"`
+	ShowHostColumn  bool                 `json:"showHostColumn"`
+}
+
+type EntityPatternConfig struct {
+	SearchType       string `json:"searchType"`
+	Pattern          string `json:"pattern"`
+	ExtractNameRegex string `json:"extractNameRegex"`
+}
+
+type MetricColumnConfig struct {
+	ColumnName  string `json:"columnName"`
+	SearchType  string `json:"searchType"`
+	Pattern     string `json:"pattern"`
+	Aggregation string `json:"aggregation"` // "last", "avg", "min", "max"
 }
 
 // ReadQuery will read and validate Settings from the DataSourceConfg
