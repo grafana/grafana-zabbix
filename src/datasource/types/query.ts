@@ -9,7 +9,8 @@ export type QueryType =
   | typeof c.MODE_ITEMID
   | typeof c.MODE_TRIGGERS
   | typeof c.MODE_PROBLEMS
-  | typeof c.MODE_MACROS;
+  | typeof c.MODE_MACROS
+  | typeof c.MODE_MULTIMETRIC_TABLE;
 
 type BaseQuery = { queryType: QueryType; datasourceId: number } & DataQuery;
 
@@ -38,6 +39,8 @@ export type ZabbixMetricsQuery = {
   evaltype?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
+  // Mutli-metric table
+  tableConfig?: MultiMetricTableConfig;
   // Problems
   showProblems?: ShowProblemTypes;
   // Deprecated
@@ -115,4 +118,22 @@ export interface HostTagFilter {
   tag: string;
   value: string;
   operator: HostTagOperatorValue;
+}
+
+export interface MultiMetricTableConfig {
+  entityPattern: {
+    searchType: 'itemName' | 'itemKey';
+    pattern: string;
+    extractNameRegex?: string;
+  };
+  metrics: MetricColumnConfig[];
+  showGroupColumn?: boolean;
+  showHostColumn?: boolean;
+}
+
+export interface MetricColumnConfig {
+  columnName: string;
+  searchType: 'itemName' | 'itemKey';
+  pattern: string;
+  aggregation: 'last' | 'avg' | 'min' | 'max';
 }
