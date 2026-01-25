@@ -900,7 +900,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       return false;
     }
 
-    return target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID;
+    return target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID || target.queryType === c.MODE_MULTIMETRIC_TABLE;
   };
 
   isDBConnectionTarget = (target: any): boolean => {
