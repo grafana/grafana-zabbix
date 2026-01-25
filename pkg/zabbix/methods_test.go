@@ -53,7 +53,7 @@ func TestGetHistory(t *testing.T) {
 			historyCalls = append(historyCalls, int(payload.Params["history"].(float64)))
 			return `{"result":[{"itemid":"1","clock":"1","value":"1.2","ns":"0"}]}`
 		}
-		if payload.Method ==  "apiinfo.version" {
+		if payload.Method == "apiinfo.version" {
 			return `{"result":"6.4.0"}`
 		}
 		return `{"result":null}`
@@ -84,7 +84,7 @@ func TestGetTrend(t *testing.T) {
 			return `{"result":[{"itemid":"1","clock":"1","value_min":"0","value_avg":"1","value_max":"2"}]}`
 		}
 
-		if payload.Method ==  "apiinfo.version" {
+		if payload.Method == "apiinfo.version" {
 			return `{"result":"6.4.0"}`
 		}
 		return `{"result":null}`
@@ -278,7 +278,7 @@ func TestFilterHostsByQuery(t *testing.T) {
 
 func TestGetGroups(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
-		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"},{"groupid":"2","name":"Apps"}]}`,
+		"hostgroup.get":   `{"result":[{"groupid":"1","name":"Servers"},{"groupid":"2","name":"Apps"}]}`,
 		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
@@ -314,7 +314,7 @@ func TestGetAllItemsBuildsParams(t *testing.T) {
 			return `{"result":[{"itemid":"1","name":"CPU $1","key_":"system.cpu[user]","value_type":"0","hosts":[{"hostid":"10","name":"web"}]}]}`
 		}
 
-		if payload.Method ==  "apiinfo.version" {
+		if payload.Method == "apiinfo.version" {
 			return `{"result":"6.4.0"}`
 		}
 
@@ -328,6 +328,7 @@ func TestGetAllItemsBuildsParams(t *testing.T) {
 		"num",
 		false,
 		"Env: prod, Application: api",
+		false, // do not select last value
 	)
 	require.NoError(t, err)
 	if assert.Len(t, items, 1) {
@@ -357,7 +358,7 @@ func TestGetItemsByIDs(t *testing.T) {
 			return `{"result":[{"itemid":"1","name":"CPU"}]}`
 		}
 
-		if payload.Method ==  "apiinfo.version" {
+		if payload.Method == "apiinfo.version" {
 			return `{"result":"6.4.0"}`
 		}
 
@@ -384,7 +385,7 @@ func TestGetAllApps(t *testing.T) {
 
 func TestGetAllHosts(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
-		"host.get": `{"result":[{"hostid":"10","name":"web01"}]}`,
+		"host.get":        `{"result":[{"hostid":"10","name":"web01"}]}`,
 		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
@@ -396,7 +397,7 @@ func TestGetAllHosts(t *testing.T) {
 
 func TestGetAllGroups(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
-		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"}]}`,
+		"hostgroup.get":   `{"result":[{"groupid":"1","name":"Servers"}]}`,
 		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
