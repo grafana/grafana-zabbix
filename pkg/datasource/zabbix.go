@@ -2,6 +2,10 @@ package datasource
 
 import (
 	"context"
+	"fmt"
+	"math"
+	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -243,4 +247,286 @@ func (ds *ZabbixDatasourceInstance) isUseTrend(timeRange backend.TimeRange, quer
 	trendTimeRange := (fromSec < time.Now().Add(-trendsFrom).Unix()) || (rangeSec > trendsRange.Seconds())
 	useTrendsToggle := query.Options.UseTrends == "true" || ds.Settings.Trends
 	return trendTimeRange && useTrendsToggle
+}
+
+// queryMultiMetricTable queries Zabbix for multiple metrics across multiple entities and returns a table
+// where each row represents a unique entity (e.g., network interface) and each column represents a metric.
+// Entities are grouped by host and entity name to handle multiple hosts matching the filter.
+func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, query *QueryModel) ([]*data.Frame, error) {
+	ds.logger.Debug("Querying multi-metric table", "query", query)
+
+	if query.TableConfig == nil || len(query.TableConfig.Metrics) == 0 {
+		ds.logger.Debug("No tableConfig or metrics defined")
+		return []*data.Frame{}, nil
+	}
+
+	entityPattern := query.TableConfig.EntityPattern
+
+	entityItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", entityPattern.Pattern)
+	if err != nil {
+		ds.logger.Error("Error fetching entity items", "error", err)
+		return nil, err
+	}
+
+	ds.logger.Debug("Entity items found", "count", len(entityItems))
+
+	if len(entityItems) == 0 {
+		ds.logger.Debug("No entity items found, returning empty frame")
+		return []*data.Frame{}, nil
+	}
+
+	// Extract hosts to check if we have multiple hosts
+	hostsMap := make(map[string]bool)
+	for _, item := range entityItems {
+		if len(item.Hosts) > 0 {
+			hostsMap[item.Hosts[0].Name] = true
+		}
+	}
+	hasMultipleHosts := len(hostsMap) > 1
+
+	// Create composite key: group|host|entity for proper grouping
+	type EntityInfo struct {
+		Item         *zabbix.Item
+		Group        string
+		Host         string
+		Entity       string
+		CompositeKey string
+	}
+
+	entityMap := make(map[string]*EntityInfo)
+	entityOrder := []string{}
+
+	for _, item := range entityItems {
+		entityLabel := ds.extractEntityLabel(item, entityPattern)
+
+		// Get host name
+		hostName := ""
+		if len(item.Hosts) > 0 {
+			hostName = item.Hosts[0].Name
+		}
+
+		// Build composite key: host|entity (always group by host AND entity)
+		compositeKey := hostName + "|" + entityLabel
+
+		if _, exists := entityMap[compositeKey]; !exists {
+			entityMap[compositeKey] = &EntityInfo{
+				Item:         item,
+				Group:        query.Group.Filter, // Store the filter pattern
+				Host:         hostName,
+				Entity:       entityLabel,
+				CompositeKey: compositeKey,
+			}
+			entityOrder = append(entityOrder, compositeKey)
+		}
+	}
+
+	ds.logger.Debug("Unique entities", "count", len(entityOrder), "multipleHosts", hasMultipleHosts)
+
+	// Create frame
+	frame := data.NewFrame(query.RefID)
+
+	// Add Group column if requested
+	if query.TableConfig.ShowGroupColumn {
+		groupValues := make([]string, len(entityOrder))
+		for i, key := range entityOrder {
+			groupValues[i] = entityMap[key].Group
+		}
+		frame.Fields = append(frame.Fields, data.NewField("Group", nil, groupValues))
+	}
+
+	// Add Host column if requested OR if there are multiple hosts (always show host when multiple)
+	if query.TableConfig.ShowHostColumn || hasMultipleHosts {
+		hostValues := make([]string, len(entityOrder))
+		for i, key := range entityOrder {
+			hostValues[i] = entityMap[key].Host
+		}
+		frame.Fields = append(frame.Fields, data.NewField("Host", nil, hostValues))
+	}
+
+	// Add Entity column
+	entityValues := make([]string, len(entityOrder))
+	for i, key := range entityOrder {
+		entityValues[i] = entityMap[key].Entity
+	}
+	frame.Fields = append(frame.Fields, data.NewField("Entity", nil, entityValues))
+
+	// Process metrics
+	for _, metric := range query.TableConfig.Metrics {
+		var columnValues []*string
+
+		if metric.Aggregation == "last" {
+			metricItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", metric.Pattern)
+			if err != nil {
+				ds.logger.Error("Error fetching metric items", "error", err, "column", metric.ColumnName)
+				continue
+			}
+
+			// Map metric values by composite key (host|entity)
+			metricValues := make(map[string]*string)
+			for _, item := range metricItems {
+				entityLabel := ds.extractEntityLabel(item, entityPattern)
+				hostName := ""
+				if len(item.Hosts) > 0 {
+					hostName = item.Hosts[0].Name
+				}
+				compositeKey := hostName + "|" + entityLabel
+				metricValues[compositeKey] = item.LastValue
+			}
+
+			columnValues = make([]*string, len(entityOrder))
+			for i, key := range entityOrder {
+				columnValues[i] = metricValues[key]
+			}
+		} else {
+			// Aggregation logic
+			metricItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", metric.Pattern)
+			if err != nil {
+				ds.logger.Error("Error fetching metric items", "error", err, "column", metric.ColumnName)
+				continue
+			}
+
+			history, err := ds.zabbix.GetHistory(ctx, metricItems, query.TimeRange)
+			if err != nil {
+				ds.logger.Error("Error fetching history", "error", err, "column", metric.ColumnName)
+				continue
+			}
+
+			aggregatedValues := ds.aggregateHistoryWithHost(history, metricItems, entityPattern, metric.Aggregation)
+
+			columnValues = make([]*string, len(entityOrder))
+			for i, key := range entityOrder {
+				if val, exists := aggregatedValues[key]; exists {
+					columnValues[i] = &val
+				}
+			}
+		}
+
+		frame.Fields = append(frame.Fields, data.NewField(metric.ColumnName, nil, columnValues))
+	}
+
+	// Log final field names
+	fieldNames := []string{}
+	for _, f := range frame.Fields {
+		fieldNames = append(fieldNames, f.Name)
+	}
+
+	return []*data.Frame{frame}, nil
+}
+
+func (ds *ZabbixDatasourceInstance) extractEntityLabel(item *zabbix.Item, pattern EntityPatternConfig) string {
+	var source string
+	if pattern.SearchType == "itemName" {
+		source = item.Name
+	} else {
+		source = item.Key
+	}
+
+	if pattern.ExtractNameRegex != "" {
+		// Apply regex extraction
+		re, err := regexp.Compile(pattern.ExtractNameRegex)
+		if err != nil {
+			ds.logger.Warn("Invalid extract regex", "regex", pattern.ExtractNameRegex, "error", err)
+			return source
+		}
+
+		matches := re.FindStringSubmatch(source)
+		if len(matches) > 1 {
+			// Return first capture group
+			return matches[1]
+		}
+
+		ds.logger.Debug("Regex did not match or no capture group", "source", source, "regex", pattern.ExtractNameRegex)
+		return source
+	}
+
+	return source
+}
+
+func (ds *ZabbixDatasourceInstance) aggregateHistoryWithHost(history zabbix.History, items []*zabbix.Item, pattern EntityPatternConfig, aggregation string) map[string]string {
+	// Group history by itemid
+	historyByItem := make(map[string][]float64)
+	for _, h := range history {
+		historyByItem[h.ItemID] = append(historyByItem[h.ItemID], h.Value)
+	}
+
+	// Calculate aggregation per composite key (host|entity)
+	result := make(map[string]string)
+	for _, item := range items {
+		entityLabel := ds.extractEntityLabel(item, pattern)
+		hostName := ""
+		if len(item.Hosts) > 0 {
+			hostName = item.Hosts[0].Name
+		}
+		compositeKey := hostName + "|" + entityLabel
+
+		values := historyByItem[item.ID]
+
+		if len(values) == 0 {
+			continue
+		}
+
+		var aggregatedValue float64
+		switch aggregation {
+		case "avg":
+			sum := 0.0
+			for _, v := range values {
+				sum += v
+			}
+			aggregatedValue = sum / float64(len(values))
+		case "min":
+			aggregatedValue = values[0]
+			for _, v := range values {
+				if v < aggregatedValue {
+					aggregatedValue = v
+				}
+			}
+		case "max":
+			aggregatedValue = values[0]
+			for _, v := range values {
+				if v > aggregatedValue {
+					aggregatedValue = v
+				}
+			}
+		case "sum":
+			sum := 0.0
+			for _, v := range values {
+				sum += v
+			}
+			aggregatedValue = sum
+		case "median":
+			// Sort values and find median
+			sortedValues := make([]float64, len(values))
+			copy(sortedValues, values)
+			sort.Float64s(sortedValues)
+
+			n := len(sortedValues)
+			if n%2 == 0 {
+				// Even number: average of two middle values
+				aggregatedValue = (sortedValues[n/2-1] + sortedValues[n/2]) / 2.0
+			} else {
+				// Odd number: middle value
+				aggregatedValue = sortedValues[n/2]
+			}
+		case "p95":
+			// Sort values and find 95th percentile
+			sortedValues := make([]float64, len(values))
+			copy(sortedValues, values)
+			sort.Float64s(sortedValues)
+
+			// Calculate index for 95th percentile
+			n := len(sortedValues)
+			index := int(math.Ceil(0.95*float64(n))) - 1
+			if index < 0 {
+				index = 0
+			}
+			if index >= n {
+				index = n - 1
+			}
+			aggregatedValue = sortedValues[index]
+		}
+
+		result[compositeKey] = fmt.Sprintf("%.2f", aggregatedValue)
+	}
+
+	return result
 }
