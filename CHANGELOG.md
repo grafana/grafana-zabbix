@@ -2,8 +2,6 @@
 
 ## 6.1.2
 
-### Patch Changes
-
 🐛 Fix silent removal of itemTagFilter when no tags match regex
 🐛 Enhance the problems panel with the ability to convert specific tags to columns. Single or multiple tags supported.
 🐛 Fix column visibility toggles for problems panel
