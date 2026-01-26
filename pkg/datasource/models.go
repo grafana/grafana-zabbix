@@ -120,9 +120,15 @@ type MultiMetricTableConfig struct {
 }
 
 type EntityPatternConfig struct {
-	SearchType       string `json:"searchType"`
-	Pattern          string `json:"pattern"`
-	ExtractNameRegex string `json:"extractNameRegex"`
+	SearchType       string                  `json:"searchType"`
+	Pattern          string                  `json:"pattern"`
+	ExtractPattern   string                  `json:"extractPattern"`
+	ExtractedColumns []ExtractedColumnConfig `json:"extractedColumns"`
+}
+
+type ExtractedColumnConfig struct {
+	Name       string `json:"name"`
+	GroupIndex int    `json:"groupIndex"`
 }
 
 type MetricColumnConfig struct {
