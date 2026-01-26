@@ -120,12 +120,18 @@ export interface HostTagFilter {
   operator: HostTagOperatorValue;
 }
 
+export interface EntityPatternConfig {
+  searchType: 'itemName' | 'itemKey';
+  pattern: string;
+  extractPattern?: string;
+  extractedColumns?: Array<{
+    name: string;
+    groupIndex: number;
+  }>;
+}
+
 export interface MultiMetricTableConfig {
-  entityPattern: {
-    searchType: 'itemName' | 'itemKey';
-    pattern: string;
-    extractNameRegex?: string;
-  };
+  entityPattern: EntityPatternConfig;
   metrics: MetricColumnConfig[];
   showGroupColumn?: boolean;
   showHostColumn?: boolean;
