@@ -7,7 +7,8 @@ ARG anonymous_auth_enabled=true
 ARG development=false
 ARG TARGETARCH
 
-
+ARG GO_VERSION=1.25.6
+ARG GO_ARCH=${TARGETARCH:-amd64}
 ENV DEV "${development}"
 
 # Make it as simple as possible to access the grafana instance for development purposes
@@ -43,7 +44,27 @@ RUN if [ "${development}" = "true" ]; then \
 COPY supervisord/supervisord.conf /etc/supervisor.d/supervisord.ini
 COPY supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Installing Go
+RUN if [ "${development}" = "true" ]; then \
+    curl -O -L https://golang.org/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+    rm -rf /usr/local/go && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+    echo "export PATH=$PATH:/usr/local/go/bin:~/go/bin" >> ~/.bashrc && \
+    rm -f go${GO_VERSION}.linux-${GO_ARCH}.tar.gz; \
+    fi
 
+# Installing delve for debugging
+RUN if [ "${development}" = "true" ]; then \
+    /usr/local/go/bin/go install github.com/go-delve/delve/cmd/dlv@latest; \
+    fi
+
+# Installing mage for plugin (re)building
+RUN if [ "${development}" = "true" ]; then \
+    git clone https://github.com/magefile/mage; \
+    cd mage; \
+    export PATH=$PATH:/usr/local/go/bin; \
+    go run bootstrap.go; \
+    fi
 
 # Inject livereload script into grafana index.html
 RUN sed -i 's|</body>|<script src="http://localhost:35729/livereload.js"></script></body>|g' /usr/share/grafana/public/views/index.html
