@@ -3,6 +3,7 @@ run-name: Deploy ${{ inputs.branch }} to ${{ inputs.environment }} by @${{ githu
 permissions:
   attestations: write
   contents: write
+  pull-requests: read
   id-token: write
 
 on:
