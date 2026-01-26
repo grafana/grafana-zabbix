@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Checkbox, InlineField, InlineFieldRow, Input, RadioButtonGroup, Select, Stack } from '@grafana/ui';
+import { Button, Checkbox, InlineField, InlineFieldRow, Input, RadioButtonGroup, Select, Stack, Icon } from '@grafana/ui';
 import { ComboboxOption } from '@grafana/ui';
 import { ZabbixMetricsQuery, MetricColumnConfig } from '../../types/query';
 import { ZabbixDatasource } from '../../datasource';
@@ -38,7 +38,12 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     application: query.application || { filter: '' },
     itemTag: query.itemTag || { filter: '' },
     tableConfig: query.tableConfig || {
-      entityPattern: { searchType: 'itemName', pattern: '', extractNameRegex: '' },
+      entityPattern: { 
+        searchType: 'itemName', 
+        pattern: '', 
+        extractPattern: '',
+        extractedColumns: []
+      },
       metrics: [],
       showGroupColumn: false,
       showHostColumn: false,
@@ -49,9 +54,9 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
 
   // Local state for entity pattern (with onBlur)
   const [localEntityPattern, setLocalEntityPattern] = useState(tableConfig.entityPattern.pattern);
-  const [localExtractRegex, setLocalExtractRegex] = useState(tableConfig.entityPattern.extractNameRegex || '');
+  const [localExtractPattern, setLocalExtractPattern] = useState(tableConfig.entityPattern.extractPattern || '');
 
-  // Local state for metric fields (array of objects)
+  // Local state for metric fields
   const [localMetrics, setLocalMetrics] = useState(
     tableConfig.metrics.map((m) => ({ columnName: m.columnName, pattern: m.pattern }))
   );
@@ -59,13 +64,12 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   // Sync local state when query changes externally
   useEffect(() => {
     setLocalEntityPattern(tableConfig.entityPattern.pattern);
-    setLocalExtractRegex(tableConfig.entityPattern.extractNameRegex || '');
-  }, [tableConfig.entityPattern.pattern, tableConfig.entityPattern.extractNameRegex]);
+    setLocalExtractPattern(tableConfig.entityPattern.extractPattern || '');
+  }, [tableConfig.entityPattern.pattern, tableConfig.entityPattern.extractPattern]);
 
-  // Sync local metrics when query changes
   useEffect(() => {
     setLocalMetrics(tableConfig.metrics.map((m) => ({ columnName: m.columnName, pattern: m.pattern })));
-  }, [tableConfig.metrics.length]); // Only sync when metrics array length changes
+  }, [tableConfig.metrics.length]);
 
   // Load groups on mount
   useEffect(() => {
@@ -74,6 +78,9 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       .then((groups) => {
         setGroups(groups.map((g) => ({ label: g.name, value: g.name })));
       })
+      .catch(() => {
+        setGroups([]);
+      });
   }, [datasource]);
 
   // Load hosts when group changes
@@ -85,6 +92,9 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
         .then((hosts) => {
           setHosts(hosts.map((h) => ({ label: h.name, value: h.name })));
         })
+        .catch(() => {
+          setHosts([]);
+        });
     } else {
       setHosts([]);
     }
@@ -113,10 +123,9 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   };
 
   const onEntityPatternBlur = () => {
-    // Only update if values changed
     if (
       localEntityPattern !== tableConfig.entityPattern.pattern ||
-      localExtractRegex !== (tableConfig.entityPattern.extractNameRegex || '')
+      localExtractPattern !== (tableConfig.entityPattern.extractPattern || '')
     ) {
       onChange({
         ...safeQuery,
@@ -125,18 +134,67 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
           entityPattern: {
             ...tableConfig.entityPattern,
             pattern: localEntityPattern,
-            extractNameRegex: localExtractRegex,
+            extractPattern: localExtractPattern,
           },
         },
       });
     }
   };
 
+  const onExtractedColumnAdd = () => {
+    const extractedColumns = tableConfig.entityPattern.extractedColumns || [];
+    const newColumn = {
+      name: 'Captured Field',
+      groupIndex: extractedColumns.length + 1,
+    };
+    
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          extractedColumns: [...extractedColumns, newColumn],
+        },
+      },
+    });
+  };
+
+  const onExtractedColumnChange = (index: number, field: 'name' | 'groupIndex', value: string | number) => {
+    const extractedColumns = [...(tableConfig.entityPattern.extractedColumns || [])];
+    extractedColumns[index] = { ...extractedColumns[index], [field]: value };
+    
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          extractedColumns,
+        },
+      },
+    });
+  };
+
+  const onExtractedColumnRemove = (index: number) => {
+    const extractedColumns = (tableConfig.entityPattern.extractedColumns || []).filter((_, i) => i !== index);
+    
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          extractedColumns,
+        },
+      },
+    });
+  };
+
   const onMetricChange = (index: number, field: keyof MetricColumnConfig, value: any) => {
     const newMetrics = [...tableConfig.metrics];
     newMetrics[index] = { ...newMetrics[index], [field]: value };
 
-    // Update local state for columnName and pattern
     if (field === 'columnName' || field === 'pattern') {
       const newLocalMetrics = [...localMetrics];
       if (!newLocalMetrics[index]) {
@@ -146,7 +204,6 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       setLocalMetrics(newLocalMetrics);
     }
 
-    // Only trigger onChange for non-text fields (searchType, aggregation)
     if (field !== 'columnName' && field !== 'pattern') {
       onChange({
         ...safeQuery,
@@ -159,7 +216,6 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   };
 
   const onMetricBlur = (index: number) => {
-    // Check if values changed
     const currentMetric = tableConfig.metrics[index];
     const localMetric = localMetrics[index];
 
@@ -199,7 +255,6 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       },
     });
 
-    // Add to local state
     setLocalMetrics([...localMetrics, { columnName: 'New Column', pattern: '' }]);
   };
 
@@ -213,71 +268,72 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       },
     });
 
-    // Remove from local state
     const newLocalMetrics = localMetrics.filter((_, i) => i !== index);
     setLocalMetrics(newLocalMetrics);
   };
 
+  const extractedColumns = tableConfig.entityPattern.extractedColumns || [];
+
   return (
     <Stack direction="column" gap={2}>
-        {/* First row: Group and Host */}
-        <InlineFieldRow>
+      {/* First row: Group and Host */}
+      <InlineFieldRow>
         <InlineField label="Group" labelWidth={16} grow>
-            <MetricPicker
+          <MetricPicker
             value={safeQuery.group.filter}
             placeholder="Select or type group filter"
             options={groups}
             createCustomValue={true}
             onChange={onGroupChange}
-            />
+          />
         </InlineField>
         <InlineField label="Host" labelWidth={16} grow>
-            <MetricPicker
+          <MetricPicker
             value={safeQuery.host.filter}
             placeholder="Select or type host filter"
             options={hosts}
             createCustomValue={true}
             onChange={onHostChange}
-            />
+          />
         </InlineField>
-        </InlineFieldRow>
+      </InlineFieldRow>
 
-        {/* Second row: Application and checkboxes */}
-        <InlineFieldRow>
+      {/* Second row: Application and checkboxes */}
+      <InlineFieldRow>
         <InlineField label="Application" labelWidth={16} grow tooltip="Optional: Application filter">
-            <Input
+          <Input
             value={safeQuery.application.filter}
             placeholder="e.g., /.*/  (optional)"
             onChange={onApplicationChange}
-            />
+          />
         </InlineField>
         <InlineField label="Show Group column" labelWidth={20}>
-            <Checkbox
+          <Checkbox
             value={tableConfig.showGroupColumn || false}
             onChange={(e) => {
-                onChange({
+              onChange({
                 ...safeQuery,
                 tableConfig: {
-                    ...tableConfig,
-                    showGroupColumn: e.currentTarget.checked,
+                  ...tableConfig,
+                  showGroupColumn: e.currentTarget.checked,
                 },
-                });
+              });
             }}
-            />
+          />
         </InlineField>
         <InlineField label="Show Host column" labelWidth={20}>
-            <Checkbox
+          <Checkbox
             value={tableConfig.showHostColumn || false}
             onChange={(e) => {
-                onChange({
+              onChange({
                 ...safeQuery,
                 tableConfig: {
-                    ...tableConfig,
-                    showHostColumn: e.currentTarget.checked,
+                  ...tableConfig,
+                  showHostColumn: e.currentTarget.checked,
                 },
-                });
+              });
             }}
-            />
+          />
         </InlineField>
       </InlineFieldRow>
 
@@ -295,9 +351,9 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
                     ...safeQuery,
                     tableConfig: {
                       ...tableConfig,
-                      entityPattern: { 
-                        ...tableConfig.entityPattern, 
-                        searchType: value as 'itemName' | 'itemKey' 
+                      entityPattern: {
+                        ...tableConfig.entityPattern,
+                        searchType: value as 'itemName' | 'itemKey',
                       },
                     },
                   })
@@ -317,19 +373,63 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
           </InlineFieldRow>
           <InlineFieldRow>
             <InlineField
-              label="Extract label"
+              label="Extract pattern"
               labelWidth={16}
               grow
-              tooltip="Optional: Regex to extract entity name, e.g., 'Interface (.*)'"
+              tooltip="Optional: Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
             >
               <Input
-                value={localExtractRegex}
-                placeholder="e.g., Interface (.*)"
-                onChange={(e) => setLocalExtractRegex(e.currentTarget.value)}
+                value={localExtractPattern}
+                placeholder="e.g., Interface (.*)\[(.*)\]"
+                onChange={(e) => setLocalExtractPattern(e.currentTarget.value)}
                 onBlur={onEntityPatternBlur}
               />
             </InlineField>
           </InlineFieldRow>
+
+          {/* Extracted Columns Section */}
+          {localExtractPattern && (
+            <div style={{ marginTop: '8px', marginLeft: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                <h6 style={{ margin: 0, fontSize: '12px' }}>
+                  <Icon name="arrow-right" /> Extracted Columns (from capture groups)
+                </h6>
+              </div>
+              <Stack direction="column" gap={1}>
+                {extractedColumns.map((col, index) => (
+                  <InlineFieldRow key={index}>
+                    <InlineField label="Column name" labelWidth={16}>
+                      <Input
+                        width={30}
+                        value={col.name}
+                        placeholder="Column name"
+                        onChange={(e) => onExtractedColumnChange(index, 'name', e.currentTarget.value)}
+                      />
+                    </InlineField>
+                    <InlineField label="Capture group" labelWidth={16}>
+                      <Input
+                        width={10}
+                        type="number"
+                        min={1}
+                        value={col.groupIndex}
+                        onChange={(e) => onExtractedColumnChange(index, 'groupIndex', parseInt(e.currentTarget.value, 10))}
+                      />
+                    </InlineField>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      icon="trash-alt"
+                      aria-label="Remove extracted column"
+                      onClick={() => onExtractedColumnRemove(index)}
+                    />
+                  </InlineFieldRow>
+                ))}
+                <Button size="sm" icon="plus" variant="secondary" onClick={onExtractedColumnAdd}>
+                  Add extracted column
+                </Button>
+              </Stack>
+            </div>
+          )}
         </Stack>
       </div>
 
@@ -389,11 +489,10 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       {/* Help text */}
       <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(50, 116, 217, 0.1)', borderRadius: '4px' }}>
         <p style={{ margin: 0, fontSize: '12px' }}>
-          <strong>How it works:</strong> Select Group/Host, define entity pattern for rows, then add metric columns.
+          <strong>How it works:</strong> Select Group/Host, define entity pattern for rows, optionally extract columns from regex capture groups, then add metric columns.
         </p>
         <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
-          <strong>Example:</strong> Host: "switch-01", Entity: "/Interface.*/" (Item Name), Extract: "Interface (.*)",
-          Columns: "Status" pattern "/.*Status/", "In" pattern "/.*Bits received/".
+          <strong>Example:</strong> Pattern: "/Interface.*/", Extract: "Interface (.*)\[(.*)\]" - Group 1: "Interface name", Group 2: "Description"
         </p>
       </div>
     </Stack>
