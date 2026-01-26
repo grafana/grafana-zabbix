@@ -3,6 +3,7 @@ run-name: Deploy ${{ inputs.branch }} to ${{ inputs.environment }} by @${{ githu
 permissions:
   attestations: write
   contents: write
+  pull-requests: read
   id-token: write
 
 on:
@@ -27,7 +28,7 @@ on:
 jobs:
   cd:
     name: CD
-    uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@ci-cd-workflows/v5.1.0
+    uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@ci-cd-workflows/v6.1.0
     with:
       golangci-lint-version: '2.7.2'
       go-version: '1.25.5'
