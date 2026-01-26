@@ -122,6 +122,76 @@ func TestGetItems(t *testing.T) {
 	}
 }
 
+func TestGetItemsWithRegexItemTagFilterNoMatch(t *testing.T) {
+	// Test that when a regex itemTagFilter doesn't match any tags,
+	// GetItems returns an empty list instead of all items.
+	// 
+	// This test verifies the fix for the bug where an empty tag filter result
+	// would cause itemTagFilter to become empty string, silently removing the filter.
+	//
+	// Bug scenario (without fix):
+	// 1. Regex itemTagFilter "/^NonExistentTag/" doesn't match any tags
+	// 2. GetItemTags returns empty list
+	// 3. itemTagFilter becomes "" (empty string) 
+	// 4. GetAllItems is called with empty itemTagFilter → returns ALL items (no tag filtering)
+	// 5. filterItemsByQuery filters by itemFilter "/.*/" → returns all 2 items
+	//
+	// Fixed scenario (with fix):
+	// 1. Regex itemTagFilter "/^NonExistentTag/" doesn't match any tags
+	// 2. GetItemTags returns empty list
+	// 3. Early return with empty items list → returns 0 items
+	itemGetCalls := []map[string]interface{}{}
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "item.get" {
+			// Track all item.get calls to verify behavior
+			paramsCopy := make(map[string]interface{})
+			for k, v := range payload.Params {
+				paramsCopy[k] = v
+			}
+			itemGetCalls = append(itemGetCalls, paramsCopy)
+			
+			// Return items that would be returned if no tag filter is applied
+			return `{
+				"result":[
+					{"itemid":"100","name":"CPU usage","tags":[{"tag":"Env","value":"prod"}]},
+					{"itemid":"200","name":"Memory usage","tags":[{"tag":"Application","value":"api"}]}
+				]
+			}`
+		}
+		if payload.Method == "hostgroup.get" {
+			return `{"result":[{"groupid":"1","name":"Servers"}]}`
+		}
+		if payload.Method == "host.get" {
+			return `{"result":[{"hostid":"10","name":"web01"}]}`
+		}
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"6.4.0"}`
+		}
+		return `{"result":null}`
+	})
+
+	// Use a regex itemTagFilter that won't match any tags
+	// Use itemFilter "/.*/" which matches all items, so we can detect if bug returns all items
+	items, err := client.GetItems(context.Background(), "Servers", "web01", "/^NonExistentTag/", "/.*/", "num", false)
+	require.NoError(t, err)
+	
+	// With fix: Should return empty list (0 items) because no tags matched
+	// Without fix: Would return 2 items because itemTagFilter becomes empty and GetAllItems returns all items
+	if len(items) != 0 {
+		t.Errorf("Expected empty list when regex itemTagFilter matches no tags, but got %d items. This indicates the bug: itemTagFilter was silently removed and all items were returned.", len(items))
+		t.Logf("Item.get was called %d times", len(itemGetCalls))
+		for i, call := range itemGetCalls {
+			tags, hasTags := call["tags"]
+			if hasTags {
+				t.Logf("Call %d: has tags filter: %v", i+1, tags)
+			} else {
+				t.Logf("Call %d: NO tags filter (this is the bug - should not call GetAllItems with empty filter)", i+1)
+			}
+		}
+	}
+	assert.Len(t, items, 0, "Expected empty list when regex itemTagFilter matches no tags. Without fix, this would return 2 items.")
+}
+
 func TestGetItemsBefore54(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
 		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"}]}`,
