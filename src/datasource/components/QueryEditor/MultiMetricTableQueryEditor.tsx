@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Checkbox, InlineField, InlineFieldRow, Input, RadioButtonGroup, Select, Stack, Icon } from '@grafana/ui';
-import { ComboboxOption } from '@grafana/ui';
-import { ZabbixMetricsQuery, MetricColumnConfig } from '../../types/query';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useAsyncFn } from 'react-use';
+import { uniqBy } from 'lodash';
+import { Button, Checkbox, InlineField, InlineFieldRow, Input, RadioButtonGroup, Select, Stack, Icon, ComboboxOption } from '@grafana/ui';
+import { ZabbixMetricsQuery, MetricColumnConfig, HostTagFilter, ZabbixTagEvalType } from '../../types/query';
 import { ZabbixDatasource } from '../../datasource';
 import { MetricPicker } from '../../../components/MetricPicker/MetricPicker';
+import { HostTagQueryEditor } from './HostTagQueryEditor';
+import { getVariableOptions, processHostTags } from './utils';
+import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 interface Props {
   query: ZabbixMetricsQuery;
@@ -27,22 +31,22 @@ const aggregationOptions = [
 ];
 
 export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Props) => {
-  const [groups, setGroups] = useState<ComboboxOption<string>[]>([]);
-  const [hosts, setHosts] = useState<ComboboxOption<string>[]>([]);
+  const interpolatedQuery = useInterpolatedQuery(datasource, query);
 
   // Ensure defaults
   const safeQuery: ZabbixMetricsQuery = {
     ...query,
     group: query.group || { filter: '' },
     host: query.host || { filter: '' },
+    hostTags: query.hostTags || [],
     application: query.application || { filter: '' },
     itemTag: query.itemTag || { filter: '' },
     tableConfig: query.tableConfig || {
-      entityPattern: { 
-        searchType: 'itemName', 
-        pattern: '', 
+      entityPattern: {
+        searchType: 'itemName',
+        pattern: '',
         extractPattern: '',
-        extractedColumns: []
+        extractedColumns: [],
       },
       metrics: [],
       showGroupColumn: false,
@@ -61,6 +65,65 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     tableConfig.metrics.map((m) => ({ columnName: m.columnName, pattern: m.pattern }))
   );
 
+  // Load group options
+  const loadGroupOptions = async () => {
+    const groups = await datasource.zabbix.getAllGroups();
+    const options = groups?.map((group) => ({
+      value: group.name,
+      label: group.name,
+    }));
+    if (options.length > 0) {
+      options.unshift({ value: '/.*/' });
+    }
+    options.unshift(...getVariableOptions());
+    return options;
+  };
+
+  const [{ loading: groupsLoading, value: groupsOptions }, fetchGroups] = useAsyncFn(async () => {
+    const options = await loadGroupOptions();
+    return options;
+  }, []);
+
+  // Load host tag options
+  const loadHostTagOptions = async (group: string) => {
+    const hostsWithTags = await datasource.zabbix.getAllHosts(group, true);
+    const hostTags = processHostTags(hostsWithTags ?? []);
+    let options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
+      value: tag.tag,
+      label: tag.tag,
+    }));
+    return options;
+  };
+
+  const [{ loading: hostTagsLoading, value: hostTagsOptions }, fetchHostTags] = useAsyncFn(async () => {
+    const options = await loadHostTagOptions(query.group.filter);
+    return options;
+  }, [query.group.filter]);
+
+  // Load host options
+  const loadHostOptions = async (group: string, hostTags?: HostTagFilter[], evalType?: ZabbixTagEvalType) => {
+    const hosts = await datasource.zabbix.getAllHosts(group, false, hostTags, evalType);
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
+      value: host.name,
+      label: host.name,
+    }));
+    options = uniqBy(options, (o) => o.value);
+    if (options.length > 0) {
+      options.unshift({ value: '/.*/' });
+    }
+    options.unshift(...getVariableOptions());
+    return options;
+  };
+
+  const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
+    const options = await loadHostOptions(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.hostTags,
+      interpolatedQuery.evaltype
+    );
+    return options;
+  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
+
   // Sync local state when query changes externally
   useEffect(() => {
     setLocalEntityPattern(tableConfig.entityPattern.pattern);
@@ -71,34 +134,18 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     setLocalMetrics(tableConfig.metrics.map((m) => ({ columnName: m.columnName, pattern: m.pattern })));
   }, [tableConfig.metrics.length]);
 
-  // Load groups on mount
+  // Fetch options on mount and when dependencies change
   useEffect(() => {
-    datasource.zabbix
-      .getGroups('/.*/')
-      .then((groups) => {
-        setGroups(groups.map((g) => ({ label: g.name, value: g.name })));
-      })
-      .catch(() => {
-        setGroups([]);
-      });
-  }, [datasource]);
+    fetchGroups();
+  }, []);
 
-  // Load hosts when group changes
   useEffect(() => {
-    const groupFilter = safeQuery.group.filter;
-    if (groupFilter && groupFilter.trim() !== '') {
-      datasource.zabbix
-        .getHosts(groupFilter, '/.*/')
-        .then((hosts) => {
-          setHosts(hosts.map((h) => ({ label: h.name, value: h.name })));
-        })
-        .catch(() => {
-          setHosts([]);
-        });
-    } else {
-      setHosts([]);
-    }
-  }, [datasource, safeQuery.group.filter]);
+    fetchHostTags();
+  }, [query.group.filter]);
+
+  useEffect(() => {
+    fetchHosts();
+  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
 
   const onGroupChange = (value: string) => {
     onChange({
@@ -108,17 +155,24 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     });
   };
 
+  const onHostTagFilterChange = useCallback(
+    (hostTags: HostTagFilter[]) => {
+      onChange({ ...safeQuery, hostTags: hostTags });
+    },
+    [onChange, safeQuery]
+  );
+
+  const onHostTagEvalTypeChange = useCallback(
+    (evalType: ZabbixTagEvalType) => {
+      onChange({ ...safeQuery, evaltype: evalType });
+    },
+    [onChange, safeQuery]
+  );
+
   const onHostChange = (value: string) => {
     onChange({
       ...safeQuery,
       host: { filter: value || '' },
-    });
-  };
-
-  const onApplicationChange = (e: React.FormEvent<HTMLInputElement>) => {
-    onChange({
-      ...safeQuery,
-      application: { filter: e.currentTarget.value || '' },
     });
   };
 
@@ -147,7 +201,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       name: 'Captured Field',
       groupIndex: extractedColumns.length + 1,
     };
-    
+
     onChange({
       ...safeQuery,
       tableConfig: {
@@ -163,7 +217,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   const onExtractedColumnChange = (index: number, field: 'name' | 'groupIndex', value: string | number) => {
     const extractedColumns = [...(tableConfig.entityPattern.extractedColumns || [])];
     extractedColumns[index] = { ...extractedColumns[index], [field]: value };
-    
+
     onChange({
       ...safeQuery,
       tableConfig: {
@@ -178,7 +232,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
 
   const onExtractedColumnRemove = (index: number) => {
     const extractedColumns = (tableConfig.entityPattern.extractedColumns || []).filter((_, i) => i !== index);
-    
+
     onChange({
       ...safeQuery,
       tableConfig: {
@@ -276,37 +330,44 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
 
   return (
     <Stack direction="column" gap={2}>
-      {/* First row: Group and Host */}
+      {/* First row: Group, Host tag, Host - matching MetricsQueryEditor */}
       <InlineFieldRow>
-        <InlineField label="Group" labelWidth={16} grow>
+        <InlineField label="Group" labelWidth={12}>
           <MetricPicker
+            width={24}
             value={safeQuery.group.filter}
-            placeholder="Select or type group filter"
-            options={groups}
+            options={groupsOptions}
+            isLoading={groupsLoading}
+            placeholder="Group name"
             createCustomValue={true}
             onChange={onGroupChange}
           />
         </InlineField>
-        <InlineField label="Host" labelWidth={16} grow>
+        <InlineField label="Host tag" labelWidth={12}>
+          <HostTagQueryEditor
+            hostTagOptions={hostTagsOptions}
+            evalTypeValue={safeQuery.evaltype}
+            hostTagOptionsLoading={hostTagsLoading}
+            onHostTagFilterChange={onHostTagFilterChange}
+            onHostTagEvalTypeChange={onHostTagEvalTypeChange}
+            version={datasource.zabbix.version}
+          />
+        </InlineField>
+        <InlineField label="Host" labelWidth={12}>
           <MetricPicker
+            width={24}
             value={safeQuery.host.filter}
-            placeholder="Select or type host filter"
-            options={hosts}
+            options={hostOptions}
+            isLoading={hostsLoading}
+            placeholder="Host name"
             createCustomValue={true}
             onChange={onHostChange}
           />
         </InlineField>
       </InlineFieldRow>
 
-      {/* Second row: Application and checkboxes */}
+      {/* Second row: Checkboxes */}
       <InlineFieldRow>
-        <InlineField label="Application" labelWidth={16} grow tooltip="Optional: Application filter">
-          <Input
-            value={safeQuery.application.filter}
-            placeholder="e.g., /.*/  (optional)"
-            onChange={onApplicationChange}
-          />
-        </InlineField>
         <InlineField label="Show Group column" labelWidth={20}>
           <Checkbox
             value={tableConfig.showGroupColumn || false}
@@ -365,7 +426,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
             <InlineField label="Pattern" labelWidth={16} grow>
               <Input
                 value={localEntityPattern}
-                placeholder="e.g., /Interface.*/ or *"
+                placeholder="e.g., /Interface.*/ or /.*: Disk .*/ or /FS .*: .*/"
                 onChange={(e) => setLocalEntityPattern(e.currentTarget.value)}
                 onBlur={onEntityPatternBlur}
               />
@@ -380,7 +441,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
             >
               <Input
                 value={localExtractPattern}
-                placeholder="e.g., Interface (.*)\[(.*)\]"
+                placeholder="Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
                 onChange={(e) => setLocalExtractPattern(e.currentTarget.value)}
                 onBlur={onEntityPatternBlur}
               />
@@ -412,7 +473,9 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
                         type="number"
                         min={1}
                         value={col.groupIndex}
-                        onChange={(e) => onExtractedColumnChange(index, 'groupIndex', parseInt(e.currentTarget.value, 10))}
+                        onChange={(e) =>
+                          onExtractedColumnChange(index, 'groupIndex', parseInt(e.currentTarget.value, 10))
+                        }
                       />
                     </InlineField>
                     <Button
@@ -489,10 +552,12 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       {/* Help text */}
       <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(50, 116, 217, 0.1)', borderRadius: '4px' }}>
         <p style={{ margin: 0, fontSize: '12px' }}>
-          <strong>How it works:</strong> Select Group/Host, define entity pattern for rows, optionally extract columns from regex capture groups, then add metric columns.
+          <strong>How it works:</strong> Select Group/Host, define entity pattern for rows, optionally extract columns
+          from regex capture groups, then add metric columns.
         </p>
         <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
-          <strong>Example:</strong> Pattern: "/Interface.*/", Extract: "Interface (.*)\[(.*)\]" - Group 1: "Interface name", Group 2: "Description"
+          <strong>Example:</strong> Pattern: "/Interface.*/", Extract: "Interface (.*)\[(.*)\]" - Group 1: "Interface
+          name", Group 2: "Description"
         </p>
       </div>
     </Stack>
