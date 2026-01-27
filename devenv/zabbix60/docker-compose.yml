@@ -19,7 +19,6 @@ services:
       file: ../../.config/docker-compose-base.yaml
       service: grafana
     volumes:
-      - ../..:/grafana-zabbix
       - ../dashboards:/devenv/dashboards
       - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
       - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'

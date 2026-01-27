@@ -105,9 +105,16 @@ func (ds *Zabbix) GetItems(
 	}
 
 	if isRegex(itemTagFilter) {
+		ds.logger.Debug("Processing regex item tag filter", "filterPattern", itemTagFilter, "hostCount", len(hostids))
 		tags, err := ds.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter)
 		if err != nil {
 			return nil, err
+		}
+		ds.logger.Debug("GetItemTags completed", "matchedTagCount", len(tags), "filterPattern", itemTagFilter)
+		// If regex filter doesn't match any tags, return empty items list
+		// to prevent silently removing the filter and returning all items
+		if len(tags) == 0 {
+			return []*Item{}, nil
 		}
 		var tagStrs []string
 		for _, t := range tags {
@@ -115,6 +122,7 @@ func (ds *Zabbix) GetItems(
 		}
 		itemTagFilter = strings.Join(tagStrs, ",")
 	}
+  ds.logger.Debug("Fetching items with filters", "hostCount", len(hostids), "itemType", itemType, "showDisabled", showDisabled, "hasItemTagFilter", len(itemTagFilter) > 0)
 	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter, false)
 	if err != nil {
 		return nil, err
