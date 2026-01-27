@@ -23,7 +23,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { reportInteraction } from '@grafana/runtime';
+import { getDataSourceSrv, reportInteraction } from '@grafana/runtime';
 import { ProblemDetails } from './ProblemDetails';
 import { capitalizeFirstLetter, parseCustomTagColumns } from './utils';
 
@@ -191,6 +191,19 @@ export const ProblemList = (props: ProblemListProps) => {
           />
         ),
       }),
+      columnHelper.accessor('datasource', {
+        header: 'Datasource',
+        size: 120,
+        cell: ({ cell }) => {
+          const datasource = cell.getValue();
+          let dsName: string = datasource as string;
+          if ((datasource as DataSourceRef)?.uid) {
+            const dsInstance = getDataSourceSrv().getInstanceSettings((datasource as DataSourceRef).uid);
+            dsName = dsInstance?.name || dsName;
+          }
+          return <span>{dsName}</span>;
+        },
+      }),
       columnHelper.accessor('timestamp', {
         id: 'age',
         header: 'Age',
@@ -268,6 +281,27 @@ export const ProblemList = (props: ProblemListProps) => {
     }));
   }, [effectivePageSize]);
 
+  // Column visibility state derived from panelOptions
+  const columnVisibility = useMemo(
+    () => ({
+      host: panelOptions.hostField,
+      hostTechName: panelOptions.hostTechNameField,
+      groups: panelOptions.hostGroups,
+      proxy: panelOptions.hostProxy,
+      priority: panelOptions.severityField,
+      statusIcon: panelOptions.statusIcon,
+      value: panelOptions.statusField,
+      opdata: panelOptions.opdataField,
+      acknowledged: panelOptions.ackField,
+      tags: panelOptions.showTags,
+      datasource: panelOptions.showDatasourceName,
+      age: panelOptions.ageField,
+    }),
+    [panelOptions]
+  );
+
+  // https://github.com/TanStack/table/issues/6137
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable returns functions that cannot be memoized
   const table = useReactTable({
     data: problems,
     columns,
@@ -276,24 +310,11 @@ export const ProblemList = (props: ProblemListProps) => {
     state: {
       columnSizing,
       pagination,
+      columnVisibility,
     },
     onPaginationChange: setPagination,
     meta: {
       panelOptions,
-    },
-    initialState: {
-      columnVisibility: {
-        host: panelOptions.hostField,
-        hostTechName: panelOptions.hostTechNameField,
-        groups: panelOptions.hostGroups,
-        proxy: panelOptions.hostProxy,
-        severity: panelOptions.severityField,
-        statusIcon: panelOptions.statusIcon,
-        opdata: panelOptions.opdataField,
-        ack: panelOptions.ackField,
-        tags: panelOptions.showTags,
-        age: panelOptions.ageField,
-      },
     },
     onColumnSizingChange: (updater) => {
       const newSizing = typeof updater === 'function' ? updater(columnSizing) : updater;

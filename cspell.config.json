@@ -29,7 +29,11 @@
     "src/**",
     "pkg/**"
   ],
-  "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
+  "ignoreRegExpList": [
+    "import\\s*\\((.|[\r\n])*?\\)",
+    "import\\s*.*\".*?\"",
+    "\\[@.+\\]"
+  ],
   "words": [
     "alexanderzobnin",
     "applicationids",
@@ -37,6 +41,7 @@
     "datapoints",
     "datasource",
     "datasources",
+    "devenv",
     "dompurify",
     "eventid",
     "eventids",
