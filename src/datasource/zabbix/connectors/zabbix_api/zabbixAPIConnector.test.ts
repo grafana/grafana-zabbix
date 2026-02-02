@@ -230,6 +230,50 @@ describe('Zabbix API connector', () => {
       });
     });
   });
+
+  describe('getSLA', () => {
+    it('defaults empty slaInterval to auto and builds SLA intervals', () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.request = jest.fn();
+
+      zabbixAPIConnector.getSLA(['1'], [0, 7200], { intervalMs: 1000 }, undefined);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('service.getsla', {
+        serviceids: ['1'],
+        intervals: [
+          { from: 0, to: 3600 },
+          { from: 3600, to: 7200 },
+        ],
+      });
+    });
+
+    it('uses provided slaInterval when not empty', () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.request = jest.fn();
+
+      zabbixAPIConnector.getSLA(['1'], [0, 7200], { intervalMs: 1000 }, '2h');
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('service.getsla', {
+        serviceids: ['1'],
+        intervals: [{ from: 0, to: 7200 }],
+      });
+    });
+
+    it('builds intervals when slaInterval is auto', () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      zabbixAPIConnector.request = jest.fn();
+
+      zabbixAPIConnector.getSLA(['1'], [0, 7200], { intervalMs: 1000 }, 'auto');
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('service.getsla', {
+        serviceids: ['1'],
+        intervals: [
+          { from: 0, to: 3600 },
+          { from: 3600, to: 7200 },
+        ],
+      });
+    });
+  });
 });
 
 const triggers = [

@@ -404,6 +404,10 @@ export class ZabbixAPIConnector {
   }
 
   getSLA(serviceids, timeRange, options, slaInterval: string) {
+    if (!slaInterval) {
+      // use default as auto
+      slaInterval = 'auto';
+    }
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
     if (slaInterval === 'auto') {
@@ -423,6 +427,9 @@ export class ZabbixAPIConnector {
   }
 
   async getSLA60(serviceids, timeRange, options, slaInterval: string) {
+    if (!slaInterval) {
+      slaInterval = 'auto';
+    }
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
     if (slaInterval === 'auto') {
