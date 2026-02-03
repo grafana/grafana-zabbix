@@ -13,6 +13,8 @@ import { Host, ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
+import { ZabbixDSOptions } from 'datasource/types/config';
+import { ConnectorOptions, InfluxDBConnectorOptions } from './connectors/types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -163,12 +165,18 @@ export class Zabbix implements ZabbixConnector {
     }
   }
 
-  initDBConnector(datasourceUID, datasourceName, options) {
+  initDBConnector(datasourceUID: string, datasourceName: string, options: ZabbixDSOptions) {
     return DBConnector.loadDatasource(datasourceUID, datasourceName).then((ds) => {
-      const connectorOptions: any = { datasourceUID, datasourceName };
+      const connectorOptions: ConnectorOptions = {
+        datasourceUID,
+        datasourceName,
+      };
       if (ds.type === 'influxdb') {
-        connectorOptions.retentionPolicy = options.dbConnectionRetentionPolicy;
-        this.dbConnector = new InfluxDBConnector(connectorOptions);
+        const influxDBConnectorOptions: InfluxDBConnectorOptions = {
+          ...connectorOptions,
+          retentionPolicy: options.dbConnectionRetentionPolicy,
+        };
+        this.dbConnector = new InfluxDBConnector(influxDBConnectorOptions);
       } else {
         this.dbConnector = new SQLConnector(connectorOptions);
       }
