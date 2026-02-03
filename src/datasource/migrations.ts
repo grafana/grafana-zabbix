@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { ZabbixMetricsQuery } from './types/query';
 import * as c from './constants';
 import { ZabbixDSOptions } from './types/config';
+import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
 
 export const DS_QUERY_SCHEMA = 12;
 export const DS_CONFIG_SCHEMA = 3;
@@ -173,15 +174,17 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     const dbConnectionOptions = jsonData.dbConnection;
     jsonData.dbConnectionEnable = dbConnectionOptions?.enable || false;
-    jsonData.dbConnectionDatasourceUID = dbConnectionOptions?.datasourceId || null;
+    jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions?.datasourceId) || undefined;
     // disabling as it is still currently needed for migration
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     delete jsonData.dbConnection;
   }
 
-  // if (oldVersion < 3) {
-  //   jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
-  // }
+  if (oldVersion < 3) {
+    // Before version 3, timeout was a string, so we need to convert it to match the new schema where timeout is a number
+    jsonData.timeout =
+      (jsonData.timeout as unknown as string) === '' ? null : Number(jsonData.timeout as unknown as string);
+  }
 
   return jsonData;
 }
@@ -231,3 +234,13 @@ export const prepareAnnotation = (json: any) => {
 
   return json;
 };
+
+// exporting for testing purposes only
+export function getUIDFromID(id: number): string {
+  const dsFilters: GetDataSourceListFilters = {
+    all: true,
+  };
+  const dsList = getDataSourceSrv().getList(dsFilters);
+  const datasource = dsList.find((ds) => ds.id === id);
+  return datasource?.uid;
+}

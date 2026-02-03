@@ -38,7 +38,7 @@ export type ZabbixDSOptions = {
  * */
 interface OldDBConnection {
   enable: boolean;
-  datasourceId: string;
+  datasourceId: number;
 }
 
 type ZabbixSecureJSONDataKeys = 'password' | 'apiToken';

@@ -1,8 +1,27 @@
 import _ from 'lodash';
-import { migrateDSConfig, DS_CONFIG_SCHEMA } from '../migrations';
+import { getDataSourceSrv } from '@grafana/runtime';
+import { getUIDFromID, migrateDSConfig, DS_CONFIG_SCHEMA } from './migrations';
+
+// Mock getDataSourceSrv from @grafana/runtime
+jest.mock('@grafana/runtime', () => ({
+  getDataSourceSrv: jest.fn(),
+}));
+
+const mockedGetDataSourceSrv = getDataSourceSrv as jest.MockedFunction<typeof getDataSourceSrv>;
 
 describe('Migrations', () => {
   let ctx: any = {};
+
+  beforeEach(() => {
+    mockedGetDataSourceSrv.mockReturnValue({
+      getList: jest.fn().mockReturnValue([
+        {
+          id: 1,
+          uid: 'datasource-1',
+        },
+      ]),
+    } as any);
+  });
 
   describe('When migrating datasource config', () => {
     beforeEach(() => {
@@ -18,7 +37,7 @@ describe('Migrations', () => {
       migrateDSConfig(ctx.jsonData);
       expect(ctx.jsonData).toMatchObject({
         dbConnectionEnable: true,
-        dbConnectionDatasourceUID: 1,
+        dbConnectionDatasourceUID: 'datasource-1',
         schema: DS_CONFIG_SCHEMA,
       });
     });
@@ -65,6 +84,31 @@ describe('Migrations', () => {
       expect(ctx.jsonData).toMatchObject(originalConf);
       expect(ctx.jsonData.dbConnectionEnable).toBe(true);
       expect(ctx.jsonData.dbConnectionDatasourceName).toBeDefined();
+    });
+  });
+
+  describe('getUIDFromID', () => {
+    it('should return the matching datasource uid', () => {
+      const getList = jest.fn().mockReturnValue([
+        { id: 1, uid: 'datasource-1' },
+        { id: 2, uid: 'datasource-2' },
+      ]);
+      mockedGetDataSourceSrv.mockReturnValue({ getList } as any);
+
+      const uid = getUIDFromID(2);
+
+      expect(uid).toBe('datasource-2');
+      expect(getList).toHaveBeenCalledWith({ all: true });
+    });
+
+    it('should return undefined when datasource is not found', () => {
+      const getList = jest.fn().mockReturnValue([{ id: 1, uid: 'datasource-1' }]);
+      mockedGetDataSourceSrv.mockReturnValue({ getList } as any);
+
+      const uid = getUIDFromID(999);
+
+      expect(uid).toBeUndefined();
+      expect(getList).toHaveBeenCalledWith({ all: true });
     });
   });
 });
