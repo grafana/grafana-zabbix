@@ -27,11 +27,11 @@ export class ZabbixAPIConnector {
   getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
   version: string;
   getVersionPromise: Promise<string>;
-  datasourceId: number;
+  datasourceUID: string;
 
-  constructor(basicAuth: any, withCredentials: boolean, datasourceId: number) {
-    this.datasourceId = datasourceId;
-    this.backendAPIUrl = `/api/datasources/${this.datasourceId}/resources/zabbix-api`;
+  constructor(basicAuth: any, withCredentials: boolean, datasourceUID: string) {
+    this.datasourceUID = datasourceUID;
+    this.backendAPIUrl = `/api/datasources/uid/${this.datasourceUID}/resources/zabbix-api`;
 
     this.requestOptions = {
       basicAuth: basicAuth,
@@ -65,7 +65,6 @@ export class ZabbixAPIConnector {
       },
       hideFromInspector: false,
       data: {
-        datasourceId: this.datasourceId,
         method,
         params,
       },
