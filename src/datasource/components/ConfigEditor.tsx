@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo } from 'react';
-import { getDataSourceSrv, config } from '@grafana/runtime';
-import { DataSourcePluginOptionsEditorProps, DataSourceSettings, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { getDataSourceSrv, config, GetDataSourceListFilters } from '@grafana/runtime';
+import {
+  DataSourceInstanceSettings,
+  DataSourceJsonData,
+  DataSourcePluginOptionsEditorProps,
+  DataSourceSettings,
+  GrafanaTheme2,
+} from '@grafana/data';
 import {
   Combobox,
   ComboboxOption,
@@ -44,17 +50,17 @@ export const ConfigEditor = (props: Props) => {
 
   // Derive selectedDBDatasource and currentDSType from options
   const { selectedDBDatasource, currentDSType } = useMemo(() => {
-    if (!options.jsonData.dbConnectionEnable || !options.jsonData.dbConnectionDatasourceId) {
+    if (!options.jsonData.dbConnectionEnable || !options.jsonData.dbConnectionDatasourceUID) {
       return { selectedDBDatasource: null, currentDSType: '' };
     }
     const selectedDs = getDirectDBDatasources().find(
-      (dsOption) => dsOption.id === options.jsonData.dbConnectionDatasourceId
+      (dsOption) => dsOption.uid === options.jsonData.dbConnectionDatasourceUID
     );
     return {
-      selectedDBDatasource: selectedDs ? { label: selectedDs.name, value: selectedDs.id } : null,
+      selectedDBDatasource: selectedDs ? { label: selectedDs.name, value: selectedDs.uid } : null,
       currentDSType: selectedDs?.type || '',
     };
-  }, [options.jsonData.dbConnectionEnable, options.jsonData.dbConnectionDatasourceId]);
+  }, [options.jsonData.dbConnectionEnable, options.jsonData.dbConnectionDatasourceUID]);
 
   // Apply some defaults on initial render
   useEffect(() => {
@@ -85,8 +91,8 @@ export const ConfigEditor = (props: Props) => {
       secureJsonData: { ...newSecureJsonData },
     });
 
-    // Handle async lookup when dbConnectionDatasourceId is not set but name is available
-    if (options.jsonData.dbConnectionEnable && !options.jsonData.dbConnectionDatasourceId) {
+    // Handle async lookup when dbConnectionDatasourceUID is not set but name is available
+    if (options.jsonData.dbConnectionEnable && !options.jsonData.dbConnectionDatasourceUID) {
       const dsName = options.jsonData.dbConnectionDatasourceName;
       getDataSourceSrv()
         .get(dsName)
@@ -96,7 +102,7 @@ export const ConfigEditor = (props: Props) => {
               ...options,
               jsonData: {
                 ...options.jsonData,
-                dbConnectionDatasourceId: ds.id,
+                dbConnectionDatasourceUID: ds.uid,
               },
             });
           }
@@ -358,7 +364,7 @@ export const ConfigEditor = (props: Props) => {
                   width={40}
                   value={selectedDBDatasource}
                   options={getDirectDBDSOptions()}
-                  onChange={directDBDatasourceChanegeHandler(options, onOptionsChange)}
+                  onChange={directDBDatasourceChangeHandler(options, onOptionsChange)}
                   placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB)"
                 />
               </Field>
@@ -514,29 +520,31 @@ const resetSecureJsonField =
     });
   };
 
-const directDBDatasourceChanegeHandler =
+const directDBDatasourceChangeHandler =
   (options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>, onChange: Props['onOptionsChange']) =>
-  (value: SelectableValue<number>) => {
+  (value: ComboboxOption<string>) => {
     onChange({
       ...options,
       jsonData: {
         ...options.jsonData,
-        dbConnectionDatasourceId: value.value,
+        dbConnectionDatasourceUID: value.value,
       },
     });
   };
 
 const getDirectDBDatasources = () => {
-  let dsList = (getDataSourceSrv() as any).getAll();
-  dsList = dsList.filter((ds) => SUPPORTED_SQL_DS.includes(ds.type));
+  const dsFilters: GetDataSourceListFilters = {
+    type: SUPPORTED_SQL_DS,
+  };
+  const dsList = getDataSourceSrv().getList(dsFilters);
   return dsList;
 };
 
 const getDirectDBDSOptions = () => {
-  const dsList = getDirectDBDatasources();
-  const dsOpts: Array<ComboboxOption<number>> = dsList.map((ds) => ({
+  const dsList: Array<DataSourceInstanceSettings<DataSourceJsonData>> = getDirectDBDatasources();
+  const dsOpts: Array<ComboboxOption<string>> = dsList.map((ds) => ({
     label: ds.name,
-    value: ds.id,
+    value: ds.uid,
     description: ds.type,
   }));
   return dsOpts;

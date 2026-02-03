@@ -49,11 +49,11 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
   enableDirectDBConnection: boolean;
-  dbConnectionDatasourceId: number;
+  dbConnectionDatasourceUID: string;
   dbConnectionDatasourceName: string;
   dbConnectionRetentionPolicy: string;
   enableDebugLog: boolean;
-  datasourceId: number;
+  datasourceUID: string;
   instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>;
   zabbix: Zabbix;
 
@@ -72,7 +72,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     };
 
     // General data source settings
-    this.datasourceId = instanceSettings.id;
+    this.datasourceUID = instanceSettings.uid;
     this.name = instanceSettings.name;
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
@@ -94,7 +94,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     // Direct DB Connection options
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
-    this.dbConnectionDatasourceId = jsonData.dbConnectionDatasourceId;
+    this.dbConnectionDatasourceUID = jsonData.dbConnectionDatasourceUID;
     this.dbConnectionDatasourceName = jsonData.dbConnectionDatasourceName;
     this.dbConnectionRetentionPolicy = jsonData.dbConnectionRetentionPolicy;
 
@@ -103,10 +103,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       withCredentials: this.withCredentials,
       cacheTTL: this.cacheTTL,
       enableDirectDBConnection: this.enableDirectDBConnection,
-      dbConnectionDatasourceId: this.dbConnectionDatasourceId,
+      dbConnectionDatasourceUID: this.dbConnectionDatasourceUID,
       dbConnectionDatasourceName: this.dbConnectionDatasourceName,
       dbConnectionRetentionPolicy: this.dbConnectionRetentionPolicy,
-      datasourceId: this.datasourceId,
+      datasourceUID: this.datasourceUID,
     };
 
     this.zabbix = new Zabbix(zabbixOptions);
@@ -320,7 +320,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async invokeDataProcessingQuery(timeSeriesData, query, timeRange) {
     // Request backend for data processing
     const requestOptions: BackendSrvRequest = {
-      url: `/api/datasources/${this.datasourceId}/resources/db-connection-post`,
+      url: `/api/datasources/uid/${this.datasourceUID}/resources/db-connection-post`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

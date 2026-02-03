@@ -18,7 +18,7 @@ describe('Migrations', () => {
       migrateDSConfig(ctx.jsonData);
       expect(ctx.jsonData).toMatchObject({
         dbConnectionEnable: true,
-        dbConnectionDatasourceId: 1,
+        dbConnectionDatasourceUID: 1,
         schema: DS_CONFIG_SCHEMA,
       });
     });
@@ -36,7 +36,7 @@ describe('Migrations', () => {
         schema: DS_CONFIG_SCHEMA,
       });
       expect(ctx.jsonData.dbConnectionEnable).toBeUndefined();
-      expect(ctx.jsonData.dbConnectionDatasourceId).toBeUndefined();
+      expect(ctx.jsonData.dbConnectionDatasourceUID).toBeUndefined();
     });
   });
 

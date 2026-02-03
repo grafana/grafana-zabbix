@@ -174,7 +174,7 @@ export function migrateDSConfig(jsonData) {
   if (oldVersion < 2) {
     const dbConnectionOptions = jsonData.dbConnection || {};
     jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
-    jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId || null;
+    jsonData.dbConnectionDatasourceUID = dbConnectionOptions.datasourceId || null; // TODO: figure out the support for older jsonData schema versions.
     delete jsonData.dbConnection;
   }
 

@@ -16,7 +16,7 @@ export type ZabbixDSOptions = {
   timeout?: number;
   queryTimeout?: number;
   dbConnectionEnable: boolean;
-  dbConnectionDatasourceId?: number;
+  dbConnectionDatasourceUID?: string;
   dbConnectionDatasourceName?: string;
   dbConnectionRetentionPolicy?: string;
   disableReadOnlyUsersAck: boolean;
