@@ -22,7 +22,24 @@ export type ZabbixDSOptions = {
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
   enableSecureSocksProxy?: boolean;
+  /** @deprecated
+   * Use `dbConnectionEnable` `dbConnectionDatasourceUID` `dbConnectionDatasourceName` `dbConnectionRetentionPolicy` instead.
+   * Currently only used to support migration for older schemas.
+   * */
+  // Disabling as we still need this for migration purposes for now.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  dbConnection?: OldDBConnection;
+  schema?: number;
 } & DataSourceJsonData;
+
+/** @deprecated
+ * Use `dbConnectionEnable` `dbConnectionDatasourceUID` `dbConnectionDatasourceName` `dbConnectionRetentionPolicy` instead.
+ * Currently only used to support migration for older schemas.
+ * */
+interface OldDBConnection {
+  enable: boolean;
+  datasourceId: string;
+}
 
 type ZabbixSecureJSONDataKeys = 'password' | 'apiToken';
 
