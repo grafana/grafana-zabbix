@@ -9,6 +9,7 @@ import dbConnector, {
   HISTORY_TO_TABLE_MAP,
   TREND_TO_TABLE_MAP,
 } from '../dbConnector';
+import { SQLConnectorOptions } from '../types';
 
 const supportedDatabases = {
   mysql: 'mysql',
@@ -20,7 +21,7 @@ export class SQLConnector extends DBConnector {
   private limit: number;
   private sqlDialect: any;
 
-  constructor(options) {
+  constructor(options: SQLConnectorOptions) {
     super(options);
 
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
@@ -103,7 +104,10 @@ export class SQLConnector extends DBConnector {
     const queryDef = {
       refId: 'A',
       format: 'time_series',
-      datasourceId: this.datasourceId,
+      datasource: {
+        type: this.datasourceType,
+        uid: this.datasourceUID,
+      },
       rawSql: query,
       maxDataPoints: this.limit,
     };
