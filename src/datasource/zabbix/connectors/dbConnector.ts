@@ -76,7 +76,7 @@ export class DBConnector {
         this.datasourceUID = ds.uid;
       }
 
-      if (!this.datasourceUID) {
+      if (!this.datasourceType) {
         this.datasourceType = ds.type;
       }
       return ds;
