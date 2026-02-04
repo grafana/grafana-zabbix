@@ -402,14 +402,18 @@ export class ZabbixAPIConnector {
     return this.request('sla.get', params);
   }
 
-  getSLA(serviceids, timeRange, options) {
+  getSLA(serviceids, timeRange, options, slaInterval: string) {
+    if (!slaInterval) {
+      // use default as auto
+      slaInterval = 'auto';
+    }
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
@@ -421,14 +425,17 @@ export class ZabbixAPIConnector {
     return this.request('service.getsla', params);
   }
 
-  async getSLA60(serviceids, timeRange, options) {
+  async getSLA60(serviceids, timeRange, options, slaInterval: string) {
+    if (!slaInterval) {
+      slaInterval = 'auto';
+    }
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
@@ -480,14 +487,14 @@ export class ZabbixAPIConnector {
     return slaLikeResponse;
   }
 
-  async getSLI(slaid, serviceids, timeRange, options) {
+  async getSLI(slaid, serviceids, timeRange, options, slaInterval: string) {
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
