@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { getDataSourceSrv } from '@grafana/runtime';
+import { ConnectorOptions } from './types';
 
 export const DEFAULT_QUERY_LIMIT = 10000;
 
@@ -41,7 +42,7 @@ export class DBConnector {
   protected datasourceTypeId: any;
   protected datasourceType: string;
 
-  constructor(options) {
+  constructor(options: ConnectorOptions) {
     this.datasourceUID = options.datasourceUID;
     this.datasourceName = options.datasourceName;
     this.datasourceTypeId = null;

@@ -25,14 +25,14 @@ describe('DBConnector', () => {
     });
 
     it('should try to load datasource by name first', () => {
-      const dbConnector = new DBConnector({ datasourceName: 'bar' });
+      const dbConnector = new DBConnector({ datasourceName: 'bar', datasourceUID: undefined });
       dbConnector.loadDBDataSource();
       expect(getAllMock).not.toHaveBeenCalled();
       expect(loadDatasourceMock).toHaveBeenCalledWith('bar');
     });
 
     it('should load datasource by UID if name not present', () => {
-      const dbConnector = new DBConnector({ datasourceUID: 'datasource-1' });
+      const dbConnector = new DBConnector({ datasourceUID: 'datasource-1', datasourceName: undefined });
       dbConnector.loadDBDataSource();
       expect(getAllMock).toHaveBeenCalled();
       expect(loadDatasourceMock).toHaveBeenCalledWith('foo');
