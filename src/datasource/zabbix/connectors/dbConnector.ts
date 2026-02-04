@@ -40,14 +40,12 @@ export class DBConnector {
   private datasourceName: string;
   protected datasourceTypeId: any;
   protected datasourceType: string;
-  // private datasourceTypeName: any;
 
   constructor(options) {
     this.datasourceUID = options.datasourceUID;
     this.datasourceName = options.datasourceName;
     this.datasourceTypeId = null;
     this.datasourceType = null;
-    // this.datasourceTypeName = null;
   }
 
   static loadDatasource(dsUID: string, dsName: string) {
@@ -68,7 +66,6 @@ export class DBConnector {
   loadDBDataSource() {
     return DBConnector.loadDatasource(this.datasourceUID, this.datasourceName).then((ds) => {
       this.datasourceTypeId = ds.meta.id;
-      // this.datasourceTypeName = ds.meta.name;
       if (!this.datasourceName) {
         this.datasourceName = ds.name;
       }
