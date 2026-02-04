@@ -234,7 +234,7 @@ describe('Zabbix API connector', () => {
 
   describe('getSLA', () => {
     it('defaults empty slaInterval to auto and builds SLA intervals', () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, datasourceUID);
       zabbixAPIConnector.request = jest.fn();
 
       zabbixAPIConnector.getSLA(['1'], [0, 7200], { intervalMs: 1000 }, undefined);
@@ -249,7 +249,7 @@ describe('Zabbix API connector', () => {
     });
 
     it('uses provided slaInterval when not empty', () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, datasourceUID);
       zabbixAPIConnector.request = jest.fn();
 
       zabbixAPIConnector.getSLA(['1'], [0, 7200], { intervalMs: 1000 }, '2h');
@@ -261,7 +261,7 @@ describe('Zabbix API connector', () => {
     });
 
     it('builds intervals when slaInterval is auto', () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, datasourceUID);
       zabbixAPIConnector.request = jest.fn();
 
       zabbixAPIConnector.getSLA(['1'], [0, 7200], { intervalMs: 1000 }, 'auto');
@@ -278,7 +278,7 @@ describe('Zabbix API connector', () => {
 
   describe('getSLA60', () => {
     it('defaults empty slaInterval to auto and builds periods', async () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, datasourceUID);
       zabbixAPIConnector.request = jest.fn((method: string) => {
         if (method === 'sla.get') {
           return Promise.resolve([{ slaid: '1' }]);
@@ -299,7 +299,7 @@ describe('Zabbix API connector', () => {
     });
 
     it('uses provided slaInterval when not empty', async () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, datasourceUID);
       zabbixAPIConnector.request = jest.fn((method: string) => {
         if (method === 'sla.get') {
           return Promise.resolve([{ slaid: '1' }]);
@@ -320,7 +320,7 @@ describe('Zabbix API connector', () => {
     });
 
     it('builds periods when slaInterval is auto', async () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, datasourceUID);
       zabbixAPIConnector.request = jest.fn((method: string) => {
         if (method === 'sla.get') {
           return Promise.resolve([{ slaid: '1' }]);
@@ -343,7 +343,7 @@ describe('Zabbix API connector', () => {
 
   describe('getSLI', () => {
     it('builds periods when slaInterval is auto', async () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, datasourceUID);
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve({}));
 
       await zabbixAPIConnector.getSLI('10', ['1'], [0, 7200], { intervalMs: 1000 }, 'auto');
@@ -358,7 +358,7 @@ describe('Zabbix API connector', () => {
     });
 
     it('uses provided slaInterval when not empty', async () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, 123);
+      const zabbixAPIConnector = new ZabbixAPIConnector(true, true, datasourceUID);
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve({}));
 
       await zabbixAPIConnector.getSLI('10', ['1'], [0, 7200], { intervalMs: 1000 }, '2h');
