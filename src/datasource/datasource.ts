@@ -447,13 +447,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
     if (target.slaFilter !== undefined) {
       const slas = await this.zabbix.getSLAs(target.slaFilter);
-      const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
+      const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request, target.slaInterval);
       // Apply alias functions
       const aliasFunctions = utils.bindFunctionDefs(target.functions, 'Alias');
       utils.sequence(aliasFunctions)(result);
       return result;
     }
-    const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
+    const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, target.slaInterval, request);
     const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
     const processedResponse = await this.invokeDataProcessingQuery(backendRequest, target, {});
     return this.handleBackendPostProcessingResponse(processedResponse, request, target);

@@ -46,7 +46,7 @@ export interface ZabbixConnector {
   getApps: (groupFilter?, hostFilter?, appFilter?) => any;
   getUMacros: (groupFilter?, hostFilter?, macroFilter?) => any;
   getItems: (groupFilter?, hostFilter?, appFilter?, itemTagFilter?, itemFilter?, options?) => any;
-  getSLA: (itservices, timeRange, target, options?) => any;
+  getSLA: (itservices, timeRange, target, slaInterval: string, options?) => any;
 
   supportsApplications: () => boolean;
 }

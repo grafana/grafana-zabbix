@@ -7,11 +7,17 @@ services:
       context: .
       args:
         grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
-        grafana_version: ${GRAFANA_VERSION:-12.2.0}
+        grafana_version: ${GRAFANA_VERSION:-12.3.1}
         development: ${DEVELOPMENT:-false}
         anonymous_auth_enabled: ${ANONYMOUS_AUTH_ENABLED:-true}
     ports:
       - 3000:3000/tcp
+      - 2345:2345/tcp # delve
+    security_opt:
+      - 'apparmor:unconfined'
+      - 'seccomp:unconfined'
+    cap_add:
+      - SYS_PTRACE
     volumes:
       - ../dist:/var/lib/grafana/plugins/alexanderzobnin-zabbix-app
       - ../provisioning:/etc/grafana/provisioning

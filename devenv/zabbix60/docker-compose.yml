@@ -19,7 +19,6 @@ services:
       file: ../../.config/docker-compose-base.yaml
       service: grafana
     volumes:
-      - ../..:/grafana-zabbix
       - ../dashboards:/devenv/dashboards
       - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
       - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
@@ -43,7 +42,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest@sha256:e034dd99e711ebb3c28ae87750b818279b857504cdac9be521743ecfbc9711e0
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest@sha256:b38d7ae7c073a8f4d0488315cd2c2131ab08294076bba4650f7b3ab065d9c07d
     ports:
       - '443:443'
       - '8188:8080'
@@ -64,7 +63,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:18@sha256:bfe50b2b0ddd9b55eadedd066fe24c7c6fe06626185b73358c480ea37868024d
+    image: postgres:18@sha256:5773fe724c49c42a7a9ca70202e11e1dff21fb7235b335a73f39297d200b73a2
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'

@@ -4,11 +4,11 @@
 
 ```sh
 # install frontend deps
-yarn install --pure-lockfile
+yarn install
 # build frontend
 yarn build
-#build backend for current platform
-mage -v build:backend
+#build backend
+mage -v
 ```
 
 ## Rebuild backend on changes
@@ -19,31 +19,31 @@ mage watch
 
 ## Debugging backend plugin
 
-For debugging backend part written on Go, you should go through a few steps. First, build a plugin with special flags for debugging:
+The plugin supports two debugging modes for the Go backend:
+
+### Standalone Debug Mode
+
+This mode allows you to run and debug the plugin locally:
+
+1. Use the **"Standalone debug mode"** configuration in VS Code (already configured in `.vscode/launch.json`)
+2. Set breakpoints in your Go code
+3. The plugin will start in standalone mode with the `-standalone` flag
+4. Run your local grafana instance
+
+### Debugging with Docker (Recommended for Grafana Integration)
+
+For debugging the backend plugin while it's running inside Grafana in Docker:
+
+1. Run the docker compose file with the following command in any of the devenv folders:
 
 ```sh
-make build-debug
+DEVELOPMENT=true docker compose up --build -d
 ```
 
-Then, configure your editor to connect to [delve](https://github.com/go-delve/delve) debugger running in headless mode. This is an example for VS Code:
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug backend plugin",
-      "type": "go",
-      "request": "attach",
-      "mode": "remote",
-      "port": 3222,
-      "host": "127.0.0.1"
-    }
-  ]
-}
-```
-
-Finally, run grafana-server and then execute `./debug-backend.sh` from grafana-zabbix root folder. This script will attach delve to running plugin. Now you can go to the VS Code and run _Debug backend plugin_ debug config.
+1. Attach VS Code debugger:
+   - Use the **"Attach to plugin backend in docker"** configuration in VS Code (already configured in `.vscode/launch.json`)
+   - Set breakpoints in your Go code
+   - The debugger will connect to delve running in the Docker container
 
 ## Submitting PR
 
