@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { getDataSourceSrv } from '@grafana/runtime';
+import { ConnectorOptions } from './types';
 
 export const DEFAULT_QUERY_LIMIT = 10000;
 
@@ -36,23 +37,23 @@ export const consolidateByTrendColumns = {
  * `testDataSource()` methods, which describe how to fetch data from source other than Zabbix API.
  */
 export class DBConnector {
-  protected datasourceId: any;
-  private datasourceName: any;
+  protected datasourceUID: string;
+  private datasourceName: string;
   protected datasourceTypeId: any;
-  // private datasourceTypeName: any;
+  protected datasourceType: string;
 
-  constructor(options) {
-    this.datasourceId = options.datasourceId;
+  constructor(options: ConnectorOptions) {
+    this.datasourceUID = options.datasourceUID;
     this.datasourceName = options.datasourceName;
     this.datasourceTypeId = null;
-    // this.datasourceTypeName = null;
+    this.datasourceType = null;
   }
 
-  static loadDatasource(dsId, dsName) {
-    if (!dsName && dsId !== undefined) {
-      const ds = _.find(getDataSourceSrv().getList(), { id: dsId });
+  static loadDatasource(dsUID: string, dsName: string) {
+    if (!dsName && dsUID !== undefined) {
+      const ds = _.find(getDataSourceSrv().getList(), { uid: dsUID });
       if (!ds) {
-        return Promise.reject(`Data Source with ID ${dsId} not found`);
+        return Promise.reject(`Data Source with UID ${dsUID} not found`);
       }
       dsName = ds.name;
     }
@@ -64,14 +65,17 @@ export class DBConnector {
   }
 
   loadDBDataSource() {
-    return DBConnector.loadDatasource(this.datasourceId, this.datasourceName).then((ds) => {
+    return DBConnector.loadDatasource(this.datasourceUID, this.datasourceName).then((ds) => {
       this.datasourceTypeId = ds.meta.id;
-      // this.datasourceTypeName = ds.meta.name;
       if (!this.datasourceName) {
         this.datasourceName = ds.name;
       }
-      if (!this.datasourceId) {
-        this.datasourceId = ds.id;
+      if (!this.datasourceUID) {
+        this.datasourceUID = ds.uid;
+      }
+
+      if (!this.datasourceType) {
+        this.datasourceType = ds.type;
       }
       return ds;
     });

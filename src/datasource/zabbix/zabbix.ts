@@ -13,6 +13,8 @@ import { Host, ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
+import { ZabbixDSOptions } from 'datasource/types/config';
+import { ConnectorOptions, InfluxDBConnectorOptions } from './connectors/types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -125,10 +127,10 @@ export class Zabbix implements ZabbixConnector {
       withCredentials,
       cacheTTL,
       enableDirectDBConnection,
-      dbConnectionDatasourceId,
+      dbConnectionDatasourceUID,
       dbConnectionDatasourceName,
       dbConnectionRetentionPolicy,
-      datasourceId,
+      datasourceUID,
     } = options;
 
     this.enableDirectDBConnection = enableDirectDBConnection;
@@ -140,7 +142,7 @@ export class Zabbix implements ZabbixConnector {
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, datasourceId);
+    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, datasourceUID);
 
     this.proxifyRequests();
     this.cacheRequests();
@@ -148,7 +150,7 @@ export class Zabbix implements ZabbixConnector {
 
     if (enableDirectDBConnection) {
       const connectorOptions: any = { dbConnectionRetentionPolicy };
-      this.initDBConnector(dbConnectionDatasourceId, dbConnectionDatasourceName, connectorOptions).then(() => {
+      this.initDBConnector(dbConnectionDatasourceUID, dbConnectionDatasourceName, connectorOptions).then(() => {
         this.getHistoryDB = this.cachingProxy.proxifyWithCache(
           this.dbConnector.getHistory,
           'getHistory',
@@ -163,12 +165,18 @@ export class Zabbix implements ZabbixConnector {
     }
   }
 
-  initDBConnector(datasourceId, datasourceName, options) {
-    return DBConnector.loadDatasource(datasourceId, datasourceName).then((ds) => {
-      const connectorOptions: any = { datasourceId, datasourceName };
+  initDBConnector(datasourceUID: string, datasourceName: string, options: ZabbixDSOptions) {
+    return DBConnector.loadDatasource(datasourceUID, datasourceName).then((ds) => {
+      const connectorOptions: ConnectorOptions = {
+        datasourceUID,
+        datasourceName,
+      };
       if (ds.type === 'influxdb') {
-        connectorOptions.retentionPolicy = options.dbConnectionRetentionPolicy;
-        this.dbConnector = new InfluxDBConnector(connectorOptions);
+        const influxDBConnectorOptions: InfluxDBConnectorOptions = {
+          ...connectorOptions,
+          retentionPolicy: options.dbConnectionRetentionPolicy,
+        };
+        this.dbConnector = new InfluxDBConnector(influxDBConnectorOptions);
       } else {
         this.dbConnector = new SQLConnector(connectorOptions);
       }

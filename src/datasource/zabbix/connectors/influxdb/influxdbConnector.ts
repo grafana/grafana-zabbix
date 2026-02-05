@@ -9,6 +9,7 @@ import {
 import _ from 'lodash';
 import { compactQuery } from '../../../utils';
 import { consolidateByTrendColumns, DBConnector, HISTORY_TO_TABLE_MAP } from '../dbConnector';
+import { InfluxDBConnectorOptions } from '../types';
 
 const consolidateByFunc = {
   avg: 'MEAN',
@@ -22,7 +23,7 @@ export class InfluxDBConnector extends DBConnector {
   private retentionPolicy: any;
   private influxDS: any;
 
-  constructor(options) {
+  constructor(options: InfluxDBConnectorOptions) {
     super(options);
     this.retentionPolicy = options.retentionPolicy;
     super.loadDBDataSource().then((ds) => {

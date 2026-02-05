@@ -34,7 +34,6 @@ type TimeRangePostProcessingRequest struct {
 }
 
 type ZabbixAPIResourceRequest struct {
-	DatasourceId int64                  `json:"datasourceId"`
 	Method       string                 `json:"method"`
 	Params       map[string]interface{} `json:"params,omitempty"`
 }
