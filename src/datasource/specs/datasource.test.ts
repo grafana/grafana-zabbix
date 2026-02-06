@@ -1,6 +1,7 @@
 import { lastValueFrom, of } from 'rxjs';
 import { ZabbixDatasource } from '../datasource';
 import * as c from '../constants';
+import * as metricFunctions from '../metricFunctions';
 import { DataSourceWithBackend } from '@grafana/runtime';
 
 const buildRequest = () =>
@@ -145,5 +146,37 @@ describe('ZabbixDatasource', () => {
     ds.enableDirectDBConnection = true;
     expect(ds.isBackendTarget(metricsTarget)).toBe(false);
     expect(ds.isDBConnectionTarget(metricsTarget)).toBe(true);
+  });
+
+  it('applyFrontendFunctions handles hidden queries gracefully', () => {
+    const ds = new ZabbixDatasource(instanceSettings);
+
+    // Get the actual setAlias function definition
+    const setAliasDef = metricFunctions.getCategories()['Alias'].find((f) => f.name === 'setAlias');
+
+    // Create a response with a frame that has no corresponding target
+    const response = {
+      data: [
+        { refId: 'A', fields: [] },
+        { refId: 'B', fields: [] }, // This will be from a hidden query
+      ],
+    } as any;
+
+    // Create a request with only target A (B is hidden)
+    const request = {
+      targets: [
+        {
+          refId: 'A',
+          queryType: c.MODE_METRICS,
+          functions: [{ def: setAliasDef, params: ['test'] }],
+        },
+      ],
+    } as any;
+
+    // This should not throw an error
+    expect(() => ds.applyFrontendFunctions(response, request)).not.toThrow();
+
+    // Response should still have both frames
+    expect(response.data.length).toBe(2);
   });
 });
