@@ -122,8 +122,8 @@ func (ds *Zabbix) GetItems(
 		}
 		itemTagFilter = strings.Join(tagStrs, ",")
 	}
-	ds.logger.Debug("Fetching items with filters", "hostCount", len(hostids), "itemType", itemType, "showDisabled", showDisabled, "hasItemTagFilter", len(itemTagFilter) > 0)
-	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter)
+  ds.logger.Debug("Fetching items with filters", "hostCount", len(hostids), "itemType", itemType, "showDisabled", showDisabled, "hasItemTagFilter", len(itemTagFilter) > 0)
+	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter, false)
 	if err != nil {
 		return nil, err
 	}
@@ -161,9 +161,9 @@ func (ds *Zabbix) GetItemsBefore54(
 
 	var allItems []*Item
 	if len(appids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "")
+		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "", false)
 	} else if appFilter == "" && len(hostids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "", false)
 	}
 	if err != nil {
 		return nil, err
@@ -255,7 +255,7 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 	itemType := "num"
 	showDisabled := false
 
-	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "", false)
 	if err != nil {
 		return nil, err
 	}
@@ -379,9 +379,16 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool, itemTagFilter string) ([]*Item, error) {
+func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool, itemTagFilter string, withLastValue bool) ([]*Item, error) {
+	output := []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"}
+
+	// Add lastvalue if requested
+	if withLastValue {
+		output = append(output, "lastvalue")
+	}
+
 	params := ZabbixAPIParams{
-		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
+		"output":         output,
 		"sortfield":      "name",
 		"webitems":       true,
 		"filter":         map[string]interface{}{},
@@ -543,7 +550,7 @@ func (ds *Zabbix) GetFullVersion(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return version, nil
 }
 
