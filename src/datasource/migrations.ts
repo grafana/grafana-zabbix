@@ -191,6 +191,9 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
     // disabling as it is currently needed for migration
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId) || undefined;
+    // disabling as it is currently needed for migration
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    delete jsonData.dbConnectionDatasourceId;
   }
   return jsonData;
 }
