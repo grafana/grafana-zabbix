@@ -5,7 +5,7 @@ import { ZabbixDSOptions } from './types/config';
 import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
 
 export const DS_QUERY_SCHEMA = 12;
-export const DS_CONFIG_SCHEMA = 3;
+export const DS_CONFIG_SCHEMA = 4;
 
 /**
  * Query format migration.
@@ -186,6 +186,12 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
       (jsonData.timeout as unknown as string) === '' ? null : Number(jsonData.timeout as unknown as string);
   }
 
+  if (oldVersion < DS_CONFIG_SCHEMA && !jsonData.dbConnectionDatasourceUID) {
+    // before version 4 we were using datasourceID for direct DB connections
+    // disabling as it is currently needed for migration
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId) || undefined;
+  }
   return jsonData;
 }
 
@@ -241,6 +247,7 @@ export function getUIDFromID(id: number): string {
     all: true,
   };
   const dsList = getDataSourceSrv().getList(dsFilters);
+  console.log(dsList);
   const datasource = dsList.find((ds) => ds.id === id);
   return datasource?.uid;
 }

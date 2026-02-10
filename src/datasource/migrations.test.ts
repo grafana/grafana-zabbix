@@ -42,6 +42,20 @@ describe('Migrations', () => {
       });
     });
 
+    it('should migrate dbConnectionDatasourceId to dbConnectionDatasourceUID', () => {
+      ctx.jsonData = {
+        dbConnectionDatasourceId: 1,
+        dbConnectionEnable: true,
+        schema: 3,
+      };
+      migrateDSConfig(ctx.jsonData);
+      expect(ctx.jsonData).toMatchObject({
+        dbConnectionEnable: true,
+        dbConnectionDatasourceUID: 'datasource-1',
+        schema: DS_CONFIG_SCHEMA,
+      });
+    });
+
     it('should not touch anything if schema is up to date', () => {
       ctx.jsonData = {
         futureOptionOne: 'foo',
