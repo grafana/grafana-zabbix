@@ -79,7 +79,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
+    image: redis:alpine@sha256:fd83658b0e40e2164617d262f13c02ca9ee9e1e6b276fd2fa06617e09bd5c780
 
   zas_backend_01:
     build: ../zas-agent
@@ -98,7 +98,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
+    image: redis:alpine@sha256:fd83658b0e40e2164617d262f13c02ca9ee9e1e6b276fd2fa06617e09bd5c780
 
   zas_frontend_01:
     build: ../zas-agent
