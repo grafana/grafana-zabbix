@@ -1896,9 +1896,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/plugin-ui@npm:0.13.0":
-  version: 0.13.0
-  resolution: "@grafana/plugin-ui@npm:0.13.0"
+"@grafana/plugin-ui@npm:0.13.1":
+  version: 0.13.1
+  resolution: "@grafana/plugin-ui@npm:0.13.1"
   dependencies:
     "@emotion/css": "npm:^11.11.2"
     "@hello-pangea/dnd": "npm:^17.0.0"
@@ -1924,7 +1924,7 @@ __metadata:
     react: ^18.2.0
     react-dom: ^18.2.0
     rxjs: ^7.8.1
-  checksum: 10c0/7aaf5787cde1f6d6670fdb453e651a2cc9d782114c12f17b580b91eddf78111ee5edfe6f9b69fda86cdfa4d10617730666fe7edbd7c0b9ba3172e6f58cb10281
+  checksum: 10c0/a44bf6e9ad3f3d5987005ebe8401cd148b7f2eaee29e9644b635a697afc4f6dc10b7e0520b549aad6f640bcb8d04659835e295731e5e9a873a60137eec7e9121
   languageName: node
   linkType: hard
 
@@ -7781,7 +7781,7 @@ __metadata:
     "@grafana/eslint-config": "npm:9.0.0"
     "@grafana/i18n": "npm:12.3.2"
     "@grafana/plugin-e2e": "npm:3.2.2"
-    "@grafana/plugin-ui": "npm:0.13.0"
+    "@grafana/plugin-ui": "npm:0.13.1"
     "@grafana/runtime": "npm:12.3.2"
     "@grafana/schema": "npm:12.3.2"
     "@grafana/tsconfig": "npm:2.0.1"
