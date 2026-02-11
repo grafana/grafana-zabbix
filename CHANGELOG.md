@@ -1,5 +1,11 @@
 # Change Log
 
+## 6.2.0
+
+🚀 Update dependencies for react-19 upgrade preparations
+🐛 Fix: Show disabled items in directdb connection
+🐛 Fix service query when selecting an SLA value
+
 ## 6.1.2
 
 🐛 Fix silent removal of itemTagFilter when no tags match regex
