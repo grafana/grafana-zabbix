@@ -2,12 +2,7 @@
 
 ## 6.2.0
 
-### Minor Changes
-
 🚀 Update dependencies for react-19 upgrade preparations
-
-### Patch Changes
-
 🐛 Fix: Show disabled items in directdb connection
 🐛 Fix service query when selecting an SLA value
 

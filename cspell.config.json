@@ -29,11 +29,7 @@
     "src/**",
     "pkg/**"
   ],
-  "ignoreRegExpList": [
-    "import\\s*\\((.|[\r\n])*?\\)",
-    "import\\s*.*\".*?\"",
-    "\\[@.+\\]"
-  ],
+  "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
   "words": [
     "alexanderzobnin",
     "applicationids",
@@ -75,6 +71,7 @@
     "unmarshal",
     "uplot",
     "zabbix",
-    "Zobnin"
+    "Zobnin",
+    "directdb"
   ]
 }
