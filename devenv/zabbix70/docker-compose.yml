@@ -72,7 +72,7 @@ services:
       POSTGRES_PASSWORD: zabbix
 
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-7.0-latest@sha256:52865010468af7f6dc3e3dbd45b645c32b8d133f4a230301cea26ffa679d5cc4
+    image: zabbix/zabbix-agent:alpine-7.0-latest@sha256:f02b3faa69594ff02bd4b74fad27ffbc6b3a8eaf612b5180ca26a1e4e3593e14
     environment:
       ZBX_SERVER_HOST: zabbix-server
       ZBX_SERVER_PORT: 10051
