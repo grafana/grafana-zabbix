@@ -1,0 +1,103 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "github>grafana/grafana-renovate-config//presets/automerge"
+    ],
+    "minimumReleaseAge": "7 days",
+    "platformAutomerge": true,
+    "timezone": "UTC",
+    "prConcurrentLimit": 3,
+    "dependencyDashboard": true,
+    "vulnerabilityAlerts": {
+        "enabled": true,
+        "labels": [
+            "security"
+        ],
+        "schedule": [
+            "at any time"
+        ],
+        "additionalBranchPrefix": "security-"
+    },
+    "packageRules": [
+        {
+            "description": "Bundle all frontend dependency updates into a single weekly PR",
+            "matchManagers": [
+                "npm"
+            ],
+            "groupName": "Frontend dependencies",
+            "groupSlug": "frontend-dependencies",
+            "extends": [
+                "schedule:earlyMondays"
+            ]
+        },
+        {
+            "description": "Bundle all backend dependency updates into a single weekly PR",
+            "matchManagers": [
+                "gomod"
+            ],
+            "groupName": "Backend dependencies",
+            "groupSlug": "backend-dependencies",
+            "extends": [
+                "schedule:earlyMondays"
+            ]
+        },
+        {
+            "description": "Bundle all Docker image updates into a single weekly PR",
+            "matchManagers": [
+                "dockerfile",
+                "docker-compose"
+            ],
+            "groupName": "Docker dependencies",
+            "groupSlug": "docker-dependencies",
+            "extends": [
+                "schedule:earlyMondays"
+            ]
+        },
+        {
+            "description": "Ignore major updates for dependencies that need to be kept in sync with Grafana",
+            "enabled": false,
+            "matchDatasources": [
+                "npm"
+            ],
+            "matchPackageNames": [
+                "react",
+                "react-dom",
+                "react-router-dom",
+                "react-router-dom-v5-compat",
+                "@types/react",
+                "@types/react-dom"
+            ],
+            "matchUpdateTypes": [
+                "major"
+            ]
+        },
+        {
+            "description": "Ignore major updates for dependencies that need to be kept in sync with the Node version defined in .nvmrc",
+            "enabled": false,
+            "matchDatasources": [
+                "npm",
+                "node-version"
+            ],
+            "matchPackageNames": [
+                "@types/node",
+                "node"
+            ],
+            "matchUpdateTypes": [
+                "major"
+            ]
+        },
+        {
+            "description": "Automerge minor dependencies",
+            "automerge": true,
+            "matchUpdateTypes": [
+                "minor",
+                "patch",
+                "pin",
+                "pinDigest"
+            ],
+            "labels": [
+                "automerge-minor"
+            ]
+        }
+    ]
+}
