@@ -54,14 +54,16 @@ The variable query editor uses a structured form with a **Query Type** drop-down
 
 | Query type | Returns | Filter fields |
 |------------|---------|---------------|
-| **Group** | Host group names | Group (regex filter) |
-| **Host** | Host names | Group, Host (regex filter) |
-| **Application** | Application names | Group, Host, Application (regex filter). For Zabbix 5.4+, use Item tag instead. |
-| **Item tag** | Item tag values | Group, Host, Item Tag (regex filter). Available in Zabbix 5.4+. |
-| **Item** | Item names | Group, Host, Application or Item Tag, Item (regex filter) |
-| **Item values** | Current item values | Group, Host, Application or Item Tag, Item (regex filter) |
+| **Group** | Host group names | Group |
+| **Host** | Host names | Group, Host |
+| **Application** | Application names | Group, Host, Application. Not available on Zabbix 5.4+ where applications have been removed. Use **Item tag** instead. |
+| **Item tag** | Item tag values | Group, Host, Item Tag. Available on Zabbix 5.4+. |
+| **Item** | Item names | Group, Host, Application or Item Tag, Item |
+| **Item values** | Current item values | Group, Host, Application or Item Tag, Item |
 
 All filter fields support regex patterns (for example, `/.*/` to match all values) and references to other template variables (for example, `$group`).
+
+For the **Item** and **Item values** query types, the editor shows either **Application** (Zabbix < 5.4) or **Item Tag** (Zabbix 5.4+) depending on your Zabbix server version. Only one field is visible at a time.
 
 When the **Item** query type is selected, you can also toggle **Show disabled items** to include disabled items in the results.
 
@@ -85,6 +87,22 @@ Each part can be a specific name or `*` (all values). The number of parts determ
 | `{Linux servers}{*}{*}` | All applications from hosts in "Linux servers" |
 | `{Linux servers}{backend01}{CPU}{*}` | All items from backend01 in the CPU application |
 
+## Use variables in queries
+
+Reference variables in the query editor by prefixing the variable name with `$`. For example, if you have a variable named `host`, use `$host` in the **Host** field of a Metrics query.
+
+Variables work in most query editor fields, including:
+
+- **Group**, **Host**, **Application** / **Item tag**, **Item**
+- **Service**, **SLA**
+- **Proxy**, **Problem**, **Item Ids**, **Macros**
+- Panel and row titles
+- Text panel content
+
+{{< admonition type="note" >}}
+When using multi-value variables, the plugin automatically formats the selected values as a regex pattern for Zabbix API queries.
+{{< /admonition >}}
+
 ## Chain variables
 
 You can reference one variable inside another variable's query to create cascading drop-downs. For example:
@@ -94,24 +112,6 @@ You can reference one variable inside another variable's query to create cascadi
 1. Create a variable named `item` with **Query Type** set to **Item**, set **Group** to `$group`, and **Host** to `$host`.
 
 When you change the `group` selection, the `host` variable automatically updates to show only hosts in that group, and the `item` variable updates accordingly.
-
-## Use variables in queries
-
-Reference variables in the query editor by prefixing the variable name with `$`. For example, if you have a variable named `host`, use `$host` in the **Host** field of a Metrics query.
-
-Variables work in the following query editor fields:
-
-- **Group**
-- **Host**
-- **Application** / **Item tag**
-- **Item**
-- **Problem**
-- Panel and row titles
-- Text panel content
-
-{{< admonition type="note" >}}
-When using multi-value variables, the plugin automatically formats the selected values as a regex pattern for Zabbix API queries.
-{{< /admonition >}}
 
 ## Next steps
 
