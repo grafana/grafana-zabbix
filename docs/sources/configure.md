@@ -1,7 +1,7 @@
 ---
 title: Configure the Zabbix data source
 menuTitle: Configure
-description: Learn how to configure the Zabbix data source plugin for Grafana, including authentication, trends, Direct DB Connection, and provisioning.
+description: Learn how to configure the Zabbix data source for Grafana, including authentication, trends, Direct DB Connection, and provisioning.
 aliases:
   - configuration/
   - configuration/direct-db-datasource/
@@ -24,7 +24,7 @@ last_reviewed: 2026-02-18
 
 # Configure the Zabbix data source
 
-This page explains how to configure the Zabbix data source in Grafana, including authentication, trends, Direct DB Connection, and provisioning.
+This document explains how to configure the Zabbix data source in Grafana, including authentication, trends, Direct DB Connection, and provisioning.
 
 ## Before you begin
 
@@ -73,7 +73,7 @@ Use a Zabbix API token to authenticate. API tokens are available in Zabbix 5.4 a
 
 ## Configure trends
 
-Trends store aggregated historical data (average, minimum, and maximum per hour) and are recommended for displaying long time ranges. Enable trends to improve query performance when viewing data older than your history retention period.
+Trends store aggregated historical data (average, minimum, and maximum per hour) and are recommended for displaying long time ranges. Enable trends to improve query performance when viewing data older than your history retention period. Find these settings under **Additional settings** > **Trends**.
 
 | Setting | Description |
 |---------|-------------|
@@ -170,6 +170,7 @@ datasources:
     type: alexanderzobnin-zabbix-datasource
     url: http://<ZABBIX_HOST>/zabbix/api_jsonrpc.php
     jsonData:
+      authType: userLogin
       username: <ZABBIX_USERNAME>
       trends: true
       trendsFrom: '7d'
@@ -180,7 +181,6 @@ datasources:
       dbConnectionRetentionPolicy: ''
       disableReadOnlyUsersAck: false
       disableDataAlignment: false
-      useZabbixValueMapping: false
     secureJsonData:
       password: <ZABBIX_PASSWORD>
     version: 1
@@ -202,9 +202,10 @@ The following table lists all available `jsonData` and `secureJsonData` fields f
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `username` | `jsonData` | Zabbix username (for user and password authentication). |
-| `password` | `secureJsonData` | Zabbix password (for user and password authentication). |
-| `apiToken` | `secureJsonData` | Zabbix API token (for API token authentication). |
+| `authType` | `jsonData` | Authentication method. Values: `userLogin` (default) or `token`. |
+| `username` | `jsonData` | Zabbix username (for `userLogin` authentication). |
+| `password` | `secureJsonData` | Zabbix password (for `userLogin` authentication). |
+| `apiToken` | `secureJsonData` | Zabbix API token (for `token` authentication). |
 | `trends` | `jsonData` | Enable trends. Default: `true`. |
 | `trendsFrom` | `jsonData` | Time after which trends are used. Default: `7d`. |
 | `trendsRange` | `jsonData` | Time range width for switching to trends. Default: `4d`. |
@@ -216,7 +217,6 @@ The following table lists all available `jsonData` and `secureJsonData` fields f
 | `dbConnectionRetentionPolicy` | `jsonData` | InfluxDB retention policy name for long-term data. |
 | `disableReadOnlyUsersAck` | `jsonData` | Disable acknowledges for read-only users. Default: `false`. |
 | `disableDataAlignment` | `jsonData` | Disable time series data alignment. Default: `false`. |
-| `useZabbixValueMapping` | `jsonData` | Use value mappings from Zabbix. Default: `false`. |
 
 For detailed MySQL and PostgreSQL provisioning options, refer to the [MySQL provisioning](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/datasources/mysql/#provision-the-data-source) and [PostgreSQL provisioning](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/datasources/postgres/#provision-the-data-source) documentation.
 
