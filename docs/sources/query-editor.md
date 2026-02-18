@@ -57,10 +57,10 @@ Use Metrics queries to retrieve numeric time series data from Zabbix items. This
 | Field | Description |
 |-------|-------------|
 | **Group** | The host group to query. Supports regex and template variables. |
-| **Host tag** | Filter hosts by tag. Available in Zabbix 5.4+. Supports AND/OR evaluation. |
+| **Host tag** | Filter hosts by tag (Zabbix 5.4+). Click the **+** button to add one or more tag filters. Each filter has a tag name, an operator, and an optional value. Available operators: Exists, Equals, Contains, Does not exist, Does not equal, Does not contain. When multiple filters are active, choose **AND/OR** or **OR** evaluation. |
 | **Host** | The host to query. Supports regex and template variables. |
-| **Application** | Filter items by application (Zabbix versions before 5.4). |
-| **Item tag** | Filter items by tag (Zabbix 5.4+). Supports template variables. |
+| **Application** | Filter items by application. Visible on Zabbix versions before 5.4. Replaced by **Item tag** on Zabbix 5.4+. |
+| **Item tag** | Filter items by tag. Visible on Zabbix 5.4+. Replaces **Application**. Supports template variables. |
 | **Item** | The item to query. Supports regex and template variables. |
 
 Expand the **Options** section to access additional settings:
@@ -71,6 +71,25 @@ Expand the **Options** section to access additional settings:
 | **Show disabled items** | Include disabled items in the item drop-down. |
 | **Use Zabbix value mapping** | Apply Zabbix value mappings to the returned data. |
 | **Disable data alignment** | Disable automatic alignment of data points to collection intervals. |
+
+### Text
+
+Use Text queries to retrieve text and log data from Zabbix items with text value types (character, log, text).
+
+| Field | Description |
+|-------|-------------|
+| **Group** | The host group to query. Supports regex and template variables. |
+| **Host** | The host to query. Supports regex and template variables. |
+| **Application** | Filter items by application. This field is always visible regardless of Zabbix version. On Zabbix 5.4+, where applications have been removed, leave this field empty. |
+| **Item** | The text item to query. Supports regex and template variables. |
+| **Text filter** | Filter returned text values by a search string. |
+| **Use capture groups** | Extract parts of the text value using regex capture groups in the text filter. |
+
+Expand the **Options** section to access additional settings:
+
+| Option | Description |
+|--------|-------------|
+| **Show disabled items** | Include disabled items in the item drop-down. |
 
 ### Services
 
@@ -84,25 +103,6 @@ Use Services queries to retrieve IT service SLA data from Zabbix.
 | **Interval** | The reporting interval: No interval, Auto, 1 hour, 12 hours, 24 hours, 1 week, or 1 month. |
 
 This query type shares the same **Options** as Metrics (Trends, Show disabled items, Use Zabbix value mapping, Disable data alignment).
-
-### Text
-
-Use Text queries to retrieve text and log data from Zabbix items with text value types (character, log, text).
-
-| Field | Description |
-|-------|-------------|
-| **Group** | The host group to query. Supports regex and template variables. |
-| **Host** | The host to query. Supports regex and template variables. |
-| **Application** | Filter items by application. |
-| **Item** | The text item to query. Supports regex and template variables. |
-| **Text filter** | Filter returned text values by a search string. |
-| **Use capture groups** | Extract parts of the text value using regex capture groups in the text filter. |
-
-Expand the **Options** section to access additional settings:
-
-| Option | Description |
-|--------|-------------|
-| **Show disabled items** | Include disabled items in the item drop-down. |
 
 ### Item ID
 
@@ -204,7 +204,7 @@ Use `/.*/` to match all values in a field. For example, setting **Group** to `/.
 
 ## Apply functions
 
-You can add processing functions to transform and aggregate query results. Click the **+** button next to the query to add functions such as `groupBy`, `scale`, `delta`, `rate`, and `movingAverage`.
+You can add processing functions to transform and aggregate query results when using **Metrics**, **Item ID**, or **Services** query types. Click the **+** button next to the query to add functions such as `groupBy`, `scale`, `delta`, `rate`, and `movingAverage`.
 
 For a complete list of available functions, refer to the [functions reference](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/).
 
