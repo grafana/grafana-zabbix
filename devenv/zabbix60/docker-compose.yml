@@ -42,7 +42,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest@sha256:b38d7ae7c073a8f4d0488315cd2c2131ab08294076bba4650f7b3ab065d9c07d
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest@sha256:dd48d90883b63097379b8194660eb231b0b74b92d63dd87993ce2b3f4ad6734a
     ports:
       - '443:443'
       - '8188:8080'
