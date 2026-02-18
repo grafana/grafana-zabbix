@@ -154,7 +154,7 @@ These settings are under **Additional settings** > **Other**.
 
 ## Verify the connection
 
-Click **Save & test** to verify the connection. A successful test displays the message "Zabbix API version" followed by the detected version number. If Direct DB Connection is enabled, the message also includes the database connector type.
+Click **Save & test** to verify the connection. A successful test displays the message "**Zabbix API version**" followed by the detected version number. If Direct DB Connection is enabled, the message also includes the database connector type.
 
 If the test fails, refer to the [troubleshooting guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/) for common connection issues and solutions.
 

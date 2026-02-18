@@ -29,6 +29,7 @@ The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure
 ## Requirements
 
 - Grafana 11.6.0 or later.
+- The Zabbix plugin installed in your Grafana instance. You can install it from **Administration** > **Plugins and data** > **Plugins**, or refer to [Install Grafana plugins](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/administration/plugin-management/) for other methods.
 - A running Zabbix server with API access enabled.
 - A Zabbix user account with read permissions for the host groups and hosts you want to query.
 
