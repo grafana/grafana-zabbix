@@ -24,7 +24,13 @@ last_reviewed: 2026-02-18
 
 # Zabbix data source
 
-The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure. You can query metrics, display problems and triggers, create annotations from Zabbix events, and build interactive dashboards with template variables. The plugin also supports querying historical data directly from the Zabbix database for improved performance on large time ranges.
+The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure. You can query metrics, display problems and triggers, monitor IT service SLA data, create annotations from Zabbix events, and build interactive dashboards with template variables. The plugin also supports querying historical data directly from the Zabbix database for improved performance on large time ranges.
+
+## Requirements
+
+- Grafana 11.6.0 or later.
+- A running Zabbix server with API access enabled.
+- A Zabbix user account with read permissions for the host groups and hosts you want to query.
 
 ## Supported features
 
@@ -34,6 +40,7 @@ The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure
 | Alerting | Yes |
 | Annotations | Yes |
 | Template variables | Yes |
+| Problems panel | Yes |
 | Direct DB Connection | Yes |
 
 ## Get started
@@ -59,7 +66,7 @@ After configuring the data source, you can:
 - **Annotate graphs** with Zabbix events filtered by severity and acknowledgment status.
 - **Use Direct DB Connection** to query history data from MySQL, PostgreSQL, or InfluxDB for faster performance on wide time ranges.
 - **Use [Explore](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/explore/)** to query Zabbix data without building a dashboard.
-- **Set up [alerting rules](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/alerting/)** based on Zabbix metrics.
+- **Set up [alerting rules](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/alerting/)** based on Zabbix data.
 
 ## Pre-built dashboards
 
