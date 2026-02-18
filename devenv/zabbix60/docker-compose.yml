@@ -25,7 +25,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-6.0-latest@sha256:b34303498b75e4a13d76211f250d5a831f746fc13d441d89d1dcea04b64adf4c
+    image: zabbix/zabbix-server-pgsql:alpine-6.0-latest@sha256:f2406f7b1d1cb167ace14d5c2aa5196bce4bb2eb16c26c288d6d7f40fe35c3fc
     ports:
       - '10051:10051'
     depends_on:
