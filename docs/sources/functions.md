@@ -50,7 +50,7 @@ Transform functions operate on each individual time series.
 groupBy(interval, function)
 ```
 
-Consolidates points within each `interval` into a single point using the specified `function`. Supported functions: `avg`, `min`, `max`, `median`.
+Consolidates points within each `interval` into a single point using the specified `function`. Supported functions: `avg`, `min`, `max`, `sum`, `count`, `median`, `first`, `last`.
 
 ```
 groupBy(10m, avg)
@@ -189,7 +189,7 @@ Aggregate functions combine multiple time series into one.
 aggregateBy(interval, function)
 ```
 
-Combines all time series by consolidating points within each `interval` using the specified `function`. Supported functions: `avg`, `min`, `max`, `median`.
+Combines all time series by consolidating points within each `interval` using the specified `function`. Supported functions: `avg`, `min`, `max`, `sum`, `count`, `median`, `first`, `last`.
 
 ```
 aggregateBy(10m, avg)
@@ -257,7 +257,7 @@ Filter functions reduce the number of time series returned.
 top(N, value)
 ```
 
-Returns the top N series sorted by `value`. Supported values: `avg`, `min`, `max`, `median`.
+Returns the top N series sorted by `value`. Supported values: `avg`, `min`, `max`, `sum`, `count`, `median`, `first`, `last`.
 
 ```
 top(10, avg)
@@ -270,10 +270,23 @@ top(5, max)
 bottom(N, value)
 ```
 
-Returns the bottom N series sorted by `value`. Supported values: `avg`, `min`, `max`, `median`.
+Returns the bottom N series sorted by `value`. Supported values: `avg`, `min`, `max`, `sum`, `count`, `median`, `first`, `last`.
 
 ```
 bottom(5, avg)
+```
+
+### sortSeries
+
+```
+sortSeries(direction)
+```
+
+Sorts multiple time series by name in the specified `direction`. Supported values: `asc`, `desc`.
+
+```
+sortSeries(asc)
+sortSeries(desc)
 ```
 
 ## Trend functions
@@ -286,7 +299,7 @@ Trend functions control how trend data is returned.
 trendValue(valueType)
 ```
 
-Specifies which trend value Zabbix returns when querying trends data. Supported values: `avg`, `min`, `max`.
+Specifies which trend value Zabbix returns when querying trends data. Supported values: `avg`, `min`, `max`, `sum`, `count`.
 
 ## Time functions
 
@@ -314,6 +327,7 @@ Alias functions change the display names of time series. The following template 
 |----------|-------------|
 | `$__zbx_item`, `$__zbx_item_name` | Item name. |
 | `$__zbx_item_key` | Item key. |
+| `$__zbx_item_interval` | Item collection interval (delay). |
 | `$__zbx_host_name` | Visible name of the host. |
 | `$__zbx_host` | Technical name of the host. |
 | `$__zbx_host_id` | ID of the host. |
