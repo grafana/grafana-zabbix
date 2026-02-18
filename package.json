@@ -61,7 +61,7 @@
     "@types/jest": "30.0.0",
     "@types/lodash": "4.17.23",
     "@types/node": "25.2.2",
-    "@types/react": "19.2.13",
+    "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/eslint-plugin": "8.55.0",
     "@typescript-eslint/parser": "8.55.0",
