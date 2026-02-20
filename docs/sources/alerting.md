@@ -24,7 +24,7 @@ You can create Grafana alert rules that evaluate Zabbix metrics and trigger noti
 
 ## Before you begin
 
-- [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/).
+- [Configure the Zabbix data source](./configure/).
 - Understand [Grafana Alerting](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/alerting/).
 
 ## Supported query types
@@ -57,6 +57,6 @@ For detailed instructions on configuring alert rules, evaluation groups, contact
 
 ## Next steps
 
-- [Build Metrics queries with the Zabbix query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/#metrics)
+- [Build Metrics queries with the Zabbix query editor](./query-editor/#metrics)
 - [Configure contact points for notifications](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/alerting/configure-notifications/manage-contact-points/)
-- [Troubleshoot the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/)
+- [Troubleshoot the Zabbix data source](./troubleshooting/)

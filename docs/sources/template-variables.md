@@ -25,7 +25,7 @@ Template variables let you create dynamic, reusable dashboards that switch betwe
 
 ## Before you begin
 
-- [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/).
+- [Configure the Zabbix data source](./configure/).
 - Understand [Grafana template variables](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/dashboards/variables/).
 
 ## Supported variable types
@@ -115,5 +115,5 @@ When you change the `group` selection, the `host` variable automatically updates
 
 ## Next steps
 
-- [Build queries with the Zabbix query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/)
-- [Apply functions to transform query results](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/)
+- [Build queries with the Zabbix query editor](./query-editor/)
+- [Apply functions to transform query results](./functions/)

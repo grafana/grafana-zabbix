@@ -48,13 +48,13 @@ The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure
 
 The following pages help you set up and use the Zabbix data source:
 
-- [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/)
-- [Zabbix query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/)
-- [Functions reference](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/)
-- [Template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/)
-- [Annotations](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/annotations/)
-- [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)
-- [Troubleshooting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/)
+- [Configure the Zabbix data source](./configure/)
+- [Zabbix query editor](./query-editor/)
+- [Functions reference](./functions/)
+- [Template variables](./template-variables/)
+- [Annotations](./annotations/)
+- [Alerting](./alerting/)
+- [Troubleshooting](./troubleshooting/)
 
 ## Feature highlights
 

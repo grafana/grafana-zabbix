@@ -156,7 +156,7 @@ These settings are under **Additional settings** > **Other**.
 
 Click **Save & test** to verify the connection. A successful test displays the message "**Zabbix API version**" followed by the detected version number. If Direct DB Connection is enabled, the message also includes the database connector type.
 
-If the test fails, refer to the [troubleshooting guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/) for common connection issues and solutions.
+If the test fails, refer to the [troubleshooting guide](./troubleshooting/) for common connection issues and solutions.
 
 ## Provision the data source
 
@@ -252,7 +252,7 @@ For more information about the Grafana Terraform provider, refer to the [Grafana
 
 ## Next steps
 
-- [Build queries with the Zabbix query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/)
-- [Use template variables for dynamic dashboards](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/)
-- [Set up alerting rules](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)
-- [Troubleshoot the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/)
+- [Build queries with the Zabbix query editor](./query-editor/)
+- [Use template variables for dynamic dashboards](./template-variables/)
+- [Set up alerting rules](./alerting/)
+- [Troubleshoot the Zabbix data source](./troubleshooting/)

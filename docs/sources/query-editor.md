@@ -28,7 +28,7 @@ The Zabbix query editor lets you build queries to visualize monitoring data from
 
 ## Before you begin
 
-- [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/).
+- [Configure the Zabbix data source](./configure/).
 - Verify your Zabbix user has permissions to access the host groups and hosts you want to query.
 
 ## Key concepts
@@ -206,11 +206,11 @@ Use `/.*/` to match all values in a field. For example, setting **Group** to `/.
 
 You can add processing functions to transform and aggregate query results when using **Metrics**, **Item ID**, or **Services** query types. Click the **+** button next to the query to add functions such as `groupBy`, `scale`, `delta`, `rate`, and `movingAverage`.
 
-For a complete list of available functions, refer to the [functions reference](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/).
+For a complete list of available functions, refer to the [functions reference](./functions/).
 
 ## Direct DB Connection behavior
 
-When [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection) is enabled, the plugin retrieves history and trend data directly from the Zabbix database instead of the Zabbix API. This is transparent to the query editor -- you build queries the same way. The key difference is that the database performs server-side aggregation, which reduces data transfer and improves performance on wide time ranges.
+When [Direct DB Connection](./configure/#configure-direct-db-connection) is enabled, the plugin retrieves history and trend data directly from the Zabbix database instead of the Zabbix API. This is transparent to the query editor -- you build queries the same way. The key difference is that the database performs server-side aggregation, which reduces data transfer and improves performance on wide time ranges.
 
 The `consolidateBy` function directly controls the aggregation function used in database queries. When using Direct DB Connection, pair it with `groupBy` for accurate results. For example, to group values by 1-hour intervals using the maximum value:
 
@@ -222,6 +222,6 @@ Without `consolidateBy`, the database aggregates using the default `AVG` functio
 
 ## Next steps
 
-- [Apply functions to transform query results](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/)
-- [Use template variables for dynamic dashboards](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/)
-- [Set up alerting rules](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)
+- [Apply functions to transform query results](./functions/)
+- [Use template variables for dynamic dashboards](./template-variables/)
+- [Set up alerting rules](./alerting/)

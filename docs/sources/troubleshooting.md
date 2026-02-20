@@ -22,7 +22,7 @@ last_reviewed: 2026-02-18
 
 # Troubleshoot Zabbix data source issues
 
-This page provides solutions to common issues you may encounter when configuring or using the Zabbix data source. For configuration instructions, refer to [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/).
+This page provides solutions to common issues you may encounter when configuring or using the Zabbix data source. For configuration instructions, refer to [Configure the Zabbix data source](./configure/).
 
 ## Authentication errors
 
@@ -123,7 +123,7 @@ These errors occur when executing queries against the Zabbix data source.
 
 1. Narrow the dashboard time range to reduce the amount of data returned.
 1. Enable trends for long time ranges to use pre-aggregated data instead of raw history.
-1. Enable [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection) for better performance on wide time ranges.
+1. Enable [Direct DB Connection](./configure/#configure-direct-db-connection) for better performance on wide time ranges.
 1. Increase the **Timeout** or **Query Timeout** values in the data source configuration if the defaults are too low for your environment.
 1. Use `groupBy` or `consolidateBy` functions to reduce the data point density.
 
@@ -198,7 +198,7 @@ These issues relate to slow queries or high resource usage.
 
 1. Enable trends in the data source configuration. Trends use pre-aggregated hourly data, which dramatically reduces the data volume for long time ranges.
 1. Set the **After** value to match your Zabbix history retention period (for example, `7d` or `30d`).
-1. Enable [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection) for server-side aggregation, which reduces data transfer.
+1. Enable [Direct DB Connection](./configure/#configure-direct-db-connection) for server-side aggregation, which reduces data transfer.
 1. Use `groupBy` functions to reduce the data point density for very long time ranges.
 1. Reduce the number of items queried by using more specific filters instead of broad regex patterns like `/.*/`.
 
