@@ -12,6 +12,7 @@
     "vendor/**",
     "cspell.config.json",
     "package.json",
+    "renovate.json",
     "yarn.lock",
     "docker-compose*.yaml",
     "docker-compose*.yml",
