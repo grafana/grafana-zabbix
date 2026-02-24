@@ -382,6 +382,11 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       const frame: DataFrame = response.data[i];
       const target = utils.getRequestTarget(request, frame.refId);
 
+      // Skip if target is not found (e.g., hidden queries)
+      if (!target) {
+        continue;
+      }
+
       // Apply alias functions
       const aliasFunctions = utils.bindFunctionDefs(target.functions, 'Alias');
       utils.sequence(aliasFunctions)(frame);
