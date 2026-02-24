@@ -13,6 +13,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
@@ -25,8 +26,9 @@ var (
 )
 
 type ZabbixDatasource struct {
-	im     instancemgmt.InstanceManager
-	logger log.Logger
+	im         instancemgmt.InstanceManager
+	logger     log.Logger
+	tokenCache *cache.TokenCache
 }
 
 // ZabbixDatasourceInstance stores state about a specific datasource
@@ -39,10 +41,26 @@ type ZabbixDatasourceInstance struct {
 }
 
 func NewZabbixDatasource() *ZabbixDatasource {
-	im := datasource.NewInstanceManager(newZabbixDatasourceInstance)
-	return &ZabbixDatasource{
-		im:     im,
-		logger: log.New(),
+	ds := &ZabbixDatasource{
+		im:         datasource.NewInstanceManager(newZabbixDatasourceInstance),
+		logger:     log.New(),
+		tokenCache: cache.NewTokenCache(),
+	}
+
+	go ds.startTokenCleanup()
+
+	return ds
+}
+
+func (ds *ZabbixDatasource) startTokenCleanup() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		cleaned := ds.tokenCache.CleanupExpired()
+		if cleaned > 0 {
+			ds.logger.Info("Cleaned up expired Zabbix authentication tokens", "count", cleaned)
+		}
 	}
 }
 
@@ -117,6 +135,12 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		return nil, err
 	}
 
+	// Apply per-user authentication
+	err = ds.applyPerUserAuth(ctx, zabbixDS, req.PluginContext.DataSourceInstanceSettings.UID)
+	if err != nil {
+		return nil, err
+  }
+  
 	queryTimeout := zabbixDS.Settings.QueryTimeout
 	if queryTimeout <= 0 {
 		queryTimeout = 60 * time.Second // Default to 60 seconds if not configured

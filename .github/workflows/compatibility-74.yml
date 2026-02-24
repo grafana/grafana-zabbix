@@ -34,6 +34,7 @@ jobs:
           ZABBIX_URL: 'http://localhost:8188/api_jsonrpc.php'
           ZABBIX_USER: 'Admin'
           ZABBIX_PASSWORD: 'zabbix'
+          ZABBIX_TARGET_USER: 'grafana_test'
         run: go test -v ./pkg/zabbixapi/...
 
       - name: Cleanup

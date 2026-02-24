@@ -85,6 +85,14 @@ func (api *ZabbixAPI) Request(ctx context.Context, method string, params ZabbixA
 	return api.request(ctx, method, params, api.auth, version)
 }
 
+func (api *ZabbixAPI) RequestWithArrayParams(ctx context.Context, method string, params []interface{}, version int) (*simplejson.Json, error) {
+	if api.auth == "" {
+		return nil, backend.DownstreamError(ErrNotAuthenticated)
+	}
+
+	return api.requestWithArrayParams(ctx, method, params, api.auth, version)
+}
+
 // Request performs API request without authentication token
 func (api *ZabbixAPI) RequestUnauthenticated(ctx context.Context, method string, params ZabbixAPIParams, version int) (*simplejson.Json, error) {
 	return api.request(ctx, method, params, "", version)
@@ -96,6 +104,52 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		"id":      2,
 		"method":  method,
 		"params":  normalizeParams(ctx, method, params, version),
+	}
+
+	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
+	// `auth` parameter throws an error in new versions so we need to add it only for older versions
+	if auth != "" && version < 72 {
+		apiRequest["auth"] = auth
+	}
+
+	reqBodyJSON, err := json.Marshal(apiRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, api.url.String(), bytes.NewBuffer(reqBodyJSON))
+	if err != nil {
+		return nil, err
+	}
+
+	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
+
+	if auth != "" && version >= 72 {
+		if api.dsSettings.BasicAuthEnabled {
+			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
+		}
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
+
+	response, err := makeHTTPRequest(ctx, api.httpClient, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return handleAPIResult(response)
+}
+
+// requestWithArrayParams performs API request with parameters as an array
+// This is used for methods that require an array of parameters instead of a map
+// currently `token.generate` method
+func (api *ZabbixAPI) requestWithArrayParams(ctx context.Context, method string, params []interface{}, auth string, version int) (*simplejson.Json, error) {
+	apiRequest := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      2,
+		"method":  method,
+		"params":  params,
 	}
 
 	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
@@ -187,6 +241,83 @@ func (api *ZabbixAPI) AuthenticateWithToken(ctx context.Context, token string) e
 	}
 	api.SetAuth(token)
 	return nil
+}
+
+// GetUserByIdentity queries Zabbix for a user by username or email
+func (api *ZabbixAPI) GetUserByIdentity(ctx context.Context, field, value string, version int) (*simplejson.Json, error) {
+	params := map[string]interface{}{
+		"filter": map[string]interface{}{
+			field: value,
+		},
+		"output": "extend",
+	}
+	return api.Request(ctx, "user.get", params, version)
+}
+
+// GenerateUserAPIToken generates or retrieves a Zabbix API token for a user
+func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, userName string, version int) (string, error) {
+	// Check for existing token with the desired name
+	getParams := map[string]interface{}{
+		"userids": userId,
+		"output":  "extend",
+		"filter": map[string]interface{}{
+			"name": "Zabbix-Grafana-Token_" + userName,
+		},
+	}
+	resp, err := api.Request(ctx, "token.get", getParams, version)
+	if err != nil {
+		return "", err
+	}
+
+	var tokenId string
+	if resp != nil && len(resp.MustArray()) > 0 {
+		// Token exists, use its tokenid
+		tokenId = resp.GetIndex(0).Get("tokenid").MustString()
+		api.logger.Debug("found existing token", "tokenid", tokenId, "username", userName)
+	} else {
+		// Token does not exist, create a new one
+		createParams := map[string]interface{}{
+			"userid": userId,
+			"name":   "Zabbix-Grafana-Token_" + userName,
+		}
+
+		createResp, err := api.Request(ctx, "token.create", createParams, version)
+		if err != nil {
+			return "", err
+		}
+
+		tokenIds := createResp.GetIndex(0).Get("tokenids").MustArray()
+		if len(tokenIds) == 0 {
+			return "", errors.New("failed to create Zabbix API token, tokenids array is empty")
+		}
+
+		tokenId = fmt.Sprintf("%v", tokenIds[0])
+		if tokenId == "" {
+			return "", errors.New("failed to create Zabbix API token, tokenid is empty")
+		}
+		api.logger.Debug("created new token", "tokenid", tokenId, "username", userName)
+	}
+
+	// Generate the actual token value
+	genParams := []interface{}{
+		tokenId,
+	}
+	genResp, err := api.RequestWithArrayParams(ctx, "token.generate", genParams, version)
+	if err != nil {
+		return "", err
+	}
+
+	if genResp == nil || len(genResp.MustArray()) == 0 {
+		return "", errors.New("failed to generate Zabbix API token, response is empty")
+	}
+
+	token := genResp.GetIndex(0).Get("token").MustString()
+	if token == "" {
+		return "", errors.New("failed to generate Zabbix API token, token string is empty")
+	}
+
+	api.logger.Debug("Generated token successfully", "userName", userName)
+	return token, nil
 }
 
 func isDeprecatedUserParamError(err error) bool {
