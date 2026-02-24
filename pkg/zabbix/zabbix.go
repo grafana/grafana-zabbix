@@ -48,7 +48,7 @@ func (zabbix *Zabbix) GetAPI() *zabbixapi.ZabbixAPI {
 func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simplejson.Json, error) {
 	var resultJson *simplejson.Json
 	var err error
-	
+
 	version, err := ds.GetVersion(ctx)
 	if err != nil {
 		ds.logger.Error("Error querying Zabbix version", "error", err)
@@ -157,4 +157,40 @@ func isNotAuthorized(err error) bool {
 	return strings.Contains(message, "Session terminated, re-login, please.") ||
 		strings.Contains(message, "Not authorised.") ||
 		strings.Contains(message, "Not authorized.")
+}
+
+func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter string) ([]*Item, error) {
+	var allItems []*Item
+	hosts, err := z.GetHosts(ctx, groupFilter, hostFilter)
+	if err != nil {
+		return nil, err
+	}
+	if len(hosts) == 0 {
+		return allItems, nil
+	}
+
+	hostids := make([]string, 0)
+	for _, host := range hosts {
+		hostids = append(hostids, host.ID)
+	}
+
+	if isRegex(itemTagFilter) {
+		tags, err := z.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter)
+		if err != nil {
+			return nil, err
+		}
+		var tagStrs []string
+		for _, t := range tags {
+			tagStrs = append(tagStrs, itemTagToString(t))
+		}
+		itemTagFilter = strings.Join(tagStrs, ",")
+	}
+
+	// Request with lastvalue
+	allItems, err = z.GetAllItems(ctx, hostids, nil, "num", false, itemTagFilter, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterItemsByQuery(allItems, itemFilter)
 }
