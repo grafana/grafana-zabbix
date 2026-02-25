@@ -176,7 +176,10 @@ describe('InfluxDBConnector', () => {
       const result = await connector.invokeInfluxDBQuery('SELECT MEAN("value") FROM "history_uint"');
 
       expect(queryMock).toHaveBeenCalledTimes(1);
-      expect(queryMock).toHaveBeenCalledWith('SELECT MEAN("value") FROM "history_uint"');
+      expect(queryMock).toHaveBeenCalledWith({
+        requestId: 'A',
+        targets: [{ refId: 'A', query: 'SELECT MEAN("value") FROM "history_uint"' }],
+      });
       expect(result).toEqual(queryResult);
     });
   });
