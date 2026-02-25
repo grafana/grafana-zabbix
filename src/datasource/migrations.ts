@@ -173,8 +173,10 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
     // disabling as it is currently needed for migration
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     const dbConnectionOptions = jsonData.dbConnection;
-    jsonData.dbConnectionEnable = dbConnectionOptions?.enable || false;
-    jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions?.datasourceId) || undefined;
+    if (dbConnectionOptions) {
+      jsonData.dbConnectionEnable = dbConnectionOptions?.enable || false;
+      jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions?.datasourceId) || undefined;
+    }
     // disabling as it is still currently needed for migration
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     delete jsonData.dbConnection;
@@ -195,6 +197,16 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     delete jsonData.dbConnectionDatasourceId;
   }
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  if (jsonData.dbConnection?.datasourceId > 0 && !jsonData.dbConnectionDatasourceUID) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnection?.datasourceId);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  if (jsonData.dbConnectionDatasourceId > 0 && !jsonData.dbConnectionDatasourceUID) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId);
+  }
   return jsonData;
 }
 
@@ -208,6 +220,10 @@ function shouldMigrateDSConfig(jsonData: ZabbixDSOptions): boolean {
     return true;
   }
   if (jsonData.schema && jsonData.schema < DS_CONFIG_SCHEMA) {
+    return true;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  if (jsonData.dbConnectionDatasourceId > 0 && !jsonData.dbConnectionDatasourceUID) {
     return true;
   }
   return false;
@@ -245,12 +261,11 @@ export const prepareAnnotation = (json: any) => {
 };
 
 // exporting for testing purposes only
-export function getUIDFromID(id: number): string {
+export function getUIDFromID(id: number): string | undefined {
   const dsFilters: GetDataSourceListFilters = {
     all: true,
   };
   const dsList = getDataSourceSrv().getList(dsFilters);
-  console.log(dsList);
   const datasource = dsList.find((ds) => ds.id === id);
   return datasource?.uid;
 }

@@ -30,7 +30,7 @@ export type ZabbixDSOptions = {
   // eslint-disable-next-line @typescript-eslint/no-deprecated
   dbConnection?: OldDBConnection;
   /** @deprecated
-   * Use `dbConnectionUID` instead.
+   * Use `dbConnectionDatasourceUID` instead.
    * Currently only used to support migration for older schemas.
    * */
   // Disabling as we still need this for migration purposes for now.

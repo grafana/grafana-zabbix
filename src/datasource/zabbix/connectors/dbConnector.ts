@@ -45,8 +45,8 @@ export class DBConnector {
   constructor(options: ConnectorOptions) {
     this.datasourceUID = options.datasourceUID;
     this.datasourceName = options.datasourceName;
-    this.datasourceTypeId = null;
-    this.datasourceType = null;
+    this.datasourceTypeId = '';
+    this.datasourceType = '';
   }
 
   static loadDatasource(dsUID: string, dsName: string) {
