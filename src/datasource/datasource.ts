@@ -661,17 +661,16 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async testDatasource() {
     try {
       const testResult = await super.testDatasource();
-      return this.zabbix.testDataSource().then((dbConnectorStatus) => {
-        let message = testResult.message;
-        if (dbConnectorStatus) {
-          message += `, DB connector type: ${dbConnectorStatus.dsType}`;
-        }
-        return {
-          status: testResult.status,
-          message: message,
-          title: testResult.status,
-        };
-      });
+      const dbConnectorStatus = await this.zabbix.testDataSource();
+      let message = testResult.message;
+      if (dbConnectorStatus) {
+        message += `, DB connector type: ${dbConnectorStatus.dsType}, DB connector name: ${dbConnectorStatus.dsName}`;
+      }
+      return {
+        status: testResult.status,
+        message: message,
+        title: testResult.status,
+      };
     } catch (error: any) {
       if (error instanceof ZabbixAPIError) {
         return Promise.reject({

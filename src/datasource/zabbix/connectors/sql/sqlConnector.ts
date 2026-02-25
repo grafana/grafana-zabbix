@@ -46,9 +46,20 @@ export class SQLConnector {
   /**
    * Try to invoke test query for one of Zabbix database tables.
    */
-  testDataSource() {
-    const testQuery = this.sqlDialect.testQuery();
-    return this.invokeSQLQuery(testQuery);
+  async testDataSource() {
+    const result = await this.datasource.testDatasource();
+    if (result.status && result.status === 'error') {
+      return Promise.reject({
+        data: {
+          message: `SQL connection error: ${result.message}`,
+        },
+      });
+    }
+    return {
+      ...result,
+      dsType: this.datasource.type,
+      dsName: this.datasource.name,
+    };
   }
 
   getHistory(items, timeFrom, timeTill, options) {

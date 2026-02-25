@@ -108,7 +108,7 @@ export class Zabbix implements ZabbixConnector {
   cachingProxy: CachingProxy;
   zabbixAPI: ZabbixAPIConnector;
   getHistoryDB: any;
-  dbConnector: any;
+  dbConnector: InfluxDBConnector | SQLConnector;
   getTrendsDB: any;
   version: string;
 
@@ -209,30 +209,11 @@ export class Zabbix implements ZabbixConnector {
 
   /**
    * Perform test query for Zabbix API and external history DB.
-   * @return {object} test result object:
-   * ```
-   *    {
-   *      zabbixVersion,
-   *      dbConnectorStatus: {
-   *        dsType,
-   *        dsName
-   *      }
-   *    }
-   * ```
    */
-  testDataSource() {
-    let dbConnectorStatus;
-
+  async testDataSource() {
     if (this.enableDirectDBConnection) {
-      return this.dbConnector.testDataSource().then((testResult) => {
-        if (testResult) {
-          dbConnectorStatus = {
-            dsType: this.dbConnector.datasourceTypeName || this.dbConnector.datasourceTypeId,
-            dsName: this.dbConnector.datasourceName,
-          };
-          return dbConnectorStatus;
-        }
-      });
+      const testResult = await this.dbConnector.testDataSource();
+      return testResult;
     } else {
       return Promise.resolve();
     }

@@ -34,17 +34,20 @@ export class InfluxDBConnector {
   /**
    * Try to invoke test query for one of Zabbix database tables.
    */
-  testDataSource() {
-    return this.datasource.testDatasource().then((result) => {
-      if (result.status && result.status === 'error') {
-        return Promise.reject({
-          data: {
-            message: `InfluxDB connection error: ${result.message}`,
-          },
-        });
-      }
-      return result;
-    });
+  async testDataSource() {
+    const result = await this.datasource.testDatasource();
+    if (result.status && result.status === 'error') {
+      return Promise.reject({
+        data: {
+          message: `InfluxDB connection error: ${result.message}`,
+        },
+      });
+    }
+    return {
+      ...result,
+      dsType: this.datasource.type,
+      dsName: this.datasource.name,
+    };
   }
 
   getHistory(items, timeFrom, timeTill, options) {
