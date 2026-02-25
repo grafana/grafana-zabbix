@@ -26,23 +26,27 @@ jest.mock(
         toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } }),
       }),
     }),
+    getDataSourceSrv: jest.fn(() => ({
+      get: jest.fn().mockResolvedValue({ id: 42, name: 'InfluxDB DS', meta: {} }),
+    })),
   }),
   { virtual: true }
 );
 
 describe('Zabbix', () => {
   let consoleSpy: jest.SpyInstance;
-  let ctx = {
-    options: {
-      url: 'http://localhost',
-      username: 'zabbix',
-      password: 'zabbix',
-    },
+  const ctx = {
+    uid: 'test-ds-uid',
+    cacheTTL: '1h',
+    dbConnectionEnable: true,
+    dbConnectionDatasourceUID: 'test-ds-uid',
+    dbConnectionDatasourceName: 'test-ds-name',
+    dbConnectionRetentionPolicy: 'test-ds-retention-policy',
   };
-  let zabbix;
+  let zabbix: Zabbix;
 
   beforeEach(() => {
-    zabbix = new Zabbix(ctx.options);
+    zabbix = new Zabbix(ctx);
     consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
@@ -129,7 +133,14 @@ describe('Zabbix', () => {
   });
 
   describe('getProblemsHistory', () => {
-    const ctx = { url: 'http://localhost' };
+    const ctx = {
+      uid: 'test-ds-uid',
+      cacheTTL: '1h',
+      dbConnectionEnable: true,
+      dbConnectionDatasourceUID: 'test-ds-uid',
+      dbConnectionDatasourceName: 'test-ds-name',
+      dbConnectionRetentionPolicy: 'test-ds-retention-policy',
+    };
     let zabbix: Zabbix;
 
     beforeEach(() => {

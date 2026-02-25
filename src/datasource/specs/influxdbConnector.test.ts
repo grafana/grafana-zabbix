@@ -1,18 +1,43 @@
-import { InfluxDBConnector } from '../zabbix/connectors/influxdb/influxdbConnector';
+import { DataSourceApi, PluginType } from '@grafana/data';
 import { compactQuery } from '../utils';
-
-jest.mock('@grafana/runtime', () => ({
-  getDataSourceSrv: jest.fn(() => ({
-    get: jest.fn().mockResolvedValue({ id: 42, name: 'InfluxDB DS', meta: {} }),
-  })),
-}));
+import { InfluxDBConnector } from '../zabbix/connectors/influxdb/influxdbConnector';
 
 describe('InfluxDBConnector', () => {
   let ctx: any = {};
+  const datasourceMock: DataSourceApi = {
+    type: 'influxdb',
+    id: 42,
+    uid: 'influxdb',
+    name: 'InfluxDB DS',
+    query: jest.fn().mockResolvedValue({ data: [] }),
+    testDatasource: jest.fn().mockResolvedValue({ data: [] }),
+    meta: {
+      id: '42',
+      name: 'InfluxDB DS',
+      type: PluginType.datasource,
+      info: {
+        author: {
+          name: 'InfluxDB DS',
+        },
+        description: 'InfluxDB DS',
+        links: [],
+        logos: {
+          small: 'InfluxDB DS',
+          large: 'InfluxDB DS',
+        },
+        screenshots: [],
+        updated: '2026-02-25',
+        version: '1.0.0',
+      },
+      module: 'influxdb',
+      baseUrl: 'http://influxdb.org',
+    },
+    getRef: jest.fn().mockResolvedValue({ data: [] }),
+  };
 
   beforeEach(() => {
-    ctx.options = { datasourceName: 'InfluxDB DS', retentionPolicy: 'longterm' };
-    ctx.influxDBConnector = new InfluxDBConnector(ctx.options);
+    ctx.options = { retentionPolicy: 'longterm' };
+    ctx.influxDBConnector = new InfluxDBConnector(datasourceMock, ctx.options);
     ctx.influxDBConnector.invokeInfluxDBQuery = jest.fn().mockResolvedValue([]);
     ctx.defaultQueryParams = {
       itemids: ['123', '234'],

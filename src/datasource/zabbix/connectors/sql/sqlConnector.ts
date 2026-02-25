@@ -1,15 +1,17 @@
-import _ from 'lodash';
+import { DataSourceApi } from '@grafana/data';
 import { getBackendSrv } from '@grafana/runtime';
+import _ from 'lodash';
 import { compactQuery } from '../../../utils';
-import mysql from './mysql';
-import postgres from './postgres';
-import dbConnector, {
-  DBConnector,
+import {
+  consolidateByFunc,
+  consolidateByTrendColumns,
   DEFAULT_QUERY_LIMIT,
   HISTORY_TO_TABLE_MAP,
   TREND_TO_TABLE_MAP,
 } from '../dbConnector';
 import { SQLConnectorOptions } from '../types';
+import mysql from './mysql';
+import postgres from './postgres';
 
 const supportedDatabases = {
   mysql: 'mysql',
@@ -17,25 +19,23 @@ const supportedDatabases = {
   postgresNew: 'grafana-postgresql-datasource',
 };
 
-export class SQLConnector extends DBConnector {
+export class SQLConnector {
   private limit: number;
-  private sqlDialect: any;
+  private sqlDialect: typeof postgres | typeof mysql;
 
-  constructor(options: SQLConnectorOptions) {
-    super(options);
-
+  constructor(
+    private datasource: DataSourceApi,
+    options: SQLConnectorOptions
+  ) {
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     this.sqlDialect = null;
-
-    super.loadDBDataSource().then(() => {
-      this.loadSQLDialect();
-    });
+    this.loadSQLDialect();
   }
 
   loadSQLDialect() {
     if (
-      this.datasourceTypeId === supportedDatabases.postgresOld ||
-      this.datasourceTypeId === supportedDatabases.postgresNew
+      this.datasource.type === supportedDatabases.postgresOld ||
+      this.datasource.type === supportedDatabases.postgresNew
     ) {
       this.sqlDialect = postgres;
     } else {
@@ -80,7 +80,7 @@ export class SQLConnector extends DBConnector {
       const itemids = _.map(items, 'itemid').join(', ');
       const table = TREND_TO_TABLE_MAP[value_type];
       let valueColumn = _.includes(['avg', 'min', 'max', 'sum'], consolidateBy) ? consolidateBy : 'avg';
-      valueColumn = dbConnector.consolidateByTrendColumns[valueColumn];
+      valueColumn = consolidateByTrendColumns[valueColumn];
       let query = this.sqlDialect.trendsQuery(
         itemids,
         table,
@@ -105,8 +105,8 @@ export class SQLConnector extends DBConnector {
       refId: 'A',
       format: 'time_series',
       datasource: {
-        type: this.datasourceType,
-        uid: this.datasourceUID,
+        type: this.datasource.type,
+        uid: this.datasource.uid,
       },
       rawSql: query,
       maxDataPoints: this.limit,
@@ -143,6 +143,6 @@ function getAggFunc(timeFrom, timeTill, options) {
   intervalSec = Math.ceil((timeTill - timeFrom) / numOfIntervals);
 
   consolidateBy = consolidateBy || 'avg';
-  const aggFunction = dbConnector.consolidateByFunc[consolidateBy];
+  const aggFunction = consolidateByFunc[consolidateBy];
   return { aggFunction, intervalSec };
 }

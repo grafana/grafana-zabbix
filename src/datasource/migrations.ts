@@ -170,31 +170,22 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
   jsonData.schema = DS_CONFIG_SCHEMA;
 
   if (oldVersion < 2) {
-    // disabling as it is currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    const dbConnectionOptions = jsonData.dbConnection;
-    jsonData.dbConnectionEnable = dbConnectionOptions?.enable || false;
-    jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions?.datasourceId) || undefined;
-    // disabling as it is still currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    const dbConnectionOptions = jsonData.dbConnection || { enable: false, datasourceId: null };
+    jsonData.dbConnectionEnable = dbConnectionOptions.enable;
+    jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId;
     delete jsonData.dbConnection;
   }
 
   if (oldVersion < 3) {
-    // Before version 3, timeout was a string, so we need to convert it to match the new schema where timeout is a number
-    jsonData.timeout =
-      (jsonData.timeout as unknown as string) === '' ? null : Number(jsonData.timeout as unknown as string);
+    jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
   }
 
-  if (oldVersion < DS_CONFIG_SCHEMA && !jsonData.dbConnectionDatasourceUID) {
-    // before version 4 we were using datasourceID for direct DB connections
-    // disabling as it is currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
+  if (oldVersion < 4 && jsonData.dbConnectionDatasourceId) {
+    // Schema 4: dbConnectionDatasourceUid is preferred over dbConnectionDatasourceId (Grafana 13).
     jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId) || undefined;
-    // disabling as it is currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
     delete jsonData.dbConnectionDatasourceId;
   }
+
   return jsonData;
 }
 
@@ -202,8 +193,6 @@ function shouldMigrateDSConfig(jsonData: ZabbixDSOptions): boolean {
   if (!jsonData) {
     return false;
   }
-  // disabling as it is currently needed for migration
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
   if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
     return true;
   }
@@ -250,7 +239,6 @@ export function getUIDFromID(id: number): string {
     all: true,
   };
   const dsList = getDataSourceSrv().getList(dsFilters);
-  console.log(dsList);
   const datasource = dsList.find((ds) => ds.id === id);
   return datasource?.uid;
 }

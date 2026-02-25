@@ -1,14 +1,16 @@
 import {
   DataFrame,
   dataFrameToJSON,
+  DataSourceApi,
   Field,
   FieldType,
   MutableDataFrame,
   TIME_SERIES_TIME_FIELD_NAME,
 } from '@grafana/data';
 import _ from 'lodash';
+import { from, lastValueFrom } from 'rxjs';
 import { compactQuery } from '../../../utils';
-import { consolidateByTrendColumns, DBConnector, HISTORY_TO_TABLE_MAP } from '../dbConnector';
+import { consolidateByTrendColumns, HISTORY_TO_TABLE_MAP } from '../dbConnector';
 import { InfluxDBConnectorOptions } from '../types';
 
 const consolidateByFunc = {
@@ -19,24 +21,21 @@ const consolidateByFunc = {
   count: 'COUNT',
 };
 
-export class InfluxDBConnector extends DBConnector {
-  private retentionPolicy: any;
-  private influxDS: any;
+export class InfluxDBConnector {
+  private retentionPolicy: string;
 
-  constructor(options: InfluxDBConnectorOptions) {
-    super(options);
+  constructor(
+    private datasource: DataSourceApi,
+    options: InfluxDBConnectorOptions
+  ) {
     this.retentionPolicy = options.retentionPolicy;
-    super.loadDBDataSource().then((ds) => {
-      this.influxDS = ds;
-      return ds;
-    });
   }
 
   /**
    * Try to invoke test query for one of Zabbix database tables.
    */
   testDataSource() {
-    return this.influxDS.testDatasource().then((result) => {
+    return this.datasource.testDatasource().then((result) => {
       if (result.status && result.status === 'error') {
         return Promise.reject({
           data: {
@@ -101,8 +100,9 @@ export class InfluxDBConnector extends DBConnector {
   }
 
   async invokeInfluxDBQuery(query) {
-    const data = await this.influxDS._seriesQuery(query).toPromise();
-    return data?.results || [];
+    const result = this.datasource.query(query);
+    const data = await lastValueFrom(from(result));
+    return data.data;
   }
 }
 
