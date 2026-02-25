@@ -149,7 +149,7 @@ export class Zabbix implements ZabbixConnector {
     // Initialize caching proxy for requests
     const cacheOptions = {
       enabled: true,
-      ttl: cacheTTL,
+      ttl: utils.parseInterval(cacheTTL),
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
@@ -161,23 +161,35 @@ export class Zabbix implements ZabbixConnector {
 
     if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceName)) {
       const connectorOptions: any = { dbConnectionRetentionPolicy };
-      this.initDBConnector(dbConnectionDatasourceUID ?? '', dbConnectionDatasourceName, connectorOptions).then(() => {
-        this.getHistoryDB = this.cachingProxy.proxifyWithCache(
-          this.dbConnector.getHistory,
-          'getHistory',
-          this.dbConnector
-        );
-        this.getTrendsDB = this.cachingProxy.proxifyWithCache(
-          this.dbConnector.getTrends,
-          'getTrends',
-          this.dbConnector
-        );
-      });
+      this.initDBConnector(dbConnectionDatasourceUID, dbConnectionDatasourceName, connectorOptions)
+        .then(() => {
+          this.getHistoryDB = this.cachingProxy.proxifyWithCache(
+            this.dbConnector.getHistory,
+            'getHistory',
+            this.dbConnector
+          );
+          this.getTrendsDB = this.cachingProxy.proxifyWithCache(
+            this.dbConnector.getTrends,
+            'getTrends',
+            this.dbConnector
+          );
+        })
+        .catch((err) => {
+          console.warn('Zabbix: Direct DB connection init failed.', err);
+        });
     }
   }
 
-  async initDBConnector(datasourceUID: string, datasourceName: string, options: ZabbixDSOptions) {
-    const ds = await getDataSourceSrv().get(datasourceUID ?? datasourceName);
+  async initDBConnector(
+    datasourceUID: string | undefined,
+    datasourceName: string | undefined,
+    options: ZabbixDSOptions
+  ) {
+    const ref = (datasourceUID && datasourceUID.trim()) || datasourceName;
+    if (!ref) {
+      throw new Error('Data Source UID or name must be specified for direct DB connection');
+    }
+    const ds = await getDataSourceSrv().get(ref);
 
     if (ds.type === 'influxdb') {
       const influxDBConnectorOptions: InfluxDBConnectorOptions = {
@@ -211,7 +223,7 @@ export class Zabbix implements ZabbixConnector {
    * Perform test query for Zabbix API and external history DB.
    */
   async testDataSource() {
-    if (this.enableDirectDBConnection) {
+    if (this.enableDirectDBConnection && this.dbConnector) {
       const testResult = await this.dbConnector.testDataSource();
       return testResult;
     } else {
@@ -625,7 +637,7 @@ export class Zabbix implements ZabbixConnector {
 
   getHistoryTS(items, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
-    if (this.enableDirectDBConnection) {
+    if (this.enableDirectDBConnection && typeof this.getHistoryDB === 'function') {
       return this.getHistoryDB(items, timeFrom, timeTo, request).then((history) =>
         responseHandler.dataResponseToTimeSeries(history, items, request)
       );
@@ -638,7 +650,7 @@ export class Zabbix implements ZabbixConnector {
 
   getTrends(items, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
-    if (this.enableDirectDBConnection) {
+    if (this.enableDirectDBConnection && typeof this.getTrendsDB === 'function') {
       return this.getTrendsDB(items, timeFrom, timeTo, request).then((history) =>
         responseHandler.dataResponseToTimeSeries(history, items, request)
       );

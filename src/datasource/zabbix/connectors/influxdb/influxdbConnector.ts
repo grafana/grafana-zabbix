@@ -103,7 +103,11 @@ export class InfluxDBConnector {
   }
 
   async invokeInfluxDBQuery(query) {
-    const result = this.datasource.query(query);
+    const queryRequest: any = {
+      requestId: 'A',
+      targets: [{ refId: 'A', query }],
+    };
+    const result = this.datasource.query(queryRequest);
     const data = await lastValueFrom(from(result));
     return data.data;
   }

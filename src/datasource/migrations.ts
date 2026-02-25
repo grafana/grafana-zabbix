@@ -167,7 +167,6 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
   }
 
   const oldVersion = jsonData.schema || 1;
-  jsonData.schema = DS_CONFIG_SCHEMA;
 
   if (oldVersion < 2 && jsonData.dbConnection) {
     const dbConnectionOptions = jsonData.dbConnection;
@@ -176,16 +175,22 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
     delete jsonData.dbConnection;
   }
 
-  if (oldVersion < 3 && jsonData.timeout) {
+  if (oldVersion < 3 && 'timeout' in jsonData) {
     jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
   }
 
   if (oldVersion < 4 && jsonData.dbConnectionDatasourceId) {
-    // Schema 4: dbConnectionDatasourceUid is preferred over dbConnectionDatasourceId (Grafana 13).
-    jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId) || undefined;
+    const uid = getUIDFromID(jsonData.dbConnectionDatasourceId);
+    if (!uid) {
+      console.warn('Zabbix: Data Source not found.', jsonData.dbConnectionDatasourceId);
+      jsonData.schema = DS_CONFIG_SCHEMA;
+      return jsonData;
+    }
+    jsonData.dbConnectionDatasourceUID = uid;
     delete jsonData.dbConnectionDatasourceId;
   }
 
+  jsonData.schema = DS_CONFIG_SCHEMA;
   return jsonData;
 }
 
@@ -196,10 +201,9 @@ function shouldMigrateDSConfig(jsonData: ZabbixDSOptions): boolean {
   if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
     return true;
   }
-  if (jsonData.schema && jsonData.schema < DS_CONFIG_SCHEMA) {
-    return true;
-  }
-  if (jsonData.dbConnectionDatasourceId) {
+  // Migrate when schema is missing (old config) or below current version
+  const schema = jsonData.schema;
+  if (schema === undefined || schema === null || schema < DS_CONFIG_SCHEMA) {
     return true;
   }
   return false;
@@ -237,7 +241,7 @@ export const prepareAnnotation = (json: any) => {
 };
 
 // exporting for testing purposes only
-export function getUIDFromID(id: number): string {
+export function getUIDFromID(id: number) {
   const dsFilters: GetDataSourceListFilters = {
     all: true,
   };
