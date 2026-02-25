@@ -1,8 +1,8 @@
+import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
 import _ from 'lodash';
-import { ZabbixMetricsQuery } from './types/query';
 import * as c from './constants';
 import { ZabbixDSOptions } from './types/config';
-import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
+import { ZabbixMetricsQuery } from './types/query';
 
 export const DS_QUERY_SCHEMA = 12;
 export const DS_CONFIG_SCHEMA = 4;
@@ -169,14 +169,14 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
   const oldVersion = jsonData.schema || 1;
   jsonData.schema = DS_CONFIG_SCHEMA;
 
-  if (oldVersion < 2) {
-    const dbConnectionOptions = jsonData.dbConnection || { enable: false, datasourceId: null };
+  if (oldVersion < 2 && jsonData.dbConnection) {
+    const dbConnectionOptions = jsonData.dbConnection;
     jsonData.dbConnectionEnable = dbConnectionOptions.enable;
     jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId;
     delete jsonData.dbConnection;
   }
 
-  if (oldVersion < 3) {
+  if (oldVersion < 3 && jsonData.timeout) {
     jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
   }
 
@@ -197,6 +197,9 @@ function shouldMigrateDSConfig(jsonData: ZabbixDSOptions): boolean {
     return true;
   }
   if (jsonData.schema && jsonData.schema < DS_CONFIG_SCHEMA) {
+    return true;
+  }
+  if (jsonData.dbConnectionDatasourceId) {
     return true;
   }
   return false;
