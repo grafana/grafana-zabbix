@@ -1,8 +1,8 @@
+import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
 import _ from 'lodash';
-import { ZabbixMetricsQuery } from './types/query';
 import * as c from './constants';
 import { ZabbixDSOptions } from './types/config';
-import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
+import { ZabbixMetricsQuery } from './types/query';
 
 export const DS_QUERY_SCHEMA = 12;
 export const DS_CONFIG_SCHEMA = 4;
@@ -167,34 +167,30 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
   }
 
   const oldVersion = jsonData.schema || 1;
-  jsonData.schema = DS_CONFIG_SCHEMA;
 
-  if (oldVersion < 2) {
-    // disabling as it is currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
+  if (oldVersion < 2 && jsonData.dbConnection) {
     const dbConnectionOptions = jsonData.dbConnection;
-    jsonData.dbConnectionEnable = dbConnectionOptions?.enable || false;
-    jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions?.datasourceId) || undefined;
-    // disabling as it is still currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    jsonData.dbConnectionEnable = dbConnectionOptions.enable;
+    jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId;
     delete jsonData.dbConnection;
   }
 
-  if (oldVersion < 3) {
-    // Before version 3, timeout was a string, so we need to convert it to match the new schema where timeout is a number
-    jsonData.timeout =
-      (jsonData.timeout as unknown as string) === '' ? null : Number(jsonData.timeout as unknown as string);
+  if (oldVersion < 3 && 'timeout' in jsonData) {
+    jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
   }
 
-  if (oldVersion < DS_CONFIG_SCHEMA && !jsonData.dbConnectionDatasourceUID) {
-    // before version 4 we were using datasourceID for direct DB connections
-    // disabling as it is currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId) || undefined;
-    // disabling as it is currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
+  if (oldVersion < 4 && jsonData.dbConnectionDatasourceId) {
+    const uid = getUIDFromID(jsonData.dbConnectionDatasourceId);
+    if (!uid) {
+      console.warn('Zabbix: Data Source not found.', jsonData.dbConnectionDatasourceId);
+      jsonData.schema = DS_CONFIG_SCHEMA;
+      return jsonData;
+    }
+    jsonData.dbConnectionDatasourceUID = uid;
     delete jsonData.dbConnectionDatasourceId;
   }
+
+  jsonData.schema = DS_CONFIG_SCHEMA;
   return jsonData;
 }
 
@@ -202,12 +198,12 @@ function shouldMigrateDSConfig(jsonData: ZabbixDSOptions): boolean {
   if (!jsonData) {
     return false;
   }
-  // disabling as it is currently needed for migration
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
   if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
     return true;
   }
-  if (jsonData.schema && jsonData.schema < DS_CONFIG_SCHEMA) {
+  // Migrate when schema is missing (old config) or below current version
+  const schema = jsonData.schema;
+  if (schema === undefined || schema === null || schema < DS_CONFIG_SCHEMA) {
     return true;
   }
   return false;
@@ -245,12 +241,11 @@ export const prepareAnnotation = (json: any) => {
 };
 
 // exporting for testing purposes only
-export function getUIDFromID(id: number): string {
+export function getUIDFromID(id: number) {
   const dsFilters: GetDataSourceListFilters = {
     all: true,
   };
   const dsList = getDataSourceSrv().getList(dsFilters);
-  console.log(dsList);
   const datasource = dsList.find((ds) => ds.id === id);
   return datasource?.uid;
 }

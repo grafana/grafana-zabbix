@@ -71,6 +71,48 @@ describe('Migrations', () => {
       expect(ctx.jsonData.dbConnectionEnable).toBeUndefined();
       expect(ctx.jsonData.dbConnectionDatasourceUID).toBeUndefined();
     });
+
+    it('should upgrade schema when schema is missing (old config with no db connection)', () => {
+      ctx.jsonData = {
+        username: 'zabbix',
+        trends: true,
+        trendsFrom: '7d',
+      };
+      migrateDSConfig(ctx.jsonData);
+      expect(ctx.jsonData.schema).toBe(DS_CONFIG_SCHEMA);
+      expect(ctx.jsonData.username).toBe('zabbix');
+    });
+
+    it('should set schema to 4 when dbConnectionDatasourceId->UID migration fails (datasource not found) to avoid retry loop', () => {
+      const getList = jest.fn().mockReturnValue([{ id: 99, uid: 'other-uid' }]);
+      mockedGetDataSourceSrv.mockReturnValue({ getList } as any);
+      ctx.jsonData = {
+        dbConnectionDatasourceId: 999,
+        dbConnectionEnable: true,
+        schema: 3,
+      };
+      migrateDSConfig(ctx.jsonData);
+      expect(ctx.jsonData.schema).toBe(DS_CONFIG_SCHEMA);
+      expect(ctx.jsonData.dbConnectionDatasourceUID).toBeUndefined();
+      expect(ctx.jsonData.dbConnectionDatasourceId).toBe(999);
+
+      migrateDSConfig(ctx.jsonData);
+      expect(getList).toHaveBeenCalledTimes(1);
+    });
+
+    it('should migrate timeout string to number when schema < 3 (including "0" and "")', () => {
+      ctx.jsonData = { schema: 2, timeout: '30' };
+      migrateDSConfig(ctx.jsonData);
+      expect(ctx.jsonData.timeout).toBe(30);
+
+      ctx.jsonData = { schema: 2, timeout: '0' };
+      migrateDSConfig(ctx.jsonData);
+      expect(ctx.jsonData.timeout).toBe(0);
+
+      ctx.jsonData = { schema: 2, timeout: '' };
+      migrateDSConfig(ctx.jsonData);
+      expect(ctx.jsonData.timeout).toBeNull();
+    });
   });
 
   describe('When handling provisioned datasource config', () => {

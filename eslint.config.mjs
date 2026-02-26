@@ -57,4 +57,22 @@ export default defineConfig([
       'prettier/prettier': 'error',
     },
   },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+      },
+    },
+
+    rules: {
+      '@typescript-eslint/no-deprecated': [
+        'warn',
+        {
+          allow: [{ from: 'file', name: ['OldDBConnection', 'dbConnection', 'dbConnectionDatasourceId'] }],
+        },
+      ],
+    },
+  },
 ]);
