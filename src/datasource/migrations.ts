@@ -162,71 +162,39 @@ function convertToRegex(str) {
 }
 
 export function migrateDSConfig(jsonData: ZabbixDSOptions) {
-  if (!shouldMigrateDSConfig(jsonData)) {
+  if (!jsonData) {
     return jsonData;
   }
 
-  const oldVersion = jsonData.schema || 1;
-  jsonData.schema = DS_CONFIG_SCHEMA;
-
-  if (oldVersion < 2) {
-    // disabling as it is currently needed for migration
+  // Migrate nested dbConnection object (schema v1) to flat fields
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  if (jsonData.dbConnection) {
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     const dbConnectionOptions = jsonData.dbConnection;
-    if (dbConnectionOptions) {
-      jsonData.dbConnectionEnable = dbConnectionOptions?.enable || false;
-      jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions?.datasourceId) || undefined;
+    jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
+    if (!jsonData.dbConnectionDatasourceUID && dbConnectionOptions.datasourceId > 0) {
+      jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions.datasourceId);
     }
-    // disabling as it is still currently needed for migration
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     delete jsonData.dbConnection;
   }
 
-  if (oldVersion < 3) {
-    // Before version 3, timeout was a string, so we need to convert it to match the new schema where timeout is a number
-    jsonData.timeout =
-      (jsonData.timeout as unknown as string) === '' ? null : Number(jsonData.timeout as unknown as string);
+  // Migrate string timeout to number
+  if (typeof jsonData.timeout === 'string') {
+    jsonData.timeout = jsonData.timeout === '' ? null : Number(jsonData.timeout);
   }
 
-  if (oldVersion < DS_CONFIG_SCHEMA && !jsonData.dbConnectionDatasourceUID) {
-    // before version 4 we were using datasourceID for direct DB connections
-    // disabling as it is currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId) || undefined;
-    // disabling as it is currently needed for migration
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    delete jsonData.dbConnectionDatasourceId;
-  }
+  // Migrate numeric datasource ID to UID
   // eslint-disable-next-line @typescript-eslint/no-deprecated
-  if (jsonData.dbConnection?.datasourceId > 0 && !jsonData.dbConnectionDatasourceUID) {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnection?.datasourceId);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  if (jsonData.dbConnectionDatasourceId > 0 && !jsonData.dbConnectionDatasourceUID) {
+  if (!jsonData.dbConnectionDatasourceUID && jsonData.dbConnectionDatasourceId > 0) {
     // eslint-disable-next-line @typescript-eslint/no-deprecated
     jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId);
   }
-  return jsonData;
-}
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  delete jsonData.dbConnectionDatasourceId;
 
-function shouldMigrateDSConfig(jsonData: ZabbixDSOptions): boolean {
-  if (!jsonData) {
-    return false;
-  }
-  // disabling as it is currently needed for migration
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
-    return true;
-  }
-  if (jsonData.schema && jsonData.schema < DS_CONFIG_SCHEMA) {
-    return true;
-  }
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  if (jsonData.dbConnectionDatasourceId > 0 && !jsonData.dbConnectionDatasourceUID) {
-    return true;
-  }
-  return false;
+  jsonData.schema = DS_CONFIG_SCHEMA;
+  return jsonData;
 }
 
 const getDefaultAnnotationTarget = (json: any) => {
