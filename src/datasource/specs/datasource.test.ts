@@ -77,7 +77,7 @@ jest.mock('@grafana/runtime', () => {
 });
 
 describe('ZabbixDatasource', () => {
-  const instanceSettings: any = { id: 1, name: 'test-ds', jsonData: {} };
+  const instanceSettings: any = { id: 1, name: 'test-ds', uid: 'test-ds-uid', jsonData: {} };
   const ds = new ZabbixDatasource(instanceSettings);
   it('waits for all non-backend responses before emitting merged data', async () => {
     jest.spyOn(ZabbixDatasource.prototype, 'interpolateVariablesInQueries').mockReturnValue(buildRequest().targets);

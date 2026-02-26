@@ -1,6 +1,6 @@
-import { Zabbix } from './zabbix';
 import { joinTriggersWithEvents } from '../problemsHandler';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
+import { Zabbix } from './zabbix';
 
 jest.mock('../problemsHandler', () => ({
   joinTriggersWithEvents: jest.fn(),
@@ -17,37 +17,73 @@ jest.mock('../responseHandler', () => ({
   handleSLIResponse: jest.fn(),
 }));
 
+const getMock = jest.fn().mockResolvedValue({
+  id: 42,
+  name: 'InfluxDB DS',
+  type: 'influxdb',
+  meta: {},
+});
+
 jest.mock(
   '@grafana/runtime',
-  () => ({
-    getBackendSrv: () => ({
-      datasourceRequest: jest.fn().mockResolvedValue({ data: { result: '' } }),
-      fetch: () => ({
-        toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } }),
+  () => {
+    return {
+      getBackendSrv: () => ({
+        datasourceRequest: jest.fn().mockResolvedValue({ data: { result: '' } }),
+        fetch: () => ({
+          toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } }),
+        }),
       }),
-    }),
-  }),
+      getDataSourceSrv: jest.fn(() => ({ get: getMock })),
+    };
+  },
   { virtual: true }
 );
 
 describe('Zabbix', () => {
   let consoleSpy: jest.SpyInstance;
-  let ctx = {
-    options: {
-      url: 'http://localhost',
-      username: 'zabbix',
-      password: 'zabbix',
-    },
+  const ctx = {
+    uid: 'test-ds-uid',
+    cacheTTL: '1h',
+    dbConnectionEnable: true,
+    dbConnectionDatasourceUID: 'test-ds-uid',
+    dbConnectionDatasourceName: 'test-ds-name',
+    dbConnectionRetentionPolicy: 'test-ds-retention-policy',
   };
-  let zabbix;
+  let zabbix: Zabbix;
 
   beforeEach(() => {
-    zabbix = new Zabbix(ctx.options);
+    zabbix = new Zabbix(ctx);
     consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
     consoleSpy.mockRestore();
+    getMock.mockClear();
+  });
+
+  describe('initDBConnector', () => {
+    const connectorOptions: any = { dbConnectionRetentionPolicy: 'policy' };
+
+    it('calls getDataSourceSrv().get with UID when datasourceUID is provided', async () => {
+      await zabbix.initDBConnector('my-db-uid', undefined, connectorOptions);
+
+      expect(getMock).toHaveBeenCalledTimes(2);
+      expect(getMock).toHaveBeenCalledWith('my-db-uid');
+    });
+
+    it('calls getDataSourceSrv().get with name when only datasourceName is provided (legacy)', async () => {
+      await zabbix.initDBConnector(undefined, 'My MySQL DS', connectorOptions);
+
+      expect(getMock).toHaveBeenCalledTimes(2);
+      expect(getMock).toHaveBeenCalledWith('My MySQL DS');
+    });
+
+    it('calls getDataSourceSrv().get with name when datasourceUID is empty string (fallback)', async () => {
+      await zabbix.initDBConnector('', 'My MySQL DS', connectorOptions);
+
+      expect(getMock).toHaveBeenCalledWith('My MySQL DS');
+    });
   });
 
   describe('When querying proxies', () => {
@@ -129,7 +165,14 @@ describe('Zabbix', () => {
   });
 
   describe('getProblemsHistory', () => {
-    const ctx = { url: 'http://localhost' };
+    const ctx = {
+      uid: 'test-ds-uid',
+      cacheTTL: '1h',
+      dbConnectionEnable: true,
+      dbConnectionDatasourceUID: 'test-ds-uid',
+      dbConnectionDatasourceName: 'test-ds-name',
+      dbConnectionRetentionPolicy: 'test-ds-retention-policy',
+    };
     let zabbix: Zabbix;
 
     beforeEach(() => {

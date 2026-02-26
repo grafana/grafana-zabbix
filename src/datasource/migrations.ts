@@ -1,9 +1,11 @@
+import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
 import _ from 'lodash';
-import { ZabbixMetricsQuery } from './types/query';
 import * as c from './constants';
+import { ZabbixDSOptions } from './types/config';
+import { ZabbixMetricsQuery } from './types/query';
 
 export const DS_QUERY_SCHEMA = 12;
-export const DS_CONFIG_SCHEMA = 3;
+export const DS_CONFIG_SCHEMA = 4;
 
 /**
  * Query format migration.
@@ -159,37 +161,49 @@ function convertToRegex(str) {
   }
 }
 
-export function migrateDSConfig(jsonData) {
-  if (!jsonData) {
-    jsonData = {};
-  }
-
+export function migrateDSConfig(jsonData: ZabbixDSOptions) {
   if (!shouldMigrateDSConfig(jsonData)) {
     return jsonData;
   }
 
   const oldVersion = jsonData.schema || 1;
-  jsonData.schema = DS_CONFIG_SCHEMA;
 
-  if (oldVersion < 2) {
-    const dbConnectionOptions = jsonData.dbConnection || {};
-    jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
-    jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId || null;
+  if (oldVersion < 2 && jsonData.dbConnection) {
+    const dbConnectionOptions = jsonData.dbConnection;
+    jsonData.dbConnectionEnable = dbConnectionOptions.enable;
+    jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId;
     delete jsonData.dbConnection;
   }
 
-  if (oldVersion < 3) {
+  if (oldVersion < 3 && 'timeout' in jsonData) {
     jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
   }
 
+  if (oldVersion < 4 && jsonData.dbConnectionDatasourceId) {
+    const uid = getUIDFromID(jsonData.dbConnectionDatasourceId);
+    if (!uid) {
+      console.warn('Zabbix: Data Source not found.', jsonData.dbConnectionDatasourceId);
+      jsonData.schema = DS_CONFIG_SCHEMA;
+      return jsonData;
+    }
+    jsonData.dbConnectionDatasourceUID = uid;
+    delete jsonData.dbConnectionDatasourceId;
+  }
+
+  jsonData.schema = DS_CONFIG_SCHEMA;
   return jsonData;
 }
 
-function shouldMigrateDSConfig(jsonData): boolean {
+function shouldMigrateDSConfig(jsonData: ZabbixDSOptions): boolean {
+  if (!jsonData) {
+    return false;
+  }
   if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
     return true;
   }
-  if (jsonData.schema && jsonData.schema < DS_CONFIG_SCHEMA) {
+  // Migrate when schema is missing (old config) or below current version
+  const schema = jsonData.schema;
+  if (schema === undefined || schema === null || schema < DS_CONFIG_SCHEMA) {
     return true;
   }
   return false;
@@ -225,3 +239,13 @@ export const prepareAnnotation = (json: any) => {
 
   return json;
 };
+
+// exporting for testing purposes only
+export function getUIDFromID(id: number) {
+  const dsFilters: GetDataSourceListFilters = {
+    all: true,
+  };
+  const dsList = getDataSourceSrv().getList(dsFilters);
+  const datasource = dsList.find((ds) => ds.id === id);
+  return datasource?.uid;
+}
