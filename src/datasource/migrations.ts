@@ -1,8 +1,8 @@
+import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
 import _ from 'lodash';
-import { ZabbixMetricsQuery } from './types/query';
 import * as c from './constants';
 import { ZabbixDSOptions } from './types/config';
-import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
+import { ZabbixMetricsQuery } from './types/query';
 
 export const DS_QUERY_SCHEMA = 12;
 export const DS_CONFIG_SCHEMA = 4;

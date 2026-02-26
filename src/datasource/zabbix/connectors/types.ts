@@ -1,12 +1,7 @@
-export interface ConnectorOptions {
-  datasourceUID: string;
-  datasourceName: string;
-}
-
-export interface InfluxDBConnectorOptions extends ConnectorOptions {
+export interface InfluxDBConnectorOptions {
   retentionPolicy: string;
 }
 
-export interface SQLConnectorOptions extends ConnectorOptions {
+export interface SQLConnectorOptions {
   limit?: number;
 }

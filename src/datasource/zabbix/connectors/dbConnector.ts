@@ -1,7 +1,3 @@
-import _ from 'lodash';
-import { getDataSourceSrv } from '@grafana/runtime';
-import { ConnectorOptions } from './types';
-
 export const DEFAULT_QUERY_LIMIT = 10000;
 
 export const HISTORY_TO_TABLE_MAP = {
@@ -30,63 +26,4 @@ export const consolidateByTrendColumns = {
   min: 'value_min',
   max: 'value_max',
   sum: 'num*value_avg', // sum of sums inside the one-hour trend period
-};
-
-/**
- * Base class for external history database connectors. Subclasses should implement `getHistory()`, `getTrends()` and
- * `testDataSource()` methods, which describe how to fetch data from source other than Zabbix API.
- */
-export class DBConnector {
-  protected datasourceUID: string;
-  private datasourceName: string;
-  protected datasourceTypeId: any;
-  protected datasourceType: string;
-
-  constructor(options: ConnectorOptions) {
-    this.datasourceUID = options.datasourceUID;
-    this.datasourceName = options.datasourceName;
-    this.datasourceTypeId = '';
-    this.datasourceType = '';
-  }
-
-  static loadDatasource(dsUID: string, dsName: string) {
-    if (!dsName && dsUID !== undefined) {
-      const ds = _.find(getDataSourceSrv().getList(), { uid: dsUID });
-      if (!ds) {
-        return Promise.reject(`Data Source with UID ${dsUID} not found`);
-      }
-      dsName = ds.name;
-    }
-    if (dsName) {
-      return getDataSourceSrv().get(dsName);
-    } else {
-      return Promise.reject(`Data Source name should be specified`);
-    }
-  }
-
-  loadDBDataSource() {
-    return DBConnector.loadDatasource(this.datasourceUID, this.datasourceName).then((ds) => {
-      this.datasourceTypeId = ds.meta.id;
-      if (!this.datasourceName) {
-        this.datasourceName = ds.name;
-      }
-      if (!this.datasourceUID) {
-        this.datasourceUID = ds.uid;
-      }
-
-      if (!this.datasourceType) {
-        this.datasourceType = ds.type;
-      }
-      return ds;
-    });
-  }
-}
-
-export default {
-  DBConnector,
-  DEFAULT_QUERY_LIMIT,
-  HISTORY_TO_TABLE_MAP,
-  TREND_TO_TABLE_MAP,
-  consolidateByFunc,
-  consolidateByTrendColumns,
 };

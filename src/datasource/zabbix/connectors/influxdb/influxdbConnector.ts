@@ -1,14 +1,16 @@
 import {
   DataFrame,
   dataFrameToJSON,
+  DataQueryResponse,
+  DataSourceApi,
   Field,
   FieldType,
-  MutableDataFrame,
   TIME_SERIES_TIME_FIELD_NAME,
 } from '@grafana/data';
 import _ from 'lodash';
+import { lastValueFrom, Observable } from 'rxjs';
 import { compactQuery } from '../../../utils';
-import { consolidateByTrendColumns, DBConnector, HISTORY_TO_TABLE_MAP } from '../dbConnector';
+import { consolidateByTrendColumns, HISTORY_TO_TABLE_MAP } from '../dbConnector';
 import { InfluxDBConnectorOptions } from '../types';
 
 const consolidateByFunc = {
@@ -19,33 +21,33 @@ const consolidateByFunc = {
   count: 'COUNT',
 };
 
-export class InfluxDBConnector extends DBConnector {
-  private retentionPolicy: any;
-  private influxDS: any;
+export class InfluxDBConnector {
+  private retentionPolicy: string;
 
-  constructor(options: InfluxDBConnectorOptions) {
-    super(options);
+  constructor(
+    private datasource: DataSourceApi,
+    options: InfluxDBConnectorOptions
+  ) {
     this.retentionPolicy = options.retentionPolicy;
-    super.loadDBDataSource().then((ds) => {
-      this.influxDS = ds;
-      return ds;
-    });
   }
 
   /**
    * Try to invoke test query for one of Zabbix database tables.
    */
-  testDataSource() {
-    return this.influxDS.testDatasource().then((result) => {
-      if (result.status && result.status === 'error') {
-        return Promise.reject({
-          data: {
-            message: `InfluxDB connection error: ${result.message}`,
-          },
-        });
-      }
-      return result;
-    });
+  async testDataSource() {
+    const result = await this.datasource.testDatasource();
+    if (result.status && result.status === 'error') {
+      return Promise.reject({
+        data: {
+          message: `InfluxDB connection error: ${result.message}`,
+        },
+      });
+    }
+    return {
+      ...result,
+      dsType: this.datasource.type,
+      dsName: this.datasource.name,
+    };
   }
 
   getHistory(items, timeFrom, timeTill, options) {
@@ -101,8 +103,13 @@ export class InfluxDBConnector extends DBConnector {
   }
 
   async invokeInfluxDBQuery(query) {
-    const data = await this.influxDS._seriesQuery(query).toPromise();
-    return data?.results || [];
+    const queryRequest: any = {
+      requestId: 'A',
+      targets: [{ refId: 'A', query }],
+    };
+    const result = this.datasource.query(queryRequest) as Observable<DataQueryResponse>;
+    const data = await lastValueFrom(result);
+    return data.data;
   }
 }
 
@@ -152,12 +159,11 @@ function handleInfluxHistoryResponse(results) {
         values: valuesBuffer,
       };
 
-      frames.push(
-        new MutableDataFrame({
-          name: influxSeries?.tags?.itemid,
-          fields: [timeFiled, valueFiled],
-        })
-      );
+      frames.push({
+        name: influxSeries?.tags?.itemid,
+        fields: [timeFiled, valueFiled],
+        length: valuesBuffer.length,
+      });
     }
   }
 

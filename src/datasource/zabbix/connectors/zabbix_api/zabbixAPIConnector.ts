@@ -23,13 +23,13 @@ const roundInterval: (interval: number) => number = rangeUtil?.roundInterval || 
  */
 export class ZabbixAPIConnector {
   backendAPIUrl: string;
-  requestOptions: { basicAuth: any; withCredentials: boolean };
+  requestOptions: { basicAuth: string; withCredentials: boolean };
   getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
   version: string;
   getVersionPromise: Promise<string>;
   datasourceUID: string;
 
-  constructor(basicAuth: any, withCredentials: boolean, datasourceUID: string) {
+  constructor(basicAuth: string, withCredentials: boolean, datasourceUID: string) {
     this.datasourceUID = datasourceUID;
     this.backendAPIUrl = `/api/datasources/uid/${this.datasourceUID}/resources/zabbix-api`;
 

@@ -48,19 +48,28 @@ export const ConfigEditor = (props: Props) => {
   const styles = useStyles2(getStyles);
   const { options, onOptionsChange } = props;
 
-  // Derive selectedDBDatasource and currentDSType from options
+  // Derive selectedDBDatasource and currentDSType from options (prefer UID; fallback to id for legacy config)
   const { selectedDBDatasource, currentDSType } = useMemo(() => {
-    if (!options.jsonData.dbConnectionEnable || !options.jsonData.dbConnectionDatasourceUID) {
+    if (!options.jsonData.dbConnectionEnable) {
       return { selectedDBDatasource: null, currentDSType: '' };
     }
-    const selectedDs = getDirectDBDatasources().find(
-      (dsOption) => dsOption.uid === options.jsonData.dbConnectionDatasourceUID
-    );
+    const dsList = getDirectDBDatasources();
+    const uid = options.jsonData.dbConnectionDatasourceUID;
+    const id = options.jsonData.dbConnectionDatasourceId;
+    const selectedDs = uid
+      ? dsList.find((d) => d.uid === uid)
+      : id !== undefined && id !== null
+        ? dsList.find((d) => d.id === id)
+        : undefined;
     return {
       selectedDBDatasource: selectedDs ? { label: selectedDs.name, value: selectedDs.uid } : null,
       currentDSType: selectedDs?.type || '',
     };
-  }, [options.jsonData.dbConnectionEnable, options.jsonData.dbConnectionDatasourceUID]);
+  }, [
+    options.jsonData.dbConnectionEnable,
+    options.jsonData.dbConnectionDatasourceUID,
+    options.jsonData.dbConnectionDatasourceId,
+  ]);
 
   // Apply some defaults on initial render
   useEffect(() => {
@@ -91,22 +100,29 @@ export const ConfigEditor = (props: Props) => {
       secureJsonData: { ...newSecureJsonData },
     });
 
-    // Handle async lookup when dbConnectionDatasourceUID is not set but name is available
-    if (options.jsonData.dbConnectionEnable && !options.jsonData.dbConnectionDatasourceUID) {
+    // Handle async lookup when neither uid nor id is set but name is available (legacy)
+    if (
+      options.jsonData.dbConnectionEnable &&
+      !options.jsonData.dbConnectionDatasourceUID &&
+      options.jsonData.dbConnectionDatasourceId == null
+    ) {
       const dsName = options.jsonData.dbConnectionDatasourceName;
-      getDataSourceSrv()
-        .get(dsName)
-        .then((ds) => {
-          if (ds) {
-            onOptionsChange({
-              ...options,
-              jsonData: {
-                ...options.jsonData,
-                dbConnectionDatasourceUID: ds.uid,
-              },
-            });
-          }
-        });
+      if (dsName) {
+        getDataSourceSrv()
+          .get(dsName)
+          .then((ds) => {
+            if (ds?.uid) {
+              onOptionsChange({
+                ...options,
+                jsonData: {
+                  ...options.jsonData,
+                  dbConnectionDatasourceUID: ds.uid,
+                  dbConnectionDatasourceName: ds.name,
+                },
+              });
+            }
+          });
+      }
     }
   }, []);
 
@@ -523,11 +539,15 @@ const resetSecureJsonField =
 const directDBDatasourceChangeHandler =
   (options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>, onChange: Props['onOptionsChange']) =>
   (value: ComboboxOption<string>) => {
+    const dsList = getDirectDBDatasources();
+    const ds = value.value ? dsList.find((d) => d.uid === value.value) : undefined;
     onChange({
       ...options,
       jsonData: {
         ...options.jsonData,
-        dbConnectionDatasourceUID: value.value,
+        dbConnectionDatasourceUID: value.value ?? undefined,
+        dbConnectionDatasourceName: ds?.name ?? options.jsonData.dbConnectionDatasourceName,
+        dbConnectionDatasourceId: undefined, // prefer uid only
       },
     });
   };
