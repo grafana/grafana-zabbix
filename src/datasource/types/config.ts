@@ -28,7 +28,7 @@ export type ZabbixDSOptions = {
    * */
   dbConnection?: OldDBConnection;
   /** @deprecated
-   * Use `dbConnectionUID` instead.
+   * Use `dbConnectionDatasourceUID` instead.
    * Currently only used to support migration for older schemas.
    * */
   dbConnectionDatasourceId?: number;
