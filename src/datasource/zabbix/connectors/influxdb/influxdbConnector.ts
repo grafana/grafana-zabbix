@@ -1,14 +1,14 @@
 import {
   DataFrame,
   dataFrameToJSON,
+  DataQueryResponse,
   DataSourceApi,
   Field,
   FieldType,
-  MutableDataFrame,
   TIME_SERIES_TIME_FIELD_NAME,
 } from '@grafana/data';
 import _ from 'lodash';
-import { from, lastValueFrom } from 'rxjs';
+import { lastValueFrom, Observable } from 'rxjs';
 import { compactQuery } from '../../../utils';
 import { consolidateByTrendColumns, HISTORY_TO_TABLE_MAP } from '../dbConnector';
 import { InfluxDBConnectorOptions } from '../types';
@@ -107,8 +107,8 @@ export class InfluxDBConnector {
       requestId: 'A',
       targets: [{ refId: 'A', query }],
     };
-    const result = this.datasource.query(queryRequest);
-    const data = await lastValueFrom(from(result));
+    const result = this.datasource.query(queryRequest) as Observable<DataQueryResponse>;
+    const data = await lastValueFrom(result);
     return data.data;
   }
 }
@@ -159,12 +159,11 @@ function handleInfluxHistoryResponse(results) {
         values: valuesBuffer,
       };
 
-      frames.push(
-        new MutableDataFrame({
-          name: influxSeries?.tags?.itemid,
-          fields: [timeFiled, valueFiled],
-        })
-      );
+      frames.push({
+        name: influxSeries?.tags?.itemid,
+        fields: [timeFiled, valueFiled],
+        length: valuesBuffer.length,
+      });
     }
   }
 
