@@ -44,7 +44,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:18@sha256:5773fe724c49c42a7a9ca70202e11e1dff21fb7235b335a73f39297d200b73a2
+    image: postgres:18@sha256:69e8582b781cb44fa4557b98ed586fe68361e320d9b12f9707494335634f4f3d
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'
@@ -79,7 +79,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
+    image: redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
 
   zas_backend_01:
     build: ../zas-agent
@@ -98,7 +98,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
+    image: redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
 
   zas_frontend_01:
     build: ../zas-agent
