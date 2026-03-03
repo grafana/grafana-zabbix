@@ -24,6 +24,9 @@ interface Props {
   rootWidth: number;
   timeRange: TimeRange;
   showTimeline?: boolean;
+  showProblemDescription?: boolean;
+  showExpression?: boolean;
+  showHostDescription?: boolean;
   panelId?: number;
   allowDangerousHTML?: boolean;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
@@ -39,6 +42,9 @@ export const ProblemDetails = ({
   rootWidth,
   timeRange,
   showTimeline,
+  showProblemDescription,
+  showExpression,
+  showHostDescription,
   panelId,
   allowDangerousHTML,
   getProblemAlerts,
@@ -164,7 +170,7 @@ export const ProblemDetails = ({
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
           </div>
-          {problem.comments && (
+          {showProblemDescription && problem.comments && (
             <div className="problem-description-row">
               <div className={styles.problemDescription}>
                 <Tooltip placement="right" content={problemDescriptionEl}>
@@ -174,12 +180,12 @@ export const ProblemDetails = ({
               </div>
             </div>
           )}
-          {problem.items && (
+          {showExpression && problem.items && (
             <div>
               <ProblemExpression problem={problem} />
             </div>
           )}
-          {problem.hosts && (
+          {showHostDescription && problem.hosts && (
             <div>
               <ProblemHostsDescription hosts={problem.hosts} />
             </div>
