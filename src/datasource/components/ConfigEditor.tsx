@@ -8,6 +8,7 @@ import {
   Icon,
   Input,
   Label,
+  MultiSelect,
   SecretInput,
   SecureSocksProxySettings,
   Switch,
@@ -55,6 +56,38 @@ export const ConfigEditor = (props: Props) => {
       currentDSType: selectedDs?.type || '',
     };
   }, [options.jsonData.dbConnectionEnable, options.jsonData.dbConnectionDatasourceId]);
+
+  const [grafanaUsers, setGrafanaUsers] = useState<SelectableValue<string>[]>([{ label: 'admin', value: 'admin' }]);
+  const [canEditExcludedUsers, setCanEditExcludedUsers] = useState(true);
+  const [userFetchWarning, setUserFetchWarning] = useState<string | null>(null);
+
+  // Fetch Grafana users on mount
+  useEffect(() => {
+    const fetchGrafanaUsers = async () => {
+      try {
+        const res = await fetch('/api/users');
+        if (res.status === 403) {
+          setUserFetchWarning(
+            'You need Grafana Admin permissions to list users. Please contact your Grafana administrator to configure per-user authentication.'
+          );
+          setCanEditExcludedUsers(false);
+          return;
+        }
+        if (!res.ok) throw new Error('Failed to fetch Grafana users');
+        const users = await res.json();
+        setGrafanaUsers(users.map((u: any) => ({
+          label: u.login,
+          value: u.login,
+        })));
+        setUserFetchWarning(null);
+        setCanEditExcludedUsers(true);
+      } catch {
+        setUserFetchWarning('Failed to fetch Grafana users. Using default user "admin".');
+        setCanEditExcludedUsers(false);
+      }
+    };
+    fetchGrafanaUsers();
+  }, []);
 
   // Apply some defaults on initial render
   useEffect(() => {
@@ -415,6 +448,104 @@ export const ConfigEditor = (props: Props) => {
               onChange={jsonDataSwitchHandler('disableDataAlignment', options, onOptionsChange)}
             />
           </Field>
+
+          <Field
+            label={
+              <Label>
+                <EditorStack gap={0.5}>
+                  <span>Enable per-user authentication</span>
+                  <Tooltip
+                    content={
+                      <span>
+                        Enable this option if you want to use per-user authentication. This will map Grafana users to
+                        Zabbix users respecting the RBAC already setup in Zabbix.
+                      </span>
+                    }
+                  >
+                    <Icon name="info-circle" size="sm" />
+                  </Tooltip>
+                </EditorStack>
+              </Label>
+            }
+          >
+            <Switch
+              value={!!options.jsonData.perUserAuth}
+              onChange={jsonDataSwitchHandler('perUserAuth', options, onOptionsChange)}
+            />
+          </Field>
+
+          {options.jsonData.perUserAuth && (
+            <>
+              <Field
+                label={
+                  <Label>
+                    <EditorStack gap={0.5}>
+                      <span>User identity field</span>
+                    </EditorStack>
+                  </Label>
+                }
+              >
+                <Combobox
+                  width={40}
+                  options={[
+                    { label: 'Username', value: 'username' },
+                    { label: 'Email', value: 'email' },
+                  ]as Array<ComboboxOption<string>>}
+                  value={{
+                    label: options.jsonData.perUserAuthField === 'email' ? 'Email' : 'Username',
+                    value: options.jsonData.perUserAuthField || 'username',
+                  }}
+                  onChange={jsonDataSelectHandler('perUserAuthField', options, onOptionsChange)}
+                />
+              </Field>
+
+              {userFetchWarning && (
+                <div style={{ color: 'orange', marginBottom: '10px' }}>
+                  <Icon name="exclamation-triangle" /> {userFetchWarning}
+                </div>
+              )}
+
+              <Field
+                label={
+                  <Label>
+                    <EditorStack gap={0.5}>
+                      <span>Exclude users from per-user authentication</span>
+                      <Tooltip 
+                        content={
+                          <span>
+                            These users will always use the global Zabbix credentials
+                          </span>
+                        }
+                      >
+                        <Icon name="info-circle" size="sm" />
+                      </Tooltip>
+                    </EditorStack>
+                  </Label>
+                }
+              >
+                <MultiSelect
+                  width={40}
+                  options={grafanaUsers}
+                  allowCustomValue
+                  value={
+                    (options.jsonData.perUserAuthExcludeUsers ?? ['admin']).map(
+                      (u) => ({ label: u, value: u } as SelectableValue<string>)
+                    )
+                  }
+                  onChange={canEditExcludedUsers ? (selected) => {
+                    onOptionsChange({
+                      ...options,
+                      jsonData: {
+                        ...options.jsonData,
+                        perUserAuthExcludeUsers: selected.map((s) => s.value),
+                      },
+                    });
+                  } : undefined}
+                  disabled={!canEditExcludedUsers}
+                />
+              </Field>
+            </>
+          )}
         </ConfigSubSection>
 
         {config.secureSocksDSProxyEnabled && gte(config.buildInfo.version, '10.0.0-0') && (
