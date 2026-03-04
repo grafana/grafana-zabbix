@@ -1745,14 +1745,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/e2e-selectors@npm:12.4.0-21983999378":
-  version: 12.4.0-21983999378
-  resolution: "@grafana/e2e-selectors@npm:12.4.0-21983999378"
+"@grafana/e2e-selectors@npm:13.0.0-22358195095":
+  version: 13.0.0-22358195095
+  resolution: "@grafana/e2e-selectors@npm:13.0.0-22358195095"
   dependencies:
     semver: "npm:^7.7.0"
     tslib: "npm:2.8.1"
     typescript: "npm:5.9.2"
-  checksum: 10c0/aace6e99dc0b594d617879053c081aaeac64a97294f48e950b8795510b592474ca87a0d5b341dc15cb5c8267d2d5595662f155196e6e36186301007add3ae53b
+  checksum: 10c0/4fbbba8e94f282e7cc986c688336e66fc838f055a3c4908f048cb4e984d89763101f8d9161474fdf58371ff5a08286307d36b30261ee602b38d716ac24d7b445
   languageName: node
   linkType: hard
 
@@ -1812,11 +1812,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/plugin-e2e@npm:3.4.0":
-  version: 3.4.0
-  resolution: "@grafana/plugin-e2e@npm:3.4.0"
+"@grafana/plugin-e2e@npm:3.4.1":
+  version: 3.4.1
+  resolution: "@grafana/plugin-e2e@npm:3.4.1"
   dependencies:
-    "@grafana/e2e-selectors": "npm:12.4.0-21983999378"
+    "@grafana/e2e-selectors": "npm:13.0.0-22358195095"
     semver: "npm:^7.5.4"
     uuid: "npm:^13.0.0"
     yaml: "npm:^2.3.4"
@@ -1824,7 +1824,7 @@ __metadata:
     "@axe-core/playwright": ^4.11.1
     "@playwright/test": ^1.52.0
     axe-core: ^4.11.1
-  checksum: 10c0/91e310f358bbf9b641902b19e84849b57f22587af268f28efb97c661d7255a7d11c8f1cbd52eeabdb4b7105ef1a212ee50df084a5ef645594a35b245b3f2d4e9
+  checksum: 10c0/e894adb7efc0550f513cf031654358380daf6033561bfd258683c8f6da161fbff7dfe9727a42b1ffeae474a96c22a33add0000fbec3d7a243cbed3ffb8e0d5f3
   languageName: node
   linkType: hard
 
@@ -7798,7 +7798,7 @@ __metadata:
     "@grafana/e2e-selectors": "npm:12.4.0"
     "@grafana/eslint-config": "npm:9.0.0"
     "@grafana/i18n": "npm:12.4.0"
-    "@grafana/plugin-e2e": "npm:3.4.0"
+    "@grafana/plugin-e2e": "npm:3.4.1"
     "@grafana/plugin-ui": "npm:0.13.1"
     "@grafana/runtime": "npm:12.4.0"
     "@grafana/schema": "npm:12.4.0"
