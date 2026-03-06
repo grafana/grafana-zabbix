@@ -672,7 +672,7 @@ export class Zabbix implements ZabbixConnector {
     }
   }
 
-  async getSLI(itservices: any[], slas: any[], timeRange, target: ZabbixMetricsQuery, options) {
+  async getSLI(itservices: any[], slas: any[], timeRange, target: ZabbixMetricsQuery, options, slaInterval: string) {
     const itServiceIds = itservices.map((s) => s.serviceid);
     if (target.slaProperty === 'status') {
       const res = await this.zabbixAPI.getServices(itServiceIds);
@@ -684,26 +684,28 @@ export class Zabbix implements ZabbixConnector {
       return [];
     }
     if (slaIds.length > 1) {
-      const sliQueries = slaIds?.map((slaId) => this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options));
+      const sliQueries = slaIds?.map((slaId) =>
+        this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options, slaInterval)
+      );
       const results = await Promise.all(sliQueries);
       return handleMultiSLIResponse(results, itservices, slas, target);
     } else {
       const slaId = slaIds?.length > 0 ? slaIds[0] : undefined;
-      const result = await this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options);
+      const result = await this.zabbixAPI.getSLI(slaId, itServiceIds, timeRange, options, slaInterval);
       return handleSLIResponse(result, itservices, target);
     }
   }
 
-  async getSLA(itservices, timeRange, target, options) {
+  async getSLA(itservices, timeRange, target, slaInterval: string, options) {
     const itServiceIds = _.map(itservices, 'serviceid');
     if (this.supportSLA()) {
-      const slaResponse = await this.zabbixAPI.getSLA60(itServiceIds, timeRange, options);
+      const slaResponse = await this.zabbixAPI.getSLA60(itServiceIds, timeRange, options, slaInterval);
       return _.map(itServiceIds, (serviceid) => {
         const itservice = _.find(itservices, { serviceid: serviceid });
         return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
       });
     }
-    const slaResponse = await this.zabbixAPI.getSLA(itServiceIds, timeRange, options);
+    const slaResponse = await this.zabbixAPI.getSLA(itServiceIds, timeRange, options, slaInterval);
     return _.map(itServiceIds, (serviceid) => {
       const itservice = _.find(itservices, { serviceid: serviceid });
       return responseHandler.handleSLAResponse(itservice, target.slaProperty, slaResponse);
