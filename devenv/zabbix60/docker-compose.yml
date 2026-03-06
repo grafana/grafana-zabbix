@@ -1,6 +1,6 @@
 services:
   ssl-cert:
-    image: alpine:latest@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62
+    image: alpine:latest@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659
     command: |
       sh -c "if [ ! -f /certs/nginx.crt ] || [ ! -f /certs/nginx.key ]; then
                apk add --no-cache openssl &&
@@ -25,7 +25,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-6.0-latest@sha256:b34303498b75e4a13d76211f250d5a831f746fc13d441d89d1dcea04b64adf4c
+    image: zabbix/zabbix-server-pgsql:alpine-6.0-latest@sha256:f2406f7b1d1cb167ace14d5c2aa5196bce4bb2eb16c26c288d6d7f40fe35c3fc
     ports:
       - '10051:10051'
     depends_on:
@@ -42,7 +42,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest@sha256:b38d7ae7c073a8f4d0488315cd2c2131ab08294076bba4650f7b3ab065d9c07d
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest@sha256:dd48d90883b63097379b8194660eb231b0b74b92d63dd87993ce2b3f4ad6734a
     ports:
       - '443:443'
       - '8188:8080'
@@ -63,7 +63,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:18@sha256:5773fe724c49c42a7a9ca70202e11e1dff21fb7235b335a73f39297d200b73a2
+    image: postgres:18@sha256:69e8582b781cb44fa4557b98ed586fe68361e320d9b12f9707494335634f4f3d
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'
@@ -72,7 +72,7 @@ services:
       POSTGRES_PASSWORD: zabbix
 
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-6.0-latest@sha256:4686ff4dd5c7e3ea43e9653e35019039e567c544495f55fcb949c2cdd0a6cf50
+    image: zabbix/zabbix-agent:alpine-6.0-latest@sha256:24b28dc16c7b44a4dee6aaa305217f52a097f6ea40e973907c09a3099e64d6d0
     environment:
       ZBX_SERVER_HOST: zabbix-server
       ZBX_SERVER_PORT: 10051
@@ -98,7 +98,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
+    image: redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
 
   zas_backend_01:
     build: ../zas-agent
@@ -117,7 +117,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine@sha256:6cbef353e480a8a6e7f10ec545f13d7d3fa85a212cdcc5ffaf5a1c818b9d3798
+    image: redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
 
   zas_frontend_01:
     build: ../zas-agent
