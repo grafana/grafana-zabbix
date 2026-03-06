@@ -41,16 +41,11 @@ func TestIntegrationZabbixAPI70(t *testing.T) {
 	require.NotEmpty(t, zabbixPassword, "ZABBIX_PASSWORD environment variable is required")
 
 	dsSettings := backend.DataSourceInstanceSettings{
-		URL:              zabbixURL,
-		BasicAuthEnabled: true,
-		BasicAuthUser:    "admin",
-		DecryptedSecureJSONData: map[string]string{
-			"basicAuthPassword": "secret",
-		},
+		URL: zabbixURL,
 		JSONData: json.RawMessage(`{"tlsSkipVerify": true}`),
 	}
 
-	// Create HTTP client with TLS skip verify and basic auth
+	// Create HTTP client with TLS skip verify
 	httpClient, err := httpclient.New(context.Background(), &dsSettings, 10*time.Second)
 	require.NoError(t, err)
 	require.NotNil(t, httpClient)
@@ -107,8 +102,8 @@ func TestIntegrationZabbixAPI70(t *testing.T) {
 		assert.True(t, backend.IsDownstreamError(err))
 	})
 
-	// Test auth parameter is in request body for v7.0
-	t.Run("Auth Parameter In Request Body", func(t *testing.T) {
+	// Test auth parameter is not in request body for v7.0+
+	t.Run("Auth Parameter Not In Request Body", func(t *testing.T) {
 		// First authenticate
 		err := api.Authenticate(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
 		require.NoError(t, err)
@@ -122,8 +117,8 @@ func TestIntegrationZabbixAPI70(t *testing.T) {
 			err = json.Unmarshal(body, &requestBody)
 			require.NoError(t, err)
 
-			// Verify auth header is not present
-			assert.Empty(t, req.Header.Get("Authorization"), "Authorization header should not be present for v7.0")
+			// Verify auth header is present
+			assert.Equal(t, "Bearer "+api.GetAuth(), req.Header.Get("Authorization"), "Authorization header should be present with Bearer token")
 
 			// Return a mock response
 			return &http.Response{
@@ -141,9 +136,8 @@ func TestIntegrationZabbixAPI70(t *testing.T) {
 		_, err = apiWithTestClient.Request(context.Background(), "test.get", map[string]interface{}{}, zabbixVersion)
 		require.NoError(t, err)
 
-		// Verify auth parameter is in the request body
-		auth, hasAuth := requestBody["auth"]
-		assert.True(t, hasAuth, "Auth parameter should be present in request body for v7.0")
-		assert.Equal(t, api.GetAuth(), auth, "Auth parameter should match the set auth token")
+		// Verify auth parameter is not in the request body
+		_, hasAuth := requestBody["auth"]
+		assert.False(t, hasAuth, "Auth parameter should not be present in request body for v7.0+")
 	})
 }
