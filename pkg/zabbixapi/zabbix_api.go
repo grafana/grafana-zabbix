@@ -98,9 +98,9 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		"params":  normalizeParams(ctx, method, params, version),
 	}
 
-	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
+	// Zabbix v7.0 and later deprecated `auth` parameter and replaced it with using Auth header
 	// `auth` parameter throws an error in new versions so we need to add it only for older versions
-	if auth != "" && version < 72 {
+	if auth != "" && version < 70 {
 		apiRequest["auth"] = auth
 	}
 
@@ -116,9 +116,9 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
 
-	if auth != "" && version >= 72 {
+	if auth != "" && version >= 70 {
 		if api.dsSettings.BasicAuthEnabled {
-			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
+			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.0 and later")
 		}
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
 	}
