@@ -147,6 +147,8 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 					frames, queryErr = zabbixDS.queryNumericItems(queryCtx, &query)
 				case MODE_ITEMID:
 					frames, queryErr = zabbixDS.queryItemIdData(queryCtx, &query)
+				case MODE_MULTIMETRIC_TABLE:
+					frames, queryErr = zabbixDS.queryMultiMetricTable(queryCtx, &query)
 				default:
 					queryErr = backend.DownstreamError(ErrNonMetricQueryNotSupported)
 				}
