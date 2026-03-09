@@ -19,12 +19,20 @@ func TestZabbixAPIUnauthenticatedQuery(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestLogin(t *testing.T) {
+func TestLoginModern(t *testing.T) {
 	zabbixApi, _ := MockZabbixAPI(`{"result":"secretauth"}`, 200)
-	err := zabbixApi.Authenticate(context.Background(), "user", "password", version)
+	auth, err := zabbixApi.Login(context.Background(), "user", "password", version)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "secretauth", zabbixApi.auth)
+	assert.Equal(t, "secretauth", auth)
+}
+
+func TestLoginDeprecated(t *testing.T) {
+	zabbixApi, _ := MockZabbixAPI(`{"result":"secretauth"}`, 200)
+	auth, err := zabbixApi.LoginDeprecated(context.Background(), "user", "password", version)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "secretauth", auth)
 }
 
 func TestZabbixAPI(t *testing.T) {
