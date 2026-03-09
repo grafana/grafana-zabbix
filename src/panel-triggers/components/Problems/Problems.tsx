@@ -14,6 +14,8 @@ import { StatusCellV8 } from './Cells/StatusCell';
 import { AckCell } from './Cells/AckCell';
 import { TagCell } from './Cells/TagCell';
 import { LastChangeCell } from './Cells/LastChangeCell';
+import { DataLinksCell } from './Cells/DataLinksCell';
+import { getProblemsDataLinks } from '../../dataLinks';
 import {
   ColumnResizeMode,
   createColumnHelper,
@@ -244,6 +246,17 @@ export const ProblemList = (props: ProblemListProps) => {
           </button>
         ),
       }),
+      columnHelper.display({
+        id: 'dataLinks',
+        header: null,
+        size: 60,
+        minSize: 60,
+        maxSize: 300,
+        cell: ({ row }) => {
+          const links = getProblemsDataLinks(panelOptions.dataLinks, row.original);
+          return <DataLinksCell links={links} />;
+        },
+      })
     ];
   }, [panelOptions]);
 
@@ -296,6 +309,7 @@ export const ProblemList = (props: ProblemListProps) => {
       tags: panelOptions.showTags,
       datasource: panelOptions.showDatasourceName,
       age: panelOptions.ageField,
+      dataLinks: Array.isArray(panelOptions.dataLinks) && panelOptions.dataLinks.length > 0,
     }),
     [panelOptions]
   );
