@@ -162,51 +162,39 @@ function convertToRegex(str) {
 }
 
 export function migrateDSConfig(jsonData: ZabbixDSOptions) {
-  if (!shouldMigrateDSConfig(jsonData)) {
+  if (!jsonData) {
     return jsonData;
   }
 
-  const oldVersion = jsonData.schema || 1;
-
-  if (oldVersion < 2 && jsonData.dbConnection) {
+  // Migrate nested dbConnection object (schema v1) to flat fields
+  if (jsonData.dbConnection) {
     const dbConnectionOptions = jsonData.dbConnection;
-    jsonData.dbConnectionEnable = dbConnectionOptions.enable;
-    jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId;
+    jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
+    if (!jsonData.dbConnectionDatasourceUID && dbConnectionOptions.datasourceId > 0) {
+      jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions.datasourceId);
+    }
     delete jsonData.dbConnection;
   }
 
-  if (oldVersion < 3 && 'timeout' in jsonData) {
-    jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
+  // Migrate string timeout to number
+  if (typeof jsonData.timeout === 'string') {
+    jsonData.timeout = jsonData.timeout === '' ? null : Number(jsonData.timeout);
   }
 
-  if (oldVersion < 4 && jsonData.dbConnectionDatasourceId) {
-    const uid = getUIDFromID(jsonData.dbConnectionDatasourceId);
-    if (!uid) {
-      console.warn('Zabbix: Data Source not found.', jsonData.dbConnectionDatasourceId);
-      jsonData.schema = DS_CONFIG_SCHEMA;
-      return jsonData;
+  // Migrate numeric datasource ID to UID
+  if (!jsonData.dbConnectionDatasourceUID && jsonData.dbConnectionDatasourceId > 0) {
+    const dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId);
+    if (!dbConnectionDatasourceUID) {
+      throw new Error(
+        `Error retrieving direct db connection data source. Data source with id ${jsonData.dbConnectionDatasourceId} not found`
+      );
     }
-    jsonData.dbConnectionDatasourceUID = uid;
-    delete jsonData.dbConnectionDatasourceId;
+    jsonData.dbConnectionDatasourceUID = dbConnectionDatasourceUID;
   }
+  delete jsonData.dbConnectionDatasourceId;
 
   jsonData.schema = DS_CONFIG_SCHEMA;
   return jsonData;
-}
-
-function shouldMigrateDSConfig(jsonData: ZabbixDSOptions): boolean {
-  if (!jsonData) {
-    return false;
-  }
-  if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
-    return true;
-  }
-  // Migrate when schema is missing (old config) or below current version
-  const schema = jsonData.schema;
-  if (schema === undefined || schema === null || schema < DS_CONFIG_SCHEMA) {
-    return true;
-  }
-  return false;
 }
 
 const getDefaultAnnotationTarget = (json: any) => {
@@ -241,7 +229,7 @@ export const prepareAnnotation = (json: any) => {
 };
 
 // exporting for testing purposes only
-export function getUIDFromID(id: number) {
+export function getUIDFromID(id: number): string | undefined {
   const dsFilters: GetDataSourceListFilters = {
     all: true,
   };

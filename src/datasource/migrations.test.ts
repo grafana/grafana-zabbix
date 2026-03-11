@@ -91,13 +91,9 @@ describe('Migrations', () => {
         dbConnectionEnable: true,
         schema: 3,
       };
-      migrateDSConfig(ctx.jsonData);
-      expect(ctx.jsonData.schema).toBe(DS_CONFIG_SCHEMA);
-      expect(ctx.jsonData.dbConnectionDatasourceUID).toBeUndefined();
-      expect(ctx.jsonData.dbConnectionDatasourceId).toBe(999);
-
-      migrateDSConfig(ctx.jsonData);
-      expect(getList).toHaveBeenCalledTimes(1);
+      expect(() => migrateDSConfig(ctx.jsonData)).toThrow(
+        `Error retrieving direct db connection data source. Data source with id 999 not found`
+      );
     });
 
     it('should migrate timeout string to number when schema < 3 (including "0" and "")', () => {
