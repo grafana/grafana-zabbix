@@ -167,15 +167,12 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
   }
 
   // Migrate nested dbConnection object (schema v1) to flat fields
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
   if (jsonData.dbConnection) {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
     const dbConnectionOptions = jsonData.dbConnection;
     jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
     if (!jsonData.dbConnectionDatasourceUID && dbConnectionOptions.datasourceId > 0) {
       jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions.datasourceId);
     }
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
     delete jsonData.dbConnection;
   }
 
@@ -185,12 +182,15 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
   }
 
   // Migrate numeric datasource ID to UID
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
   if (!jsonData.dbConnectionDatasourceUID && jsonData.dbConnectionDatasourceId > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    jsonData.dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId);
+    const dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId);
+    if (!dbConnectionDatasourceUID) {
+      throw new Error(
+        `Error retrieving direct db connection data source. Data source with id ${jsonData.dbConnectionDatasourceId} not found`
+      );
+    }
+    jsonData.dbConnectionDatasourceUID = dbConnectionDatasourceUID;
   }
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
   delete jsonData.dbConnectionDatasourceId;
 
   jsonData.schema = DS_CONFIG_SCHEMA;
