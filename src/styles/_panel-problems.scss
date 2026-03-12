@@ -93,6 +93,7 @@
           max-height: 4.5rem;
           min-height: 3rem;
           overflow: hidden;
+          white-space: normal;
 
           &:after {
             content: "";
@@ -445,9 +446,11 @@
   0% {
     opacity: 1;
   }
+
   50% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -458,6 +461,7 @@
     color: $dark-3;
     text-shadow: unset;
   }
+
   100% {
     color: $orange;
     text-shadow: 0px 0px 10px rgba($orange, 0.5);
@@ -469,10 +473,12 @@
     opacity: 1;
     text-shadow: 0px 0px 3px $orange;
   }
+
   50% {
     opacity: 0.3;
     text-shadow: 0px 0px 10px $orange;
   }
+
   100% {
     opacity: 1;
     text-shadow: 0px 0px 2px $orange;

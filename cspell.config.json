@@ -12,6 +12,7 @@
     "vendor/**",
     "cspell.config.json",
     "package.json",
+    "renovate.json",
     "yarn.lock",
     "docker-compose*.yaml",
     "docker-compose*.yml",
@@ -29,11 +30,7 @@
     "src/**",
     "pkg/**"
   ],
-  "ignoreRegExpList": [
-    "import\\s*\\((.|[\r\n])*?\\)",
-    "import\\s*.*\".*?\"",
-    "\\[@.+\\]"
-  ],
+  "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
   "words": [
     "alexanderzobnin",
     "applicationids",
@@ -75,6 +72,7 @@
     "unmarshal",
     "uplot",
     "zabbix",
-    "Zobnin"
+    "Zobnin",
+    "directdb"
   ]
 }

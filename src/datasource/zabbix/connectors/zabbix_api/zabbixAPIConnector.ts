@@ -23,15 +23,15 @@ const roundInterval: (interval: number) => number = rangeUtil?.roundInterval || 
  */
 export class ZabbixAPIConnector {
   backendAPIUrl: string;
-  requestOptions: { basicAuth: any; withCredentials: boolean };
+  requestOptions: { basicAuth: string; withCredentials: boolean };
   getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
   version: string;
   getVersionPromise: Promise<string>;
-  datasourceId: number;
+  datasourceUID: string;
 
-  constructor(basicAuth: any, withCredentials: boolean, datasourceId: number) {
-    this.datasourceId = datasourceId;
-    this.backendAPIUrl = `/api/datasources/${this.datasourceId}/resources/zabbix-api`;
+  constructor(basicAuth: string, withCredentials: boolean, datasourceUID: string) {
+    this.datasourceUID = datasourceUID;
+    this.backendAPIUrl = `/api/datasources/uid/${this.datasourceUID}/resources/zabbix-api`;
 
     this.requestOptions = {
       basicAuth: basicAuth,
@@ -65,7 +65,6 @@ export class ZabbixAPIConnector {
       },
       hideFromInspector: false,
       data: {
-        datasourceId: this.datasourceId,
         method,
         params,
       },
@@ -403,14 +402,18 @@ export class ZabbixAPIConnector {
     return this.request('sla.get', params);
   }
 
-  getSLA(serviceids, timeRange, options) {
+  getSLA(serviceids, timeRange, options, slaInterval: string) {
+    if (!slaInterval) {
+      // use default as auto
+      slaInterval = 'auto';
+    }
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
@@ -422,14 +425,17 @@ export class ZabbixAPIConnector {
     return this.request('service.getsla', params);
   }
 
-  async getSLA60(serviceids, timeRange, options) {
+  async getSLA60(serviceids, timeRange, options, slaInterval: string) {
+    if (!slaInterval) {
+      slaInterval = 'auto';
+    }
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
@@ -481,14 +487,14 @@ export class ZabbixAPIConnector {
     return slaLikeResponse;
   }
 
-  async getSLI(slaid, serviceids, timeRange, options) {
+  async getSLI(slaid, serviceids, timeRange, options, slaInterval: string) {
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
