@@ -166,7 +166,7 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 							"refId", q.RefID,
 							"queryType", query.QueryType,
 							"timeout", queryTimeout,
-							"datasourceId", req.PluginContext.DataSourceInstanceSettings.ID,
+							"datasourceUID", req.PluginContext.DataSourceInstanceSettings.UID,
 						)
 						res = backend.ErrorResponseWithErrorSource(
 							backend.DownstreamError(fmt.Errorf("query timeout: %s", timeoutMsg)),

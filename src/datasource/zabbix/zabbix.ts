@@ -1,18 +1,21 @@
+import { DataSourceInstanceSettings } from '@grafana/data';
+import { getDataSourceSrv } from '@grafana/runtime';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
-import * as utils from '../utils';
-import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
-import { CachingProxy } from './proxy/cachingProxy';
-import { DBConnector } from './connectors/dbConnector';
-import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
-import { SQLConnector } from './connectors/sql/sqlConnector';
-import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
-import { Host, ZabbixConnector } from './types';
 import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
-import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
+import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
+import { ZabbixDSOptions } from '../types/config';
+import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
+import * as utils from '../utils';
+import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
+import { SQLConnector } from './connectors/sql/sqlConnector';
+import { InfluxDBConnectorOptions } from './connectors/types';
+import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
+import { CachingProxy } from './proxy/cachingProxy';
+import { Host, ZabbixConnector } from './types';
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -90,12 +93,22 @@ const REQUESTS_TO_BIND = [
   'getUsers',
 ];
 
+type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAuth' | 'withCredentials' | 'uid'> &
+  Pick<
+    ZabbixDSOptions,
+    | 'cacheTTL'
+    | 'dbConnectionEnable'
+    | 'dbConnectionDatasourceUID'
+    | 'dbConnectionDatasourceName'
+    | 'dbConnectionRetentionPolicy'
+  >;
+
 export class Zabbix implements ZabbixConnector {
   enableDirectDBConnection: boolean;
   cachingProxy: CachingProxy;
   zabbixAPI: ZabbixAPIConnector;
   getHistoryDB: any;
-  dbConnector: any;
+  dbConnector: InfluxDBConnector | SQLConnector;
   getTrendsDB: any;
   version: string;
 
@@ -119,61 +132,73 @@ export class Zabbix implements ZabbixConnector {
   getSLAList: () => Promise<any>;
   getUsers: () => Promise<any>;
 
-  constructor(options) {
+  constructor(options: ZabbixOptions) {
     const {
       basicAuth,
       withCredentials,
       cacheTTL,
-      enableDirectDBConnection,
-      dbConnectionDatasourceId,
+      dbConnectionEnable,
+      dbConnectionDatasourceUID,
       dbConnectionDatasourceName,
       dbConnectionRetentionPolicy,
-      datasourceId,
+      uid,
     } = options;
 
-    this.enableDirectDBConnection = enableDirectDBConnection;
+    this.enableDirectDBConnection = dbConnectionEnable;
 
     // Initialize caching proxy for requests
     const cacheOptions = {
       enabled: true,
-      ttl: cacheTTL,
+      ttl: utils.parseInterval(cacheTTL),
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, datasourceId);
+    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, uid);
 
     this.proxifyRequests();
     this.cacheRequests();
     this.bindRequests();
 
-    if (enableDirectDBConnection) {
+    if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceName)) {
       const connectorOptions: any = { dbConnectionRetentionPolicy };
-      this.initDBConnector(dbConnectionDatasourceId, dbConnectionDatasourceName, connectorOptions).then(() => {
-        this.getHistoryDB = this.cachingProxy.proxifyWithCache(
-          this.dbConnector.getHistory,
-          'getHistory',
-          this.dbConnector
-        );
-        this.getTrendsDB = this.cachingProxy.proxifyWithCache(
-          this.dbConnector.getTrends,
-          'getTrends',
-          this.dbConnector
-        );
-      });
+      this.initDBConnector(dbConnectionDatasourceUID, dbConnectionDatasourceName, connectorOptions)
+        .then(() => {
+          this.getHistoryDB = this.cachingProxy.proxifyWithCache(
+            this.dbConnector.getHistory,
+            'getHistory',
+            this.dbConnector
+          );
+          this.getTrendsDB = this.cachingProxy.proxifyWithCache(
+            this.dbConnector.getTrends,
+            'getTrends',
+            this.dbConnector
+          );
+        })
+        .catch((err) => {
+          console.warn('Zabbix: Direct DB connection init failed.', err);
+        });
     }
   }
 
-  initDBConnector(datasourceId, datasourceName, options) {
-    return DBConnector.loadDatasource(datasourceId, datasourceName).then((ds) => {
-      const connectorOptions: any = { datasourceId, datasourceName };
-      if (ds.type === 'influxdb') {
-        connectorOptions.retentionPolicy = options.dbConnectionRetentionPolicy;
-        this.dbConnector = new InfluxDBConnector(connectorOptions);
-      } else {
-        this.dbConnector = new SQLConnector(connectorOptions);
-      }
-      return this.dbConnector;
-    });
+  async initDBConnector(
+    datasourceUID: string | undefined,
+    datasourceName: string | undefined,
+    options: ZabbixDSOptions
+  ) {
+    const ref = (datasourceUID && datasourceUID.trim()) || datasourceName;
+    if (!ref) {
+      throw new Error('Data Source UID or name must be specified for direct DB connection');
+    }
+    const ds = await getDataSourceSrv().get(ref);
+
+    if (ds.type === 'influxdb') {
+      const influxDBConnectorOptions: InfluxDBConnectorOptions = {
+        retentionPolicy: options.dbConnectionRetentionPolicy,
+      };
+      this.dbConnector = new InfluxDBConnector(ds, influxDBConnectorOptions);
+    } else {
+      this.dbConnector = new SQLConnector(ds, {});
+    }
   }
 
   proxifyRequests() {
@@ -196,30 +221,11 @@ export class Zabbix implements ZabbixConnector {
 
   /**
    * Perform test query for Zabbix API and external history DB.
-   * @return {object} test result object:
-   * ```
-   *    {
-   *      zabbixVersion,
-   *      dbConnectorStatus: {
-   *        dsType,
-   *        dsName
-   *      }
-   *    }
-   * ```
    */
-  testDataSource() {
-    let dbConnectorStatus;
-
-    if (this.enableDirectDBConnection) {
-      return this.dbConnector.testDataSource().then((testResult) => {
-        if (testResult) {
-          dbConnectorStatus = {
-            dsType: this.dbConnector.datasourceTypeName || this.dbConnector.datasourceTypeId,
-            dsName: this.dbConnector.datasourceName,
-          };
-          return dbConnectorStatus;
-        }
-      });
+  async testDataSource() {
+    if (this.enableDirectDBConnection && this.dbConnector) {
+      const testResult = await this.dbConnector.testDataSource();
+      return testResult;
     } else {
       return Promise.resolve();
     }
@@ -631,7 +637,7 @@ export class Zabbix implements ZabbixConnector {
 
   getHistoryTS(items, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
-    if (this.enableDirectDBConnection) {
+    if (this.enableDirectDBConnection && typeof this.getHistoryDB === 'function') {
       return this.getHistoryDB(items, timeFrom, timeTo, request).then((history) =>
         responseHandler.dataResponseToTimeSeries(history, items, request)
       );
@@ -644,7 +650,7 @@ export class Zabbix implements ZabbixConnector {
 
   getTrends(items, timeRange, request) {
     const [timeFrom, timeTo] = timeRange;
-    if (this.enableDirectDBConnection) {
+    if (this.enableDirectDBConnection && typeof this.getTrendsDB === 'function') {
       return this.getTrendsDB(items, timeFrom, timeTo, request).then((history) =>
         responseHandler.dataResponseToTimeSeries(history, items, request)
       );

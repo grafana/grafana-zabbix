@@ -11,7 +11,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest@sha256:37c525bb544690c7ccb2804e0e5f3412fb26aebcbead3e051735c2ce80292e3e
+    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest@sha256:c1f1d320b2323a9b31e868341224e17962fa04244f9ff9ff02b8dd9b27f9c616
     ports:
       - '10051:10051'
     depends_on:
@@ -28,7 +28,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-apache-pgsql:alpine-7.4-latest@sha256:447d7917bce7de49a3153b7a8da1e0c7a71e30f4824a1f8d99f0636b709b590e
+    image: zabbix/zabbix-web-apache-pgsql:alpine-7.4-latest@sha256:f4f88cd3a1dbc1bd24dd0de038eccb90d496c1e1946788b4ad32179230485cdb
     ports:
       - '8188:8080'
     depends_on:
@@ -53,7 +53,7 @@ services:
       POSTGRES_PASSWORD: zabbix
 
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-7.4-latest@sha256:8d8ddbbd45452e906b0f359d00073745590a013ca7045ca69e11b7f0b8d91887
+    image: zabbix/zabbix-agent:alpine-7.4-latest@sha256:3de1acbaf0b90a0c646851cdfe42dae769d5aa13f1d9eaca90109505bc08af21
     environment:
       ZBX_SERVER_HOST: zabbix-server
       ZBX_SERVER_PORT: 10051
