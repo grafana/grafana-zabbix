@@ -1744,14 +1744,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/e2e-selectors@npm:13.0.0-22898798261":
-  version: 13.0.0-22898798261
-  resolution: "@grafana/e2e-selectors@npm:13.0.0-22898798261"
+"@grafana/e2e-selectors@npm:13.0.0-22967232448":
+  version: 13.0.0-22967232448
+  resolution: "@grafana/e2e-selectors@npm:13.0.0-22967232448"
   dependencies:
     semver: "npm:^7.7.0"
     tslib: "npm:2.8.1"
     typescript: "npm:5.9.2"
-  checksum: 10c0/d437e29cb25e4974088ab9108d0489dd3c9fb599d03b46a480814bcdb36ee62bae6b5cad865137665ae8d1d0a23eb74b9e8cee34f386a5738e68eaddeb53bd36
+  checksum: 10c0/61b59086e93ef9e9f2f618a80da9122fc73b3692b9d8ba00748c4e4d1a1fe2d67a799fab2878c8b0255e462e7857c35cf509b2e2abc7d276321ebdb2772b45fa
   languageName: node
   linkType: hard
 
@@ -1811,11 +1811,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/plugin-e2e@npm:3.4.5":
-  version: 3.4.5
-  resolution: "@grafana/plugin-e2e@npm:3.4.5"
+"@grafana/plugin-e2e@npm:3.4.6":
+  version: 3.4.6
+  resolution: "@grafana/plugin-e2e@npm:3.4.6"
   dependencies:
-    "@grafana/e2e-selectors": "npm:13.0.0-22898798261"
+    "@grafana/e2e-selectors": "npm:13.0.0-22967232448"
     semver: "npm:^7.5.4"
     uuid: "npm:^13.0.0"
     yaml: "npm:^2.3.4"
@@ -1825,7 +1825,7 @@ __metadata:
   peerDependenciesMeta:
     "@axe-core/playwright":
       optional: true
-  checksum: 10c0/f125153cd7ff222e24c418bff805263872d2c0012a24ecf83f00f7b9e0a3369b2283e04a3d234d03c43aec779ce7e6aed9de418ebb9769233589937e02c8760a
+  checksum: 10c0/3f41c53a3d4fc54331492e2a469f1d7229d79ee95cffafa7c06f12113d13cfaf0e3fd51ff27686f391a24790933117a1aa2144490a3dbe6c64b314b9d2b28463
   languageName: node
   linkType: hard
 
@@ -7799,7 +7799,7 @@ __metadata:
     "@grafana/e2e-selectors": "npm:12.4.0"
     "@grafana/eslint-config": "npm:9.0.0"
     "@grafana/i18n": "npm:12.4.0"
-    "@grafana/plugin-e2e": "npm:3.4.5"
+    "@grafana/plugin-e2e": "npm:3.4.6"
     "@grafana/plugin-ui": "npm:0.13.1"
     "@grafana/runtime": "npm:12.4.0"
     "@grafana/schema": "npm:12.4.0"
