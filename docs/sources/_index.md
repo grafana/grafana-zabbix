@@ -1,41 +1,94 @@
 ---
-title: Grafana Zabbix plugin
-menuTitle: Grafana Zabbix plugin
-description: Introduction to Grafana-Zabbix plugin.
+title: Zabbix data source
+menuTitle: Zabbix
+description: Use the Zabbix data source to visualize monitoring data from Zabbix in Grafana dashboards.
 aliases:
+  - features/
+  - installation/
+  - installation/upgrade/
+  - installation/building-from-sources/
 keywords:
-  - data source
+  - grafana
   - zabbix
+  - data source
+  - monitoring
+  - plugin
 labels:
   products:
     - oss
-    - grafana cloud
+    - enterprise
+    - cloud
 weight: 100
+last_reviewed: 2026-02-18
 ---
 
-# Grafana Zabbix plugin
+# Zabbix data source
 
-Grafana-Zabbix is a plugin for Grafana allowing to visualize monitoring data from Zabbix
-and create dashboards for analyzing metrics and realtime monitoring. Main goals of this project
-are extend Zabbix capabilities for monitoring data visualization and provide quick and powerful way
-to create dashboards. It is possible due both Grafana and Grafana-Zabbix plugin features.
+The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure. You can query metrics, display problems and triggers, monitor IT service SLA data, create annotations from Zabbix events, and build interactive dashboards with template variables. The plugin also supports querying historical data directly from the Zabbix database for improved performance on large time ranges.
 
-## Community Resources, Feedback, and Support
+## Requirements
 
-This project is being started as a simple plugin for Grafana. But many powerful features and
-improvements come from community. So don't hesitate to give any feedback and together we will make
-this tool better.
+- Grafana 11.6.0 or later.
+- The Zabbix plugin installed in your Grafana instance. You can install it from **Administration** > **Plugins and data** > **Plugins**, or refer to [Install Grafana plugins](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/administration/plugin-management/) for other methods.
+- A running Zabbix server with API access enabled.
+- A Zabbix user account with read permissions for the host groups and hosts you want to query.
 
-If you have any troubles with Grafana or you just want clarification on a feature, there are
-a number of ways to get help:
+## Supported features
 
-- [Troubleshooting guide](./configuration/troubleshooting/)
-- Search closed and open [issues on GitHub](https://github.com/grafana/grafana-zabbix/issues)
-- [Grafana Community](https://community.grafana.com)
+| Feature | Supported |
+|---------|-----------|
+| Metrics | Yes |
+| Alerting | Yes |
+| Annotations | Yes |
+| Template variables | Yes |
+| Problems panel | Yes |
+| Direct DB Connection | Yes |
 
-## License
+## Get started
 
-By utilizing this software, you agree to the terms of the included license. Grafana-Zabbix plugin is
-licensed under the Apache 2.0 agreement. See
-[LICENSE](https://github.com/grafana/grafana-zabbix/blob/main/LICENSE) for the full
-license terms.
+The following pages help you set up and use the Zabbix data source:
+
+- [Configure the Zabbix data source](./configure/)
+- [Zabbix query editor](./query-editor/)
+- [Functions reference](./functions/)
+- [Template variables](./template-variables/)
+- [Annotations](./annotations/)
+- [Alerting](./alerting/)
+- [Troubleshooting](./troubleshooting/)
+
+## Feature highlights
+
+After configuring the data source, you can:
+
+- **Query multiple metrics** using regex to select items across hosts and groups.
+- **Apply processing functions** such as `groupBy`, `scale`, `delta`, `rate`, `movingAverage`, and `percentile` to transform and aggregate data.
+- **Create template variables** to build dynamic, reusable dashboards that switch between host groups, hosts, and items.
+- **Display Zabbix problems** using the Problems panel to monitor active triggers.
+- **Annotate graphs** with Zabbix events filtered by severity and acknowledgment status.
+- **Use Direct DB Connection** to query history data from MySQL, PostgreSQL, or InfluxDB for faster performance on wide time ranges.
+- **Use [Explore](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/explore/)** to query Zabbix data without building a dashboard.
+- **Set up [alerting rules](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/alerting/)** based on Zabbix data.
+
+## Pre-built dashboards
+
+The plugin includes three pre-built dashboards that you can import from the data source configuration page:
+
+- **Zabbix System Status:** Overview of active problems and system health.
+- **Zabbix Template Linux Server:** Linux server monitoring with CPU, memory, disk, and network metrics.
+- **Zabbix Server Dashboard:** Zabbix server performance and internal metrics.
+
+To import a dashboard, navigate to **Connections** > **Data sources**, select your Zabbix data source, and click the **Dashboards** tab.
+
+## Plugin updates
+
+Always ensure that your plugin version is up-to-date so you have access to all current features and improvements. Navigate to **Administration** > **Plugins and data** > **Plugins** to check for updates.
+
+{{< admonition type="note" >}}
+Plugins are automatically updated in Grafana Cloud.
+{{< /admonition >}}
+
+## Related resources
+
+- [Zabbix data source plugin on GitHub](https://github.com/grafana/grafana-zabbix)
+- [Zabbix documentation](https://www.zabbix.com/documentation/)
+- [Grafana community forum](https://community.grafana.com/)
