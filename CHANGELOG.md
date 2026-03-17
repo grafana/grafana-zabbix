@@ -2,11 +2,7 @@
 
 ## 6.3.0
 
-### Minor Changes
-
 🚀 Replace use of deprecated api/datasources/id with api/datasources/uid
-
-### Patch Changes
 
 ## 6.2.1
 
