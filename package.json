@@ -104,7 +104,7 @@
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
     "webpack": "5.105.4",
-    "webpack-cli": "6.0.1",
+    "webpack-cli": "7.0.0",
     "webpack-livereload-plugin": "3.0.2",
     "webpack-remove-empty-scripts": "1.1.1",
     "webpack-subresource-integrity": "5.1.0",
