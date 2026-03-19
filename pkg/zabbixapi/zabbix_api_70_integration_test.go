@@ -21,7 +21,7 @@ import (
 // ZABBIX_USER - Username for authentication
 // ZABBIX_PASSWORD - Password for authentication
 // ZABBIX_VERSION - Zabbix API version (e.g., 65 for 6.5)
-// To run locally, start devenv/zabbix70 and run INTEGRATION_TEST70=true ZABBIX_URL="https://localhost/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" go test -v ./pkg/zabbixapi/...
+// To run locally, start devenv/zabbix70 and run INTEGRATION_TEST70=true ZABBIX_URL="http://localhost:8188/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" go test -v ./pkg/zabbixapi/...
 
 func TestIntegrationZabbixAPI70(t *testing.T) {
 	// Skip if not running integration tests
