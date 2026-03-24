@@ -106,6 +106,79 @@ func TestApplyFunctionsFunction(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyFunctionsSupportsLiteralRangeSeriesMacro(t *testing.T) {
+	makeSeries := func(values ...float64) *timeseries.TimeSeriesData {
+		ts := make(timeseries.TimeSeries, 0, len(values))
+		for i, value := range values {
+			v := value
+			ts = append(ts, timeseries.TimePoint{
+				Time:  time.Unix(int64(i*60), 0),
+				Value: &v,
+			})
+		}
+
+		return &timeseries.TimeSeriesData{TS: ts}
+	}
+
+	tests := []struct {
+		name      string
+		functions []QueryFunction
+		series    []*timeseries.TimeSeriesData
+	}{
+		{
+			name: "groupBy accepts $__range_series",
+			functions: []QueryFunction{
+				{
+					Def: QueryFunctionDef{Name: "groupBy"},
+					Params: []interface{}{
+						"$__range_series",
+						"avg",
+					},
+				},
+			},
+			series: []*timeseries.TimeSeriesData{makeSeries(1, 2, 3)},
+		},
+		{
+			name: "percentile accepts $__range_series",
+			functions: []QueryFunction{
+				{
+					Def: QueryFunctionDef{Name: "percentile"},
+					Params: []interface{}{
+						"$__range_series",
+						95.0,
+					},
+				},
+			},
+			series: []*timeseries.TimeSeriesData{makeSeries(1, 2, 3)},
+		},
+		{
+			name: "percentileAgg accepts $__range_series",
+			functions: []QueryFunction{
+				{
+					Def: QueryFunctionDef{Name: "percentileAgg"},
+					Params: []interface{}{
+						"$__range_series",
+						95.0,
+					},
+				},
+			},
+			series: []*timeseries.TimeSeriesData{
+				makeSeries(1, 2, 3),
+				makeSeries(4, 5, 6),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := applyFunctions(tt.series, tt.functions)
+			assert.NoError(t, err)
+			assert.Len(t, result, 1)
+			assert.Len(t, result[0].TS, 2)
+		})
+	}
+}
 // TestApplyFunctionsPreFunction tests the applyFunctionsPre function for error handling
 func TestApplyFunctionsPreFunction(t *testing.T) {
 	query := QueryModel{
