@@ -154,7 +154,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   async frontendQuery(request: DataQueryRequest<ZabbixMetricsQuery>): Promise<DataQueryResponse> {
-    const requestWithScopedVars = { ...request, scopedVars: this.getRequestScopedVars(request) };
     const frontendTargets = request.targets.filter((t) => !(this.isBackendTarget(t) || this.isDBConnectionTarget(t)));
     const oldVersionTargets = frontendTargets
       .filter((target) => (target as any).itservice && !target.itServiceFilter)
@@ -165,7 +164,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         return [];
       }
 
-      const timeRange = this.buildTimeRange(requestWithScopedVars, target);
+      const timeRange = this.buildTimeRange(request, target);
 
       if (target.queryType === c.MODE_TEXT) {
         // Text query
@@ -177,13 +176,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       } else if (target.queryType === c.MODE_ITSERVICE) {
         // IT services query
         const isOldVersion = oldVersionTargets.includes(target.refId);
-        return this.queryITServiceData(target, timeRange, requestWithScopedVars, isOldVersion);
+        return this.queryITServiceData(target, timeRange, request, isOldVersion);
       } else if (target.queryType === c.MODE_TRIGGERS) {
         // Triggers query
-        return this.queryTriggersData(target, timeRange, requestWithScopedVars);
+        return this.queryTriggersData(target, timeRange, request);
       } else if (target.queryType === c.MODE_PROBLEMS) {
         // Problems query
-        return this.queryProblems(target, timeRange, requestWithScopedVars);
+        return this.queryProblems(target, timeRange, request);
       } else if (target.queryType === c.MODE_MACROS) {
         // UserMacro query
         return this.queryUserMacrosData(target);
@@ -215,7 +214,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   async dbConnectionQuery(request: DataQueryRequest<any>): Promise<DataQueryResponse> {
-    const requestWithScopedVars = { ...request, scopedVars: this.getRequestScopedVars(request) };
     const targets = request.targets.filter(this.isDBConnectionTarget);
 
     const queries = _.compact(
@@ -225,17 +223,17 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           return [];
         }
 
-        const timeRange = this.buildTimeRange(requestWithScopedVars, target);
+        const timeRange = this.buildTimeRange(request, target);
         const useTrends = this.isUseTrends(timeRange, target);
 
         if (!target.queryType || target.queryType === c.MODE_METRICS) {
-          return this.queryNumericData(target, timeRange, useTrends, requestWithScopedVars);
+          return this.queryNumericData(target, timeRange, useTrends, request);
         } else if (target.queryType === c.MODE_ITEMID) {
           // Item ID query
           if (!target.itemids) {
             return [];
           }
-          return this.queryItemIdData(target, timeRange, useTrends, requestWithScopedVars);
+          return this.queryItemIdData(target, timeRange, useTrends, request);
         } else {
           return [];
         }
