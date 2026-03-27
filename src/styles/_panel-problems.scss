@@ -71,6 +71,8 @@
 
       .problem-details-head {
         display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
       }
 
       .problem-details-body {
@@ -79,32 +81,22 @@
 
       .problem-details {
         position: relative;
-        flex: 10 1 auto;
+        flex: 35 1 0;
+        min-width: 0;
         padding: 0.5rem 1rem 0.5rem 1.2rem;
         display: flex;
         flex-direction: column;
-        white-space: pre-line;
+        white-space: pre-wrap;
       }
 
       .problem-description-row {
 
         .problem-description {
           position: relative;
-          max-height: 4.5rem;
           min-height: 3rem;
-          overflow: hidden;
-          white-space: normal;
-
-          &:after {
-            content: "";
-            text-align: right;
-            position: inherit;
-            bottom: 0;
-            right: 0;
-            width: 70%;
-            height: 1.5rem;
-            background: linear-gradient(to right, rgba($problem-details-background, 0), rgba($problem-details-background, 1) 50%);
-          }
+          white-space: pre-wrap;
+          overflow-wrap: break-word;
+          word-break: break-word;
         }
 
         .description-label {
@@ -131,7 +123,9 @@
         padding-top: 0.8rem;
         padding-bottom: 0.8rem;
         margin-top: auto;
-        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
       }
 
       .problem-items-row {
@@ -218,7 +212,8 @@
       }
 
       .problem-details-middle {
-        flex: 1 0 auto;
+        flex: 50 1 0;
+        min-width: 0;
         overflow: auto;
 
         .problem-ack-container {
@@ -254,7 +249,8 @@
       }
 
       .problem-details-right {
-        flex: 0 0 auto;
+        flex: 15 1 0;
+        min-width: 0;
         padding: 0.5rem 2rem;
         color: $text-muted;
 

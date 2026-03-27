@@ -59,6 +59,24 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         showIf: (options) => options.layout === 'table',
       })
       .addBooleanSwitch({
+        path: 'showProblemDescription',
+        name: 'Problem description',
+        defaultValue: defaultPanelOptions.showProblemDescription,
+        category: ['Problem details'],
+      })
+      .addBooleanSwitch({
+        path: 'showExpression',
+        name: 'Expression',
+        defaultValue: defaultPanelOptions.showExpression,
+        category: ['Problem details'],
+      })
+      .addBooleanSwitch({
+        path: 'showHostDescription',
+        name: 'Host description',
+        defaultValue: defaultPanelOptions.showHostDescription,
+        category: ['Problem details'],
+      })
+      .addBooleanSwitch({
         path: 'highlightBackground',
         name: 'Highlight background',
         defaultValue: defaultPanelOptions.highlightBackground,
