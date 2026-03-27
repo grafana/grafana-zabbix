@@ -22,6 +22,15 @@ var (
 	}
 )
 
+func isRangeSeriesVariable(interval string) bool {
+	switch strings.TrimSpace(interval) {
+	case RANGE_VARIABLE_VALUE, "$__range_series", "${__range_series}", "[[__range_series]]":
+		return true
+	default:
+		return false
+	}
+}
+
 func MustString(p QueryFunctionParam) (string, error) {
 	if pStr, ok := p.(string); ok {
 		return pStr, nil
@@ -156,7 +165,7 @@ func applyGroupBy(series timeseries.TimeSeries, params ...interface{}) (timeseri
 	}
 
 	aggFunc := getAggFunc(pAgg)
-	if pInterval == RANGE_VARIABLE_VALUE {
+	if isRangeSeriesVariable(pInterval) {
 		s := series.GroupByRange(aggFunc)
 		return s, nil
 	}
@@ -184,7 +193,7 @@ func applyPercentile(series timeseries.TimeSeries, params ...interface{}) (times
 	}
 
 	aggFunc := timeseries.AggPercentile(percentile)
-	if pInterval == RANGE_VARIABLE_VALUE {
+	if isRangeSeriesVariable(pInterval) {
 		s := series.GroupByRange(aggFunc)
 		return s, nil
 	}
@@ -326,7 +335,7 @@ func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface
 	}
 	aggFunc := timeseries.AggPercentile(percentile)
 
-	if pInterval == RANGE_VARIABLE_VALUE {
+	if isRangeSeriesVariable(pInterval) {
 		aggregatedSeries := timeseries.AggregateByRange(series, aggFunc)
 		aggregatedSeries.Meta.Name = fmt.Sprintf("percentileAgg(%s, %v)", pInterval, percentile)
 		return []*timeseries.TimeSeriesData{aggregatedSeries}, nil
