@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/bitly/go-simplejson"
@@ -163,23 +162,6 @@ func (api *ZabbixAPI) LoginDeprecated(ctx context.Context, username string, pass
 	return auth.MustString(), nil
 }
 
-// Authenticate performs API authentication and sets authentication token.
-func (api *ZabbixAPI) Authenticate(ctx context.Context, username string, password string, version int) error {
-	auth, err := api.Login(ctx, username, password, version)
-	if isDeprecatedUserParamError(err) {
-		api.logger.Debug("user.login method error, switching to deprecated user parameter", "error", err)
-		auth, err = api.LoginDeprecated(ctx, username, password, version)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
-	}
-
-	api.SetAuth(auth)
-	return nil
-}
-
 // AuthenticateWithToken performs authentication with API token.
 func (api *ZabbixAPI) AuthenticateWithToken(ctx context.Context, token string) error {
 	if token == "" {
@@ -187,15 +169,6 @@ func (api *ZabbixAPI) AuthenticateWithToken(ctx context.Context, token string) e
 	}
 	api.SetAuth(token)
 	return nil
-}
-
-func isDeprecatedUserParamError(err error) bool {
-	if err == nil {
-		return false
-	} else if strings.Contains(err.Error(), `unexpected parameter "user`) {
-		return true
-	}
-	return false
 }
 
 func handleAPIResult(response []byte) (*simplejson.Json, error) {
