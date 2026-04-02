@@ -85,7 +85,7 @@
     "imports-loader": "5.0.0",
     "jest": "30.3.0",
     "jest-environment-jsdom": "30.3.0",
-    "lodash": "4.17.23",
+    "lodash": "4.18.1",
     "mini-css-extract-plugin": "2.10.1",
     "moment": "2.30.1",
     "postcss": "8.5.8",
@@ -114,7 +114,7 @@
     "@openfeature/core": "1.9.2",
     "glob": "13.0.6",
     "js-yaml": "4.1.1",
-    "lodash": "4.17.23",
+    "lodash": "4.18.1",
     "minimatch": "10.2.4",
     "serialize-javascript": "7.0.5"
   },
