@@ -30,7 +30,9 @@ export const ProblemHostsDescription = ({ hosts }: ProblemHostsProps) => {
     <>
       <span className={styles.label}>Host description:&nbsp;</span>
       {hosts.map((h, i) => (
-        <span key={`${h.hostid}-${i}`}>{h.description}</span>
+        <span className={styles.description} key={`${h.hostid}-${i}`}>
+          {h.description}
+        </span>
       ))}
     </>
   );
@@ -42,5 +44,10 @@ const getStyles = (theme: GrafanaTheme2) => ({
   `,
   label: css`
     color: ${theme.colors.text.secondary};
+  `,
+  description: css`
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
   `,
 });

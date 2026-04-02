@@ -24,6 +24,9 @@ interface Props {
   rootWidth: number;
   timeRange: TimeRange;
   showTimeline?: boolean;
+  showProblemDescription?: boolean;
+  showExpression?: boolean;
+  showHostDescription?: boolean;
   panelId?: number;
   allowDangerousHTML?: boolean;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
@@ -39,6 +42,9 @@ export const ProblemDetails = ({
   rootWidth,
   timeRange,
   showTimeline,
+  showProblemDescription,
+  showExpression,
+  showHostDescription,
   panelId,
   allowDangerousHTML,
   getProblemAlerts,
@@ -115,7 +121,7 @@ export const ProblemDetails = ({
   return (
     <div className={`problem-details-container ${displayClass}`}>
       <div className="problem-details-body">
-        <div className={styles.problemDetails}>
+        <div className={`problem-details ${styles.problemDetails}`}>
           <div className="problem-details-head">
             <div className="problem-actions-left">
               <ExploreButton problem={problem} panelId={panelId} range={timeRange} />
@@ -164,7 +170,7 @@ export const ProblemDetails = ({
               {problem.items && <ProblemItems items={problem.items} />}
             </div>
           </div>
-          {problem.comments && (
+          {showProblemDescription && problem.comments && (
             <div className="problem-description-row">
               <div className={styles.problemDescription}>
                 <Tooltip placement="right" content={problemDescriptionEl}>
@@ -174,12 +180,12 @@ export const ProblemDetails = ({
               </div>
             </div>
           )}
-          {problem.items && (
+          {showExpression && problem.items && (
             <div>
               <ProblemExpression problem={problem} />
             </div>
           )}
-          {problem.hosts && (
+          {showHostDescription && problem.hosts && (
             <div>
               <ProblemHostsDescription hosts={problem.hosts} />
             </div>
@@ -240,7 +246,8 @@ export const ProblemDetails = ({
 const getStyles = (theme: GrafanaTheme2) => ({
   problemDetails: css`
     position: relative;
-    flex: 10 1 auto;
+    flex: 35 1 0;
+    min-width: 0;
     // padding: 0.5rem 1rem 0.5rem 1.2rem;
     padding: ${theme.spacing(0.5)} ${theme.spacing(1)} ${theme.spacing(0.5)} ${theme.spacing(1.2)};
     display: flex;
@@ -250,19 +257,9 @@ const getStyles = (theme: GrafanaTheme2) => ({
   `,
   problemDescription: css`
     position: relative;
-    max-height: 6rem;
     min-height: 3rem;
-    overflow: hidden;
-
-    &:after {
-      content: '';
-      text-align: right;
-      position: inherit;
-      bottom: 0;
-      right: 0;
-      width: 70%;
-      height: 1.5rem;
-      background: linear-gradient(to right, rgba(0, 0, 0, 0), ${theme.colors.background.canvas} 50%);
-    }
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
   `,
 });
