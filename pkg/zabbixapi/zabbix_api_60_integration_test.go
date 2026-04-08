@@ -60,8 +60,9 @@ func TestIntegrationZabbixAPI60(t *testing.T) {
 
 	// Test authentication
 	t.Run("Authentication", func(t *testing.T) {
-		err := api.Authenticate(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
+		auth, err := api.Login(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
 		require.NoError(t, err)
+		api.SetAuth(auth)
 		assert.NotEmpty(t, api.GetAuth(), "Authentication token should not be empty")
 	})
 
@@ -79,8 +80,9 @@ func TestIntegrationZabbixAPI60(t *testing.T) {
 	// Test host group retrieval
 	t.Run("Get Host Groups", func(t *testing.T) {
 		// First authenticate
-		err := api.Authenticate(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
+		auth, err := api.Login(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
 		require.NoError(t, err)
+		api.SetAuth(auth)
 
 		// Get host groups
 		params := map[string]interface{}{
@@ -108,8 +110,9 @@ func TestIntegrationZabbixAPI60(t *testing.T) {
 	// Test auth parameter is in request body for v6.0
 	t.Run("Auth Parameter In Request Body", func(t *testing.T) {
 		// First authenticate
-		err := api.Authenticate(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
+		auth, err := api.Login(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
 		require.NoError(t, err)
+		api.SetAuth(auth)
 
 		// Create a test client that captures the request body
 		var requestBody map[string]interface{}
@@ -140,8 +143,8 @@ func TestIntegrationZabbixAPI60(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify auth parameter is in the request body
-		auth, hasAuth := requestBody["auth"]
+		authParam, hasAuth := requestBody["auth"]
 		assert.True(t, hasAuth, "Auth parameter should be present in request body for v6.0")
-		assert.Equal(t, api.GetAuth(), auth, "Auth parameter should match the set auth token")
+		assert.Equal(t, api.GetAuth(), authParam, "Auth parameter should match the set auth token")
 	})
 }

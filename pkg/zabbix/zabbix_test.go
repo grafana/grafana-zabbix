@@ -27,6 +27,63 @@ func TestLoginError(t *testing.T) {
 	assert.Equal(t, "", zabbixClient.api.GetAuth())
 }
 
+func TestLoginUsesUsernameParamForModernZabbix(t *testing.T) {
+	var capturedParams map[string]interface{}
+	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "user.login" {
+			capturedParams = payload.Params
+		}
+		return `{"result":"secretauth"}`
+	})
+	zabbixClient.api.SetAuth("")
+	zabbixClient.version = 65 // >= 54: modern
+
+	err := zabbixClient.Authenticate(context.Background())
+
+	assert.NoError(t, err)
+	assert.Equal(t, "secretauth", zabbixClient.api.GetAuth())
+	assert.Contains(t, capturedParams, "username")
+	assert.NotContains(t, capturedParams, "user")
+}
+
+func TestLoginUsesUserParamForOldZabbix(t *testing.T) {
+	var capturedParams map[string]interface{}
+	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "user.login" {
+			capturedParams = payload.Params
+		}
+		return `{"result":"secretauth"}`
+	})
+	zabbixClient.api.SetAuth("")
+	zabbixClient.version = 50 // < 54: deprecated "user" param
+
+	err := zabbixClient.Authenticate(context.Background())
+
+	assert.NoError(t, err)
+	assert.Equal(t, "secretauth", zabbixClient.api.GetAuth())
+	assert.Contains(t, capturedParams, "user")
+	assert.NotContains(t, capturedParams, "username")
+}
+
+func TestLoginFallsBackToModernForUnknownVersion(t *testing.T) {
+	var capturedParams map[string]interface{}
+	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "user.login" {
+			capturedParams = payload.Params
+		}
+		return `{"result":"secretauth"}`
+	})
+	zabbixClient.api.SetAuth("")
+	zabbixClient.version = 0 // unknown (e.g. GetVersion failed)
+
+	err := zabbixClient.Authenticate(context.Background())
+
+	assert.NoError(t, err)
+	assert.Equal(t, "secretauth", zabbixClient.api.GetAuth())
+	assert.Contains(t, capturedParams, "username")
+	assert.NotContains(t, capturedParams, "user")
+}
+
 func TestZabbixAPIQuery(t *testing.T) {
 	zabbixClient, _ := MockZabbixClient(BasicDatasourceInfo, `{"result":"test"}`, 200)
 	resp, err := zabbixClient.Request(context.Background(), &ZabbixAPIRequest{Method: "test.get", Params: emptyParams})

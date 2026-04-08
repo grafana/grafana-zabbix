@@ -138,11 +138,19 @@ func (zabbix *Zabbix) Authenticate(ctx context.Context) error {
 		zabbixPassword = jsonData.Get("password").MustString()
 	}
 
-	err = zabbix.api.Authenticate(ctx, zabbixLogin, zabbixPassword, zabbix.version)
+	var auth string
+	// Zabbix < 5.4 uses "user" param; 5.4+ uses "username". version=0 means unknown (GetVersion failed),
+	// treat as modern to avoid sending the wrong param to newer instances.
+	if zabbix.version > 0 && zabbix.version < 54 {
+		auth, err = zabbix.api.LoginDeprecated(ctx, zabbixLogin, zabbixPassword, zabbix.version)
+	} else {
+		auth, err = zabbix.api.Login(ctx, zabbixLogin, zabbixPassword, zabbix.version)
+	}
 	if err != nil {
 		zabbix.logger.Error("Zabbix authentication error", "error", err)
 		return err
 	}
+	zabbix.api.SetAuth(auth)
 	zabbix.logger.Debug("Successfully authenticated", "url", zabbix.api.GetUrl().String(), "user", zabbixLogin)
 
 	return nil
