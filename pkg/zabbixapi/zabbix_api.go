@@ -98,9 +98,9 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		"params":  normalizeParams(ctx, method, params, version),
 	}
 
-	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
-	// `auth` parameter throws an error in new versions so we need to add it only for older versions
-	if auth != "" && version < 72 {
+	// Zabbix v7.0 and later deprecated `auth` parameter and replaced it with using Auth header.
+	// In v7.0 with HTTP basic auth enabled (reverse proxy scenario), auth still needs to be in request body.
+	if auth != "" && (version < 70 || (version <= 70 && api.dsSettings.BasicAuthEnabled)) {
 		apiRequest["auth"] = auth
 	}
 
@@ -116,11 +116,13 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
 
-	if auth != "" && version >= 72 {
-		if api.dsSettings.BasicAuthEnabled {
+	if auth != "" && version >= 70 {
+		if version > 70 && api.dsSettings.BasicAuthEnabled {
 			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
 		}
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+		if !api.dsSettings.BasicAuthEnabled {
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+		}
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
