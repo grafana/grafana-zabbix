@@ -30,6 +30,9 @@ export interface ProblemsPanelOptions {
   fontSize: string;
   pageSize?: number;
   problemTimeline?: boolean;
+  showProblemDescription?: boolean;
+  showExpression?: boolean;
+  showHostDescription?: boolean;
   highlightBackground?: boolean;
   highlightNewEvents?: boolean;
   highlightNewerThan?: string;
@@ -82,6 +85,9 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   fontSize: '100%',
   pageSize: 10,
   problemTimeline: true,
+  showProblemDescription: true,
+  showExpression: true,
+  showHostDescription: true,
   highlightBackground: false,
   highlightNewEvents: false,
   highlightNewerThan: '1h',
