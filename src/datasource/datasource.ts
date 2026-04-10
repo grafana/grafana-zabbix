@@ -94,6 +94,15 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   ////////////////////////
   // Datasource methods //
   ////////////////////////
+  private getRequestScopedVars(request: Pick<DataQueryRequest<ZabbixMetricsQuery>, 'range' | 'scopedVars'>): ScopedVars {
+    const hasDateTimeRange = typeof request.range?.to?.diff === 'function';
+    if (!hasDateTimeRange) {
+      return request.scopedVars ?? {};
+    }
+
+    return Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
+  }
+
   /**
    * Query panel data. Calls for each panel in dashboard.
    * @param  {Object} request   Contains time range, targets and other info.
@@ -117,14 +126,16 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         return target;
       });
 
-    const interpolatedTargets = this.interpolateVariablesInQueries(requestTargets, request.scopedVars);
-    const backendResponse = super.query({ ...request, targets: interpolatedTargets.filter(this.isBackendTarget) });
-    const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: interpolatedTargets });
-    const frontendResponsePromise = this.frontendQuery({ ...request, targets: interpolatedTargets });
-    const annotationResponsePromise = this.annotationRequest({ ...request, targets: interpolatedTargets });
+    const scopedVars = this.getRequestScopedVars(request);
+    const interpolatedTargets = this.interpolateVariablesInQueries(requestTargets, scopedVars);
+    const requestWithScopedVars = { ...request, scopedVars };
+    const backendResponse = super.query({ ...requestWithScopedVars, targets: interpolatedTargets.filter(this.isBackendTarget) });
+    const dbConnectionResponsePromise = this.dbConnectionQuery({ ...requestWithScopedVars, targets: interpolatedTargets });
+    const frontendResponsePromise = this.frontendQuery({ ...requestWithScopedVars, targets: interpolatedTargets });
+    const annotationResponsePromise = this.annotationRequest({ ...requestWithScopedVars, targets: interpolatedTargets });
     const applyFEFuncs = (queryResponse: DataQueryResponse) =>
       this.applyFrontendFunctions(queryResponse, {
-        ...request,
+        ...requestWithScopedVars,
         targets: interpolatedTargets.filter(this.isBackendTarget),
       });
 
@@ -153,8 +164,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         return [];
       }
 
-      // Add range variables
-      request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
       const timeRange = this.buildTimeRange(request, target);
 
       if (target.queryType === c.MODE_TEXT) {
@@ -214,8 +223,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           return [];
         }
 
-        // Add range variables
-        request.scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
         const timeRange = this.buildTimeRange(request, target);
         const useTrends = this.isUseTrends(timeRange, target);
 

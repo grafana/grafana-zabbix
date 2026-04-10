@@ -6,7 +6,10 @@ import { DataSourceWithBackend } from '@grafana/runtime';
 const buildRequest = () =>
   ({
     targets: [{ refId: 'A', queryType: c.MODE_METRICS }],
-    range: { from: 'now-1h', to: 'now' },
+    range: {
+      from: {},
+      to: { diff: () => 3600000 },
+    },
     scopedVars: {},
   }) as any;
 
@@ -79,6 +82,11 @@ jest.mock('@grafana/runtime', () => {
 describe('ZabbixDatasource', () => {
   const instanceSettings: any = { id: 1, name: 'test-ds', uid: 'test-ds-uid', jsonData: {} };
   const ds = new ZabbixDatasource(instanceSettings);
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('waits for all non-backend responses before emitting merged data', async () => {
     jest.spyOn(ZabbixDatasource.prototype, 'interpolateVariablesInQueries').mockReturnValue(buildRequest().targets);
     jest.spyOn(ds, 'applyFrontendFunctions').mockImplementation((response) => response);
@@ -109,6 +117,29 @@ describe('ZabbixDatasource', () => {
 
     const result = await resultPromise;
     expect(result.data).toEqual([{ refId: 'A' }, { refId: 'B' }, { refId: 'C' }, { refId: 'D' }]);
+  });
+
+  it('adds range scoped vars before interpolating queries', async () => {
+    const localDs = new ZabbixDatasource(instanceSettings);
+    const interpolateSpy = jest.spyOn(localDs, 'interpolateVariablesInQueries');
+
+    jest.spyOn(localDs, 'applyFrontendFunctions').mockImplementation((response) => response);
+    jest.spyOn(DataSourceWithBackend.prototype, 'query').mockReturnValue(of({ data: [] }));
+    jest.spyOn(localDs, 'dbConnectionQuery').mockResolvedValue({ data: [] } as any);
+    jest.spyOn(localDs, 'frontendQuery').mockResolvedValue({ data: [] } as any);
+    jest.spyOn(localDs, 'annotationRequest').mockResolvedValue({ data: [] } as any);
+
+    await lastValueFrom(localDs.query(buildRequest()));
+
+    expect(interpolateSpy).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({
+        __range_series: {
+          text: c.RANGE_VARIABLE_VALUE,
+          value: c.RANGE_VARIABLE_VALUE,
+        },
+      })
+    );
   });
 
   it('mergeQueries combines data without mutating the original response', () => {
