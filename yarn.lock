@@ -1751,14 +1751,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/e2e-selectors@npm:13.0.0-23624974663":
-  version: 13.0.0-23624974663
-  resolution: "@grafana/e2e-selectors@npm:13.0.0-23624974663"
+"@grafana/e2e-selectors@npm:13.1.0-24236083202":
+  version: 13.1.0-24236083202
+  resolution: "@grafana/e2e-selectors@npm:13.1.0-24236083202"
   dependencies:
     semver: "npm:^7.7.0"
     tslib: "npm:2.8.1"
     typescript: "npm:5.9.2"
-  checksum: 10c0/714095fbf1932c49a923027e0d6d5e6d89f7dd06070e512716f58a7a2241eeac10b24ef9427b5ff5a21b2e4df43240ed2532676197e5daa75e7828b044e7bc54
+  checksum: 10c0/de94b82628e2d2e400336c48de05b81f3232802653ec113dbf5480261e37b12522be341ecc38a8ace67ac863d98edd5b1d155d21b67a8aeba946a015864d794d
   languageName: node
   linkType: hard
 
@@ -1818,11 +1818,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/plugin-e2e@npm:3.4.10":
-  version: 3.4.10
-  resolution: "@grafana/plugin-e2e@npm:3.4.10"
+"@grafana/plugin-e2e@npm:3.4.13":
+  version: 3.4.13
+  resolution: "@grafana/plugin-e2e@npm:3.4.13"
   dependencies:
-    "@grafana/e2e-selectors": "npm:13.0.0-23624974663"
+    "@grafana/e2e-selectors": "npm:13.1.0-24236083202"
     semver: "npm:^7.5.4"
     uuid: "npm:^13.0.0"
     yaml: "npm:^2.3.4"
@@ -1832,7 +1832,7 @@ __metadata:
   peerDependenciesMeta:
     "@axe-core/playwright":
       optional: true
-  checksum: 10c0/dfe47c44b10c9d61856675aa9b85476928d0aee9bc21e72dff2618e25f95bb57d52ee90b1b176cfe6d9785b10fe4607f0ab83e24aba1956c76430c9fc01d420c
+  checksum: 10c0/9f3dc34d48b04779cba3745f19f484927ce12b29aea094abbe4cb005b548ef5e937d0545724de3d0ca371b0d3326a8902890de14e671bddb920b0c753c329477
   languageName: node
   linkType: hard
 
@@ -7739,7 +7739,7 @@ __metadata:
     "@grafana/e2e-selectors": "npm:12.4.1"
     "@grafana/eslint-config": "npm:9.0.0"
     "@grafana/i18n": "npm:12.4.1"
-    "@grafana/plugin-e2e": "npm:3.4.10"
+    "@grafana/plugin-e2e": "npm:3.4.13"
     "@grafana/plugin-ui": "npm:0.13.1"
     "@grafana/runtime": "npm:12.4.1"
     "@grafana/schema": "npm:12.4.1"
@@ -7781,7 +7781,7 @@ __metadata:
     imports-loader: "npm:5.0.0"
     jest: "npm:30.3.0"
     jest-environment-jsdom: "npm:30.3.0"
-    lodash: "npm:4.17.23"
+    lodash: "npm:4.18.1"
     mini-css-extract-plugin: "npm:2.10.1"
     moment: "npm:2.30.1"
     postcss: "npm:8.5.8"
@@ -9477,10 +9477,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:4.17.23":
-  version: 4.17.23
-  resolution: "lodash@npm:4.17.23"
-  checksum: 10c0/1264a90469f5bb95d4739c43eb6277d15b6d9e186df4ac68c3620443160fc669e2f14c11e7d8b2ccf078b81d06147c01a8ccced9aab9f9f63d50dcf8cace6bf6
+"lodash@npm:4.18.1":
+  version: 4.18.1
+  resolution: "lodash@npm:4.18.1"
+  checksum: 10c0/757228fc68805c59789e82185135cf85f05d0b2d3d54631d680ca79ec21944ec8314d4533639a14b8bcfbd97a517e78960933041a5af17ecb693ec6eecb99a27
   languageName: node
   linkType: hard
 
