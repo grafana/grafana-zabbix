@@ -18,6 +18,7 @@ import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 import { ItemCountWarning } from './ItemCountWarning';
 import { TimeRangeWarning } from './TimeRangeWarning';
+import { MultiMetricTableQueryEditor } from './QueryEditor/MultiMetricTableQueryEditor';
 
 const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
   {
@@ -55,6 +56,11 @@ const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
     label: 'User macros',
     description: 'User Macros',
   },
+  {
+    value: c.MODE_MULTIMETRIC_TABLE,
+    label: 'Multi-metric Table',
+    description: 'Query multiple metrics as table columns',
+  },
 ];
 
 const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
@@ -80,6 +86,10 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
     useZabbixValueMapping: false,
     useTrends: 'default',
     count: false,
+  },
+   tableConfig: { 
+    entityPattern: { searchType: 'itemName', pattern: '', extractNameRegex: '' },
+    metrics: [],
   },
   table: {
     skipEmptyValues: false,
@@ -207,6 +217,10 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery, range }: 
     return <UserMacrosQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
   };
 
+  const renderMultiMetricTableEditor = () => {
+    return <MultiMetricTableQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+  };
+
   return (
     <Stack direction="column">
       {queryType === c.MODE_METRICS && <ItemCountWarning itemCount={itemCount} />}
@@ -228,6 +242,7 @@ export const QueryEditor = ({ query, datasource, onChange, onRunQuery, range }: 
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
       {queryType === c.MODE_MACROS && renderUserMacrosEditor()}
+      {queryType === c.MODE_MULTIMETRIC_TABLE && renderMultiMetricTableEditor()}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </Stack>
   );
