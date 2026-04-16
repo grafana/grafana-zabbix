@@ -47,7 +47,7 @@
     "@changesets/cli": "2.30.0",
     "@grafana/e2e-selectors": "12.4.1",
     "@grafana/eslint-config": "9.0.0",
-    "@grafana/plugin-e2e": "3.4.8",
+    "@grafana/plugin-e2e": "3.4.13",
     "@grafana/tsconfig": "2.0.1",
     "@openfeature/web-sdk": "1.7.3",
     "@playwright/test": "1.58.2",
@@ -66,10 +66,10 @@
     "@types/node": "25.5.0",
     "@types/react": "18.3.28",
     "@types/react-dom": "18.3.7",
-    "@typescript-eslint/eslint-plugin": "8.57.0",
-    "@typescript-eslint/parser": "8.57.0",
+    "@typescript-eslint/eslint-plugin": "8.57.1",
+    "@typescript-eslint/parser": "8.57.1",
     "autoprefixer": "10.4.27",
-    "copy-webpack-plugin": "13.0.1",
+    "copy-webpack-plugin": "14.0.0",
     "cspell": "9.7.0",
     "css-loader": "7.1.4",
     "eslint": "9.39.4",
@@ -85,7 +85,7 @@
     "imports-loader": "5.0.0",
     "jest": "30.3.0",
     "jest-environment-jsdom": "30.3.0",
-    "lodash": "4.17.23",
+    "lodash": "4.18.1",
     "mini-css-extract-plugin": "2.10.1",
     "moment": "2.30.1",
     "postcss": "8.5.8",
@@ -104,7 +104,7 @@
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
     "webpack": "5.105.4",
-    "webpack-cli": "6.0.1",
+    "webpack-cli": "7.0.2",
     "webpack-livereload-plugin": "3.0.2",
     "webpack-remove-empty-scripts": "1.1.1",
     "webpack-subresource-integrity": "5.1.0",
@@ -114,9 +114,9 @@
     "@openfeature/core": "1.9.2",
     "glob": "13.0.6",
     "js-yaml": "4.1.1",
-    "lodash": "4.17.23",
+    "lodash": "4.18.1",
     "minimatch": "10.2.4",
-    "serialize-javascript": "7.0.4"
+    "serialize-javascript": "7.0.5"
   },
-  "packageManager": "yarn@4.12.0"
+  "packageManager": "yarn@4.13.0"
 }
