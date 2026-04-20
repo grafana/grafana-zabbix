@@ -12,6 +12,7 @@
     "vendor/**",
     "cspell.config.json",
     "package.json",
+    "renovate.json",
     "yarn.lock",
     "docker-compose*.yaml",
     "docker-compose*.yml",
@@ -37,6 +38,7 @@
     "datapoints",
     "datasource",
     "datasources",
+    "devenv",
     "dompurify",
     "eventid",
     "eventids",
@@ -47,6 +49,7 @@
     "hostid",
     "hostids",
     "iowait",
+    "jsonencode",
     "itemid",
     "itemids",
     "itemtype",
@@ -70,6 +73,7 @@
     "unmarshal",
     "uplot",
     "zabbix",
-    "Zobnin"
+    "Zobnin",
+    "directdb"
   ]
 }

@@ -1,15 +1,32 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ConfigEditor, Props } from './ConfigEditor';
 
+const mockGetList = jest.fn();
 jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),
   config: {},
+  getDataSourceSrv: () => ({
+    getList: mockGetList,
+    get: jest.fn().mockResolvedValue({ uid: 'mysql-uid', name: 'MySQL Zabbix' }),
+  }),
 }));
 
 jest.mock('@grafana/ui', () => ({
   ...jest.requireActual('@grafana/ui'),
   config: {},
+  Combobox: function MockCombobox({ options = [], onChange, placeholder }: any) {
+    return (
+      <div data-testid="db-datasource-combobox" data-placeholder={placeholder}>
+        {(options as Array<{ label: string; value: string }>).map((opt, i) => (
+          <button key={i} type="button" onClick={() => onChange(opt)}>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    );
+  },
 }));
 
 describe('ConfigEditor', () => {
@@ -78,6 +95,38 @@ describe('ConfigEditor', () => {
         secureJsonData: {}, // password should be missing from secureJsonData
         secureJsonFields: { ...getDefaultOptions().secureJsonFields, password: true },
       });
+    });
+  });
+
+  describe('Direct DB datasource selection', () => {
+    beforeEach(() => {
+      mockGetList.mockReturnValue([
+        { id: 1, uid: 'mysql-uid', name: 'MySQL Zabbix', type: 'mysql' },
+        { id: 2, uid: 'influx-uid', name: 'InfluxDB', type: 'influxdb' },
+      ]);
+    });
+
+    it('calls onOptionsChange with dbConnectionDatasourceUID when user selects a DB datasource', async () => {
+      const options = getDefaultOptions();
+      options.jsonData = {
+        ...options.jsonData,
+        dbConnectionEnable: true,
+      };
+      const onOptionsChangeSpy = jest.fn();
+
+      render(<ConfigEditor options={options} onOptionsChange={onOptionsChangeSpy} />);
+
+      const mysqlButton = screen.getByRole('button', { name: 'MySQL Zabbix' });
+      await userEvent.click(mysqlButton);
+
+      expect(onOptionsChangeSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jsonData: expect.objectContaining({
+            dbConnectionDatasourceUID: 'mysql-uid',
+            dbConnectionDatasourceName: 'MySQL Zabbix',
+          }),
+        })
+      );
     });
   });
 });

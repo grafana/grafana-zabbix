@@ -38,22 +38,13 @@ import { trackRequest } from './tracking';
 import { from, lastValueFrom, map, Observable, switchMap } from 'rxjs';
 
 export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, ZabbixDSOptions> {
-  name: string;
-  basicAuth: any;
-  withCredentials: any;
-
   trends: boolean;
   trendsFrom: string;
   trendsRange: string;
-  cacheTTL: any;
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
   enableDirectDBConnection: boolean;
-  dbConnectionDatasourceId: number;
-  dbConnectionDatasourceName: string;
-  dbConnectionRetentionPolicy: string;
   enableDebugLog: boolean;
-  datasourceId: number;
   instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>;
   zabbix: Zabbix;
 
@@ -71,12 +62,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       prepareAnnotation: migrations.prepareAnnotation,
     };
 
-    // General data source settings
-    this.datasourceId = instanceSettings.id;
-    this.name = instanceSettings.name;
-    this.basicAuth = instanceSettings.basicAuth;
-    this.withCredentials = instanceSettings.withCredentials;
-
     const jsonData = migrations.migrateDSConfig(instanceSettings.jsonData);
 
     // Use trends instead history since specified time
@@ -86,7 +71,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     // Set cache update interval
     const ttl = jsonData.cacheTTL || '1h';
-    this.cacheTTL = utils.parseInterval(ttl);
 
     // Other options
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
@@ -94,22 +78,17 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     // Direct DB Connection options
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
-    this.dbConnectionDatasourceId = jsonData.dbConnectionDatasourceId;
-    this.dbConnectionDatasourceName = jsonData.dbConnectionDatasourceName;
-    this.dbConnectionRetentionPolicy = jsonData.dbConnectionRetentionPolicy;
 
-    const zabbixOptions = {
-      basicAuth: this.basicAuth,
-      withCredentials: this.withCredentials,
-      cacheTTL: this.cacheTTL,
-      enableDirectDBConnection: this.enableDirectDBConnection,
-      dbConnectionDatasourceId: this.dbConnectionDatasourceId,
-      dbConnectionDatasourceName: this.dbConnectionDatasourceName,
-      dbConnectionRetentionPolicy: this.dbConnectionRetentionPolicy,
-      datasourceId: this.datasourceId,
-    };
-
-    this.zabbix = new Zabbix(zabbixOptions);
+    this.zabbix = new Zabbix({
+      basicAuth: instanceSettings.basicAuth,
+      withCredentials: instanceSettings.withCredentials,
+      cacheTTL: ttl,
+      dbConnectionEnable: this.enableDirectDBConnection,
+      dbConnectionDatasourceUID: jsonData.dbConnectionDatasourceUID,
+      dbConnectionDatasourceName: jsonData.dbConnectionDatasourceName,
+      dbConnectionRetentionPolicy: jsonData.dbConnectionRetentionPolicy,
+      uid: instanceSettings.uid,
+    });
   }
 
   ////////////////////////
@@ -281,6 +260,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async queryNumericData(target, timeRange, useTrends, request): Promise<any> {
     const getItemOptions = {
       itemtype: 'num',
+      showDisabledItems: target.options.showDisabledItems,
     };
 
     const items = await this.zabbix.getItemsFromTarget(target, getItemOptions);
@@ -320,7 +300,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async invokeDataProcessingQuery(timeSeriesData, query, timeRange) {
     // Request backend for data processing
     const requestOptions: BackendSrvRequest = {
-      url: `/api/datasources/${this.datasourceId}/resources/db-connection-post`,
+      url: `/api/datasources/uid/${this.instanceSettings.uid}/resources/db-connection-post`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -446,13 +426,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
     if (target.slaFilter !== undefined) {
       const slas = await this.zabbix.getSLAs(target.slaFilter);
-      const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
+      const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request, target.slaInterval);
       // Apply alias functions
       const aliasFunctions = utils.bindFunctionDefs(target.functions, 'Alias');
       utils.sequence(aliasFunctions)(result);
       return result;
     }
-    const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
+    const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, target.slaInterval, request);
     const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
     const processedResponse = await this.invokeDataProcessingQuery(backendRequest, target, {});
     return this.handleBackendPostProcessingResponse(processedResponse, request, target);
@@ -503,7 +483,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   async queryTriggersICData(target, timeRange) {
-    const getItemOptions = { itemtype: 'num' };
+    const getItemOptions = {
+      itemtype: 'num',
+      showDisabledItems: target.options.showDisabledItems,
+    };
     const [hosts, apps, items] = await this.zabbix.getHostsFromICTarget(target, getItemOptions);
     if (!hosts.length) {
       return Promise.resolve([]);
@@ -678,17 +661,16 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async testDatasource() {
     try {
       const testResult = await super.testDatasource();
-      return this.zabbix.testDataSource().then((dbConnectorStatus) => {
-        let message = testResult.message;
-        if (dbConnectorStatus) {
-          message += `, DB connector type: ${dbConnectorStatus.dsType}`;
-        }
-        return {
-          status: testResult.status,
-          message: message,
-          title: testResult.status,
-        };
-      });
+      const dbConnectorStatus = await this.zabbix.testDataSource();
+      let message = testResult.message;
+      if (dbConnectorStatus) {
+        message += `, DB connector type: ${dbConnectorStatus.dsType}, DB connector name: ${dbConnectorStatus.dsName}`;
+      }
+      return {
+        status: testResult.status,
+        message: message,
+        title: testResult.status,
+      };
     } catch (error: any) {
       if (error instanceof ZabbixAPIError) {
         return Promise.reject({
