@@ -28,7 +28,7 @@ Install by using `grafana-cli`
 grafana-cli plugins install alexanderzobnin-zabbix-app
 ```
 
-Or see more installation options in [docs](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/installation/).
+Or see more installation options in [docs](https://grafana.com/grafana/plugins/alexanderzobnin-zabbix-app/?tab=installation).
 
 ## Getting started
 
@@ -37,7 +37,7 @@ First, [configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/l
 ## Documentation
 
 - [About](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
-- [Installation](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/installation)
+- [Installation](https://grafana.com/grafana/plugins/alexanderzobnin-zabbix-app/?tab=installation)
 - [Getting Started](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides)
 - [Templating](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating)
 - [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/)
