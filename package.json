@@ -102,7 +102,7 @@
     "terser-webpack-plugin": "5.4.0",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "webpack": "5.105.4",
     "webpack-cli": "7.0.2",
     "webpack-livereload-plugin": "3.0.2",
