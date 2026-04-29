@@ -273,9 +273,9 @@ describe('Zabbix', () => {
 
     it('falls back to lastvalue when no history record exists at or before timestamp', async () => {
       const problems: any[] = [makeProblem(1000, { items: [makeItem({ lastvalue: 'fallback' })] })];
-      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
-        { itemid: '601', clock: '1010', value: 'only record is after' },
-      ]);
+      zabbix.zabbixAPI.getHistory = jest
+        .fn()
+        .mockResolvedValue([{ itemid: '601', clock: '1010', value: 'only record is after' }]);
 
       const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
 
