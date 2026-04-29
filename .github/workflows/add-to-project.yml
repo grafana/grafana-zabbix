@@ -1,4 +1,4 @@
-name: Add issues to OSS Big Tent team project
+name: Add issues to Data Source Plugin team project
 on:
   issues:
     types:
@@ -23,5 +23,5 @@ jobs:
       - name: Add to project
         uses: actions/add-to-project@27022a19346d0433f2b9859dd2b69d38f4277808 # main
         with:
-          project-url: https://github.com/orgs/grafana/projects/457
+          project-url: https://github.com/orgs/grafana/projects/1085
           github-token: ${{ steps.get-github-token.outputs.token }}
