@@ -573,7 +573,7 @@ export class ZabbixAPIConnector {
       skipDependent: true,
       [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: ['name', 'groupid'],
       selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'description'],
-      selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
+      selectItems: ['itemid', 'name', 'key_', 'lastvalue', 'value_type'],
       // selectLastEvent: 'extend',
       // selectTags: 'extend',
       preservekeys: '1',
@@ -615,7 +615,7 @@ export class ZabbixAPIConnector {
       },
       [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: ['groupid', 'name'],
       selectHosts: ['hostid', 'name', 'host', 'maintenance_status'],
-      selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
+      selectItems: ['itemid', 'name', 'key_', 'lastvalue', 'value_type'],
       selectLastEvent: 'extend',
       selectTags: 'extend',
     };

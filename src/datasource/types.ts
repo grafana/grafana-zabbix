@@ -224,6 +224,7 @@ export interface ZBXItem {
   name: string;
   key_: string;
   lastvalue?: string;
+  value_type?: string;
   tags?: ZBXItemTag[];
 }
 
