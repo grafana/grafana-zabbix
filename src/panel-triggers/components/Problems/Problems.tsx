@@ -460,6 +460,9 @@ export const ProblemList = (props: ProblemListProps) => {
                           rootWidth={rootRef?.current?.clientWidth || 0}
                           timeRange={timeRange}
                           showTimeline={panelOptions.problemTimeline}
+                          showProblemDescription={panelOptions.showProblemDescription}
+                          showExpression={panelOptions.showExpression}
+                          showHostDescription={panelOptions.showHostDescription}
                           allowDangerousHTML={panelOptions.allowDangerousHTML}
                           panelId={panelId}
                           getProblemEvents={getProblemEvents}

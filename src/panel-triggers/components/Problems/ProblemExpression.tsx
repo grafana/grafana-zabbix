@@ -26,5 +26,8 @@ const getStyles = (theme: GrafanaTheme2) => ({
   `,
   expression: css`
     font-family: ${theme.typography.fontFamilyMonospace};
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
   `,
 });
