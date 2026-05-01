@@ -21,7 +21,7 @@ jobs:
         with:
           github_app: grafana-oss-big-tent
       - name: Add to project
-        uses: actions/add-to-project@27022a19346d0433f2b9859dd2b69d38f4277808 # main
+        uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # main
         with:
           project-url: https://github.com/orgs/grafana/projects/1085
           github-token: ${{ steps.get-github-token.outputs.token }}
