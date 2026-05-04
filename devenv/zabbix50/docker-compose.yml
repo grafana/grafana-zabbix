@@ -1,6 +1,6 @@
 services:
   ssl-cert:
-    image: alpine:latest@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659
+    image: alpine:latest@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
     command: |
       sh -c "if [ ! -f /certs/nginx.crt ] || [ ! -f /certs/nginx.key ]; then
                apk add --no-cache openssl &&
@@ -64,7 +64,7 @@ services:
       - ../nginx/.htpasswd:/etc/nginx/.htpasswd:ro
 
   database:
-    image: postgres:18@sha256:a9abf4275f9e99bff8e6aed712b3b7dfec9cac1341bba01c1ffdfce9ff9fc34a
+    image: postgres:18@sha256:78481659c47e862334611ccdaf7c369c986b3046da9857112f3b309114a65fb4
     ports:
       - '15432:5432'
     environment:
@@ -116,7 +116,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
+    image: redis:alpine@sha256:c5e375abb885e6b2021c0377879e4890bf76f9065b8922ffc113f2b226b9fc17
 
   zas_backend_01:
     build: ../zas-agent
@@ -134,7 +134,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
+    image: redis:alpine@sha256:c5e375abb885e6b2021c0377879e4890bf76f9065b8922ffc113f2b226b9fc17
 
   zas_frontend_01:
     build: ../zas-agent
