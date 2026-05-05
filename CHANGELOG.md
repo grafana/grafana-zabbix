@@ -1,5 +1,13 @@
 # Change Log
 
+## 6.3.1
+
+🐛 Fix problems panel showing identical operational data for all problems of the same trigger by fetching historical item values at each problem's timestamp instead of the current `lastvalue`
+
+## 6.3.0
+
+🚀 Replace use of deprecated api/datasources/id with api/datasources/uid
+
 ## 6.2.1
 
 🐛 Fix problem description text overflow by adding `white-space: normal` to prevent layout issues with acknowledgment panel
