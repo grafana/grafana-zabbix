@@ -567,7 +567,6 @@ export class ZabbixAPIConnector {
       triggerids: triggerids,
       expandDescription: true,
       expandData: true,
-      expandComment: true,
       expandExpression: true,
       monitored: true,
       skipDependent: true,
