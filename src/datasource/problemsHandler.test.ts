@@ -28,10 +28,9 @@ describe('expandItemMacros', () => {
   });
 
   it('expands both macros in the same string with different values', () => {
-    const result = expandItemMacros(
-      'Value received: {ITEM.VALUE} / Last value received: {ITEM.LASTVALUE}',
-      [item('12', '7')]
-    );
+    const result = expandItemMacros('Value received: {ITEM.VALUE} / Last value received: {ITEM.LASTVALUE}', [
+      item('12', '7'),
+    ]);
     expect(result).toBe('Value received: 12 / Last value received: 7');
   });
 
