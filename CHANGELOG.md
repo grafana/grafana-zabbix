@@ -7,6 +7,7 @@
 ## 6.3.1
 
 🐛 Fix operational data showing the same current item value for all problems of the same trigger; historical item values are now fetched at each problem's timestamp via `history.get`
+🐛 Fix: deprecation error in webserver logs because of "/auth" property using version 7.0
 
 ## 6.3.0
 
