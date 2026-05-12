@@ -29,6 +29,7 @@ export interface ProblemsPanelOptions {
   // View options
   fontSize: string;
   pageSize?: number;
+  showSearchFilter?: boolean;
   problemTimeline?: boolean;
   highlightBackground?: boolean;
   highlightNewEvents?: boolean;
@@ -81,6 +82,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   layout: 'table',
   fontSize: '100%',
   pageSize: 10,
+  showSearchFilter: false,
   problemTimeline: true,
   highlightBackground: false,
   highlightNewEvents: false,
