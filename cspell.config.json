@@ -49,6 +49,7 @@
     "hostid",
     "hostids",
     "iowait",
+    "jsonencode",
     "itemid",
     "itemids",
     "itemtype",

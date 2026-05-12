@@ -183,6 +183,7 @@ describe('Zabbix', () => {
       zabbix.supportsApplications = jest.fn().mockReturnValue(true);
       zabbix.zabbixAPI.getEventsHistory = jest.fn().mockResolvedValue([{ objectid: '501' }]);
       zabbix.zabbixAPI.getTriggersByIds = jest.fn().mockResolvedValue([{ triggerid: '501' }]);
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([]);
       (joinTriggersWithEvents as jest.Mock).mockReturnValue([{ triggerid: '501' }]);
       zabbix.filterTriggersByProxy = jest.fn().mockResolvedValue([{ triggerid: '501' }]);
     });
@@ -206,6 +207,100 @@ describe('Zabbix', () => {
       await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
 
       expect(zabbix.zabbixAPI.getEventsHistory).toHaveBeenCalledWith(['21'], ['31'], undefined, {});
+    });
+  });
+
+  describe('enrichProblemsWithItemHistory', () => {
+    beforeEach(() => {
+      zabbix = new Zabbix(ctx);
+    });
+
+    const makeItem = (overrides = {}) => ({
+      itemid: '601',
+      name: 'Test item',
+      key_: 'test.metric',
+      lastvalue: 'current',
+      value_type: '0',
+      ...overrides,
+    });
+
+    const makeProblem = (timestamp: number, overrides = {}) => ({
+      timestamp,
+      items: [makeItem()],
+      ...overrides,
+    });
+
+    it('replaces lastvalue with the historical value at problem timestamp', async () => {
+      const problems: any[] = [makeProblem(1000)];
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
+        { itemid: '601', clock: '995', value: 'historical value' },
+        { itemid: '601', clock: '1010', value: 'later value' },
+      ]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].items[0].lastvalue).toBe('historical value');
+    });
+
+    it('picks the last record at or before problem.timestamp, not after', async () => {
+      const problems: any[] = [makeProblem(1010)];
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
+        { itemid: '601', clock: '990', value: 'old' },
+        { itemid: '601', clock: '1005', value: 'correct' },
+        { itemid: '601', clock: '1015', value: 'too new' },
+      ]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].items[0].lastvalue).toBe('correct');
+    });
+
+    it('gives each problem its own historical value', async () => {
+      const problems: any[] = [
+        makeProblem(1000, { items: [makeItem({ lastvalue: 'latest' })] }),
+        makeProblem(1010, { items: [makeItem({ lastvalue: 'latest' })] }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
+        { itemid: '601', clock: '995', value: 'First test' },
+        { itemid: '601', clock: '1005', value: 'Second test' },
+      ]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].items[0].lastvalue).toBe('First test');
+      expect(result[1].items[0].lastvalue).toBe('Second test');
+    });
+
+    it('falls back to lastvalue when no history record exists at or before timestamp', async () => {
+      const problems: any[] = [makeProblem(1000, { items: [makeItem({ lastvalue: 'fallback' })] })];
+      zabbix.zabbixAPI.getHistory = jest
+        .fn()
+        .mockResolvedValue([{ itemid: '601', clock: '1010', value: 'only record is after' }]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].items[0].lastvalue).toBe('fallback');
+    });
+
+    it('skips history fetch when no items have value_type', async () => {
+      const problems: any[] = [
+        makeProblem(1000, { items: [{ itemid: '601', name: 'i', key_: 'k', lastvalue: 'current' }] }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn();
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result).toEqual(problems);
+      expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
+    });
+
+    it('returns empty array unchanged without calling history API', async () => {
+      zabbix.zabbixAPI.getHistory = jest.fn();
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory([]);
+
+      expect(result).toEqual([]);
+      expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
     });
   });
 
