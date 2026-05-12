@@ -228,6 +228,27 @@ export function toDataFrame(problems: any[], query: ZabbixMetricsQuery): DataFra
   return response;
 }
 
+interface ItemResolution {
+  historicalValue?: string;
+  originalLastvalue?: string;
+}
+
+export function expandItemMacros(text: string, items: ItemResolution[]): string {
+  if (!text || !items.length) {
+    return text;
+  }
+  let result = text;
+  const first = items[0];
+  result = result.replace(/\{ITEM\.VALUE\}/g, first.historicalValue ?? first.originalLastvalue ?? '');
+  result = result.replace(/\{ITEM\.LASTVALUE\}/g, first.originalLastvalue ?? '');
+  items.forEach(({ historicalValue, originalLastvalue }, index) => {
+    const n = index + 1;
+    result = result.replace(new RegExp(`\\{ITEM${n}\\.VALUE\\}`, 'g'), historicalValue ?? originalLastvalue ?? '');
+    result = result.replace(new RegExp(`\\{ITEM${n}\\.LASTVALUE\\}`, 'g'), originalLastvalue ?? '');
+  });
+  return result;
+}
+
 const problemsHandler = {
   addTriggerDataSource,
   addTriggerHostProxy,

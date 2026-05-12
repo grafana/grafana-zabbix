@@ -4,7 +4,7 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
-import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
+import { expandItemMacros, joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 import { ZabbixDSOptions } from '../types/config';
@@ -507,14 +507,37 @@ export class Zabbix implements ZabbixConnector {
     const history = await this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill);
     const historyByItem = _.groupBy(history, 'itemid');
 
-    return problems.map((problem) => ({
-      ...problem,
-      items: problem.items?.map((item) => {
+    return problems.map((problem) => {
+      const itemResolutions = (problem.items || []).map((item) => {
         const itemHistory = historyByItem[item.itemid] || [];
         const atTime = _.findLast(itemHistory, (h) => Number(h.clock) <= problem.timestamp);
-        return atTime ? { ...item, lastvalue: atTime.value } : item;
-      }),
-    }));
+        return {
+          originalLastvalue: item.lastvalue,
+          historicalValue: atTime?.value,
+          updatedItem: atTime ? { ...item, lastvalue: atTime.value } : item,
+        };
+      });
+
+      const expandMacros = (text: string): string => {
+        if (!text) {
+          return text;
+        }
+        let result = text;
+        const host = problem.hosts?.[0];
+        if (host) {
+          result = result.replace(/\{HOST\.NAME\}/g, host.name || '');
+          result = result.replace(/\{HOST\.HOST\}/g, host.host || '');
+        }
+        return expandItemMacros(result, itemResolutions);
+      };
+
+      return {
+        ...problem,
+        description: expandMacros(problem.description),
+        comments: expandMacros(problem.comments),
+        items: itemResolutions.map((r) => r.updatedItem),
+      };
+    });
   }
 
   getProblems(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {

@@ -1,8 +1,13 @@
 # Change Log
 
+## 6.3.2
+
+🐛 Fix `{ITEM.VALUE}` and `{ITEM.LASTVALUE}` macros in trigger description always showing the current item value instead of the value at problem creation time
+
 ## 6.3.1
 
-🐛 Fix problems panel showing identical operational data for all problems of the same trigger by fetching historical item values at each problem's timestamp instead of the current `lastvalue`
+🐛 Fix operational data showing the same current item value for all problems of the same trigger; historical item values are now fetched at each problem's timestamp via `history.get`
+🐛 Fix: deprecation error in webserver logs because of "/auth" property using version 7.0
 
 ## 6.3.0
 

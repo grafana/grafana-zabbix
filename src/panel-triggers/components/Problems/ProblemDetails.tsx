@@ -240,7 +240,8 @@ export const ProblemDetails = ({
 const getStyles = (theme: GrafanaTheme2) => ({
   problemDetails: css`
     position: relative;
-    flex: 10 1 auto;
+    overflow: auto;
+    flex: 1 0 550px;
     // padding: 0.5rem 1rem 0.5rem 1.2rem;
     padding: ${theme.spacing(0.5)} ${theme.spacing(1)} ${theme.spacing(0.5)} ${theme.spacing(1.2)};
     display: flex;
@@ -252,7 +253,6 @@ const getStyles = (theme: GrafanaTheme2) => ({
     position: relative;
     max-height: 6rem;
     min-height: 3rem;
-    overflow: hidden;
 
     &:after {
       content: '';
