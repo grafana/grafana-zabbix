@@ -21,7 +21,7 @@ import (
 // ZABBIX_USER - Username for authentication
 // ZABBIX_PASSWORD - Password for authentication
 // ZABBIX_VERSION - Zabbix API version (e.g., 65 for 6.5)
-// To run locally, start devenv/zabbix70 and run INTEGRATION_TEST70=true ZABBIX_URL="https://localhost/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" go test -v ./pkg/zabbixapi/...
+// To run locally, start devenv/zabbix70 and run INTEGRATION_TEST70=true ZABBIX_URL="http://localhost:8188/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" go test -v ./pkg/zabbixapi/...
 
 func TestIntegrationZabbixAPI70(t *testing.T) {
 	// Skip if not running integration tests
@@ -41,16 +41,11 @@ func TestIntegrationZabbixAPI70(t *testing.T) {
 	require.NotEmpty(t, zabbixPassword, "ZABBIX_PASSWORD environment variable is required")
 
 	dsSettings := backend.DataSourceInstanceSettings{
-		URL:              zabbixURL,
-		BasicAuthEnabled: true,
-		BasicAuthUser:    "admin",
-		DecryptedSecureJSONData: map[string]string{
-			"basicAuthPassword": "secret",
-		},
+		URL:      zabbixURL,
 		JSONData: json.RawMessage(`{"tlsSkipVerify": true}`),
 	}
 
-	// Create HTTP client with TLS skip verify and basic auth
+	// Create HTTP client with TLS skip verify
 	httpClient, err := httpclient.New(context.Background(), &dsSettings, 10*time.Second)
 	require.NoError(t, err)
 	require.NotNil(t, httpClient)
@@ -107,8 +102,8 @@ func TestIntegrationZabbixAPI70(t *testing.T) {
 		assert.True(t, backend.IsDownstreamError(err))
 	})
 
-	// Test auth parameter is in request body for v7.0
-	t.Run("Auth Parameter In Request Body", func(t *testing.T) {
+	// Test auth parameter is not in request body for v7.0 without basic auth
+	t.Run("Auth Parameter Not In Request Body", func(t *testing.T) {
 		// First authenticate
 		err := api.Authenticate(context.Background(), zabbixUser, zabbixPassword, zabbixVersion)
 		require.NoError(t, err)
@@ -122,8 +117,8 @@ func TestIntegrationZabbixAPI70(t *testing.T) {
 			err = json.Unmarshal(body, &requestBody)
 			require.NoError(t, err)
 
-			// Verify auth header is not present
-			assert.Empty(t, req.Header.Get("Authorization"), "Authorization header should not be present for v7.0")
+			// Verify auth header is present
+			assert.Equal(t, "Bearer "+api.GetAuth(), req.Header.Get("Authorization"), "Authorization header should be present with Bearer token")
 
 			// Return a mock response
 			return &http.Response{
@@ -141,9 +136,43 @@ func TestIntegrationZabbixAPI70(t *testing.T) {
 		_, err = apiWithTestClient.Request(context.Background(), "test.get", map[string]interface{}{}, zabbixVersion)
 		require.NoError(t, err)
 
-		// Verify auth parameter is in the request body
+		// Verify auth parameter is not in the request body
+		_, hasAuth := requestBody["auth"]
+		assert.False(t, hasAuth, "Auth parameter should not be present in request body for v7.0+")
+	})
+
+	// Test auth parameter remains in request body for v7.0 when basic auth is enabled
+	t.Run("Auth Parameter In Request Body With Basic Auth", func(t *testing.T) {
+		dsSettingsWithBasicAuth := backend.DataSourceInstanceSettings{
+			URL:              zabbixURL,
+			BasicAuthEnabled: true,
+			BasicAuthUser:    zabbixUser,
+		}
+
+		var requestBody map[string]interface{}
+		testClient := NewTestClient(func(req *http.Request) *http.Response {
+			body, err := io.ReadAll(req.Body)
+			require.NoError(t, err)
+			err = json.Unmarshal(body, &requestBody)
+			require.NoError(t, err)
+
+			assert.Empty(t, req.Header.Get("Authorization"), "Authorization header should not be present for v7.0 when basic auth is enabled")
+
+			return &http.Response{
+				StatusCode: 200,
+				Body:       io.NopCloser(bytes.NewBufferString(`{"result": "test"}`)),
+			}
+		})
+
+		apiWithBasicAuth, err := New(dsSettingsWithBasicAuth, testClient)
+		require.NoError(t, err)
+		apiWithBasicAuth.SetAuth("session-token")
+
+		_, err = apiWithBasicAuth.Request(context.Background(), "test.get", map[string]interface{}{}, zabbixVersion)
+		require.NoError(t, err)
+
 		auth, hasAuth := requestBody["auth"]
-		assert.True(t, hasAuth, "Auth parameter should be present in request body for v7.0")
-		assert.Equal(t, api.GetAuth(), auth, "Auth parameter should match the set auth token")
+		assert.True(t, hasAuth, "Auth parameter should be present in request body for v7.0 with basic auth")
+		assert.Equal(t, "session-token", auth)
 	})
 }

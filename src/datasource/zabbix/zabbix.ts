@@ -4,7 +4,7 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
-import { joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
+import { expandItemMacros, joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 import { ZabbixDSOptions } from '../types/config';
@@ -485,6 +485,61 @@ export class Zabbix implements ZabbixConnector {
     return findByFilter(slas, slaFilter);
   }
 
+  private async enrichProblemsWithItemHistory(problems: ProblemDTO[]): Promise<ProblemDTO[]> {
+    if (!problems.length) {
+      return problems;
+    }
+
+    const allItems = _.uniqBy(
+      problems.flatMap((p) => p.items || []),
+      'itemid'
+    );
+    const itemsWithType = allItems.filter((item) => item.value_type !== undefined);
+    if (!itemsWithType.length) {
+      return problems;
+    }
+
+    const timestamps = problems.map((p) => p.timestamp);
+    // Use a 1-hour lookback to cover typical Zabbix polling intervals (up to 5 min)
+    const timeFrom = Math.min(...timestamps) - 3600;
+    const timeTill = Math.max(...timestamps) + 60;
+
+    const history = await this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill);
+    const historyByItem = _.groupBy(history, 'itemid');
+
+    return problems.map((problem) => {
+      const itemResolutions = (problem.items || []).map((item) => {
+        const itemHistory = historyByItem[item.itemid] || [];
+        const atTime = _.findLast(itemHistory, (h) => Number(h.clock) <= problem.timestamp);
+        return {
+          originalLastvalue: item.lastvalue,
+          historicalValue: atTime?.value,
+          updatedItem: atTime ? { ...item, lastvalue: atTime.value } : item,
+        };
+      });
+
+      const expandMacros = (text: string): string => {
+        if (!text) {
+          return text;
+        }
+        let result = text;
+        const host = problem.hosts?.[0];
+        if (host) {
+          result = result.replace(/\{HOST\.NAME\}/g, host.name || '');
+          result = result.replace(/\{HOST\.HOST\}/g, host.host || '');
+        }
+        return expandItemMacros(result, itemResolutions);
+      };
+
+      return {
+        ...problem,
+        description: expandMacros(problem.description),
+        comments: expandMacros(problem.comments),
+        items: itemResolutions.map((r) => r.updatedItem),
+      };
+    });
+  }
+
   getProblems(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {
     const promises = [
       this.getGroups(groupFilter),
@@ -523,6 +578,7 @@ export class Zabbix implements ZabbixConnector {
         return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
       })
       .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
+      .then((problems) => this.enrichProblemsWithItemHistory(problems))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
@@ -559,6 +615,7 @@ export class Zabbix implements ZabbixConnector {
         return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
       })
       .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
+      .then((problems) => this.enrichProblemsWithItemHistory(problems))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }

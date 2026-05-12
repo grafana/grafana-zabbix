@@ -1,5 +1,18 @@
 # Change Log
 
+## 6.3.2
+
+🐛 Fix `{ITEM.VALUE}` and `{ITEM.LASTVALUE}` macros in trigger description always showing the current item value instead of the value at problem creation time
+
+## 6.3.1
+
+🐛 Fix operational data showing the same current item value for all problems of the same trigger; historical item values are now fetched at each problem's timestamp via `history.get`
+🐛 Fix: deprecation error in webserver logs because of "/auth" property using version 7.0
+
+## 6.3.0
+
+🚀 Replace use of deprecated api/datasources/id with api/datasources/uid
+
 ## 6.2.1
 
 🐛 Fix problem description text overflow by adding `white-space: normal` to prevent layout issues with acknowledgment panel
