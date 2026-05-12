@@ -11,7 +11,7 @@ export type QueryType =
   | typeof c.MODE_PROBLEMS
   | typeof c.MODE_MACROS;
 
-type BaseQuery = { queryType: QueryType; datasourceId: number } & DataQuery;
+type BaseQuery = { queryType: QueryType; datasourceUid?: string } & DataQuery;
 
 export type ZabbixMetricsQuery = {
   schema: number;

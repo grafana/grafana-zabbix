@@ -1,14 +1,17 @@
-import _ from 'lodash';
+import { DataSourceApi } from '@grafana/data';
 import { getBackendSrv } from '@grafana/runtime';
+import _ from 'lodash';
 import { compactQuery } from '../../../utils';
-import mysql from './mysql';
-import postgres from './postgres';
-import dbConnector, {
-  DBConnector,
+import {
+  consolidateByFunc,
+  consolidateByTrendColumns,
   DEFAULT_QUERY_LIMIT,
   HISTORY_TO_TABLE_MAP,
   TREND_TO_TABLE_MAP,
 } from '../dbConnector';
+import { SQLConnectorOptions } from '../types';
+import mysql from './mysql';
+import postgres from './postgres';
 
 const supportedDatabases = {
   mysql: 'mysql',
@@ -16,25 +19,23 @@ const supportedDatabases = {
   postgresNew: 'grafana-postgresql-datasource',
 };
 
-export class SQLConnector extends DBConnector {
+export class SQLConnector {
   private limit: number;
-  private sqlDialect: any;
+  private sqlDialect: typeof postgres | typeof mysql;
 
-  constructor(options) {
-    super(options);
-
+  constructor(
+    private datasource: DataSourceApi,
+    options: SQLConnectorOptions
+  ) {
     this.limit = options.limit || DEFAULT_QUERY_LIMIT;
     this.sqlDialect = null;
-
-    super.loadDBDataSource().then(() => {
-      this.loadSQLDialect();
-    });
+    this.loadSQLDialect();
   }
 
   loadSQLDialect() {
     if (
-      this.datasourceTypeId === supportedDatabases.postgresOld ||
-      this.datasourceTypeId === supportedDatabases.postgresNew
+      this.datasource.type === supportedDatabases.postgresOld ||
+      this.datasource.type === supportedDatabases.postgresNew
     ) {
       this.sqlDialect = postgres;
     } else {
@@ -45,9 +46,20 @@ export class SQLConnector extends DBConnector {
   /**
    * Try to invoke test query for one of Zabbix database tables.
    */
-  testDataSource() {
-    const testQuery = this.sqlDialect.testQuery();
-    return this.invokeSQLQuery(testQuery);
+  async testDataSource() {
+    const result = await this.datasource.testDatasource();
+    if (result.status && result.status === 'error') {
+      return Promise.reject({
+        data: {
+          message: `SQL connection error: ${result.message}`,
+        },
+      });
+    }
+    return {
+      ...result,
+      dsType: this.datasource.type,
+      dsName: this.datasource.name,
+    };
   }
 
   getHistory(items, timeFrom, timeTill, options) {
@@ -79,7 +91,7 @@ export class SQLConnector extends DBConnector {
       const itemids = _.map(items, 'itemid').join(', ');
       const table = TREND_TO_TABLE_MAP[value_type];
       let valueColumn = _.includes(['avg', 'min', 'max', 'sum'], consolidateBy) ? consolidateBy : 'avg';
-      valueColumn = dbConnector.consolidateByTrendColumns[valueColumn];
+      valueColumn = consolidateByTrendColumns[valueColumn];
       let query = this.sqlDialect.trendsQuery(
         itemids,
         table,
@@ -103,7 +115,10 @@ export class SQLConnector extends DBConnector {
     const queryDef = {
       refId: 'A',
       format: 'time_series',
-      datasourceId: this.datasourceId,
+      datasource: {
+        type: this.datasource.type,
+        uid: this.datasource.uid,
+      },
       rawSql: query,
       maxDataPoints: this.limit,
     };
@@ -139,6 +154,6 @@ function getAggFunc(timeFrom, timeTill, options) {
   intervalSec = Math.ceil((timeTill - timeFrom) / numOfIntervals);
 
   consolidateBy = consolidateBy || 'avg';
-  const aggFunction = dbConnector.consolidateByFunc[consolidateBy];
+  const aggFunction = consolidateByFunc[consolidateBy];
   return { aggFunction, intervalSec };
 }

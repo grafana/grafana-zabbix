@@ -9,7 +9,7 @@ export class CachingProxy {
   cache: any;
   promises: any;
 
-  constructor(cacheOptions) {
+  constructor(cacheOptions: { enabled: boolean; ttl: number }) {
     this.cacheEnabled = cacheOptions.enabled;
     this.ttl = cacheOptions.ttl || 600000; // 10 minutes by default
 

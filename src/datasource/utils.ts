@@ -334,7 +334,7 @@ export function sequence(funcsArray) {
 /**
  * Replaces any space-like symbols (tabs, new lines, spaces) by single whitespace.
  */
-export function compactQuery(query) {
+export function compactQuery(query: string) {
   return query.replace(/\s+/g, ' ').trim();
 }
 
