@@ -1,4 +1,4 @@
-FROM python:2.7@sha256:cfa62318c459b1fde9e0841c619906d15ada5910d625176e24bf692cf8a2601d
+FROM python:3.9@sha256:da5aee29682d12a6649f51c8d6f15b87deb3e6c524b923c41d0cb3304d07c913
 
 # ENV ZAS_SOURCE_URL=https://github.com/vulogov/zas_agent/archive/master.zip
 # ENV ZAS_ARC_NAME=zas_agent-master
