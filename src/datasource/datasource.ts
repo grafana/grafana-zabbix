@@ -731,14 +731,29 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     queryModel = queryModel as VariableQuery;
     const { group, host, application, item } = queryModel;
+    const interpolatedHostTags = queryModel.hostTags?.map((f) => ({
+      ...f,
+      tag: utils.replaceTemplateVars(this.templateSrv, f.tag, {}),
+      value: utils.replaceTemplateVars(this.templateSrv, f.value, {}),
+    }));
 
     switch (queryModel.queryType) {
       case VariableQueryTypes.Group:
         resultPromise = this.zabbix.getGroups(queryModel.group);
         break;
-      case VariableQueryTypes.Host:
-        resultPromise = this.zabbix.getHosts(queryModel.group, queryModel.host);
+      case VariableQueryTypes.Host: {
+        const hostFilterForTagQuery =
+          !queryModel.host && interpolatedHostTags && interpolatedHostTags.length > 0
+            ? '/.*/'
+            : queryModel.host;
+        resultPromise = this.zabbix.getHosts(
+          queryModel.group,
+          hostFilterForTagQuery,
+          interpolatedHostTags,
+          queryModel.evaltype
+        );
         break;
+      }
       case VariableQueryTypes.Application:
         resultPromise = this.zabbix.getApps(queryModel.group, queryModel.host, queryModel.application);
         break;

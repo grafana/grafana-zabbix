@@ -292,7 +292,7 @@ describe('ZabbixDatasource', () => {
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(test.expect[0], test.expect[1]);
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(test.expect[0], test.expect[1], undefined, undefined);
         ctx.ds.zabbix.getHosts.mockClear();
       }
       done();
@@ -374,7 +374,7 @@ describe('ZabbixDatasource', () => {
       let query = '*.*';
 
       ctx.ds.metricFindQuery(query);
-      expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('/.*/', '/.*/');
+      expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('/.*/', '/.*/', undefined, undefined);
       done();
     });
 
@@ -403,11 +403,29 @@ describe('ZabbixDatasource', () => {
       it('should return hosts when queryType is Host', async () => {
         const query = { queryType: VariableQueryTypes.Host, group: 'GroupFilter', host: 'HostFilter' };
         const result = await ctx.ds.metricFindQuery(query, {});
-        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', 'HostFilter');
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', 'HostFilter', undefined, undefined);
         expect(result).toEqual([
           { text: 'Host1', expandable: false },
           { text: 'Host2', expandable: false },
         ]);
+      });
+
+      it('should pass hostTags and evaltype when queryType is Host', async () => {
+        const hostTags = [{ tag: 'class', value: 'database', operator: '1' as any }];
+        const query = {
+          queryType: VariableQueryTypes.Host,
+          group: 'GroupFilter',
+          host: '/.*/',
+          hostTags,
+          evaltype: '2' as any,
+        };
+        await ctx.ds.metricFindQuery(query, {});
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+          'GroupFilter',
+          '/.*/',
+          [{ tag: 'class', value: 'database', operator: '1' }],
+          '2'
+        );
       });
 
       it('should return applications when queryType is Application', async () => {

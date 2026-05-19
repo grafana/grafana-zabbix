@@ -1,5 +1,5 @@
-import { Tooltip, Button, Combobox, ComboboxOption, Stack, Input, RadioButtonGroup } from '@grafana/ui';
-import React, { FormEvent, useCallback, useEffect, useState } from 'react';
+import { Tooltip, Button, Combobox, ComboboxOption, Stack, RadioButtonGroup } from '@grafana/ui';
+import React, { useCallback, useEffect, useState } from 'react';
 import { HostTagOperatorLabel, HostTagOperatorValue } from './types';
 import { HostTagFilter, ZabbixTagEvalType } from 'datasource/types/query';
 import { getHostTagOptionLabel } from './utils';
@@ -8,7 +8,9 @@ interface Props {
   hostTagOptions: ComboboxOption[];
   hostTagOptionsLoading: boolean;
   version: string;
+  value?: HostTagFilter[];
   evalTypeValue?: ZabbixTagEvalType;
+  hostTagValueOptions?: Record<string, ComboboxOption[]>;
   onHostTagFilterChange?: (hostTags: HostTagFilter[]) => void;
   onHostTagEvalTypeChange?: (evalType: ZabbixTagEvalType) => void;
 }
@@ -17,12 +19,14 @@ export const HostTagQueryEditor = ({
   hostTagOptions,
   hostTagOptionsLoading,
   version,
+  value,
   evalTypeValue,
+  hostTagValueOptions,
   onHostTagFilterChange,
   onHostTagEvalTypeChange,
 }: Props) => {
-  const [hostTagFilters, setHostTagFilters] = useState<HostTagFilter[]>([]);
-  const [hostTagValueDrafts, setHostTagValueDrafts] = useState<string[]>([]);
+  const [hostTagFilters, setHostTagFilters] = useState<HostTagFilter[]>(value ?? []);
+  const [hostTagValueDrafts, setHostTagValueDrafts] = useState<string[]>((value ?? []).map((f) => f.value ?? ''));
   const operatorOptions: ComboboxOption[] = [
     { value: HostTagOperatorValue.Exists, label: HostTagOperatorLabel.Exists },
     { value: HostTagOperatorValue.Equals, label: HostTagOperatorLabel.Equals },
@@ -117,21 +121,21 @@ export const HostTagQueryEditor = ({
               />
               {filter.operator !== HostTagOperatorValue.Exists &&
                 filter.operator !== HostTagOperatorValue.DoesNotExist && (
-                  <Input
-                    value={hostTagValueDrafts[index] ?? filter.value}
-                    onChange={(evt: FormEvent<HTMLInputElement>) => {
-                      const value = evt?.currentTarget?.value ?? '';
+                  <Combobox
+                    value={hostTagValueDrafts[index] ?? filter.value ?? ''}
+                    onChange={(option: ComboboxOption) => {
+                      const v = option?.value ?? '';
                       setHostTagValueDrafts((prevDrafts) => {
                         const nextDrafts = [...prevDrafts];
-                        nextDrafts[index] = value;
+                        nextDrafts[index] = v;
                         return nextDrafts;
                       });
+                      setHostTagFilterValue(index, v);
                     }}
-                    onBlur={(evt: FormEvent<HTMLInputElement>) =>
-                      setHostTagFilterValue(index, evt?.currentTarget?.value)
-                    }
+                    options={(hostTagValueOptions && hostTagValueOptions[filter.tag]) ?? []}
                     width={19}
                     placeholder="Host tag value"
+                    createCustomValue={true}
                   />
                 )}
               <Tooltip content="Remove host tag filter">
