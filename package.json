@@ -4,7 +4,7 @@
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.5.0"
   },
   "bugs": {
     "url": "https://github.com/grafana/grafana-zabbix/issues"
