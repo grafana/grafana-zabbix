@@ -3,6 +3,9 @@
   "version": "6.3.2",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
+  "engines": {
+    "node": ">=24"
+  },
   "bugs": {
     "url": "https://github.com/grafana/grafana-zabbix/issues"
   },
