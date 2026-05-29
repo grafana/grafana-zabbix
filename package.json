@@ -45,7 +45,6 @@
   },
   "devDependencies": {
     "@changesets/cli": "2.30.0",
-    "@grafana/e2e-selectors": "12.4.1",
     "@grafana/eslint-config": "9.0.0",
     "@grafana/plugin-e2e": "3.6.1",
     "@grafana/tsconfig": "2.0.1",
@@ -67,7 +66,6 @@
     "@types/react-dom": "18.3.7",
     "@typescript-eslint/eslint-plugin": "8.57.1",
     "@typescript-eslint/parser": "8.57.1",
-    "autoprefixer": "10.4.27",
     "copy-webpack-plugin": "14.0.0",
     "cspell": "10.0.0",
     "css-loader": "7.1.4",
