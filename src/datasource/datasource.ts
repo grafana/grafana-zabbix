@@ -1,6 +1,4 @@
 import _ from 'lodash';
-import config from 'grafana/app/core/config';
-import { contextSrv } from 'grafana/app/core/core';
 import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
@@ -15,6 +13,7 @@ import { ZabbixMetricsQuery, ShowProblemTypes } from './types/query';
 import { ZabbixDSOptions } from './types/config';
 import {
   BackendSrvRequest,
+  config,
   getBackendSrv,
   getTemplateSrv,
   getDataSourceSrv,
@@ -30,6 +29,7 @@ import {
   DataSourceInstanceSettings,
   FieldType,
   isDataFrame,
+  OrgRole,
   ScopedVars,
   toDataFrame,
 } from '@grafana/data';
@@ -570,7 +570,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   async queryProblems(target: ZabbixMetricsQuery, timeRange, options) {
     const [timeFrom, timeTo] = timeRange;
-    const userIsEditor = contextSrv.isEditor || contextSrv.isGrafanaAdmin;
+    const userIsEditor =
+      config.bootData.user.isGrafanaAdmin ||
+      config.bootData.user.orgRole === OrgRole.Editor ||
+      config.bootData.user.orgRole === OrgRole.Admin;
 
     let showAckButton = true;
 

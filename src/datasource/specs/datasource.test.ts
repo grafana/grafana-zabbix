@@ -35,14 +35,6 @@ jest.mock('../zabbix/zabbix', () => ({
   Zabbix: jest.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('grafana/app/core/config', () => ({
-  buildInfo: { env: 'development' },
-}));
-
-jest.mock('grafana/app/core/core', () => ({
-  contextSrv: {},
-}));
-
 jest.mock('grafana/app/core/utils/datemath', () => ({
   parse: () => Date.now(),
 }));
@@ -63,6 +55,10 @@ jest.mock('@grafana/runtime', () => {
 
   return {
     DataSourceWithBackend: MockDataSourceWithBackend,
+    config: {
+      buildInfo: { env: 'development' },
+      bootData: { user: { isGrafanaAdmin: false, orgRole: 'Editor' } },
+    },
     getTemplateSrv: jest.fn(() => ({
       replace: (value: any) => value,
       variableExists: () => false,
