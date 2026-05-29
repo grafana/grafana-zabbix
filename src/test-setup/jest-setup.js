@@ -83,28 +83,6 @@ jest.mock(
 );
 
 jest.mock(
-  'grafana/app/core/table_model',
-  () => {
-    return class TableModel {
-      constructor() {
-        this.columns = [];
-        this.columnMap = {};
-        this.rows = [];
-        this.type = 'table';
-      }
-
-      addColumn(col) {
-        if (!this.columnMap[col.text]) {
-          this.columns.push(col);
-          this.columnMap[col.text] = col;
-        }
-      }
-    };
-  },
-  { virtual: true }
-);
-
-jest.mock(
   'grafana/app/core/config',
   () => {
     return {

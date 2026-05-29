@@ -375,17 +375,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const options = {
       itemtype: 'text',
     };
-    return this.zabbix
-      .getItemsFromTarget(target, options)
-      .then((items) => {
-        return this.zabbix.getHistoryText(items, timeRange, target);
-      })
-      .then((result) => {
-        if (target.resultFormat !== 'table') {
-          return result.map((s) => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
-        }
-        return result;
-      });
+    return this.zabbix.getItemsFromTarget(target, options).then(async (items) => {
+      const result = await this.zabbix.getHistoryText(items, timeRange, target);
+      if (target.resultFormat === 'table') {
+        return [result];
+      }
+      return (result as any[]).map((s) => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
+    });
   }
 
   /**
