@@ -35,10 +35,6 @@ jest.mock('../zabbix/zabbix', () => ({
   Zabbix: jest.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('grafana/app/core/utils/datemath', () => ({
-  parse: () => Date.now(),
-}));
-
 jest.mock('@grafana/runtime', () => {
   const { of } = require('rxjs');
 

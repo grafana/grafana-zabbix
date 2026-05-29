@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
@@ -27,6 +26,7 @@ import {
   DataQueryRequest,
   DataQueryResponse,
   DataSourceInstanceSettings,
+  dateMath,
   FieldType,
   isDataFrame,
   OrgRole,
@@ -241,8 +241,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   buildTimeRange(request, target) {
-    let timeFrom = Math.ceil(dateMath.parse(request.range.from) / 1000);
-    let timeTo = Math.ceil(dateMath.parse(request.range.to) / 1000);
+    let timeFrom = Math.ceil(dateMath.toDateTime(request.range.from, {})?.unix() ?? 0);
+    let timeTo = Math.ceil(dateMath.toDateTime(request.range.to, {})?.unix() ?? 0);
 
     // Apply Time-related functions (timeShift(), etc)
     const timeFunctions = utils.bindFunctionDefs(target.functions, 'Time');
@@ -804,8 +804,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   annotationQueryLegacy(options) {
     const timeRange = options.range || options.rangeRaw;
-    const timeFrom = Math.ceil(dateMath.parse(timeRange.from) / 1000);
-    const timeTo = Math.ceil(dateMath.parse(timeRange.to) / 1000);
+    const timeFrom = Math.ceil(dateMath.toDateTime(timeRange.from, {})?.unix() ?? 0);
+    const timeTo = Math.ceil(dateMath.toDateTime(timeRange.to, {})?.unix() ?? 0);
     const annotation = options.targets[0];
 
     // Show all triggers
@@ -872,7 +872,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       return false;
     }
     const [timeFrom, timeTo] = timeRange;
-    const useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
+    const useTrendsFrom = Math.ceil(dateMath.toDateTime('now-' + this.trendsFrom, {})?.unix() ?? 0);
     const useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
     const useTrendsToggle = target.options.useTrends === 'true';
     const useTrends =
