@@ -48,6 +48,7 @@
     "@grafana/eslint-config": "9.0.0",
     "@grafana/plugin-e2e": "3.6.1",
     "@grafana/tsconfig": "2.0.1",
+    "@openfeature/web-sdk": "1.7.3",
     "@playwright/test": "1.58.2",
     "@stylistic/eslint-plugin-ts": "4.4.1",
     "@swc/core": "1.15.18",
