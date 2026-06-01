@@ -70,19 +70,6 @@ jest.mock(
 );
 
 jest.mock(
-  'grafana/app/core/utils/datemath',
-  () => {
-    const datemath = require('./modules/datemath');
-    return {
-      parse: datemath.parse,
-      parseDateMath: datemath.parseDateMath,
-      isValid: datemath.isValid,
-    };
-  },
-  { virtual: true }
-);
-
-jest.mock(
   'grafana/app/core/config',
   () => {
     return {
