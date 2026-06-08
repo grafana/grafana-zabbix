@@ -4,7 +4,13 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
-import { expandItemMacros, joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
+import {
+  expandItemMacros,
+  expandUserMacros,
+  hasUserMacro,
+  joinTriggersWithEvents,
+  joinTriggersWithProblems,
+} from '../problemsHandler';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 import { ZabbixDSOptions } from '../types/config';
@@ -502,7 +508,12 @@ export class Zabbix implements ZabbixConnector {
       'itemid'
     );
     const itemsWithType = allItems.filter((item) => item.value_type !== undefined);
-    if (!itemsWithType.length) {
+
+    const needsUserMacros = problems.some(
+      (p) => hasUserMacro(p.description) || hasUserMacro(p.comments) || hasUserMacro(p.opdata)
+    );
+
+    if (!itemsWithType.length && !needsUserMacros) {
       return problems;
     }
 
@@ -517,7 +528,18 @@ export class Zabbix implements ZabbixConnector {
     const timeFrom = Math.max(minTimestamp - HISTORY_LOOKBACK_SECONDS, maxTimestamp - MAX_HISTORY_WINDOW_SECONDS);
     const timeTill = maxTimestamp + 60;
 
-    const history = await this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill, HISTORY_FETCH_LIMIT);
+    const macroHostids = needsUserMacros
+      ? _.uniq(problems.flatMap((p) => (p.hosts || []).map((h: ZBXHost) => h.hostid)).filter(Boolean))
+      : [];
+
+    const [history, hostMacros, globalMacros] = await Promise.all([
+      itemsWithType.length
+        ? this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill, HISTORY_FETCH_LIMIT)
+        : Promise.resolve([]),
+      macroHostids.length ? this.zabbixAPI.getMacros(macroHostids) : Promise.resolve([]),
+      needsUserMacros ? this.zabbixAPI.getGlobalMacros() : Promise.resolve([]),
+    ]);
+
     const historyByItem = _.groupBy(history, 'itemid');
 
     return problems.map((problem) => {
@@ -531,6 +553,8 @@ export class Zabbix implements ZabbixConnector {
         };
       });
 
+      const problemHostids = (problem.hosts || []).map((h: ZBXHost) => h.hostid).filter(Boolean);
+
       const expandMacros = (text: string): string => {
         if (!text) {
           return text;
@@ -541,13 +565,16 @@ export class Zabbix implements ZabbixConnector {
           result = result.replace(/\{HOST\.NAME\}/g, host.name || '');
           result = result.replace(/\{HOST\.HOST\}/g, host.host || '');
         }
-        return expandItemMacros(result, itemResolutions);
+        result = expandItemMacros(result, itemResolutions);
+        result = expandUserMacros(result, hostMacros, globalMacros, problemHostids);
+        return result;
       };
 
       return {
         ...problem,
         description: expandMacros(problem.description),
         comments: expandMacros(problem.comments),
+        opdata: expandMacros(problem.opdata),
         items: itemResolutions.map((r) => r.updatedItem),
       };
     });

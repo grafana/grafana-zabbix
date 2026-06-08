@@ -3,6 +3,7 @@ import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleS
 import { Zabbix } from './zabbix';
 
 jest.mock('../problemsHandler', () => ({
+  ...jest.requireActual('../problemsHandler'),
   joinTriggersWithEvents: jest.fn(),
   joinTriggersWithProblems: jest.fn(),
 }));
@@ -302,6 +303,42 @@ describe('Zabbix', () => {
       expect(result[0].items[0].lastvalue).toBe('fallback');
     });
 
+    it('expands {ITEM.VALUE} in description and comments using historical value, not latest lastvalue', async () => {
+      const problems: any[] = [
+        makeProblem(1000, {
+          description: 'Value: {ITEM.VALUE}, Last: {ITEM.LASTVALUE}',
+          comments: 'Value received: {ITEM.VALUE} / Last value received: {ITEM.LASTVALUE}',
+          items: [makeItem({ lastvalue: '99' })],
+        }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
+        { itemid: '601', clock: '995', value: '12' },
+        { itemid: '601', clock: '1010', value: '50' },
+      ]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].description).toBe('Value: 12, Last: 99');
+      expect(result[0].comments).toBe('Value received: 12 / Last value received: 99');
+    });
+
+    it('expands {ITEM.VALUE} in opdata using historical value', async () => {
+      const problems: any[] = [
+        makeProblem(1000, {
+          opdata: 'Value: {ITEM.VALUE}',
+          items: [makeItem({ lastvalue: '99' })],
+        }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
+        { itemid: '601', clock: '995', value: '12' },
+        { itemid: '601', clock: '1010', value: '50' },
+      ]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].opdata).toBe('Value: 12');
+    });
+
     it('skips history fetch when no items have value_type', async () => {
       const problems: any[] = [
         makeProblem(1000, { items: [{ itemid: '601', name: 'i', key_: 'k', lastvalue: 'current' }] }),
@@ -338,6 +375,67 @@ describe('Zabbix', () => {
       // A hard row cap must be sent to history.get.
       expect(typeof limit).toBe('number');
       expect(limit).toBeGreaterThan(0);
+    });
+
+    it('expands user-defined host macros in description and comments', async () => {
+      const problems: any[] = [
+        makeProblem(1000, {
+          description: 'CONTACT: {$CONTACT}',
+          comments: 'VERSION: {$VERSION}',
+          hosts: [{ hostid: '10', name: 'host01', host: 'host01' }],
+          items: [],
+        }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn();
+      zabbix.zabbixAPI.getMacros = jest.fn().mockResolvedValue([
+        { macro: '{$CONTACT}', value: 'Pepe', hostid: '10' },
+        { macro: '{$VERSION}', value: '6.4.1', hostid: '10' },
+      ]);
+      zabbix.zabbixAPI.getGlobalMacros = jest.fn().mockResolvedValue([]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].description).toBe('CONTACT: Pepe');
+      expect(result[0].comments).toBe('VERSION: 6.4.1');
+      expect(zabbix.zabbixAPI.getMacros).toHaveBeenCalledWith(['10']);
+      expect(zabbix.zabbixAPI.getGlobalMacros).toHaveBeenCalled();
+      expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
+    });
+
+    it('does not fetch macros when no user macros are present in text', async () => {
+      const problems: any[] = [
+        makeProblem(1000, {
+          description: 'plain description',
+          comments: 'plain comments',
+          hosts: [{ hostid: '10' }],
+        }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([]);
+      zabbix.zabbixAPI.getMacros = jest.fn();
+      zabbix.zabbixAPI.getGlobalMacros = jest.fn();
+
+      await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(zabbix.zabbixAPI.getMacros).not.toHaveBeenCalled();
+      expect(zabbix.zabbixAPI.getGlobalMacros).not.toHaveBeenCalled();
+    });
+
+    it('falls back to global macros when host macro is not defined', async () => {
+      const problems: any[] = [
+        makeProblem(1000, {
+          description: 'Region: {$REGION}',
+          comments: '',
+          hosts: [{ hostid: '10' }],
+          items: [],
+        }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn();
+      zabbix.zabbixAPI.getMacros = jest.fn().mockResolvedValue([]);
+      zabbix.zabbixAPI.getGlobalMacros = jest.fn().mockResolvedValue([{ macro: '{$REGION}', value: 'eu-west' }]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].description).toBe('Region: eu-west');
     });
   });
 
