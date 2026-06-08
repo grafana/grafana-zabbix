@@ -3996,13 +3996,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/grafana@github:CorpGlory/types-grafana":
-  version: 4.6.3
-  resolution: "@types/grafana@https://github.com/CorpGlory/types-grafana.git#commit=4beede5fa0e5bdebdb23b09e4e1e214dcc4c267f"
-  checksum: 10c0/94d400d17f17f0d5e8dc205fdb0b7cc3e5bb2ea6ae2e28628bef0716c65489b87d61fe6741a6d2fc9066ed4c3f439e88386101bd1c9fcf4cd3f1e4c5bdc7e9b6
-  languageName: node
-  linkType: hard
-
 "@types/hoist-non-react-statics@npm:^3.3.1":
   version: 3.3.7
   resolution: "@types/hoist-non-react-statics@npm:3.3.7"
@@ -7835,7 +7828,6 @@ __metadata:
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:16.3.2"
     "@testing-library/user-event": "npm:14.6.1"
-    "@types/grafana": "github:CorpGlory/types-grafana"
     "@types/jest": "npm:30.0.0"
     "@types/lodash": "npm:4.17.24"
     "@types/node": "npm:25.5.0"
