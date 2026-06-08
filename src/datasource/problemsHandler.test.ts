@@ -95,12 +95,7 @@ describe('expandUserMacros', () => {
   const globalMacro = (macro: string, value: string) => ({ macro, value });
 
   it('replaces a host macro with its value', () => {
-    const result = expandUserMacros(
-      'Contact: {$CONTACT}',
-      [hostMacro('{$CONTACT}', 'Pepe', '10')],
-      [],
-      ['10']
-    );
+    const result = expandUserMacros('Contact: {$CONTACT}', [hostMacro('{$CONTACT}', 'Pepe', '10')], [], ['10']);
     expect(result).toBe('Contact: Pepe');
   });
 
@@ -115,22 +110,12 @@ describe('expandUserMacros', () => {
   });
 
   it('replaces every occurrence of the same macro', () => {
-    const result = expandUserMacros(
-      '{$CONTACT}/{$CONTACT}',
-      [hostMacro('{$CONTACT}', 'Pepe', '10')],
-      [],
-      ['10']
-    );
+    const result = expandUserMacros('{$CONTACT}/{$CONTACT}', [hostMacro('{$CONTACT}', 'Pepe', '10')], [], ['10']);
     expect(result).toBe('Pepe/Pepe');
   });
 
   it('falls back to global macros when no host macro matches', () => {
-    const result = expandUserMacros(
-      'Region: {$REGION}',
-      [],
-      [globalMacro('{$REGION}', 'eu-west')],
-      ['10']
-    );
+    const result = expandUserMacros('Region: {$REGION}', [], [globalMacro('{$REGION}', 'eu-west')], ['10']);
     expect(result).toBe('Region: eu-west');
   });
 
@@ -145,12 +130,7 @@ describe('expandUserMacros', () => {
   });
 
   it('ignores host macros whose hostid is not in the problem hosts', () => {
-    const result = expandUserMacros(
-      '{$CONTACT}',
-      [hostMacro('{$CONTACT}', 'Pepe', '99')],
-      [],
-      ['10']
-    );
+    const result = expandUserMacros('{$CONTACT}', [hostMacro('{$CONTACT}', 'Pepe', '99')], [], ['10']);
     expect(result).toBe('{$CONTACT}');
   });
 
