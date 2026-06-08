@@ -1,10 +1,5 @@
 name: Plugins - CD
 run-name: Deploy ${{ inputs.branch }} to ${{ inputs.environment }} by @${{ github.actor }}
-permissions:
-  attestations: write
-  contents: write
-  pull-requests: read
-  id-token: write
 
 on:
   workflow_dispatch:
@@ -27,6 +22,11 @@ on:
 
 jobs:
   cd:
+    permissions:
+      attestations: write
+      contents: write
+      pull-requests: read
+      id-token: write
     name: CD
     uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@ci-cd-workflows/v8.0.1
     with:

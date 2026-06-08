@@ -1,6 +1,6 @@
 module github.com/alexanderzobnin/grafana-zabbix
 
-go 1.26.0
+go 1.26.3
 
 // Go 1.24 enabled the post-quantum key exchange mechanism
 // X25519MLKEM768 by default. It can cause issues with some TLS servers

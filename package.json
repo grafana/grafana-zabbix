@@ -3,9 +3,6 @@
   "version": "6.3.2",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
-  "engines": {
-    "node": ">=24.5.0"
-  },
   "bugs": {
     "url": "https://github.com/grafana/grafana-zabbix/issues"
   },
@@ -24,7 +21,7 @@
     "server": "docker compose up --build",
     "server:down": "docker compose --file ./devenv/default/docker-compose.yml down",
     "server:stop": "docker compose --file ./devenv/default/docker-compose.yml stop",
-    "sign": "npx --yes @grafana/sign-plugin@latest",
+    "sign": "sign-plugin",
     "spellcheck": "cspell -c cspell.config.json \"**/*.{ts,tsx,js,go,md,mdx,yml,yaml,json,scss,css}\"",
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
@@ -47,6 +44,7 @@
     "@changesets/cli": "2.30.0",
     "@grafana/eslint-config": "9.0.0",
     "@grafana/plugin-e2e": "3.6.1",
+    "@grafana/sign-plugin": "^3.2.2",
     "@grafana/tsconfig": "2.0.1",
     "@openfeature/web-sdk": "1.7.3",
     "@playwright/test": "1.58.2",
@@ -113,5 +111,9 @@
     "lodash": "4.18.1",
     "serialize-javascript": "7.0.5"
   },
-  "packageManager": "yarn@4.14.0"
+  "packageManager": "yarn@4.15.0",
+  "engines": {
+    "node": ">=24.5.0",
+    "yarn": ">=4.15.0"
+  }
 }
