@@ -161,7 +161,7 @@ describe('Zabbix API connector', () => {
   describe('getHosts', () => {
     it('passes base params and group ids', () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn();
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
 
       zabbixAPIConnector.getHosts(['1', '2']);
 
@@ -174,22 +174,29 @@ describe('Zabbix API connector', () => {
 
     it('requests tags when getHostTags is true', () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn();
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      zabbixAPIConnector.version = '7.4.0';
 
       zabbixAPIConnector.getHosts(undefined, true);
 
       expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
-        output: ['hostid', 'name', 'host', 'tags'],
+        output: ['hostid', 'name', 'host'],
         sortfield: 'name',
         selectTags: 'extend',
+        selectInheritedTags: 'extend',
       });
     });
 
-    it('builds tag filters with numeric operator and evaltype', () => {
+    it('builds request params for tag filters and applies the filter client-side', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn();
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([
+        { hostid: '1', name: 'host-a', tags: [{ tag: 'role', value: 'api' }], inheritedTags: [] },
+        { hostid: '2', name: 'host-b', tags: [], inheritedTags: [{ tag: 'role', value: 'web' }] },
+        { hostid: '3', name: 'host-c', tags: [], inheritedTags: [{ tag: 'env', value: 'prod' }] },
+      ]);
+      zabbixAPIConnector.version = '7.4.0';
 
-      zabbixAPIConnector.getHosts(
+      const result = await zabbixAPIConnector.getHosts(
         undefined,
         false,
         [
@@ -199,36 +206,34 @@ describe('Zabbix API connector', () => {
         ZabbixTagEvalType.Or
       );
 
+      // No server-side `tags` / `evaltype` filter — we fetch all hosts with both tag lists
+      // and apply the filter client-side so inherited-tag matches are not lost.
       expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
         output: ['hostid', 'name', 'host'],
         sortfield: 'name',
         selectTags: 'extend',
-        evaltype: 2,
-        tags: [{ tag: 'role', value: 'api', operator: 0 }],
+        selectInheritedTags: 'extend',
       });
+
+      // Both host-a (direct) and host-b (inherited) match `role contains api`/`web` — wait, only
+      // the literal value 'api' is the filter; host-b's role value is 'web' which doesn't contain
+      // 'api'. So only host-a should match.
+      expect(result.map((h: any) => h.hostid)).toEqual(['1']);
     });
 
-    it('builds tag filters with numeric operator and default evaltype when using unsupported evalType', () => {
+    it('matches hosts whose tags are only inherited from templates', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn();
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([
+        { hostid: '1', name: 'db-1', tags: [], inheritedTags: [{ tag: 'class', value: 'database' }] },
+        { hostid: '2', name: 'web-1', tags: [], inheritedTags: [{ tag: 'class', value: 'os' }] },
+      ]);
+      zabbixAPIConnector.version = '7.4.0';
 
-      zabbixAPIConnector.getHosts(
-        undefined,
-        false,
-        [
-          { tag: 'role', value: 'api', operator: HostTagOperatorValue.Contains },
-          { tag: '', value: 'ignore me', operator: HostTagOperatorValue.Equals },
-        ],
-        '3' as ZabbixTagEvalType
-      );
+      const result = await zabbixAPIConnector.getHosts(undefined, false, [
+        { tag: 'class', value: 'database', operator: HostTagOperatorValue.Equals },
+      ]);
 
-      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
-        output: ['hostid', 'name', 'host'],
-        sortfield: 'name',
-        selectTags: 'extend',
-        evaltype: 0,
-        tags: [{ tag: 'role', value: 'api', operator: 0 }],
-      });
+      expect(result.map((h: any) => h.hostid)).toEqual(['1']);
     });
   });
 

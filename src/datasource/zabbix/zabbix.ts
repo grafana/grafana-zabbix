@@ -324,8 +324,15 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getHosts(groupFilter?, hostFilter?): Promise<any[]> {
-    return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
+  getHosts(
+    groupFilter?: string,
+    hostFilter?: string,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<any[]> {
+    return this.getAllHosts(groupFilter, false, hostTagFilters, evalType).then((hosts) =>
+      findByFilter(hosts, hostFilter)
+    );
   }
 
   /**

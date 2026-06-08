@@ -44,11 +44,35 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
   const loadHostTagOptions = async (group: string) => {
     const hostsWithTags = await datasource.zabbix.getAllHosts(group, true);
     const hostTags = processHostTags(hostsWithTags ?? []);
-    let options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
+    const options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
       value: tag.tag,
       label: tag.tag,
     }));
-    return options;
+
+    // Build tag -> unique non-empty values map for the value autocomplete.
+    const valuesByTag = new Map<string, Set<string>>();
+    for (const h of hostsWithTags ?? []) {
+      for (const t of ((h as any)?.tags ?? []) as Array<{ tag: string; value?: string }>) {
+        if (!t?.tag) {
+          continue;
+        }
+        const v = (t.value ?? '').toString();
+        if (!v) {
+          continue;
+        }
+        if (!valuesByTag.has(t.tag)) {
+          valuesByTag.set(t.tag, new Set());
+        }
+        valuesByTag.get(t.tag)!.add(v);
+      }
+    }
+    const valueOptions: Record<string, Array<ComboboxOption<string>>> = {};
+    for (const [tag, set] of valuesByTag.entries()) {
+      valueOptions[tag] = Array.from(set)
+        .sort()
+        .map((v) => ({ value: v, label: v }));
+    }
+    return { options, valueOptions };
   };
 
   const loadHostOptions = async (group: string, hostTags?: HostTagFilter[], evalType?: ZabbixTagEvalType) => {
@@ -65,10 +89,11 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     return options;
   };
 
-  const [{ loading: hostTagsLoading, value: hostTagsOptions }, fetchHostTags] = useAsyncFn(async () => {
-    const options = await loadHostTagOptions(query.group.filter);
-    return options;
+  const [{ loading: hostTagsLoading, value: hostTagsData }, fetchHostTags] = useAsyncFn(async () => {
+    return await loadHostTagOptions(query.group.filter);
   }, [query.group.filter]);
+  const hostTagsOptions = hostTagsData?.options;
+  const hostTagValueOptions = hostTagsData?.valueOptions;
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
     const options = await loadHostOptions(
@@ -245,6 +270,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
         <InlineField label="Host tag" labelWidth={12}>
           <HostTagQueryEditor
             hostTagOptions={hostTagsOptions}
+            hostTagValueOptions={hostTagValueOptions}
             evalTypeValue={query.evaltype}
             hostTagOptionsLoading={hostTagsLoading}
             onHostTagFilterChange={onHostTagFilterChange}
