@@ -1,5 +1,13 @@
 # Change Log
 
+## 6.4.0
+
+🚀 Remove use of @types/grafana and migrate to use components from @grafana/\* packages.
+
+🚀 Dependency improvement, clean up and security hardening
+
+🐛 ProblemsPanel: Fix long description shifts content
+
 ## 6.3.2
 
 🐛 Fix `{ITEM.VALUE}` and `{ITEM.LASTVALUE}` macros in trigger description always showing the current item value instead of the value at problem creation time

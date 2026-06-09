@@ -1,9 +1,8 @@
 import React from 'react';
 import _ from 'lodash';
-import { dateMath, PanelProps } from '@grafana/data';
+import { dateMath, PanelProps, OrgRole } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
-import { getDataSourceSrv } from '@grafana/runtime';
-import { contextSrv } from 'grafana/app/core/core';
+import { getDataSourceSrv, config } from '@grafana/runtime';
 import { ProblemsPanelOptions, RTResized } from './types';
 import { ZabbixMetricsQuery } from '../datasource/types/query';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
@@ -212,10 +211,13 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
     const { message, action, severity } = data;
     const eventid = problem.eventid;
-    const grafana_user = (contextSrv.user as any).name;
+    const grafana_user = config.bootData.user.name;
     const ack_message = grafana_user + ' (Grafana): ' + message;
     const ds: any = await getDataSourceSrv().get(problem.datasource);
-    const userIsEditor = contextSrv.isEditor || contextSrv.isGrafanaAdmin;
+    const userIsEditor =
+      config.bootData.user.isGrafanaAdmin ||
+      config.bootData.user.orgRole === OrgRole.Editor ||
+      config.bootData.user.orgRole === OrgRole.Admin;
     if (ds.disableReadOnlyUsersAck && !userIsEditor) {
       return { message: 'You have no permissions to acknowledge events.' };
     }
