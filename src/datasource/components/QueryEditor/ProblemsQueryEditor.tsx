@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import React, { useEffect, FormEvent } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { SelectableValue } from '@grafana/data';
 import { Combobox, ComboboxOption, InlineField, Input, MultiSelect } from '@grafana/ui';
