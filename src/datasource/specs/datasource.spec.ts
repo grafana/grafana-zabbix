@@ -5,6 +5,7 @@ import { VariableQueryTypes } from '../types';
 import { ZabbixDatasource } from 'datasource/datasource';
 // firstValueFrom removed - tests call frontendQuery directly for text queries
 import * as utils from '../utils';
+import { from } from 'rxjs';
 
 jest.mock(
   '@grafana/runtime',
@@ -16,7 +17,6 @@ jest.mock(
       // @ts-ignore
       actual.DataSourceWithBackend.prototype.query = function (request: any) {
         const that: any = this;
-        const { from } = require('rxjs');
 
         const backendResponse = Promise.resolve({ data: [] });
         const dbPromise = that.dbConnectionQuery ? that.dbConnectionQuery(request) : Promise.resolve({ data: [] });

@@ -36,8 +36,6 @@ jest.mock('../zabbix/zabbix', () => ({
 }));
 
 jest.mock('@grafana/runtime', () => {
-  const { of } = require('rxjs');
-
   class MockDataSourceWithBackend {
     instanceSettings: any;
     constructor(settings: any) {
