@@ -237,13 +237,22 @@
 
       .problem-ack-list {
         display: flex;
-        overflow: auto;
         white-space: pre-line;
 
         .problem-ack-col {
           display: flex;
           flex-direction: column;
           padding-right: 0.8rem;
+          // Allow the columns to shrink so long messages wrap instead of
+          // overflowing horizontally (which hid the scrollbar and made the
+          // acknowledges list appear unscrollable).
+          min-width: 0;
+        }
+
+        .problem-ack-message {
+          // Break very long messages that contain no spaces so they wrap
+          // within the column; the container then scrolls vertically.
+          overflow-wrap: anywhere;
         }
 
         .problem-ack-time,
