@@ -1925,20 +1925,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/eslint-config@npm:9.0.0":
-  version: 9.0.0
-  resolution: "@grafana/eslint-config@npm:9.0.0"
+"@grafana/eslint-config@npm:10.0.0":
+  version: 10.0.0
+  resolution: "@grafana/eslint-config@npm:10.0.0"
   peerDependencies:
-    "@stylistic/eslint-plugin-ts": ">=2.9.0"
-    "@typescript-eslint/eslint-plugin": ">=6.18.0"
-    "@typescript-eslint/parser": ">=6.18.0"
-    eslint: ">=8.0.0"
-    eslint-config-prettier: ">=8.8.0"
-    eslint-plugin-jsdoc: ">=46.8.0"
-    eslint-plugin-react: ">=7.33.0"
-    eslint-plugin-react-hooks: ">=7.0.0"
-    typescript: ">=5.2.0"
-  checksum: 10c0/a603561418ff4fae279efb91ffeffee721ae35dfbe33078d8bfa18311a69cfe8249e3d4020141c948cea986ee43b366aced8803a92df48f6abf54e4d71ce9ca9
+    "@stylistic/eslint-plugin": ">=5.0.0"
+    "@typescript-eslint/eslint-plugin": ">=8.9.0"
+    "@typescript-eslint/parser": ">=8.9.0"
+    eslint: ">=8.57.0"
+    eslint-config-prettier: ">=9.1.0"
+    eslint-plugin-jsdoc: ">=50.4.0"
+    eslint-plugin-react: ">=7.37.0"
+    eslint-plugin-react-hooks: ">=7.1.0"
+    typescript: ">=5.5.0"
+  checksum: 10c0/1e06ea9adbc2192649152fb3128e221bd634775e085347b8604428fea05f3423297132d15a39646b2cd7e55ad2cdfb4f436859b3c0065f531fa6917a6bd06d94
   languageName: node
   linkType: hard
 
@@ -7862,7 +7862,7 @@ __metadata:
     "@changesets/cli": "npm:2.31.0"
     "@emotion/css": "npm:11.13.5"
     "@grafana/data": "npm:13.1.0-27176567230"
-    "@grafana/eslint-config": "npm:9.0.0"
+    "@grafana/eslint-config": "npm:10.0.0"
     "@grafana/plugin-e2e": "npm:3.9.0"
     "@grafana/plugin-ui": "npm:0.13.1"
     "@grafana/runtime": "npm:13.1.0-27176567230"
