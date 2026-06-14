@@ -1981,13 +1981,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/plugin-e2e@npm:3.9.0":
-  version: 3.9.0
-  resolution: "@grafana/plugin-e2e@npm:3.9.0"
+"@grafana/plugin-e2e@npm:3.9.1":
+  version: 3.9.1
+  resolution: "@grafana/plugin-e2e@npm:3.9.1"
   dependencies:
     "@grafana/e2e-selectors": "npm:13.1.0-25644485979"
-    semver: "npm:^7.5.4"
-    uuid: "npm:^13.0.0"
     yaml: "npm:^2.3.4"
   peerDependencies:
     "@axe-core/playwright": ^4.11.1
@@ -1995,7 +1993,7 @@ __metadata:
   peerDependenciesMeta:
     "@axe-core/playwright":
       optional: true
-  checksum: 10c0/850429638e7898ef20404696857a151658c5668617adfb15de1fbf161efbd05a4f22f685c83ef2e3ef6b3298adbf8349d78bf5998f531804b1a02b2f57e5000b
+  checksum: 10c0/93e17213c8a63f52a08cdb2716ea5a1a799b435a14e4bc2ce8fbc710a3afa03e54aa097f4d81b1f452c659867aad0fe475f861aa8523f74790216f18bee528ba
   languageName: node
   linkType: hard
 
@@ -7863,7 +7861,7 @@ __metadata:
     "@emotion/css": "npm:11.13.5"
     "@grafana/data": "npm:13.1.0-27176567230"
     "@grafana/eslint-config": "npm:9.0.0"
-    "@grafana/plugin-e2e": "npm:3.9.0"
+    "@grafana/plugin-e2e": "npm:3.9.1"
     "@grafana/plugin-ui": "npm:0.13.1"
     "@grafana/runtime": "npm:13.1.0-27176567230"
     "@grafana/schema": "npm:13.1.0-27176567230"
@@ -13310,15 +13308,6 @@ __metadata:
   bin:
     uuid: dist/esm/bin/uuid
   checksum: 10c0/9e3af58eba872ece5a5e76f4773a94fc78a0ef2c2444c38dbe6b42f41dadf76c01850fd783604f27986f6195e6286aef064d45987d401b2a33127b98ddf7c0c5
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^13.0.0":
-  version: 13.0.2
-  resolution: "uuid@npm:13.0.2"
-  bin:
-    uuid: dist-node/bin/uuid
-  checksum: 10c0/32c7ee84fa7c7966cc09b3a1514a752a8e2f609f15c00033fbaedc0255d577d1877b839f11ee537f37e587bbc620bbb98c3b3a1482931b8ed47d79497cd7a7cd
   languageName: node
   linkType: hard
 
