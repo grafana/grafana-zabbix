@@ -390,34 +390,35 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		frame.Fields = append(frame.Fields, data.NewField("Entity", nil, entityValues))
 	}
 
-	// Step 3: Process metrics - filter from allMetricItems instead of fetching separately
+	// Step 3: Process metrics - filter from allMetricItems instead of fetching separately.
+	// A sparkline-enabled column is NOT rendered as a scalar value; instead it emits its own
+	// time-series frames (with a distinct RefID) so Grafana's "Time series to table" transformation
+	// produces a dedicated "Trend #<column>" sparkline column per metric.
+	sparklineFrames := []*data.Frame{}
+
 	for _, metric := range query.TableConfig.Metrics {
+		// Filter items matching this metric's pattern from allMetricItems
+		metricItems := ds.filterItemsByPattern(allMetricItems, metric.Pattern, metric.SearchType)
+		ds.logger.Debug("Filtered metric items", "column", metric.ColumnName, "count", len(metricItems))
+
+		// Sparkline columns deliver the full history as separate time-series frames and skip the
+		// scalar aggregation entirely (aggregation is disabled for them in the query editor).
+		if metric.ShowSparkline {
+			history, err := ds.zabbix.GetHistory(ctx, metricItems, query.TimeRange)
+			if err != nil {
+				ds.logger.Error("Error fetching sparkline history", "error", err, "column", metric.ColumnName)
+				continue
+			}
+			sparklineFrames = append(sparklineFrames, ds.buildSparklineFrames(metric, metricItems, history, entityPattern)...)
+			continue
+		}
+
 		var columnValues []*string
 
 		if metric.Aggregation == "last" {
-			// Filter items matching this metric's pattern from allMetricItems
-			metricItems := ds.filterItemsByPattern(allMetricItems, metric.Pattern, metric.SearchType)
-
-			ds.logger.Debug("Filtered metric items", "column", metric.ColumnName, "count", len(metricItems))
-
 			metricValues := make(map[string]*string)
 			for _, item := range metricItems {
-				_, extractedValues := ds.extractEntityLabelWithGroups(item, entityPattern)
-				hostName := ""
-				if len(item.Hosts) > 0 {
-					hostName = item.Hosts[0].Name
-				}
-
-				var compositeKey string
-				if len(extractedValues) > 0 {
-					extractedKey := strings.Join(extractedValues, "|")
-					compositeKey = hostName + "|" + extractedKey
-				} else {
-					entityLabel, _ := ds.extractEntityLabelWithGroups(item, entityPattern)
-					compositeKey = hostName + "|" + entityLabel
-				}
-
-				metricValues[compositeKey] = item.LastValue
+				metricValues[ds.entityCompositeKey(item, entityPattern)] = item.LastValue
 			}
 
 			columnValues = make([]*string, len(entityOrder))
@@ -425,9 +426,6 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 				columnValues[i] = metricValues[key]
 			}
 		} else {
-			// For aggregations, still need to fetch history
-			metricItems := ds.filterItemsByPattern(allMetricItems, metric.Pattern, metric.SearchType)
-
 			history, err := ds.zabbix.GetHistory(ctx, metricItems, query.TimeRange)
 			if err != nil {
 				ds.logger.Error("Error fetching history", "error", err, "column", metric.ColumnName)
@@ -447,7 +445,117 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		frame.Fields = append(frame.Fields, data.NewField(metric.ColumnName, nil, columnValues))
 	}
 
-	return []*data.Frame{frame}, nil
+	// The scalar table frame is always returned first. With sparklines it carries only the row
+	// dimensions (and any non-sparkline metric columns) and acts as the join base. Keeping it also
+	// makes a non-time-series frame the first in the response, which prevents the frontend wide-format
+	// conversion (isConvertibleToWide) from merging the per-metric sparkline series back together.
+	frames := []*data.Frame{frame}
+	frames = append(frames, sparklineFrames...)
+	return frames, nil
+}
+
+// entityCompositeKey builds the same row key used to align metric values with entity rows:
+// "<host>|<joined extracted capture groups>" or "<host>|<entity label>" when no groups are extracted.
+func (ds *ZabbixDatasourceInstance) entityCompositeKey(item *zabbix.Item, pattern EntityPatternConfig) string {
+	entityLabel, extractedValues := ds.extractEntityLabelWithGroups(item, pattern)
+	hostName := ""
+	if len(item.Hosts) > 0 {
+		hostName = item.Hosts[0].Name
+	}
+	if len(extractedValues) > 0 {
+		return hostName + "|" + strings.Join(extractedValues, "|")
+	}
+	return hostName + "|" + entityLabel
+}
+
+// sparklineInterval returns the interval used to align a sparkline series: the item's configured
+// update interval (e.g. "60s") when it is a fixed value, otherwise the interval detected from the
+// data itself. Returns 0 when no interval can be determined (alignment is then skipped).
+func sparklineInterval(item *zabbix.Item, ts timeseries.TimeSeries) time.Duration {
+	if d := parseItemUpdateInterval(item.Delay); d != nil && *d > 0 {
+		return *d
+	}
+	return ts.DetectInterval()
+}
+
+// buildSparklineFrames returns one time-series frame per item whose history was fetched. Each frame
+// is a single labeled series so Grafana's "Time series to table" transformation produces a Trend
+// (sparkline) column.
+//
+// The transformation groups frames by RefID and emits exactly one "Trend #<refId>" column per RefID,
+// so every sparkline metric is given its OWN RefID (the column name). This yields one sparkline column
+// per metric ("wide" layout) instead of a single Trend column with a "metric" dimension column.
+// Labels carry only the row-identifying dimensions (Host / extracted columns / Entity) so the per-metric
+// Trend tables can be joined or merged onto each other (and onto the scalar table) on those columns.
+func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConfig, items []*zabbix.Item, history zabbix.History, pattern EntityPatternConfig) []*data.Frame {
+	pointsByItem := make(map[string][]zabbix.HistoryPoint, len(items))
+	for _, p := range history {
+		pointsByItem[p.ItemID] = append(pointsByItem[p.ItemID], p)
+	}
+
+	frames := make([]*data.Frame, 0, len(items))
+	for _, item := range items {
+		points, ok := pointsByItem[item.ID]
+		if !ok || len(points) == 0 {
+			continue
+		}
+
+		// Convert the raw history into a time series and align it to the item's collection interval,
+		// exactly like the normal metric path (queryNumericDataForItems). Zabbix timestamps carry
+		// nanosecond precision and history is sorted by whole-second clock only, so the raw points are
+		// off-grid and can be non-monotonic within a second — which the sparkline renders as spurious
+		// gaps/vertical jumps. Sorting + aligning snaps points to a regular grid, drops same-frame
+		// duplicates, and interpolates single-point gaps, producing a continuous line.
+		ts := make(timeseries.TimeSeries, 0, len(points))
+		for _, p := range points {
+			value := p.Value
+			ts = append(ts, timeseries.TimePoint{Time: time.Unix(p.Clock, p.NS), Value: &value})
+		}
+		ts.Sort()
+		if interval := sparklineInterval(item, ts); interval > 0 {
+			ts = ts.Align(interval)
+		}
+
+		entityLabel, extractedValues := ds.extractEntityLabelWithGroups(item, pattern)
+		hostName := ""
+		if len(item.Hosts) > 0 {
+			hostName = item.Hosts[0].Name
+		}
+
+		labels := data.Labels{}
+		if hostName != "" {
+			labels["Host"] = hostName
+		}
+		if len(extractedValues) > 0 {
+			for _, col := range pattern.ExtractedColumns {
+				if col.GroupIndex > 0 && col.GroupIndex <= len(extractedValues) {
+					labels[col.Name] = extractedValues[col.GroupIndex-1]
+				}
+			}
+		} else {
+			labels["Entity"] = entityLabel
+		}
+
+		timeField := data.NewFieldFromFieldType(data.FieldTypeTime, len(ts))
+		timeField.Name = data.TimeSeriesTimeFieldName
+		valueField := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, len(ts))
+		valueField.Name = data.TimeSeriesValueFieldName
+		valueField.Labels = labels
+		valueField.Config = &data.FieldConfig{DisplayNameFromDS: metric.ColumnName, Custom: map[string]interface{}{"units": item.Units}}
+
+		for i, p := range ts {
+			timeField.Set(i, p.Time)
+			valueField.Set(i, p.Value)
+		}
+
+		f := data.NewFrame(metric.ColumnName, timeField, valueField)
+		// Distinct RefID per metric => one "Trend #<column>" column per metric after the transform.
+		f.RefID = metric.ColumnName
+		f.Meta = &data.FrameMeta{Type: data.FrameTypeTimeSeriesMulti}
+		frames = append(frames, f)
+	}
+
+	return frames
 }
 
 // filterItemsByPattern filters items by pattern (similar to existing Zabbix filter logic)

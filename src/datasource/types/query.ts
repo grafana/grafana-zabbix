@@ -142,4 +142,8 @@ export interface MetricColumnConfig {
   searchType: 'itemName' | 'itemKey';
   pattern: string;
   aggregation: 'last' | 'avg' | 'min' | 'max';
+  // When true, the backend fetches the full history for this column's items over the
+  // panel time range and returns it as an additional time-series frame, so the column
+  // can be rendered as a sparkline via Grafana's "Time series to table" transformation.
+  showSparkline?: boolean;
 }

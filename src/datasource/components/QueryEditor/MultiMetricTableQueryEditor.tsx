@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAsyncFn } from 'react-use';
 import { uniqBy } from 'lodash';
 import { Button, Checkbox, InlineField, InlineFieldRow, Input, RadioButtonGroup, Select, Stack, Icon, ComboboxOption } from '@grafana/ui';
@@ -8,6 +8,7 @@ import { MetricPicker } from '../../../components/MetricPicker/MetricPicker';
 import { HostTagQueryEditor } from './HostTagQueryEditor';
 import { getVariableOptions, processHostTags } from './utils';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
+import { ZBXItem } from '../../types';
 
 interface Props {
   query: ZabbixMetricsQuery;
@@ -56,14 +57,11 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
 
   const tableConfig = safeQuery.tableConfig!;
 
-  // Local state for entity pattern (with onBlur)
-  const [localEntityPattern, setLocalEntityPattern] = useState(tableConfig.entityPattern.pattern);
+  // Local state for the extract pattern (regex) — committed on blur to avoid invalid intermediate values.
   const [localExtractPattern, setLocalExtractPattern] = useState(tableConfig.entityPattern.extractPattern || '');
 
-  // Local state for metric fields
-  const [localMetrics, setLocalMetrics] = useState(
-    tableConfig.metrics.map((m) => ({ columnName: m.columnName, pattern: m.pattern }))
-  );
+  // Local state for the metric column name — committed on blur.
+  const [localMetricNames, setLocalMetricNames] = useState(tableConfig.metrics.map((m) => m.columnName));
 
   // Load group options
   const loadGroupOptions = async () => {
@@ -124,14 +122,48 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
 
-  // Sync local state when query changes externally
+  // Fetch items (raw list) once per group/host change; we derive name/key option arrays in-memo below.
+  const [{ loading: itemsLoading, value: items }, fetchItems] = useAsyncFn(async () => {
+    const fetched: ZBXItem[] = await datasource.zabbix.getAllItems(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.host.filter,
+      null,
+      null,
+      { itemtype: 'num' }
+    );
+    return fetched || [];
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
+
+  const itemNameOptions = useMemo<Array<ComboboxOption<string>>>(() => {
+    const opts: Array<ComboboxOption<string>> = (items ?? []).map((item) => ({
+      value: item.name,
+      label: item.name,
+    }));
+    const unique = uniqBy(opts, (o) => o.value);
+    unique.unshift(...getVariableOptions());
+    return unique;
+  }, [items]);
+
+  const itemKeyOptions = useMemo<Array<ComboboxOption<string>>>(() => {
+    const opts: Array<ComboboxOption<string>> = (items ?? []).map((item) => ({
+      value: item.key_,
+      label: item.key_,
+    }));
+    const unique = uniqBy(opts, (o) => o.value);
+    unique.unshift(...getVariableOptions());
+    return unique;
+  }, [items]);
+
+  const optionsForSearchType = (searchType: 'itemName' | 'itemKey') =>
+    searchType === 'itemKey' ? itemKeyOptions : itemNameOptions;
+
+  // Sync deferred local state when the query changes externally (e.g., variable resolution, panel switch).
   useEffect(() => {
-    setLocalEntityPattern(tableConfig.entityPattern.pattern);
     setLocalExtractPattern(tableConfig.entityPattern.extractPattern || '');
-  }, [tableConfig.entityPattern.pattern, tableConfig.entityPattern.extractPattern]);
+  }, [tableConfig.entityPattern.extractPattern]);
 
   useEffect(() => {
-    setLocalMetrics(tableConfig.metrics.map((m) => ({ columnName: m.columnName, pattern: m.pattern })));
+    setLocalMetricNames(tableConfig.metrics.map((m) => m.columnName));
   }, [tableConfig.metrics.length]);
 
   // Fetch options on mount and when dependencies change
@@ -146,6 +178,10 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   useEffect(() => {
     fetchHosts();
   }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
   const onGroupChange = (value: string) => {
     onChange({
@@ -176,18 +212,27 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     });
   };
 
-  const onEntityPatternBlur = () => {
-    if (
-      localEntityPattern !== tableConfig.entityPattern.pattern ||
-      localExtractPattern !== (tableConfig.entityPattern.extractPattern || '')
-    ) {
+  const onEntityPatternChange = (value: string) => {
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          pattern: value || '',
+        },
+      },
+    });
+  };
+
+  const onExtractPatternBlur = () => {
+    if (localExtractPattern !== (tableConfig.entityPattern.extractPattern || '')) {
       onChange({
         ...safeQuery,
         tableConfig: {
           ...tableConfig,
           entityPattern: {
             ...tableConfig.entityPattern,
-            pattern: localEntityPattern,
             extractPattern: localExtractPattern,
           },
         },
@@ -245,52 +290,22 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     });
   };
 
-  const onMetricChange = (index: number, field: keyof MetricColumnConfig, value: any) => {
+  const commitMetric = (index: number, patch: Partial<MetricColumnConfig>) => {
     const newMetrics = [...tableConfig.metrics];
-    newMetrics[index] = { ...newMetrics[index], [field]: value };
-
-    if (field === 'columnName' || field === 'pattern') {
-      const newLocalMetrics = [...localMetrics];
-      if (!newLocalMetrics[index]) {
-        newLocalMetrics[index] = { columnName: '', pattern: '' };
-      }
-      newLocalMetrics[index] = { ...newLocalMetrics[index], [field]: value };
-      setLocalMetrics(newLocalMetrics);
-    }
-
-    if (field !== 'columnName' && field !== 'pattern') {
-      onChange({
-        ...safeQuery,
-        tableConfig: {
-          ...tableConfig,
-          metrics: newMetrics,
-        },
-      });
-    }
+    newMetrics[index] = { ...newMetrics[index], ...patch };
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        metrics: newMetrics,
+      },
+    });
   };
 
-  const onMetricBlur = (index: number) => {
-    const currentMetric = tableConfig.metrics[index];
-    const localMetric = localMetrics[index];
-
-    if (
-      localMetric &&
-      (currentMetric.columnName !== localMetric.columnName || currentMetric.pattern !== localMetric.pattern)
-    ) {
-      const newMetrics = [...tableConfig.metrics];
-      newMetrics[index] = {
-        ...newMetrics[index],
-        columnName: localMetric.columnName,
-        pattern: localMetric.pattern,
-      };
-
-      onChange({
-        ...safeQuery,
-        tableConfig: {
-          ...tableConfig,
-          metrics: newMetrics,
-        },
-      });
+  const onMetricColumnNameBlur = (index: number) => {
+    const local = localMetricNames[index];
+    if (local !== undefined && local !== tableConfig.metrics[index]?.columnName) {
+      commitMetric(index, { columnName: local });
     }
   };
 
@@ -309,7 +324,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       },
     });
 
-    setLocalMetrics([...localMetrics, { columnName: 'New Column', pattern: '' }]);
+    setLocalMetricNames([...localMetricNames, newMetric.columnName]);
   };
 
   const onMetricRemove = (index: number) => {
@@ -322,8 +337,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       },
     });
 
-    const newLocalMetrics = localMetrics.filter((_, i) => i !== index);
-    setLocalMetrics(newLocalMetrics);
+    setLocalMetricNames(localMetricNames.filter((_, i) => i !== index));
   };
 
   const extractedColumns = tableConfig.entityPattern.extractedColumns || [];
@@ -424,11 +438,14 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
           </InlineFieldRow>
           <InlineFieldRow>
             <InlineField label="Pattern" labelWidth={16} grow>
-              <Input
-                value={localEntityPattern}
+              <MetricPicker
+                width={40}
+                value={tableConfig.entityPattern.pattern}
+                options={optionsForSearchType(tableConfig.entityPattern.searchType)}
+                isLoading={itemsLoading}
                 placeholder="e.g., /Interface.*/ or /.*: Disk .*/ or /FS .*: .*/"
-                onChange={(e) => setLocalEntityPattern(e.currentTarget.value)}
-                onBlur={onEntityPatternBlur}
+                createCustomValue={true}
+                onChange={onEntityPatternChange}
               />
             </InlineField>
           </InlineFieldRow>
@@ -443,7 +460,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
                 value={localExtractPattern}
                 placeholder="Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
                 onChange={(e) => setLocalExtractPattern(e.currentTarget.value)}
-                onBlur={onEntityPatternBlur}
+                onBlur={onExtractPatternBlur}
               />
             </InlineField>
           </InlineFieldRow>
@@ -505,33 +522,58 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
               <InlineField label="Column" labelWidth={16}>
                 <Input
                   width={20}
-                  value={localMetrics[index]?.columnName ?? metric.columnName}
+                  value={localMetricNames[index] ?? metric.columnName}
                   placeholder="Column name"
-                  onChange={(e) => onMetricChange(index, 'columnName', e.currentTarget.value)}
-                  onBlur={() => onMetricBlur(index)}
+                  onChange={(e) => {
+                    const next = [...localMetricNames];
+                    next[index] = e.currentTarget.value;
+                    setLocalMetricNames(next);
+                  }}
+                  onBlur={() => onMetricColumnNameBlur(index)}
                 />
               </InlineField>
               <InlineField label="Search by" labelWidth={16}>
                 <RadioButtonGroup
                   value={metric.searchType}
                   options={searchTypeOptions}
-                  onChange={(value) => onMetricChange(index, 'searchType', value)}
+                  onChange={(value) => commitMetric(index, { searchType: value as 'itemName' | 'itemKey' })}
                 />
               </InlineField>
               <InlineField label="Pattern" labelWidth={16} grow>
-                <Input
-                  value={localMetrics[index]?.pattern ?? metric.pattern}
+                <MetricPicker
+                  width={40}
+                  value={metric.pattern}
+                  options={optionsForSearchType(metric.searchType)}
+                  isLoading={itemsLoading}
                   placeholder="e.g., /.*Status/"
-                  onChange={(e) => onMetricChange(index, 'pattern', e.currentTarget.value)}
-                  onBlur={() => onMetricBlur(index)}
+                  createCustomValue={true}
+                  onChange={(value) => commitMetric(index, { pattern: value || '' })}
                 />
               </InlineField>
-              <InlineField label="Aggregation" labelWidth={16}>
+              <InlineField
+                label="Aggregation"
+                labelWidth={16}
+                disabled={metric.showSparkline}
+                tooltip={
+                  metric.showSparkline ? 'Not used for sparkline columns — the full series is returned.' : undefined
+                }
+              >
                 <Select
                   width={15}
                   value={metric.aggregation}
                   options={aggregationOptions}
-                  onChange={(option) => onMetricChange(index, 'aggregation', option.value!)}
+                  disabled={metric.showSparkline}
+                  onChange={(option) => commitMetric(index, { aggregation: option.value as MetricColumnConfig['aggregation'] })}
+                />
+              </InlineField>
+              <InlineField
+                label="Sparkline"
+                labelWidth={12}
+                tooltip="Return this column as its own time-series frame (full history over the panel time range) instead of a scalar value. Render it as a sparkline by adding Grafana's 'Time series to table' transformation; one Trend column is produced per sparkline metric."
+              >
+                <Checkbox
+                  value={metric.showSparkline || false}
+                  onChange={(e) => commitMetric(index, { showSparkline: e.currentTarget.checked })}
                 />
               </InlineField>
               <Button
@@ -558,6 +600,12 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
         <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
           <strong>Example:</strong> Pattern: "/Interface.*/", Extract: "Interface (.*)\[(.*)\]" - Group 1: "Interface
           name", Group 2: "Description"
+        </p>
+        <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
+          <strong>Sparkline:</strong> Each enabled column is returned as its own time-series frame (full history)
+          instead of a scalar. Add the Grafana <em>Time series to table</em> transformation to get one Trend column per
+          metric, then <em>Join by field</em> / <em>Merge</em> on the Host/Entity (or extracted) columns. The first
+          (table) frame carries the row dimensions and is the join base.
         </p>
       </div>
     </Stack>
