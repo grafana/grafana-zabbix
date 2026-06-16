@@ -135,6 +135,9 @@ type MetricColumnConfig struct {
 	SearchType  string `json:"searchType"`
 	Pattern     string `json:"pattern"`
 	Aggregation string `json:"aggregation"` // "last", "avg", "min", "max"
+	// ShowSparkline, when true, makes the backend fetch full history for this column's
+	// items over the query time range and return it as an additional time-series frame.
+	ShowSparkline bool `json:"showSparkline"`
 }
 
 // ReadQuery will read and validate Settings from the DataSourceConfg
