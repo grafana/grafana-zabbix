@@ -1,0 +1,15 @@
+{
+  "type": "panel",
+  "name": "Zabbix Problems",
+  "id": "alexanderzobnin-zabbix-triggers-panel",
+  "info": {
+    "author": {
+      "name": "Grafana Labs",
+      "url": "https://grafana.com"
+    },
+    "logos": {
+      "small": "img/icn-zabbix-problems-panel.svg",
+      "large": "img/icn-zabbix-problems-panel.svg"
+    }
+  }
+}

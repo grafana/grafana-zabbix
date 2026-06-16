@@ -1,0 +1,6 @@
+# *.md
+# *.pdf
+Dockerfile
+Dockerfile*
+run_zas.sh
+*/.git

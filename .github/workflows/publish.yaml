@@ -1,0 +1,37 @@
+name: Plugins - CD
+run-name: Deploy ${{ inputs.branch }} to ${{ inputs.environment }} by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to publish from. Can be used to deploy PRs to dev
+        default: main
+      environment:
+        description: Environment to publish to
+        required: true
+        type: choice
+        options:
+          - 'dev'
+          - 'ops'
+          - 'prod'
+      docs-only:
+        description: Only publish docs, do not publish the plugin
+        default: false
+        type: boolean
+
+jobs:
+  cd:
+    permissions:
+      attestations: write
+      contents: write
+      pull-requests: read
+      id-token: write
+    name: CD
+    uses: grafana/plugin-ci-workflows/.github/workflows/cd.yml@ci-cd-workflows/v9.0.0
+    with:
+      branch: ${{ github.event.inputs.branch }}
+      environment: ${{ github.event.inputs.environment }}
+      docs-only: ${{ fromJSON(github.event.inputs.docs-only) }}
+      run-playwright: true
+      github-draft-release: false
