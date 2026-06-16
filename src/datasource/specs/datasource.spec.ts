@@ -5,6 +5,7 @@ import { VariableQueryTypes } from '../types';
 import { ZabbixDatasource } from 'datasource/datasource';
 // firstValueFrom removed - tests call frontendQuery directly for text queries
 import * as utils from '../utils';
+import { from } from 'rxjs';
 
 jest.mock(
   '@grafana/runtime',
@@ -16,7 +17,6 @@ jest.mock(
       // @ts-ignore
       actual.DataSourceWithBackend.prototype.query = function (request: any) {
         const that: any = this;
-        const { from } = require('rxjs');
 
         const backendResponse = Promise.resolve({ data: [] });
         const dbPromise = that.dbConnectionQuery ? that.dbConnectionQuery(request) : Promise.resolve({ data: [] });
@@ -64,27 +64,35 @@ jest.mock(
   { virtual: true }
 );
 
+jest.mock('../dataProcessor', () => ({
+  __esModule: true,
+  default: {
+    metricFunctions: {},
+  },
+}));
+
+jest.mock('../metricFunctions', () => ({
+  getCategories: jest.fn(() => ({})),
+  createFuncInstance: jest.fn(),
+}));
+
 jest.mock('../components/AnnotationQueryEditor', () => ({
   AnnotationQueryEditor: () => {},
 }));
 
-jest.mock(
-  '../utils',
-  () => (
-    jest.requireActual('../utils'),
-    {
-      replaceVariablesInFuncParams: jest.fn(),
-      parseInterval: jest.fn(),
-      replaceTemplateVars: jest.fn().mockImplementation((templateSrv, prop) => prop),
-      getRangeScopedVars: jest.fn(),
-      bindFunctionDefs: jest.fn().mockResolvedValue([]),
-      parseLegacyVariableQuery: jest.fn(),
-      formatMetric: jest.fn().mockImplementation((metric) => {
-        return { text: metric.name, expandable: false };
-      }),
-    }
-  )
-);
+jest.mock('../utils', () => ({
+  ...jest.requireActual('../utils'),
+  replaceVariablesInFuncParams: jest.fn(),
+  parseInterval: jest.fn(),
+  replaceTemplateVars: jest.fn().mockImplementation((_templateSrv, prop) => prop),
+  getRangeScopedVars: jest.fn(),
+  bindFunctionDefs: jest.fn().mockResolvedValue([]),
+  parseLegacyVariableQuery: jest.fn(),
+  formatMetric: jest.fn().mockImplementation((metric) => ({
+    text: metric.name,
+    expandable: false,
+  })),
+}));
 
 describe('ZabbixDatasource', () => {
   let ctx: any = {};
@@ -172,16 +180,21 @@ describe('ZabbixDatasource', () => {
       const result = (await ctx.ds.frontendQuery(ctx.options)) as DataQueryResponse;
       expect(result.data.length).toBe(1);
 
-      let tableData = result.data[0];
-      expect(tableData.columns).toEqual([{ text: 'Host' }, { text: 'Item' }, { text: 'Key' }, { text: 'Last value' }]);
-      expect(tableData.rows).toEqual([['Zabbix server', 'System information', 'system.uname', 'Linux last']]);
+      const tableData = result.data[0];
+      expect(tableData.fields.map((f) => f.name)).toEqual(['Host', 'Item', 'Key', 'Last value']);
+      expect(tableData.fields.map((f) => f.values[0])).toEqual([
+        'Zabbix server',
+        'System information',
+        'system.uname',
+        'Linux last',
+      ]);
     });
 
     it('should extract value if regex with capture group is used', (done) => {
       ctx.options.targets[0].textFilter = 'Linux (.*)';
       ctx.ds.frontendQuery(ctx.options).then((result) => {
-        let tableData = result.data[0];
-        expect(tableData.rows[0][3]).toEqual('last');
+        const tableData = result.data[0];
+        expect(tableData.fields.find((f) => f.name === 'Last value')?.values[0]).toEqual('last');
         done();
       });
     });
@@ -215,9 +228,9 @@ describe('ZabbixDatasource', () => {
         ])
       );
       return ctx.ds.frontendQuery(ctx.options).then((result) => {
-        let tableData = result.data[0];
-        expect(tableData.rows.length).toBe(1);
-        expect(tableData.rows[0][3]).toEqual('Linux last');
+        const tableData = result.data[0];
+        expect(tableData.length).toBe(1);
+        expect(tableData.fields.find((f) => f.name === 'Last value')?.values[0]).toEqual('Linux last');
       });
     });
   });
@@ -230,10 +243,6 @@ describe('ZabbixDatasource', () => {
         getApps: jest.fn().mockReturnValue(Promise.resolve([])),
         getItems: jest.fn().mockReturnValue(Promise.resolve([])),
       };
-
-      jest.spyOn(utils, 'replaceTemplateVars').mockImplementation(({}, prop: string, {}) => {
-        return prop;
-      });
     });
 
     it('should return groups', (done) => {

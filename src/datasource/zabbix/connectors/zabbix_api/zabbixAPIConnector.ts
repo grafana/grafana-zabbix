@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import semver from 'semver';
-import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
 import { HostTagFilter, ShowProblemTypes, ZabbixTagEvalType } from '../../../types/query';
@@ -12,9 +11,6 @@ import { parseItemTag } from '../../../utils';
 import { zabbixMethodName } from 'datasource/zabbix/types';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
-
-// Backward compatibility. Since Grafana 7.2 roundInterval() func was moved to @grafana/data package
-const roundInterval: (interval: number) => number = rangeUtil?.roundInterval || kbn.roundInterval || kbn.round_interval;
 
 /**
  * Zabbix API Wrapper.
@@ -1003,7 +999,7 @@ function filterTriggersByAcknowledge(triggers, acknowledged) {
 function getSLAInterval(intervalMs) {
   // Too many intervals may cause significant load on the database, so decrease number of resulting points
   const resolutionRatio = 100;
-  const interval = roundInterval(intervalMs * resolutionRatio) / 1000;
+  const interval = rangeUtil.roundInterval(intervalMs * resolutionRatio) / 1000;
   return Math.max(interval, MIN_SLA_INTERVAL);
 }
 
