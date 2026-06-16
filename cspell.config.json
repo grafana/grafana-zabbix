@@ -74,6 +74,8 @@
     "uplot",
     "zabbix",
     "Zobnin",
-    "directdb"
+    "directdb",
+    "npmPreapprovedPackages",
+    "yarnrc"
   ]
 }
