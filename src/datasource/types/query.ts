@@ -62,6 +62,7 @@ export interface ZabbixQueryOptions {
   useTimeRange?: boolean;
   severities?: number[];
   count?: boolean;
+  symptom?: boolean | null; // null = all, true = only symptoms, false = only causes
 
   // Annotations
   showOkEvents?: boolean;

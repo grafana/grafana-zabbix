@@ -507,7 +507,7 @@ export class ZabbixAPIConnector {
   }
 
   getProblems(groupids, hostids, applicationids, supportsApplications, options): Promise<ZBXProblem[]> {
-    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype } = options;
+    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, symptom } = options;
 
     const params: any = {
       output: 'extend',
@@ -552,6 +552,10 @@ export class ZabbixAPIConnector {
 
     if (supportsApplications) {
       params.applicationids = applicationids;
+    }
+
+    if (symptom !== undefined && symptom !== null) {
+      params.symptom = symptom;
     }
 
     return this.request('problem.get', params).then(utils.mustArray);
@@ -668,7 +672,7 @@ export class ZabbixAPIConnector {
   }
 
   getEventsHistory(groupids, hostids, applicationids, options) {
-    const { timeFrom, timeTo, severities, limit, value, tags, evaltype } = options;
+    const { timeFrom, timeTo, severities, limit, value, tags, evaltype, symptom } = options;
 
     const params: any = {
       output: 'extend',
@@ -706,6 +710,10 @@ export class ZabbixAPIConnector {
 
     if (evaltype) {
       params.evaltype = evaltype;
+    }
+
+    if (symptom !== undefined && symptom !== null) {
+      params.symptom = symptom;
     }
 
     return this.request('event.get', params).then(utils.mustArray);
