@@ -22,6 +22,9 @@ export type ZabbixDSOptions = {
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
   enableSecureSocksProxy?: boolean;
+  perUserAuth?: boolean;
+  perUserAuthField?: 'username' | 'email';
+  perUserAuthExcludeUsers?: string[];
   /** @deprecated
    * Use `dbConnectionEnable` `dbConnectionDatasourceUID` `dbConnectionDatasourceName` `dbConnectionRetentionPolicy` instead.
    * Currently only used to support migration for older schemas.
