@@ -139,8 +139,9 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 		queryTimeout = 60 * time.Second // Default to 60 seconds if not configured
 	}
 
-	// Apply per-user authentication
-	err = ds.applyPerUserAuth(ctx, zabbixDS, req.PluginContext.DataSourceInstanceSettings.UID)
+	// Apply per-user authentication. The returned context carries the resolved
+	// per-user token and must be used for the queries below.
+	ctx, err = ds.applyPerUserAuth(ctx, zabbixDS, req.PluginContext.DataSourceInstanceSettings.UID)
 	if err != nil {
 		return nil, err
 	}

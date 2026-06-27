@@ -103,6 +103,7 @@ func ReadZabbixSettings(dsInstanceSettings *backend.DataSourceInstanceSettings) 
 		DisableReadOnlyUsersAck: zabbixSettingsDTO.DisableReadOnlyUsersAck,
 		PerUserAuth:             zabbixSettingsDTO.PerUserAuth,
 		PerUserAuthField:        zabbixSettingsDTO.PerUserAuthField,
+		PerUserAuthExcludeUsers: zabbixSettingsDTO.PerUserAuthExcludeUsers,
 	}
 
 	return zabbixSettings, nil

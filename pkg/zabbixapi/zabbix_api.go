@@ -23,6 +23,33 @@ var (
 	ErrNotAuthenticated = errors.New("zabbix api: not authenticated")
 )
 
+type perUserTokenKey struct{}
+
+// WithPerUserToken returns a context carrying a per-request authentication token.
+// When present, this token is used for the request instead of the shared/stored
+// auth, which keeps per-user authentication safe under concurrent requests.
+func WithPerUserToken(ctx context.Context, token string) context.Context {
+	return context.WithValue(ctx, perUserTokenKey{}, token)
+}
+
+// PerUserTokenFromContext returns the per-request token set by WithPerUserToken,
+// or an empty string if none is present.
+func PerUserTokenFromContext(ctx context.Context) string {
+	if v, ok := ctx.Value(perUserTokenKey{}).(string); ok {
+		return v
+	}
+	return ""
+}
+
+// effectiveAuth resolves the auth token to use for a request: the per-request
+// token from context if set, otherwise the shared/stored token.
+func (api *ZabbixAPI) effectiveAuth(ctx context.Context) string {
+	if token := PerUserTokenFromContext(ctx); token != "" {
+		return token
+	}
+	return api.auth
+}
+
 // ZabbixAPI is a simple client responsible for making request to Zabbix API
 type ZabbixAPI struct {
 	url        *url.URL
@@ -78,19 +105,21 @@ func (api *ZabbixAPI) SetAuth(auth string) {
 
 // Request performs API request
 func (api *ZabbixAPI) Request(ctx context.Context, method string, params ZabbixAPIParams, version int) (*simplejson.Json, error) {
-	if api.auth == "" {
+	auth := api.effectiveAuth(ctx)
+	if auth == "" {
 		return nil, backend.DownstreamError(ErrNotAuthenticated)
 	}
 
-	return api.request(ctx, method, params, api.auth, version)
+	return api.request(ctx, method, params, auth, version)
 }
 
 func (api *ZabbixAPI) RequestWithArrayParams(ctx context.Context, method string, params []interface{}, version int) (*simplejson.Json, error) {
-	if api.auth == "" {
+	auth := api.effectiveAuth(ctx)
+	if auth == "" {
 		return nil, backend.DownstreamError(ErrNotAuthenticated)
 	}
 
-	return api.requestWithArrayParams(ctx, method, params, api.auth, version)
+	return api.requestWithArrayParams(ctx, method, params, auth, version)
 }
 
 // Request performs API request without authentication token
@@ -124,11 +153,13 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 
 	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
 
-	if auth != "" && version >= 72 {
-		if api.dsSettings.BasicAuthEnabled {
+	if auth != "" && version >= 70 {
+		if version > 70 && api.dsSettings.BasicAuthEnabled {
 			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
 		}
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+		if !api.dsSettings.BasicAuthEnabled {
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+		}
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
@@ -152,9 +183,9 @@ func (api *ZabbixAPI) requestWithArrayParams(ctx context.Context, method string,
 		"params":  params,
 	}
 
-	// Zabbix v7.2 and later deprecated `auth` parameter and replaced it with using Auth header
-	// `auth` parameter throws an error in new versions so we need to add it only for older versions
-	if auth != "" && version < 72 {
+	// Zabbix v7.0 and later deprecated `auth` parameter and replaced it with using Auth header.
+	// In v7.0 with HTTP basic auth enabled (reverse proxy scenario), auth still needs to be in request body.
+	if auth != "" && (version < 70 || (version <= 70 && api.dsSettings.BasicAuthEnabled)) {
 		apiRequest["auth"] = auth
 	}
 
@@ -170,8 +201,8 @@ func (api *ZabbixAPI) requestWithArrayParams(ctx context.Context, method string,
 
 	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
 
-	if auth != "" && version >= 72 {
-		if api.dsSettings.BasicAuthEnabled {
+	if auth != "" && version >= 70 {
+		if version > 70 && api.dsSettings.BasicAuthEnabled {
 			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
 		}
 		if !api.dsSettings.BasicAuthEnabled {
@@ -287,8 +318,12 @@ func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, u
 		if err != nil {
 			return "", err
 		}
+		if createResp == nil {
+			return "", errors.New("failed to create Zabbix API token, response is empty")
+		}
 
-		tokenIds := createResp.GetIndex(0).Get("tokenids").MustArray()
+		// token.create returns an object: {"tokenids": ["<id>"]}
+		tokenIds := createResp.Get("tokenids").MustArray()
 		if len(tokenIds) == 0 {
 			return "", errors.New("failed to create Zabbix API token, tokenids array is empty")
 		}
