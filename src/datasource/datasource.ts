@@ -1,7 +1,4 @@
 import _ from 'lodash';
-import config from 'grafana/app/core/config';
-import { contextSrv } from 'grafana/app/core/core';
-import * as dateMath from 'grafana/app/core/utils/datemath';
 import * as utils from './utils';
 import * as migrations from './migrations';
 import * as metricFunctions from './metricFunctions';
@@ -15,6 +12,7 @@ import { ZabbixMetricsQuery, ShowProblemTypes } from './types/query';
 import { ZabbixDSOptions } from './types/config';
 import {
   BackendSrvRequest,
+  config,
   getBackendSrv,
   getTemplateSrv,
   getDataSourceSrv,
@@ -28,32 +26,25 @@ import {
   DataQueryRequest,
   DataQueryResponse,
   DataSourceInstanceSettings,
+  dateMath,
   FieldType,
   isDataFrame,
+  OrgRole,
   ScopedVars,
   toDataFrame,
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
-import { lastValueFrom, map, Observable } from 'rxjs';
+import { from, lastValueFrom, map, Observable, switchMap } from 'rxjs';
 
 export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, ZabbixDSOptions> {
-  name: string;
-  basicAuth: any;
-  withCredentials: any;
-
   trends: boolean;
   trendsFrom: string;
   trendsRange: string;
-  cacheTTL: any;
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
   enableDirectDBConnection: boolean;
-  dbConnectionDatasourceId: number;
-  dbConnectionDatasourceName: string;
-  dbConnectionRetentionPolicy: string;
   enableDebugLog: boolean;
-  datasourceId: number;
   instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>;
   zabbix: Zabbix;
 
@@ -71,12 +62,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       prepareAnnotation: migrations.prepareAnnotation,
     };
 
-    // General data source settings
-    this.datasourceId = instanceSettings.id;
-    this.name = instanceSettings.name;
-    this.basicAuth = instanceSettings.basicAuth;
-    this.withCredentials = instanceSettings.withCredentials;
-
     const jsonData = migrations.migrateDSConfig(instanceSettings.jsonData);
 
     // Use trends instead history since specified time
@@ -86,7 +71,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     // Set cache update interval
     const ttl = jsonData.cacheTTL || '1h';
-    this.cacheTTL = utils.parseInterval(ttl);
 
     // Other options
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
@@ -94,22 +78,17 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     // Direct DB Connection options
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
-    this.dbConnectionDatasourceId = jsonData.dbConnectionDatasourceId;
-    this.dbConnectionDatasourceName = jsonData.dbConnectionDatasourceName;
-    this.dbConnectionRetentionPolicy = jsonData.dbConnectionRetentionPolicy;
 
-    const zabbixOptions = {
-      basicAuth: this.basicAuth,
-      withCredentials: this.withCredentials,
-      cacheTTL: this.cacheTTL,
-      enableDirectDBConnection: this.enableDirectDBConnection,
-      dbConnectionDatasourceId: this.dbConnectionDatasourceId,
-      dbConnectionDatasourceName: this.dbConnectionDatasourceName,
-      dbConnectionRetentionPolicy: this.dbConnectionRetentionPolicy,
-      datasourceId: this.datasourceId,
-    };
-
-    this.zabbix = new Zabbix(zabbixOptions);
+    this.zabbix = new Zabbix({
+      basicAuth: instanceSettings.basicAuth,
+      withCredentials: instanceSettings.withCredentials,
+      cacheTTL: ttl,
+      dbConnectionEnable: this.enableDirectDBConnection,
+      dbConnectionDatasourceUID: jsonData.dbConnectionDatasourceUID,
+      dbConnectionDatasourceName: jsonData.dbConnectionDatasourceName,
+      dbConnectionRetentionPolicy: jsonData.dbConnectionRetentionPolicy,
+      uid: instanceSettings.uid,
+    });
   }
 
   ////////////////////////
@@ -142,10 +121,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const backendResponse = super.query({ ...request, targets: interpolatedTargets.filter(this.isBackendTarget) });
     const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: interpolatedTargets });
     const frontendResponsePromise = this.frontendQuery({ ...request, targets: interpolatedTargets });
-    const annotationResposePromise = this.annotationRequest({ ...request, targets: interpolatedTargets });
-
-    const applyMergeQueries = (queryResponse: DataQueryResponse) =>
-      this.mergeQueries(queryResponse, dbConnectionResponsePromise, frontendResponsePromise, annotationResposePromise);
+    const annotationResponsePromise = this.annotationRequest({ ...request, targets: interpolatedTargets });
     const applyFEFuncs = (queryResponse: DataQueryResponse) =>
       this.applyFrontendFunctions(queryResponse, {
         ...request,
@@ -156,7 +132,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       map(applyFEFuncs),
       map(responseHandler.convertZabbixUnits),
       map(this.convertToWide),
-      map(applyMergeQueries)
+      switchMap((queryResponse) =>
+        from(Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResponsePromise])).pipe(
+          map(([dbConnectionRes, frontendRes, annotationRes]) =>
+            this.mergeQueries(queryResponse, dbConnectionRes, frontendRes, annotationRes)
+          )
+        )
+      )
     );
   }
 
@@ -259,8 +241,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   buildTimeRange(request, target) {
-    let timeFrom = Math.ceil(dateMath.parse(request.range.from) / 1000);
-    let timeTo = Math.ceil(dateMath.parse(request.range.to) / 1000);
+    let timeFrom = Math.ceil(dateMath.toDateTime(request.range.from, {})?.unix() ?? 0);
+    let timeTo = Math.ceil(dateMath.toDateTime(request.range.to, {})?.unix() ?? 0);
 
     // Apply Time-related functions (timeShift(), etc)
     const timeFunctions = utils.bindFunctionDefs(target.functions, 'Time');
@@ -278,6 +260,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async queryNumericData(target, timeRange, useTrends, request): Promise<any> {
     const getItemOptions = {
       itemtype: 'num',
+      showDisabledItems: target.options.showDisabledItems,
     };
 
     const items = await this.zabbix.getItemsFromTarget(target, getItemOptions);
@@ -317,7 +300,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async invokeDataProcessingQuery(timeSeriesData, query, timeRange) {
     // Request backend for data processing
     const requestOptions: BackendSrvRequest = {
-      url: `/api/datasources/${this.datasourceId}/resources/db-connection-post`,
+      url: `/api/datasources/uid/${this.instanceSettings.uid}/resources/db-connection-post`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -392,17 +375,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const options = {
       itemtype: 'text',
     };
-    return this.zabbix
-      .getItemsFromTarget(target, options)
-      .then((items) => {
-        return this.zabbix.getHistoryText(items, timeRange, target);
-      })
-      .then((result) => {
-        if (target.resultFormat !== 'table') {
-          return result.map((s) => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
-        }
-        return result;
-      });
+    return this.zabbix.getItemsFromTarget(target, options).then(async (items) => {
+      const result = await this.zabbix.getHistoryText(items, timeRange, target);
+      if (target.resultFormat === 'table') {
+        return [result];
+      }
+      return (result as any[]).map((s) => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
+    });
   }
 
   /**
@@ -443,13 +422,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
     if (target.slaFilter !== undefined) {
       const slas = await this.zabbix.getSLAs(target.slaFilter);
-      const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request);
+      const result = await this.zabbix.getSLI(itservices, slas, timeRange, target, request, target.slaInterval);
       // Apply alias functions
       const aliasFunctions = utils.bindFunctionDefs(target.functions, 'Alias');
       utils.sequence(aliasFunctions)(result);
       return result;
     }
-    const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, request);
+    const itservicesdp = await this.zabbix.getSLA(itservices, timeRange, target, target.slaInterval, request);
     const backendRequest = responseHandler.itServiceResponseToTimeSeries(itservicesdp, target.slaInterval);
     const processedResponse = await this.invokeDataProcessingQuery(backendRequest, target, {});
     return this.handleBackendPostProcessingResponse(processedResponse, request, target);
@@ -500,7 +479,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   async queryTriggersICData(target, timeRange) {
-    const getItemOptions = { itemtype: 'num' };
+    const getItemOptions = {
+      itemtype: 'num',
+      showDisabledItems: target.options.showDisabledItems,
+    };
     const [hosts, apps, items] = await this.zabbix.getHostsFromICTarget(target, getItemOptions);
     if (!hosts.length) {
       return Promise.resolve([]);
@@ -584,7 +566,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   async queryProblems(target: ZabbixMetricsQuery, timeRange, options) {
     const [timeFrom, timeTo] = timeRange;
-    const userIsEditor = contextSrv.isEditor || contextSrv.isGrafanaAdmin;
+    const userIsEditor =
+      config.bootData.user.isGrafanaAdmin ||
+      config.bootData.user.orgRole === OrgRole.Editor ||
+      config.bootData.user.orgRole === OrgRole.Admin;
 
     let showAckButton = true;
 
@@ -675,17 +660,16 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   async testDatasource() {
     try {
       const testResult = await super.testDatasource();
-      return this.zabbix.testDataSource().then((dbConnectorStatus) => {
-        let message = testResult.message;
-        if (dbConnectorStatus) {
-          message += `, DB connector type: ${dbConnectorStatus.dsType}`;
-        }
-        return {
-          status: testResult.status,
-          message: message,
-          title: testResult.status,
-        };
-      });
+      const dbConnectorStatus = await this.zabbix.testDataSource();
+      let message = testResult.message;
+      if (dbConnectorStatus) {
+        message += `, DB connector type: ${dbConnectorStatus.dsType}, DB connector name: ${dbConnectorStatus.dsName}`;
+      }
+      return {
+        status: testResult.status,
+        message: message,
+        title: testResult.status,
+      };
     } catch (error: any) {
       if (error instanceof ZabbixAPIError) {
         return Promise.reject({
@@ -816,8 +800,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   annotationQueryLegacy(options) {
     const timeRange = options.range || options.rangeRaw;
-    const timeFrom = Math.ceil(dateMath.parse(timeRange.from) / 1000);
-    const timeTo = Math.ceil(dateMath.parse(timeRange.to) / 1000);
+    const timeFrom = Math.ceil(dateMath.toDateTime(timeRange.from, {})?.unix() ?? 0);
+    const timeTo = Math.ceil(dateMath.toDateTime(timeRange.to, {})?.unix() ?? 0);
     const annotation = options.targets[0];
 
     // Show all triggers
@@ -884,7 +868,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       return false;
     }
     const [timeFrom, timeTo] = timeRange;
-    const useTrendsFrom = Math.ceil(dateMath.parse('now-' + this.trendsFrom) / 1000);
+    const useTrendsFrom = Math.ceil(dateMath.toDateTime('now-' + this.trendsFrom, {})?.unix() ?? 0);
     const useTrendsRange = Math.ceil(utils.parseInterval(this.trendsRange) / 1000);
     const useTrendsToggle = target.options.useTrends === 'true';
     const useTrends =
@@ -906,24 +890,26 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   mergeQueries(
     queryResponse: DataQueryResponse,
-    dbConnectionResponsePromise: Promise<DataQueryResponse>,
-    frontendResponsePromise: Promise<DataQueryResponse>,
-    annotationResposePromise: Promise<DataQueryResponse>
+    dbConnectionResponse?: DataQueryResponse,
+    frontendResponse?: DataQueryResponse,
+    annotationResponse?: DataQueryResponse
   ): DataQueryResponse {
-    Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResposePromise]).then((resp) => {
-      const [dbConnectionRes, frontendRes, annotationRes] = resp;
-      if (dbConnectionRes.data) {
-        queryResponse.data = queryResponse.data.concat(dbConnectionRes.data);
-      }
-      if (frontendRes.data) {
-        queryResponse.data = queryResponse.data.concat(frontendRes.data);
-      }
+    const mergedResponse: DataQueryResponse = {
+      ...queryResponse,
+      data: queryResponse.data ? [...queryResponse.data] : [],
+    };
 
-      if (annotationRes.data) {
-        queryResponse.data = queryResponse.data.concat(annotationRes.data);
-      }
-    });
-    return queryResponse;
+    if (dbConnectionResponse?.data) {
+      mergedResponse.data = mergedResponse.data.concat(dbConnectionResponse.data);
+    }
+    if (frontendResponse?.data) {
+      mergedResponse.data = mergedResponse.data.concat(frontendResponse.data);
+    }
+    if (annotationResponse?.data) {
+      mergedResponse.data = mergedResponse.data.concat(annotationResponse.data);
+    }
+
+    return mergedResponse;
   }
 
   convertToWide(response: DataQueryResponse) {

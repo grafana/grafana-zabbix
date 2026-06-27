@@ -206,6 +206,7 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     return (
       <Modal
         isOpen={true}
+        ariaLabel="Acknowledge problem"
         onDismiss={this.dismiss}
         className={styles.modal}
         title={

@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import React, { useEffect } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
@@ -101,6 +101,7 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            createCustomValue={true}
             placeholder="Group name"
           />
         </InlineField>
@@ -111,6 +112,7 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            createCustomValue={true}
             placeholder="Host name"
           />
         </InlineField>
@@ -123,6 +125,7 @@ export const UserMacrosQueryEditor = ({ query, datasource, onChange }: Props) =>
             options={macrosOptions}
             isLoading={macrosLoading}
             onChange={onFilterChange('macro')}
+            createCustomValue={true}
             placeholder="Macro name"
           />
         </InlineField>

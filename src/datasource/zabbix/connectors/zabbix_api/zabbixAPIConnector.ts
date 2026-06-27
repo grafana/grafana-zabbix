@@ -1,9 +1,8 @@
 import _ from 'lodash';
 import semver from 'semver';
-import kbn from 'grafana/app/core/utils/kbn';
 import * as utils from '../../../utils';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
-import { ShowProblemTypes } from '../../../types/query';
+import { HostTagFilter, ShowProblemTypes, ZabbixTagEvalType } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
@@ -13,9 +12,6 @@ import { zabbixMethodName } from 'datasource/zabbix/types';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
-// Backward compatibility. Since Grafana 7.2 roundInterval() func was moved to @grafana/data package
-const roundInterval: (interval: number) => number = rangeUtil?.roundInterval || kbn.roundInterval || kbn.round_interval;
-
 /**
  * Zabbix API Wrapper.
  * Creates Zabbix API instance with given parameters (url, credentials and other).
@@ -23,15 +19,15 @@ const roundInterval: (interval: number) => number = rangeUtil?.roundInterval || 
  */
 export class ZabbixAPIConnector {
   backendAPIUrl: string;
-  requestOptions: { basicAuth: any; withCredentials: boolean };
+  requestOptions: { basicAuth: string; withCredentials: boolean };
   getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
   version: string;
   getVersionPromise: Promise<string>;
-  datasourceId: number;
+  datasourceUID: string;
 
-  constructor(basicAuth: any, withCredentials: boolean, datasourceId: number) {
-    this.datasourceId = datasourceId;
-    this.backendAPIUrl = `/api/datasources/${this.datasourceId}/resources/zabbix-api`;
+  constructor(basicAuth: string, withCredentials: boolean, datasourceUID: string) {
+    this.datasourceUID = datasourceUID;
+    this.backendAPIUrl = `/api/datasources/uid/${this.datasourceUID}/resources/zabbix-api`;
 
     this.requestOptions = {
       basicAuth: basicAuth,
@@ -65,7 +61,6 @@ export class ZabbixAPIConnector {
       },
       hideFromInspector: false,
       data: {
-        datasourceId: this.datasourceId,
         method,
         params,
       },
@@ -149,7 +144,12 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
-  getHosts(groupids): Promise<any[]> {
+  getHosts(
+    groupids: string[],
+    getHostTags?: boolean,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<any[]> {
     const params: any = {
       output: ['hostid', 'name', 'host'],
       sortfield: 'name',
@@ -158,6 +158,23 @@ export class ZabbixAPIConnector {
       params.groupids = groupids;
     }
 
+    if (getHostTags) {
+      params.output.push('tags');
+      params.selectTags = 'extend';
+    }
+
+    if (hostTagFilters && hostTagFilters.length > 0) {
+      params.selectTags = 'extend';
+      params.evaltype = evalType === ZabbixTagEvalType.Or || evalType === ZabbixTagEvalType.AndOr ? +evalType : 0;
+
+      // ensure only non empty tag keys are being sent
+      // convert operator to number since that is the expected type in Zabbix.
+      params.tags = hostTagFilters
+        .filter((tagFilter) => tagFilter.tag !== '')
+        .map((tagFilter) => {
+          return { ...tagFilter, operator: +tagFilter.operator };
+        });
+    }
     return this.request('host.get', params);
   }
 
@@ -381,14 +398,18 @@ export class ZabbixAPIConnector {
     return this.request('sla.get', params);
   }
 
-  getSLA(serviceids, timeRange, options) {
+  getSLA(serviceids, timeRange, options, slaInterval: string) {
+    if (!slaInterval) {
+      // use default as auto
+      slaInterval = 'auto';
+    }
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
@@ -400,14 +421,17 @@ export class ZabbixAPIConnector {
     return this.request('service.getsla', params);
   }
 
-  async getSLA60(serviceids, timeRange, options) {
+  async getSLA60(serviceids, timeRange, options, slaInterval: string) {
+    if (!slaInterval) {
+      slaInterval = 'auto';
+    }
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
@@ -459,14 +483,14 @@ export class ZabbixAPIConnector {
     return slaLikeResponse;
   }
 
-  async getSLI(slaid, serviceids, timeRange, options) {
+  async getSLI(slaid, serviceids, timeRange, options, slaInterval: string) {
     const [timeFrom, timeTo] = timeRange;
     let intervals = [{ from: timeFrom, to: timeTo }];
-    if (options.slaInterval === 'auto') {
+    if (slaInterval === 'auto') {
       const interval = getSLAInterval(options.intervalMs);
       intervals = buildSLAIntervals(timeRange, interval);
-    } else if (options.slaInterval !== 'none') {
-      const interval = utils.parseInterval(options.slaInterval) / 1000;
+    } else if (slaInterval !== 'none') {
+      const interval = utils.parseInterval(slaInterval) / 1000;
       intervals = buildSLAIntervals(timeRange, interval);
     }
 
@@ -539,13 +563,12 @@ export class ZabbixAPIConnector {
       triggerids: triggerids,
       expandDescription: true,
       expandData: true,
-      expandComment: true,
       expandExpression: true,
       monitored: true,
       skipDependent: true,
       [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: ['name', 'groupid'],
       selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'description'],
-      selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
+      selectItems: ['itemid', 'name', 'key_', 'lastvalue', 'value_type'],
       // selectLastEvent: 'extend',
       // selectTags: 'extend',
       preservekeys: '1',
@@ -587,7 +610,7 @@ export class ZabbixAPIConnector {
       },
       [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: ['groupid', 'name'],
       selectHosts: ['hostid', 'name', 'host', 'maintenance_status'],
-      selectItems: ['itemid', 'name', 'key_', 'lastvalue'],
+      selectItems: ['itemid', 'name', 'key_', 'lastvalue', 'value_type'],
       selectLastEvent: 'extend',
       selectTags: 'extend',
     };
@@ -976,7 +999,7 @@ function filterTriggersByAcknowledge(triggers, acknowledged) {
 function getSLAInterval(intervalMs) {
   // Too many intervals may cause significant load on the database, so decrease number of resulting points
   const resolutionRatio = 100;
-  const interval = roundInterval(intervalMs * resolutionRatio) / 1000;
+  const interval = rangeUtil.roundInterval(intervalMs * resolutionRatio) / 1000;
   return Math.max(interval, MIN_SLA_INTERVAL);
 }
 

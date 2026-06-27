@@ -2,7 +2,6 @@
 *.sublime-project
 
 .idea/
-.vscode
 
 *.bat
 .DS_Store

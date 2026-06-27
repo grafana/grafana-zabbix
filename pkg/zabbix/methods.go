@@ -105,9 +105,16 @@ func (ds *Zabbix) GetItems(
 	}
 
 	if isRegex(itemTagFilter) {
+		ds.logger.Debug("Processing regex item tag filter", "filterPattern", itemTagFilter, "hostCount", len(hostids))
 		tags, err := ds.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter)
 		if err != nil {
 			return nil, err
+		}
+		ds.logger.Debug("GetItemTags completed", "matchedTagCount", len(tags), "filterPattern", itemTagFilter)
+		// If regex filter doesn't match any tags, return empty items list
+		// to prevent silently removing the filter and returning all items
+		if len(tags) == 0 {
+			return []*Item{}, nil
 		}
 		var tagStrs []string
 		for _, t := range tags {
@@ -115,6 +122,7 @@ func (ds *Zabbix) GetItems(
 		}
 		itemTagFilter = strings.Join(tagStrs, ",")
 	}
+	ds.logger.Debug("Fetching items with filters", "hostCount", len(hostids), "itemType", itemType, "showDisabled", showDisabled, "hasItemTagFilter", len(itemTagFilter) > 0)
 	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter)
 	if err != nil {
 		return nil, err
@@ -233,7 +241,7 @@ func filterAppsByQuery(items []Application, filter string) ([]Application, error
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilter string, tagFilter string) ([]ItemTag, error) {
+func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilter string, tagFilter string) ([]Tag, error) {
 	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
 		return nil, err
@@ -252,8 +260,8 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 		return nil, err
 	}
 
-	var allTags []ItemTag
-	tagsMap := make(map[string]ItemTag)
+	var allTags []Tag
+	tagsMap := make(map[string]Tag)
 	for _, item := range allItems {
 		for _, itemTag := range item.Tags {
 			tagStr := itemTagToString(itemTag)
@@ -267,13 +275,13 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 	return filterTags(allTags, tagFilter)
 }
 
-func filterTags(items []ItemTag, filter string) ([]ItemTag, error) {
+func filterTags(items []Tag, filter string) ([]Tag, error) {
 	re, err := parseFilter(filter)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredItems := make([]ItemTag, 0)
+	filteredItems := make([]Tag, 0)
 	for _, i := range items {
 		tagStr := itemTagToString(i)
 		if re != nil {

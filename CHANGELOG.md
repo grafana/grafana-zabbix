@@ -1,5 +1,78 @@
 # Change Log
 
+## 6.4.0
+
+🚀 Remove use of @types/grafana and migrate to use components from @grafana/\* packages.
+
+🚀 Dependency improvement, clean up and security hardening
+
+🐛 ProblemsPanel: Fix long description shifts content
+
+## 6.3.2
+
+🐛 Fix `{ITEM.VALUE}` and `{ITEM.LASTVALUE}` macros in trigger description always showing the current item value instead of the value at problem creation time
+
+## 6.3.1
+
+🐛 Fix operational data showing the same current item value for all problems of the same trigger; historical item values are now fetched at each problem's timestamp via `history.get`
+🐛 Fix: deprecation error in webserver logs because of "/auth" property using version 7.0
+
+## 6.3.0
+
+🚀 Replace use of deprecated api/datasources/id with api/datasources/uid
+
+## 6.2.1
+
+🐛 Fix problem description text overflow by adding `white-space: normal` to prevent layout issues with acknowledgment panel
+
+⚙️ Updated backend/go version to 1.26.0 from 1.25.6 which resolves CVE-2025-68121
+
+⚙️ Updated frontend & backend dependencies
+
+## 6.2.0
+
+🚀 Update dependencies for react-19 upgrade preparations
+
+🐛 Fix: Show disabled items in directdb connection
+
+🐛 Fix service query when selecting an SLA value
+
+## 6.1.2
+
+🐛 Fix silent removal of itemTagFilter when no tags match regex
+
+🐛 Enhance the problems panel with the ability to convert specific tags to columns. Single or multiple tags supported.
+
+🐛 Fix column visibility toggles for problems panel
+
+## 6.1.1
+
+🐛 Fix moment value rendering issue
+
+🐛 Fix proxies dropdown in ProblemsQueryEditor
+
+## 6.1.0
+
+🎉 Migrates use of DatasourceApi to DatasourceWithBackend
+
+🚀 Fix support of `applicationids` filters with Zabbix problems for versions older than 5.0.x
+
+🚀 Fix when to fetch Zabbix version before issuing new requests
+
+🚀 Support adding custom values in dropdowns for all query types
+
+🚀 Add support for host tags when querying metrics
+
+🚀 Add support for disabled items in Item variable type
+
+🚀 Standardization across Zabbix UI components
+
+🚀 Moves health check to the backend
+
+🚀 Fix how frontend and backend querying responses are merged
+
+🐛 Upgrade react-table to v8
+
 ## 6.0.3
 
 ### Patch Changes

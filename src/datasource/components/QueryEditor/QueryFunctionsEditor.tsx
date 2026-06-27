@@ -14,10 +14,14 @@ export interface Props {
 
 export const QueryFunctionsEditor = ({ query, onChange }: Props) => {
   const onFuncParamChange = (func: MetricFunc, index: number, value: string) => {
-    func.params[index] = value;
-    const funcIndex = query.functions.findIndex((f) => f === func);
-    const functions = query.functions;
-    functions[funcIndex] = func;
+    const functions = query.functions.map((f) => {
+      if (f === func) {
+        const newParams = [...f.params];
+        newParams[index] = value;
+        return { ...f, params: newParams };
+      }
+      return f;
+    });
     onChange({ ...query, functions });
   };
 

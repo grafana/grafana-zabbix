@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ScopedVars } from '@grafana/data';
 import { ZabbixDatasource } from '../datasource';
 import { ZabbixMetricsQuery } from '../types/query';
@@ -10,12 +10,10 @@ export const useInterpolatedQuery = (
   query: ZabbixMetricsQuery,
   scopedVars?: ScopedVars
 ): ZabbixMetricsQuery => {
-  const [interpolatedQuery, setInterpolatedQuery] = useState<ZabbixMetricsQuery>(query);
-  const resolvedScopedVars = useMemo(() => scopedVars ?? EMPTY_SCOPED_VARS, [scopedVars]);
+  const resolvedScopedVars = scopedVars ?? EMPTY_SCOPED_VARS;
 
-  useEffect(() => {
-    const replacedQuery = datasource.interpolateVariablesInQueries([query], resolvedScopedVars)[0];
-    setInterpolatedQuery(replacedQuery);
+  const interpolatedQuery = useMemo(() => {
+    return datasource.interpolateVariablesInQueries([query], resolvedScopedVars)[0];
   }, [datasource, query, resolvedScopedVars]);
 
   return interpolatedQuery;

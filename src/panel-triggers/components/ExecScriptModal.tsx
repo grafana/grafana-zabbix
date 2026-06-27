@@ -136,6 +136,7 @@ export class ExecScriptModalUnthemed extends PureComponent<Props, State> {
         isOpen={true}
         onDismiss={this.dismiss}
         className={styles.modal}
+        ariaLabel="Execute script"
         title={
           <div className={styles.modalHeaderTitle}>
             {this.state.loading ? <Spinner size={18} /> : <FAIcon icon="terminal" />}

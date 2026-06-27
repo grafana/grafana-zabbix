@@ -1,6 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { getDataSourceSrv, config } from '@grafana/runtime';
-import { DataSourcePluginOptionsEditorProps, DataSourceSettings, GrafanaTheme2, SelectableValue } from '@grafana/data';
+import React, { useEffect, useMemo } from 'react';
+import { getDataSourceSrv, config, GetDataSourceListFilters } from '@grafana/runtime';
+import {
+  DataSourceInstanceSettings,
+  DataSourceJsonData,
+  DataSourcePluginOptionsEditorProps,
+  DataSourceSettings,
+  GrafanaTheme2,
+} from '@grafana/data';
 import {
   Combobox,
   ComboboxOption,
@@ -43,8 +49,28 @@ export const ConfigEditor = (props: Props) => {
   const styles = useStyles2(getStyles);
   const { options, onOptionsChange } = props;
 
-  const [selectedDBDatasource, setSelectedDBDatasource] = useState(null);
-  const [currentDSType, setCurrentDSType] = useState('');
+  // Derive selectedDBDatasource and currentDSType from options (prefer UID; fallback to id for legacy config)
+  const { selectedDBDatasource, currentDSType } = useMemo(() => {
+    if (!options.jsonData.dbConnectionEnable) {
+      return { selectedDBDatasource: null, currentDSType: '' };
+    }
+    const dsList = getDirectDBDatasources();
+    const uid = options.jsonData.dbConnectionDatasourceUID;
+    const id = options.jsonData.dbConnectionDatasourceId;
+    const selectedDs = uid
+      ? dsList.find((d) => d.uid === uid)
+      : id !== undefined && id !== null
+        ? dsList.find((d) => d.id === id)
+        : undefined;
+    return {
+      selectedDBDatasource: selectedDs ? { label: selectedDs.name, value: selectedDs.uid } : null,
+      currentDSType: selectedDs?.type || '',
+    };
+  }, [
+    options.jsonData.dbConnectionEnable,
+    options.jsonData.dbConnectionDatasourceUID,
+    options.jsonData.dbConnectionDatasourceId,
+  ]);
 
   const [grafanaUsers, setGrafanaUsers] = useState<SelectableValue<string>[]>([{ label: 'admin', value: 'admin' }]);
   const [canEditExcludedUsers, setCanEditExcludedUsers] = useState(true);
@@ -100,37 +126,35 @@ export const ConfigEditor = (props: Props) => {
         trendsRange: '',
         cacheTTL: '',
         timeout: undefined,
+        queryTimeout: undefined,
         disableDataAlignment: false,
         ...restJsonData,
       },
       secureJsonData: { ...newSecureJsonData },
     });
 
-    if (options.jsonData.dbConnectionEnable) {
-      if (!options.jsonData.dbConnectionDatasourceId) {
-        const dsName = options.jsonData.dbConnectionDatasourceName;
+    // Handle async lookup when neither uid nor id is set but name is available (legacy)
+    if (
+      options.jsonData.dbConnectionEnable &&
+      !options.jsonData.dbConnectionDatasourceUID &&
+      options.jsonData.dbConnectionDatasourceId == null
+    ) {
+      const dsName = options.jsonData.dbConnectionDatasourceName;
+      if (dsName) {
         getDataSourceSrv()
           .get(dsName)
           .then((ds) => {
-            if (ds) {
-              const selectedDs = getDirectDBDatasources().find((dsOption) => dsOption.id === ds.id);
-              setSelectedDBDatasource({ label: selectedDs?.name, value: selectedDs?.id });
-              setCurrentDSType(selectedDs?.type);
+            if (ds?.uid) {
               onOptionsChange({
                 ...options,
                 jsonData: {
                   ...options.jsonData,
-                  dbConnectionDatasourceId: ds.id,
+                  dbConnectionDatasourceUID: ds.uid,
+                  dbConnectionDatasourceName: ds.name,
                 },
               });
             }
           });
-      } else {
-        const selectedDs = getDirectDBDatasources().find(
-          (dsOption) => dsOption.id === options.jsonData.dbConnectionDatasourceId
-        );
-        setSelectedDBDatasource({ label: selectedDs?.name, value: selectedDs?.id });
-        setCurrentDSType(selectedDs?.type);
       }
     }
   }, []);
@@ -270,6 +294,44 @@ export const ConfigEditor = (props: Props) => {
           </Field>
         </ConfigSubSection>
 
+        <ConfigSubSection title="Query Options">
+          <Field
+            label={
+              <Label>
+                <EditorStack gap={0.5}>
+                  <span>Query Timeout</span>
+                  <Tooltip
+                    content={
+                      <span>
+                        Maximum execution time in seconds for database queries initiated by the plugin. Queries
+                        exceeding this limit will be automatically terminated. Default is 60 seconds.
+                      </span>
+                    }
+                  >
+                    <Icon name="info-circle" size="sm" />
+                  </Tooltip>
+                </EditorStack>
+              </Label>
+            }
+          >
+            <Input
+              width={40}
+              type="number"
+              value={options.jsonData.queryTimeout}
+              placeholder="60"
+              onChange={(event) => {
+                onOptionsChange({
+                  ...options,
+                  jsonData: {
+                    ...options.jsonData,
+                    queryTimeout: parseInt(event.currentTarget.value, 10) || undefined,
+                  },
+                });
+              }}
+            />
+          </Field>
+        </ConfigSubSection>
+
         <ConfigSubSection title="Trends">
           <Field label="Enable Trends">
             <Switch
@@ -351,12 +413,7 @@ export const ConfigEditor = (props: Props) => {
                   width={40}
                   value={selectedDBDatasource}
                   options={getDirectDBDSOptions()}
-                  onChange={directDBDatasourceChanegeHandler(
-                    options,
-                    onOptionsChange,
-                    setSelectedDBDatasource,
-                    setCurrentDSType
-                  )}
+                  onChange={directDBDatasourceChangeHandler(options, onOptionsChange)}
                   placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB)"
                 />
               </Field>
@@ -610,37 +667,35 @@ const resetSecureJsonField =
     });
   };
 
-const directDBDatasourceChanegeHandler =
-  (
-    options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
-    onChange: Props['onOptionsChange'],
-    setSelectedDS: React.Dispatch<any>,
-    setSelectedDSType: React.Dispatch<any>
-  ) =>
-  (value: SelectableValue<number>) => {
-    const selectedDs = getDirectDBDatasources().find((dsOption) => dsOption.id === value.value);
-    setSelectedDS({ label: selectedDs.name, value: selectedDs.id });
-    setSelectedDSType(selectedDs.type);
+const directDBDatasourceChangeHandler =
+  (options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>, onChange: Props['onOptionsChange']) =>
+  (value: ComboboxOption<string>) => {
+    const dsList = getDirectDBDatasources();
+    const ds = value.value ? dsList.find((d) => d.uid === value.value) : undefined;
     onChange({
       ...options,
       jsonData: {
         ...options.jsonData,
-        dbConnectionDatasourceId: value.value,
+        dbConnectionDatasourceUID: value.value ?? undefined,
+        dbConnectionDatasourceName: ds?.name ?? options.jsonData.dbConnectionDatasourceName,
+        dbConnectionDatasourceId: undefined, // prefer uid only
       },
     });
   };
 
 const getDirectDBDatasources = () => {
-  let dsList = (getDataSourceSrv() as any).getAll();
-  dsList = dsList.filter((ds) => SUPPORTED_SQL_DS.includes(ds.type));
+  const dsFilters: GetDataSourceListFilters = {
+    type: SUPPORTED_SQL_DS,
+  };
+  const dsList = getDataSourceSrv().getList(dsFilters);
   return dsList;
 };
 
 const getDirectDBDSOptions = () => {
-  const dsList = getDirectDBDatasources();
-  const dsOpts: Array<ComboboxOption<number>> = dsList.map((ds) => ({
+  const dsList: Array<DataSourceInstanceSettings<DataSourceJsonData>> = getDirectDBDatasources();
+  const dsOpts: Array<ComboboxOption<string>> = dsList.map((ds) => ({
     label: ds.name,
-    value: ds.id,
+    value: ds.uid,
     description: ds.type,
   }));
   return dsOpts;

@@ -3,13 +3,41 @@ apiVersion: 1
 datasources:
   - name: zabbix
     type: alexanderzobnin-zabbix-datasource
-    access: proxy
+    id: 1
     url: http://zabbix-web:8080/api_jsonrpc.php
     isDefault: true
     jsonData:
       username: Admin
       trends: true
-      trendsFrom: "7d"
-      trendsRange: "4d"
+      trendsFrom: '7d'
+      trendsRange: '4d'
+    secureJsonData:
+      password: zabbix
+  - name: zabbix74-database
+    type: grafana-postgresql-datasource
+    url: zabbix74-database-1:5432
+    id: 2
+    uid: zabbix74-database-1
+    user: zabbix
+    jsonData:
+      database: zabbix
+      sslmode: disable
+    secureJsonData:
+      password: zabbix
+  - name: zabbix74-directdb-connection
+    type: alexanderzobnin-zabbix-datasource
+    id: 3
+    uid: zabbix74-directdb-connection
+    url: http://zabbix-web:8080/api_jsonrpc.php
+    jsonData:
+      authType: userLogin
+      username: Admin
+      dbConnectionEnable: true
+      dbConnectionDatasourceId: 2
+      dbConnectionDatasourceName: zabbix74-database
+      # dbConnectionDatasourceUID: zabbix74-database-1
+      trends: true
+      trendsFrom: '7d'
+      trendsRange: '4d'
     secureJsonData:
       password: zabbix

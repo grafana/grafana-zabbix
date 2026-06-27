@@ -1,4 +1,5 @@
 import {
+  createDataFrame,
   DataFrame,
   dataFrameFromJSON,
   DataFrameJSON,
@@ -11,7 +12,6 @@ import {
   TIME_SERIES_TIME_FIELD_NAME,
   TIME_SERIES_VALUE_FIELD_NAME,
 } from '@grafana/data';
-import TableModel from 'grafana/app/core/table_model';
 import _ from 'lodash';
 import * as c from './constants';
 import { ZBXGroup, ZBXTrigger } from './types';
@@ -441,11 +441,10 @@ function handleText(history, items, target, addHostName = true) {
 }
 
 function handleHistoryAsTable(history, items, target) {
-  const table: any = new TableModel();
-  table.addColumn({ text: 'Host' });
-  table.addColumn({ text: 'Item' });
-  table.addColumn({ text: 'Key' });
-  table.addColumn({ text: 'Last value' });
+  const hosts: string[] = [];
+  const itemNames: string[] = [];
+  const keys: string[] = [];
+  const lastValues: string[] = [];
 
   const grouped_history = _.groupBy(history, 'itemid');
   _.each(items, (item) => {
@@ -465,10 +464,21 @@ function handleHistoryAsTable(history, items, target) {
     let host: any = _.first(item.hosts);
     host = host ? host.name : '';
 
-    table.rows.push([host, item.name, item.key_, lastValue]);
+    hosts.push(host);
+    itemNames.push(item.name);
+    keys.push(item.key_);
+    lastValues.push(lastValue);
   });
 
-  return table;
+  return createDataFrame({
+    refId: target.refId,
+    fields: [
+      { name: 'Host', type: FieldType.string, values: hosts },
+      { name: 'Item', type: FieldType.string, values: itemNames },
+      { name: 'Key', type: FieldType.string, values: keys },
+      { name: 'Last value', type: FieldType.string, values: lastValues },
+    ],
+  });
 }
 
 function convertText(target, point) {

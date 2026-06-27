@@ -1,13 +1,13 @@
 package datasource
 
 import (
+	"context"
 	"strings"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
-	"golang.org/x/net/context"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"

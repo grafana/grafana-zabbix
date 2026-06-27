@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import React, { useEffect, FormEvent } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { SelectableValue } from '@grafana/data';
 import { Combobox, ComboboxOption, InlineField, Input, MultiSelect } from '@grafana/ui';
@@ -43,8 +43,8 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
     const options = groups?.map((group) => ({
-      value: group.name,
-      label: group.name,
+      value: group.name ?? '',
+      label: group.name ?? '',
     }));
     options.unshift(...getVariableOptions());
     return options;
@@ -58,8 +58,8 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
   const loadHostOptions = async (group: string) => {
     const hosts = await datasource.zabbix.getAllHosts(group);
     let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
-      value: host.name,
-      label: host.name,
+      value: host.name ?? '',
+      label: host.name ?? '',
     }));
     options = _.uniqBy(options, (o) => o.value);
     options.unshift({ value: '/.*/' });
@@ -75,8 +75,8 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
     let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
-      value: app.name,
-      label: app.name,
+      value: app.name ?? '',
+      label: app.name ?? '',
     }));
     options = _.uniqBy(options, (o) => o.value);
     options.unshift(...getVariableOptions());
@@ -91,8 +91,8 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
   const loadProxyOptions = async () => {
     const proxies = await datasource.zabbix.getProxies();
     const options = proxies?.map((proxy) => ({
-      value: proxy.host,
-      label: proxy.host,
+      value: (!!proxy.host ? proxy.host : proxy.name) ?? '',
+      label: (!!proxy.host ? proxy.host : proxy.name) ?? '',
     }));
     options.unshift(...getVariableOptions());
     return options;
@@ -166,6 +166,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={groupsOptions}
             isLoading={groupsLoading}
             onChange={onFilterChange('group')}
+            createCustomValue={true}
             placeholder="Group name"
           />
         </InlineField>
@@ -176,6 +177,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={hostOptions}
             isLoading={hostsLoading}
             onChange={onFilterChange('host')}
+            createCustomValue={true}
             placeholder="Host name"
           />
         </InlineField>
@@ -186,6 +188,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={proxiesOptions}
             isLoading={proxiesLoading}
             onChange={onFilterChange('proxy')}
+            createCustomValue={true}
             placeholder="Proxy name"
           />
         </InlineField>
@@ -199,6 +202,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
               options={appOptions}
               isLoading={appsLoading}
               onChange={onFilterChange('application')}
+              createCustomValue={true}
               placeholder="Application name"
             />
           </InlineField>

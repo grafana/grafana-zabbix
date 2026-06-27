@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import React, { useEffect } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { Combobox, ComboboxOption, InlineField } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
@@ -95,6 +95,7 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={itServicesOptions}
             isLoading={itServicesLoading}
             onChange={onStringPropChange('itServiceFilter')}
+            createCustomValue={true}
             placeholder="Service name"
           />
         </InlineField>
@@ -105,6 +106,7 @@ export const ServicesQueryEditor = ({ query, datasource, onChange }: Props) => {
             options={slaOptions}
             isLoading={slaLoading}
             onChange={onStringPropChange('slaFilter')}
+            createCustomValue={true}
             placeholder="SLA name"
           />
         </InlineField>

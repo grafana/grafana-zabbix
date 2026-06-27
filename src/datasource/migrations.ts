@@ -1,9 +1,11 @@
+import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
 import _ from 'lodash';
-import { ZabbixMetricsQuery } from './types/query';
 import * as c from './constants';
+import { ZabbixDSOptions } from './types/config';
+import { ZabbixMetricsQuery } from './types/query';
 
 export const DS_QUERY_SCHEMA = 12;
-export const DS_CONFIG_SCHEMA = 3;
+export const DS_CONFIG_SCHEMA = 4;
 
 /**
  * Query format migration.
@@ -159,40 +161,40 @@ function convertToRegex(str) {
   }
 }
 
-export function migrateDSConfig(jsonData) {
+export function migrateDSConfig(jsonData: ZabbixDSOptions) {
   if (!jsonData) {
-    jsonData = {};
-  }
-
-  if (!shouldMigrateDSConfig(jsonData)) {
     return jsonData;
   }
 
-  const oldVersion = jsonData.schema || 1;
-  jsonData.schema = DS_CONFIG_SCHEMA;
-
-  if (oldVersion < 2) {
-    const dbConnectionOptions = jsonData.dbConnection || {};
+  // Migrate nested dbConnection object (schema v1) to flat fields
+  if (jsonData.dbConnection) {
+    const dbConnectionOptions = jsonData.dbConnection;
     jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
-    jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId || null;
+    if (!jsonData.dbConnectionDatasourceUID && dbConnectionOptions.datasourceId > 0) {
+      jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions.datasourceId);
+    }
     delete jsonData.dbConnection;
   }
 
-  if (oldVersion < 3) {
-    jsonData.timeout = (jsonData.timeout as string) === '' ? null : Number(jsonData.timeout as string);
+  // Migrate string timeout to number
+  if (typeof jsonData.timeout === 'string') {
+    jsonData.timeout = jsonData.timeout === '' ? null : Number(jsonData.timeout);
   }
 
+  // Migrate numeric datasource ID to UID
+  if (!jsonData.dbConnectionDatasourceUID && jsonData.dbConnectionDatasourceId > 0) {
+    const dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId);
+    if (!dbConnectionDatasourceUID) {
+      throw new Error(
+        `Error retrieving direct db connection data source. Data source with id ${jsonData.dbConnectionDatasourceId} not found`
+      );
+    }
+    jsonData.dbConnectionDatasourceUID = dbConnectionDatasourceUID;
+  }
+  delete jsonData.dbConnectionDatasourceId;
+
+  jsonData.schema = DS_CONFIG_SCHEMA;
   return jsonData;
-}
-
-function shouldMigrateDSConfig(jsonData): boolean {
-  if (jsonData.dbConnection && !_.isEmpty(jsonData.dbConnection)) {
-    return true;
-  }
-  if (jsonData.schema && jsonData.schema < DS_CONFIG_SCHEMA) {
-    return true;
-  }
-  return false;
 }
 
 const getDefaultAnnotationTarget = (json: any) => {
@@ -225,3 +227,13 @@ export const prepareAnnotation = (json: any) => {
 
   return json;
 };
+
+// exporting for testing purposes only
+export function getUIDFromID(id: number): string | undefined {
+  const dsFilters: GetDataSourceListFilters = {
+    all: true,
+  };
+  const dsList = getDataSourceSrv().getList(dsFilters);
+  const datasource = dsList.find((ds) => ds.id === id);
+  return datasource?.uid;
+}
