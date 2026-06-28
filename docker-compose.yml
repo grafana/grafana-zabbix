@@ -2,7 +2,7 @@
 # plugin, seeded with deterministic fixture data. Used for local development
 # (`yarn server`) and by the Playwright e2e workflow.
 #
-# The Zabbix version is switchable via ZABBIX_VERSION (default 7.4). Grafana only
+# The Zabbix version is switchable via ZABBIX_VERSION (default 7.0, the latest LTS). Grafana only
 # starts after the e2e-data-loader has exited successfully, so tests never run
 # against an empty backend.
 services:
@@ -35,7 +35,7 @@ services:
       retries: 30
 
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-${ZABBIX_VERSION:-7.4}-latest
+    image: zabbix/zabbix-server-pgsql:alpine-${ZABBIX_VERSION:-7.0}-latest
     depends_on:
       database:
         condition: service_healthy
@@ -47,7 +47,7 @@ services:
       POSTGRES_DB: zabbix
 
   zabbix-web:
-    image: zabbix/zabbix-web-apache-pgsql:alpine-${ZABBIX_VERSION:-7.4}-latest
+    image: zabbix/zabbix-web-apache-pgsql:alpine-${ZABBIX_VERSION:-7.0}-latest
     depends_on:
       database:
         condition: service_healthy

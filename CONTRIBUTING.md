@@ -35,7 +35,7 @@ yarn server          # == docker compose up --build
 yarn build && docker compose restart grafana
 ```
 
-Switch the Zabbix version with `ZABBIX_VERSION` (default `7.4`):
+Switch the Zabbix version with `ZABBIX_VERSION` (default `7.0`, the latest LTS):
 
 ```sh
 ZABBIX_VERSION=7.0 docker compose up -d --wait

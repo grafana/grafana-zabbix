@@ -37,7 +37,7 @@ window bound observable. It targets the current Zabbix schema and is idempotent.
 ```sh
 # from the repo root
 make dist                       # build the plugin into ./dist
-docker compose up -d --wait     # start the stack (ZABBIX_VERSION optional, default 7.4)
+docker compose up -d --wait     # start the stack (ZABBIX_VERSION optional, default 7.0)
 yarn e2e                        # run the tests against http://localhost:3000
 ```
 
