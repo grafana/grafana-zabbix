@@ -21,8 +21,13 @@ export default defineConfig<PluginOptions>({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * The whole suite runs against a single shared Zabbix + Grafana backend, which
+   * can't serve many concurrent sessions — Playwright's default (≈ half the CPU
+   * cores) overloads it and causes timeouts. Cap concurrency so `yarn e2e` is
+   * reliable locally without a `--workers` flag; CI runs serially.
+   */
+  workers: process.env.CI ? 1 : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
