@@ -1,5 +1,91 @@
+# Canonical dev / e2e environment: a real Zabbix backend + Grafana with the
+# plugin, seeded with deterministic fixture data. Used for local development
+# (`yarn server`) and by the Playwright e2e workflow.
+#
+# The Zabbix version is switchable via ZABBIX_VERSION (default 7.4). Grafana only
+# starts after the e2e-data-loader has exited successfully, so tests never run
+# against an empty backend.
 services:
   grafana:
     extends:
       file: .config/docker-compose-base.yaml
       service: grafana
+    depends_on:
+      zabbix-web:
+        condition: service_healthy
+      e2e-data-loader:
+        condition: service_completed_successfully
+    environment:
+      # Avoid the onboarding splash / new-layout modals during e2e runs and when
+      # browsing the dev environment manually.
+      GF_FEATURE_TOGGLES_splashScreen: 'false'
+      GF_FEATURE_TOGGLES_dashboardNewLayouts: 'false'
+
+  database:
+    image: postgres:18@sha256:a9abf4275f9e99bff8e6aed712b3b7dfec9cac1341bba01c1ffdfce9ff9fc34a
+    command: postgres -c 'max_connections=200'
+    environment:
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      POSTGRES_DB: zabbix
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zabbix -d zabbix']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-${ZABBIX_VERSION:-7.4}-latest
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DB_SERVER_HOST: database
+      DB_SERVER_PORT: 5432
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      POSTGRES_DB: zabbix
+
+  zabbix-web:
+    image: zabbix/zabbix-web-apache-pgsql:alpine-${ZABBIX_VERSION:-7.4}-latest
+    depends_on:
+      database:
+        condition: service_healthy
+      zabbix-server:
+        condition: service_started
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_PORT: 10051
+      DB_SERVER_HOST: database
+      DB_SERVER_PORT: 5432
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      POSTGRES_DB: zabbix
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://localhost:8080/ || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  # One-shot: loads every *.sql fixture under tests/e2e/fixtures in lexicographic
+  # order, then exits. Grafana waits for it. New feature-specific fixtures can live
+  # alongside seed.sql without creating merge conflicts when multiple PRs add
+  # fixtures. $$f (not $f) so docker compose passes a literal $ to the shell.
+  # Depends on zabbix-web being healthy so the Zabbix DB schema already exists.
+  e2e-data-loader:
+    image: postgres:18@sha256:a9abf4275f9e99bff8e6aed712b3b7dfec9cac1341bba01c1ffdfce9ff9fc34a
+    depends_on:
+      zabbix-web:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        for f in /data/*.sql; do
+          echo "Loading fixture: $$f"
+          psql "postgresql://zabbix:zabbix@database:5432/zabbix" -v ON_ERROR_STOP=1 -f "$$f"
+        done
+    volumes:
+      - ./tests/e2e/fixtures:/data:ro
+    restart: 'no'
