@@ -8,7 +8,7 @@ that run against a **real Zabbix backend** with deterministic fixture data.
 | Path | Purpose |
 | --- | --- |
 | `*.spec.ts`, `*.test.ts` | The tests. |
-| `fixtures/*.sql` | Deterministic dataset, loaded into the Zabbix DB on startup. |
+| `../fixtures/*.sql` | Deterministic dataset, loaded into the Zabbix DB on startup. |
 | `../../provisioning/datasources/` | Provisioned Zabbix data source (`uid: zabbix-e2e`). |
 | `../../provisioning/dashboards/` | Provisioned dashboards used by tests, loaded via `readProvisionedDashboard`. |
 
@@ -22,7 +22,7 @@ Zabbix server/web, a one-shot `e2e-data-loader`, and Grafana. Grafana `depends_o
 the loader with `service_completed_successfully`, so tests never start against an
 empty backend.
 
-`e2e-data-loader` runs every `fixtures/*.sql` file in lexicographic order via `psql`,
+`e2e-data-loader` runs every `tests/fixtures/*.sql` file in lexicographic order via `psql`,
 so new feature-specific fixtures can live alongside `seed.sql` without merge
 conflicts when multiple PRs add fixtures.
 

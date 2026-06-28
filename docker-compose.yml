@@ -67,7 +67,7 @@ services:
       timeout: 3s
       retries: 40
 
-  # One-shot: loads every *.sql fixture under tests/e2e/fixtures in lexicographic
+  # One-shot: loads every *.sql fixture under tests/fixtures in lexicographic
   # order, then exits. Grafana waits for it. New feature-specific fixtures can live
   # alongside seed.sql without creating merge conflicts when multiple PRs add
   # fixtures. $$f (not $f) so docker compose passes a literal $ to the shell.
@@ -87,5 +87,5 @@ services:
           psql "postgresql://zabbix:zabbix@database:5432/zabbix" -v ON_ERROR_STOP=1 -f "$$f"
         done
     volumes:
-      - ./tests/e2e/fixtures:/data:ro
+      - ./tests/fixtures:/data:ro
     restart: 'no'
