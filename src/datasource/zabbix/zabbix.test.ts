@@ -208,6 +208,26 @@ describe('Zabbix', () => {
 
       expect(zabbix.zabbixAPI.getEventsHistory).toHaveBeenCalledWith(['21'], ['31'], undefined, {});
     });
+
+    it('does not fetch item history by default (fetchHistoricalItemValue off)', async () => {
+      (joinTriggersWithEvents as jest.Mock).mockReturnValue([
+        { triggerid: '501', timestamp: 1000, items: [{ itemid: '601', value_type: '0', lastvalue: 'x' }] },
+      ]);
+
+      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
+
+      expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
+    });
+
+    it('fetches item history only when fetchHistoricalItemValue is enabled', async () => {
+      (joinTriggersWithEvents as jest.Mock).mockReturnValue([
+        { triggerid: '501', timestamp: 1000, items: [{ itemid: '601', value_type: '0', lastvalue: 'x' }] },
+      ]);
+
+      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, { fetchHistoricalItemValue: true });
+
+      expect(zabbix.zabbixAPI.getHistory).toHaveBeenCalled();
+    });
   });
 
   describe('enrichProblemsWithItemHistory', () => {
@@ -301,6 +321,23 @@ describe('Zabbix', () => {
 
       expect(result).toEqual([]);
       expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
+    });
+
+    it('bounds the history window span and passes a row limit even for long-open problems', async () => {
+      const recent = 1_000_000;
+      const sixtyDays = 60 * 86400;
+      const problems: any[] = [makeProblem(recent - sixtyDays), makeProblem(recent)];
+      const getHistory = jest.fn().mockResolvedValue([]);
+      zabbix.zabbixAPI.getHistory = getHistory;
+
+      await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      const [, timeFrom, timeTill, limit] = getHistory.mock.calls[0];
+      // The 60-day problem span must NOT translate into a 60-day history query.
+      expect(timeTill - timeFrom).toBeLessThan(2 * 86400);
+      // A hard row cap must be sent to history.get.
+      expect(typeof limit).toBe('number');
+      expect(limit).toBeGreaterThan(0);
     });
   });
 

@@ -297,7 +297,7 @@ export class ZabbixAPIConnector {
    * @param  {Number} timeTill   Time in seconds
    * @return {Array}  Array of Zabbix history objects
    */
-  getHistory(items, timeFrom, timeTill) {
+  getHistory(items, timeFrom, timeTill, limit?) {
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
     const promises = _.map(grouped_items, (items, value_type) => {
@@ -314,6 +314,12 @@ export class ZabbixAPIConnector {
       // Relative queries (e.g. last hour) don't include an end time
       if (timeTill) {
         params.time_till = timeTill;
+      }
+
+      // Optional hard cap on rows returned, to protect the Zabbix frontend/DB
+      // from unbounded result sets (issue #2427).
+      if (limit) {
+        params.limit = limit;
       }
 
       return this.request('history.get', params);
