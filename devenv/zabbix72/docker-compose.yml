@@ -5,6 +5,10 @@ services:
       file: ../../.config/docker-compose-base.yaml
       service: grafana
     volumes:
+      # Override the base ../provisioning mount so the nested datasource/dashboard
+      # mounts below create their (Docker-generated) mount-point files under a
+      # gitignored tmp dir instead of the tracked repo-root provisioning/.
+      - ../../tmp/provisioning:/etc/grafana/provisioning
       - ../dashboards:/devenv/dashboards
       - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
       - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
