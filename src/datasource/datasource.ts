@@ -361,6 +361,14 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       const frame: DataFrame = response.data[i];
       const target = utils.getRequestTarget(request, frame.refId);
 
+      // A frame may carry a refId that doesn't map to any request target — e.g. the per-metric
+      // sparkline frames emitted by the Multi-Metric table use the column name as their refId so
+      // that "Time series to table" produces a Trend column per metric. Such frames have no alias
+      // functions to apply; skip them instead of dereferencing a null target.
+      if (!target) {
+        continue;
+      }
+
       // Apply alias functions
       const aliasFunctions = utils.bindFunctionDefs(target.functions, 'Alias');
       utils.sequence(aliasFunctions)(frame);
@@ -877,6 +885,16 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   isBackendTarget = (target: any): boolean => {
+    // The Multi-Metric table is always handled by the Go backend via the Zabbix API. Its "last"
+    // aggregation uses item.get `lastvalue` (no history at all), while other aggregations and
+    // sparklines fetch history through the API. The direct DB connection only accelerates the normal
+    // metric/itemid history path, so it does not apply here — route this to the backend either way.
+    // (Without this, an enabled DB connection makes this target match neither the backend nor the DB
+    // path, so it falls through to frontendQuery and silently returns no data.)
+    if (target.queryType === c.MODE_MULTIMETRIC_TABLE) {
+      return true;
+    }
+
     if (this.enableDirectDBConnection) {
       return false;
     }
