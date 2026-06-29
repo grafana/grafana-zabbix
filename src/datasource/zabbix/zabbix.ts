@@ -17,6 +17,13 @@ import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { CachingProxy } from './proxy/cachingProxy';
 import { Host, ZabbixConnector } from './types';
 
+// Bounds for the optional "historical item value at problem creation time" lookup
+// (issue #2427). These keep the single batched history.get from scanning an
+// unbounded time range / returning an unbounded number of rows.
+const HISTORY_LOOKBACK_SECONDS = 3600; // per-problem lookback (covers typical polling intervals)
+const MAX_HISTORY_WINDOW_SECONDS = 4 * 3600; // cap the total span regardless of oldest open problem
+const HISTORY_FETCH_LIMIT = 50000; // hard cap on rows returned by history.get
+
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
   hostids?: any[];
@@ -500,11 +507,17 @@ export class Zabbix implements ZabbixConnector {
     }
 
     const timestamps = problems.map((p) => p.timestamp);
-    // Use a 1-hour lookback to cover typical Zabbix polling intervals (up to 5 min)
-    const timeFrom = Math.min(...timestamps) - 3600;
-    const timeTill = Math.max(...timestamps) + 60;
+    const minTimestamp = Math.min(...timestamps);
+    const maxTimestamp = Math.max(...timestamps);
+    // Use a 1-hour lookback to cover typical Zabbix polling intervals (up to 5 min).
+    // Cap the overall span so that a single long-open problem cannot widen the
+    // history.get window (and the resulting row count) without bound — which would
+    // overload the Zabbix frontend/DB in large environments (see issue #2427).
+    // Problems older than the cap fall back to their current lastvalue.
+    const timeFrom = Math.max(minTimestamp - HISTORY_LOOKBACK_SECONDS, maxTimestamp - MAX_HISTORY_WINDOW_SECONDS);
+    const timeTill = maxTimestamp + 60;
 
-    const history = await this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill);
+    const history = await this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill, HISTORY_FETCH_LIMIT);
     const historyByItem = _.groupBy(history, 'itemid');
 
     return problems.map((problem) => {
@@ -578,7 +591,7 @@ export class Zabbix implements ZabbixConnector {
         return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
       })
       .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
-      .then((problems) => this.enrichProblemsWithItemHistory(problems))
+      .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
@@ -615,7 +628,7 @@ export class Zabbix implements ZabbixConnector {
         return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
       })
       .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
-      .then((problems) => this.enrichProblemsWithItemHistory(problems))
+      .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
