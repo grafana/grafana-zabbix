@@ -39,8 +39,8 @@ function replaceAlias(regexp: string, newAlias: string, frame: DataFrame) {
   if (frame.fields?.length <= 2) {
     let alias = frame.name.replace(pattern, newAlias);
     const valueField = frame.fields.find((f) => f.name !== TIME_SERIES_TIME_FIELD_NAME);
-    if (valueField?.state?.scopedVars) {
-      alias = getTemplateSrv().replace(alias, valueField?.state?.scopedVars);
+    if (valueField?.config?.custom?.scopedVars) {
+      alias = getTemplateSrv().replace(alias, valueField?.config?.custom?.scopedVars);
     }
     if (valueField) {
       valueField.config.displayNameFromDS = alias;
@@ -52,8 +52,8 @@ function replaceAlias(regexp: string, newAlias: string, frame: DataFrame) {
   for (const field of frame.fields) {
     if (field.type !== FieldType.time) {
       let alias = field.config?.displayNameFromDS?.replace(pattern, newAlias);
-      if (field?.state?.scopedVars && alias) {
-        alias = getTemplateSrv().replace(alias, field?.state?.scopedVars);
+      if (field?.config?.custom?.scopedVars && alias) {
+        alias = getTemplateSrv().replace(alias, field?.config?.custom?.scopedVars);
       }
       field.name = alias || field.name;
     }

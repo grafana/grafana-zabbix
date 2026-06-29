@@ -331,10 +331,12 @@ Alias functions change the display names of time series. The following template 
 | `$__zbx_host_name` | Visible name of the host. |
 | `$__zbx_host` | Technical name of the host. |
 | `$__zbx_host_id` | ID of the host. |
+| `$__zbx_item_tag_<name>` | Value of the item tag with the given name. Tag names are sanitized to alphanumeric characters and underscores (for example, `App Name` becomes `$__zbx_item_tag_App_Name`). A tag that exists but has no value resolves to an empty string; a tag that is not present on the item is left unresolved (the literal token remains in the output). When multiple values exist for the same tag name, they are joined with `, `. Requires Zabbix 5.4 or later. |
 
 ```
 setAlias($__zbx_host_name: $__zbx_item)       -- backend01: CPU user time
 setAlias(Item key: $__zbx_item_key)            -- Item key: system.cpu.load[percpu,avg1]
+setAlias($__zbx_item_tag_service)              -- checkout (from item tag "service: checkout")
 ```
 
 ### setAlias

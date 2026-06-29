@@ -200,9 +200,10 @@ describe('DataProcessor', () => {
             name: 'value',
             type: FieldType.number,
             values: [10, 20],
-            config: {},
-            state: {
-              scopedVars: { env: { value: 'production' } },
+            config: {
+              custom: {
+                scopedVars: { env: { value: 'production' } },
+              },
             },
           },
         ],
@@ -212,6 +213,47 @@ describe('DataProcessor', () => {
       dataProcessor.metricFunctions.replaceAlias('dev', '$env', frame);
 
       expect(mockReplace).toHaveBeenCalledWith('cpu.usage.$env', { env: { value: 'production' } });
+    });
+
+    it('should resolve item tag tokens from config.custom.scopedVars', () => {
+      const mockReplace = jest.fn((text: string, scopedVars: Record<string, { value: string }>) => {
+        return text.replace('$__zbx_item_tag_service', scopedVars['__zbx_item_tag_service']?.value || '');
+      });
+      mockTemplateSrv.mockReturnValue({
+        replace: mockReplace,
+      } as any);
+
+      const frame: DataFrame = {
+        name: 'vfs.fs.size[/,used]',
+        fields: [
+          {
+            name: TIME_SERIES_TIME_FIELD_NAME,
+            type: FieldType.time,
+            values: [1000, 2000],
+            config: {},
+          },
+          {
+            name: 'value',
+            type: FieldType.number,
+            values: [10, 20],
+            config: {
+              custom: {
+                scopedVars: {
+                  __zbx_item_tag_service: { value: 'checkout' },
+                },
+              },
+            },
+          },
+        ],
+        length: 2,
+      };
+
+      const result = dataProcessor.metricFunctions.setAlias('$__zbx_item_tag_service usage', frame);
+
+      expect(mockReplace).toHaveBeenCalledWith('$__zbx_item_tag_service usage', {
+        __zbx_item_tag_service: { value: 'checkout' },
+      });
+      expect(result.fields[1].config.displayNameFromDS).toBe('checkout usage');
     });
 
     it('should handle multiple value fields', () => {
