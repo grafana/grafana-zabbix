@@ -21,8 +21,13 @@ export default defineConfig<PluginOptions>({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * The whole suite runs against a single shared Zabbix + Grafana backend, which
+   * can't serve many concurrent sessions — Playwright's default (≈ half the CPU
+   * cores) overloads it and causes timeouts. Cap concurrency so `yarn e2e` is
+   * reliable locally without a `--workers` flag; CI runs serially.
+   */
+  workers: process.env.CI ? 1 : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -30,8 +35,14 @@ export default defineConfig<PluginOptions>({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.GRAFANA_URL || `http://localhost:${process.env.PORT || 3000}`,
 
+    launchOptions: {
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    },
+
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'on',
   },
 
   /* Configure projects for major browsers */
@@ -42,10 +53,13 @@ export default defineConfig<PluginOptions>({
       testDir: pluginE2eAuth,
       testMatch: [/.*\.js/],
     },
-    // 2. Run tests in Google Chrome. Every test will start authenticated as admin user.
+    // 2. Run tests authenticated as the admin user.
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'], storageState: 'playwright/.auth/admin.json' },
+      name: 'run-tests',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: `playwright/.auth/${process.env.GRAFANA_ADMIN_USER || 'admin'}.json`,
+      },
       dependencies: ['auth'],
     },
   ],
