@@ -102,7 +102,7 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 		valueField.Labels["host"] = item.Hosts[0].Name
 	}
 
-	addItemTagScopedVars(scopedVars, valueField.Labels, item.Tags)
+	addItemTagScopedVars(scopedVars, item.Tags)
 
 	valueField.Config = &data.FieldConfig{
 		DisplayNameFromDS: seriesName,
@@ -193,7 +193,7 @@ func sanitizeTagName(name string) string {
 	return tagNameSanitizePattern.ReplaceAllString(name, "_")
 }
 
-func addItemTagScopedVars(scopedVars map[string]ScopedVar, labels data.Labels, tags []zabbix.Tag) {
+func addItemTagScopedVars(scopedVars map[string]ScopedVar, tags []zabbix.Tag) {
 	if len(tags) == 0 {
 		return
 	}
@@ -210,10 +210,7 @@ func addItemTagScopedVars(scopedVars map[string]ScopedVar, labels data.Labels, t
 
 	for key, values := range tagValues {
 		sort.Strings(values)
-		joined := strings.Join(values, ", ")
-		scopedVars[key] = ScopedVar{Value: joined}
-		labelKey := strings.TrimPrefix(key, "__zbx_item_tag_")
-		labels["item_tag_"+labelKey] = joined
+		scopedVars[key] = ScopedVar{Value: strings.Join(values, ", ")}
 	}
 }
 

@@ -267,6 +267,7 @@ describe('Utils', () => {
       expect(utils.sanitizeTagName('service')).toBe('service');
       expect(utils.sanitizeTagName('App Name')).toBe('App_Name');
       expect(utils.sanitizeTagName('App.Name-test')).toBe('App_Name_test');
+      expect(utils.sanitizeTagName('!!!')).toBe('___');
       expect(utils.sanitizeTagName('')).toBe('');
     });
   });

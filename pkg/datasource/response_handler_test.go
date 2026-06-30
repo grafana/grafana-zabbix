@@ -19,6 +19,7 @@ func TestSanitizeTagName(t *testing.T) {
 		{name: "simple name", input: "service", expected: "service"},
 		{name: "spaces", input: "App Name", expected: "App_Name"},
 		{name: "dots and dashes", input: "App.Name-test", expected: "App_Name_test"},
+		{name: "all special characters", input: "!!!", expected: "___"},
 		{name: "empty string", input: "", expected: ""},
 	}
 
@@ -31,9 +32,8 @@ func TestSanitizeTagName(t *testing.T) {
 
 func TestAddItemTagScopedVars(t *testing.T) {
 	scopedVars := map[string]ScopedVar{}
-	labels := data.Labels{}
 
-	addItemTagScopedVars(scopedVars, labels, []zabbix.Tag{
+	addItemTagScopedVars(scopedVars, []zabbix.Tag{
 		{Tag: "service", Value: "payment"},
 		{Tag: "App Name", Value: "api"},
 		{Tag: "service", Value: "checkout"},
@@ -43,9 +43,6 @@ func TestAddItemTagScopedVars(t *testing.T) {
 	assert.Equal(t, ScopedVar{Value: "checkout, payment"}, scopedVars["__zbx_item_tag_service"])
 	assert.Equal(t, ScopedVar{Value: "api"}, scopedVars["__zbx_item_tag_App_Name"])
 	assert.Equal(t, ScopedVar{Value: ""}, scopedVars["__zbx_item_tag_monitoring"])
-	assert.Equal(t, "checkout, payment", labels["item_tag_service"])
-	assert.Equal(t, "api", labels["item_tag_App_Name"])
-	assert.Equal(t, "", labels["item_tag_monitoring"])
 }
 
 func TestSeriesToDataFrameItemTagScopedVars(t *testing.T) {
@@ -75,6 +72,4 @@ func TestSeriesToDataFrameItemTagScopedVars(t *testing.T) {
 
 	assert.Equal(t, ScopedVar{Value: "checkout"}, scopedVars["__zbx_item_tag_service"])
 	assert.Equal(t, ScopedVar{Value: "prod"}, scopedVars["__zbx_item_tag_Env"])
-	assert.Equal(t, "checkout", valueField.Labels["item_tag_service"])
-	assert.Equal(t, "prod", valueField.Labels["item_tag_Env"])
 }

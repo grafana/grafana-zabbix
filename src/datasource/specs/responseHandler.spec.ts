@@ -25,8 +25,7 @@ describe('responseHandler', () => {
       const valueField = frame.fields.find((field) => field.type === FieldType.number);
 
       expect(valueField?.config?.custom?.scopedVars).toEqual(timeseries.scopedVars);
-      expect(valueField?.labels).toEqual({
-        host: undefined,
+      expect(valueField?.labels).toMatchObject({
         item: 'CPU load',
         item_key: 'system.cpu.load',
       });

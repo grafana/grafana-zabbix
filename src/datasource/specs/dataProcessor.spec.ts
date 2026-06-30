@@ -256,6 +256,41 @@ describe('DataProcessor', () => {
       expect(result.fields[1].config.displayNameFromDS).toBe('checkout usage');
     });
 
+    it('should leave absent item tag tokens unresolved', () => {
+      mockTemplateSrv.mockReturnValue({
+        replace: jest.fn((text: string) => text),
+      } as any);
+
+      const frame: DataFrame = {
+        name: 'CPU load',
+        fields: [
+          {
+            name: TIME_SERIES_TIME_FIELD_NAME,
+            type: FieldType.time,
+            values: [1000, 2000],
+            config: {},
+          },
+          {
+            name: 'value',
+            type: FieldType.number,
+            values: [10, 20],
+            config: {
+              custom: {
+                scopedVars: {
+                  __zbx_item_tag_service: { value: 'checkout' },
+                },
+              },
+            },
+          },
+        ],
+        length: 2,
+      };
+
+      const result = dataProcessor.metricFunctions.setAlias('$__zbx_item_tag_missing usage', frame);
+
+      expect(result.fields[1].config.displayNameFromDS).toBe('$__zbx_item_tag_missing usage');
+    });
+
     it('should handle multiple value fields', () => {
       const frame: DataFrame = {
         name: 'original_name',
