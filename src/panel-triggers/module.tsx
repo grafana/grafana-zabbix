@@ -231,6 +231,71 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
           placeholder: 'component, scope, target',
         },
         category: ['Fields'],
+      })
+
+      // Sound alerts
+      .addBooleanSwitch({
+        path: 'soundAlerts',
+        name: 'Enable sound alerts',
+        description: 'Play a sound when new problems matching the severity threshold appear.',
+        defaultValue: defaultPanelOptions.soundAlerts,
+        category: ['Sound alerts'],
+      })
+      .addSelect({
+        path: 'soundMinSeverity',
+        name: 'Minimum severity',
+        description: 'Only trigger sound for problems at or above this severity level.',
+        defaultValue: defaultPanelOptions.soundMinSeverity,
+        settings: {
+          options: [
+            { label: 'Not classified', value: 0 },
+            { label: 'Information',    value: 1 },
+            { label: 'Warning',        value: 2 },
+            { label: 'Average',        value: 3 },
+            { label: 'High',           value: 4 },
+            { label: 'Disaster',       value: 5 },
+          ],
+        },
+        showIf: (options) => !!options.soundAlerts,
+        category: ['Sound alerts'],
+      })
+      .addSelect({
+        path: 'soundTone',
+        name: 'Sound type',
+        defaultValue: defaultPanelOptions.soundTone,
+        settings: {
+          options: [
+            { label: 'Beep',   value: 'beep'   },
+            { label: 'Alarm',  value: 'alarm'  },
+            { label: 'Custom', value: 'custom' },
+          ],
+        },
+        showIf: (options) => !!options.soundAlerts,
+        category: ['Sound alerts'],
+      })
+      .addTextInput({
+        path: 'soundCustomUrl',
+        name: 'Audio file URL',
+        description: 'URL to a .mp3 or .wav file accessible from the browser.',
+        defaultValue: defaultPanelOptions.soundCustomUrl,
+        showIf: (options) => !!options.soundAlerts && options.soundTone === 'custom',
+        category: ['Sound alerts'],
+      })
+      .addNumberInput({
+        path: 'soundVolume',
+        name: 'Volume (%)',
+        defaultValue: defaultPanelOptions.soundVolume,
+        settings: { min: 0, max: 100 },
+        showIf: (options) => !!options.soundAlerts,
+        category: ['Sound alerts'],
+      })
+      .addBooleanSwitch({
+        path: 'soundRepeat',
+        name: 'Repeat while active',
+        description: 'Keep playing on every refresh cycle while active problems persist.',
+        defaultValue: defaultPanelOptions.soundRepeat,
+        showIf: (options) => !!options.soundAlerts,
+        category: ['Sound alerts'],
       });
   });
 
