@@ -211,7 +211,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
           <Input
             width={24}
             defaultValue={query.trigger?.filter}
-            placeholder="Problem name"
+            placeholder="Problem name, wildcard* or /regex/"
             onBlur={onTextFilterChange('trigger')}
           />
         </InlineField>

@@ -231,6 +231,258 @@ export function buildRegex(str) {
   return new RegExp(pattern, flags);
 }
 
+/**
+ * Converts a wildcard pattern (where `*` matches any sequence of characters, the
+ * same semantics as the Zabbix API `search` parameter with `searchWildcardsEnabled`)
+ * into an anchored, case-insensitive RegExp. Used to evaluate wildcard problem-name
+ * filters client-side consistently with the server-side narrowing.
+ */
+export function wildcardToRegex(pattern: string): RegExp {
+  const escaped = pattern
+    .split('*')
+    .map((part) => part.replace(/[\\^$+?.()|[\]{}]/g, '\\$&'))
+    .join('.*');
+  return new RegExp(`^${escaped}$`, 'i');
+}
+
+/**
+ * Returns true when `value` matches the given problem-name `filter`. The filter may
+ * be a JS regex (`/pattern/flags`), a wildcard pattern (containing `*`), or a plain
+ * string (exact match). Shared by the panel/query and annotation code paths so the
+ * client-side filter stays consistent with the server-side Zabbix `search` narrowing.
+ */
+export function matchesProblemName(value: string, filter: string): boolean {
+  if (isRegex(filter)) {
+    return buildRegex(filter).test(value);
+  }
+  if (filter.includes('*')) {
+    return wildcardToRegex(filter).test(value);
+  }
+  return value === filter;
+}
+
+// Minimum length for an extracted literal, so a tiny fragment doesn't over-narrow.
+const MIN_LITERAL_LENGTH = 3;
+
+/**
+ * Walks a single regex branch (no top-level alternation) and returns the longest
+ * substring that MUST appear literally in every match of that branch, or null if none
+ * qualifies. Conservative: character classes are skipped (alternatives, not guaranteed),
+ * optionally-quantified characters are dropped, and escaped characters end the run.
+ */
+function guaranteedLiteralForBranch(pattern: string): string | null {
+  // Metacharacters that terminate a literal run while keeping the run intact.
+  const terminators = new Set(['.', '+', '(', ')', '^', '$', '}', '|']);
+  const runs: string[] = [];
+  let current = '';
+  const flush = (dropLast: boolean) => {
+    if (dropLast) {
+      current = current.slice(0, -1);
+    }
+    if (current) {
+      runs.push(current);
+    }
+    current = '';
+  };
+
+  for (let i = 0; i < pattern.length; i++) {
+    const ch = pattern[i];
+    if (ch === '\\') {
+      // Escaped char: end the current run and skip the escaped char (stay conservative).
+      flush(false);
+      i++;
+    } else if (ch === '[') {
+      // Character class: its contents are alternatives, not a guaranteed literal — skip it.
+      flush(false);
+      i++;
+      while (i < pattern.length && pattern[i] !== ']') {
+        if (pattern[i] === '\\') {
+          i++;
+        }
+        i++;
+      }
+    } else if (ch === '?' || ch === '*' || ch === '{') {
+      // Preceding char is optional / variably quantified — drop it from the literal.
+      flush(true);
+      if (ch === '{') {
+        while (i < pattern.length && pattern[i] !== '}') {
+          i++;
+        }
+      }
+    } else if (terminators.has(ch)) {
+      flush(false);
+    } else {
+      current += ch;
+    }
+  }
+  flush(false);
+
+  const longest = runs.reduce((a, b) => (b.length > a.length ? b : a), '');
+  return longest.length >= MIN_LITERAL_LENGTH ? longest : null;
+}
+
+/** Strips outer anchors and a single whole-pattern capturing group, e.g. `^(a|b)$` → `a|b`. */
+function stripAnchorsAndOuterGroup(pattern: string): string {
+  let p = pattern;
+  if (p.startsWith('^')) {
+    p = p.slice(1);
+  }
+  if (p.endsWith('$')) {
+    p = p.slice(0, -1);
+  }
+  // Unwrap a capturing group only when it encloses the ENTIRE remaining pattern.
+  while (p.startsWith('(') && !p.startsWith('(?')) {
+    let depth = 0;
+    let end = -1;
+    let inClass = false;
+    for (let i = 0; i < p.length; i++) {
+      const ch = p[i];
+      if (ch === '\\') {
+        i++;
+      } else if (inClass) {
+        if (ch === ']') {
+          inClass = false;
+        }
+      } else if (ch === '[') {
+        inClass = true;
+      } else if (ch === '(') {
+        depth++;
+      } else if (ch === ')') {
+        depth--;
+        if (depth === 0) {
+          end = i;
+          break;
+        }
+      }
+    }
+    if (end === p.length - 1) {
+      p = p.slice(1, -1);
+    } else {
+      break;
+    }
+  }
+  return p;
+}
+
+/** Splits a pattern on TOP-LEVEL `|` only (ignoring `|` inside groups or character classes). */
+function splitTopLevelAlternation(pattern: string): string[] {
+  const branches: string[] = [];
+  let depth = 0;
+  let inClass = false;
+  let current = '';
+  for (let i = 0; i < pattern.length; i++) {
+    const ch = pattern[i];
+    if (ch === '\\') {
+      current += ch + (pattern[i + 1] ?? '');
+      i++;
+    } else if (inClass) {
+      current += ch;
+      if (ch === ']') {
+        inClass = false;
+      }
+    } else if (ch === '[') {
+      inClass = true;
+      current += ch;
+    } else if (ch === '(') {
+      depth++;
+      current += ch;
+    } else if (ch === ')') {
+      depth--;
+      current += ch;
+    } else if (ch === '|' && depth === 0) {
+      branches.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  branches.push(current);
+  return branches;
+}
+
+/**
+ * Extracts literal substrings such that EVERY string matched by the regex contains at
+ * least one of them — usable as a coarse server-side `search` (OR) pre-filter that
+ * narrows the result set before the precise regex runs client-side. Zabbix cannot
+ * evaluate regular expressions, so this is the only way to push regex filters down.
+ *
+ * Returns null (no safe narrowing) when:
+ *  - the pattern uses look-around / inline-group constructs (`(?...)`), because a literal
+ *    inside a NEGATIVE look-ahead would otherwise be pushed as a positive search and
+ *    return exactly the rows the user wants excluded; or
+ *  - any top-level alternation branch has no guaranteed literal (narrowing on the other
+ *    branches would drop that branch's valid matches).
+ */
+export function extractRegexLiterals(regexStr: string): string[] | null {
+  if (!isRegex(regexStr)) {
+    return null;
+  }
+  const pattern = regexStr.match(regexPattern)?.[1];
+  if (!pattern) {
+    return null;
+  }
+  // Look-arounds / inline groups: literals around them aren't guaranteed, and a negative
+  // look-around literal would be actively wrong — don't narrow at the source.
+  if (pattern.includes('(?')) {
+    return null;
+  }
+
+  const branches = splitTopLevelAlternation(stripAnchorsAndOuterGroup(pattern));
+  const literals: string[] = [];
+  for (const branch of branches) {
+    const literal = guaranteedLiteralForBranch(branch);
+    if (!literal) {
+      // One un-narrowable branch means narrowing the rest would drop its matches.
+      return null;
+    }
+    literals.push(literal);
+  }
+  return Array.from(new Set(literals));
+}
+
+/**
+ * Best-effort extraction of a single literal substring guaranteed to appear in every
+ * match of a non-alternation regex. Returns null for alternations, look-arounds, or when
+ * no literal qualifies. (Thin wrapper over {@link extractRegexLiterals}.)
+ */
+export function extractRegexLiteral(regexStr: string): string | null {
+  const literals = extractRegexLiterals(regexStr);
+  return literals && literals.length === 1 ? literals[0] : null;
+}
+
+/**
+ * Builds the Zabbix API `search` parameters for a problem-name filter so filtering can
+ * happen at the source instead of after fetching every problem. Plain strings and
+ * wildcard patterns map directly to a `search` on the problem `name`; regex filters are
+ * narrowed by their guaranteed literal substring(s) — a top-level alternation pushes all
+ * branch literals as an OR (`searchByAny`). Returns an empty object when no server-side
+ * narrowing is possible (e.g. look-around regexes), leaving the client-side filter to do
+ * the precise work.
+ */
+export function buildProblemNameSearchParams(filter?: string): {
+  search?: { name: string | string[] };
+  searchWildcardsEnabled?: boolean;
+  searchByAny?: boolean;
+} {
+  if (!filter) {
+    return {};
+  }
+  if (isRegex(filter)) {
+    const literals = extractRegexLiterals(filter);
+    if (!literals || !literals.length) {
+      return {};
+    }
+    if (literals.length === 1) {
+      return { search: { name: literals[0] } };
+    }
+    return { search: { name: literals }, searchByAny: true };
+  }
+  if (filter.includes('*')) {
+    return { search: { name: filter }, searchWildcardsEnabled: true };
+  }
+  return { search: { name: filter } };
+}
+
 // Need for template variables replace
 // From Grafana's templateSrv.js
 export function escapeRegex(value) {
