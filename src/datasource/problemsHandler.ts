@@ -186,15 +186,7 @@ export function filterTriggersPre(triggerList, replacedTarget) {
 }
 
 function filterTriggers(triggers, triggerFilter) {
-  if (utils.isRegex(triggerFilter)) {
-    return _.filter(triggers, (trigger) => {
-      return utils.buildRegex(triggerFilter).test(trigger.description);
-    });
-  } else {
-    return _.filter(triggers, (trigger) => {
-      return trigger.description === triggerFilter;
-    });
-  }
+  return _.filter(triggers, (trigger) => utils.matchesProblemName(trigger.description ?? '', triggerFilter));
 }
 
 export function sortProblems(problems: ProblemDTO[], target) {

@@ -189,6 +189,81 @@ describe('Zabbix API connector', () => {
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.symptom).toBeUndefined();
     });
+
+    it('pushes a plain problem name to the API search parameter', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: 'High CPU load' });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toEqual({ name: 'High CPU load' });
+      expect(params.searchWildcardsEnabled).toBeUndefined();
+    });
+
+    it('enables wildcards when the problem name contains *', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: 'CPU*' });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toEqual({ name: 'CPU*' });
+      expect(params.searchWildcardsEnabled).toBe(true);
+    });
+
+    it('narrows a regex problem name by its literal substring', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: '/CPU load.*/' });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toEqual({ name: 'CPU load' });
+      expect(params.searchWildcardsEnabled).toBeUndefined();
+    });
+
+    it('omits search when no problem name is given', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toBeUndefined();
+    });
+
+    it('pushes an alternation regex as an OR of branch literals (searchByAny)', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {
+        problemName: '/(Datastore free space|Unavailable by ICMP|Zabbix agent is not available)/',
+      });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toEqual({
+        name: ['Datastore free space', 'Unavailable by ICMP', 'Zabbix agent is not available'],
+      });
+      expect(params.searchByAny).toBe(true);
+    });
+
+    it('omits search for a negative look-ahead (exclusion) regex', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: '/^(?!.*Zabbix agent).*/' });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toBeUndefined();
+      expect(params.searchByAny).toBeUndefined();
+    });
   });
 
   describe('getEventsHistory', () => {
