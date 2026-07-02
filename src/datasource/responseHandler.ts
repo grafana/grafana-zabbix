@@ -54,6 +54,8 @@ function convertHistory(history, items, addHostName, convertPointCallback) {
       __zbx_item_interval: { value: item.delay },
     };
 
+    utils.addItemTagScopedVars(scopedVars, item.tags);
+
     if (_.keys(hosts).length > 0) {
       const host = _.find(hosts, { hostid: item.hostid });
       scopedVars['__zbx_host'] = { value: host.host };
@@ -146,6 +148,7 @@ export function seriesToDataFrame(
 
     valueFiled.config.custom = {
       itemInterval: scopedVars['__zbx_item_interval']?.value,
+      scopedVars,
     };
   }
 
