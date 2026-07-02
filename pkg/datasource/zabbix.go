@@ -258,8 +258,8 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 
 	entityPattern := query.TableConfig.EntityPattern
 
-	// Step 1: Fetch entity items
-	entityItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", entityPattern.Pattern)
+	// Step 1: Fetch entity items (rows are always discovered from numeric items)
+	entityItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", entityPattern.Pattern, "num")
 	if err != nil {
 		ds.logger.Error("Error fetching entity items", "error", err)
 		return nil, err
@@ -324,28 +324,48 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 
 	ds.logger.Debug("Unique entities", "count", len(entityOrder))
 
-	// Step 2: Build combined pattern for all metrics (OPTIMIZATION!)
-	// Instead of fetching each metric separately, fetch all at once
-	var allMetricItems []*zabbix.Item
-
-	if len(query.TableConfig.Metrics) == 1 {
-		// Single metric - use direct pattern
-		allMetricItems, err = ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", query.TableConfig.Metrics[0].Pattern)
-		if err != nil {
-			ds.logger.Error("Error fetching metric items", "error", err)
-			return nil, err
+	// Step 2: Build item pools for the metric columns (OPTIMIZATION!)
+	// Instead of fetching each metric separately, fetch at most once per value type: numeric and
+	// text items live under different Zabbix value types, so each pool is a single bulk call.
+	// When a pool serves exactly one metric, its pattern is used directly; otherwise the pool is
+	// fetched broad ("/.*/") and filtered in memory per column.
+	fetchMetricPool := func(itemType string, metrics []MetricColumnConfig) ([]*zabbix.Item, error) {
+		pattern := "/.*/"
+		if len(metrics) == 1 {
+			pattern = metrics[0].Pattern
 		}
-	} else {
-		// Multiple metrics - fetch all items and filter in memory
-		// Use a broad pattern or fetch all items for the hosts
-		allMetricItems, err = ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", "/.*/")
+		return ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", pattern, itemType)
+	}
+
+	numMetrics := []MetricColumnConfig{}
+	textMetrics := []MetricColumnConfig{}
+	for _, m := range query.TableConfig.Metrics {
+		if m.IsText() {
+			textMetrics = append(textMetrics, m)
+		} else {
+			numMetrics = append(numMetrics, m)
+		}
+	}
+
+	var allMetricItems []*zabbix.Item
+	if len(numMetrics) > 0 {
+		allMetricItems, err = fetchMetricPool("num", numMetrics)
 		if err != nil {
-			ds.logger.Error("Error fetching all items for metrics", "error", err)
+			ds.logger.Error("Error fetching numeric metric items", "error", err)
 			return nil, err
 		}
 	}
 
-	ds.logger.Debug("All metric items fetched", "count", len(allMetricItems))
+	var allTextMetricItems []*zabbix.Item
+	if len(textMetrics) > 0 {
+		allTextMetricItems, err = fetchMetricPool("text", textMetrics)
+		if err != nil {
+			ds.logger.Error("Error fetching text metric items", "error", err)
+			return nil, err
+		}
+	}
+
+	ds.logger.Debug("All metric items fetched", "numCount", len(allMetricItems), "textCount", len(allTextMetricItems))
 
 	frame := data.NewFrame(query.RefID)
 
@@ -397,13 +417,18 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 	sparklineFrames := []*data.Frame{}
 
 	for _, metric := range query.TableConfig.Metrics {
-		// Filter items matching this metric's pattern from allMetricItems
-		metricItems := ds.filterItemsByPattern(allMetricItems, metric.Pattern, metric.SearchType)
+		// Filter items matching this metric's pattern from the pool of its value type
+		pool := allMetricItems
+		if metric.IsText() {
+			pool = allTextMetricItems
+		}
+		metricItems := ds.filterItemsByPattern(pool, metric.Pattern, metric.SearchType)
 		ds.logger.Debug("Filtered metric items", "column", metric.ColumnName, "count", len(metricItems))
 
 		// Sparkline columns deliver the full history as separate time-series frames and skip the
 		// scalar aggregation entirely (aggregation is disabled for them in the query editor).
-		if metric.ShowSparkline {
+		// Text columns never render sparklines.
+		if metric.ShowSparkline && !metric.IsText() {
 			history, err := ds.zabbix.GetHistory(ctx, metricItems, query.TimeRange)
 			if err != nil {
 				ds.logger.Error("Error fetching sparkline history", "error", err, "column", metric.ColumnName)
@@ -415,7 +440,9 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 
 		var columnValues []*string
 
-		if metric.Aggregation == "last" {
+		// Text columns always resolve via lastvalue: history aggregations are meaningless for
+		// text/character/log values (the editor locks them to "last" as well).
+		if metric.Aggregation == "last" || metric.IsText() {
 			metricValues := make(map[string]*string)
 			for _, item := range metricItems {
 				metricValues[ds.entityCompositeKey(item, entityPattern)] = item.LastValue

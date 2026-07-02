@@ -21,6 +21,11 @@ const searchTypeOptions = [
   { label: 'Item Key', value: 'itemKey' },
 ];
 
+const valueTypeOptions = [
+  { label: 'Numeric', value: 'num' },
+  { label: 'Text', value: 'text' },
+];
+
 const aggregationOptions = [
   { label: 'Last', value: 'last' },
   { label: 'Average', value: 'avg' },
@@ -122,6 +127,8 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
 
+  const hasTextMetrics = tableConfig.metrics.some((m) => m.valueType === 'text');
+
   // Fetch items (raw list) once per group/host change; we derive name/key option arrays in-memo below.
   const [{ loading: itemsLoading, value: items }, fetchItems] = useAsyncFn(async () => {
     const fetched: ZBXItem[] = await datasource.zabbix.getAllItems(
@@ -134,28 +141,43 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     return fetched || [];
   }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
-  const itemNameOptions = useMemo<Array<ComboboxOption<string>>>(() => {
-    const opts: Array<ComboboxOption<string>> = (items ?? []).map((item) => ({
-      value: item.name,
-      label: item.name,
+  // Text/character/log items are fetched separately (different Zabbix value types) and only when
+  // some metric column actually targets text values.
+  const [{ loading: textItemsLoading, value: textItems }, fetchTextItems] = useAsyncFn(async () => {
+    if (!hasTextMetrics) {
+      return [];
+    }
+    const fetched: ZBXItem[] = await datasource.zabbix.getAllItems(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.host.filter,
+      null,
+      null,
+      { itemtype: 'text' }
+    );
+    return fetched || [];
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter, hasTextMetrics]);
+
+  const buildItemOptions = (list: ZBXItem[] | undefined, prop: 'name' | 'key_') => {
+    const opts: Array<ComboboxOption<string>> = (list ?? []).map((item) => ({
+      value: item[prop],
+      label: item[prop],
     }));
     const unique = uniqBy(opts, (o) => o.value);
     unique.unshift(...getVariableOptions());
     return unique;
-  }, [items]);
+  };
 
-  const itemKeyOptions = useMemo<Array<ComboboxOption<string>>>(() => {
-    const opts: Array<ComboboxOption<string>> = (items ?? []).map((item) => ({
-      value: item.key_,
-      label: item.key_,
-    }));
-    const unique = uniqBy(opts, (o) => o.value);
-    unique.unshift(...getVariableOptions());
-    return unique;
-  }, [items]);
+  const itemNameOptions = useMemo(() => buildItemOptions(items, 'name'), [items]);
+  const itemKeyOptions = useMemo(() => buildItemOptions(items, 'key_'), [items]);
+  const textItemNameOptions = useMemo(() => buildItemOptions(textItems, 'name'), [textItems]);
+  const textItemKeyOptions = useMemo(() => buildItemOptions(textItems, 'key_'), [textItems]);
 
-  const optionsForSearchType = (searchType: 'itemName' | 'itemKey') =>
-    searchType === 'itemKey' ? itemKeyOptions : itemNameOptions;
+  const optionsForSearchType = (searchType: 'itemName' | 'itemKey', valueType?: 'num' | 'text') => {
+    if (valueType === 'text') {
+      return searchType === 'itemKey' ? textItemKeyOptions : textItemNameOptions;
+    }
+    return searchType === 'itemKey' ? itemKeyOptions : itemNameOptions;
+  };
 
   // Sync deferred local state when the query changes externally (e.g., variable resolution, panel switch).
   useEffect(() => {
@@ -182,6 +204,10 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   useEffect(() => {
     fetchItems();
   }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
+
+  useEffect(() => {
+    fetchTextItems();
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter, hasTextMetrics]);
 
   const onGroupChange = (value: string) => {
     onChange({
@@ -306,6 +332,15 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     const local = localMetricNames[index];
     if (local !== undefined && local !== tableConfig.metrics[index]?.columnName) {
       commitMetric(index, { columnName: local });
+    }
+  };
+
+  const onMetricValueTypeChange = (index: number, valueType: NonNullable<MetricColumnConfig['valueType']>) => {
+    if (valueType === 'text') {
+      // Text columns always resolve via the last value and cannot render sparklines.
+      commitMetric(index, { valueType, aggregation: 'last', showSparkline: false });
+    } else {
+      commitMetric(index, { valueType });
     }
   };
 
@@ -539,12 +574,25 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
                   onChange={(value) => commitMetric(index, { searchType: value as 'itemName' | 'itemKey' })}
                 />
               </InlineField>
+              <InlineField
+                label="Value type"
+                labelWidth={16}
+                tooltip="Numeric matches unsigned/float items. Text matches character/log/text items — those always show the last value and cannot render sparklines."
+              >
+                <RadioButtonGroup
+                  value={metric.valueType || 'num'}
+                  options={valueTypeOptions}
+                  onChange={(value) =>
+                    onMetricValueTypeChange(index, value as NonNullable<MetricColumnConfig['valueType']>)
+                  }
+                />
+              </InlineField>
               <InlineField label="Pattern" labelWidth={16} grow>
                 <MetricPicker
                   width={40}
                   value={metric.pattern}
-                  options={optionsForSearchType(metric.searchType)}
-                  isLoading={itemsLoading}
+                  options={optionsForSearchType(metric.searchType, metric.valueType)}
+                  isLoading={metric.valueType === 'text' ? textItemsLoading : itemsLoading}
                   placeholder="e.g., /.*Status/"
                   createCustomValue={true}
                   onChange={(value) => commitMetric(index, { pattern: value || '' })}
@@ -553,29 +601,35 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
               <InlineField
                 label="Aggregation"
                 labelWidth={16}
-                disabled={metric.showSparkline}
+                disabled={metric.showSparkline || metric.valueType === 'text'}
                 tooltip={
-                  metric.showSparkline ? 'Not used for sparkline columns — the full series is returned.' : undefined
+                  metric.valueType === 'text'
+                    ? 'Text columns always show the last value.'
+                    : metric.showSparkline
+                      ? 'Not used for sparkline columns — the full series is returned.'
+                      : undefined
                 }
               >
                 <Select
                   width={15}
-                  value={metric.aggregation}
+                  value={metric.valueType === 'text' ? 'last' : metric.aggregation}
                   options={aggregationOptions}
-                  disabled={metric.showSparkline}
+                  disabled={metric.showSparkline || metric.valueType === 'text'}
                   onChange={(option) => commitMetric(index, { aggregation: option.value as MetricColumnConfig['aggregation'] })}
                 />
               </InlineField>
-              <InlineField
-                label="Sparkline"
-                labelWidth={12}
-                tooltip="Return this column as its own time-series frame (full history over the panel time range) instead of a scalar value. Render it as a sparkline by adding Grafana's 'Time series to table' transformation; one Trend column is produced per sparkline metric."
-              >
-                <Checkbox
-                  value={metric.showSparkline || false}
-                  onChange={(e) => commitMetric(index, { showSparkline: e.currentTarget.checked })}
-                />
-              </InlineField>
+              {metric.valueType !== 'text' && (
+                <InlineField
+                  label="Sparkline"
+                  labelWidth={12}
+                  tooltip="Return this column as its own time-series frame (full history over the panel time range) instead of a scalar value. Render it as a sparkline by adding Grafana's 'Time series to table' transformation; one Trend column is produced per sparkline metric."
+                >
+                  <Checkbox
+                    value={metric.showSparkline || false}
+                    onChange={(e) => commitMetric(index, { showSparkline: e.currentTarget.checked })}
+                  />
+                </InlineField>
+              )}
               <Button
                 size="sm"
                 variant="destructive"

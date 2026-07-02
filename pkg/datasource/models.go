@@ -131,13 +131,22 @@ type ExtractedColumnConfig struct {
 }
 
 type MetricColumnConfig struct {
-	ColumnName  string `json:"columnName"`
-	SearchType  string `json:"searchType"`
-	Pattern     string `json:"pattern"`
+	ColumnName string `json:"columnName"`
+	SearchType string `json:"searchType"`
+	Pattern    string `json:"pattern"`
+	// ValueType is the item value type this column matches: "num" (unsigned/float, default when
+	// empty) or "text" (character/log/text). Text columns always use the "last" aggregation and
+	// never emit sparkline frames.
+	ValueType   string `json:"valueType"`
 	Aggregation string `json:"aggregation"` // "last", "avg", "min", "max"
 	// ShowSparkline, when true, makes the backend fetch full history for this column's
 	// items over the query time range and return it as an additional time-series frame.
 	ShowSparkline bool `json:"showSparkline"`
+}
+
+// IsText returns true when the column matches text/character/log items.
+func (m MetricColumnConfig) IsText() bool {
+	return m.ValueType == "text"
 }
 
 // ReadQuery will read and validate Settings from the DataSourceConfg

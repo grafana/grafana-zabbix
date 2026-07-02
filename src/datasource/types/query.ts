@@ -141,6 +141,9 @@ export interface MetricColumnConfig {
   columnName: string;
   searchType: 'itemName' | 'itemKey';
   pattern: string;
+  // Item value type this column matches: numeric (unsigned/float, default) or text (character/log/text).
+  // Text columns always use the "last" aggregation and cannot render sparklines.
+  valueType?: 'num' | 'text';
   aggregation: 'last' | 'avg' | 'min' | 'max';
   // When true, the backend fetches the full history for this column's items over the
   // panel time range and returns it as an additional time-series frame, so the column

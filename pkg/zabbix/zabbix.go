@@ -159,7 +159,8 @@ func isNotAuthorized(err error) bool {
 		strings.Contains(message, "Not authorized.")
 }
 
-func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter string) ([]*Item, error) {
+// GetItemsWithLastValue fetches items of the given type ("num" or "text") with their lastvalue populated.
+func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, itemType string) ([]*Item, error) {
 	var allItems []*Item
 	hosts, err := z.GetHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
@@ -187,7 +188,7 @@ func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFil
 	}
 
 	// Request with lastvalue
-	allItems, err = z.GetAllItems(ctx, hostids, nil, "num", false, itemTagFilter, true)
+	allItems, err = z.GetAllItems(ctx, hostids, nil, itemType, false, itemTagFilter, true)
 	if err != nil {
 		return nil, err
 	}
