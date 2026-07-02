@@ -133,6 +133,10 @@ export interface EntityPatternConfig {
 export interface MultiMetricTableConfig {
   entityPattern: EntityPatternConfig;
   metrics: MetricColumnConfig[];
+  // What a table row represents: 'entityPattern' (default) discovers rows from items matching the
+  // entity pattern (LLD-style entities); 'host' produces one row per host — for non-LLD, host-level
+  // items (e.g. CPU/Memory utilization per VM) where the host is the only shared identifier.
+  rowSource?: 'entityPattern' | 'host';
   showGroupColumn?: boolean;
   showHostColumn?: boolean;
 }

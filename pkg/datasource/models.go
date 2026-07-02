@@ -112,10 +112,20 @@ type ScopedVar struct {
 }
 
 type MultiMetricTableConfig struct {
-	EntityPattern   EntityPatternConfig  `json:"entityPattern"`
-	Metrics         []MetricColumnConfig `json:"metrics"`
-	ShowGroupColumn bool                 `json:"showGroupColumn"`
-	ShowHostColumn  bool                 `json:"showHostColumn"`
+	EntityPattern EntityPatternConfig  `json:"entityPattern"`
+	Metrics       []MetricColumnConfig `json:"metrics"`
+	// RowSource selects what a table row represents: "entityPattern" (default when empty) discovers
+	// rows from items matching the entity pattern (LLD-style entities), while "host" produces one row
+	// per host — for non-LLD, host-level items (e.g. CPU/Memory utilization per VM) where the host is
+	// the only identifier shared between the metric columns.
+	RowSource       string `json:"rowSource"`
+	ShowGroupColumn bool   `json:"showGroupColumn"`
+	ShowHostColumn  bool   `json:"showHostColumn"`
+}
+
+// RowsFromHost returns true when table rows represent hosts rather than pattern-discovered entities.
+func (c MultiMetricTableConfig) RowsFromHost() bool {
+	return c.RowSource == "host"
 }
 
 type EntityPatternConfig struct {

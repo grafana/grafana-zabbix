@@ -2,11 +2,17 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAsyncFn } from 'react-use';
 import { uniqBy } from 'lodash';
 import { Button, Checkbox, InlineField, InlineFieldRow, Input, RadioButtonGroup, Select, Stack, Icon, ComboboxOption } from '@grafana/ui';
-import { ZabbixMetricsQuery, MetricColumnConfig, HostTagFilter, ZabbixTagEvalType } from '../../types/query';
+import {
+  ZabbixMetricsQuery,
+  MetricColumnConfig,
+  MultiMetricTableConfig,
+  HostTagFilter,
+  ZabbixTagEvalType,
+} from '../../types/query';
 import { ZabbixDatasource } from '../../datasource';
 import { MetricPicker } from '../../../components/MetricPicker/MetricPicker';
 import { HostTagQueryEditor } from './HostTagQueryEditor';
-import { getVariableOptions, processHostTags } from './utils';
+import { getVariableOptions, matchesItemPattern, processHostTags } from './utils';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 import { ZBXItem } from '../../types';
 
@@ -24,6 +30,11 @@ const searchTypeOptions = [
 const valueTypeOptions = [
   { label: 'Numeric', value: 'num' },
   { label: 'Text', value: 'text' },
+];
+
+const rowSourceOptions = [
+  { label: 'Item pattern', value: 'entityPattern' },
+  { label: 'Hosts', value: 'host' },
 ];
 
 const aggregationOptions = [
@@ -61,6 +72,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   };
 
   const tableConfig = safeQuery.tableConfig!;
+  const rowsFromHost = (tableConfig.rowSource || 'entityPattern') === 'host';
 
   // Local state for the extract pattern (regex) — committed on blur to avoid invalid intermediate values.
   const [localExtractPattern, setLocalExtractPattern] = useState(tableConfig.entityPattern.extractPattern || '');
@@ -169,14 +181,41 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
 
   const itemNameOptions = useMemo(() => buildItemOptions(items, 'name'), [items]);
   const itemKeyOptions = useMemo(() => buildItemOptions(items, 'key_'), [items]);
-  const textItemNameOptions = useMemo(() => buildItemOptions(textItems, 'name'), [textItems]);
-  const textItemKeyOptions = useMemo(() => buildItemOptions(textItems, 'key_'), [textItems]);
 
-  const optionsForSearchType = (searchType: 'itemName' | 'itemKey', valueType?: 'num' | 'text') => {
-    if (valueType === 'text') {
-      return searchType === 'itemKey' ? textItemKeyOptions : textItemNameOptions;
+  // Used by the Table Rows pattern picker (unscoped — it defines the scope).
+  const optionsForSearchType = (searchType: 'itemName' | 'itemKey') =>
+    searchType === 'itemKey' ? itemKeyOptions : itemNameOptions;
+
+  // With entity-pattern rows, metric columns select WITHIN the items matching the Table Rows
+  // pattern, so their suggestion dropdowns are scoped to that subset.
+  const scopeToEntityPattern = (list: ZBXItem[] | undefined) => {
+    const entityPattern = tableConfig.entityPattern;
+    if (rowsFromHost || !entityPattern.pattern) {
+      return list ?? [];
     }
-    return searchType === 'itemKey' ? itemKeyOptions : itemNameOptions;
+    const byKey = entityPattern.searchType === 'itemKey';
+    return (list ?? []).filter((item) => matchesItemPattern(byKey ? item.key_ : item.name, entityPattern.pattern));
+  };
+
+  const scopedItems = useMemo(
+    () => scopeToEntityPattern(items),
+    [items, rowsFromHost, tableConfig.entityPattern.pattern, tableConfig.entityPattern.searchType]
+  );
+  const scopedTextItems = useMemo(
+    () => scopeToEntityPattern(textItems),
+    [textItems, rowsFromHost, tableConfig.entityPattern.pattern, tableConfig.entityPattern.searchType]
+  );
+
+  const metricItemNameOptions = useMemo(() => buildItemOptions(scopedItems, 'name'), [scopedItems]);
+  const metricItemKeyOptions = useMemo(() => buildItemOptions(scopedItems, 'key_'), [scopedItems]);
+  const metricTextItemNameOptions = useMemo(() => buildItemOptions(scopedTextItems, 'name'), [scopedTextItems]);
+  const metricTextItemKeyOptions = useMemo(() => buildItemOptions(scopedTextItems, 'key_'), [scopedTextItems]);
+
+  const metricOptionsForSearchType = (searchType: 'itemName' | 'itemKey', valueType?: 'num' | 'text') => {
+    if (valueType === 'text') {
+      return searchType === 'itemKey' ? metricTextItemKeyOptions : metricTextItemNameOptions;
+    }
+    return searchType === 'itemKey' ? metricItemKeyOptions : metricItemNameOptions;
   };
 
   // Sync deferred local state when the query changes externally (e.g., variable resolution, panel switch).
@@ -431,77 +470,117 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
             }}
           />
         </InlineField>
-        <InlineField label="Show Host column" labelWidth={20}>
-          <Checkbox
-            value={tableConfig.showHostColumn || false}
-            onChange={(e) => {
-              onChange({
-                ...safeQuery,
-                tableConfig: {
-                  ...tableConfig,
-                  showHostColumn: e.currentTarget.checked,
-                },
-              });
-            }}
-          />
-        </InlineField>
+        {!rowsFromHost && (
+          <InlineField label="Show Host column" labelWidth={20}>
+            <Checkbox
+              value={tableConfig.showHostColumn || false}
+              onChange={(e) => {
+                onChange({
+                  ...safeQuery,
+                  tableConfig: {
+                    ...tableConfig,
+                    showHostColumn: e.currentTarget.checked,
+                  },
+                });
+              }}
+            />
+          </InlineField>
+        )}
       </InlineFieldRow>
 
-      {/* Entity Pattern Section */}
+      {/* Table Rows Section */}
       <div style={{ borderTop: '1px solid #444', paddingTop: '16px', marginTop: '16px' }}>
-        <h6 style={{ marginBottom: '8px' }}>Entity Pattern (defines table rows)</h6>
+        <h6 style={{ marginBottom: '8px' }}>Table Rows</h6>
         <Stack direction="column" gap={1}>
           <InlineFieldRow>
-            <InlineField label="Search by" labelWidth={16}>
+            <InlineField
+              label="Rows from"
+              labelWidth={16}
+              tooltip="Item pattern discovers one row per matching item/entity (LLD-style, e.g. interfaces or disks). Hosts produces one row per host — for host-level items like CPU or memory utilization, where metric columns are matched to rows by host alone."
+            >
               <RadioButtonGroup
-                value={tableConfig.entityPattern.searchType}
-                options={searchTypeOptions}
+                value={tableConfig.rowSource || 'entityPattern'}
+                options={rowSourceOptions}
                 onChange={(value) =>
                   onChange({
                     ...safeQuery,
                     tableConfig: {
                       ...tableConfig,
-                      entityPattern: {
-                        ...tableConfig.entityPattern,
-                        searchType: value as 'itemName' | 'itemKey',
-                      },
+                      rowSource: value as MultiMetricTableConfig['rowSource'],
                     },
                   })
                 }
               />
             </InlineField>
           </InlineFieldRow>
-          <InlineFieldRow>
-            <InlineField label="Pattern" labelWidth={16} grow>
-              <MetricPicker
-                width={40}
-                value={tableConfig.entityPattern.pattern}
-                options={optionsForSearchType(tableConfig.entityPattern.searchType)}
-                isLoading={itemsLoading}
-                placeholder="e.g., /Interface.*/ or /.*: Disk .*/ or /FS .*: .*/"
-                createCustomValue={true}
-                onChange={onEntityPatternChange}
-              />
-            </InlineField>
-          </InlineFieldRow>
-          <InlineFieldRow>
-            <InlineField
-              label="Extract pattern"
-              labelWidth={16}
-              grow
-              tooltip="Optional: Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
-            >
-              <Input
-                value={localExtractPattern}
-                placeholder="Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
-                onChange={(e) => setLocalExtractPattern(e.currentTarget.value)}
-                onBlur={onExtractPatternBlur}
-              />
-            </InlineField>
-          </InlineFieldRow>
+          {rowsFromHost && (
+            <p style={{ margin: 0, fontSize: '12px', color: '#8e8e8e' }}>
+              One row per host. Rows are the hosts with at least one item matching the metric columns below; each metric
+              value is matched to its row by host.
+            </p>
+          )}
+          {!rowsFromHost && (
+            <InlineFieldRow>
+              <InlineField label="Search by" labelWidth={16}>
+                <RadioButtonGroup
+                  value={tableConfig.entityPattern.searchType}
+                  options={searchTypeOptions}
+                  onChange={(value) =>
+                    onChange({
+                      ...safeQuery,
+                      tableConfig: {
+                        ...tableConfig,
+                        entityPattern: {
+                          ...tableConfig.entityPattern,
+                          searchType: value as 'itemName' | 'itemKey',
+                        },
+                      },
+                    })
+                  }
+                />
+              </InlineField>
+            </InlineFieldRow>
+          )}
+          {!rowsFromHost && (
+            <InlineFieldRow>
+              <InlineField
+                label="Pattern"
+                labelWidth={16}
+                grow
+                tooltip="Exact item name/key, or /regex/. Defines the set of items rows are built from — metric columns select within this set."
+              >
+                <MetricPicker
+                  width={40}
+                  value={tableConfig.entityPattern.pattern}
+                  options={optionsForSearchType(tableConfig.entityPattern.searchType)}
+                  isLoading={itemsLoading}
+                  placeholder="e.g., /Interface.*/ or /.*: Disk .*/ or /FS .*: .*/"
+                  createCustomValue={true}
+                  onChange={onEntityPatternChange}
+                />
+              </InlineField>
+            </InlineFieldRow>
+          )}
+          {!rowsFromHost && (
+            <InlineFieldRow>
+              <InlineField
+                label="Extract pattern"
+                labelWidth={16}
+                grow
+                tooltip="Optional: Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
+              >
+                <Input
+                  value={localExtractPattern}
+                  placeholder="Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
+                  onChange={(e) => setLocalExtractPattern(e.currentTarget.value)}
+                  onBlur={onExtractPatternBlur}
+                />
+              </InlineField>
+            </InlineFieldRow>
+          )}
 
           {/* Extracted Columns Section */}
-          {localExtractPattern && (
+          {!rowsFromHost && localExtractPattern && (
             <div style={{ marginTop: '8px', marginLeft: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                 <h6 style={{ margin: 0, fontSize: '12px' }}>
@@ -587,13 +666,22 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
                   }
                 />
               </InlineField>
-              <InlineField label="Pattern" labelWidth={16} grow>
+              <InlineField
+                label="Pattern"
+                labelWidth={16}
+                grow
+                tooltip={
+                  rowsFromHost
+                    ? 'Exact item name/key, or /regex/.'
+                    : 'Exact item name/key, or /regex/. Selects within the items matching the Table Rows pattern.'
+                }
+              >
                 <MetricPicker
                   width={40}
                   value={metric.pattern}
-                  options={optionsForSearchType(metric.searchType, metric.valueType)}
+                  options={metricOptionsForSearchType(metric.searchType, metric.valueType)}
                   isLoading={metric.valueType === 'text' ? textItemsLoading : itemsLoading}
-                  placeholder="e.g., /.*Status/"
+                  placeholder="Exact name or /regex/, e.g., /.*Bits received/"
                   createCustomValue={true}
                   onChange={(value) => commitMetric(index, { pattern: value || '' })}
                 />
@@ -648,8 +736,15 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       {/* Help text */}
       <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(50, 116, 217, 0.1)', borderRadius: '4px' }}>
         <p style={{ margin: 0, fontSize: '12px' }}>
-          <strong>How it works:</strong> Select Group/Host, define entity pattern for rows, optionally extract columns
-          from regex capture groups, then add metric columns.
+          <strong>How it works:</strong> Select Group/Host, choose what rows represent, then add metric columns. With
+          rows from <em>Item pattern</em>, define the entity pattern (optionally extracting columns from regex capture
+          groups). With rows from <em>Hosts</em>, each host is a row — use this for host-level (non-LLD) items such as
+          CPU or memory utilization.
+        </p>
+        <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
+          <strong>Patterns:</strong> a value wrapped in slashes (/.../) is a regex; anything else must match the item
+          name or key exactly. With rows from <em>Item pattern</em>, metric columns select within the items matching the
+          Table Rows pattern.
         </p>
         <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
           <strong>Example:</strong> Pattern: "/Interface.*/", Extract: "Interface (.*)\[(.*)\]" - Group 1: "Interface

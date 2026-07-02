@@ -257,30 +257,8 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 	}
 
 	entityPattern := query.TableConfig.EntityPattern
+	rowsFromHost := query.TableConfig.RowsFromHost()
 
-	// Step 1: Fetch entity items (rows are always discovered from numeric items)
-	entityItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", entityPattern.Pattern, "num")
-	if err != nil {
-		ds.logger.Error("Error fetching entity items", "error", err)
-		return nil, err
-	}
-
-	ds.logger.Debug("Entity items found", "count", len(entityItems))
-
-	if len(entityItems) == 0 {
-		return []*data.Frame{}, nil
-	}
-
-	// Extract hosts to check if we have multiple hosts
-	hostsMap := make(map[string]bool)
-	for _, item := range entityItems {
-		if len(item.Hosts) > 0 {
-			hostsMap[item.Hosts[0].Name] = true
-		}
-	}
-	hasMultipleHosts := len(hostsMap) > 1
-
-	// Build entity map
 	type EntityInfo struct {
 		Item            *zabbix.Item
 		Group           string
@@ -292,46 +270,83 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 
 	entityMap := make(map[string]*EntityInfo)
 	entityOrder := []string{}
+	hasMultipleHosts := false
 
-	for _, item := range entityItems {
-		entityLabel, extractedValues := ds.extractEntityLabelWithGroups(item, entityPattern)
+	// Step 1 (entity-pattern rows only): discover rows from items matching the entity pattern.
+	// Host rows are built after the metric pools are fetched (from the hosts of matched items).
+	if !rowsFromHost {
+		// The fetch-level item filter matches item names only, so it can narrow the request just
+		// for name-based patterns; key-based patterns fetch broad and filter in memory below.
+		entityFetchPattern := entityPattern.Pattern
+		if entityPattern.SearchType != "itemName" {
+			entityFetchPattern = "/.*/"
+		}
+		entityItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", entityFetchPattern, "num")
+		if err != nil {
+			ds.logger.Error("Error fetching entity items", "error", err)
+			return nil, err
+		}
+		entityItems = ds.filterItemsByPattern(entityItems, entityPattern.Pattern, entityPattern.SearchType)
 
-		hostName := ""
-		if len(item.Hosts) > 0 {
-			hostName = item.Hosts[0].Name
+		ds.logger.Debug("Entity items found", "count", len(entityItems))
+
+		if len(entityItems) == 0 {
+			return []*data.Frame{}, nil
 		}
 
-		var compositeKey string
-		if len(extractedValues) > 0 {
-			extractedKey := strings.Join(extractedValues, "|")
-			compositeKey = hostName + "|" + extractedKey
-		} else {
-			compositeKey = hostName + "|" + entityLabel
-		}
-
-		if _, exists := entityMap[compositeKey]; !exists {
-			entityMap[compositeKey] = &EntityInfo{
-				Item:            item,
-				Group:           query.Group.Filter,
-				Host:            hostName,
-				Entity:          entityLabel,
-				ExtractedValues: extractedValues,
-				CompositeKey:    compositeKey,
+		// Extract hosts to check if we have multiple hosts
+		hostsMap := make(map[string]bool)
+		for _, item := range entityItems {
+			if len(item.Hosts) > 0 {
+				hostsMap[item.Hosts[0].Name] = true
 			}
-			entityOrder = append(entityOrder, compositeKey)
 		}
-	}
+		hasMultipleHosts = len(hostsMap) > 1
 
-	ds.logger.Debug("Unique entities", "count", len(entityOrder))
+		for _, item := range entityItems {
+			entityLabel, extractedValues := ds.extractEntityLabelWithGroups(item, entityPattern)
+
+			hostName := ""
+			if len(item.Hosts) > 0 {
+				hostName = item.Hosts[0].Name
+			}
+
+			var compositeKey string
+			if len(extractedValues) > 0 {
+				extractedKey := strings.Join(extractedValues, "|")
+				compositeKey = hostName + "|" + extractedKey
+			} else {
+				compositeKey = hostName + "|" + entityLabel
+			}
+
+			if _, exists := entityMap[compositeKey]; !exists {
+				entityMap[compositeKey] = &EntityInfo{
+					Item:            item,
+					Group:           query.Group.Filter,
+					Host:            hostName,
+					Entity:          entityLabel,
+					ExtractedValues: extractedValues,
+					CompositeKey:    compositeKey,
+				}
+				entityOrder = append(entityOrder, compositeKey)
+			}
+		}
+
+		ds.logger.Debug("Unique entities", "count", len(entityOrder))
+	}
 
 	// Step 2: Build item pools for the metric columns (OPTIMIZATION!)
 	// Instead of fetching each metric separately, fetch at most once per value type: numeric and
 	// text items live under different Zabbix value types, so each pool is a single bulk call.
-	// When a pool serves exactly one metric, its pattern is used directly; otherwise the pool is
-	// fetched broad ("/.*/") and filtered in memory per column.
+	// The request is narrowed when possible (fetch-level filters match item names only): with
+	// entity-pattern rows the metric items are a subset of the entity pattern, and a pool serving
+	// exactly one metric can use that metric's own pattern. Otherwise the pool is fetched broad
+	// ("/.*/") and filtered in memory per column.
 	fetchMetricPool := func(itemType string, metrics []MetricColumnConfig) ([]*zabbix.Item, error) {
 		pattern := "/.*/"
-		if len(metrics) == 1 {
+		if !rowsFromHost && entityPattern.Pattern != "" && entityPattern.SearchType == "itemName" {
+			pattern = entityPattern.Pattern
+		} else if len(metrics) == 1 && metrics[0].SearchType == "itemName" {
 			pattern = metrics[0].Pattern
 		}
 		return ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", pattern, itemType)
@@ -346,6 +361,8 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 			numMetrics = append(numMetrics, m)
 		}
 	}
+
+	var err error
 
 	var allMetricItems []*zabbix.Item
 	if len(numMetrics) > 0 {
@@ -367,6 +384,66 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 
 	ds.logger.Debug("All metric items fetched", "numCount", len(allMetricItems), "textCount", len(allTextMetricItems))
 
+	// Pre-filter each column's items from the pool of its value type. With entity-pattern rows,
+	// metric columns select WITHIN the items matching the Table Rows pattern (subset semantics):
+	// values join rows via the shared extracted identifier, so items outside the entity pattern
+	// could only produce stray keys or wrong matches.
+	metricItemsPerColumn := make([][]*zabbix.Item, len(query.TableConfig.Metrics))
+	for i, metric := range query.TableConfig.Metrics {
+		pool := allMetricItems
+		if metric.IsText() {
+			pool = allTextMetricItems
+		}
+		if !rowsFromHost && entityPattern.Pattern != "" {
+			pool = ds.filterItemsByPattern(pool, entityPattern.Pattern, entityPattern.SearchType)
+		}
+		metricItemsPerColumn[i] = ds.filterItemsByPattern(pool, metric.Pattern, metric.SearchType)
+		ds.logger.Debug("Filtered metric items", "column", metric.ColumnName, "count", len(metricItemsPerColumn[i]))
+	}
+
+	// Step 2b (host rows only): one row per host, sorted alphabetically. Rows are the hosts having
+	// at least one item matching any metric column; values are matched to rows by host name alone.
+	if rowsFromHost {
+		for _, metricItems := range metricItemsPerColumn {
+			for _, item := range metricItems {
+				if len(item.Hosts) == 0 {
+					continue
+				}
+				hostName := item.Hosts[0].Name
+				if _, exists := entityMap[hostName]; !exists {
+					entityMap[hostName] = &EntityInfo{
+						Item:         item,
+						Group:        query.Group.Filter,
+						Host:         hostName,
+						Entity:       hostName,
+						CompositeKey: hostName,
+					}
+					entityOrder = append(entityOrder, hostName)
+				}
+			}
+		}
+		sort.Strings(entityOrder)
+
+		ds.logger.Debug("Unique host rows", "count", len(entityOrder))
+
+		if len(entityOrder) == 0 {
+			return []*data.Frame{}, nil
+		}
+		hasMultipleHosts = len(entityOrder) > 1
+	}
+
+	// rowKey maps an item to the row it belongs to: the host name for host rows, or the
+	// entity composite key (host + extracted values / entity label) for entity-pattern rows.
+	rowKey := func(item *zabbix.Item) string {
+		if rowsFromHost {
+			if len(item.Hosts) > 0 {
+				return item.Hosts[0].Name
+			}
+			return ""
+		}
+		return ds.entityCompositeKey(item, entityPattern)
+	}
+
 	frame := data.NewFrame(query.RefID)
 
 	// Add Group column if requested
@@ -378,8 +455,9 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		frame.Fields = append(frame.Fields, data.NewField("Group", nil, groupValues))
 	}
 
-	// Add Host column if requested OR if there are multiple hosts
-	if query.TableConfig.ShowHostColumn || hasMultipleHosts {
+	// Add Host column if requested OR if there are multiple hosts. Host rows always include it —
+	// the host IS the row identity there.
+	if rowsFromHost || query.TableConfig.ShowHostColumn || hasMultipleHosts {
 		hostValues := make([]string, len(entityOrder))
 		for i, key := range entityOrder {
 			hostValues[i] = entityMap[key].Host
@@ -387,27 +465,29 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		frame.Fields = append(frame.Fields, data.NewField("Host", nil, hostValues))
 	}
 
-	// Add extracted columns from capture groups
-	for _, extractedCol := range entityPattern.ExtractedColumns {
-		colValues := make([]string, len(entityOrder))
-		for i, key := range entityOrder {
-			entityInfo := entityMap[key]
-			if extractedCol.GroupIndex > 0 && extractedCol.GroupIndex <= len(entityInfo.ExtractedValues) {
-				colValues[i] = entityInfo.ExtractedValues[extractedCol.GroupIndex-1]
-			} else {
-				colValues[i] = ""
+	if !rowsFromHost {
+		// Add extracted columns from capture groups
+		for _, extractedCol := range entityPattern.ExtractedColumns {
+			colValues := make([]string, len(entityOrder))
+			for i, key := range entityOrder {
+				entityInfo := entityMap[key]
+				if extractedCol.GroupIndex > 0 && extractedCol.GroupIndex <= len(entityInfo.ExtractedValues) {
+					colValues[i] = entityInfo.ExtractedValues[extractedCol.GroupIndex-1]
+				} else {
+					colValues[i] = ""
+				}
 			}
+			frame.Fields = append(frame.Fields, data.NewField(extractedCol.Name, nil, colValues))
 		}
-		frame.Fields = append(frame.Fields, data.NewField(extractedCol.Name, nil, colValues))
-	}
 
-	// Add Entity column only if no extracted columns defined
-	if len(entityPattern.ExtractedColumns) == 0 {
-		entityValues := make([]string, len(entityOrder))
-		for i, key := range entityOrder {
-			entityValues[i] = entityMap[key].Entity
+		// Add Entity column only if no extracted columns defined
+		if len(entityPattern.ExtractedColumns) == 0 {
+			entityValues := make([]string, len(entityOrder))
+			for i, key := range entityOrder {
+				entityValues[i] = entityMap[key].Entity
+			}
+			frame.Fields = append(frame.Fields, data.NewField("Entity", nil, entityValues))
 		}
-		frame.Fields = append(frame.Fields, data.NewField("Entity", nil, entityValues))
 	}
 
 	// Step 3: Process metrics - filter from allMetricItems instead of fetching separately.
@@ -416,14 +496,8 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 	// produces a dedicated "Trend #<column>" sparkline column per metric.
 	sparklineFrames := []*data.Frame{}
 
-	for _, metric := range query.TableConfig.Metrics {
-		// Filter items matching this metric's pattern from the pool of its value type
-		pool := allMetricItems
-		if metric.IsText() {
-			pool = allTextMetricItems
-		}
-		metricItems := ds.filterItemsByPattern(pool, metric.Pattern, metric.SearchType)
-		ds.logger.Debug("Filtered metric items", "column", metric.ColumnName, "count", len(metricItems))
+	for metricIndex, metric := range query.TableConfig.Metrics {
+		metricItems := metricItemsPerColumn[metricIndex]
 
 		// Sparkline columns deliver the full history as separate time-series frames and skip the
 		// scalar aggregation entirely (aggregation is disabled for them in the query editor).
@@ -434,7 +508,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 				ds.logger.Error("Error fetching sparkline history", "error", err, "column", metric.ColumnName)
 				continue
 			}
-			sparklineFrames = append(sparklineFrames, ds.buildSparklineFrames(metric, metricItems, history, entityPattern)...)
+			sparklineFrames = append(sparklineFrames, ds.buildSparklineFrames(metric, metricItems, history, entityPattern, rowsFromHost)...)
 			continue
 		}
 
@@ -445,7 +519,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		if metric.Aggregation == "last" || metric.IsText() {
 			metricValues := make(map[string]*string)
 			for _, item := range metricItems {
-				metricValues[ds.entityCompositeKey(item, entityPattern)] = item.LastValue
+				metricValues[rowKey(item)] = item.LastValue
 			}
 
 			columnValues = make([]*string, len(entityOrder))
@@ -459,7 +533,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 				continue
 			}
 
-			aggregatedValues := ds.aggregateHistoryWithHost(history, metricItems, entityPattern, metric.Aggregation)
+			aggregatedValues := ds.aggregateHistoryByKey(history, metricItems, rowKey, metric.Aggregation)
 
 			columnValues = make([]*string, len(entityOrder))
 			for i, key := range entityOrder {
@@ -512,9 +586,10 @@ func sparklineInterval(item *zabbix.Item, ts timeseries.TimeSeries) time.Duratio
 // The transformation groups frames by RefID and emits exactly one "Trend #<refId>" column per RefID,
 // so every sparkline metric is given its OWN RefID (the column name). This yields one sparkline column
 // per metric ("wide" layout) instead of a single Trend column with a "metric" dimension column.
-// Labels carry only the row-identifying dimensions (Host / extracted columns / Entity) so the per-metric
-// Trend tables can be joined or merged onto each other (and onto the scalar table) on those columns.
-func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConfig, items []*zabbix.Item, history zabbix.History, pattern EntityPatternConfig) []*data.Frame {
+// Labels carry only the row-identifying dimensions (Host / extracted columns / Entity — or just Host
+// when rows represent hosts) so the per-metric Trend tables can be joined or merged onto each other
+// (and onto the scalar table) on those columns.
+func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConfig, items []*zabbix.Item, history zabbix.History, pattern EntityPatternConfig, rowsFromHost bool) []*data.Frame {
 	pointsByItem := make(map[string][]zabbix.HistoryPoint, len(items))
 	for _, p := range history {
 		pointsByItem[p.ItemID] = append(pointsByItem[p.ItemID], p)
@@ -543,7 +618,6 @@ func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConf
 			ts = ts.Align(interval)
 		}
 
-		entityLabel, extractedValues := ds.extractEntityLabelWithGroups(item, pattern)
 		hostName := ""
 		if len(item.Hosts) > 0 {
 			hostName = item.Hosts[0].Name
@@ -553,14 +627,19 @@ func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConf
 		if hostName != "" {
 			labels["Host"] = hostName
 		}
-		if len(extractedValues) > 0 {
-			for _, col := range pattern.ExtractedColumns {
-				if col.GroupIndex > 0 && col.GroupIndex <= len(extractedValues) {
-					labels[col.Name] = extractedValues[col.GroupIndex-1]
+		// Host rows join on the Host label alone; entity-pattern rows also carry the
+		// extracted columns (or the entity label) as join dimensions.
+		if !rowsFromHost {
+			entityLabel, extractedValues := ds.extractEntityLabelWithGroups(item, pattern)
+			if len(extractedValues) > 0 {
+				for _, col := range pattern.ExtractedColumns {
+					if col.GroupIndex > 0 && col.GroupIndex <= len(extractedValues) {
+						labels[col.Name] = extractedValues[col.GroupIndex-1]
+					}
 				}
+			} else {
+				labels["Entity"] = entityLabel
 			}
-		} else {
-			labels["Entity"] = entityLabel
 		}
 
 		timeField := data.NewFieldFromFieldType(data.FieldTypeTime, len(ts))
@@ -585,13 +664,19 @@ func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConf
 	return frames
 }
 
-// filterItemsByPattern filters items by pattern (similar to existing Zabbix filter logic)
+// filterItemsByPattern filters items by pattern, following the plugin-wide filter convention:
+// a value wrapped in slashes ("/.../") is a regex, anything else must match the item name/key exactly.
 func (ds *ZabbixDatasourceInstance) filterItemsByPattern(items []*zabbix.Item, pattern string, searchType string) []*zabbix.Item {
-	// Parse the pattern (handle regex and wildcards)
-	re, err := regexp.Compile(strings.TrimPrefix(strings.TrimSuffix(pattern, "/"), "/"))
-	if err != nil {
-		ds.logger.Warn("Invalid pattern", "pattern", pattern, "error", err)
-		return items
+	isRegex := len(pattern) > 1 && strings.HasPrefix(pattern, "/") && strings.HasSuffix(pattern, "/")
+
+	var re *regexp.Regexp
+	if isRegex {
+		var err error
+		re, err = regexp.Compile(pattern[1 : len(pattern)-1])
+		if err != nil {
+			ds.logger.Warn("Invalid pattern", "pattern", pattern, "error", err)
+			return items
+		}
 	}
 
 	filtered := []*zabbix.Item{}
@@ -603,7 +688,11 @@ func (ds *ZabbixDatasourceInstance) filterItemsByPattern(items []*zabbix.Item, p
 			source = item.Key
 		}
 
-		if re.MatchString(source) {
+		if isRegex {
+			if re.MatchString(source) {
+				filtered = append(filtered, item)
+			}
+		} else if source == pattern {
 			filtered = append(filtered, item)
 		}
 	}
@@ -641,7 +730,9 @@ func (ds *ZabbixDatasourceInstance) extractEntityLabelWithGroups(item *zabbix.It
 	return source, []string{}
 }
 
-func (ds *ZabbixDatasourceInstance) aggregateHistoryWithHost(history zabbix.History, items []*zabbix.Item, pattern EntityPatternConfig, aggregation string) map[string]string {
+// aggregateHistoryByKey aggregates each item's history points and maps the result to the item's
+// table row, resolved via keyFunc (entity composite key or host name, depending on the row source).
+func (ds *ZabbixDatasourceInstance) aggregateHistoryByKey(history zabbix.History, items []*zabbix.Item, keyFunc func(*zabbix.Item) string, aggregation string) map[string]string {
 	historyByItem := make(map[string][]float64)
 	for _, h := range history {
 		historyByItem[h.ItemID] = append(historyByItem[h.ItemID], h.Value)
@@ -649,21 +740,7 @@ func (ds *ZabbixDatasourceInstance) aggregateHistoryWithHost(history zabbix.Hist
 
 	result := make(map[string]string)
 	for _, item := range items {
-		_, extractedValues := ds.extractEntityLabelWithGroups(item, pattern)
-		hostName := ""
-		if len(item.Hosts) > 0 {
-			hostName = item.Hosts[0].Name
-		}
-
-		// Build same composite key as entities
-		var compositeKey string
-		if len(extractedValues) > 0 {
-			extractedKey := strings.Join(extractedValues, "|")
-			compositeKey = hostName + "|" + extractedKey
-		} else {
-			entityLabel, _ := ds.extractEntityLabelWithGroups(item, pattern)
-			compositeKey = hostName + "|" + entityLabel
-		}
+		compositeKey := keyFunc(item)
 
 		values := historyByItem[item.ID]
 
