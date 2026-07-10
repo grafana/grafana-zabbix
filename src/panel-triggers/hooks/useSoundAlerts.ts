@@ -95,10 +95,15 @@ export function useSoundAlerts(problems: ProblemDTO[], options: ProblemsPanelOpt
     }
 
     // Update the set of known problem IDs
-    prevIdsRef.current = new Set(
-      problems
-        .map((p) => String(p.eventid ?? p.triggerid ?? ''))
-        .filter(Boolean)
-    );
-  }, [problems, soundAlerts, soundMinSeverity, soundTone, soundCustomUrl, soundVolume, soundRepeat, highlightNewerThan]);
+    prevIdsRef.current = new Set(problems.map((p) => String(p.eventid ?? p.triggerid ?? '')).filter(Boolean));
+  }, [
+    problems,
+    soundAlerts,
+    soundMinSeverity,
+    soundTone,
+    soundCustomUrl,
+    soundVolume,
+    soundRepeat,
+    highlightNewerThan,
+  ]);
 }
