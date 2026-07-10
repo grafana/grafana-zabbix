@@ -283,7 +283,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const problems = prepareProblems();
-  useSoundAlerts(problems, options);  
+  useSoundAlerts(problems, options);
 
   return (
     <>
