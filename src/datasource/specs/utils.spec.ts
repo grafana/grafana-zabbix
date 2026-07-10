@@ -261,4 +261,47 @@ describe('Utils', () => {
       expect(templateSrv.replace).not.toHaveBeenCalled();
     });
   });
+
+  describe('sanitizeTagName()', () => {
+    it('should replace non-alphanumeric characters with underscores', () => {
+      expect(utils.sanitizeTagName('service')).toBe('service');
+      expect(utils.sanitizeTagName('App Name')).toBe('App_Name');
+      expect(utils.sanitizeTagName('App.Name-test')).toBe('App_Name_test');
+      expect(utils.sanitizeTagName('!!!')).toBe('___');
+      expect(utils.sanitizeTagName('')).toBe('');
+    });
+  });
+
+  describe('addItemTagScopedVars()', () => {
+    it('should add sanitized tag scoped vars and join duplicate values', () => {
+      const scopedVars: Record<string, { value: string }> = {};
+
+      utils.addItemTagScopedVars(scopedVars, [
+        { tag: 'service', value: 'payment' },
+        { tag: 'App Name', value: 'api' },
+        { tag: 'service', value: 'checkout' },
+      ]);
+
+      expect(scopedVars['__zbx_item_tag_service']).toEqual({ value: 'checkout, payment' });
+      expect(scopedVars['__zbx_item_tag_App_Name']).toEqual({ value: 'api' });
+    });
+
+    it('should no-op when tags are missing', () => {
+      const scopedVars: Record<string, { value: string }> = {};
+
+      utils.addItemTagScopedVars(scopedVars, undefined);
+      utils.addItemTagScopedVars(scopedVars, []);
+
+      expect(scopedVars).toEqual({});
+    });
+
+    it('should add empty string for tags without a value', () => {
+      const scopedVars: Record<string, { value: string }> = {};
+
+      utils.addItemTagScopedVars(scopedVars, [{ tag: 'monitoring' }, { tag: 'service', value: 'checkout' }]);
+
+      expect(scopedVars['__zbx_item_tag_monitoring']).toEqual({ value: '' });
+      expect(scopedVars['__zbx_item_tag_service']).toEqual({ value: 'checkout' });
+    });
+  });
 });
