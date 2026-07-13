@@ -1,5 +1,16 @@
 # Change Log
 
+## 6.5.0
+
+### Minor Changes
+
+🚀 Support item tag values as alias tokens (`$__zbx_item_tag_<name>`) for setAlias/replaceAlias legends
+
+### Patch Changes
+
+⚙️ Chore: update frontend, docker, and GitHub Actions dependencies
+🐛 Fix operational data macro expansion and user macro support in problems panel
+
 ## 6.4.1
 
 🐛 ProblemsPanel: Fix severe Zabbix DB / PHP-FPM overload caused by the per-problem historical item value lookup (#2427). The `history.get` enrichment introduced in 6.3.1 now runs only when explicitly enabled via the new "Item value at problem time" query option (off by default, restoring 6.3.0 behavior). When enabled, the history window span and result size are bounded to protect the Zabbix frontend and database in large environments.
