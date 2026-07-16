@@ -72,7 +72,9 @@ export const ConfigEditor = (props: Props) => {
     options.jsonData.dbConnectionDatasourceId,
   ]);
 
-  const [grafanaUsers, setGrafanaUsers] = useState<SelectableValue<string>[]>([{ label: 'admin', value: 'admin' }]);
+  const [grafanaUsers, setGrafanaUsers] = useState<Array<SelectableValue<string>>>([
+    { label: 'admin', value: 'admin' },
+  ]);
   const [canEditExcludedUsers, setCanEditExcludedUsers] = useState(true);
   const [userFetchWarning, setUserFetchWarning] = useState<string | null>(null);
 
@@ -88,12 +90,16 @@ export const ConfigEditor = (props: Props) => {
           setCanEditExcludedUsers(false);
           return;
         }
-        if (!res.ok) throw new Error('Failed to fetch Grafana users');
+        if (!res.ok) {
+          throw new Error('Failed to fetch Grafana users');
+        }
         const users = await res.json();
-        setGrafanaUsers(users.map((u: any) => ({
-          label: u.login,
-          value: u.login,
-        })));
+        setGrafanaUsers(
+          users.map((u: any) => ({
+            label: u.login,
+            value: u.login,
+          }))
+        );
         setUserFetchWarning(null);
         setCanEditExcludedUsers(true);
       } catch {
@@ -509,10 +515,12 @@ export const ConfigEditor = (props: Props) => {
               >
                 <Combobox
                   width={40}
-                  options={[
-                    { label: 'Username', value: 'username' },
-                    { label: 'Email', value: 'email' },
-                  ]as Array<ComboboxOption<string>>}
+                  options={
+                    [
+                      { label: 'Username', value: 'username' },
+                      { label: 'Email', value: 'email' },
+                    ] as Array<ComboboxOption<string>>
+                  }
                   value={{
                     label: options.jsonData.perUserAuthField === 'email' ? 'Email' : 'Username',
                     value: options.jsonData.perUserAuthField || 'username',
@@ -532,13 +540,7 @@ export const ConfigEditor = (props: Props) => {
                   <Label>
                     <EditorStack gap={0.5}>
                       <span>Exclude users from per-user authentication</span>
-                      <Tooltip 
-                        content={
-                          <span>
-                            These users will always use the global Zabbix credentials
-                          </span>
-                        }
-                      >
+                      <Tooltip content={<span>These users will always use the global Zabbix credentials</span>}>
                         <Icon name="info-circle" size="sm" />
                       </Tooltip>
                     </EditorStack>
@@ -549,20 +551,22 @@ export const ConfigEditor = (props: Props) => {
                   width={40}
                   options={grafanaUsers}
                   allowCustomValue
-                  value={
-                    (options.jsonData.perUserAuthExcludeUsers ?? ['admin']).map(
-                      (u) => ({ label: u, value: u } as SelectableValue<string>)
-                    )
+                  value={(options.jsonData.perUserAuthExcludeUsers ?? ['admin']).map(
+                    (u) => ({ label: u, value: u }) as SelectableValue<string>
+                  )}
+                  onChange={
+                    canEditExcludedUsers
+                      ? (selected) => {
+                          onOptionsChange({
+                            ...options,
+                            jsonData: {
+                              ...options.jsonData,
+                              perUserAuthExcludeUsers: selected.map((s) => s.value),
+                            },
+                          });
+                        }
+                      : undefined
                   }
-                  onChange={canEditExcludedUsers ? (selected) => {
-                    onOptionsChange({
-                      ...options,
-                      jsonData: {
-                        ...options.jsonData,
-                        perUserAuthExcludeUsers: selected.map((s) => s.value),
-                      },
-                    });
-                  } : undefined}
                   disabled={!canEditExcludedUsers}
                 />
               </Field>
