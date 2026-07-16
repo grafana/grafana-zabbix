@@ -79,13 +79,20 @@ if not groups:
   groups = zapi.usergroup.get(output="extend")
 groupid = groups[0]['usrgrpid']
 
+# 'type' was removed in Zabbix 6.0 and replaced by 'roleid' (required).
+# Look up the default "User role" (equivalent to the old type=1 Zabbix user).
+roles = zapi.role.get(output="extend", filter={"name": "User role"})
+if not roles:
+  roles = zapi.role.get(output="extend")
+roleid = roles[0]['roleid']
+
 user_create_params = {
   "username": zabbix_test_user,
   "passwd": zabbix_test_pass,
   "name": "Grafana",
   "surname": "Test",
-  "type": 1,  # Zabbix user type
-  "user_groups": [{"usrgrpid": groupid}],
+  "roleid": roleid,  # 'type' removed in Zabbix 6.0; roleid is required
+  "usrgrps": [{"usrgrpid": groupid}],
 }
 
 try:
