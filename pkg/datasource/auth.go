@@ -66,7 +66,7 @@ func (ds *ZabbixDatasource) applyPerUserAuth(ctx context.Context, zabbixDS *Zabb
 	}
 
 	// Check token cache first
-	if tokenInfo, ok := ds.tokenCache.Get(datasourceUID, identity, identity); ok {
+	if tokenInfo, ok := ds.tokenCache.Get(datasourceUID, identity); ok {
 		ds.logger.Debug("Using cached token", "user", identity, "expiresIn", time.Until(tokenInfo.ExpiresAt).Round(time.Minute))
 		return zabbixapi.WithPerUserToken(ctx, tokenInfo.Token), nil
 	}
@@ -135,7 +135,7 @@ func (ds *ZabbixDatasource) applyPerUserAuth(ctx context.Context, zabbixDS *Zabb
 	ds.logger.Info("Per-user authentication successful", "user", identity, "zabbixUser", userName, "tokenCached", true, "ttl", TokenTTL)
 
 	// Cache the token
-	ds.tokenCache.Set(datasourceUID, identity, identity, token, TokenTTL)
+	ds.tokenCache.Set(datasourceUID, identity, userId, token, TokenTTL)
 
 	// Scope the user's token to this request only (do not mutate shared instance auth)
 	return zabbixapi.WithPerUserToken(ctx, token), nil

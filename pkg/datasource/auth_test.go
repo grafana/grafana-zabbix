@@ -122,7 +122,7 @@ func TestApplyPerUserAuth_ExcludedUserUsesStoredCreds(t *testing.T) {
 	assert.Empty(t, zabbixapi.PerUserTokenFromContext(gotCtx), "excluded user must not carry a per-user token (falls back to stored creds)")
 	assert.Equal(t, testStoredAuth, inst.zabbix.GetAPI().GetAuth(), "excluded user must keep stored credentials")
 	assert.Empty(t, calls, "excluded user should not trigger any Zabbix API calls")
-	_, ok := ds.tokenCache.Get("ds-uid", "alice", "alice")
+	_, ok := ds.tokenCache.Get("ds-uid", "alice")
 	assert.False(t, ok, "excluded user must not be cached")
 }
 
@@ -154,16 +154,17 @@ func TestApplyPerUserAuth_HappyPathScopesAndCachesToken(t *testing.T) {
 	assert.Equal(t, "generated-token-xyz", zabbixapi.PerUserTokenFromContext(gotCtx), "returned context should carry the user's token")
 	assert.Equal(t, testStoredAuth, inst.zabbix.GetAPI().GetAuth(), "shared instance auth must NOT be mutated (concurrency safety)")
 
-	cached, ok := ds.tokenCache.Get("ds-uid", "alice", "alice")
+	cached, ok := ds.tokenCache.Get("ds-uid", "alice")
 	require.True(t, ok, "token should be cached after generation")
 	assert.Equal(t, "generated-token-xyz", cached.Token)
+	assert.Equal(t, "42", cached.UserID, "cache should record the Zabbix user id")
 }
 
 func TestApplyPerUserAuth_UsesCachedTokenWithoutAPICalls(t *testing.T) {
 	var calls []string
 	s := &settings.ZabbixDatasourceSettings{PerUserAuth: true, PerUserAuthField: "username"}
 	ds, inst := buildTestInstance(t, s, happyPathResponses(), &calls)
-	ds.tokenCache.Set("ds-uid", "alice", "alice", "cached-token", time.Hour)
+	ds.tokenCache.Set("ds-uid", "alice", "42", "cached-token", time.Hour)
 
 	ctx := backend.WithUser(context.Background(), &backend.User{Login: "alice"})
 	gotCtx, err := ds.applyPerUserAuth(ctx, inst, "ds-uid")
@@ -182,7 +183,7 @@ func TestApplyPerUserAuth_EmailFieldSelectsEmailIdentity(t *testing.T) {
 	_, err := ds.applyPerUserAuth(ctx, inst, "ds-uid")
 
 	require.NoError(t, err)
-	_, ok := ds.tokenCache.Get("ds-uid", "alice@example.com", "alice@example.com")
+	_, ok := ds.tokenCache.Get("ds-uid", "alice@example.com")
 	assert.True(t, ok, "cache key should use the email identity when field is email")
 }
 

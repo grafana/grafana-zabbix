@@ -13,15 +13,15 @@ type TokenInfo struct {
 }
 
 type TokenCache struct {
-	tokens sync.Map // key: "datasourceUID:identity:userID"
+	tokens sync.Map // key: "datasourceUID:identity"
 }
 
 func NewTokenCache() *TokenCache {
 	return &TokenCache{}
 }
 
-func (tc *TokenCache) Get(datasourceUID, identity, userID string) (*TokenInfo, bool) {
-	key := datasourceUID + ":" + identity + ":" + userID
+func (tc *TokenCache) Get(datasourceUID, identity string) (*TokenInfo, bool) {
+	key := datasourceUID + ":" + identity
 	if val, ok := tc.tokens.Load(key); ok {
 		tokenInfo := val.(*TokenInfo)
 		if time.Now().Before(tokenInfo.ExpiresAt) {
@@ -32,12 +32,15 @@ func (tc *TokenCache) Get(datasourceUID, identity, userID string) (*TokenInfo, b
 	return nil, false
 }
 
-func (tc *TokenCache) Set(datasourceUID, identity, userID, token string, ttl time.Duration) {
-	key := datasourceUID + ":" + identity + ":" + userID
+// Set caches a token keyed by (datasourceUID, identity). zabbixUserID is the
+// Zabbix user id and is stored only for observability; it is not part of the key
+// because it is unknown at Get time (before the Zabbix user lookup).
+func (tc *TokenCache) Set(datasourceUID, identity, zabbixUserID, token string, ttl time.Duration) {
+	key := datasourceUID + ":" + identity
 	tokenInfo := &TokenInfo{
 		Token:     token,
 		ExpiresAt: time.Now().Add(ttl),
-		UserID:    userID,
+		UserID:    zabbixUserID,
 		Username:  identity,
 	}
 	tc.tokens.Store(key, tokenInfo)
