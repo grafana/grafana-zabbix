@@ -5,6 +5,10 @@ services:
       file: ../../.config/docker-compose-base.yaml
       service: grafana
     volumes:
+      # Override the base ../provisioning mount so the nested datasource/dashboard
+      # mounts below create their (Docker-generated) mount-point files under a
+      # gitignored tmp dir instead of the tracked repo-root provisioning/.
+      - ../../tmp/provisioning:/etc/grafana/provisioning
       - ../dashboards:/devenv/dashboards
       - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
       - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
@@ -44,7 +48,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:18@sha256:a9abf4275f9e99bff8e6aed712b3b7dfec9cac1341bba01c1ffdfce9ff9fc34a
+    image: postgres:18@sha256:22c89fe0d0f507606260237fd55e51f6137f58b2d5bcf6152242b96d9fe8f9a4
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'
@@ -81,7 +85,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
+    image: redis:alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005
 
   zas_backend_01:
     build: ../zas-agent
@@ -100,7 +104,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
+    image: redis:alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005
 
   zas_frontend_01:
     build: ../zas-agent

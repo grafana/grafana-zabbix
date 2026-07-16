@@ -1,0 +1,85 @@
+name: Integration tests
+run-name: Integration tests (Zabbix versions)
+
+# Runs the Go API integration tests (pkg/zabbixapi) against a real Zabbix
+# instance, once per supported Zabbix version via a matrix. This is distinct
+# from Grafana-API "compatibility" — see grafana/plugin-actions/is-compatible —
+# so it is deliberately named "integration", not "compatibility".
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Monthly: the devenv stacks track upstream Zabbix images.
+    - cron: '0 9 1 * *'
+
+jobs:
+  integration:
+    name: integration (Zabbix ${{ matrix.version }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 5.0 / 6.0 front Zabbix with nginx (TLS + HTTP basic auth).
+          - version: '5.0'
+            devenv: zabbix50
+            integration-var: INTEGRATION_TEST50
+            url: https://localhost/api_jsonrpc.php
+          - version: '6.0'
+            devenv: zabbix60
+            integration-var: INTEGRATION_TEST60
+            url: https://localhost/api_jsonrpc.php
+          # 7.0+ use the apache web image over plain HTTP.
+          - version: '7.0'
+            devenv: zabbix70
+            integration-var: INTEGRATION_TEST70
+            url: http://localhost:8188/api_jsonrpc.php
+          - version: '7.2'
+            devenv: zabbix72
+            integration-var: INTEGRATION_TEST72
+            url: http://localhost:8188/api_jsonrpc.php
+          - version: '7.4'
+            devenv: zabbix74
+            integration-var: INTEGRATION_TEST74
+            url: http://localhost:8188/api_jsonrpc.php
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - name: Start Zabbix environment
+        env:
+          DEVENV: ${{ matrix.devenv }}
+        run: |
+          docker compose -f "devenv/${DEVENV}/docker-compose.yml" up -d
+          # Wait for Zabbix to be ready
+          sleep 30
+
+      - name: Run integration tests
+        env:
+          INTEGRATION_VAR: ${{ matrix.integration-var }}
+          ZABBIX_URL: ${{ matrix.url }}
+          ZABBIX_USER: Admin
+          ZABBIX_PASSWORD: zabbix
+          # Used by the per-user auth integration tests (6.0+).
+          ZABBIX_TARGET_USER: grafana_test
+        run: |
+          # Each version's test self-gates on its own INTEGRATION_TESTNN var.
+          export "${INTEGRATION_VAR}=true"
+          go test -v ./pkg/zabbixapi/...
+
+      - name: Tear down
+        if: always()
+        env:
+          DEVENV: ${{ matrix.devenv }}
+        run: docker compose -f "devenv/${DEVENV}/docker-compose.yml" down -v
