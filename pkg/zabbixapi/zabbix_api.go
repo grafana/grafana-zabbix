@@ -306,7 +306,7 @@ func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, u
 	if resp != nil && len(resp.MustArray()) > 0 {
 		// Token exists, use its tokenid
 		tokenId = resp.GetIndex(0).Get("tokenid").MustString()
-		api.logger.Debug("found existing token", "tokenid", tokenId, "username", userName)
+		api.logger.Debug("found existing token", "tokenid", tokenId)
 	} else {
 		// Token does not exist, create a new one
 		createParams := map[string]interface{}{
@@ -332,7 +332,7 @@ func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, u
 		if tokenId == "" {
 			return "", errors.New("failed to create Zabbix API token, tokenid is empty")
 		}
-		api.logger.Debug("created new token", "tokenid", tokenId, "username", userName)
+		api.logger.Debug("created new token", "tokenid", tokenId)
 	}
 
 	// Generate the actual token value
@@ -353,7 +353,7 @@ func (api *ZabbixAPI) GenerateUserAPIToken(ctx context.Context, userId string, u
 		return "", errors.New("failed to generate Zabbix API token, token string is empty")
 	}
 
-	api.logger.Debug("Generated token successfully", "userName", userName)
+	api.logger.Debug("Generated token successfully")
 	return token, nil
 }
 

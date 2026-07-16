@@ -61,18 +61,18 @@ func (ds *ZabbixDatasource) applyPerUserAuth(ctx context.Context, zabbixDS *Zabb
 	}
 
 	if excluded {
-		ds.logger.Info("User is excluded from per-user authentication, using stored credentials", "user", identity)
+		ds.logger.Info("User is excluded from per-user authentication, using stored credentials")
 		return ctx, nil
 	}
 
 	// Check token cache first
 	if tokenInfo, ok := ds.tokenCache.Get(datasourceUID, identity); ok {
-		ds.logger.Debug("Using cached token", "user", identity, "expiresIn", time.Until(tokenInfo.ExpiresAt).Round(time.Minute))
+		ds.logger.Debug("Using cached token", "expiresIn", time.Until(tokenInfo.ExpiresAt).Round(time.Minute))
 		return zabbixapi.WithPerUserToken(ctx, tokenInfo.Token), nil
 	}
 
 	// Staring token generation
-	ds.logger.Info("Authenticating user with Zabbix", "user", identity)
+	ds.logger.Info("Authenticating user with Zabbix")
 
 	// Ensure stored credentials are authenticated
 	storedAuth := zabbixDS.zabbix.GetAPI().GetAuth()
@@ -108,31 +108,31 @@ func (ds *ZabbixDatasource) applyPerUserAuth(ctx context.Context, zabbixDS *Zabb
 	}
 
 	// Query Zabbix for the user (using stored credentials)
-	ds.logger.Debug("Looking up Zabbix user", "identity", identity, "field", zabbixDS.Settings.PerUserAuthField)
+	ds.logger.Debug("Looking up Zabbix user", "field", zabbixDS.Settings.PerUserAuthField)
 	zabbixUser, err := zabbixDS.zabbix.GetAPI().GetUserByIdentity(ctx, zabbixDS.Settings.PerUserAuthField, identity, zabbixVersion)
 	if err != nil {
-		ds.logger.Error("Failed to query Zabbix for user", "identity", identity, "error", err)
+		ds.logger.Error("Failed to query Zabbix for user", "error", err)
 		return ctx, errors.New("error querying Zabbix for user: " + err.Error())
 	}
 	if zabbixUser == nil || len(zabbixUser.MustArray()) == 0 {
-		ds.logger.Error("User not found in Zabbix", "identity", identity)
-		return ctx, errors.New("user " + identity + " not found in Zabbix. Contact your administrator to provision access")
+		ds.logger.Error("User not found in Zabbix")
+		return ctx, errors.New("user not found in Zabbix. Contact your administrator to provision access")
 	}
 
 	userId := zabbixUser.GetIndex(0).Get("userid").MustString()
 	userName := zabbixUser.GetIndex(0).Get("username").MustString()
 
-	ds.logger.Debug("Found Zabbix user", "identity", identity, "userId", userId, "userName", userName)
+	ds.logger.Debug("Found Zabbix user")
 
 	// Generate token
-	ds.logger.Debug("Generating token for user", "zabbixUserId", userId, "userName", userName)
+	ds.logger.Debug("Generating token for user")
 	token, err := zabbixDS.zabbix.GetAPI().GenerateUserAPIToken(ctx, userId, userName, zabbixVersion)
 	if err != nil {
-		ds.logger.Error("Failed to generate token", "userId", userId, "error", err)
+		ds.logger.Error("Failed to generate token", "error", err)
 		return ctx, errors.New("failed to generate Zabbix API token for user: " + err.Error())
 	}
 
-	ds.logger.Info("Per-user authentication successful", "user", identity, "zabbixUser", userName, "tokenCached", true, "ttl", TokenTTL)
+	ds.logger.Info("Per-user authentication successful", "tokenCached", true, "ttl", TokenTTL)
 
 	// Cache the token
 	ds.tokenCache.Set(datasourceUID, identity, userId, token, TokenTTL)
