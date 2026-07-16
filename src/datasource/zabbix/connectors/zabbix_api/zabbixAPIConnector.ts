@@ -112,6 +112,11 @@ export class ZabbixAPIConnector {
     return semver.gte(this.version, '5.4.0');
   }
 
+  // Cause and symptom problems were introduced in Zabbix 6.4
+  supportsCauseSymptomProblems() {
+    return this.version ? semver.gte(this.version, '6.4.0') : false;
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
@@ -560,7 +565,7 @@ export class ZabbixAPIConnector {
       params.applicationids = applicationids;
     }
 
-    if (symptom !== undefined && symptom !== null) {
+    if (this.supportsCauseSymptomProblems() && symptom !== undefined && symptom !== null) {
       params.symptom = symptom;
     }
 
@@ -718,7 +723,7 @@ export class ZabbixAPIConnector {
       params.evaltype = evaltype;
     }
 
-    if (symptom !== undefined && symptom !== null) {
+    if (this.supportsCauseSymptomProblems() && symptom !== undefined && symptom !== null) {
       params.symptom = symptom;
     }
 
