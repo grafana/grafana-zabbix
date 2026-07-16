@@ -1,4 +1,4 @@
-FROM python:3@sha256:09b29c360b84742bf98eba40b214f7f6b4b53286bb2c8a8b5b1afa188a8d9c0e
+FROM python:3@sha256:311ea5bb79f1a238ee9e38f8d5f09cb3b4b244575cf49e27cf365ea7e60f11d4
 
 ENV ZBX_API_URL=http://zabbix-web
 ENV ZBX_API_USER="Admin"
