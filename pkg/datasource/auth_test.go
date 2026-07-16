@@ -197,5 +197,4 @@ func TestApplyPerUserAuth_UserNotFoundInZabbix(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found in Zabbix")
-
 }

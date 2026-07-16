@@ -54,5 +54,4 @@ func (tc *TokenCache) CleanupExpired() int {
 		return true
 	})
 	return count
-
 }

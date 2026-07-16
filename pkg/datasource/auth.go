@@ -139,5 +139,4 @@ func (ds *ZabbixDatasource) applyPerUserAuth(ctx context.Context, zabbixDS *Zabb
 
 	// Scope the user's token to this request only (do not mutate shared instance auth)
 	return zabbixapi.WithPerUserToken(ctx, token), nil
-
 }
