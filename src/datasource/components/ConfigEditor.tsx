@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getDataSourceSrv, config, GetDataSourceListFilters } from '@grafana/runtime';
 import {
   DataSourceInstanceSettings,
@@ -8,6 +8,7 @@ import {
   GrafanaTheme2,
 } from '@grafana/data';
 import {
+  Alert,
   Combobox,
   ComboboxOption,
   Field,
@@ -530,9 +531,9 @@ export const ConfigEditor = (props: Props) => {
               </Field>
 
               {userFetchWarning && (
-                <div style={{ color: 'orange', marginBottom: '10px' }}>
-                  <Icon name="exclamation-triangle" /> {userFetchWarning}
-                </div>
+                <Alert title="Cannot list Grafana users" severity="warning">
+                  {userFetchWarning}
+                </Alert>
               )}
 
               <Field
