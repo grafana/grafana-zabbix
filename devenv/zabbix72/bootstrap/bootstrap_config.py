@@ -74,13 +74,13 @@ with open(config_path, 'r') as f:
     print(e)
 
 print("Creating a user for testing per-user auth")
-groups = zapi.usergoup.get(output="extend", filter={"name": "Zabbix administrators"})
+groups = zapi.usergroup.get(output="extend", filter={"name": "Zabbix administrators"})
 if not groups:
   groups = zapi.usergroup.get(output="extend")
 groupid = groups[0]['usrgrpid']
 
 user_create_params = {
-  "alias": zabbix_test_user,
+  "username": zabbix_test_user,
   "passwd": zabbix_test_pass,
   "name": "Grafana",
   "surname": "Test",
