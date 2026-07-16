@@ -28,6 +28,7 @@ type ZabbixDatasource struct {
 	im         instancemgmt.InstanceManager
 	logger     log.Logger
 	tokenCache *cache.TokenCache
+	cancel     context.CancelFunc
 }
 
 // ZabbixDatasourceInstance stores state about a specific datasource
@@ -40,25 +41,39 @@ type ZabbixDatasourceInstance struct {
 }
 
 func NewZabbixDatasource() *ZabbixDatasource {
+	ctx, cancel := context.WithCancel(context.Background())
 	ds := &ZabbixDatasource{
 		im:         datasource.NewInstanceManager(newZabbixDatasourceInstance),
 		logger:     log.New(),
 		tokenCache: cache.NewTokenCache(),
+		cancel:     cancel,
 	}
 
-	go ds.startTokenCleanup()
+	go ds.startTokenCleanup(ctx, 5*time.Minute)
 
 	return ds
 }
 
-func (ds *ZabbixDatasource) startTokenCleanup() {
-	ticker := time.NewTicker(5 * time.Minute)
+// Close stops the background token-cleanup goroutine. Safe to call multiple times.
+func (ds *ZabbixDatasource) Close() {
+	if ds.cancel != nil {
+		ds.cancel()
+	}
+}
+
+func (ds *ZabbixDatasource) startTokenCleanup(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		cleaned := ds.tokenCache.CleanupExpired()
-		if cleaned > 0 {
-			ds.logger.Info("Cleaned up expired Zabbix authentication tokens", "count", cleaned)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			cleaned := ds.tokenCache.CleanupExpired()
+			if cleaned > 0 {
+				ds.logger.Info("Cleaned up expired Zabbix authentication tokens", "count", cleaned)
+			}
 		}
 	}
 }
