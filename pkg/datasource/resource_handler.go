@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -69,7 +70,18 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 
 	apiReq := &zabbix.ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
 
-	result, err := dsInstance.ZabbixAPIQuery(req.Context(), apiReq)
+	// Bound resource calls (metric-picker autocomplete: groups/hosts/items/apps)
+	// with the same query timeout used for regular metric queries in
+	// QueryData (see datasource.go), so a slow/overloaded Zabbix can't hang
+	// this call indefinitely and trip Grafana's own outer gateway timeout.
+	queryTimeout := dsInstance.Settings.QueryTimeout
+	if queryTimeout <= 0 {
+		queryTimeout = 60 * time.Second
+	}
+	resourceCtx, cancel := context.WithTimeout(req.Context(), queryTimeout)
+	defer cancel()
+
+	result, err := dsInstance.ZabbixAPIQuery(resourceCtx, apiReq)
 	if err != nil {
 		ds.logger.Error("Zabbix API request error", "error", err)
 		writeError(rw, http.StatusInternalServerError, err)
@@ -153,8 +165,12 @@ func writeResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {
 func writeError(rw http.ResponseWriter, statusCode int, err error) {
 	data := make(map[string]interface{})
 
-	data["error"] = "Internal Server Error"
-	data["message"] = err.Error()
+	data["error"] = http.StatusText(statusCode)
+	if err != nil {
+		data["message"] = err.Error()
+	} else {
+		data["message"] = "empty request body"
+	}
 
 	var b []byte
 	if b, err = json.Marshal(data); err != nil {
@@ -163,7 +179,7 @@ func writeError(rw http.ResponseWriter, statusCode int, err error) {
 	}
 
 	rw.Header().Add("Content-Type", "application/json")
-	rw.WriteHeader(http.StatusInternalServerError)
+	rw.WriteHeader(statusCode)
 
 	_, err = rw.Write(b)
 	if err != nil {

@@ -22,6 +22,34 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 	}
 }
 
+type flakyRoundTripper func(req *http.Request) (*http.Response, error)
+
+func (f flakyRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+// NewFlakyTestClient returns an *http.Client whose Transport fails the first
+// failTimes requests with failErr (simulating a network-level error such as
+// a stale pooled connection being closed by the peer) before responding
+// normally. The returned *int tracks how many attempts were made.
+func NewFlakyTestClient(failTimes int, failErr error, body string, statusCode int) (*http.Client, *int) {
+	attempts := 0
+	client := &http.Client{
+		Transport: flakyRoundTripper(func(req *http.Request) (*http.Response, error) {
+			attempts++
+			if attempts <= failTimes {
+				return nil, failErr
+			}
+			return &http.Response{
+				StatusCode: statusCode,
+				Body:       io.NopCloser(bytes.NewBufferString(body)),
+				Header:     make(http.Header),
+			}, nil
+		}),
+	}
+	return client, &attempts
+}
+
 func MockZabbixAPI(body string, statusCode int) (*ZabbixAPI, error) {
 	apiLogger := log.New()
 	zabbixURL, err := url.Parse("http://zabbix.org/zabbix")

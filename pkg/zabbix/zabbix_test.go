@@ -82,6 +82,29 @@ func TestNonCachedQuery(t *testing.T) {
 	assert.Equal(t, "testNew", result)
 }
 
+func TestVersionIsCachedAcrossRequests(t *testing.T) {
+	versionCalls := 0
+	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		switch payload.Method {
+		case "apiinfo.version":
+			versionCalls++
+			return `{"result":"6.4.0"}`
+		default:
+			return `{"result":"ok"}`
+		}
+	})
+
+	// Every Request() internally checks the API version to pick the right
+	// dialect. Before the fix, that meant a live apiinfo.version HTTP call
+	// on every single Request() - doubling the load sent to Zabbix.
+	for i := 0; i < 5; i++ {
+		_, err := zabbixClient.Request(context.Background(), &ZabbixAPIRequest{Method: "history.get", Params: emptyParams})
+		assert.NoError(t, err)
+	}
+
+	assert.Equal(t, 1, versionCalls, "apiinfo.version should be fetched once and cached, not on every Request()")
+}
+
 func TestItemTagCache(t *testing.T) {
 	callCount := 0
 	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {

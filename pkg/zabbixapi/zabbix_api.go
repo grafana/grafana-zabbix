@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"syscall"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/bitly/go-simplejson"
@@ -109,25 +110,28 @@ func (api *ZabbixAPI) request(ctx context.Context, method string, params ZabbixA
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, api.url.String(), bytes.NewBuffer(reqBodyJSON))
-	if err != nil {
-		return nil, err
-	}
-
 	metrics.ZabbixAPIQueryTotal.WithLabelValues(method).Inc()
 
-	if auth != "" && version >= 70 {
-		if version > 70 && api.dsSettings.BasicAuthEnabled {
-			return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
+	if auth != "" && version >= 70 && version > 70 && api.dsSettings.BasicAuthEnabled {
+		return nil, backend.DownstreamErrorf("basic auth is not supported for Zabbix v7.2 and later")
+	}
+
+	// Build a fresh *http.Request for every attempt: the request body reader
+	// is consumed after it's written to the wire, so a retry needs its own copy.
+	newReq := func() (*http.Request, error) {
+		req, err := http.NewRequest(http.MethodPost, api.url.String(), bytes.NewReader(reqBodyJSON))
+		if err != nil {
+			return nil, err
 		}
-		if !api.dsSettings.BasicAuthEnabled {
+		if auth != "" && version >= 70 && !api.dsSettings.BasicAuthEnabled {
 			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
 		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
+		return req, nil
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Grafana/grafana-zabbix")
 
-	response, err := makeHTTPRequest(ctx, api.httpClient, req)
+	response, err := makeHTTPRequest(ctx, api.httpClient, newReq)
 	if err != nil {
 		return nil, err
 	}
@@ -214,15 +218,50 @@ func handleAPIResult(response []byte) (*simplejson.Json, error) {
 	return jsonResult, nil
 }
 
-func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Request) ([]byte, error) {
-	// Set to true to prevents re-use of TCP connections (this may cause random EOF error in some request)
-	req.Close = true
-
-	res, err := ctxhttp.Do(ctx, httpClient, req)
+// makeHTTPRequest performs the HTTP round trip, reusing pooled connections
+// (no more forced req.Close=true - see doHTTPRequestOnce for why).
+func makeHTTPRequest(ctx context.Context, httpClient *http.Client, newReq func() (*http.Request, error)) ([]byte, error) {
+	body, err := doHTTPRequestOnce(ctx, httpClient, newReq)
+	if err != nil && isRetryableConnError(err) {
+		// The pooled connection was closed by the server/proxy in the small
+		// window between Go picking it from the idle pool and writing the
+		// request to it (classic keep-alive race, e.g. grafana-zabbix#1295).
+		// Nothing reached the server in that case, so retrying once with a
+		// brand-new connection is always safe, even for non-idempotent
+		// calls like user.login.
+		log.DefaultLogger.Debug("Retrying Zabbix API request after transient connection error", "error", err)
+		body, err = doHTTPRequestOnce(ctx, httpClient, newReq)
+	}
 	if err != nil {
 		if backend.IsDownstreamHTTPError(err) {
 			return nil, backend.DownstreamError(err)
 		}
+		return nil, err
+	}
+	return body, nil
+}
+
+// isRetryableConnError reports whether err is a network-level failure that
+// can only happen before the server ever saw the request (a stale pooled
+// connection being closed right as it's reused), making a retry safe.
+func isRetryableConnError(err error) bool {
+	return errors.Is(err, io.EOF) ||
+		errors.Is(err, io.ErrUnexpectedEOF) ||
+		errors.Is(err, syscall.ECONNRESET)
+}
+
+// doHTTPRequestOnce performs a single HTTP attempt. Connection-level errors
+// (nothing received yet) are returned unwrapped so the caller can decide
+// whether a retry is safe; HTTP-status-level errors are classified here since
+// they're never retry candidates.
+func doHTTPRequestOnce(ctx context.Context, httpClient *http.Client, newReq func() (*http.Request, error)) ([]byte, error) {
+	req, err := newReq()
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := ctxhttp.Do(ctx, httpClient, req)
+	if err != nil {
 		return nil, err
 	}
 	defer func() {
@@ -232,12 +271,12 @@ func makeHTTPRequest(ctx context.Context, httpClient *http.Client, req *http.Req
 	}()
 
 	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("request failed, status: %v", res.Status)
+		statusErr := fmt.Errorf("request failed, status: %v", res.Status)
 		if backend.ErrorSourceFromHTTPStatus(res.StatusCode) == backend.ErrorSourceDownstream {
-			return nil, backend.DownstreamError(err)
+			return nil, backend.DownstreamError(statusErr)
 		}
 
-		return nil, err
+		return nil, statusErr
 	}
 
 	body, err := io.ReadAll(res.Body)
