@@ -24,7 +24,7 @@ export default defineConfig<PluginOptions>({
   /*
    * The whole suite runs against a single shared Zabbix + Grafana backend, which
    * can't serve many concurrent sessions — Playwright's default (≈ half the CPU
-   * cores) overloads it and causes timeouts. Cap concurrency so `yarn e2e` is
+   * cores) overloads it and causes timeouts. Cap concurrency so `npm run e2e` is
    * reliable locally without a `--workers` flag; CI runs serially.
    */
   workers: process.env.CI ? 1 : 2,
