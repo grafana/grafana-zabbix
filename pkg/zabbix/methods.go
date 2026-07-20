@@ -537,7 +537,25 @@ func (ds *Zabbix) GetValueMappings(ctx context.Context) ([]ValueMap, error) {
 	return valuemaps, err
 }
 
+// GetFullVersion returns the Zabbix API version, e.g. "6.4.5".
+//
+// The version rarely changes for a running Zabbix instance, but Request()
+// (see zabbix.go) checks it on every single API call to pick the right
+// request dialect. Without caching, that turns every logical Zabbix API
+// call the plugin makes into two HTTP requests instead of one, which under
+// real dashboard load (many panels, autorefresh, several users) is enough
+// to exhaust the connection/worker limits of the Zabbix web frontend and
+// makes it start answering with 502/503. Cache the result using the same
+// ZabbixCache already used for host.get/item.get/etc. so the version is
+// only re-fetched once per cache TTL.
 func (ds *Zabbix) GetFullVersion(ctx context.Context) (string, error) {
+	versionReq := &ZabbixAPIRequest{Method: "apiinfo.version"}
+	if cached, ok := ds.cache.GetAPIRequest(versionReq); ok {
+		if version, ok := cached.(string); ok && version != "" {
+			return version, nil
+		}
+	}
+
 	result, err := ds.request(ctx, "apiinfo.version", ZabbixAPIParams{})
 	if err != nil {
 		return "", err
@@ -548,7 +566,9 @@ func (ds *Zabbix) GetFullVersion(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
+	ds.cache.SetAPIRequest(versionReq, version)
+
 	return version, nil
 }
 
