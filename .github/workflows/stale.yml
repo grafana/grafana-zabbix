@@ -3,38 +3,40 @@ on:
   schedule:
     - cron: '30 1 * * *'
 
+permissions: {}
+
 jobs:
   stale:
+    runs-on: ubuntu-arm64-small
     permissions:
       issues: write
       pull-requests: write
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@eb5cf3af3ac0a1aa4c9c45633dd1ae542a27a899 # v10.3.0
+      - uses: actions/stale@1e223db275d687790206a7acac4d1a11bd6fe629 # v10
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           operations-per-run: 750
           # start from the oldest issues/PRs when performing stale operations
           ascending: true
-          days-before-issue-stale: 730
-          days-before-issue-close: 60
+          days-before-issue-stale: 365
+          days-before-issue-close: 30
           stale-issue-label: stale
-          exempt-issue-labels: no stalebot,type/epic,type/bug
+          exempt-issue-labels: no stalebot,type/epic
           stale-issue-message: >
             This issue has been automatically marked as stale because it has not had
-            activity in the last 2 years. It will be closed in 60 days if no further activity occurs. Please
+            activity in the last year. It will be closed in 30 days if no further activity occurs. Please
             feel free to leave a comment if you believe the issue is still relevant.
             Thank you for your contributions!
           close-issue-message: >
             This issue has been automatically closed because it has not had any further
-            activity in the last 60 days. Thank you for your contributions!
-          days-before-pr-stale: 60
+            activity in the last 30 days. Thank you for your contributions!
+          days-before-pr-stale: 30
           days-before-pr-close: 14
           stale-pr-label: stale
           exempt-pr-labels: no stalebot
           stale-pr-message: >
             This pull request has been automatically marked as stale because it has not had
-            activity in the last 60 days. It will be closed in 2 weeks if no further activity occurs. Please
+            activity in the last 30 days. It will be closed in 2 weeks if no further activity occurs. Please
             feel free to give a status update or ping for review. Thank you for your contributions!
           close-pr-message: >
             This pull request has been automatically closed because it has not had any further

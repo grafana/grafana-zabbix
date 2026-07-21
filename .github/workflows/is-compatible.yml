@@ -1,0 +1,44 @@
+name: Compatibility check
+run-name: Grafana API compatibility check
+
+# Runs grafana/plugin-actions/is-compatible (levitate) to detect when the plugin
+# uses Grafana frontend APIs that are deprecated or removed in newer Grafana
+# versions. This is the real "compatibility" check — distinct from the Zabbix
+# integration tests in integration.yml.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compatibilitycheck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # needed for the comment-pr step
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          yarn install --immutable
+
+      - name: Build plugin
+        run: yarn build
+
+      - name: Compatibility check
+        uses: grafana/plugin-actions/is-compatible@8c65927553042c5cf701877636dd37344a8a0ce1 # v1
+        with:
+          module: './src/module.ts'
+          comment-pr: 'yes'
+          skip-comment-if-compatible: 'yes'
+          fail-if-incompatible: 'no'
+          targets: '@grafana/data,@grafana/ui,@grafana/runtime,@grafana/schema'
