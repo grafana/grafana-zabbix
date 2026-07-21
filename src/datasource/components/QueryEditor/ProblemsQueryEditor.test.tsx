@@ -4,6 +4,7 @@ import { ProblemsQueryEditor } from './ProblemsQueryEditor';
 import { ShowProblemTypes, ZabbixTagEvalType } from '../../types/query';
 
 const metricPickerSpy = jest.fn();
+const comboboxSpy = jest.fn();
 
 jest.mock('../../../components', () => ({
   MetricPicker: (props: any) => {
@@ -19,7 +20,10 @@ jest.mock('@grafana/runtime', () => ({
 }));
 
 jest.mock('@grafana/ui', () => ({
-  Combobox: (props: any) => <div {...props} />,
+  Combobox: (props: any) => {
+    comboboxSpy(props);
+    return <div />;
+  },
   InlineField: ({ children }: any) => <div>{children}</div>,
   InlineFieldRow: ({ children }: any) => <div>{children}</div>,
   InlineFormLabel: ({ children }: any) => <div>{children}</div>,
@@ -46,6 +50,7 @@ const buildDatasource = (overrides: Partial<any> = {}) => {
     getAllApps: jest.fn().mockResolvedValue([]),
     getProxies: jest.fn().mockResolvedValue([]),
     supportsApplications: jest.fn(() => true),
+    supportsCauseSymptomProblems: jest.fn(() => true),
     ...overrides,
   };
 
@@ -55,9 +60,15 @@ const buildDatasource = (overrides: Partial<any> = {}) => {
   };
 };
 
+const findProblemTypeCombobox = () =>
+  comboboxSpy.mock.calls
+    .map((call) => call[0])
+    .find((props) => props?.options?.some((option: any) => option.label === 'Symptoms only'));
+
 describe('ProblemsQueryEditor', () => {
   beforeEach(() => {
     metricPickerSpy.mockClear();
+    comboboxSpy.mockClear();
   });
 
   it('uses proxy name when host is missing', async () => {
@@ -127,6 +138,59 @@ describe('ProblemsQueryEditor', () => {
       expect(hasValidValues(hostCall.options)).toBe(true);
       expect(hasValidValues(appCall.options)).toBe(true);
       expect(hasValidValues(proxyCall.options)).toBe(true);
+    });
+  });
+
+  describe('Problem Type (cause/symptom) field', () => {
+    it('is shown when Zabbix supports cause/symptom problems (6.4+)', () => {
+      const datasource = buildDatasource();
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={jest.fn()} />);
+
+      expect(findProblemTypeCombobox()).toBeTruthy();
+    });
+
+    it('is hidden when Zabbix does not support cause/symptom problems', () => {
+      const datasource = buildDatasource({
+        supportsCauseSymptomProblems: jest.fn(() => false),
+      });
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={jest.fn()} />);
+
+      expect(findProblemTypeCombobox()).toBeUndefined();
+    });
+
+    it.each([
+      [undefined, 'all'],
+      [null, 'all'],
+      [true, 'true'],
+      [false, 'false'],
+    ])('maps symptom option %s to combobox value %s', (symptom, expected) => {
+      const datasource = buildDatasource();
+      const query = { ...baseQuery, options: { ...baseQuery.options, symptom } };
+
+      render(<ProblemsQueryEditor query={query} datasource={datasource as any} onChange={jest.fn()} />);
+
+      expect(findProblemTypeCombobox().value).toBe(expected);
+    });
+
+    it.each([
+      ['all', null],
+      ['true', true],
+      ['false', false],
+    ])('selecting %s sets query symptom option to %s', (selected, expected) => {
+      const datasource = buildDatasource();
+      const onChange = jest.fn();
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={onChange} />);
+
+      findProblemTypeCombobox().onChange({ value: selected });
+
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({ symptom: expected }),
+        })
+      );
     });
   });
 });
