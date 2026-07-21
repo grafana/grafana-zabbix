@@ -112,6 +112,11 @@ export class ZabbixAPIConnector {
     return semver.gte(this.version, '5.4.0');
   }
 
+  // Cause and symptom problems were introduced in Zabbix 6.4
+  supportsCauseSymptomProblems() {
+    return this.version ? semver.gte(this.version, '6.4.0') : false;
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
@@ -513,7 +518,7 @@ export class ZabbixAPIConnector {
   }
 
   getProblems(groupids, hostids, applicationids, supportsApplications, options): Promise<ZBXProblem[]> {
-    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype } = options;
+    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, symptom } = options;
 
     const params: any = {
       output: 'extend',
@@ -558,6 +563,10 @@ export class ZabbixAPIConnector {
 
     if (supportsApplications) {
       params.applicationids = applicationids;
+    }
+
+    if (this.supportsCauseSymptomProblems() && symptom !== undefined && symptom !== null) {
+      params.symptom = symptom;
     }
 
     return this.request('problem.get', params).then(utils.mustArray);
@@ -674,7 +683,7 @@ export class ZabbixAPIConnector {
   }
 
   getEventsHistory(groupids, hostids, applicationids, options) {
-    const { timeFrom, timeTo, severities, limit, value, tags, evaltype } = options;
+    const { timeFrom, timeTo, severities, limit, value, tags, evaltype, symptom } = options;
 
     const params: any = {
       output: 'extend',
@@ -712,6 +721,10 @@ export class ZabbixAPIConnector {
 
     if (evaltype) {
       params.evaltype = evaltype;
+    }
+
+    if (this.supportsCauseSymptomProblems() && symptom !== undefined && symptom !== null) {
+      params.symptom = symptom;
     }
 
     return this.request('event.get', params).then(utils.mustArray);

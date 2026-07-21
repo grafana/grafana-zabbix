@@ -620,6 +620,12 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     problemsOptions.fetchHistoricalItemValue = !!target.options?.fetchHistoricalItemValue;
 
+    if (target.options?.symptom !== undefined && target.options?.symptom !== null) {
+      problemsOptions.symptom = target.options.symptom;
+    }
+
+    problemsOptions.fetchHistoricalItemValue = !!target.options?.fetchHistoricalItemValue;
+
     let getProblemsPromise: Promise<ProblemDTO[]>;
     if (showProblems === ShowProblemTypes.History || target.options?.useTimeRange) {
       problemsOptions.timeFrom = timeFrom;
