@@ -618,6 +618,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       problemsOptions.severities = severities;
     }
 
+    problemsOptions.fetchHistoricalItemValue = !!target.options?.fetchHistoricalItemValue;
+
     let getProblemsPromise: Promise<ProblemDTO[]>;
     if (showProblems === ShowProblemTypes.History || target.options?.useTimeRange) {
       problemsOptions.timeFrom = timeFrom;

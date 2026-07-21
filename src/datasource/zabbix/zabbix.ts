@@ -4,7 +4,13 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
-import { expandItemMacros, joinTriggersWithEvents, joinTriggersWithProblems } from '../problemsHandler';
+import {
+  expandItemMacros,
+  expandUserMacros,
+  hasUserMacro,
+  joinTriggersWithEvents,
+  joinTriggersWithProblems,
+} from '../problemsHandler';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 import { ZabbixDSOptions } from '../types/config';
@@ -16,6 +22,13 @@ import { InfluxDBConnectorOptions } from './connectors/types';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { CachingProxy } from './proxy/cachingProxy';
 import { Host, ZabbixConnector } from './types';
+
+// Bounds for the optional "historical item value at problem creation time" lookup
+// (issue #2427). These keep the single batched history.get from scanning an
+// unbounded time range / returning an unbounded number of rows.
+const HISTORY_LOOKBACK_SECONDS = 3600; // per-problem lookback (covers typical polling intervals)
+const MAX_HISTORY_WINDOW_SECONDS = 4 * 3600; // cap the total span regardless of oldest open problem
+const HISTORY_FETCH_LIMIT = 50000; // hard cap on rows returned by history.get
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -495,16 +508,38 @@ export class Zabbix implements ZabbixConnector {
       'itemid'
     );
     const itemsWithType = allItems.filter((item) => item.value_type !== undefined);
-    if (!itemsWithType.length) {
+
+    const needsUserMacros = problems.some(
+      (p) => hasUserMacro(p.description) || hasUserMacro(p.comments) || hasUserMacro(p.opdata)
+    );
+
+    if (!itemsWithType.length && !needsUserMacros) {
       return problems;
     }
 
     const timestamps = problems.map((p) => p.timestamp);
-    // Use a 1-hour lookback to cover typical Zabbix polling intervals (up to 5 min)
-    const timeFrom = Math.min(...timestamps) - 3600;
-    const timeTill = Math.max(...timestamps) + 60;
+    const minTimestamp = Math.min(...timestamps);
+    const maxTimestamp = Math.max(...timestamps);
+    // Use a 1-hour lookback to cover typical Zabbix polling intervals (up to 5 min).
+    // Cap the overall span so that a single long-open problem cannot widen the
+    // history.get window (and the resulting row count) without bound — which would
+    // overload the Zabbix frontend/DB in large environments (see issue #2427).
+    // Problems older than the cap fall back to their current lastvalue.
+    const timeFrom = Math.max(minTimestamp - HISTORY_LOOKBACK_SECONDS, maxTimestamp - MAX_HISTORY_WINDOW_SECONDS);
+    const timeTill = maxTimestamp + 60;
 
-    const history = await this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill);
+    const macroHostids = needsUserMacros
+      ? _.uniq(problems.flatMap((p) => (p.hosts || []).map((h: ZBXHost) => h.hostid)).filter(Boolean))
+      : [];
+
+    const [history, hostMacros, globalMacros] = await Promise.all([
+      itemsWithType.length
+        ? this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill, HISTORY_FETCH_LIMIT)
+        : Promise.resolve([]),
+      macroHostids.length ? this.zabbixAPI.getMacros(macroHostids) : Promise.resolve([]),
+      needsUserMacros ? this.zabbixAPI.getGlobalMacros() : Promise.resolve([]),
+    ]);
+
     const historyByItem = _.groupBy(history, 'itemid');
 
     return problems.map((problem) => {
@@ -518,6 +553,8 @@ export class Zabbix implements ZabbixConnector {
         };
       });
 
+      const problemHostids = (problem.hosts || []).map((h: ZBXHost) => h.hostid).filter(Boolean);
+
       const expandMacros = (text: string): string => {
         if (!text) {
           return text;
@@ -528,13 +565,16 @@ export class Zabbix implements ZabbixConnector {
           result = result.replace(/\{HOST\.NAME\}/g, host.name || '');
           result = result.replace(/\{HOST\.HOST\}/g, host.host || '');
         }
-        return expandItemMacros(result, itemResolutions);
+        result = expandItemMacros(result, itemResolutions);
+        result = expandUserMacros(result, hostMacros, globalMacros, problemHostids);
+        return result;
       };
 
       return {
         ...problem,
         description: expandMacros(problem.description),
         comments: expandMacros(problem.comments),
+        opdata: expandMacros(problem.opdata),
         items: itemResolutions.map((r) => r.updatedItem),
       };
     });
@@ -578,7 +618,7 @@ export class Zabbix implements ZabbixConnector {
         return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
       })
       .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
-      .then((problems) => this.enrichProblemsWithItemHistory(problems))
+      .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
@@ -615,7 +655,7 @@ export class Zabbix implements ZabbixConnector {
         return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
       })
       .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
-      .then((problems) => this.enrichProblemsWithItemHistory(problems))
+      .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
