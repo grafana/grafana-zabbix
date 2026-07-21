@@ -157,6 +157,39 @@ describe('Zabbix API connector', () => {
       expect(params.applicationids).toBeUndefined();
     });
 
+    it.each([true, false])('sends symptom=%s when version is 6.4 or greater', async (symptom) => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.4.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { symptom });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.symptom).toBe(symptom);
+    });
+
+    it.each([undefined, null])('omits symptom when it is %s', async (symptom) => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { symptom });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.symptom).toBeUndefined();
+    });
+
+    it('omits symptom when version is less than 6.4', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.2.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { symptom: true });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.symptom).toBeUndefined();
+    });
+
     it('pushes a plain problem name to the API search parameter', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.version = '7.0.0';
@@ -230,6 +263,41 @@ describe('Zabbix API connector', () => {
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.search).toBeUndefined();
       expect(params.searchByAny).toBeUndefined();
+    });
+  });
+
+  describe('getEventsHistory', () => {
+    it('sends symptom when version is 6.4 or greater', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.4.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], { symptom: false });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.symptom).toBe(false);
+    });
+
+    it('omits symptom when version is less than 6.4', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.2.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], { symptom: true });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.symptom).toBeUndefined();
+    });
+
+    it('omits symptom when it is not set', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.symptom).toBeUndefined();
     });
   });
 
