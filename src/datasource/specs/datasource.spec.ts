@@ -235,6 +235,57 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When querying problems', () => {
+    const buildProblemsTarget = (options: any = {}, showProblems = 'problems') => ({
+      group: { filter: '' },
+      host: { filter: '' },
+      application: { filter: '' },
+      proxy: { filter: '' },
+      trigger: { filter: '' },
+      tags: { filter: '' },
+      showProblems,
+      options,
+    });
+
+    beforeEach(() => {
+      ctx.ds.replaceTemplateVars = (str) => str;
+      ctx.ds.zabbix.getProblems = jest.fn().mockResolvedValue([]);
+      ctx.ds.zabbix.getProblemsHistory = jest.fn().mockResolvedValue([]);
+      ctx.ds.zabbix.getUsers = jest.fn().mockResolvedValue([]);
+    });
+
+    it.each([true, false])('passes symptom=%s to getProblems when the option is set', async (symptom) => {
+      const target = buildProblemsTarget({ symptom });
+
+      await ctx.ds.queryProblems(target, [100, 200], {});
+
+      expect(ctx.ds.zabbix.getProblems).toHaveBeenCalledWith('', '', '', '', expect.objectContaining({ symptom }));
+    });
+
+    it.each([undefined, null])('omits symptom from problems options when it is %s', async (symptom) => {
+      const target = buildProblemsTarget({ symptom });
+
+      await ctx.ds.queryProblems(target, [100, 200], {});
+
+      const [, , , , problemsOptions] = ctx.ds.zabbix.getProblems.mock.calls.at(-1);
+      expect('symptom' in problemsOptions).toBe(false);
+    });
+
+    it('passes symptom to getProblemsHistory when querying history', async () => {
+      const target = buildProblemsTarget({ symptom: true }, 'history');
+
+      await ctx.ds.queryProblems(target, [100, 200], {});
+
+      expect(ctx.ds.zabbix.getProblemsHistory).toHaveBeenCalledWith(
+        '',
+        '',
+        '',
+        '',
+        expect.objectContaining({ symptom: true, timeFrom: 100, timeTo: 200 })
+      );
+    });
+  });
+
   describe('When invoking metricFindQuery() with legacy query', () => {
     beforeEach(() => {
       ctx.ds.zabbix = {
