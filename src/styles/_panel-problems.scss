@@ -492,3 +492,46 @@
     text-shadow: 0px 0px 2px $orange;
   }
 }
+
+.problems-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0 8px 0;
+  align-items: center;
+}
+
+.problems-search-input {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color, #3d3d3d);
+  border-radius: 4px;
+  background: var(--input-bg, transparent);
+  color: var(--text-color, inherit);
+  font-size: 12px;
+  min-width: 200px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color, #6e9fff);
+  }
+}
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sort-indicator {
+  font-size: 10px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}

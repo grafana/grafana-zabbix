@@ -15,12 +15,16 @@ import { AckCell } from './Cells/AckCell';
 import { TagCell } from './Cells/TagCell';
 import { LastChangeCell } from './Cells/LastChangeCell';
 import {
+  ColumnFiltersState,
   ColumnResizeMode,
+  SortingState,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   getExpandedRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { getDataSourceSrv, reportInteraction } from '@grafana/runtime';
@@ -106,11 +110,13 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('host', {
         header: 'Host',
         size: 120,
+        enableSorting: true,
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('hostTechName', {
         header: 'Host (Technical Name)',
         size: 170,
+        enableSorting: true,
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('groups', {
@@ -124,10 +130,17 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('proxy', {
         header: 'Proxy',
         size: 120,
+        enableSorting: true,
       }),
       columnHelper.accessor('priority', {
         header: 'Severity',
         size: 80,
+        sortDescFirst: true,
+        sortingFn: (rowA, rowB) => {
+          const a = parseInt(rowA.original.severity ?? '0', 10);
+          const b = parseInt(rowB.original.severity ?? '0', 10);
+          return a - b;
+        },
         meta: {
           className: 'problem-severity',
         },
@@ -159,12 +172,14 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('value', {
         header: 'Status',
         size: 70,
+        enableSorting: false,
         cell: ({ cell }) => <StatusCellV8 cell={cell} highlightNewerThan={highlightNewerThan} />,
       }),
       columnHelper.accessor('name', {
         header: 'Problem',
         size: 250,
         minSize: 200,
+        enableSorting: true,
         cell: ({ cell }) => <span className="problem-description">{cell.getValue()}</span>,
       }),
       columnHelper.accessor('opdata', {
@@ -174,12 +189,14 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('acknowledged', {
         header: 'Ack',
         size: 70,
+        enableSorting: false,
         cell: ({ cell }) => <AckCell acknowledges={cell.row.original.acknowledges} />,
       }),
       ...customTagColumns,
       columnHelper.accessor('tags', {
         header: 'Tags',
         size: 150,
+        enableSorting: false,
         meta: {
           className: 'problem-tags',
         },
@@ -194,6 +211,7 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('datasource', {
         header: 'Datasource',
         size: 120,
+        enableSorting: true,
         cell: ({ cell }) => {
           const datasource = cell.getValue();
           let dsName: string = datasource as string;
@@ -208,6 +226,7 @@ export const ProblemList = (props: ProblemListProps) => {
         id: 'age',
         header: 'Age',
         size: 100,
+        enableSorting: true,
         meta: {
           className: 'problem-age',
         },
@@ -217,6 +236,8 @@ export const ProblemList = (props: ProblemListProps) => {
         id: 'lastchange',
         header: 'Time',
         size: 150,
+        enableSorting: true,
+        sortingFn: (rowA, rowB) => Number(rowA.original.timestamp) - Number(rowB.original.timestamp),
         meta: {
           className: 'last-change',
         },
@@ -263,6 +284,19 @@ export const ProblemList = (props: ProblemListProps) => {
     getColumnSizingFromResized(panelOptions.resizedColumns)
   );
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
+
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'lastchange', desc: true},
+  ]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  // Clear global filter when the option is disabled
+  useEffect(() => {
+    if (!panelOptions.showSearchFilter) {
+      setGlobalFilter('');
+    }
+  }, [panelOptions.showSearchFilter]);
 
   // Default pageSize to 10 if not provided
   const effectivePageSize = pageSize || 10;
@@ -311,8 +345,14 @@ export const ProblemList = (props: ProblemListProps) => {
       columnSizing,
       pagination,
       columnVisibility,
+      sorting,
+      columnFilters,
+      globalFilter,
     },
     onPaginationChange: setPagination,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     meta: {
       panelOptions,
     },
@@ -331,6 +371,8 @@ export const ProblemList = (props: ProblemListProps) => {
     getRowCanExpand: () => true,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
 
@@ -413,13 +455,39 @@ export const ProblemList = (props: ProblemListProps) => {
             <div className="-loading-inner">Loading...</div>
           </div>
         )}
+        {panelOptions.showSearchFilter && (
+          <div className="problems-toolbar">
+            <input
+              className="problems-search-input"
+              type="text"
+              placeholder="Search problems..."
+              value={globalFilter}
+              onChange={(e) => {
+                setGlobalFilter(e.target.value);
+                table.setPageIndex(0);
+              }}
+            />
+          </div>
+        )}
         <table className="react-table-v8">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} style={{ width: `${header.getSize()}px` }}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  <th
+                    key={header.id}
+                    style={{ width: `${header.getSize()}px` }}
+                    onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                    className={header.column.getCanSort() ? 'sortable-header' : ''}
+                  >
+                    <span className="header-content">
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.column.getCanSort() && (
+                        <span className="sort-indicator">
+                          {{ asc: ' ▲', desc: ' ▼' }[header.column.getIsSorted() as string] ?? ' ⇅'}
+                        </span>
+                      )}
+                    </span>
                     {header.column.getCanResize() && (
                       <div
                         onMouseDown={header.getResizeHandler()}
