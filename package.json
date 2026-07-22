@@ -29,11 +29,11 @@
   },
   "dependencies": {
     "@emotion/css": "11.13.5",
-    "@grafana/data": "13.1.0",
-    "@grafana/plugin-ui": "0.16.1",
-    "@grafana/runtime": "13.1.0",
-    "@grafana/schema": "13.1.0",
-    "@grafana/ui": "13.1.0",
+    "@grafana/data": "13.1.1",
+    "@grafana/plugin-ui": "0.17.3",
+    "@grafana/runtime": "13.1.1",
+    "@grafana/schema": "13.1.1",
+    "@grafana/ui": "13.1.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "rxjs": "7.8.2"
@@ -41,7 +41,7 @@
   "devDependencies": {
     "@changesets/cli": "2.31.0",
     "@grafana/eslint-config": "9.0.0",
-    "@grafana/plugin-e2e": "3.9.2",
+    "@grafana/plugin-e2e": "3.10.0",
     "@grafana/sign-plugin": "3.3.2",
     "@grafana/tsconfig": "2.2.0",
     "@playwright/test": "1.61.1",
