@@ -4,9 +4,9 @@
 
 ```sh
 # install frontend deps
-yarn install
+npm install
 # build frontend
-yarn build
+npm run build
 #build backend
 mage -v
 ```
@@ -29,10 +29,10 @@ data source works immediately without waiting for organic data.
 make dist
 
 # Start everything (Grafana on http://localhost:3000, admin/admin)
-yarn server          # == docker compose up --build
+npm run server          # == docker compose up --build
 
 # After editing sources, rebuild and restart Grafana
-yarn build && docker compose restart grafana
+npm run build && docker compose restart grafana
 ```
 
 Switch the Zabbix version with `ZABBIX_VERSION` (default `7.0`, the latest LTS):
@@ -49,11 +49,11 @@ are also what the `compatibility-*` integration workflows run against.
 
 ```sh
 # Unit tests
-yarn test            # frontend (watch)
+npm test              # frontend (watch)
 go test ./pkg/...    # backend
 
 # End-to-end tests (Playwright) — needs the environment above running
-yarn e2e
+npm run e2e
 ```
 
 End-to-end tests live in [`tests/e2e`](./tests/e2e) and run against the real Zabbix
@@ -92,8 +92,8 @@ DEVELOPMENT=true docker compose up --build -d
 
 ## Submitting PR
 
-If you are creating a PR, ensure to run `yarn changeset` from your branch. Provide the details accordingly. It will create `*.md` file inside `./.changeset` folder. Later during the release, based on these changesets, package version will be bumped and changelog will be generated.
+If you are creating a PR, ensure to run `npx changeset` from your branch. Provide the details accordingly. It will create `*.md` file inside `./.changeset` folder. Later during the release, based on these changesets, package version will be bumped and changelog will be generated.
 
 ## Releasing & Bumping version
 
-To create a new release, execute `yarn changeset version`. This will update the Changelog and bump the version in `package.json` file. Commit those changes. Run the `Plugins - CD` GitHub Action to publish the new release.
+To create a new release, execute `npx changeset version`. This will update the Changelog and bump the version in `package.json` file. Commit those changes. Run the `Plugins - CD` GitHub Action to publish the new release.

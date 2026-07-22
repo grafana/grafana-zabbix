@@ -3,7 +3,7 @@ all: install build test lint
 # Install dependencies
 install:
 	# Frontend
-	yarn install --pure-lockfile
+	npm ci
 	# Backend
 	go install -v ./pkg/
 	go install golang.org/x/lint/golint@latest
@@ -13,7 +13,7 @@ deps-go:
 
 build: build-frontend build-backend
 build-frontend:
-	yarn build
+	npm run build
 
 build-backend:
 	mage -v build:backend
@@ -21,8 +21,8 @@ build-debug:
 	mage -v build:debug
 
 run-frontend:
-	yarn install --pure-lockfile
-	yarn dev
+	npm ci
+	npm run dev
 
 run-backend:
 	# Rebuilds plugin on changes and kill running instance which forces grafana to restart plugin
@@ -32,7 +32,7 @@ run-backend:
 # Build plugin for all platforms (ready for distribution)
 dist: dist-frontend dist-backend
 dist-frontend:
-	yarn build
+	npm run build
 
 dist-backend: dist-backend-mage dist-backend-freebsd dist-arm-freebsd-arm64
 dist-backend-mage:
@@ -55,11 +55,11 @@ dist-arm-%-arm64:
 .PHONY: test
 test: test-frontend test-backend
 test-frontend:
-	yarn test
+	npm test
 test-backend:
 	go test ./pkg/...
 test-ci:
-	yarn ci-test
+	npm run ci-test
 	mkdir -p tmp/coverage/golang/
 	go test -race -coverprofile=tmp/coverage/golang/coverage.txt -covermode=atomic ./pkg/...
 
@@ -69,11 +69,11 @@ clean:
 
 .PHONY: lint
 lint:
-	yarn lint
+	npm run lint
 	golint -min_confidence=1.1 -set_exit_status pkg/...
 
 sign-package:
-	yarn sign
+	npm run sign
 
 package: install dist sign-package
 

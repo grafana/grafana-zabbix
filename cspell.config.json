@@ -15,7 +15,7 @@
     "cspell.config.json",
     "package.json",
     "renovate.json",
-    "yarn.lock",
+    "package-lock.json",
     "docker-compose*.yaml",
     "docker-compose*.yml",
     "src/test-setup/**",
@@ -81,7 +81,6 @@
     "zabbix",
     "Zobnin",
     "directdb",
-    "npmPreapprovedPackages",
-    "yarnrc"
+    "npmPreapprovedPackages"
   ]
 }

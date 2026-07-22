@@ -37,7 +37,6 @@ playwright/.auth/
 
 # Tools logs
 npm-debug.log
-yarn-error.log
 
 # Built plugin
 dist/
@@ -56,10 +55,3 @@ tmp/
 devenv/nginx/nginx.crt
 devenv/nginx/nginx.key
 
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions

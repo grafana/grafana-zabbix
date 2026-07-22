@@ -17,7 +17,7 @@
     "dev": "webpack -w -c ./webpack.config.ts --env development",
     "e2e": "playwright test",
     "lint": "eslint --cache .",
-    "lint:fix": "yarn run lint --fix && prettier --write --list-different .",
+    "lint:fix": "npm run lint -- --fix && prettier --write --list-different .",
     "server": "docker compose up --build",
     "server:down": "docker compose --file ./devenv/default/docker-compose.yml down",
     "server:stop": "docker compose --file ./devenv/default/docker-compose.yml stop",
@@ -98,9 +98,9 @@
     "webpack-subresource-integrity": "5.1.0",
     "webpack-virtual-modules": "0.6.2"
   },
-  "packageManager": "yarn@4.17.1",
+  "packageManager": "npm@11.18.0",
   "engines": {
     "node": ">=24.5.0",
-    "yarn": ">=4.15.0"
+    "npm": ">=11.12.1"
   }
 }
