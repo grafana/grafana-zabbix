@@ -90,7 +90,7 @@
     "swc-loader": "0.2.7",
     "terser-webpack-plugin": "5.6.1",
     "ts-node": "10.9.2",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "webpack": "5.108.4",
     "webpack-cli": "7.2.1",
     "webpack-livereload-plugin": "3.0.2",
