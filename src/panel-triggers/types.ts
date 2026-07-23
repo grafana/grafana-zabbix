@@ -1,4 +1,5 @@
 import { CURRENT_SCHEMA_VERSION } from './migrations';
+import { DataLink } from '@grafana/data';
 
 export interface ProblemsPanelOptions {
   schemaVersion: number;
@@ -44,6 +45,8 @@ export interface ProblemsPanelOptions {
   markAckEvents?: boolean;
   // Custom tag names to display as column
   customTagColumns?: string;
+  // datalink
+  dataLinks?: DataLink[];
 }
 
 export const DEFAULT_SEVERITY: TriggerSeverity[] = [
