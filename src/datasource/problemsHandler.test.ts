@@ -1,4 +1,4 @@
-import { expandItemMacros } from './problemsHandler';
+import { expandItemMacros, expandUserMacros, hasUserMacro } from './problemsHandler';
 
 describe('expandItemMacros', () => {
   const item = (historicalValue?: string, originalLastvalue?: string) => ({ historicalValue, originalLastvalue });
@@ -64,5 +64,96 @@ describe('expandItemMacros', () => {
     it('handles undefined text', () => {
       expect(expandItemMacros(undefined as any, [item('12', '7')])).toBeUndefined();
     });
+  });
+});
+
+describe('hasUserMacro', () => {
+  it('returns true when text contains a {$MACRO}', () => {
+    expect(hasUserMacro('Contact: {$CONTACT}')).toBe(true);
+  });
+
+  it('returns true for macros with digits, underscores, and dots', () => {
+    expect(hasUserMacro('{$DB.HOST_1}')).toBe(true);
+  });
+
+  it('returns false when no macro is present', () => {
+    expect(hasUserMacro('plain text')).toBe(false);
+  });
+
+  it('returns false for empty or undefined text', () => {
+    expect(hasUserMacro('')).toBe(false);
+    expect(hasUserMacro(undefined as any)).toBe(false);
+  });
+
+  it('returns false for {ITEM.VALUE}-style macros', () => {
+    expect(hasUserMacro('{ITEM.VALUE} / {HOST.NAME}')).toBe(false);
+  });
+});
+
+describe('expandUserMacros', () => {
+  const hostMacro = (macro: string, value: string, hostid: string) => ({ macro, value, hostid });
+  const globalMacro = (macro: string, value: string) => ({ macro, value });
+
+  it('replaces a host macro with its value', () => {
+    const result = expandUserMacros('Contact: {$CONTACT}', [hostMacro('{$CONTACT}', 'Pepe', '10')], [], ['10']);
+    expect(result).toBe('Contact: Pepe');
+  });
+
+  it('replaces multiple distinct macros in the same string', () => {
+    const result = expandUserMacros(
+      'CONTACT: {$CONTACT} VERSION: {$VERSION}',
+      [hostMacro('{$CONTACT}', 'Pepe', '10'), hostMacro('{$VERSION}', '6.4.1', '10')],
+      [],
+      ['10']
+    );
+    expect(result).toBe('CONTACT: Pepe VERSION: 6.4.1');
+  });
+
+  it('replaces every occurrence of the same macro', () => {
+    const result = expandUserMacros('{$CONTACT}/{$CONTACT}', [hostMacro('{$CONTACT}', 'Pepe', '10')], [], ['10']);
+    expect(result).toBe('Pepe/Pepe');
+  });
+
+  it('falls back to global macros when no host macro matches', () => {
+    const result = expandUserMacros('Region: {$REGION}', [], [globalMacro('{$REGION}', 'eu-west')], ['10']);
+    expect(result).toBe('Region: eu-west');
+  });
+
+  it('prefers host macro over global macro of the same name', () => {
+    const result = expandUserMacros(
+      '{$ENV}',
+      [hostMacro('{$ENV}', 'prod', '10')],
+      [globalMacro('{$ENV}', 'global')],
+      ['10']
+    );
+    expect(result).toBe('prod');
+  });
+
+  it('ignores host macros whose hostid is not in the problem hosts', () => {
+    const result = expandUserMacros('{$CONTACT}', [hostMacro('{$CONTACT}', 'Pepe', '99')], [], ['10']);
+    expect(result).toBe('{$CONTACT}');
+  });
+
+  it('leaves the raw macro unchanged when no definition is found', () => {
+    expect(expandUserMacros('{$UNKNOWN}', [], [], ['10'])).toBe('{$UNKNOWN}');
+  });
+
+  it('leaves the raw macro unchanged when the macro value is null (secret)', () => {
+    const result = expandUserMacros(
+      '{$SECRET}',
+      [{ macro: '{$SECRET}', value: null as any, hostid: '10' }],
+      [],
+      ['10']
+    );
+    expect(result).toBe('{$SECRET}');
+  });
+
+  it('returns the text unchanged when it contains no macros', () => {
+    expect(expandUserMacros('no macros here', [], [], [])).toBe('no macros here');
+  });
+
+  it('returns empty/undefined text unchanged', () => {
+    expect(expandUserMacros('', [], [], [])).toBe('');
+    expect(expandUserMacros(undefined as any, [], [], [])).toBeUndefined();
   });
 });
