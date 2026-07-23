@@ -9,7 +9,8 @@ export type QueryType =
   | typeof c.MODE_ITEMID
   | typeof c.MODE_TRIGGERS
   | typeof c.MODE_PROBLEMS
-  | typeof c.MODE_MACROS;
+  | typeof c.MODE_MACROS
+  | typeof c.MODE_MULTIMETRIC_TABLE;
 
 type BaseQuery = { queryType: QueryType; datasourceUid?: string } & DataQuery;
 
@@ -38,6 +39,8 @@ export type ZabbixMetricsQuery = {
   evaltype?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
+  // Mutli-metric table
+  tableConfig?: MultiMetricTableConfig;
   // Problems
   showProblems?: ShowProblemTypes;
   // Deprecated
@@ -119,4 +122,39 @@ export interface HostTagFilter {
   tag: string;
   value: string;
   operator: HostTagOperatorValue;
+}
+
+export interface EntityPatternConfig {
+  searchType: 'itemName' | 'itemKey';
+  pattern: string;
+  extractPattern?: string;
+  extractedColumns?: Array<{
+    name: string;
+    groupIndex: number;
+  }>;
+}
+
+export interface MultiMetricTableConfig {
+  entityPattern: EntityPatternConfig;
+  metrics: MetricColumnConfig[];
+  // What a table row represents: 'entityPattern' (default) discovers rows from items matching the
+  // entity pattern (LLD-style entities); 'host' produces one row per host — for non-LLD, host-level
+  // items (e.g. CPU/Memory utilization per VM) where the host is the only shared identifier.
+  rowSource?: 'entityPattern' | 'host';
+  showGroupColumn?: boolean;
+  showHostColumn?: boolean;
+}
+
+export interface MetricColumnConfig {
+  columnName: string;
+  searchType: 'itemName' | 'itemKey';
+  pattern: string;
+  // Item value type this column matches: numeric (unsigned/float, default) or text (character/log/text).
+  // Text columns always use the "last" aggregation and cannot render sparklines.
+  valueType?: 'num' | 'text';
+  aggregation: 'last' | 'avg' | 'min' | 'max';
+  // When true, the backend fetches the full history for this column's items over the
+  // panel time range and returns it as an additional time-series frame, so the column
+  // can be rendered as a sparkline via Grafana's "Time series to table" transformation.
+  showSparkline?: boolean;
 }
