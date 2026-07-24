@@ -1,6 +1,11 @@
 import { ZabbixAPIConnector } from './zabbixAPIConnector';
 import { HostTagOperatorValue } from '../../../components/QueryEditor/types';
 import { ZabbixTagEvalType } from 'datasource/types/query';
+import { getBackendSrv } from '@grafana/runtime';
+
+jest.mock('@grafana/runtime', () => ({
+  getBackendSrv: jest.fn(),
+}));
 
 describe('Zabbix API connector', () => {
   const datasourceUID = 'test-datasource-uid';
@@ -406,6 +411,61 @@ describe('Zabbix API connector', () => {
         period_to: 7200,
         periods: 2,
       });
+    });
+  });
+
+  describe('backendAPIRequest retry on transient errors', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+      jest.clearAllMocks();
+    });
+
+    it('retries a transient 503 and succeeds once the backend recovers', async () => {
+      jest.useFakeTimers();
+      const fetchMock = jest
+        .fn()
+        .mockReturnValueOnce({ toPromise: () => Promise.reject({ status: 503 }) })
+        .mockReturnValueOnce({ toPromise: () => Promise.resolve({ data: { result: 'ok' } }) });
+      (getBackendSrv as jest.Mock).mockReturnValue({ fetch: fetchMock });
+
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      const resultPromise = zabbixAPIConnector.backendAPIRequest('host.get', {});
+
+      await jest.advanceTimersByTimeAsync(1000);
+      const result = await resultPromise;
+
+      expect(result).toBe('ok');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('gives up after exhausting retries on a persistent 503', async () => {
+      jest.useFakeTimers();
+      const fetchMock = jest.fn().mockReturnValue({ toPromise: () => Promise.reject({ status: 503 }) });
+      (getBackendSrv as jest.Mock).mockReturnValue({ fetch: fetchMock });
+
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      const resultPromise = zabbixAPIConnector.backendAPIRequest('host.get', {});
+      const assertion = expect(resultPromise).rejects.toThrow(/temporarily unavailable/i);
+
+      await jest.advanceTimersByTimeAsync(5000);
+      await assertion;
+
+      expect(fetchMock).toHaveBeenCalledTimes(3); // initial attempt + 2 retries
+    });
+
+    it('does not retry a non-transient error, e.g. a 400 validation/guardrail error', async () => {
+      const fetchMock = jest.fn().mockReturnValue({
+        toPromise: () => Promise.reject({ status: 400, data: { message: 'bad request' } }),
+      });
+      (getBackendSrv as jest.Mock).mockReturnValue({ fetch: fetchMock });
+
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+
+      await expect(zabbixAPIConnector.backendAPIRequest('host.get', {})).rejects.toEqual({
+        status: 400,
+        data: { message: 'bad request' },
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 

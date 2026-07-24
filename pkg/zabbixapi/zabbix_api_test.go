@@ -3,6 +3,7 @@ package zabbixapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -13,6 +14,51 @@ import (
 )
 
 var version = 65
+
+// TestRetryOnTransientConnectionError verifies the fix for the connection
+// storm: a single pre-response network failure (the classic stale
+// pooled-connection race, grafana-zabbix#1295) is retried once with a fresh
+// connection and the call still succeeds, instead of forcing every request
+// to open a brand-new connection (the old req.Close=true workaround).
+func TestRetryOnTransientConnectionError(t *testing.T) {
+	httpClient, attempts := NewFlakyTestClient(1, io.EOF, `{"result":"sampleResult"}`, 200)
+	zabbixApi, err := New(backend.DataSourceInstanceSettings{URL: "http://zabbix.org/zabbix"}, httpClient)
+	assert.NoError(t, err)
+
+	resp, err := zabbixApi.RequestUnauthenticated(context.Background(), "test.get", map[string]interface{}{}, version)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "sampleResult", resp.MustString())
+	assert.Equal(t, 2, *attempts, "expected exactly one retry after the transient EOF")
+}
+
+// TestRetryOnTransientConnectionErrorGivesUp verifies the retry is bounded:
+// a second consecutive connection failure is not retried again and
+// surfaces as an error, rather than looping forever.
+func TestRetryOnTransientConnectionErrorGivesUp(t *testing.T) {
+	httpClient, attempts := NewFlakyTestClient(2, io.EOF, `{"result":"sampleResult"}`, 200)
+	zabbixApi, err := New(backend.DataSourceInstanceSettings{URL: "http://zabbix.org/zabbix"}, httpClient)
+	assert.NoError(t, err)
+
+	_, err = zabbixApi.RequestUnauthenticated(context.Background(), "test.get", map[string]interface{}{}, version)
+
+	assert.Error(t, err)
+	assert.Equal(t, 2, *attempts, "should not retry more than once")
+}
+
+// TestNonRetryableErrorIsNotRetried verifies only the specific pre-response
+// network errors are retried - an arbitrary transport error surfaces
+// immediately, on the first attempt.
+func TestNonRetryableErrorIsNotRetried(t *testing.T) {
+	httpClient, attempts := NewFlakyTestClient(1, errors.New("boom"), `{"result":"sampleResult"}`, 200)
+	zabbixApi, err := New(backend.DataSourceInstanceSettings{URL: "http://zabbix.org/zabbix"}, httpClient)
+	assert.NoError(t, err)
+
+	_, err = zabbixApi.RequestUnauthenticated(context.Background(), "test.get", map[string]interface{}{}, version)
+
+	assert.Error(t, err)
+	assert.Equal(t, 1, *attempts, "non-retryable errors must not be retried")
+}
 
 func TestZabbixAPIUnauthenticatedQuery(t *testing.T) {
 	zabbixApi, _ := MockZabbixAPI(`{"result":"sampleResult"}`, 200)
