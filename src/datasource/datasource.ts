@@ -733,7 +733,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
 
     for (const prop of ['group', 'host', 'application', 'itemTag', 'item']) {
-      queryModel[prop] = utils.replaceTemplateVars(this.templateSrv, queryModel[prop], {});
+      queryModel[prop] = utils.replaceTemplateVars(this.templateSrv, queryModel[prop], options?.scopedVars ?? {});
     }
 
     queryModel = queryModel as VariableQuery;
