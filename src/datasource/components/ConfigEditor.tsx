@@ -6,6 +6,7 @@ import {
   DataSourcePluginOptionsEditorProps,
   DataSourceSettings,
   GrafanaTheme2,
+  SelectableValue,
 } from '@grafana/data';
 import {
   Alert,
