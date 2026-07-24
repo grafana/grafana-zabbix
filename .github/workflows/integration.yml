@@ -71,6 +71,8 @@ jobs:
           ZABBIX_URL: ${{ matrix.url }}
           ZABBIX_USER: Admin
           ZABBIX_PASSWORD: zabbix
+          # Used by the per-user auth integration tests (6.0+).
+          ZABBIX_TARGET_USER: grafana_test
         run: |
           # Each version's test self-gates on its own INTEGRATION_TESTNN var.
           export "${INTEGRATION_VAR}=true"

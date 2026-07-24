@@ -15,6 +15,7 @@
 - Transform and shape your data with [metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
 - Find problems faster with [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/) feature
 - Mix metrics from multiple data sources in the same dashboard or even graph
+- Per user authentication using Bearer tokens, so that Grafana respects the RBAC on Zabbix
 - Discover and share [dashboards](https://grafana.com/dashboards) in the official library
 
 See all features overview and dashboards examples at Grafana-Zabbix [Live demo](http://play.grafana-zabbix.org) site.

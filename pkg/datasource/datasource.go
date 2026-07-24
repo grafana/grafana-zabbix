@@ -7,17 +7,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/httpclient"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 var (
@@ -25,8 +25,10 @@ var (
 )
 
 type ZabbixDatasource struct {
-	im     instancemgmt.InstanceManager
-	logger log.Logger
+	im         instancemgmt.InstanceManager
+	logger     log.Logger
+	tokenCache *cache.TokenCache
+	cancel     context.CancelFunc
 }
 
 // ZabbixDatasourceInstance stores state about a specific datasource
@@ -39,10 +41,40 @@ type ZabbixDatasourceInstance struct {
 }
 
 func NewZabbixDatasource() *ZabbixDatasource {
-	im := datasource.NewInstanceManager(newZabbixDatasourceInstance)
-	return &ZabbixDatasource{
-		im:     im,
-		logger: log.New(),
+	ctx, cancel := context.WithCancel(context.Background())
+	ds := &ZabbixDatasource{
+		im:         datasource.NewInstanceManager(newZabbixDatasourceInstance),
+		logger:     log.New(),
+		tokenCache: cache.NewTokenCache(),
+		cancel:     cancel,
+	}
+
+	go ds.startTokenCleanup(ctx, 5*time.Minute)
+
+	return ds
+}
+
+// Close stops the background token-cleanup goroutine. Safe to call multiple times.
+func (ds *ZabbixDatasource) Close() {
+	if ds.cancel != nil {
+		ds.cancel()
+	}
+}
+
+func (ds *ZabbixDatasource) startTokenCleanup(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			cleaned := ds.tokenCache.CleanupExpired()
+			if cleaned > 0 {
+				ds.logger.Info("Cleaned up expired Zabbix authentication tokens", "count", cleaned)
+			}
+		}
 	}
 }
 
@@ -120,6 +152,13 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 	queryTimeout := zabbixDS.Settings.QueryTimeout
 	if queryTimeout <= 0 {
 		queryTimeout = 60 * time.Second // Default to 60 seconds if not configured
+	}
+
+	// Apply per-user authentication. The returned context carries the resolved
+	// per-user token and must be used for the queries below.
+	ctx, err = ds.applyPerUserAuth(ctx, zabbixDS, req.PluginContext.DataSourceInstanceSettings.UID)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, q := range req.Queries {

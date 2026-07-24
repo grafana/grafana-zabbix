@@ -33,6 +33,9 @@ export type ZabbixDSOptions = {
    * */
   dbConnectionDatasourceId?: number;
   schema?: number;
+  perUserAuth?: boolean;
+  perUserAuthField?: 'username' | 'email';
+  perUserAuthExcludeUsers?: string[];
 } & DataSourceJsonData;
 
 /** @deprecated
