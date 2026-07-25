@@ -41,6 +41,29 @@ func PerUserTokenFromContext(ctx context.Context) string {
 	return ""
 }
 
+type tokenRefresherKey struct{}
+
+// TokenRefresher regenerates a per-user token after Zabbix rejected the given
+// one. It returns the replacement token. Implementations must evict the
+// rejected token from any cache and must authenticate the regeneration calls
+// with the stored credentials, never with the rejected token.
+type TokenRefresher func(ctx context.Context, rejected string) (string, error)
+
+// WithTokenRefresher returns a context carrying a TokenRefresher. Pass nil to
+// clear a previously set refresher (used to prevent refresh loops on retry).
+func WithTokenRefresher(ctx context.Context, refresher TokenRefresher) context.Context {
+	return context.WithValue(ctx, tokenRefresherKey{}, refresher)
+}
+
+// TokenRefresherFromContext returns the TokenRefresher set by
+// WithTokenRefresher, or nil if none is present.
+func TokenRefresherFromContext(ctx context.Context) TokenRefresher {
+	if v, ok := ctx.Value(tokenRefresherKey{}).(TokenRefresher); ok {
+		return v
+	}
+	return nil
+}
+
 // effectiveAuth resolves the auth token to use for a request: the per-request
 // token from context if set, otherwise the shared/stored token.
 func (api *ZabbixAPI) effectiveAuth(ctx context.Context) string {

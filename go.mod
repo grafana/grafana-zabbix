@@ -16,6 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/net v0.57.0
+	golang.org/x/sync v0.22.0
 	gotest.tools v2.2.0+incompatible
 )
 

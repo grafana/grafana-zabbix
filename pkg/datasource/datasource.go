@@ -18,6 +18,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"golang.org/x/sync/singleflight"
 )
 
 var (
@@ -28,6 +29,10 @@ type ZabbixDatasource struct {
 	im         instancemgmt.InstanceManager
 	logger     log.Logger
 	tokenCache *cache.TokenCache
+	// tokenGroup deduplicates concurrent token generation per datasource/user:
+	// token.generate invalidates previous values of the same named token, so a
+	// cold-cache stampede would leave all but the last request with dead tokens.
+	tokenGroup singleflight.Group
 	cancel     context.CancelFunc
 }
 

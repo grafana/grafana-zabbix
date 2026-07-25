@@ -46,6 +46,19 @@ func (tc *TokenCache) Set(datasourceUID, identity, zabbixUserID, token string, t
 	tc.tokens.Store(key, tokenInfo)
 }
 
+// CompareAndDelete removes the cached entry for (datasourceUID, identity) only
+// if it still holds the given token. This prevents a request that got rejected
+// with a stale token from evicting a fresh token that a concurrent request has
+// already regenerated and cached.
+func (tc *TokenCache) CompareAndDelete(datasourceUID, identity, token string) {
+	key := datasourceUID + ":" + identity
+	if val, ok := tc.tokens.Load(key); ok {
+		if tokenInfo, ok := val.(*TokenInfo); ok && tokenInfo.Token == token {
+			tc.tokens.Delete(key)
+		}
+	}
+}
+
 func (tc *TokenCache) CleanupExpired() int {
 	count := 0
 	tc.tokens.Range(func(key, value interface{}) bool {
