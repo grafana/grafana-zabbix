@@ -22,9 +22,11 @@ const TokenTTL = 24 * time.Hour
 // recover once from a token Zabbix rejects (e.g. regenerated externally) without
 // ever falling back to the stored credentials.
 //
-// When per-user auth does not apply (disabled, excluded user, empty identity) the
-// original context is returned unchanged, so the request falls back to the shared
-// stored credentials.
+// When per-user auth does not apply (disabled, excluded user) the original
+// context is returned unchanged, so the request falls back to the shared stored
+// credentials. Anonymous requests and users with an empty identity are rejected:
+// they cannot be mapped to a Zabbix user, and falling back to the stored
+// credentials would bypass the Zabbix permission model.
 func (ds *ZabbixDatasource) applyPerUserAuth(ctx context.Context, zabbixDS *ZabbixDatasourceInstance, datasourceUID string) (context.Context, error) {
 	if !zabbixDS.Settings.PerUserAuth {
 		ds.logger.Debug("Per-user authentication is disabled in datasource settings")
@@ -45,10 +47,16 @@ func (ds *ZabbixDatasource) applyPerUserAuth(ctx context.Context, zabbixDS *Zabb
 		identity = user.Login
 	}
 
-	// If identity is empty, skip per-user auth
+	// An empty identity cannot be mapped to a Zabbix user. Fail instead of
+	// silently falling back to the stored credentials, which would bypass the
+	// Zabbix permission model that per-user auth exists to enforce.
 	if identity == "" {
-		ds.logger.Debug("User identity is empty, skipping per-user auth")
-		return ctx, nil
+		field := zabbixDS.Settings.PerUserAuthField
+		if field == "" {
+			field = "username"
+		}
+		ds.logger.Error("User identity is empty, rejecting request", "field", field)
+		return ctx, errors.New("per-user authentication is enabled but the Grafana user's " + field + " is empty")
 	}
 
 	// Check if the user is excluded from per-user auth

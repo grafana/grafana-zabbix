@@ -106,6 +106,33 @@ func TestApplyPerUserAuth_NoUserInContext(t *testing.T) {
 	assert.Equal(t, testStoredAuth, inst.zabbix.GetAPI().GetAuth())
 }
 
+func TestApplyPerUserAuth_EmptyIdentityIsRejected(t *testing.T) {
+	var calls []string
+	s := &settings.ZabbixDatasourceSettings{PerUserAuth: true, PerUserAuthField: "username"}
+	ds, inst := buildTestInstance(t, s, nil, &calls)
+
+	// User present but with an empty login.
+	ctx := backend.WithUser(context.Background(), &backend.User{Login: ""})
+	gotCtx, err := ds.applyPerUserAuth(ctx, inst, "ds-uid")
+
+	require.Error(t, err, "empty identity must be rejected, not fall back to stored credentials")
+	assert.Contains(t, err.Error(), "username")
+	assert.Empty(t, zabbixapi.PerUserTokenFromContext(gotCtx))
+	assert.Empty(t, calls, "no Zabbix API calls expected")
+}
+
+func TestApplyPerUserAuth_EmptyEmailIsRejectedWhenFieldIsEmail(t *testing.T) {
+	s := &settings.ZabbixDatasourceSettings{PerUserAuth: true, PerUserAuthField: "email"}
+	ds, inst := buildTestInstance(t, s, nil, nil)
+
+	// User has a login but no email, and the datasource maps by email.
+	ctx := backend.WithUser(context.Background(), &backend.User{Login: "alice", Email: ""})
+	_, err := ds.applyPerUserAuth(ctx, inst, "ds-uid")
+
+	require.Error(t, err, "missing email must be rejected when identity field is email")
+	assert.Contains(t, err.Error(), "email")
+}
+
 func TestApplyPerUserAuth_ExcludedUserUsesStoredCreds(t *testing.T) {
 	var calls []string
 	s := &settings.ZabbixDatasourceSettings{
