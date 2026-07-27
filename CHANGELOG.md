@@ -1,5 +1,15 @@
 # Change Log
 
+## Unreleased
+
+🚀 Host tag filter in template variables: add a "Host tag" picker to the Host (and downstream) variable query types so dashboards can filter hosts by tag (e.g. `class:database`, `platform:globalspec`) without per-host-group workarounds. Closes #1682.
+
+🚀 Host tag filtering now matches tags inherited from linked templates, not just directly-assigned host tags — applies to both the panel editor and the new variable editor. Hosts are fetched with `selectInheritedTags` and the filter is evaluated client-side against the merged tag list.
+
+🚀 Tag-name and tag-value autocomplete in the host tag picker now suggests options observed across the host inventory (direct + inherited).
+
+🐛 Saved host-tag filters now repopulate the editor on reload via a new `value` prop on `HostTagQueryEditor`.
+
 ## 6.3.2
 
 🐛 Fix `{ITEM.VALUE}` and `{ITEM.LASTVALUE}` macros in trigger description always showing the current item value instead of the value at problem creation time
