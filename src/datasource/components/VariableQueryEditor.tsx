@@ -1,12 +1,14 @@
 import React, { PureComponent } from 'react';
 import { useAsyncFn } from 'react-use';
-import { parseLegacyVariableQuery } from '../utils';
+import { getTemplateSrv } from '@grafana/runtime';
+import { parseLegacyVariableQuery, replaceTemplateVars } from '../utils';
 import { VariableQuery, VariableQueryData, VariableQueryProps, VariableQueryTypes } from '../types';
 import { HostTagFilter, ZabbixTagEvalType } from '../types/query';
+import { ZabbixDatasource } from '../datasource';
 import { ZabbixInput } from './ZabbixInput';
 import { Combobox, ComboboxOption, InlineField, InlineFieldRow, InlineFormLabel, Input, Switch } from '@grafana/ui';
 import { HostTagQueryEditor } from './QueryEditor/HostTagQueryEditor';
-import { processHostTags } from './QueryEditor/utils';
+import { buildHostTagOptions, HostTagAutocompleteOptions, hostTagFiltersEqual } from './QueryEditor/utils';
 
 export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps, VariableQueryData> {
   queryTypes: Array<ComboboxOption<VariableQueryTypes>> = [
@@ -120,8 +122,9 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   };
 
   handleHostTagsChange = (hostTags: HostTagFilter[]) => {
-    const prev = this.state.hostTags ?? [];
-    if (prev.length === hostTags.length && prev.every((f, i) => f === hostTags[i])) {
+    // The editor re-emits its filters on every render pass; bail out unless something actually
+    // changed, otherwise onChange -> re-render -> onChange loops.
+    if (hostTagFiltersEqual(this.state.hostTags, hostTags)) {
       return;
     }
     this.setState({ ...this.state, hostTags });
@@ -276,13 +279,15 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
 }
 
 interface HostTagFilterLoaderProps {
-  datasource: any;
+  datasource: ZabbixDatasource;
   group: string;
   value?: HostTagFilter[];
   evalTypeValue?: ZabbixTagEvalType;
   onHostTagFilterChange: (hostTags: HostTagFilter[]) => void;
   onHostTagEvalTypeChange: (evalType: ZabbixTagEvalType) => void;
 }
+
+const EMPTY_OPTIONS: HostTagAutocompleteOptions = { tagOptions: [], valueOptions: {} };
 
 const HostTagFilterLoader: React.FC<HostTagFilterLoaderProps> = ({
   datasource,
@@ -294,38 +299,12 @@ const HostTagFilterLoader: React.FC<HostTagFilterLoaderProps> = ({
 }) => {
   const [{ loading, value: result }, fetchTags] = useAsyncFn(async () => {
     if (!group) {
-      return { tagOptions: [] as ComboboxOption[], valueOptions: {} as Record<string, ComboboxOption[]> };
+      return EMPTY_OPTIONS;
     }
-    const interpolated = datasource?.templateSrv?.replace ? datasource.templateSrv.replace(group) : group;
-    const hostsWithTags = await datasource.zabbix.getAllHosts(interpolated, true);
-    const tags = processHostTags(hostsWithTags ?? []);
-    const tagOptions = tags.map((t: { tag: string }) => ({ value: t.tag, label: t.tag })) as ComboboxOption[];
-
-    // Build a tag -> unique values map for the value autocomplete.
-    const valuesByTag = new Map<string, Set<string>>();
-    for (const h of hostsWithTags ?? []) {
-      for (const t of (h.tags ?? []) as Array<{ tag: string; value?: string }>) {
-        if (!t?.tag) {
-          continue;
-        }
-        const v = (t.value ?? '').toString();
-        if (!v) {
-          continue;
-        }
-        if (!valuesByTag.has(t.tag)) {
-          valuesByTag.set(t.tag, new Set());
-        }
-        valuesByTag.get(t.tag)!.add(v);
-      }
-    }
-    const valueOptions: Record<string, ComboboxOption[]> = {};
-    for (const [tag, set] of valuesByTag.entries()) {
-      valueOptions[tag] = Array.from(set)
-        .sort()
-        .map((v) => ({ value: v, label: v }));
-    }
-    return { tagOptions, valueOptions };
-  }, [group]);
+    const interpolatedGroup = replaceTemplateVars(getTemplateSrv(), group, {});
+    const hostsWithTags = await datasource.zabbix.getAllHosts(interpolatedGroup, true);
+    return buildHostTagOptions(hostsWithTags ?? []);
+  }, [datasource, group]);
 
   React.useEffect(() => {
     fetchTags();
@@ -335,7 +314,7 @@ const HostTagFilterLoader: React.FC<HostTagFilterLoaderProps> = ({
     <HostTagQueryEditor
       hostTagOptions={result?.tagOptions ?? []}
       hostTagOptionsLoading={loading}
-      version={datasource?.zabbix?.version ?? ''}
+      version={datasource.zabbix?.version ?? ''}
       value={value}
       evalTypeValue={evalTypeValue}
       hostTagValueOptions={result?.valueOptions}

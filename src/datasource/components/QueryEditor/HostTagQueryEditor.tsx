@@ -1,5 +1,5 @@
 import { Tooltip, Button, Combobox, ComboboxOption, Stack, RadioButtonGroup } from '@grafana/ui';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import { HostTagOperatorLabel, HostTagOperatorValue } from './types';
 import { HostTagFilter, ZabbixTagEvalType } from 'datasource/types/query';
 import { getHostTagOptionLabel } from './utils';
@@ -8,6 +8,7 @@ interface Props {
   hostTagOptions: ComboboxOption[];
   hostTagOptionsLoading: boolean;
   version: string;
+  /** The filters to render. This is a controlled component — the parent owns the filter list. */
   value?: HostTagFilter[];
   evalTypeValue?: ZabbixTagEvalType;
   hostTagValueOptions?: Record<string, ComboboxOption[]>;
@@ -25,8 +26,9 @@ export const HostTagQueryEditor = ({
   onHostTagFilterChange,
   onHostTagEvalTypeChange,
 }: Props) => {
-  const [hostTagFilters, setHostTagFilters] = useState<HostTagFilter[]>(value ?? []);
-  const [hostTagValueDrafts, setHostTagValueDrafts] = useState<string[]>((value ?? []).map((f) => f.value ?? ''));
+  // Rendered straight from props rather than mirrored into local state, so saved filters show up on
+  // reopen and any later external change (query swapped, variable duplicated) is picked up too.
+  const hostTagFilters = value ?? [];
   const operatorOptions: ComboboxOption[] = [
     { value: HostTagOperatorValue.Exists, label: HostTagOperatorLabel.Exists },
     { value: HostTagOperatorValue.Equals, label: HostTagOperatorLabel.Equals },
@@ -45,42 +47,41 @@ export const HostTagQueryEditor = ({
     },
   ];
 
+  // Emitted from the change handlers rather than an effect on state: an effect would also fire on
+  // mount and write an empty filter list back into the query before the user touched anything.
+  const applyHostTagFilters = onHostTagFilterChange ?? (() => {});
+
   const onAddHostTagFilter = useCallback(() => {
-    setHostTagFilters((prevFilters) => [
-      ...prevFilters,
-      { tag: '', value: '', operator: HostTagOperatorValue.Contains },
-    ]);
-    setHostTagValueDrafts((prevDrafts) => [...prevDrafts, '']);
-  }, []);
+    applyHostTagFilters([...hostTagFilters, { tag: '', value: '', operator: HostTagOperatorValue.Contains }]);
+  }, [applyHostTagFilters, hostTagFilters]);
 
-  const onRemoveHostTagFilter = useCallback((index: number) => {
-    setHostTagFilters((prevFilters) => prevFilters.filter((_, i) => i !== index));
-    setHostTagValueDrafts((prevDrafts) => prevDrafts.filter((_, i) => i !== index));
-  }, []);
+  const onRemoveHostTagFilter = useCallback(
+    (index: number) => {
+      applyHostTagFilters(hostTagFilters.filter((_, i) => i !== index));
+    },
+    [applyHostTagFilters, hostTagFilters]
+  );
 
-  const setHostTagFilterName = useCallback((index: number, name: string) => {
-    setHostTagFilters((prevFilters) =>
-      prevFilters.map((filter, i) => (i === index ? { ...filter, tag: name } : filter))
-    );
-  }, []);
+  const setHostTagFilterName = useCallback(
+    (index: number, name: string) => {
+      applyHostTagFilters(hostTagFilters.map((filter, i) => (i === index ? { ...filter, tag: name } : filter)));
+    },
+    [applyHostTagFilters, hostTagFilters]
+  );
 
-  const setHostTagFilterValue = useCallback((index: number, value: string) => {
-    if (value !== undefined) {
-      setHostTagFilters((prevFilters) =>
-        prevFilters.map((filter, i) => (i === index ? { ...filter, value: value } : filter))
-      );
-    }
-  }, []);
+  const setHostTagFilterValue = useCallback(
+    (index: number, value: string) => {
+      applyHostTagFilters(hostTagFilters.map((filter, i) => (i === index ? { ...filter, value } : filter)));
+    },
+    [applyHostTagFilters, hostTagFilters]
+  );
 
-  const setHostTagFilterOperator = useCallback((index: number, operator: HostTagOperatorValue) => {
-    setHostTagFilters((prevFilters) =>
-      prevFilters.map((filter, i) => (i === index ? { ...filter, operator } : filter))
-    );
-  }, []);
-
-  useEffect(() => {
-    onHostTagFilterChange(hostTagFilters);
-  }, [hostTagFilters]);
+  const setHostTagFilterOperator = useCallback(
+    (index: number, operator: HostTagOperatorValue) => {
+      applyHostTagFilters(hostTagFilters.map((filter, i) => (i === index ? { ...filter, operator } : filter)));
+    },
+    [applyHostTagFilters, hostTagFilters]
+  );
 
   return (
     <div>
@@ -122,16 +123,8 @@ export const HostTagQueryEditor = ({
               {filter.operator !== HostTagOperatorValue.Exists &&
                 filter.operator !== HostTagOperatorValue.DoesNotExist && (
                   <Combobox
-                    value={hostTagValueDrafts[index] ?? filter.value ?? ''}
-                    onChange={(option: ComboboxOption) => {
-                      const v = option?.value ?? '';
-                      setHostTagValueDrafts((prevDrafts) => {
-                        const nextDrafts = [...prevDrafts];
-                        nextDrafts[index] = v;
-                        return nextDrafts;
-                      });
-                      setHostTagFilterValue(index, v);
-                    }}
+                    value={filter.value ?? ''}
+                    onChange={(option: ComboboxOption) => setHostTagFilterValue(index, option?.value ?? '')}
                     options={(hostTagValueOptions && hostTagValueOptions[filter.tag]) ?? []}
                     width={19}
                     placeholder="Host tag value"

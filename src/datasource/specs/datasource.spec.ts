@@ -317,7 +317,13 @@ describe('ZabbixDatasource', () => {
 
       for (const test of tests) {
         ctx.ds.metricFindQuery(test.query);
-        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith(test.expect[0], test.expect[1], test.expect[2]);
+        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith(
+          test.expect[0],
+          test.expect[1],
+          test.expect[2],
+          undefined,
+          undefined
+        );
         ctx.ds.zabbix.getApps.mockClear();
       }
       done();
@@ -428,6 +434,131 @@ describe('ZabbixDatasource', () => {
         );
       });
 
+      it('should pass hostTags and evaltype for non-Host query types', async () => {
+        const hostTags = [{ tag: 'class', value: 'database', operator: '1' as any }];
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Application,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            application: 'AppFilter',
+            hostTags,
+            evaltype: '2' as any,
+          },
+          {}
+        );
+        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'AppFilter',
+          [{ tag: 'class', value: 'database', operator: '1' }],
+          '2'
+        );
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.ItemTag,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            itemTag: 'TagFilter',
+            hostTags,
+            evaltype: '2' as any,
+          },
+          {}
+        );
+        expect(ctx.ds.zabbix.getItemTags).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'TagFilter',
+          [{ tag: 'class', value: 'database', operator: '1' }],
+          '2'
+        );
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Item,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            application: 'AppFilter',
+            itemTag: 'TagFilter',
+            item: 'ItemFilter',
+            hostTags,
+            evaltype: '2' as any,
+          },
+          {}
+        );
+        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'AppFilter',
+          'TagFilter',
+          'ItemFilter',
+          expect.objectContaining({
+            hostTags: [{ tag: 'class', value: 'database', operator: '1' }],
+            evaltype: '2',
+          })
+        );
+      });
+
+      it('should default an empty host filter to /.*/ when host tags are set', async () => {
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Item,
+            group: 'GroupFilter',
+            host: '',
+            item: 'ItemFilter',
+            hostTags: [{ tag: 'class', value: 'database', operator: '1' as any }],
+          },
+          {}
+        );
+        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
+          'GroupFilter',
+          '/.*/',
+          undefined,
+          undefined,
+          'ItemFilter',
+          expect.objectContaining({ hostTags: [{ tag: 'class', value: 'database', operator: '1' }] })
+        );
+      });
+
+      it('should interpolate host tags literally, without regex anchoring', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string) => {
+          return str === '$env' ? 'production' : str;
+        });
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            hostTags: [{ tag: 'env', value: '$env', operator: '1' as any }],
+          },
+          {}
+        );
+
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          [{ tag: 'env', value: 'production', operator: '1' }],
+          undefined
+        );
+      });
+
+      it('should ignore host tag filters with an empty tag name', async () => {
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            hostTags: [{ tag: '', value: 'ignored', operator: '1' as any }],
+          },
+          {}
+        );
+
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', 'HostFilter', [], undefined);
+      });
+
       it('should return applications when queryType is Application', async () => {
         const query = {
           queryType: VariableQueryTypes.Application,
@@ -436,7 +567,13 @@ describe('ZabbixDatasource', () => {
           application: 'AppFilter',
         };
         const result = await ctx.ds.metricFindQuery(query, {});
-        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'AppFilter');
+        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'AppFilter',
+          undefined,
+          undefined
+        );
         expect(result).toEqual([
           { text: 'App1', expandable: false },
           { text: 'App2', expandable: false },
@@ -500,7 +637,13 @@ describe('ZabbixDatasource', () => {
           itemTag: 'TagFilter',
         };
         const result = await ctx.ds.metricFindQuery(query, {});
-        expect(ctx.ds.zabbix.getItemTags).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'TagFilter');
+        expect(ctx.ds.zabbix.getItemTags).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          'TagFilter',
+          undefined,
+          undefined
+        );
         expect(result).toEqual([
           { text: 'Tag1', expandable: false },
           { text: 'Tag2', expandable: false },

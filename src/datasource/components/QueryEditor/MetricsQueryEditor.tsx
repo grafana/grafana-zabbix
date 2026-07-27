@@ -5,7 +5,7 @@ import { useAsyncFn } from 'react-use';
 import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
-import { getVariableOptions, processHostTags } from './utils';
+import { buildHostTagOptions, getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
@@ -43,36 +43,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
 
   const loadHostTagOptions = async (group: string) => {
     const hostsWithTags = await datasource.zabbix.getAllHosts(group, true);
-    const hostTags = processHostTags(hostsWithTags ?? []);
-    const options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
-      value: tag.tag,
-      label: tag.tag,
-    }));
-
-    // Build tag -> unique non-empty values map for the value autocomplete.
-    const valuesByTag = new Map<string, Set<string>>();
-    for (const h of hostsWithTags ?? []) {
-      for (const t of ((h as any)?.tags ?? []) as Array<{ tag: string; value?: string }>) {
-        if (!t?.tag) {
-          continue;
-        }
-        const v = (t.value ?? '').toString();
-        if (!v) {
-          continue;
-        }
-        if (!valuesByTag.has(t.tag)) {
-          valuesByTag.set(t.tag, new Set());
-        }
-        valuesByTag.get(t.tag)!.add(v);
-      }
-    }
-    const valueOptions: Record<string, Array<ComboboxOption<string>>> = {};
-    for (const [tag, set] of valuesByTag.entries()) {
-      valueOptions[tag] = Array.from(set)
-        .sort()
-        .map((v) => ({ value: v, label: v }));
-    }
-    return { options, valueOptions };
+    return buildHostTagOptions(hostsWithTags ?? []);
   };
 
   const loadHostOptions = async (group: string, hostTags?: HostTagFilter[], evalType?: ZabbixTagEvalType) => {
@@ -92,7 +63,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
   const [{ loading: hostTagsLoading, value: hostTagsData }, fetchHostTags] = useAsyncFn(async () => {
     return await loadHostTagOptions(query.group.filter);
   }, [query.group.filter]);
-  const hostTagsOptions = hostTagsData?.options;
+  const hostTagsOptions = hostTagsData?.tagOptions;
   const hostTagValueOptions = hostTagsData?.valueOptions;
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
@@ -271,6 +242,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
           <HostTagQueryEditor
             hostTagOptions={hostTagsOptions}
             hostTagValueOptions={hostTagValueOptions}
+            value={query.hostTags}
             evalTypeValue={query.evaltype}
             hostTagOptionsLoading={hostTagsLoading}
             onHostTagFilterChange={onHostTagFilterChange}

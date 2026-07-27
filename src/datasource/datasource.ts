@@ -730,49 +730,46 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
 
     queryModel = queryModel as VariableQuery;
-    const { group, host, application, item } = queryModel;
-    const interpolatedHostTags = queryModel.hostTags?.map((f) => ({
-      ...f,
-      tag: utils.replaceTemplateVars(this.templateSrv, f.tag, {}),
-      value: utils.replaceTemplateVars(this.templateSrv, f.value, {}),
-    }));
+    const { group, application, item } = queryModel;
+
+    // Host tags are matched literally against the host's tag list, so interpolate with a plain
+    // replace. utils.replaceTemplateVars() would wrap a substituted value in /^...$/ for Zabbix's
+    // regex filter syntax, which would then never match a tag value.
+    const hostTags = queryModel.hostTags
+      ?.filter((f) => f.tag !== '')
+      .map((f) => ({
+        ...f,
+        tag: this.templateSrv.replace(f.tag, {}),
+        value: this.templateSrv.replace(f.value, {}),
+      }));
+    const evaltype = queryModel.evaltype;
+    // Once host tags are narrowing the host list, an empty Host filter should mean "every matching
+    // host"; findByFilter('') would otherwise return nothing.
+    const host = !queryModel.host && hostTags?.length > 0 ? '/.*/' : queryModel.host;
 
     switch (queryModel.queryType) {
       case VariableQueryTypes.Group:
-        resultPromise = this.zabbix.getGroups(queryModel.group);
+        resultPromise = this.zabbix.getGroups(group);
         break;
-      case VariableQueryTypes.Host: {
-        const hostFilterForTagQuery =
-          !queryModel.host && interpolatedHostTags && interpolatedHostTags.length > 0
-            ? '/.*/'
-            : queryModel.host;
-        resultPromise = this.zabbix.getHosts(
-          queryModel.group,
-          hostFilterForTagQuery,
-          interpolatedHostTags,
-          queryModel.evaltype
-        );
+      case VariableQueryTypes.Host:
+        resultPromise = this.zabbix.getHosts(group, host, hostTags, evaltype);
         break;
-      }
       case VariableQueryTypes.Application:
-        resultPromise = this.zabbix.getApps(queryModel.group, queryModel.host, queryModel.application);
+        resultPromise = this.zabbix.getApps(group, host, application, hostTags, evaltype);
         break;
       case VariableQueryTypes.ItemTag:
-        resultPromise = this.zabbix.getItemTags(queryModel.group, queryModel.host, queryModel.itemTag);
+        resultPromise = this.zabbix.getItemTags(group, host, queryModel.itemTag, hostTags, evaltype);
         break;
       case VariableQueryTypes.Item:
-        resultPromise = this.zabbix.getItems(
-          queryModel.group,
-          queryModel.host,
-          queryModel.application,
-          queryModel.itemTag,
-          queryModel.item,
-          { showDisabledItems: queryModel.showDisabledItems }
-        );
+        resultPromise = this.zabbix.getItems(group, host, application, queryModel.itemTag, item, {
+          showDisabledItems: queryModel.showDisabledItems,
+          hostTags,
+          evaltype,
+        });
         break;
       case VariableQueryTypes.ItemValues:
         const range = options?.range;
-        resultPromise = this.zabbix.getItemValues(group, host, application, item, { range });
+        resultPromise = this.zabbix.getItemValues(group, host, application, item, { range, hostTags, evaltype });
         break;
       default:
         resultPromise = Promise.resolve([]);

@@ -172,12 +172,33 @@ describe('Zabbix API connector', () => {
       });
     });
 
-    it('requests tags when getHostTags is true', () => {
+    it('requests tags when getHostTags is true', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
       zabbixAPIConnector.version = '7.4.0';
 
-      zabbixAPIConnector.getHosts(undefined, true);
+      await zabbixAPIConnector.getHosts(undefined, true);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        selectTags: 'extend',
+        selectInheritedTags: 'extend',
+      });
+    });
+
+    it('resolves the version before building params so selectInheritedTags is not dropped', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      // Version not resolved yet — getHosts must await initVersion() rather than reading a version
+      // that is still undefined.
+      zabbixAPIConnector.version = undefined;
+      jest.spyOn(zabbixAPIConnector, 'initVersion').mockImplementation(async () => {
+        zabbixAPIConnector.version = '7.4.0';
+        return '7.4.0';
+      });
+
+      await zabbixAPIConnector.getHosts(undefined, true);
 
       expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
         output: ['hostid', 'name', 'host'],
@@ -215,9 +236,7 @@ describe('Zabbix API connector', () => {
         selectInheritedTags: 'extend',
       });
 
-      // Both host-a (direct) and host-b (inherited) match `role contains api`/`web` — wait, only
-      // the literal value 'api' is the filter; host-b's role value is 'web' which doesn't contain
-      // 'api'. So only host-a should match.
+      // Only host-a carries a `role` value containing 'api'; the empty-tag filter is ignored.
       expect(result.map((h: any) => h.hostid)).toEqual(['1']);
     });
 
@@ -234,6 +253,86 @@ describe('Zabbix API connector', () => {
       ]);
 
       expect(result.map((h: any) => h.hostid)).toEqual(['1']);
+    });
+
+    describe('evaltype semantics', () => {
+      const hosts = [
+        { hostid: '1', name: 'api-prod', tags: [{ tag: 'role', value: 'api' }], inheritedTags: [] },
+        { hostid: '2', name: 'web-prod', tags: [{ tag: 'role', value: 'web' }], inheritedTags: [] },
+        { hostid: '3', name: 'db-prod', tags: [{ tag: 'role', value: 'db' }], inheritedTags: [] },
+      ];
+
+      const getConnector = () => {
+        const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+        zabbixAPIConnector.request = jest.fn().mockResolvedValue(hosts);
+        zabbixAPIConnector.version = '7.4.0';
+        return zabbixAPIConnector;
+      };
+
+      it('ORs filters that share a tag name under And/Or', async () => {
+        const result = await getConnector().getHosts(
+          undefined,
+          false,
+          [
+            { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
+            { tag: 'role', value: 'web', operator: HostTagOperatorValue.Equals },
+          ],
+          ZabbixTagEvalType.AndOr
+        );
+
+        expect(result.map((h: any) => h.hostid)).toEqual(['1', '2']);
+      });
+
+      it('ANDs filters across different tag names under And/Or', async () => {
+        const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+        zabbixAPIConnector.request = jest.fn().mockResolvedValue([
+          {
+            hostid: '1',
+            name: 'api-prod',
+            tags: [
+              { tag: 'role', value: 'api' },
+              { tag: 'env', value: 'prod' },
+            ],
+            inheritedTags: [],
+          },
+          { hostid: '2', name: 'api-dev', tags: [{ tag: 'role', value: 'api' }], inheritedTags: [] },
+        ]);
+        zabbixAPIConnector.version = '7.4.0';
+
+        const result = await zabbixAPIConnector.getHosts(
+          undefined,
+          false,
+          [
+            { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
+            { tag: 'env', value: 'prod', operator: HostTagOperatorValue.Equals },
+          ],
+          ZabbixTagEvalType.AndOr
+        );
+
+        expect(result.map((h: any) => h.hostid)).toEqual(['1']);
+      });
+
+      it('ORs every filter under Or', async () => {
+        const result = await getConnector().getHosts(
+          undefined,
+          false,
+          [
+            { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
+            { tag: 'role', value: 'db', operator: HostTagOperatorValue.Equals },
+          ],
+          ZabbixTagEvalType.Or
+        );
+
+        expect(result.map((h: any) => h.hostid)).toEqual(['1', '3']);
+      });
+
+      it('matches nothing for an unrecognised operator', async () => {
+        const result = await getConnector().getHosts(undefined, false, [
+          { tag: 'role', value: 'api', operator: '99' as HostTagOperatorValue },
+        ]);
+
+        expect(result).toEqual([]);
+      });
     });
   });
 

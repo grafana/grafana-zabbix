@@ -149,7 +149,7 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
-  getHosts(
+  async getHosts(
     groupids: string[],
     getHostTags?: boolean,
     hostTagFilters?: HostTagFilter[],
@@ -170,7 +170,11 @@ export class ZabbixAPIConnector {
       // Also fetch tags inherited from linked templates so callers can see / filter on them.
       // The host.get `tags` filter param only matches direct host tags — inherited matches must be
       // applied client-side. selectInheritedTags is supported from Zabbix 5.4.
-      if (this.version && semver.gte(this.version, '5.4.0')) {
+      // Await the version rather than reading this.version, which initVersion() sets asynchronously:
+      // losing that race would silently drop inherited matches and CachingProxy would cache the
+      // wrong result.
+      await this.initVersion();
+      if (semver.gte(this.version, '5.4.0')) {
         params.selectInheritedTags = 'extend';
       }
     }
@@ -180,43 +184,34 @@ export class ZabbixAPIConnector {
     // hosts whose match comes only from a template-inherited tag. Instead we fetch with
     // selectInheritedTags and apply the filter client-side below against the merged tag list.
 
-    return this.request('host.get', params).then((hosts: any[]) => {
-      if (!wantsTags || !Array.isArray(hosts)) {
-        return hosts;
-      }
-      // Merge inheritedTags into tags so downstream code (autocomplete, filtering, processHostTags)
-      // sees a single combined list. De-dupe on tag+value.
-      const merged = hosts.map((h) => {
-        const direct = Array.isArray(h?.tags) ? h.tags : [];
-        const inherited = Array.isArray(h?.inheritedTags) ? h.inheritedTags : [];
-        const combined: any[] = [];
-        const seen = new Set<string>();
-        for (const t of [...direct, ...inherited]) {
-          const key = (t?.tag ?? '') + '\t' + (t?.value ?? '');
-          if (!seen.has(key)) {
-            seen.add(key);
-            combined.push(t);
-          }
+    const hosts: any[] = await this.request('host.get', params);
+    if (!wantsTags || !Array.isArray(hosts)) {
+      return hosts;
+    }
+    // Merge inheritedTags into tags so downstream code (autocomplete, filtering, processHostTags)
+    // sees a single combined list. De-dupe on tag+value.
+    const merged = hosts.map((h) => {
+      const direct = Array.isArray(h?.tags) ? h.tags : [];
+      const inherited = Array.isArray(h?.inheritedTags) ? h.inheritedTags : [];
+      const combined: any[] = [];
+      const seen = new Set<string>();
+      for (const t of [...direct, ...inherited]) {
+        const key = (t?.tag ?? '') + '\t' + (t?.value ?? '');
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(t);
         }
-        const { inheritedTags: _omit, ...rest } = h;
-        return { ...rest, tags: combined };
-      });
-
-      if (!hostTagFilters || hostTagFilters.length === 0) {
-        return merged;
       }
-      const activeFilters = hostTagFilters.filter((f) => f.tag !== '');
-      if (activeFilters.length === 0) {
-        return merged;
-      }
-      const isOr = evalType === ZabbixTagEvalType.Or;
-      return merged.filter((h: any) => {
-        const tags = (h.tags ?? []) as Array<{ tag: string; value?: string }>;
-        return isOr
-          ? activeFilters.some((f) => matchHostTag(tags, f))
-          : activeFilters.every((f) => matchHostTag(tags, f));
-      });
+      const { inheritedTags: _omit, ...rest } = h;
+      return { ...rest, tags: combined };
     });
+
+    const activeFilters = hostTagFilters?.filter((f) => f.tag !== '') ?? [];
+    if (activeFilters.length === 0) {
+      return merged;
+    }
+
+    return merged.filter((h: any) => matchHostTagFilters((h.tags ?? []) as HostTag[], activeFilters, evalType));
   }
 
   async getApps(hostids): Promise<any[]> {
@@ -1081,14 +1076,43 @@ export class ZabbixAPIError {
   }
 }
 
+interface HostTag {
+  tag: string;
+  value?: string;
+}
+
+/**
+ * Client-side evaluation of a set of host tag filters, mirroring the Zabbix server-side `evaltype`
+ * semantics:
+ *   - Or (2)     — a host matches if any single filter matches.
+ *   - And/Or (0) — filters are grouped by tag name; within a group the filters are OR'ed, and the
+ *                  groups are AND'ed together. So `role Equals api` + `role Equals web` matches a
+ *                  host carrying either value, while `role Equals api` + `env Equals prod` requires
+ *                  both.
+ */
+function matchHostTagFilters(tags: HostTag[], filters: HostTagFilter[], evalType?: ZabbixTagEvalType): boolean {
+  if (evalType === ZabbixTagEvalType.Or) {
+    return filters.some((f) => matchHostTag(tags, f));
+  }
+
+  const groups = new Map<string, HostTagFilter[]>();
+  for (const filter of filters) {
+    const group = groups.get(filter.tag);
+    if (group) {
+      group.push(filter);
+    } else {
+      groups.set(filter.tag, [filter]);
+    }
+  }
+
+  return Array.from(groups.values()).every((group) => group.some((f) => matchHostTag(tags, f)));
+}
+
 // Client-side host-tag matcher. Mirrors the Zabbix server-side operators so we can apply tag
 // filters against the merged (direct + inherited) tag list returned by host.get.
-function matchHostTag(
-  tags: Array<{ tag: string; value?: string }>,
-  filter: { tag: string; value: string; operator: HostTagOperatorValue }
-): boolean {
+function matchHostTag(tags: HostTag[], filter: HostTagFilter): boolean {
   const op = String(filter.operator) as HostTagOperatorValue;
-  const sameKey = (t: { tag: string }) => t.tag === filter.tag;
+  const sameKey = (t: HostTag) => t.tag === filter.tag;
   switch (op) {
     case HostTagOperatorValue.Exists:
       return tags.some(sameKey);
@@ -1103,7 +1127,9 @@ function matchHostTag(
     case HostTagOperatorValue.DoesNotContain:
       return tags.every((t) => !sameKey(t) || !(t.value ?? '').includes(filter.value));
     default:
-      return tags.some((t) => sameKey(t) && (t.value ?? '').includes(filter.value));
+      // Unknown operator — match nothing rather than silently falling back to Contains, which would
+      // filter on a value the user never asked for.
+      return false;
   }
 }
 
