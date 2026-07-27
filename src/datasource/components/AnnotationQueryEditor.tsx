@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import React, { useEffect, FormEvent } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsyncFn } from '../hooks/useAsyncFn';
 import { AnnotationQuery, SelectableValue } from '@grafana/data';
 import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
 import { ZabbixMetricsQuery } from '../types/query';
@@ -25,8 +25,8 @@ type Props = ZabbixQueryEditorProps & {
   onAnnotationChange?: (annotation: AnnotationQuery<ZabbixMetricsQuery>) => void;
 };
 
-export const AnnotationQueryEditor = ({ annotation, onAnnotationChange, datasource }: Props) => {
-  annotation = prepareAnnotation(annotation);
+export const AnnotationQueryEditor = ({ annotation: annotationProp, onAnnotationChange, datasource }: Props) => {
+  const annotation = prepareAnnotation(annotationProp);
   const query = annotation.target;
   const interpolatedQuery = useInterpolatedQuery(datasource, query);
 

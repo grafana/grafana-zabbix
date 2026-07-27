@@ -1,4 +1,4 @@
-name: Add issues to Data Source Plugin team project
+name: Add issues & PRs to Grafana Data Source Plugins Squad project
 on:
   issues:
     types:
@@ -7,21 +7,9 @@ on:
     types:
       - opened
 
-permissions:
-  contents: read
-  id-token: write
-
 jobs:
   add-to-project:
-    name: Add issue to project
-    runs-on: ubuntu-latest
-    steps:
-      - id: get-github-token
-        uses: grafana/shared-workflows/actions/create-github-app-token@ae92934a14a48b94494dbc06d74a81d47fe08a40 # create-github-app-token/v0.2.2
-        with:
-          github_app: grafana-oss-big-tent
-      - name: Add to project
-        uses: actions/add-to-project@27022a19346d0433f2b9859dd2b69d38f4277808 # main
-        with:
-          project-url: https://github.com/orgs/grafana/projects/1085
-          github-token: ${{ steps.get-github-token.outputs.token }}
+    permissions:
+      contents: read
+      id-token: write
+    uses: grafana/data-sources-ci-workflows/.github/workflows/reusable-add-to-project.yml@main # zizmor: ignore[unpinned-uses]

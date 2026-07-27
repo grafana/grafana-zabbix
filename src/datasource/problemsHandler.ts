@@ -249,6 +249,45 @@ export function expandItemMacros(text: string, items: ItemResolution[]): string 
   return result;
 }
 
+export interface UserMacro {
+  macro: string;
+  value?: string;
+  hostid?: string;
+}
+
+const USER_MACRO_PATTERN = /\{\$[A-Z0-9_.]+\}/g;
+
+export function hasUserMacro(text: string): boolean {
+  if (!text) {
+    return false;
+  }
+  return /\{\$[A-Z0-9_.]+\}/.test(text);
+}
+
+export function expandUserMacros(
+  text: string,
+  hostMacros: UserMacro[],
+  globalMacros: UserMacro[],
+  hostids: string[]
+): string {
+  if (!text) {
+    return text;
+  }
+  return text.replace(USER_MACRO_PATTERN, (macroName) => {
+    const hostMacro = hostMacros.find(
+      (m) => m.macro === macroName && m.hostid !== undefined && hostids.includes(m.hostid)
+    );
+    if (hostMacro && hostMacro.value != null) {
+      return hostMacro.value;
+    }
+    const globalMacro = globalMacros.find((m) => m.macro === macroName);
+    if (globalMacro && globalMacro.value != null) {
+      return globalMacro.value;
+    }
+    return macroName;
+  });
+}
+
 const problemsHandler = {
   addTriggerDataSource,
   addTriggerHostProxy,

@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsyncFn } from '../hooks/useAsyncFn';
 import { getTemplateSrv } from '@grafana/runtime';
 import { parseLegacyVariableQuery, replaceTemplateVars } from '../utils';
 import { VariableQuery, VariableQueryData, VariableQueryProps, VariableQueryTypes } from '../types';

@@ -49,7 +49,8 @@ alexanderzobnin-zabbix-app.zip
 # locally required config files
 public/css/*.min.css
 
-provisioning/
+# Scratch dir for Docker-generated devenv provisioning mount points
+tmp/
 
 # SSL certificates
 devenv/nginx/nginx.crt

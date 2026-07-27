@@ -180,6 +180,19 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
             onChange={() => onChange({ ...queryOptions, hostProxy: !queryOptions.hostProxy })}
           />
         </InlineField>
+        <InlineField
+          label="Item value at problem time"
+          labelWidth={24}
+          tooltip="Resolve each problem's item value at its creation time via history.get (for {ITEM.VALUE} / operational data). May impact performance in large environments with many active problems. Disabled by default."
+        >
+          <InlineSwitch
+            data-testid="zabbix-problems-fetch-historical-value"
+            value={queryOptions.fetchHistoricalItemValue}
+            onChange={() =>
+              onChange({ ...queryOptions, fetchHistoricalItemValue: !queryOptions.fetchHistoricalItemValue })
+            }
+          />
+        </InlineField>
         <InlineField label="Limit" labelWidth={24}>
           <Input width={12} type="number" defaultValue={queryOptions.limit} onBlur={onLimitChange} />
         </InlineField>

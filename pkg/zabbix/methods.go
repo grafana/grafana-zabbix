@@ -451,6 +451,11 @@ func (ds *Zabbix) GetItemsByIDs(ctx context.Context, itemids []string) ([]*Item,
 		"selectHosts": []string{"hostid", "name"},
 	}
 
+	// Item tags were introduced in Zabbix 5.4; older versions don't support selectTags.
+	if ds.version >= 54 {
+		params["selectTags"] = "extend"
+	}
+
 	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "item.get", Params: params})
 	if err != nil {
 		return nil, err

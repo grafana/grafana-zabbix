@@ -1,0 +1,6 @@
+# Test fixture / provisioning files contain synthetic credentials (e.g. the
+# Zabbix dev password "zabbix") and no real secrets. Exclude them from secret
+# scanning to avoid false positives.
+exclude_paths:
+  - tests/fixtures/
+  - tests/e2e/provisioning/

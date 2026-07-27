@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import React, { useEffect, FormEvent } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { SelectableValue } from '@grafana/data';
 import { Combobox, ComboboxOption, InlineField, Input, MultiSelect } from '@grafana/ui';
@@ -29,6 +29,12 @@ const severityOptions: Array<SelectableValue<number>> = [
 const evaltypeOptions: Array<ComboboxOption<ZabbixTagEvalType>> = [
   { label: 'AND/OR', value: ZabbixTagEvalType.AndOr },
   { label: 'OR', value: ZabbixTagEvalType.Or },
+];
+
+const symptomOptions: Array<ComboboxOption<string>> = [
+  { label: 'All Problems', value: 'all' },
+  { label: 'Cause only', value: 'false' },
+  { label: 'Symptoms only', value: 'true' },
 ];
 
 export interface Props {
@@ -155,6 +161,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
   };
 
   const supportsApplications = datasource.zabbix.supportsApplications();
+  const supportsCauseSymptomProblems = datasource.zabbix.supportsCauseSymptomProblems();
 
   return (
     <>
@@ -246,6 +253,38 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
             onChange={onSeveritiesChange}
           />
         </InlineField>
+        {supportsCauseSymptomProblems && (
+          <InlineField label="Problem Type" labelWidth={16}>
+            <Combobox
+              width={24}
+              value={
+                query.options?.symptom === null || query.options?.symptom === undefined
+                  ? 'all'
+                  : query.options.symptom
+                    ? 'true'
+                    : 'false'
+              }
+              options={symptomOptions}
+              onChange={(option) => {
+                if (option) {
+                  let symptomValue: boolean | null = null;
+                  if (option.value === 'true') {
+                    symptomValue = true;
+                  } else if (option.value === 'false') {
+                    symptomValue = false;
+                  }
+                  onChange({
+                    ...query,
+                    options: {
+                      ...query.options,
+                      symptom: symptomValue,
+                    },
+                  });
+                }
+              }}
+            />
+          </InlineField>
+        )}
       </QueryEditorRow>
     </>
   );

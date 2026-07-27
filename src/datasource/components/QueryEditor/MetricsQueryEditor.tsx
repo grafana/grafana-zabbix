@@ -1,6 +1,6 @@
 import { flatten, uniqBy } from 'lodash';
 import React, { useCallback, useEffect } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';

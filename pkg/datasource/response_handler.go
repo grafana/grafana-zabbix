@@ -3,7 +3,9 @@ package datasource
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/gtime"
@@ -100,6 +102,8 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 		valueField.Labels["host"] = item.Hosts[0].Name
 	}
 
+	addItemTagScopedVars(scopedVars, item.Tags)
+
 	valueField.Config = &data.FieldConfig{
 		DisplayNameFromDS: seriesName,
 		Custom: map[string]interface{}{
@@ -180,7 +184,35 @@ func getTrendPointValue(point zabbix.TrendPoint, valueType string) (float64, err
 	return 0, backend.DownstreamError(fmt.Errorf("failed to get trend value, unknown value type: %s", valueType))
 }
 
-var fixedUpdateIntervalPattern = regexp.MustCompile(`^(\d+)([smhdw]?)$`)
+var (
+	fixedUpdateIntervalPattern = regexp.MustCompile(`^(\d+)([smhdw]?)$`)
+	tagNameSanitizePattern     = regexp.MustCompile(`[^a-zA-Z0-9_]`)
+)
+
+func sanitizeTagName(name string) string {
+	return tagNameSanitizePattern.ReplaceAllString(name, "_")
+}
+
+func addItemTagScopedVars(scopedVars map[string]ScopedVar, tags []zabbix.Tag) {
+	if len(tags) == 0 {
+		return
+	}
+
+	tagValues := make(map[string][]string)
+	for _, tag := range tags {
+		sanitized := sanitizeTagName(tag.Tag)
+		if sanitized == "" {
+			continue
+		}
+		key := "__zbx_item_tag_" + sanitized
+		tagValues[key] = append(tagValues[key], tag.Value)
+	}
+
+	for key, values := range tagValues {
+		sort.Strings(values)
+		scopedVars[key] = ScopedVar{Value: strings.Join(values, ", ")}
+	}
+}
 
 func parseItemUpdateInterval(delay string) *time.Duration {
 	if valid := fixedUpdateIntervalPattern.MatchString(delay); !valid {

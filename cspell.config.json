@@ -2,6 +2,8 @@
   "ignorePaths": [
     "coverage/**",
     "dist/**",
+    "test-results/**",
+    "playwright-report/**",
     "go.sum",
     "mage_output_file.go",
     "node_modules/**",
@@ -28,7 +30,8 @@
     "docs/**/*.yaml",
     "dashboards/**",
     "src/**",
-    "pkg/**"
+    "pkg/**",
+    "jest.config.js"
   ],
   "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
   "words": [
@@ -42,6 +45,7 @@
     "dompurify",
     "eventid",
     "eventids",
+    "evaltype",
     "Gleb",
     "grafana",
     "groupid",
@@ -56,9 +60,11 @@
     "Ivanovsky",
     "lastchange",
     "lastvalue",
+    "lookback",
     "mydomain",
     "opdata",
     "percpu",
+    "psql",
     "singlestat",
     "slaid",
     "struct",
@@ -69,11 +75,14 @@
     "timeshift",
     "triggerid",
     "triggerids",
+    "trufflehog",
     "typeahead",
     "unmarshal",
     "uplot",
     "zabbix",
     "Zobnin",
-    "directdb"
+    "directdb",
+    "npmPreapprovedPackages",
+    "yarnrc"
   ]
 }

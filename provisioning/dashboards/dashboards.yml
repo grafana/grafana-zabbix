@@ -1,0 +1,12 @@
+apiVersion: 1
+
+# Loads the JSON dashboards in this directory. Grafana's file provider only reads
+# *.json, so this provider YAML is ignored as a dashboard. plugin-e2e's
+# readProvisionedDashboard reads the same JSON files from tests/e2e/provisioning/dashboards.
+providers:
+  - name: 'E2E dashboards'
+    type: file
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

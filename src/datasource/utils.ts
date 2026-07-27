@@ -389,6 +389,33 @@ export function itemTagToString(t: ZBXItemTag): string {
   return t.value ? `${t.tag}: ${t.value}` : t.tag;
 }
 
+export function sanitizeTagName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_]/g, '_');
+}
+
+export function addItemTagScopedVars(scopedVars: Record<string, { value: string }>, tags?: ZBXItemTag[]): void {
+  if (!tags || tags.length === 0) {
+    return;
+  }
+
+  const tagValues: Record<string, string[]> = {};
+  for (const tag of tags) {
+    const sanitized = sanitizeTagName(tag.tag);
+    if (!sanitized) {
+      continue;
+    }
+    const key = `__zbx_item_tag_${sanitized}`;
+    if (!tagValues[key]) {
+      tagValues[key] = [];
+    }
+    tagValues[key].push(tag.value || '');
+  }
+
+  for (const [key, values] of Object.entries(tagValues)) {
+    scopedVars[key] = { value: values.sort().join(', ') };
+  }
+}
+
 export function mustArray(result: any): any[] {
   return result || [];
 }

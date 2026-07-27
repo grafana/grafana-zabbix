@@ -17,6 +17,51 @@ mage -v
 mage watch
 ```
 
+## Running a development environment
+
+The root `docker-compose.yml` is the canonical environment for both local development
+and CI. It starts Grafana (with the plugin from `./dist`), a Zabbix server + web +
+PostgreSQL, and a one-shot fixture loader that seeds a deterministic dataset, so the
+data source works immediately without waiting for organic data.
+
+```sh
+# Build the plugin first (Grafana loads it from ./dist)
+make dist
+
+# Start everything (Grafana on http://localhost:3000, admin/admin)
+yarn server          # == docker compose up --build
+
+# After editing sources, rebuild and restart Grafana
+yarn build && docker compose restart grafana
+```
+
+Switch the Zabbix version with `ZABBIX_VERSION` (default `7.0`, the latest LTS):
+
+```sh
+ZABBIX_VERSION=7.0 docker compose up -d --wait
+```
+
+For richer, version-specific scenarios — including TLS + HTTP basic auth (5.0/6.0/7.0)
+and Zabbix proxy (5.0) — use the per-version stacks under [`devenv/`](./devenv); those
+are also what the `compatibility-*` integration workflows run against.
+
+## Testing
+
+```sh
+# Unit tests
+yarn test            # frontend (watch)
+go test ./pkg/...    # backend
+
+# End-to-end tests (Playwright) — needs the environment above running
+yarn e2e
+```
+
+End-to-end tests live in [`tests/e2e`](./tests/e2e) and run against the real Zabbix
+backend with the seeded SQL fixtures. CI runs them via the shared Plugins-CI workflow
+(`.github/workflows/push.yaml`), which brings up `docker-compose.yml` and runs the
+suite against it. Coverage across Zabbix versions is provided by the `compatibility-*`
+Go integration workflows. See [`tests/e2e/README.md`](./tests/e2e/README.md) for details.
+
 ## Debugging backend plugin
 
 The plugin supports two debugging modes for the Go backend:

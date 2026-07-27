@@ -1,14 +1,31 @@
 # Change Log
 
-## Unreleased
+## 6.5.0
 
-🚀 Host tag filter in template variables: add a "Host tag" picker to the Host, Application, Item tag, Item and Item values variable query types so dashboards can filter hosts by tag (e.g. `class:database`, `platform:globalspec`) without per-host-group workarounds. Closes #1682.
+### Minor Changes
 
-🚀 Host tag filtering now matches tags inherited from linked templates, not just directly-assigned host tags — applies to both the panel editor and the new variable editor. Hosts are fetched with `selectInheritedTags` and the filter is evaluated client-side against the merged tag list.
+🚀 Support item tag values as alias tokens (`$__zbx_item_tag_<name>`) for setAlias/replaceAlias legends
 
-🚀 Tag-name and tag-value autocomplete in the host tag picker now suggests options observed across the host inventory (direct + inherited).
+### Patch Changes
 
-🐛 Saved host-tag filters now repopulate the editor on reload, in both the panel editor and the variable editor.
+⚙️ Chore: update frontend, docker, and GitHub Actions dependencies
+🐛 Fix operational data macro expansion and user macro support in problems panel
+
+## 6.4.1
+
+🐛 ProblemsPanel: Fix severe Zabbix DB / PHP-FPM overload caused by the per-problem historical item value lookup (#2427). The `history.get` enrichment introduced in 6.3.1 now runs only when explicitly enabled via the new "Item value at problem time" query option (off by default, restoring 6.3.0 behavior). When enabled, the history window span and result size are bounded to protect the Zabbix frontend and database in large environments.
+
+🐛 Remove the react-use dependency in favor of a local useAsyncFn hook, and upgrade dependencies (including @grafana/\* packages to 13.1.0).
+
+🐛 ProblemsPanel: Fix acknowledges list not scrolling when messages are long. Long acknowledgement messages now wrap instead of overflowing horizontally, so the acknowledges container scrolls vertically as expected.
+
+## 6.4.0
+
+🚀 Remove use of @types/grafana and migrate to use components from @grafana/\* packages.
+
+🚀 Dependency improvement, clean up and security hardening
+
+🐛 ProblemsPanel: Fix long description shifts content
 
 ## 6.3.2
 
