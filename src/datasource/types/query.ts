@@ -62,6 +62,7 @@ export interface ZabbixQueryOptions {
   useTimeRange?: boolean;
   severities?: number[];
   count?: boolean;
+  symptom?: boolean | null; // null = all, true = only symptoms, false = only causes
   // When enabled, fetch each problem's item value at its creation time via
   // history.get. Off by default — it is costly in large environments (issue #2427).
   fetchHistoricalItemValue?: boolean;
