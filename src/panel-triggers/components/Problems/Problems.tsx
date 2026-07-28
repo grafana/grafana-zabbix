@@ -79,6 +79,19 @@ const buildCustomTagColumns = (customTagColumns?: string) => {
   );
 };
 
+// Derive the table's sorting state from the "Sort by" panel option, so the panel
+// keeps the configured ordering instead of forcing its own.
+const getSortingFromOption = (sortProblems?: ProblemsPanelOptions['sortProblems']): SortingState => {
+  switch (sortProblems) {
+    case 'priority':
+      return [{ id: 'priority', desc: true }];
+    case 'lastchange':
+      return [{ id: 'lastchange', desc: true }];
+    default:
+      return [];
+  }
+};
+
 export const ProblemList = (props: ProblemListProps) => {
   const {
     pageSize,
@@ -285,11 +298,14 @@ export const ProblemList = (props: ProblemListProps) => {
   );
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
 
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: 'lastchange', desc: true},
-  ]);
+  const [sorting, setSorting] = useState<SortingState>(() => getSortingFromOption(panelOptions.sortProblems));
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+
+  // Follow the "Sort by" panel option when it is changed in the editor
+  useEffect(() => {
+    setSorting(getSortingFromOption(panelOptions.sortProblems));
+  }, [panelOptions.sortProblems]);
 
   // Clear global filter when the option is disabled
   useEffect(() => {
@@ -477,10 +493,12 @@ export const ProblemList = (props: ProblemListProps) => {
                   <th
                     key={header.id}
                     style={{ width: `${header.getSize()}px` }}
-                    onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
                     className={header.column.getCanSort() ? 'sortable-header' : ''}
                   >
-                    <span className="header-content">
+                    <span
+                      className="header-content"
+                      onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                    >
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getCanSort() && (
                         <span className="sort-indicator">
