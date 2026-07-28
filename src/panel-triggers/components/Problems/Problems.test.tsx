@@ -109,7 +109,7 @@ describe('ProblemList', () => {
 
       const table = screen.getByRole('table');
       const headers = within(table).getAllByRole('columnheader');
-      const ageHeader = headers.find((header) => header.textContent === 'Age');
+      const ageHeader = headers.find((header) => header.textContent?.includes('Age'));
 
       expect(ageHeader).toBeInTheDocument();
     });
@@ -125,7 +125,7 @@ describe('ProblemList', () => {
 
       const table = screen.getByRole('table');
       const headers = within(table).getAllByRole('columnheader');
-      const ageHeader = headers.find((header) => header.textContent === 'Age');
+      const ageHeader = headers.find((header) => header.textContent?.includes('Age'));
 
       expect(ageHeader).toBeUndefined();
     });
@@ -177,7 +177,7 @@ describe('ProblemList', () => {
 
       const table = screen.getByRole('table');
       const headers = within(table).getAllByRole('columnheader');
-      const severityHeader = headers.find((header) => header.textContent === 'Severity');
+      const severityHeader = headers.find((header) => header.textContent?.includes('Severity'));
 
       expect(severityHeader).toBeInTheDocument();
     });
@@ -193,7 +193,7 @@ describe('ProblemList', () => {
 
       const table = screen.getByRole('table');
       const headers = within(table).getAllByRole('columnheader');
-      const severityHeader = headers.find((header) => header.textContent === 'Severity');
+      const severityHeader = headers.find((header) => header.textContent?.includes('Severity'));
 
       expect(severityHeader).toBeUndefined();
     });
@@ -245,7 +245,7 @@ describe('ProblemList', () => {
 
       const table = screen.getByRole('table');
       const headers = within(table).getAllByRole('columnheader');
-      const datasourceHeader = headers.find((header) => header.textContent === 'Datasource');
+      const datasourceHeader = headers.find((header) => header.textContent?.includes('Datasource'));
 
       expect(datasourceHeader).toBeUndefined();
     });
