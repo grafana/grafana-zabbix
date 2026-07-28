@@ -3,7 +3,7 @@ import moment from 'moment/moment';
 import { cx } from '@emotion/css';
 import { AckProblemData } from '../AckModal';
 import { ProblemsPanelOptions, RTResized } from '../../types';
-import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
+import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { TimeRange } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
@@ -70,6 +70,7 @@ const buildCustomTagColumns = (customTagColumns?: string) => {
         id: `problem-tag_${tagName}`,
         header: capitalizeFirstLetter(tagName),
         size: 150,
+        sortingFn: 'alphanumeric',
         meta: {
           className: `problem-tag_${tagName}`,
         },
@@ -77,6 +78,20 @@ const buildCustomTagColumns = (customTagColumns?: string) => {
       }
     )
   );
+};
+
+// Join group names the same way the cell renders them, so sorting compares
+// the visible text instead of falling back to comparing arrays.
+const joinGroupNames = (groups?: ZBXGroup[]): string => (groups ?? []).map((g) => g.name).join(', ');
+
+// Resolve the datasource name the same way the cell renders it, so sorting
+// matches the visible text instead of comparing refs or raw uids.
+const resolveDatasourceName = (datasource?: DataSourceRef | string): string => {
+  if ((datasource as DataSourceRef)?.uid) {
+    const instance = getDataSourceSrv().getInstanceSettings((datasource as DataSourceRef).uid);
+    return instance?.name ?? String((datasource as DataSourceRef).uid);
+  }
+  return (datasource as string) ?? '';
 };
 
 // Derive the table's sorting state from the "Sort by" panel option, so the panel
@@ -124,26 +139,28 @@ export const ProblemList = (props: ProblemListProps) => {
         header: 'Host',
         size: 120,
         enableSorting: true,
+        sortingFn: 'alphanumeric',
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('hostTechName', {
         header: 'Host (Technical Name)',
         size: 170,
         enableSorting: true,
+        sortingFn: 'alphanumeric',
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('groups', {
         header: 'Host Groups',
         size: 150,
-        cell: ({ cell }) => {
-          const groups = cell.getValue() ?? [];
-          return <span>{groups.map((g) => g.name).join(', ')}</span>;
-        },
+        sortingFn: (rowA, rowB) =>
+          joinGroupNames(rowA.original.groups).localeCompare(joinGroupNames(rowB.original.groups)),
+        cell: ({ cell }) => <span>{joinGroupNames(cell.getValue())}</span>,
       }),
       columnHelper.accessor('proxy', {
         header: 'Proxy',
         size: 120,
         enableSorting: true,
+        sortingFn: 'alphanumeric',
       }),
       columnHelper.accessor('priority', {
         header: 'Severity',
@@ -193,11 +210,13 @@ export const ProblemList = (props: ProblemListProps) => {
         size: 250,
         minSize: 200,
         enableSorting: true,
+        sortingFn: 'alphanumeric',
         cell: ({ cell }) => <span className="problem-description">{cell.getValue()}</span>,
       }),
       columnHelper.accessor('opdata', {
         header: 'Operational data',
         size: 150,
+        sortingFn: 'alphanumeric',
       }),
       columnHelper.accessor('acknowledged', {
         header: 'Ack',
@@ -225,21 +244,19 @@ export const ProblemList = (props: ProblemListProps) => {
         header: 'Datasource',
         size: 120,
         enableSorting: true,
-        cell: ({ cell }) => {
-          const datasource = cell.getValue();
-          let dsName: string = datasource as string;
-          if ((datasource as DataSourceRef)?.uid) {
-            const dsInstance = getDataSourceSrv().getInstanceSettings((datasource as DataSourceRef).uid);
-            dsName = dsInstance?.name || dsName;
-          }
-          return <span>{dsName}</span>;
-        },
+        sortingFn: (rowA, rowB) =>
+          resolveDatasourceName(rowA.original.datasource).localeCompare(
+            resolveDatasourceName(rowB.original.datasource)
+          ),
+        cell: ({ cell }) => <span>{resolveDatasourceName(cell.getValue())}</span>,
       }),
       columnHelper.accessor('timestamp', {
         id: 'age',
         header: 'Age',
         size: 100,
         enableSorting: true,
+        // Age counts backwards from timestamp: a newer timestamp is a smaller age.
+        sortingFn: (rowA, rowB) => Number(rowB.original.timestamp) - Number(rowA.original.timestamp),
         meta: {
           className: 'problem-age',
         },
