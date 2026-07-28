@@ -839,10 +839,11 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return this.zabbix
       .getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions)
       .then((problems) => {
-        // Filter triggers by description
+        // Filter by problem name — matched on `name`, the same field the server-side
+        // `search` narrowing filters on (see problemsHandler.filterTriggersPre).
         const problemName = annotation.trigger.filter;
         if (problemName) {
-          problems = _.filter(problems, (p) => utils.matchesProblemName(p.description ?? '', problemName));
+          problems = _.filter(problems, (p) => utils.matchesProblemName(p.name ?? '', problemName));
         }
 
         // Hide acknowledged events if option enabled

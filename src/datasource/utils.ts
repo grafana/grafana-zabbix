@@ -268,12 +268,20 @@ const MIN_LITERAL_LENGTH = 3;
  * Walks a single regex branch (no top-level alternation) and returns the longest
  * substring that MUST appear literally in every match of that branch, or null if none
  * qualifies. Conservative: character classes are skipped (alternatives, not guaranteed),
- * optionally-quantified characters are dropped, and escaped characters end the run.
+ * optionally-quantified characters are dropped, escaped characters end the run, and a
+ * group quantified with `?`, `*` or `{...}` has ALL of its contents retracted — nothing
+ * inside an optional group is guaranteed. A group quantified with `+` (one or more)
+ * keeps its contents. Look-around groups never reach this function (the caller bails
+ * on `(?` patterns).
  */
 function guaranteedLiteralForBranch(pattern: string): string | null {
   // Metacharacters that terminate a literal run while keeping the run intact.
-  const terminators = new Set(['.', '+', '(', ')', '^', '$', '}', '|']);
+  // `(` and `)` are handled separately to support retracting optional groups.
+  const terminators = new Set(['.', '+', '^', '$', '}', '|']);
   const runs: string[] = [];
+  // For each open group, the number of runs committed before it — used to retract
+  // every run the group contributed when it turns out to be optionally quantified.
+  const groupMarks: number[] = [];
   let current = '';
   const flush = (dropLast: boolean) => {
     if (dropLast) {
@@ -300,6 +308,25 @@ function guaranteedLiteralForBranch(pattern: string): string | null {
           i++;
         }
         i++;
+      }
+    } else if (ch === '(') {
+      flush(false);
+      groupMarks.push(runs.length);
+    } else if (ch === ')') {
+      flush(false);
+      const mark = groupMarks.pop() ?? 0;
+      const next = pattern[i + 1];
+      // `?` / `*` make the whole group optional and `{...}` may (e.g. {0,2}) — none of
+      // the runs committed inside it are guaranteed, so retract them all. `+` keeps the
+      // group mandatory (at least one occurrence), so its runs stay.
+      if (next === '?' || next === '*' || next === '{') {
+        runs.length = mark;
+        i++;
+        if (next === '{') {
+          while (i < pattern.length && pattern[i] !== '}') {
+            i++;
+          }
+        }
       }
     } else if (ch === '?' || ch === '*' || ch === '{') {
       // Preceding char is optional / variably quantified — drop it from the literal.

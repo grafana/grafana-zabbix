@@ -121,6 +121,37 @@ describe('extractRegexLiterals', () => {
     expect(extractRegexLiterals('/^(?!.*Zabbix agent).*/')).toBeNull();
     expect(extractRegexLiterals('/foo(?=bar)/')).toBeNull();
   });
+
+  describe('quantified groups', () => {
+    it('retracts the contents of an optional group', () => {
+      expect(extractRegexLiterals('/(Critical failure)?CPU load/')).toEqual(['CPU load']);
+    });
+
+    it('retracts the contents of a *-quantified group', () => {
+      expect(extractRegexLiterals('/(Very long prefix)*CPU load/')).toEqual(['CPU load']);
+    });
+
+    it('retracts the contents of a {}-quantified group', () => {
+      expect(extractRegexLiterals('/(Prefix here){0,2}CPU load/')).toEqual(['CPU load']);
+    });
+
+    it('retracts every run committed inside an optional group', () => {
+      // The group commits two runs ("Foo bar", "Baz qux") — both must be retracted.
+      expect(extractRegexLiterals('/(Foo bar|Baz qux)?Common part/')).toEqual(['Common part']);
+    });
+
+    it('retracts nested optional groups', () => {
+      expect(extractRegexLiterals('/((Inner)?Outer)?Trailing text/')).toEqual(['Trailing text']);
+    });
+
+    it('keeps the contents of a +-quantified group (guaranteed at least once)', () => {
+      expect(extractRegexLiterals('/(Mandatory prefix)+CPU/')).toEqual(['Mandatory prefix']);
+    });
+
+    it('keeps the contents of an unquantified group', () => {
+      expect(extractRegexLiterals('/(Foo bar)Baz/')).toEqual(['Foo bar']);
+    });
+  });
 });
 
 describe('buildProblemNameSearchParams', () => {
@@ -159,5 +190,13 @@ describe('buildProblemNameSearchParams', () => {
 
   it('skips narrowing for a negative look-ahead (exclusion) regex', () => {
     expect(buildProblemNameSearchParams('/^(?!.*Zabbix agent).*/')).toEqual({});
+  });
+
+  it('narrows a regex with an optional group by the remaining guaranteed literal', () => {
+    expect(buildProblemNameSearchParams('/(Critical failure)?CPU load/')).toEqual({ search: { name: 'CPU load' } });
+  });
+
+  it('skips narrowing when the only literal is inside an optional group', () => {
+    expect(buildProblemNameSearchParams('/(Critical failure)?.*/')).toEqual({});
   });
 });

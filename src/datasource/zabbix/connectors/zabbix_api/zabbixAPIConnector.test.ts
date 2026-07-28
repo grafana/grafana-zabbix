@@ -226,6 +226,21 @@ describe('Zabbix API connector', () => {
       expect(params.searchWildcardsEnabled).toBeUndefined();
     });
 
+    it('does not narrow by a literal inside an optional group', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {
+        problemName: '/(Critical failure)?CPU load/',
+      });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      // "Critical failure" is optional — narrowing on it would drop plain "CPU load"
+      // problems the regex matches. Only the guaranteed literal may be pushed.
+      expect(params.search).toEqual({ name: 'CPU load' });
+    });
+
     it('omits search when no problem name is given', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.version = '7.0.0';

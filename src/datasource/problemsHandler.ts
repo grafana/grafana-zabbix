@@ -171,7 +171,7 @@ export function formatAcknowledges(triggers, users) {
 }
 
 export function filterTriggersPre(triggerList, replacedTarget) {
-  // Filter triggers by description
+  // Filter triggers by problem name
   const triggerFilter = replacedTarget.trigger.filter;
   if (triggerFilter) {
     triggerList = filterTriggers(triggerList, triggerFilter);
@@ -186,7 +186,12 @@ export function filterTriggersPre(triggerList, replacedTarget) {
 }
 
 function filterTriggers(triggers, triggerFilter) {
-  return _.filter(triggers, (trigger) => utils.matchesProblemName(trigger.description ?? '', triggerFilter));
+  // Match on `name` (the event/problem name) — the same field the server-side
+  // `search` narrowing filters on (see buildProblemNameSearchParams) and the field
+  // the Problems panel displays. On the event.get path `description` holds the
+  // trigger name with macros expanded to CURRENT values, which can diverge from the
+  // event name the server filtered on and silently drop rows.
+  return _.filter(triggers, (trigger) => utils.matchesProblemName(trigger.name ?? '', triggerFilter));
 }
 
 export function sortProblems(problems: ProblemDTO[], target) {

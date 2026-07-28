@@ -518,8 +518,7 @@ export class ZabbixAPIConnector {
   }
 
   getProblems(groupids, hostids, applicationids, supportsApplications, options): Promise<ZBXProblem[]> {
-    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, problemName, symptom } =
-      options;
+    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, problemName, symptom } = options;
 
     const params: any = {
       output: 'extend',
