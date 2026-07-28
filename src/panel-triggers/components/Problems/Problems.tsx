@@ -3,7 +3,7 @@ import moment from 'moment/moment';
 import { cx } from '@emotion/css';
 import { AckProblemData } from '../AckModal';
 import { ProblemsPanelOptions, RTResized } from '../../types';
-import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
+import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { TimeRange } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
@@ -17,12 +17,16 @@ import { LastChangeCell } from './Cells/LastChangeCell';
 import { DataLinksCell } from './Cells/DataLinksCell';
 import { getProblemsDataLinks } from '../../dataLinks';
 import {
+  ColumnFiltersState,
   ColumnResizeMode,
+  SortingState,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   getExpandedRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { getDataSourceSrv, reportInteraction } from '@grafana/runtime';
@@ -68,6 +72,7 @@ const buildCustomTagColumns = (customTagColumns?: string) => {
         id: `problem-tag_${tagName}`,
         header: capitalizeFirstLetter(tagName),
         size: 150,
+        sortingFn: 'alphanumeric',
         meta: {
           className: `problem-tag_${tagName}`,
         },
@@ -75,6 +80,33 @@ const buildCustomTagColumns = (customTagColumns?: string) => {
       }
     )
   );
+};
+
+// Join group names the same way the cell renders them, so sorting compares
+// the visible text instead of falling back to comparing arrays.
+const joinGroupNames = (groups?: ZBXGroup[]): string => (groups ?? []).map((g) => g.name).join(', ');
+
+// Resolve the datasource name the same way the cell renders it, so sorting
+// matches the visible text instead of comparing refs or raw uids.
+const resolveDatasourceName = (datasource?: DataSourceRef | string): string => {
+  if ((datasource as DataSourceRef)?.uid) {
+    const instance = getDataSourceSrv().getInstanceSettings((datasource as DataSourceRef).uid);
+    return instance?.name ?? String((datasource as DataSourceRef).uid);
+  }
+  return (datasource as string) ?? '';
+};
+
+// Derive the table's sorting state from the "Sort by" panel option, so the panel
+// keeps the configured ordering instead of forcing its own.
+const getSortingFromOption = (sortProblems?: ProblemsPanelOptions['sortProblems']): SortingState => {
+  switch (sortProblems) {
+    case 'priority':
+      return [{ id: 'priority', desc: true }];
+    case 'lastchange':
+      return [{ id: 'lastchange', desc: true }];
+    default:
+      return [];
+  }
 };
 
 export const ProblemList = (props: ProblemListProps) => {
@@ -108,28 +140,39 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('host', {
         header: 'Host',
         size: 120,
+        enableSorting: true,
+        sortingFn: 'alphanumeric',
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('hostTechName', {
         header: 'Host (Technical Name)',
         size: 170,
+        enableSorting: true,
+        sortingFn: 'alphanumeric',
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
       columnHelper.accessor('groups', {
         header: 'Host Groups',
         size: 150,
-        cell: ({ cell }) => {
-          const groups = cell.getValue() ?? [];
-          return <span>{groups.map((g) => g.name).join(', ')}</span>;
-        },
+        sortingFn: (rowA, rowB) =>
+          joinGroupNames(rowA.original.groups).localeCompare(joinGroupNames(rowB.original.groups)),
+        cell: ({ cell }) => <span>{joinGroupNames(cell.getValue())}</span>,
       }),
       columnHelper.accessor('proxy', {
         header: 'Proxy',
         size: 120,
+        enableSorting: true,
+        sortingFn: 'alphanumeric',
       }),
       columnHelper.accessor('priority', {
         header: 'Severity',
         size: 80,
+        sortDescFirst: true,
+        sortingFn: (rowA, rowB) => {
+          const a = parseInt(rowA.original.severity ?? '0', 10);
+          const b = parseInt(rowB.original.severity ?? '0', 10);
+          return a - b;
+        },
         meta: {
           className: 'problem-severity',
         },
@@ -161,27 +204,33 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('value', {
         header: 'Status',
         size: 70,
+        enableSorting: false,
         cell: ({ cell }) => <StatusCellV8 cell={cell} highlightNewerThan={highlightNewerThan} />,
       }),
       columnHelper.accessor('name', {
         header: 'Problem',
         size: 250,
         minSize: 200,
+        enableSorting: true,
+        sortingFn: 'alphanumeric',
         cell: ({ cell }) => <span className="problem-description">{cell.getValue()}</span>,
       }),
       columnHelper.accessor('opdata', {
         header: 'Operational data',
         size: 150,
+        sortingFn: 'alphanumeric',
       }),
       columnHelper.accessor('acknowledged', {
         header: 'Ack',
         size: 70,
+        enableSorting: false,
         cell: ({ cell }) => <AckCell acknowledges={cell.row.original.acknowledges} />,
       }),
       ...customTagColumns,
       columnHelper.accessor('tags', {
         header: 'Tags',
         size: 150,
+        enableSorting: false,
         meta: {
           className: 'problem-tags',
         },
@@ -196,20 +245,20 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('datasource', {
         header: 'Datasource',
         size: 120,
-        cell: ({ cell }) => {
-          const datasource = cell.getValue();
-          let dsName: string = datasource as string;
-          if ((datasource as DataSourceRef)?.uid) {
-            const dsInstance = getDataSourceSrv().getInstanceSettings((datasource as DataSourceRef).uid);
-            dsName = dsInstance?.name || dsName;
-          }
-          return <span>{dsName}</span>;
-        },
+        enableSorting: true,
+        sortingFn: (rowA, rowB) =>
+          resolveDatasourceName(rowA.original.datasource).localeCompare(
+            resolveDatasourceName(rowB.original.datasource)
+          ),
+        cell: ({ cell }) => <span>{resolveDatasourceName(cell.getValue())}</span>,
       }),
       columnHelper.accessor('timestamp', {
         id: 'age',
         header: 'Age',
         size: 100,
+        enableSorting: true,
+        // Age counts backwards from timestamp: a newer timestamp is a smaller age.
+        sortingFn: (rowA, rowB) => Number(rowB.original.timestamp) - Number(rowA.original.timestamp),
         meta: {
           className: 'problem-age',
         },
@@ -219,6 +268,8 @@ export const ProblemList = (props: ProblemListProps) => {
         id: 'lastchange',
         header: 'Time',
         size: 150,
+        enableSorting: true,
+        sortingFn: (rowA, rowB) => Number(rowA.original.timestamp) - Number(rowB.original.timestamp),
         meta: {
           className: 'last-change',
         },
@@ -277,6 +328,22 @@ export const ProblemList = (props: ProblemListProps) => {
   );
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
 
+  const [sorting, setSorting] = useState<SortingState>(() => getSortingFromOption(panelOptions.sortProblems));
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  // Follow the "Sort by" panel option when it is changed in the editor
+  useEffect(() => {
+    setSorting(getSortingFromOption(panelOptions.sortProblems));
+  }, [panelOptions.sortProblems]);
+
+  // Clear global filter when the option is disabled
+  useEffect(() => {
+    if (!panelOptions.showSearchFilter) {
+      setGlobalFilter('');
+    }
+  }, [panelOptions.showSearchFilter]);
+
   // Default pageSize to 10 if not provided
   const effectivePageSize = pageSize || 10;
 
@@ -325,8 +392,14 @@ export const ProblemList = (props: ProblemListProps) => {
       columnSizing,
       pagination,
       columnVisibility,
+      sorting,
+      columnFilters,
+      globalFilter,
     },
     onPaginationChange: setPagination,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     meta: {
       panelOptions,
     },
@@ -345,6 +418,8 @@ export const ProblemList = (props: ProblemListProps) => {
     getRowCanExpand: () => true,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
 
@@ -427,13 +502,41 @@ export const ProblemList = (props: ProblemListProps) => {
             <div className="-loading-inner">Loading...</div>
           </div>
         )}
+        {panelOptions.showSearchFilter && (
+          <div className="problems-toolbar">
+            <input
+              className="problems-search-input"
+              type="text"
+              placeholder="Search problems..."
+              value={globalFilter}
+              onChange={(e) => {
+                setGlobalFilter(e.target.value);
+                table.setPageIndex(0);
+              }}
+            />
+          </div>
+        )}
         <table className="react-table-v8">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} style={{ width: `${header.getSize()}px` }}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  <th
+                    key={header.id}
+                    style={{ width: `${header.getSize()}px` }}
+                    className={header.column.getCanSort() ? 'sortable-header' : ''}
+                  >
+                    <span
+                      className="header-content"
+                      onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                    >
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.column.getCanSort() && (
+                        <span className="sort-indicator">
+                          {{ asc: ' ▲', desc: ' ▼' }[header.column.getIsSorted() as string] ?? ' ⇅'}
+                        </span>
+                      )}
+                    </span>
                     {header.column.getCanResize() && (
                       <div
                         onMouseDown={header.getResizeHandler()}
