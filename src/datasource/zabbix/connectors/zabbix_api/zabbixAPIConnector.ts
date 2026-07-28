@@ -518,7 +518,7 @@ export class ZabbixAPIConnector {
   }
 
   getProblems(groupids, hostids, applicationids, supportsApplications, options): Promise<ZBXProblem[]> {
-    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, symptom } = options;
+    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, problemName, symptom } = options;
 
     const params: any = {
       output: 'extend',
@@ -563,6 +563,19 @@ export class ZabbixAPIConnector {
 
     if (supportsApplications) {
       params.applicationids = applicationids;
+    }
+
+    // Push the problem-name filter to the Zabbix API so it filters at the source
+    // instead of the plugin fetching every problem and filtering client-side.
+    const nameSearch = utils.buildProblemNameSearchParams(problemName);
+    if (nameSearch.search) {
+      params.search = nameSearch.search;
+      if (nameSearch.searchWildcardsEnabled) {
+        params.searchWildcardsEnabled = true;
+      }
+      if (nameSearch.searchByAny) {
+        params.searchByAny = true;
+      }
     }
 
     if (this.supportsCauseSymptomProblems() && symptom !== undefined && symptom !== null) {
@@ -683,7 +696,7 @@ export class ZabbixAPIConnector {
   }
 
   getEventsHistory(groupids, hostids, applicationids, options) {
-    const { timeFrom, timeTo, severities, limit, value, tags, evaltype, symptom } = options;
+    const { timeFrom, timeTo, severities, limit, value, tags, evaltype, problemName, symptom } = options;
 
     const params: any = {
       output: 'extend',
@@ -721,6 +734,18 @@ export class ZabbixAPIConnector {
 
     if (evaltype) {
       params.evaltype = evaltype;
+    }
+
+    // Push the problem-name filter to the Zabbix API (see getProblems).
+    const nameSearch = utils.buildProblemNameSearchParams(problemName);
+    if (nameSearch.search) {
+      params.search = nameSearch.search;
+      if (nameSearch.searchWildcardsEnabled) {
+        params.searchWildcardsEnabled = true;
+      }
+      if (nameSearch.searchByAny) {
+        params.searchByAny = true;
+      }
     }
 
     if (this.supportsCauseSymptomProblems() && symptom !== undefined && symptom !== null) {
