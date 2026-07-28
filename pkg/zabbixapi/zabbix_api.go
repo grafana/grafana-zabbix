@@ -308,12 +308,11 @@ func doHTTPRequestOnce(ctx context.Context, httpClient *http.Client, newReq func
 
 	if res.StatusCode != http.StatusOK {
 		statusErr := fmt.Errorf("request failed, status: %v", res.Status)
-		var wrapped error = statusErr
 		if backend.ErrorSourceFromHTTPStatus(res.StatusCode) == backend.ErrorSourceDownstream {
-			wrapped = backend.DownstreamError(statusErr)
+			return nil, &StatusError{StatusCode: res.StatusCode, err: backend.DownstreamError(statusErr)}
 		}
 
-		return nil, &StatusError{StatusCode: res.StatusCode, err: wrapped}
+		return nil, &StatusError{StatusCode: res.StatusCode, err: statusErr}
 	}
 
 	// The server already sent a 200 and we're mid-body here - a read failure
