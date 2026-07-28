@@ -265,6 +265,12 @@ export class Zabbix implements ZabbixConnector {
     return version ? semver.gte(version, '6.0.0') : true;
   }
 
+  // Cause and symptom problems were introduced in Zabbix 6.4
+  supportsCauseSymptomProblems() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '6.4.0') : false;
+  }
+
   async isZabbix54OrHigher() {
     const version = await this.zabbixAPI.initVersion();
     return version ? semver.gte(version, '5.4.0') : false;

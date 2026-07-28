@@ -30,7 +30,8 @@
     "docs/**/*.yaml",
     "dashboards/**",
     "src/**",
-    "pkg/**"
+    "pkg/**",
+    "jest.config.js"
   ],
   "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
   "words": [
