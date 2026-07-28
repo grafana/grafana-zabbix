@@ -50,6 +50,31 @@ func NewFlakyTestClient(failTimes int, failErr error, body string, statusCode in
 	return client, &attempts
 }
 
+// erroringBody is an io.ReadCloser that always fails to read, simulating a
+// connection dropped mid-response after the server already sent headers.
+type erroringBody struct{ err error }
+
+func (b *erroringBody) Read([]byte) (int, error) { return 0, b.err }
+func (b *erroringBody) Close() error             { return nil }
+
+// NewTruncatedBodyTestClient returns an *http.Client that always answers
+// with statusCode but a body that fails to read with err. The returned *int
+// tracks how many attempts were made.
+func NewTruncatedBodyTestClient(statusCode int, err error) (*http.Client, *int) {
+	attempts := 0
+	client := &http.Client{
+		Transport: flakyRoundTripper(func(req *http.Request) (*http.Response, error) {
+			attempts++
+			return &http.Response{
+				StatusCode: statusCode,
+				Body:       &erroringBody{err: err},
+				Header:     make(http.Header),
+			}, nil
+		}),
+	}
+	return client, &attempts
+}
+
 func MockZabbixAPI(body string, statusCode int) (*ZabbixAPI, error) {
 	apiLogger := log.New()
 	zabbixURL, err := url.Parse("http://zabbix.org/zabbix")

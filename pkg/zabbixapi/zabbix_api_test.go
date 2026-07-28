@@ -60,6 +60,38 @@ func TestNonRetryableErrorIsNotRetried(t *testing.T) {
 	assert.Equal(t, 1, *attempts, "non-retryable errors must not be retried")
 }
 
+// TestBodyReadFailureAfterOKIsNotRetried covers the case flagged in review:
+// a body-read error can look identical (io.ErrUnexpectedEOF) to the
+// pre-response stale-connection race, but by the time we're reading the
+// body the server has already sent a 200 and processed the call - retrying
+// here could re-run a non-idempotent action like user.login.
+func TestBodyReadFailureAfterOKIsNotRetried(t *testing.T) {
+	httpClient, attempts := NewTruncatedBodyTestClient(200, io.ErrUnexpectedEOF)
+	zabbixApi, err := New(backend.DataSourceInstanceSettings{URL: "http://zabbix.org/zabbix"}, httpClient)
+	assert.NoError(t, err)
+
+	_, err = zabbixApi.RequestUnauthenticated(context.Background(), "user.login", map[string]interface{}{}, version)
+
+	assert.Error(t, err)
+	assert.Equal(t, 1, *attempts, "a body-read failure after a 200 must never be retried")
+}
+
+// TestNon200ResponseCarriesUpstreamStatusCode verifies the error returned
+// for a non-200 response can be unwrapped to the real HTTP status code, so
+// callers like the resource handler can report it instead of a generic 500.
+func TestNon200ResponseCarriesUpstreamStatusCode(t *testing.T) {
+	zabbixApi, err := MockZabbixAPI(`{"error":{"message":"service unavailable"}}`, 503)
+	assert.NoError(t, err)
+
+	_, err = zabbixApi.RequestUnauthenticated(context.Background(), "test.get", map[string]interface{}{}, version)
+
+	assert.Error(t, err)
+	var statusErr *StatusError
+	if assert.True(t, errors.As(err, &statusErr), "expected error chain to contain *StatusError") {
+		assert.Equal(t, 503, statusErr.StatusCode)
+	}
+}
+
 func TestZabbixAPIUnauthenticatedQuery(t *testing.T) {
 	zabbixApi, _ := MockZabbixAPI(`{"result":"sampleResult"}`, 200)
 	resp, err := zabbixApi.RequestUnauthenticated(context.Background(), "test.get", map[string]interface{}{}, version)

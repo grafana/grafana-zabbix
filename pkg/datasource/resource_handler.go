@@ -3,11 +3,13 @@ package datasource
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -84,7 +86,11 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 	result, err := dsInstance.ZabbixAPIQuery(resourceCtx, apiReq)
 	if err != nil {
 		ds.logger.Error("Zabbix API request error", "error", err)
-		writeError(rw, http.StatusInternalServerError, err)
+		// Surface the real upstream status (e.g. 502/503/504 from an
+		// overloaded Zabbix) instead of always reporting 500, so the
+		// frontend's retry-on-transient-error logic (which keys off the
+		// actual HTTP status of this response) has something to match.
+		writeError(rw, statusCodeFromError(err, http.StatusInternalServerError), err)
 		return
 	}
 
@@ -160,6 +166,16 @@ func writeResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {
 	if err != nil {
 		log.DefaultLogger.Warn("Error writing response")
 	}
+}
+
+// statusCodeFromError extracts the upstream HTTP status code carried by a
+// *zabbixapi.StatusError, if any, falling back to fallback otherwise.
+func statusCodeFromError(err error, fallback int) int {
+	var statusErr *zabbixapi.StatusError
+	if errors.As(err, &statusErr) {
+		return statusErr.StatusCode
+	}
+	return fallback
 }
 
 func writeError(rw http.ResponseWriter, statusCode int, err error) {

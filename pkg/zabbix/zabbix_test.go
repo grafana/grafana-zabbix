@@ -82,6 +82,34 @@ func TestNonCachedQuery(t *testing.T) {
 	assert.Equal(t, "testNew", result)
 }
 
+// TestVersionCacheDoesNotCollideWithAPIRequestCache covers a bug flagged in
+// review: the version used to be cached under a ZabbixAPIRequest key in the
+// same keyspace as regular *simplejson.Json API responses. A caller
+// invoking apiinfo.version through the generic Request() path with the same
+// key (e.g. &ZabbixAPIRequest{Method: "apiinfo.version"}, Params left nil -
+// exactly what the version cache itself used to write under) would then
+// read the cached string back, fail the *simplejson.Json type assertion,
+// and silently get an empty object instead of the real version.
+func TestVersionCacheDoesNotCollideWithAPIRequestCache(t *testing.T) {
+	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"6.4.5"}`
+		}
+		return `{"result":"ok"}`
+	})
+
+	version, err := zabbixClient.GetFullVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, "6.4.5", version)
+
+	resp, err := zabbixClient.Request(context.Background(), &ZabbixAPIRequest{Method: "apiinfo.version"})
+	assert.NoError(t, err)
+
+	result, err := resp.String()
+	assert.NoError(t, err)
+	assert.Equal(t, "6.4.5", result, "apiinfo.version routed through Request() must return the real version, not an empty object from a cache-type collision")
+}
+
 func TestVersionIsCachedAcrossRequests(t *testing.T) {
 	versionCalls := 0
 	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {

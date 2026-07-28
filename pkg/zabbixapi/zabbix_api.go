@@ -218,6 +218,33 @@ func handleAPIResult(response []byte) (*simplejson.Json, error) {
 	return jsonResult, nil
 }
 
+// StatusError carries the actual upstream HTTP status code alongside the
+// error, so callers outside this package (e.g. the resource handler backing
+// the query-editor autocomplete) can report the real status instead of a
+// generic 500 - which is what the frontend's retry-on-502/503/504 logic
+// actually keys off of.
+type StatusError struct {
+	StatusCode int
+	err        error
+}
+
+func (e *StatusError) Error() string {
+	if e.err != nil {
+		return e.err.Error()
+	}
+	return fmt.Sprintf("request failed, status: %d", e.StatusCode)
+}
+func (e *StatusError) Unwrap() error { return e.err }
+
+// preResponseError marks a failure that happened before any response was
+// received from the server - i.e. the request is guaranteed to never have
+// reached it. Only these are safe to retry, even for non-idempotent calls
+// like user.login or script.execute.
+type preResponseError struct{ err error }
+
+func (e *preResponseError) Error() string { return e.err.Error() }
+func (e *preResponseError) Unwrap() error { return e.err }
+
 // makeHTTPRequest performs the HTTP round trip, reusing pooled connections
 // (no more forced req.Close=true - see doHTTPRequestOnce for why).
 func makeHTTPRequest(ctx context.Context, httpClient *http.Client, newReq func() (*http.Request, error)) ([]byte, error) {
@@ -243,17 +270,26 @@ func makeHTTPRequest(ctx context.Context, httpClient *http.Client, newReq func()
 
 // isRetryableConnError reports whether err is a network-level failure that
 // can only happen before the server ever saw the request (a stale pooled
-// connection being closed right as it's reused), making a retry safe.
+// connection being closed right as it's reused), making a retry safe. Errors
+// that happen while reading an already-received response (e.g. a truncated
+// body after a 200) are deliberately excluded even though they can present
+// the same io.EOF-shaped error - by then the server has already processed
+// the call, so retrying could re-run a non-idempotent action.
 func isRetryableConnError(err error) bool {
+	var preErr *preResponseError
+	if !errors.As(err, &preErr) {
+		return false
+	}
 	return errors.Is(err, io.EOF) ||
 		errors.Is(err, io.ErrUnexpectedEOF) ||
 		errors.Is(err, syscall.ECONNRESET)
 }
 
 // doHTTPRequestOnce performs a single HTTP attempt. Connection-level errors
-// (nothing received yet) are returned unwrapped so the caller can decide
-// whether a retry is safe; HTTP-status-level errors are classified here since
-// they're never retry candidates.
+// (nothing received yet) are wrapped in preResponseError so the caller can
+// decide whether a retry is safe; HTTP-status-level errors are classified
+// here (and carry the real status via StatusError) since they're never retry
+// candidates - the server has already responded by then.
 func doHTTPRequestOnce(ctx context.Context, httpClient *http.Client, newReq func() (*http.Request, error)) ([]byte, error) {
 	req, err := newReq()
 	if err != nil {
@@ -262,7 +298,7 @@ func doHTTPRequestOnce(ctx context.Context, httpClient *http.Client, newReq func
 
 	res, err := ctxhttp.Do(ctx, httpClient, req)
 	if err != nil {
-		return nil, err
+		return nil, &preResponseError{err: err}
 	}
 	defer func() {
 		if err := res.Body.Close(); err != nil {
@@ -272,13 +308,18 @@ func doHTTPRequestOnce(ctx context.Context, httpClient *http.Client, newReq func
 
 	if res.StatusCode != http.StatusOK {
 		statusErr := fmt.Errorf("request failed, status: %v", res.Status)
+		var wrapped error = statusErr
 		if backend.ErrorSourceFromHTTPStatus(res.StatusCode) == backend.ErrorSourceDownstream {
-			return nil, backend.DownstreamError(statusErr)
+			wrapped = backend.DownstreamError(statusErr)
 		}
 
-		return nil, statusErr
+		return nil, &StatusError{StatusCode: res.StatusCode, err: wrapped}
 	}
 
+	// The server already sent a 200 and we're mid-body here - a read failure
+	// (even an io.EOF-shaped one) is intentionally left unwrapped so
+	// isRetryableConnError never matches it: the call has already been
+	// processed by Zabbix, so it must not be retried.
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
