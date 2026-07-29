@@ -63,6 +63,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ds := NewZabbixDatasource()
+			defer ds.Close()
 			got, _ := ds.getDSInstance(context.Background(), tt.pluginContext)
 
 			// Only checking the URL, being the easiest value to, and guarantee equality for
