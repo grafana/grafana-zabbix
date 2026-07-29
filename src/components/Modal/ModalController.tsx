@@ -31,8 +31,11 @@ export class ModalController extends React.Component<Props, State> {
   }
 
   showModal = (component: React.ComponentType<any>, props: any) => {
+    // Wrap the component once here instead of in renderModal(): provideTheme()
+    // creates a new component type on every call, so wrapping during render
+    // would remount the modal (dropping its state) on every parent re-render.
     this.setState({
-      component,
+      component: provideTheme(component),
       props,
     });
   };
@@ -52,7 +55,7 @@ export class ModalController extends React.Component<Props, State> {
     }
 
     this.modalRoot.appendChild(this.modalNode);
-    const modal = React.createElement(provideTheme(component), props);
+    const modal = React.createElement(component, props);
     return ReactDOM.createPortal(modal, this.modalNode) as React.ReactNode;
   }
 

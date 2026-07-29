@@ -530,6 +530,121 @@ describe('Zabbix API connector', () => {
       });
     });
   });
+
+  describe('acknowledgeEvent', () => {
+    const createConnector = (version = '7.0.0') => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = version;
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve({ eventids: ['10'] }));
+      return zabbixAPIConnector;
+    };
+
+    it('defaults to add message action when no action is passed and version is 4.0+', async () => {
+      const connector = createConnector('6.0.0');
+      await connector.acknowledgeEvent('10', 'a message');
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 4,
+      });
+    });
+
+    it('defaults to no action when version is below 4.0', async () => {
+      const connector = createConnector('3.4.0');
+      await connector.acknowledgeEvent('10', 'a message');
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 0,
+      });
+    });
+
+    it('passes the action bitmask and severity', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', 'a message', 14, 5);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 14,
+        severity: 5,
+      });
+    });
+
+    it('passes unacknowledge action without extra params', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 16);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 16,
+      });
+    });
+
+    it('passes suppress_until for the suppress action, including 0 for indefinite suppression', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 32, undefined, 0);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 32,
+        suppress_until: 0,
+      });
+    });
+
+    it('passes a non-zero suppress_until timestamp', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 32, undefined, 1700003600);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 32,
+        suppress_until: 1700003600,
+      });
+    });
+
+    it('passes cause_eventid for the rank as symptom action', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 256, undefined, undefined, '100500');
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 256,
+        cause_eventid: '100500',
+      });
+    });
+  });
+
+  describe('version capabilities', () => {
+    const createConnector = (version: string) => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = version;
+      return zabbixAPIConnector;
+    };
+
+    it.each([
+      ['4.4.0', false],
+      ['5.0.0', true],
+      ['7.0.0', true],
+    ])('supportsUnacknowledge for version %s is %s', (version, expected) => {
+      expect(createConnector(version).supportsUnacknowledge()).toBe(expected);
+    });
+
+    it.each([
+      ['6.0.0', false],
+      ['6.2.0', true],
+      ['7.0.0', true],
+    ])('supportsProblemSuppression for version %s is %s', (version, expected) => {
+      expect(createConnector(version).supportsProblemSuppression()).toBe(expected);
+    });
+
+    it.each([
+      ['6.2.0', false],
+      ['6.4.0', true],
+      ['7.0.0', true],
+    ])('supportsCauseSymptomProblems for version %s is %s', (version, expected) => {
+      expect(createConnector(version).supportsCauseSymptomProblems()).toBe(expected);
+    });
+  });
 });
 
 const triggers = [
