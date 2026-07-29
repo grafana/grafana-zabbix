@@ -10,21 +10,22 @@ zabbix_test_user = os.environ['ZBX_TEST_USER']
 zabbix_test_pass = os.environ['ZBX_TEST_PASS']
 print(zabbix_url, zabbix_user, zabbix_password, zabbix_test_user, zabbix_test_pass)
 
-zapi = ZabbixAPI(zabbix_url, timeout=5)
-
-connected = False
+# Construct inside the retry loop: this pyzabbix version calls api_version()
+# in the constructor, which fails while the Zabbix web frontend is starting up.
+zapi = None
 for i in range(30):
-  print("Trying to connected to Zabbix API %s" % zabbix_url)
+  print("Trying to connect to Zabbix API %s" % zabbix_url)
   try:
+    zapi = ZabbixAPI(zabbix_url, timeout=5)
     zapi.login(zabbix_user, zabbix_password)
     print("Connected to Zabbix API Version %s" % zapi.api_version())
-    connected = True
     break
   except Exception as e:
     print(e)
+    zapi = None
     sleep(5)
 
-if not connected:
+if zapi is None:
   print("Could not connect to Zabbix API, giving up")
   sys.exit(1)
 
