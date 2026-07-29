@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/cache"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/metrics"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
@@ -18,25 +19,34 @@ import (
 // Zabbix is a wrapper for Zabbix API. It wraps Zabbix API queries and performs authentication, adds caching,
 // deduplication and other performance optimizations.
 type Zabbix struct {
-	api      *zabbixapi.ZabbixAPI
-	dsInfo   *backend.DataSourceInstanceSettings
-	settings *settings.ZabbixDatasourceSettings
-	cache    *ZabbixCache
-	version  int
-	logger   log.Logger
+	api          *zabbixapi.ZabbixAPI
+	dsInfo       *backend.DataSourceInstanceSettings
+	settings     *settings.ZabbixDatasourceSettings
+	cache        *ZabbixCache
+	versionCache *cache.Cache
+	version      int
+	logger       log.Logger
 }
 
 // New returns new instance of Zabbix client.
 func New(dsInfo *backend.DataSourceInstanceSettings, zabbixSettings *settings.ZabbixDatasourceSettings, zabbixAPI *zabbixapi.ZabbixAPI) (*Zabbix, error) {
 	logger := log.New()
 	zabbixCache := NewZabbixCache(zabbixSettings.CacheTTL, 10*time.Minute)
+	// Deliberately a separate cache instance from zabbixCache: that one is
+	// keyed by ZabbixAPIRequest and stores *simplejson.Json API responses.
+	// The cached version is a plain string - sharing the same keyspace would
+	// mean a legitimate apiinfo.version call routed through Request() (it's
+	// an allowed resource-endpoint method) could read this cache entry back
+	// and fail its own type assertion, silently returning an empty result.
+	versionCache := cache.NewCache(zabbixSettings.CacheTTL, 10*time.Minute)
 
 	return &Zabbix{
-		api:      zabbixAPI,
-		dsInfo:   dsInfo,
-		settings: zabbixSettings,
-		cache:    zabbixCache,
-		logger:   logger,
+		api:          zabbixAPI,
+		dsInfo:       dsInfo,
+		settings:     zabbixSettings,
+		cache:        zabbixCache,
+		versionCache: versionCache,
+		logger:       logger,
 	}, nil
 }
 

@@ -1,12 +1,15 @@
 package datasource
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbixapi"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -78,10 +81,26 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 
 	apiReq := &zabbix.ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
 
-	result, err := dsInstance.ZabbixAPIQuery(ctx, apiReq)
+	// Bound resource calls (metric-picker autocomplete: groups/hosts/items/apps)
+	// with the same query timeout used for regular metric queries in
+	// QueryData (see datasource.go), so a slow/overloaded Zabbix can't hang
+	// this call indefinitely and trip Grafana's own outer gateway timeout.
+	// Derived from ctx so the per-user auth token is preserved.
+	queryTimeout := dsInstance.Settings.QueryTimeout
+	if queryTimeout <= 0 {
+		queryTimeout = 60 * time.Second
+	}
+	resourceCtx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
+
+	result, err := dsInstance.ZabbixAPIQuery(resourceCtx, apiReq)
 	if err != nil {
 		ds.logger.Error("Zabbix API request error", "error", err)
-		writeError(rw, http.StatusInternalServerError, err)
+		// Surface the real upstream status (e.g. 502/503/504 from an
+		// overloaded Zabbix) instead of always reporting 500, so the
+		// frontend's retry-on-transient-error logic (which keys off the
+		// actual HTTP status of this response) has something to match.
+		writeError(rw, statusCodeFromError(err, http.StatusInternalServerError), err)
 		return
 	}
 
@@ -168,11 +187,25 @@ func writeResponse(rw http.ResponseWriter, result *ZabbixAPIResourceResponse) {
 	}
 }
 
+// statusCodeFromError extracts the upstream HTTP status code carried by a
+// *zabbixapi.StatusError, if any, falling back to fallback otherwise.
+func statusCodeFromError(err error, fallback int) int {
+	var statusErr *zabbixapi.StatusError
+	if errors.As(err, &statusErr) {
+		return statusErr.StatusCode
+	}
+	return fallback
+}
+
 func writeError(rw http.ResponseWriter, statusCode int, err error) {
 	data := make(map[string]interface{})
 
 	data["error"] = http.StatusText(statusCode)
-	data["message"] = err.Error()
+	if err != nil {
+		data["message"] = err.Error()
+	} else {
+		data["message"] = "empty request body"
+	}
 
 	var b []byte
 	if b, err = json.Marshal(data); err != nil {
