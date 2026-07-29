@@ -27,10 +27,6 @@ for i in range(30):
 if not connected:
   print("Could not connect to Zabbix API, giving up")
   sys.exit(1)
-  except:
-    print("Waiting")
-    sleep(5)
-
 
 config_path = os.environ['ZBX_CONFIG']
 import_rules = {
