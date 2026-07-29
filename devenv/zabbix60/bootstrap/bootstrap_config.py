@@ -1,4 +1,5 @@
 import os
+import sys
 from time import sleep
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 
@@ -11,15 +12,21 @@ print(zabbix_url, zabbix_user, zabbix_password, zabbix_test_user, zabbix_test_pa
 
 zapi = ZabbixAPI(zabbix_url, timeout=5)
 
-for i in range(10):
+connected = False
+for i in range(30):
   print("Trying to connected to Zabbix API %s" % zabbix_url)
   try:
     zapi.login(zabbix_user, zabbix_password)
     print("Connected to Zabbix API Version %s" % zapi.api_version())
+    connected = True
     break
-  except ZabbixAPIException as e:
-    print e
+  except Exception as e:
+    print(e)
     sleep(5)
+
+if not connected:
+  print("Could not connect to Zabbix API, giving up")
+  sys.exit(1)
   except:
     print("Waiting")
     sleep(5)
@@ -104,7 +111,11 @@ try:
   user = zapi.user.create(**user_create_params)
   print("User created successfully: %s" % user['userids'][0])
 except Exception as e:
-  print("Failed to create user: %s" % e)
+  if "already exists" in str(e):
+    print("Test user already exists, skipping creation")
+  else:
+    print("Failed to create user: %s" % e)
+    sys.exit(1)
 
 
 for h in zapi.host.get(output="extend"):

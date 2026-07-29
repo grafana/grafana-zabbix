@@ -173,9 +173,10 @@ func TestIntegrationZabbixAPI74(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, zabbixUserResp)
 
-		if len(zabbixUserResp.MustArray()) == 0 {
-			t.Skipf("User %s not found in Zabbix. Skipping per-user auth test.", targetUsername)
-		}
+		// The devenv bootstrap provisions this user; a missing user means the
+		// bootstrap failed, so fail loudly instead of silently skipping.
+		require.NotEmpty(t, zabbixUserResp.MustArray(),
+			"user %s not found in Zabbix — check the devenv bootstrap container logs", targetUsername)
 
 		userId := zabbixUserResp.GetIndex(0).Get("userid").MustString()
 		userName := zabbixUserResp.GetIndex(0).Get("username").MustString()

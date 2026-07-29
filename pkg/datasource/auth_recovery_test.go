@@ -36,14 +36,27 @@ func (h *authTestHarness) respond(method string, authHeader string) string {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	// Bootstrap calls (user lookup and token management) must always be
+	// authenticated with the stored credentials — never with a (possibly
+	// rejected) per-user token.
+	storedOnly := func(response string) string {
+		if authHeader != "Bearer "+testStoredAuth {
+			return `{"error":{"code":-32602,"message":"Invalid params.","data":"bootstrap call made without stored credentials (auth: ` + authHeader + `)"}}`
+		}
+		return response
+	}
+
 	switch method {
 	case "apiinfo.version":
 		return `{"result":"7.4.0"}`
 	case "user.get":
-		return `{"result":[{"userid":"42","username":"alice"}]}`
+		return storedOnly(`{"result":[{"userid":"42","username":"alice"}]}`)
 	case "token.get":
-		return `{"result":[{"tokenid":"100"}]}`
+		return storedOnly(`{"result":[{"tokenid":"100"}]}`)
 	case "token.generate":
+		if resp := storedOnly(""); resp != "" {
+			return resp
+		}
 		h.generateCalls++
 		return `{"result":[{"token":"` + h.nextToken + `"}]}`
 	default:

@@ -1,4 +1,6 @@
 import os
+import sys
+import time
 from zabbix_utils import ZabbixAPI
 
 zabbix_url = os.environ['ZBX_API_URL']
@@ -8,15 +10,23 @@ zabbix_test_user = os.environ['ZBX_TEST_USER']
 zabbix_test_pass = os.environ['ZBX_TEST_PASS']
 print(zabbix_url, zabbix_user, zabbix_password, zabbix_test_user, zabbix_test_pass)
 
-zapi = ZabbixAPI(zabbix_url)
-
-for i in range(10):
+# Construct inside the retry loop: the ZabbixAPI constructor performs an API
+# version check, which fails while the Zabbix database is still initializing.
+zapi = None
+for i in range(30):
   try:
+    zapi = ZabbixAPI(zabbix_url)
     zapi.login(user=zabbix_user, password=zabbix_password)
     print("Connected to Zabbix API Version %s" % zapi.api_version())
     break
   except Exception as e:
     print(e)
+    zapi = None
+    time.sleep(5)
+
+if zapi is None:
+  print("Could not connect to Zabbix API, giving up")
+  sys.exit(1)
 
 config_path = os.environ['ZBX_CONFIG']
 import_rules = {
@@ -99,7 +109,11 @@ try:
   user = zapi.user.create(**user_create_params)
   print("User created successfully: %s" % user['userids'][0])
 except Exception as e:
-  print("Failed to create user: %s" % e)
+  if "already exists" in str(e):
+    print("Test user already exists, skipping creation")
+  else:
+    print("Failed to create user: %s" % e)
+    sys.exit(1)
 
 for h in zapi.host.get(output="extend"):
     print(h['name'])

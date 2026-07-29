@@ -64,6 +64,18 @@ jobs:
           docker compose -f "devenv/${DEVENV}/docker-compose.yml" up -d
           # Wait for Zabbix to be ready
           sleep 30
+          # The bootstrap container is a one-shot job that imports the host
+          # config and creates the per-user auth test user. Block until it
+          # exits, surface its logs, and fail fast if it failed — otherwise
+          # tests that depend on the provisioned data pass or skip silently.
+          cid=$(docker compose -f "devenv/${DEVENV}/docker-compose.yml" ps -aq bootstrap)
+          bootstrap_exit=$(docker wait "$cid")
+          echo "--- bootstrap logs ---"
+          docker logs "$cid"
+          if [ "$bootstrap_exit" -ne 0 ]; then
+            echo "bootstrap exited with code $bootstrap_exit"
+            exit 1
+          fi
 
       - name: Run integration tests
         env:

@@ -6,7 +6,7 @@ ENV ZBX_API_PASSWORD="zabbix"
 ENV ZBX_CONFIG="zbx_export_hosts.xml"
 ENV ZBX_BOOTSTRAP_SCRIPT="bootstrap_config.py"
 ENV ZBX_TEST_USER="grafana_test"
-ENV ZBX_TEST_PASS="zabbix_test_pass"
+ENV ZBX_TEST_PASS="s3cure_devenv_2024"
 
 RUN pip install pyzabbix
 

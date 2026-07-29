@@ -58,6 +58,29 @@ func TestTokenCache_IsolatedByDatasourceAndIdentity(t *testing.T) {
 	assert.Equal(t, "token-3", info.Token, "must not leak token across identities")
 }
 
+func TestTokenCache_CompareAndDeleteRemovesMatchingToken(t *testing.T) {
+	tc := NewTokenCache()
+	tc.Set("ds", "alice", "42", "rejected-token", time.Hour)
+
+	tc.CompareAndDelete("ds", "alice", "rejected-token")
+
+	_, ok := tc.Get("ds", "alice")
+	assert.False(t, ok, "matching token should be evicted")
+}
+
+// The eviction must be conditional: if a concurrent request already replaced
+// the rejected token with a fresh one, a straggler's eviction must not remove it.
+func TestTokenCache_CompareAndDeletePreservesReplacedToken(t *testing.T) {
+	tc := NewTokenCache()
+	tc.Set("ds", "alice", "42", "fresh-token", time.Hour)
+
+	tc.CompareAndDelete("ds", "alice", "rejected-token")
+
+	info, ok := tc.Get("ds", "alice")
+	require.True(t, ok, "fresh token must survive a stale eviction attempt")
+	assert.Equal(t, "fresh-token", info.Token)
+}
+
 func TestTokenCache_CleanupExpired(t *testing.T) {
 	tc := NewTokenCache()
 	tc.Set("ds", "valid", "1", "t1", time.Hour)
