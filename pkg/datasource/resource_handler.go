@@ -70,17 +70,27 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 		return
 	}
 
+	// Apply per-user authentication with caching. The returned context carries
+	// the resolved per-user token and must be used for the query below.
+	ctx, err = ds.applyPerUserAuth(ctx, dsInstance, pluginCxt.DataSourceInstanceSettings.UID)
+	if err != nil {
+		ds.logger.Error("Per-user authentication failed", "error", err)
+		writeError(rw, http.StatusForbidden, err)
+		return
+	}
+
 	apiReq := &zabbix.ZabbixAPIRequest{Method: reqData.Method, Params: reqData.Params}
 
 	// Bound resource calls (metric-picker autocomplete: groups/hosts/items/apps)
 	// with the same query timeout used for regular metric queries in
 	// QueryData (see datasource.go), so a slow/overloaded Zabbix can't hang
 	// this call indefinitely and trip Grafana's own outer gateway timeout.
+	// Derived from ctx so the per-user auth token is preserved.
 	queryTimeout := dsInstance.Settings.QueryTimeout
 	if queryTimeout <= 0 {
 		queryTimeout = 60 * time.Second
 	}
-	resourceCtx, cancel := context.WithTimeout(req.Context(), queryTimeout)
+	resourceCtx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
 
 	result, err := dsInstance.ZabbixAPIQuery(resourceCtx, apiReq)
@@ -130,10 +140,19 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 		return
 	}
 
+	// Apply per-user authentication with caching. The returned context carries
+	// the resolved per-user token and must be used for the processing below.
+	ctx, err = ds.applyPerUserAuth(ctx, dsInstance, pluginCxt.DataSourceInstanceSettings.UID)
+	if err != nil {
+		ds.logger.Error("Per-user authentication failed", "error", err)
+		writeError(rw, http.StatusForbidden, err)
+		return
+	}
+
 	reqData.Query.TimeRange.From = time.Unix(reqData.TimeRange.From, 0)
 	reqData.Query.TimeRange.To = time.Unix(reqData.TimeRange.To, 0)
 
-	frames, err := dsInstance.applyDataProcessing(req.Context(), &reqData.Query, reqData.Series, true)
+	frames, err := dsInstance.applyDataProcessing(ctx, &reqData.Query, reqData.Series, true)
 	if err != nil {
 		writeError(rw, http.StatusInternalServerError, err)
 	}

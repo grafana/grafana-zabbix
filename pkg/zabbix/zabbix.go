@@ -67,7 +67,12 @@ func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simpl
 		ds.version = version
 	}
 
-	cachedResult, queryExistInCache := ds.cache.GetAPIRequest(apiReq)
+	// Partition the response cache by the per-user token so responses fetched
+	// under one user's Zabbix permissions are never served to another user.
+	// Shared-credential requests use an empty scope (single shared partition).
+	cacheScope := zabbixapi.PerUserTokenFromContext(ctx)
+
+	cachedResult, queryExistInCache := ds.cache.GetAPIRequest(cacheScope, apiReq)
 	if !queryExistInCache {
 		resultJson, err = ds.request(ctx, apiReq.Method, apiReq.Params)
 		if err != nil {
@@ -76,7 +81,7 @@ func (ds *Zabbix) Request(ctx context.Context, apiReq *ZabbixAPIRequest) (*simpl
 
 		if IsCachedRequest(apiReq.Method) {
 			ds.logger.Debug("Writing result to cache", "method", apiReq.Method, "version", ds.version)
-			ds.cache.SetAPIRequest(apiReq, resultJson)
+			ds.cache.SetAPIRequest(cacheScope, apiReq, resultJson)
 		}
 	} else {
 		metrics.CacheHitTotal.WithLabelValues(apiReq.Method).Inc()
@@ -102,6 +107,30 @@ func (zabbix *Zabbix) request(ctx context.Context, method string, params ZabbixA
 	result, err := zabbix.api.Request(ctx, method, params, zabbix.version)
 	notAuthorized := isNotAuthorized(err)
 	isTokenAuth := zabbix.settings.AuthType == settings.AuthTypeToken
+	// When the request carries a per-user token, never silently re-login with the
+	// shared/stored credentials: doing so would run the query as the stored user
+	// (a privilege escalation). Instead, if the auth layer provided a refresher,
+	// evict/regenerate the token through it and retry once; otherwise fail.
+	perUserToken := zabbixapi.PerUserTokenFromContext(ctx)
+	if perUserToken != "" && notAuthorized {
+		refresher := zabbixapi.TokenRefresherFromContext(ctx)
+		if refresher == nil {
+			zabbix.logger.Debug("Per-user token rejected by Zabbix, not falling back to stored credentials")
+			return nil, err
+		}
+
+		zabbix.logger.Info("Per-user token rejected by Zabbix, regenerating and retrying once")
+		newToken, refreshErr := refresher(ctx, perUserToken)
+		if refreshErr != nil {
+			zabbix.logger.Error("Failed to regenerate per-user token", "error", refreshErr)
+			return nil, err
+		}
+
+		// Retry with the fresh token. The refresher is cleared so a second
+		// rejection fails instead of looping.
+		retryCtx := zabbixapi.WithTokenRefresher(zabbixapi.WithPerUserToken(ctx, newToken), nil)
+		return zabbix.api.Request(retryCtx, method, params, zabbix.version)
+	}
 	if err == backend.DownstreamError(zabbixapi.ErrNotAuthenticated) || (notAuthorized && !isTokenAuth) {
 		if notAuthorized {
 			zabbix.logger.Debug("Authentication token expired, performing re-login")
