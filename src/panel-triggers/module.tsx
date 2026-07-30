@@ -154,6 +154,13 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         category: ['Fields'],
       })
       .addBooleanSwitch({
+        path: 'hostIpField',
+        name: 'Host IP',
+        description: 'Requires the "Host IP" query option to be enabled on the data source query',
+        defaultValue: defaultPanelOptions.hostIpField,
+        category: ['Fields'],
+      })
+      .addBooleanSwitch({
         path: 'hostGroups',
         name: 'Host groups',
         defaultValue: defaultPanelOptions.hostGroups,

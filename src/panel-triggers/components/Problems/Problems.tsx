@@ -149,6 +149,12 @@ export const ProblemList = (props: ProblemListProps) => {
         sortingFn: 'alphanumeric',
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
       }),
+      columnHelper.accessor('hostIp', {
+        header: 'Host IP',
+        size: 120,
+        enableSorting: true,
+        sortingFn: 'alphanumeric',
+      }),
       columnHelper.accessor('groups', {
         header: 'Host Groups',
         size: 150,
@@ -353,6 +359,7 @@ export const ProblemList = (props: ProblemListProps) => {
     () => ({
       host: panelOptions.hostField,
       hostTechName: panelOptions.hostTechNameField,
+      hostIp: panelOptions.hostIpField,
       groups: panelOptions.hostGroups,
       proxy: panelOptions.hostProxy,
       priority: panelOptions.severityField,
