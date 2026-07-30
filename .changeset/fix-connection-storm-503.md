@@ -1,0 +1,5 @@
+---
+'grafana-zabbix': patch
+---
+
+Fix a connection storm against the Zabbix web frontend that could cause widespread 502/503 errors under normal dashboard load. Every backend API request implicitly re-fetched and discarded the Zabbix API version instead of using the existing cache, doubling the number of HTTP requests sent per query; each of those requests then forced its own new TCP connection instead of reusing the pool (`req.Close = true`, a 2021 workaround for a narrow stale-connection race). Together this meant a dashboard with N panels opened roughly 2N fresh connections to Zabbix's web frontend (nginx/php-fpm) per load or refresh, which exhausted php-fpm/connection limits on modest self-hosted Zabbix installs. The version is now cached, connections are pooled normally, and a single safe retry handles the original stale-connection race without disabling keep-alive. The metric-picker resource endpoint also got a bounded timeout, and the frontend now retries transient 502/503/504 responses with backoff.
