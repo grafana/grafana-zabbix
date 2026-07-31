@@ -3,7 +3,7 @@ import { cx } from '@emotion/css';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
-import { isNewProblem, formatLastChange } from '../../utils';
+import { isNewProblem, formatLastChange, getAckModalActionProps } from '../../utils';
 import { ProblemsPanelOptions, TriggerSeverity } from '../../types';
 import { AckProblemData, AckModal } from '../AckModal';
 import { EventTag } from '../EventTag';
@@ -18,6 +18,8 @@ import { getDataSourceSrv } from '@grafana/runtime';
 interface AlertCardProps {
   problem: ProblemDTO;
   panelOptions: ProblemsPanelOptions;
+  /** All problems currently shown in the panel, used as candidates for the cause event selection. */
+  panelProblems?: ProblemDTO[];
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
 }
@@ -183,7 +185,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
                     problem={problem}
                     onClick={() => {
                       showModal(AckModal, {
-                        canClose: problem.manual_close === '1',
+                        ...getAckModalActionProps(problem, this.props.panelProblems),
                         severity: problemSeverity,
                         onSubmit: this.ackProblem,
                         onDismiss: hideModal,
