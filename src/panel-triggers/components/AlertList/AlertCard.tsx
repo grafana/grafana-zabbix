@@ -98,6 +98,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
               {(panelOptions.hostField || panelOptions.hostTechNameField) && (
                 <AlertHost problem={problem} panelOptions={panelOptions} />
               )}
+              {panelOptions.hostIpField && problem.hostIp && <span className="zabbix-hostname">{problem.hostIp}</span>}
               {panelOptions.hostGroups && <AlertGroup problem={problem} panelOptions={panelOptions} />}
 
               {panelOptions.showTags && (

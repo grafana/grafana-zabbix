@@ -575,6 +575,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     const showProblems = target.showProblems || ShowProblemTypes.Problems;
     const showProxy = target.options.hostProxy;
+    const showHostIp = target.options.hostIp;
 
     const getProxiesPromise = showProxy ? this.zabbix.getProxies() : () => [];
     showAckButton = !this.disableReadOnlyUsersAck || userIsEditor;
@@ -658,12 +659,24 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       .then((problems) => problemsHandler.sortProblems(problems, target))
       .then((problems) => problemsHandler.addTriggerDataSource(problems, target))
       .then((problems) => problemsHandler.formatAcknowledges(problems, zabbixUsers))
-      .then((problems) => problemsHandler.addTriggerHostProxy(problems, proxies));
+      .then((problems) => problemsHandler.addTriggerHostProxy(problems, proxies))
+      .then((problems) => (showHostIp ? this.addProblemsHostIp(problems) : problems));
 
     return problemsPromises.then((problems) => {
       const problemsDataFrame = problemsHandler.toDataFrame(problems, target);
       return problemsDataFrame;
     });
+  }
+
+  // Fetch interfaces only for the hosts present in the result set (one host.get
+  // call), keeping the overhead low when the Host IP option is enabled.
+  async addProblemsHostIp(problems: ProblemDTO[]): Promise<ProblemDTO[]> {
+    const hostids = _.uniq(problems.map((p) => p.hosts?.[0]?.hostid).filter(Boolean));
+    if (hostids.length === 0) {
+      return problems;
+    }
+    const hostInterfaces = await this.zabbix.getHostInterfaces(hostids);
+    return problemsHandler.addTriggerHostIps(problems, hostInterfaces);
   }
 
   /**

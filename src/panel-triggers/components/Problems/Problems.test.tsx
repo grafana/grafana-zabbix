@@ -39,6 +39,7 @@ describe('ProblemList', () => {
     targets: [],
     hostField: true,
     hostTechNameField: false,
+    hostIpField: false,
     hostGroups: false,
     hostProxy: false,
     severityField: true,
@@ -104,6 +105,50 @@ describe('ProblemList', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('Host IP Field', () => {
+    const findHostIpHeader = () => {
+      const table = screen.getByRole('table');
+      const headers = within(table).getAllByRole('columnheader');
+      return headers.find((header) => header.textContent?.includes('Host IP'));
+    };
+
+    it('should not render the Host IP column by default', () => {
+      const props = {
+        ...defaultProps,
+        problems: [{ ...createMockProblem('1', 1609459200), hostIp: '192.168.1.10' }],
+      };
+
+      render(<ProblemList {...props} />);
+
+      expect(findHostIpHeader()).toBeUndefined();
+    });
+
+    it('should render the Host IP column when hostIpField is enabled', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, hostIpField: true },
+        problems: [{ ...createMockProblem('1', 1609459200), hostIp: '192.168.1.10' }],
+      };
+
+      render(<ProblemList {...props} />);
+
+      expect(findHostIpHeader()).toBeInTheDocument();
+      expect(screen.getByText('192.168.1.10')).toBeInTheDocument();
+    });
+
+    it('should render comma-separated IPs when the host has multiple interfaces', () => {
+      const props = {
+        ...defaultProps,
+        panelOptions: { ...defaultPanelOptions, hostIpField: true },
+        problems: [{ ...createMockProblem('1', 1609459200), hostIp: '192.168.1.10, 10.0.0.5' }],
+      };
+
+      render(<ProblemList {...props} />);
+
+      expect(screen.getByText('192.168.1.10, 10.0.0.5')).toBeInTheDocument();
+    });
   });
 
   describe('Age Field', () => {
@@ -325,6 +370,7 @@ describe('ProblemList', () => {
       ...defaultPanelOptions,
       sortProblems: 'default',
       hostTechNameField: true,
+      hostIpField: true,
       hostGroups: true,
       hostProxy: true,
       opdataField: true,
@@ -339,6 +385,7 @@ describe('ProblemList', () => {
         ...createMockProblem('1', 4000), // newest
         host: 'srv1',
         hostTechName: 'tech-b',
+        hostIp: '10.0.0.2',
         groups: [{ groupid: '1', name: 'Beta' }],
         proxy: 'proxy-c',
         severity: '2',
@@ -352,6 +399,7 @@ describe('ProblemList', () => {
         ...createMockProblem('2', 1000), // oldest
         host: 'srv2',
         hostTechName: 'tech-d',
+        hostIp: '10.0.0.4',
         groups: [{ groupid: '2', name: 'Delta' }],
         proxy: 'proxy-a',
         severity: '5',
@@ -365,6 +413,7 @@ describe('ProblemList', () => {
         ...createMockProblem('3', 3000),
         host: 'SRV3',
         hostTechName: 'tech-a',
+        hostIp: '10.0.0.1',
         groups: [{ groupid: '3', name: 'Alpha' }],
         proxy: 'proxy-d',
         severity: '1',
@@ -378,6 +427,7 @@ describe('ProblemList', () => {
         ...createMockProblem('4', 2000),
         host: 'srv10',
         hostTechName: 'tech-c',
+        hostIp: '10.0.0.3',
         groups: [],
         proxy: 'proxy-b',
         severity: '4',
@@ -403,6 +453,7 @@ describe('ProblemList', () => {
       const sortable = [
         'Host',
         'Host (Technical Name)',
+        'Host IP',
         'Host Groups',
         'Proxy',
         'Severity',
@@ -434,6 +485,7 @@ describe('ProblemList', () => {
       const cases: Array<[string, string[]]> = [
         ['Host', ['srv1', 'srv2', 'SRV3', 'srv10']], // natural, case-insensitive
         ['Host (Technical Name)', ['SRV3', 'srv1', 'srv10', 'srv2']],
+        ['Host IP', ['SRV3', 'srv1', 'srv10', 'srv2']], // .1 < .2 < .3 < .4
         ['Host Groups', ['srv10', 'SRV3', 'srv1', 'srv2']], // '' < Alpha < Beta < Delta
         ['Proxy', ['srv2', 'srv10', 'srv1', 'SRV3']],
         ['Severity', ['SRV3', 'srv1', 'srv10', 'srv2']], // 1 < 2 < 4 < 5

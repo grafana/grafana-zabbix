@@ -111,6 +111,21 @@ describe('Zabbix API connector', () => {
     });
   });
 
+  describe('getHostInterfaces', () => {
+    it('requests interfaces via host.get with minimal output for the given hosts', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn();
+
+      await zabbixAPIConnector.getHostInterfaces(['10001', '10002']);
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid'],
+        hostids: ['10001', '10002'],
+        selectInterfaces: ['ip', 'useip'],
+      });
+    });
+  });
+
   describe('getProblems', () => {
     it('sends full filter payload with application ids when supported', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);

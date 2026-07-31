@@ -110,6 +110,7 @@ export interface ProblemDTO {
   host?: string;
   hostInMaintenance?: boolean;
   hostTechName?: string;
+  hostIp?: string;
   proxy?: string;
   severity?: string;
   priority?: string;
@@ -216,7 +217,16 @@ export interface ZBXHost {
   maintenance_status?: string;
   proxy_hostid?: string;
   proxy?: any;
+  hostIp?: string;
   description?: string;
+}
+
+export interface ZBXHostInterface {
+  interfaceid?: string;
+  ip?: string;
+  dns?: string;
+  /** '1' - connect via IP, '0' - connect via DNS */
+  useip?: '0' | '1';
 }
 
 export interface ZBXItem {
