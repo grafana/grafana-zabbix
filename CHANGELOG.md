@@ -1,5 +1,19 @@
 # Change Log
 
+## 6.6.0
+
+### Minor Changes
+
+🚀 Add the ability to have per-user authentication
+🚀 Problems query: push the problem-name filter to the Zabbix API (`problem.get`/`event.get` `search`) instead of fetching every problem and filtering client-side. This drastically reduces the data transferred for large environments (avoiding gRPC message-size limits) and makes the `limit` apply to name-matched problems. Plain names and `*` wildcards are filtered fully at the source; regex filters are narrowed at the source by their guaranteed literal substring — including top-level alternations like `/(A|B|C)/`, which are pushed as an OR of branch literals (`searchByAny`) — and are still matched precisely client-side. Look-around regexes (e.g. negative look-ahead `/^(?!...)/` used for exclusion) are evaluated client-side only, so they keep working without being incorrectly narrowed at the source. Problem-name filters now also support `*` wildcards.
+🚀 add column sorting and free-text search filter on problems panel
+🚀 Added support for filtering Zabbix problems by cause or symptom via the symptom parameter on problem.get and event.get API calls.
+
+### Patch Changes
+
+🐛 Fix a connection storm against the Zabbix web frontend that could cause widespread 502/503 errors under normal dashboard load. Every backend API request implicitly re-fetched and discarded the Zabbix API version instead of using the existing cache, doubling the number of HTTP requests sent per query; each of those requests then forced its own new TCP connection instead of reusing the pool (`req.Close = true`, a 2021 workaround for a narrow stale-connection race). Together this meant a dashboard with N panels opened roughly 2N fresh connections to Zabbix's web frontend (nginx/php-fpm) per load or refresh, which exhausted php-fpm/connection limits on modest self-hosted Zabbix installs. The version is now cached, connections are pooled normally, and a single safe retry handles the original stale-connection race without disabling keep-alive. The metric-picker resource endpoint also got a bounded timeout, and the frontend now retries transient 502/503/504 responses with backoff.
+🐛 Fix a crash in the variable query editor when a query variable has no saved Zabbix query. From Grafana 13.1, the scenes-based variable editor constructs the editor with a truthy-but-empty query object; the selected query type then resolved to `undefined`, overwrote the valid default, and the next render threw `TypeError: Cannot read properties of undefined (reading 'value')`. Selecting Zabbix as the datasource for a new query variable, switching an existing variable to Zabbix from another datasource, and opening a variable saved with a query type the editor has no option for now all fall back to the default query type instead of crashing. The editor also keeps the stored query type in sync with the option it displays: previously a variable that fell back to the default rendered as `Group` but saved an unset query type, so on the first edit it resolved to an empty option list with no error. Legacy string queries take the same path and now pick up the editor's defaults for item tag and disabled-item handling, which were previously left unset there.
+
 ## 6.5.0
 
 ### Minor Changes
