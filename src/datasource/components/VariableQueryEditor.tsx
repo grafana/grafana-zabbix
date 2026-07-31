@@ -33,9 +33,11 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
       const query = parseLegacyVariableQuery(this.props.query);
       const selectedQueryType = this.getSelectedQueryType(query.queryType);
       this.state = {
-        selectedQueryType,
-        legacyQuery: this.props.query,
+        ...this.defaults,
         ...query,
+        legacyQuery: this.props.query,
+        selectedQueryType,
+        queryType: selectedQueryType.value,
       };
     } else if (this.props.query) {
       const query = this.props.query as VariableQuery;
@@ -44,14 +46,15 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
         ...this.defaults,
         ...query,
         selectedQueryType,
+        queryType: selectedQueryType.value,
       };
     } else {
       this.state = this.defaults;
     }
   }
 
-  getSelectedQueryType(queryType: VariableQueryTypes) {
-    return this.queryTypes.find((q) => q.value === queryType);
+  getSelectedQueryType(queryType?: VariableQueryTypes): ComboboxOption<VariableQueryTypes> {
+    return this.queryTypes.find((q) => q.value === queryType) ?? this.defaults.selectedQueryType;
   }
 
   handleQueryUpdate = (evt: React.ChangeEvent<HTMLInputElement>, prop: string) => {
