@@ -45,6 +45,13 @@ export interface ProblemsPanelOptions {
   markAckEvents?: boolean;
   // Custom tag names to display as column
   customTagColumns?: string;
+  // Sound alerts
+  soundAlerts?: boolean;
+  soundMinSeverity?: number;
+  soundTone?: 'beep' | 'alarm' | 'custom';
+  soundCustomUrl?: string;
+  soundVolume?: number;
+  soundRepeat?: boolean;
 }
 
 export const DEFAULT_SEVERITY: TriggerSeverity[] = [
@@ -96,6 +103,13 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   okEventColor: 'rgb(56, 189, 113)',
   ackEventColor: 'rgb(56, 219, 156)',
   markAckEvents: false,
+  // Sound alerts
+  soundAlerts: false,
+  soundMinSeverity: 4,
+  soundTone: 'beep',
+  soundCustomUrl: '',
+  soundVolume: 80,
+  soundRepeat: false,
 };
 
 export interface ProblemsPanelTarget {
