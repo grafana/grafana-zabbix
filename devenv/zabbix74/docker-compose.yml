@@ -72,6 +72,8 @@ services:
       ZBX_API_URL: http://zabbix-web:8080
       ZBX_API_USER: Admin
       ZBX_API_PASSWORD: zabbix
+      ZBX_TEST_USER: grafana_test
+      ZBX_TEST_PASS: s3cure_devenv_2024
     depends_on:
       - database
       - zabbix-server

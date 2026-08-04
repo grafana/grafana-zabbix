@@ -1,4 +1,4 @@
-import { expandItemMacros, expandUserMacros, hasUserMacro } from './problemsHandler';
+import { expandItemMacros, expandUserMacros, filterTriggersPre, hasUserMacro } from './problemsHandler';
 
 describe('expandItemMacros', () => {
   const item = (historicalValue?: string, originalLastvalue?: string) => ({ historicalValue, originalLastvalue });
@@ -155,5 +155,53 @@ describe('expandUserMacros', () => {
   it('returns empty/undefined text unchanged', () => {
     expect(expandUserMacros('', [], [], [])).toBe('');
     expect(expandUserMacros(undefined as any, [], [], [])).toBeUndefined();
+  });
+});
+
+describe('filterTriggersPre', () => {
+  const target = (filter: string) => ({ trigger: { filter }, options: { hostsInMaintenance: true } });
+
+  it('matches on the problem name with an exact filter', () => {
+    const problems: any[] = [
+      { name: 'High CPU load', description: 'High CPU load' },
+      { name: 'Low disk space', description: 'Low disk space' },
+    ];
+
+    const result = filterTriggersPre(problems, target('High CPU load'));
+
+    expect(result.map((p) => p.name)).toEqual(['High CPU load']);
+  });
+
+  it('matches on the problem name with a regex filter', () => {
+    const problems: any[] = [
+      { name: 'Unavailable by ICMP', description: 'Unavailable by ICMP' },
+      { name: 'High CPU load', description: 'High CPU load' },
+    ];
+
+    const result = filterTriggersPre(problems, target('/ICMP/'));
+
+    expect(result.map((p) => p.name)).toEqual(['Unavailable by ICMP']);
+  });
+
+  it('matches on name, not description, when the two diverge (event.get path)', () => {
+    // On the events/history path, `name` is the event name (macro values frozen at
+    // event time) while `description` is the trigger name expanded with CURRENT
+    // values. The server-side search narrows on `name`, so the client filter must
+    // match the same field or rows get silently dropped.
+    const problems: any[] = [
+      { name: 'Load on server1 is 95%', description: 'Load on server1 is 97%' },
+      { name: 'Disk full on server2', description: 'Disk full on server2' },
+    ];
+
+    const result = filterTriggersPre(problems, target('/Load on server1 is 95%/'));
+
+    expect(result.map((p) => p.name)).toEqual(['Load on server1 is 95%']);
+  });
+
+  it('keeps problems with a missing name only when the filter is empty', () => {
+    const problems: any[] = [{ description: 'orphan' }, { name: 'High CPU load' }];
+
+    expect(filterTriggersPre(problems, target('High CPU load')).length).toBe(1);
+    expect(filterTriggersPre(problems, target('')).length).toBe(2);
   });
 });

@@ -36,15 +36,18 @@ func NewZabbixCache(ttl time.Duration, cleanupInterval time.Duration) *ZabbixCac
 	}
 }
 
-// GetAPIRequest gets request response from cache
-func (c *ZabbixCache) GetAPIRequest(request *ZabbixAPIRequest) (interface{}, bool) {
-	requestHash := HashString(request.String())
+// GetAPIRequest gets request response from cache. scope partitions the cache:
+// per-user requests pass their auth token so responses fetched under one
+// user's Zabbix permissions are never served to another user. Requests using
+// the shared stored credentials pass an empty scope.
+func (c *ZabbixCache) GetAPIRequest(scope string, request *ZabbixAPIRequest) (interface{}, bool) {
+	requestHash := HashString(scope + ":" + request.String())
 	return c.cache.Get(requestHash)
 }
 
-// SetAPIRequest writes request response to cache
-func (c *ZabbixCache) SetAPIRequest(request *ZabbixAPIRequest, response interface{}) {
-	requestHash := HashString(request.String())
+// SetAPIRequest writes request response to cache under the given scope.
+func (c *ZabbixCache) SetAPIRequest(scope string, request *ZabbixAPIRequest, response interface{}) {
+	requestHash := HashString(scope + ":" + request.String())
 	c.cache.Set(requestHash, response)
 }
 
