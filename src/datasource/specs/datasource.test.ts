@@ -126,14 +126,21 @@ describe('ZabbixDatasource', () => {
     const metricsTarget = { queryType: c.MODE_METRICS } as any;
     const itemIdTarget = { queryType: c.MODE_ITEMID } as any;
     const problemsTarget = { queryType: c.MODE_PROBLEMS } as any;
+    const multiMetricTarget = { queryType: c.MODE_MULTIMETRIC_TABLE } as any;
 
     expect(ds.isBackendTarget(metricsTarget)).toBe(true);
     expect(ds.isBackendTarget(itemIdTarget)).toBe(true);
     expect(ds.isBackendTarget(problemsTarget)).toBe(false);
+    expect(ds.isBackendTarget(multiMetricTarget)).toBe(true);
     expect(ds.isDBConnectionTarget(metricsTarget)).toBe(false);
 
     ds.enableDirectDBConnection = true;
     expect(ds.isBackendTarget(metricsTarget)).toBe(false);
     expect(ds.isDBConnectionTarget(metricsTarget)).toBe(true);
+
+    // The Multi-Metric table is always handled by the backend, even with the direct DB connection
+    // enabled — otherwise it matches neither path and silently returns no data.
+    expect(ds.isBackendTarget(multiMetricTarget)).toBe(true);
+    expect(ds.isDBConnectionTarget(multiMetricTarget)).toBe(false);
   });
 });
