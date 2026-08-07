@@ -22,7 +22,7 @@ services:
       GF_FEATURE_TOGGLES_dashboardNewLayouts: 'false'
 
   database:
-    image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+    image: postgres:18@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
     command: postgres -c 'max_connections=200'
     environment:
       POSTGRES_USER: zabbix
@@ -73,7 +73,7 @@ services:
   # fixtures. $$f (not $f) so docker compose passes a literal $ to the shell.
   # Depends on zabbix-web being healthy so the Zabbix DB schema already exists.
   e2e-data-loader:
-    image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+    image: postgres:18@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
     depends_on:
       zabbix-web:
         condition: service_healthy

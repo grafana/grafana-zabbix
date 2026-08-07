@@ -29,7 +29,7 @@ services:
 
   # Zabbix
   zabbix-server:
-    image: zabbix/zabbix-server-pgsql:alpine-6.0-latest@sha256:a00ba1885f4fdbcedcd0842c465be686ffa3043262d451caae4e6ab498b9071a
+    image: zabbix/zabbix-server-pgsql:alpine-6.0-latest@sha256:d67463bef13bb6264d7d57ddfb4a0e93a1209ac9ef957befbcc065dc4df7787f
     ports:
       - '10051:10051'
     depends_on:
@@ -46,7 +46,7 @@ services:
       ZBX_DEBUGLEVEL: 3
 
   zabbix-web:
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest@sha256:d0a6a3ef0516eb88c01c5e4f290447acc3b57c52395fc8baa241fdc60ff82680
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-6.0-latest@sha256:8f37e6fe3ebc0f0aee0f479aa3b80387ffab5b8e4cd58878a5b1692180ffc794
     ports:
       - '443:443'
       - '8188:8080'
@@ -67,7 +67,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+    image: postgres:18@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'
@@ -76,7 +76,7 @@ services:
       POSTGRES_PASSWORD: zabbix
 
   zabbix-agent:
-    image: zabbix/zabbix-agent:alpine-6.0-latest@sha256:43f62ee0d5f6094c500741fcbc087fd82edf2734b28e20a793b00ddaee171346
+    image: zabbix/zabbix-agent:alpine-6.0-latest@sha256:a1bc75c7a46a49f9943427f4bd8fecd6b848e3281becb985ddf0c0a7ff0ab1d1
     environment:
       ZBX_SERVER_HOST: zabbix-server
       ZBX_SERVER_PORT: 10051
@@ -104,7 +104,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005
+    image: redis:alpine@sha256:978f0e01593e65eed801f2402944efcd936d43b5027e4908a7897baf88ed6241
 
   zas_backend_01:
     build: ../zas-agent
@@ -123,7 +123,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005
+    image: redis:alpine@sha256:978f0e01593e65eed801f2402944efcd936d43b5027e4908a7897baf88ed6241
 
   zas_frontend_01:
     build: ../zas-agent

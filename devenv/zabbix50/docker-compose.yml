@@ -68,7 +68,7 @@ services:
       - ../nginx/.htpasswd:/etc/nginx/.htpasswd:ro
 
   database:
-    image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+    image: postgres:18@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
     ports:
       - '15432:5432'
     environment:
@@ -120,7 +120,7 @@ services:
 
   # backend
   redis_backend:
-    image: redis:alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005
+    image: redis:alpine@sha256:978f0e01593e65eed801f2402944efcd936d43b5027e4908a7897baf88ed6241
 
   zas_backend_01:
     build: ../zas-agent
@@ -138,7 +138,7 @@ services:
 
   # frontend
   redis_frontend:
-    image: redis:alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005
+    image: redis:alpine@sha256:978f0e01593e65eed801f2402944efcd936d43b5027e4908a7897baf88ed6241
 
   zas_frontend_01:
     build: ../zas-agent
