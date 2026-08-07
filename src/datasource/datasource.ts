@@ -599,6 +599,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       recent: showProblems === ShowProblemTypes.Recent,
       minSeverity: target.options?.minSeverity,
       limit: target.options?.limit,
+      // Filter problem names at the source (Zabbix API) instead of fetching all
+      // problems and filtering client-side. The precise client-side filter still
+      // runs afterwards (see problemsHandler.filterTriggersPre).
+      problemName: target.trigger?.filter,
     };
 
     if (tags && tags.length) {
@@ -826,6 +830,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       valueFromEvent: true,
       timeFrom,
       timeTo,
+      // Narrow problem names at the source; the precise filter still runs below.
+      problemName: annotation.trigger?.filter,
     };
 
     if (annotation.options.minSeverity) {
@@ -841,16 +847,11 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return this.zabbix
       .getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions)
       .then((problems) => {
-        // Filter triggers by description
+        // Filter by problem name — matched on `name`, the same field the server-side
+        // `search` narrowing filters on (see problemsHandler.filterTriggersPre).
         const problemName = annotation.trigger.filter;
-        if (utils.isRegex(problemName)) {
-          problems = _.filter(problems, (p) => {
-            return utils.buildRegex(problemName).test(p.description);
-          });
-        } else if (problemName) {
-          problems = _.filter(problems, (p) => {
-            return p.description === problemName;
-          });
+        if (problemName) {
+          problems = _.filter(problems, (p) => utils.matchesProblemName(p.name ?? '', problemName));
         }
 
         // Hide acknowledged events if option enabled

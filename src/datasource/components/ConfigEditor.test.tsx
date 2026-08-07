@@ -98,6 +98,47 @@ describe('ConfigEditor', () => {
     });
   });
 
+  describe('per-user authentication', () => {
+    const originalFetch = window.fetch;
+    afterEach(() => {
+      window.fetch = originalFetch;
+    });
+
+    it('hides the per-user auth fields when the feature is disabled', () => {
+      window.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [] } as Response);
+      render(<ConfigEditor options={getDefaultOptions()} onOptionsChange={jest.fn()} />);
+
+      expect(screen.queryByText('User identity field')).not.toBeInTheDocument();
+      expect(screen.queryByText('Exclude users from per-user authentication')).not.toBeInTheDocument();
+    });
+
+    it('shows the identity field and exclude-users list when enabled', async () => {
+      window.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => [{ login: 'admin' }, { login: 'alice' }],
+      } as Response);
+      const options = getDefaultOptions();
+      options.jsonData = { ...options.jsonData, perUserAuth: true };
+
+      render(<ConfigEditor options={options} onOptionsChange={jest.fn()} />);
+
+      expect(await screen.findByText('User identity field')).toBeInTheDocument();
+      expect(screen.getByText('Exclude users from per-user authentication')).toBeInTheDocument();
+    });
+
+    it('shows a warning when the user lacks permission to list Grafana users', async () => {
+      window.fetch = jest.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({}) } as Response);
+      const options = getDefaultOptions();
+      options.jsonData = { ...options.jsonData, perUserAuth: true };
+
+      render(<ConfigEditor options={options} onOptionsChange={jest.fn()} />);
+
+      expect(await screen.findByText('Cannot list Grafana users')).toBeInTheDocument();
+      expect(screen.getByText(/Grafana Admin permissions/)).toBeInTheDocument();
+    });
+  });
+
   describe('Direct DB datasource selection', () => {
     beforeEach(() => {
       mockGetList.mockReturnValue([
