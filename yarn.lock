@@ -1894,17 +1894,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/e2e-selectors@npm:13.1.0-25644485979":
-  version: 13.1.0-25644485979
-  resolution: "@grafana/e2e-selectors@npm:13.1.0-25644485979"
-  dependencies:
-    semver: "npm:^7.7.0"
-    tslib: "npm:2.8.1"
-    typescript: "npm:6.0.2"
-  checksum: 10c0/4333578ebd1e072a869376e1a31de222ba8678a01cbe6970d27ce483de8954289f08a3f6bdd59bbf6a1fb4f35c08a8a89440b0992bb2e1348eadc648e8a44992
-  languageName: node
-  linkType: hard
-
 "@grafana/e2e-selectors@npm:13.1.1":
   version: 13.1.1
   resolution: "@grafana/e2e-selectors@npm:13.1.1"
@@ -1912,6 +1901,15 @@ __metadata:
     semver: "npm:^7.7.0"
     typescript: "npm:6.0.2"
   checksum: 10c0/b6c2a62acc42de9c767fa3073de07042ba2a0902dc98735e099fab359e3027e85e7dd38d8e25ccaff081da8a56ad74a89f0f84c493fb2fda69077cf81ca9a428
+  languageName: node
+  linkType: hard
+
+"@grafana/e2e-selectors@npm:13.2.0-30594044109":
+  version: 13.2.0-30594044109
+  resolution: "@grafana/e2e-selectors@npm:13.2.0-30594044109"
+  dependencies:
+    semver: "npm:^7.7.0"
+  checksum: 10c0/7397a6e009573074df11430e883cfc4f75045d8627eac3c6d93da7a345382c855ce60d120ab80bf6ad3e390ea2d00e84edeed1b27022ea027a71110ab8e78f03
   languageName: node
   linkType: hard
 
@@ -1971,11 +1969,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grafana/plugin-e2e@npm:3.10.0":
-  version: 3.10.0
-  resolution: "@grafana/plugin-e2e@npm:3.10.0"
+"@grafana/plugin-e2e@npm:3.11.0":
+  version: 3.11.0
+  resolution: "@grafana/plugin-e2e@npm:3.11.0"
   dependencies:
-    "@grafana/e2e-selectors": "npm:13.1.0-25644485979"
+    "@grafana/e2e-selectors": "npm:13.2.0-30594044109"
     yaml: "npm:^2.3.4"
   peerDependencies:
     "@axe-core/playwright": ^4.11.1
@@ -1983,7 +1981,7 @@ __metadata:
   peerDependenciesMeta:
     "@axe-core/playwright":
       optional: true
-  checksum: 10c0/e90b76cfb1e5e561a278d083a93a6acb6f4f6f2c24b686f375fadb1a409d6cfce2cc9a6cce183a5891618d9100494c64aafa35e349701266f5a0b7d3f160924a
+  checksum: 10c0/2504354e91c180df17f7ab3c8caa8657a1f6d07de00f955b02a918dd935e96d962aa139459cd64cee794bd52b1a725cc62ec81ebb821812464a1226ca5679c21
   languageName: node
   linkType: hard
 
@@ -7786,7 +7784,7 @@ __metadata:
     "@emotion/css": "npm:11.13.5"
     "@grafana/data": "npm:13.1.1"
     "@grafana/eslint-config": "npm:9.0.0"
-    "@grafana/plugin-e2e": "npm:3.10.0"
+    "@grafana/plugin-e2e": "npm:3.11.0"
     "@grafana/plugin-ui": "npm:0.17.3"
     "@grafana/runtime": "npm:13.1.1"
     "@grafana/schema": "npm:13.1.1"
@@ -12888,7 +12886,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:2.8.1, tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.7.0, tslib@npm:^2.8.0, tslib@npm:^2.8.1":
+"tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.7.0, tslib@npm:^2.8.0, tslib@npm:^2.8.1":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62
