@@ -1,6 +1,6 @@
 {
   "name": "grafana-zabbix",
-  "version": "6.5.0",
+  "version": "6.6.0",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "bugs": {
@@ -41,7 +41,7 @@
   "devDependencies": {
     "@changesets/cli": "2.31.1",
     "@grafana/eslint-config": "9.0.0",
-    "@grafana/plugin-e2e": "3.10.0",
+    "@grafana/plugin-e2e": "3.11.0",
     "@grafana/sign-plugin": "3.3.3",
     "@grafana/tsconfig": "2.2.0",
     "@playwright/test": "1.61.1",

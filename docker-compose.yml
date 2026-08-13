@@ -16,10 +16,9 @@ services:
       e2e-data-loader:
         condition: service_completed_successfully
     environment:
-      # Avoid the onboarding splash / new-layout modals during e2e runs and when
-      # browsing the dev environment manually.
+      # Avoid the onboarding splash during e2e runs and when browsing the dev
+      # environment manually.
       GF_FEATURE_TOGGLES_splashScreen: 'false'
-      GF_FEATURE_TOGGLES_dashboardNewLayouts: 'false'
 
   database:
     image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
