@@ -13,7 +13,6 @@ var cachedMethods = map[string]bool{
 	"host.get":        true,
 	"application.get": true,
 	"item.get":        true,
-	"service.get":     true,
 	"usermacro.get":   true,
 	"proxy.get":       true,
 	"valuemap.get":    true,
