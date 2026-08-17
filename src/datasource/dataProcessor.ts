@@ -11,6 +11,8 @@ function setAlias(alias: string, frame: DataFrame) {
     }
     if (valueField) {
       valueField.config.displayNameFromDS = alias;
+      // The data plane contract reads the series name from the value field name.
+      valueField.name = alias;
     }
     frame.name = alias;
     return frame;
@@ -45,6 +47,8 @@ function replaceAlias(regexp: string, newAlias: string, frame: DataFrame) {
     }
     if (valueField) {
       valueField.config.displayNameFromDS = alias;
+      // The data plane contract reads the series name from the value field name.
+      valueField.name = alias;
     }
     frame.name = alias;
     return frame;
@@ -69,6 +73,8 @@ function setAliasByRegex(alias: string, frame: DataFrame) {
     try {
       if (valueField) {
         valueField.config.displayNameFromDS = extractText(valueField.config?.displayNameFromDS, alias);
+        // The data plane contract reads the series name from the value field name.
+        valueField.name = valueField.config.displayNameFromDS;
       }
       frame.name = extractText(frame.name, alias);
     } catch (error: any) {

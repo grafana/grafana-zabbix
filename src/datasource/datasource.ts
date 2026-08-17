@@ -131,7 +131,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return backendResponse.pipe(
       map(applyFEFuncs),
       map(responseHandler.convertZabbixUnits),
-      map(this.convertToWide),
       switchMap((queryResponse) =>
         from(Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResponsePromise])).pipe(
           map(([dbConnectionRes, frontendRes, annotationRes]) =>
@@ -195,10 +194,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           !utils.nonTimeSeriesDataFrame(data[0])
         ) {
           data = responseHandler.alignFrames(data);
-          if (responseHandler.isConvertibleToWide(data)) {
-            console.log('Converting response to the wide format');
-            data = responseHandler.convertToWide(data);
-          }
         }
         return { data };
       });
@@ -328,10 +323,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const resp = { data: frames };
     this.sortByRefId(resp);
     this.applyFrontendFunctions(resp, request);
-    if (responseHandler.isConvertibleToWide(resp.data)) {
-      console.log('Converting response to the wide format');
-      resp.data = responseHandler.convertToWide(resp.data);
-    }
 
     return resp.data;
   }
@@ -921,12 +912,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return mergedResponse;
   }
 
-  convertToWide(response: DataQueryResponse) {
-    if (responseHandler.isConvertibleToWide(response.data)) {
-      response.data = responseHandler.convertToWide(response.data);
-    }
-    return response;
-  }
   interpolateVariablesInQueries(queries: ZabbixMetricsQuery[], scopedVars: ScopedVars): ZabbixMetricsQuery[] {
     if (!queries || queries.length === 0) {
       return [];

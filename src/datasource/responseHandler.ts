@@ -3,12 +3,13 @@ import {
   DataFrame,
   dataFrameFromJSON,
   DataFrameJSON,
+  DataFrameType,
   DataQueryResponse,
   Field,
   FieldType,
   getTimeField,
   MutableDataFrame,
-  MutableField,
+  QueryResultMeta,
   TIME_SERIES_TIME_FIELD_NAME,
   TIME_SERIES_VALUE_FIELD_NAME,
 } from '@grafana/data';
@@ -17,6 +18,20 @@ import * as c from './constants';
 import { ZBXGroup, ZBXTrigger } from './types';
 import { ZabbixMetricsQuery } from './types/query';
 import * as utils from './utils';
+
+// Data plane contract type declarations, see
+// https://grafana.github.io/dataplane/contract/timeseries
+// One time field and one value field per frame.
+export const TIME_SERIES_MULTI_META: QueryResultMeta = {
+  type: DataFrameType.TimeSeriesMulti,
+  typeVersion: [0, 1],
+};
+
+// One shared time field and a value field per series.
+export const TIME_SERIES_WIDE_META: QueryResultMeta = {
+  type: DataFrameType.TimeSeriesWide,
+  typeVersion: [0, 1],
+};
 
 /**
  * Convert Zabbix API history.get response to Grafana format
@@ -304,29 +319,6 @@ export function itServiceResponseToTimeSeries(response: any, interval) {
   return series;
 }
 
-export function isConvertibleToWide(data: DataFrame[]): boolean {
-  if (!data || data.length < 2) {
-    return false;
-  }
-
-  const first = data[0].fields.find((f) => f.type === FieldType.time);
-  if (!first) {
-    return false;
-  }
-
-  for (let i = 1; i < data.length; i++) {
-    const timeField = data[i].fields.find((f) => f.type === FieldType.time);
-
-    for (let j = 0; j < Math.min(data.length, 2); j++) {
-      if (timeField.values.get(j) !== first.values.get(j)) {
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
-
 export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
   if (!data || data.length === 0) {
     return data;
@@ -342,83 +334,39 @@ export function alignFrames(data: MutableDataFrame[]): MutableDataFrame[] {
     }
   }
 
-  for (let i = 0; i < data.length; i++) {
-    const frame = data[i];
+  return data.map((frame) => {
     const timeField = frame.fields.find((f) => f.name === TIME_SERIES_TIME_FIELD_NAME);
-    const valueField = frame.fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME || f.type === 'number');
     const firstTs = timeField.values.get(0);
-
-    if (firstTs > minTimestamp) {
-      console.log('Data frames: adding missing points');
-      let timestamps = timeField.values.toArray();
-      let values = valueField.values.toArray();
-      const missingTimestamps = [];
-      const missingValues = [];
-      const frameInterval: number = timeField.config.custom?.itemInterval;
-      for (let j = minTimestamp; j < firstTs; j += frameInterval) {
-        missingTimestamps.push(j);
-        missingValues.push(null);
-      }
-
-      timestamps = missingTimestamps.concat(timestamps);
-      values = missingValues.concat(values);
-      timeField.values = timestamps;
-      valueField.values = values;
-    }
-  }
-
-  return data;
-}
-
-export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
-  const maxLengthIndex = getLongestFrame(data);
-  const timeField = data[maxLengthIndex].fields.find((f) => f.type === FieldType.time);
-  if (!timeField) {
-    return [];
-  }
-
-  const fields: MutableField[] = [timeField];
-
-  for (let i = 0; i < data.length; i++) {
-    let valueField = data[i].fields.find((f) => f.name === TIME_SERIES_VALUE_FIELD_NAME);
-    if (data[i].name === 'SLI') {
-      valueField = data[i].fields.find((f) => f.type === FieldType.number);
-    }
-    if (!valueField) {
-      continue;
+    if (firstTs <= minTimestamp) {
+      return frame;
     }
 
-    valueField.name = data[i].name;
-
-    // Add null value to the end if series is shifted by 1 time frame
-    if (timeField.values.length - valueField.values.length === 1) {
-      valueField.values.add(null);
+    const missingTimestamps = [];
+    const frameInterval: number = timeField.config.custom?.itemInterval;
+    for (let j = minTimestamp; j < firstTs; j += frameInterval) {
+      missingTimestamps.push(j);
     }
-    fields.push(valueField);
-  }
-
-  const frame: DataFrame = {
-    refId: data[maxLengthIndex].refId,
-    name: 'wide',
-    fields,
-    length: timeField.values.length,
-  };
-
-  return [frame];
-}
-
-function getLongestFrame(data: MutableDataFrame[]): number {
-  let maxLengthIndex = 0;
-  let maxLength = 0;
-  for (let i = 0; i < data.length; i++) {
-    const timeField = data[i].fields.find((f) => f.type === FieldType.time);
-    if (timeField.values.length > maxLength) {
-      maxLength = timeField.values.length;
-      maxLengthIndex = i;
+    if (!missingTimestamps.length) {
+      return frame;
     }
-  }
 
-  return maxLengthIndex;
+    console.log('Data frames: adding missing points');
+    const missingValues = missingTimestamps.map(() => null);
+
+    // All fields of a frame must stay the same length, so pad every one of them and not
+    // just the first value field (a frame may hold more than one series, e.g. SLI). The
+    // frame is rebuilt because MutableDataFrame caches the first field's values, so
+    // assigning to field.values leaves frame.length stale.
+    return new MutableDataFrame({
+      name: frame.name,
+      refId: frame.refId,
+      meta: frame.meta,
+      fields: frame.fields.map((field) => ({
+        ...field,
+        values: (field === timeField ? missingTimestamps : missingValues).concat(field.values.toArray()),
+      })),
+    });
+  });
 }
 
 function sortTimeseries(timeseries) {
@@ -554,6 +502,7 @@ export function handleSLIResponse(response: any, itservices: any[], target: Zabb
   return new MutableDataFrame({
     refId: target.refId,
     name: 'SLI',
+    meta: { ...TIME_SERIES_WIDE_META },
     fields: [timeFiled, ...valueFields],
   });
 }
@@ -622,6 +571,7 @@ export function handleMultiSLIResponse(response: any[], itservices: any[], slas:
   return new MutableDataFrame({
     refId: target.refId,
     name: 'SLI',
+    meta: { ...TIME_SERIES_WIDE_META },
     fields: [timeFiled, ...valueFields],
   });
 }
@@ -664,6 +614,7 @@ export function handleServiceResponse(response: any, itservices: any[], target: 
   return new MutableDataFrame({
     refId: target.refId,
     name: 'Service status',
+    meta: { ...TIME_SERIES_WIDE_META },
     fields: [timeFiled, ...valueFields],
   });
 }
@@ -702,12 +653,22 @@ function handleTriggersResponse(triggers: ZBXTrigger[], groups: ZBXGroup[], time
       console.log('Error when handling triggers count: ', err);
     }
 
+    const seriesName = `Count ${target.refId}`;
     const frame = new MutableDataFrame({
-      name: `Count ${target.refId}`,
+      name: seriesName,
       refId: target.refId,
+      meta: { ...TIME_SERIES_MULTI_META },
       fields: [
         { name: TIME_SERIES_TIME_FIELD_NAME, type: FieldType.time, values: [timeRange[1] * 1000] },
-        { name: TIME_SERIES_VALUE_FIELD_NAME, type: FieldType.number, values: [triggersCount] },
+        {
+          // The data plane contract reads the series name from the value field name.
+          // displayNameFromDS keeps the displayed name identical to what the frame name
+          // used to resolve to.
+          name: seriesName,
+          type: FieldType.number,
+          config: { displayNameFromDS: seriesName },
+          values: [triggersCount],
+        },
       ],
       length: 1,
     });
@@ -805,8 +766,6 @@ export default {
   seriesToDataFrame,
   dataResponseToTimeSeries,
   itServiceResponseToTimeSeries,
-  isConvertibleToWide,
-  convertToWide,
   alignFrames,
   convertZabbixUnits,
 };
