@@ -1,5 +1,8 @@
 import { joinTriggersWithEvents } from '../problemsHandler';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
+import { ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector';
+import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
+import { SQLConnector } from './connectors/sql/sqlConnector';
 import { Zabbix } from './zabbix';
 
 jest.mock('../problemsHandler', () => ({
@@ -134,6 +137,36 @@ describe('Zabbix', () => {
       await expect(
         zabbix.initDBConnector(undefined, undefined, { ...connectorOptions, dbConnectionDatasourceId: 999 })
       ).rejects.toThrow('Error retrieving direct db connection data source. Data source with id 999 not found');
+    });
+
+    it('creates InfluxDBConnector for influxdb datasource type', async () => {
+      await zabbix.initDBConnector('my-db-uid', undefined, connectorOptions);
+
+      expect(zabbix.dbConnector).toBeInstanceOf(InfluxDBConnector);
+    });
+
+    it('creates ClickHouseConnector for ClickHouse datasource type', async () => {
+      getMock.mockResolvedValueOnce({
+        id: 43,
+        name: 'ClickHouse DS',
+        type: 'grafana-clickhouse-datasource',
+        meta: {},
+      });
+      await zabbix.initDBConnector('my-clickhouse-uid', undefined, connectorOptions);
+
+      expect(zabbix.dbConnector).toBeInstanceOf(ClickHouseConnector);
+    });
+
+    it('creates SQLConnector for SQL datasource types', async () => {
+      getMock.mockResolvedValueOnce({
+        id: 44,
+        name: 'MySQL DS',
+        type: 'mysql',
+        meta: {},
+      });
+      await zabbix.initDBConnector('my-mysql-uid', undefined, connectorOptions);
+
+      expect(zabbix.dbConnector).toBeInstanceOf(SQLConnector);
     });
   });
 

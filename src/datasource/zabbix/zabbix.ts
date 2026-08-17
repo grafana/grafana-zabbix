@@ -17,6 +17,7 @@ import { ZabbixDSOptions } from '../types/config';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import * as utils from '../utils';
 import { getUIDFromID } from '../migrations';
+import { CLICKHOUSE_DS_ID, ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
@@ -127,7 +128,7 @@ export class Zabbix implements ZabbixConnector {
   cachingProxy: CachingProxy;
   zabbixAPI: ZabbixAPIConnector;
   getHistoryDB: any;
-  dbConnector: InfluxDBConnector | SQLConnector;
+  dbConnector: InfluxDBConnector | SQLConnector | ClickHouseConnector;
   /** Settles when the DB connector set up by the constructor is ready, or failed */
   dbConnectorReady: Promise<void> = Promise.resolve();
   getTrendsDB: any;
@@ -234,6 +235,8 @@ export class Zabbix implements ZabbixConnector {
         retentionPolicy: options.dbConnectionRetentionPolicy,
       };
       this.dbConnector = new InfluxDBConnector(ds, influxDBConnectorOptions);
+    } else if (ds.type === CLICKHOUSE_DS_ID) {
+      this.dbConnector = new ClickHouseConnector(ds, {});
     } else {
       this.dbConnector = new SQLConnector(ds, {});
     }
