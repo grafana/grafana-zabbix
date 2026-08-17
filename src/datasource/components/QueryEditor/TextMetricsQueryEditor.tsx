@@ -14,9 +14,11 @@ export interface Props {
   query: ZabbixMetricsQuery;
   datasource: ZabbixDatasource;
   onChange: (query: ZabbixMetricsQuery) => void;
+  // 'text' offers all text-like items (char, log, text), 'log' offers log items only
+  itemType?: 'text' | 'log';
 }
 
-export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) => {
+export const TextMetricsQueryEditor = ({ query, datasource, onChange, itemType = 'text' }: Props) => {
   const interpolatedQuery = useInterpolatedQuery(datasource, query);
 
   const loadGroupOptions = async () => {
@@ -69,7 +71,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
 
   const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
     const options = {
-      itemtype: 'text',
+      itemtype: itemType,
       showDisabledItems: query.options.showDisabledItems,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
@@ -185,20 +187,22 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
-        <InlineField label="Text filter" labelWidth={12}>
+        <InlineField label={itemType === 'log' ? 'Line filter' : 'Text filter'} labelWidth={12}>
           <Input
             width={24}
             defaultValue={query.textFilter}
             onBlur={onTextFilterChange}
-            placeholder="Metric text filter"
+            placeholder={itemType === 'log' ? 'Regex to filter log lines' : 'Metric text filter'}
           />
         </InlineField>
-        <InlineField label="Use capture groups" labelWidth={18}>
-          <InlineSwitch
-            value={query.useCaptureGroups}
-            onChange={() => onChange({ ...query, useCaptureGroups: !query.useCaptureGroups })}
-          />
-        </InlineField>
+        {itemType !== 'log' && (
+          <InlineField label="Use capture groups" labelWidth={18}>
+            <InlineSwitch
+              value={query.useCaptureGroups}
+              onChange={() => onChange({ ...query, useCaptureGroups: !query.useCaptureGroups })}
+            />
+          </InlineField>
+        )}
       </QueryEditorRow>
     </>
   );

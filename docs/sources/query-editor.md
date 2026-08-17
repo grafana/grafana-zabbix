@@ -91,6 +91,25 @@ Expand the **Options** section to access additional settings:
 |--------|-------------|
 | **Show disabled items** | Include disabled items in the item drop-down. |
 
+### Logs
+
+Use Logs queries to retrieve data from Zabbix items with the Log value type (`log[]`, `logrt[]`, `eventlog[]` and similar keys). Results are returned as log lines and render in the Logs panel and the Explore logs view. Log entry metadata (severity, source, and event ID for Windows event log items) is mapped to the log line's level and labels.
+
+| Field | Description |
+|-------|-------------|
+| **Group** | The host group to query. Supports regex and template variables. |
+| **Host** | The host to query. Supports regex and template variables. |
+| **Application** | Filter items by application. This field is always visible regardless of Zabbix version. On Zabbix 5.4+, where applications have been removed, leave this field empty. |
+| **Item** | The log item to query. Supports regex and template variables. |
+| **Line filter** | A regular expression used to keep only matching log lines. |
+
+Expand the **Options** section to access additional settings:
+
+| Option | Description |
+|--------|-------------|
+| **Show disabled items** | Include disabled items in the item drop-down. |
+| **Line limit** | The maximum number of log lines to return. The most recent lines within the time range are kept. Default: 1000. |
+
 ### Services
 
 Use Services queries to retrieve IT service SLA data from Zabbix.

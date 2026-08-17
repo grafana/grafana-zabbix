@@ -9,7 +9,8 @@ export type QueryType =
   | typeof c.MODE_ITEMID
   | typeof c.MODE_TRIGGERS
   | typeof c.MODE_PROBLEMS
-  | typeof c.MODE_MACROS;
+  | typeof c.MODE_MACROS
+  | typeof c.MODE_LOGS;
 
 type BaseQuery = { queryType: QueryType; datasourceUid?: string } & DataQuery;
 

@@ -766,6 +766,18 @@ export class Zabbix implements ZabbixConnector {
     }
   }
 
+  getHistoryLogs(items, timeRange, target) {
+    const [timeFrom, timeTo] = timeRange;
+    if (!items.length) {
+      return Promise.resolve([]);
+    }
+    const limit = target.options?.limit;
+    // With a limit, fetch the most recent entries (DESC); handleLogs() sorts lines ascending
+    return this.zabbixAPI
+      .getHistory(items, timeFrom, timeTo, limit, limit ? 'DESC' : undefined)
+      .then((history) => [responseHandler.handleLogs(history, items, target)]);
+  }
+
   getHistoryText(items, timeRange, target) {
     const [timeFrom, timeTo] = timeRange;
     if (items.length) {

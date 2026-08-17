@@ -164,6 +164,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           return [];
         }
         return this.queryTextData(target, timeRange);
+      } else if (target.queryType === c.MODE_LOGS) {
+        // Logs query
+        // Don't request undefined targets
+        if (!target.group || !target.host || !target.item) {
+          return [];
+        }
+        return this.queryLogsData(target, timeRange);
       } else if (target.queryType === c.MODE_ITSERVICE) {
         // IT services query
         const isOldVersion = oldVersionTargets.includes(target.refId);
@@ -192,6 +199,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           isDataFrame(data[0]) &&
           !utils.isProblemsDataFrame(data[0]) &&
           !utils.isMacrosDataFrame(data[0]) &&
+          !utils.isLogsDataFrame(data[0]) &&
           !utils.nonTimeSeriesDataFrame(data[0])
         ) {
           data = responseHandler.alignFrames(data);
@@ -381,6 +389,19 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         return [result];
       }
       return (result as any[]).map((s) => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
+    });
+  }
+
+  /**
+   * Query target data for Logs (items with the Log value type)
+   */
+  queryLogsData(target, timeRange) {
+    const options = {
+      itemtype: 'log',
+      showDisabledItems: target.options?.showDisabledItems,
+    };
+    return this.zabbix.getItemsFromTarget(target, options).then((items) => {
+      return this.zabbix.getHistoryLogs(items, timeRange, target);
     });
   }
 

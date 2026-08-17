@@ -769,6 +769,10 @@ export function isMacrosDataFrame(data: DataFrame): boolean {
   return data.name === 'macros';
 }
 
+export function isLogsDataFrame(data: DataFrame): boolean {
+  return data.meta?.preferredVisualisationType === 'logs';
+}
+
 export function nonTimeSeriesDataFrame(data: DataFrame): boolean {
   return !data.fields.find((f) => f.type === FieldType.time || f.name === TIME_SERIES_TIME_FIELD_NAME);
 }

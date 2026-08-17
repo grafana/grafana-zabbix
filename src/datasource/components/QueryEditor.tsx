@@ -31,6 +31,11 @@ const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
     description: 'Query text data',
   },
   {
+    value: c.MODE_LOGS,
+    label: 'Logs',
+    description: 'Query log items',
+  },
+  {
     value: c.MODE_ITSERVICE,
     label: 'Services',
     description: 'Query services SLA',
@@ -95,6 +100,14 @@ function getSLAQueryDefaults(): Partial<ZabbixMetricsQuery> {
   };
 }
 
+function getLogsQueryDefaults(): Partial<ZabbixMetricsQuery> {
+  return {
+    options: {
+      limit: c.DEFAULT_ZABBIX_LOGS_LIMIT,
+    },
+  };
+}
+
 function getProblemsQueryDefaults(): Partial<ZabbixMetricsQuery> {
   return {
     showProblems: ShowProblemTypes.Problems,
@@ -130,6 +143,12 @@ export const QueryEditor = ({ query: queryProp, datasource, onChange, onRunQuery
   }
   if (queryType === c.MODE_ITSERVICE) {
     query = { ...getSLAQueryDefaults(), ...query };
+  }
+  if (queryType === c.MODE_LOGS) {
+    const defaults = getLogsQueryDefaults();
+    query = { ...defaults, ...query };
+    query.options = { ...defaults.options, ...query.options };
+    query.options.limit = query.options.limit ?? c.DEFAULT_ZABBIX_LOGS_LIMIT;
   }
 
   // Migrate query on load
@@ -186,6 +205,14 @@ export const QueryEditor = ({ query: queryProp, datasource, onChange, onRunQuery
     );
   };
 
+  const renderLogsEditor = () => {
+    return (
+      <>
+        <TextMetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} itemType="log" />
+      </>
+    );
+  };
+
   const renderITServicesEditor = () => {
     return (
       <>
@@ -224,6 +251,7 @@ export const QueryEditor = ({ query: queryProp, datasource, onChange, onRunQuery
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
       {queryType === c.MODE_ITEMID && renderItemIdsEditor()}
       {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
+      {queryType === c.MODE_LOGS && renderLogsEditor()}
       {queryType === c.MODE_ITSERVICE && renderITServicesEditor()}
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}

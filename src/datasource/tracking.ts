@@ -4,6 +4,7 @@ import { ZabbixMetricsQuery } from './types/query';
 import {
   MODE_ITEMID,
   MODE_ITSERVICE,
+  MODE_LOGS,
   MODE_MACROS,
   MODE_METRICS,
   MODE_PROBLEMS,
@@ -42,6 +43,9 @@ export const trackRequest = (request: DataQueryRequest<ZabbixMetricsQuery>): voi
         break;
       case MODE_MACROS:
         properties.queryType = 'Macros';
+        break;
+      case MODE_LOGS:
+        properties.queryType = 'Logs';
         break;
     }
 
