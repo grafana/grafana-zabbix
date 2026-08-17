@@ -159,8 +159,9 @@ These errors are specific to the Direct DB Connection feature.
 |-------|----------|
 | Wrong data source selected | Verify the data source selected in the **Data Source** drop-down points to the correct Zabbix database. |
 | Database permissions | Verify the database user has `SELECT` access to the `history`, `history_uint`, `trends`, and `trends_uint` tables. |
-| Database data source not configured | The selected MySQL, PostgreSQL, or InfluxDB data source must be configured and working independently. Test it by running a query directly against that data source. |
+| Database data source not configured | The selected MySQL, PostgreSQL, InfluxDB, or ClickHouse data source must be configured and working independently. Test it by running a query directly against that data source. |
 | InfluxDB retention policy | If using InfluxDB, verify the **Retention Policy** name matches the one configured in your InfluxDB instance. Leave it blank if using only the default retention policy. |
+| ClickHouse default database | If using ClickHouse (Zabbix 8.0 history storage), set the **Default database** of the ClickHouse data source to the Zabbix history database (`zabbix` by default). The plugin queries history tables without a database prefix. |
 
 ## Template variable errors
 
