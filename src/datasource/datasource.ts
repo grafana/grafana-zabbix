@@ -399,6 +399,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const options = {
       itemtype: 'log',
       showDisabledItems: target.options?.showDisabledItems,
+      hostTags: target.hostTags,
+      evaltype: target.evaltype,
     };
     return this.zabbix.getItemsFromTarget(target, options).then((items) => {
       return this.zabbix.getHistoryLogs(items, timeRange, target);

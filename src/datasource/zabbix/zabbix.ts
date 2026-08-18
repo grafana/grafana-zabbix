@@ -343,8 +343,10 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getHosts(groupFilter?, hostFilter?): Promise<any[]> {
-    return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
+  getHosts(groupFilter?, hostFilter?, hostTagFilters?: HostTagFilter[], evalType?: ZabbixTagEvalType): Promise<any[]> {
+    return this.getAllHosts(groupFilter, false, hostTagFilters, evalType).then((hosts) =>
+      findByFilter(hosts, hostFilter)
+    );
   }
 
   /**
@@ -417,7 +419,7 @@ export class Zabbix implements ZabbixConnector {
       return this.getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options);
     }
 
-    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hosts = await this.getHosts(groupFilter, hostFilter, options.hostTags, options.evaltype);
     const hostids = _.map(hosts, 'hostid');
 
     // Support regexp in tags

@@ -10,6 +10,7 @@ import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
 import { TextMetricsQueryEditor } from './QueryEditor/TextMetricsQueryEditor';
+import { LogsQueryEditor } from './QueryEditor/LogsQueryEditor';
 import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
 import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
@@ -208,7 +209,7 @@ export const QueryEditor = ({ query: queryProp, datasource, onChange, onRunQuery
   const renderLogsEditor = () => {
     return (
       <>
-        <TextMetricsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} itemType="log" />
+        <LogsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
       </>
     );
   };
