@@ -37,17 +37,18 @@ function playTone(type: 'beep' | 'alarm', volume: number): void {
   oscillator.onended = () => ctx.close();
 }
 
-function playCustomUrl(url: string, volume: number): void {
+function playCustomUrl(url: string, volume: number): HTMLAudioElement {
   const audio = new Audio(url);
   audio.volume = Math.max(0, Math.min(1, volume / 100));
   audio.play().catch((err) => {
     console.warn('Zabbix panel: failed to play audio URL', err);
   });
+  return audio;
 }
 
 export function useSoundAlerts(problems: ProblemDTO[], options: ProblemsPanelOptions): void {
   const prevIdsRef = useRef<Set<string>>(new Set());
-  const audioRef = useRef<Audio | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const {
     soundAlerts,
@@ -88,7 +89,9 @@ export function useSoundAlerts(problems: ProblemDTO[], options: ProblemsPanelOpt
 
     if (shouldPlay) {
       if (soundTone === 'custom' && soundCustomUrl) {
-        playCustomUrl(soundCustomUrl, soundVolume);
+        // Stop the previous playback before starting a new one
+        audioRef.current?.pause();
+        audioRef.current = playCustomUrl(soundCustomUrl, soundVolume);
       } else {
         playTone(soundTone as 'beep' | 'alarm', soundVolume);
       }
@@ -106,4 +109,12 @@ export function useSoundAlerts(problems: ProblemDTO[], options: ProblemsPanelOpt
     soundRepeat,
     highlightNewerThan,
   ]);
+
+  // Stop any playing audio when the panel unmounts
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
 }
