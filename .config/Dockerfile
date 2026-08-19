@@ -1,4 +1,4 @@
-ARG grafana_version=latest@sha256:b92dd301ac40f837e87bfd05428397f9096a0941773ab417e67b399d0381b3ba
+ARG grafana_version=latest
 ARG grafana_image=grafana-enterprise
 
 FROM grafana/${grafana_image}:${grafana_version}
@@ -7,8 +7,9 @@ ARG anonymous_auth_enabled=true
 ARG development=false
 ARG TARGETARCH
 
-ARG GO_VERSION=1.25.6
+ARG GO_VERSION=1.21.6
 ARG GO_ARCH=${TARGETARCH:-amd64}
+
 ENV DEV "${development}"
 
 # Make it as simple as possible to access the grafana instance for development purposes
@@ -43,6 +44,7 @@ RUN if [ "${development}" = "true" ]; then \
 
 COPY supervisord/supervisord.conf /etc/supervisor.d/supervisord.ini
 COPY supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 
 # Installing Go
 RUN if [ "${development}" = "true" ]; then \
