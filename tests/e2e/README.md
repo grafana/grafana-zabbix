@@ -54,14 +54,14 @@ state-flip assertions reload the dashboard until the new state appears.
 # from the repo root
 make dist                       # build the plugin into ./dist
 docker compose up -d --wait     # start the stack (ZABBIX_VERSION optional, default 7.0)
-yarn e2e                        # run the tests against http://localhost:3000
+npm run e2e                     # run the tests against http://localhost:3000
 ```
 
 Run a single spec, or try another Zabbix version:
 
 ```sh
-yarn playwright test tests/e2e/problemsHistoryBounded.spec.ts
-ZABBIX_VERSION=7.0 docker compose up -d --wait && yarn e2e
+npx playwright test tests/e2e/problemsHistoryBounded.spec.ts
+ZABBIX_VERSION=7.0 docker compose up -d --wait && npm run e2e
 ```
 
 ## CI
