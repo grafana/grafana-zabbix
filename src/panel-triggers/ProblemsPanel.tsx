@@ -84,6 +84,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       const host = trigger.hosts[0];
       trigger.host = host.name;
       trigger.hostTechName = host.host;
+      trigger.hostIp = host.hostIp;
       if (host.proxy) {
         trigger.proxy = host.proxy;
       }

@@ -139,6 +139,27 @@ export function addTriggerHostProxy(triggers, proxies) {
   return triggers;
 }
 
+/**
+ * Set host IP on problems from host interfaces fetched via host.get + selectInterfaces.
+ * Only interfaces configured to connect via IP (useip = '1') are used; interfaces
+ * connecting via DNS contribute nothing. Multiple IPs are joined comma-separated,
+ * no matching interfaces result in an empty string.
+ */
+export function addTriggerHostIps(triggers, hostsWithInterfaces) {
+  const hostsById = _.keyBy(hostsWithInterfaces, 'hostid');
+  triggers.forEach((trigger) => {
+    if (trigger.hosts && trigger.hosts.length) {
+      const host = trigger.hosts[0];
+      const interfaces = hostsById[host.hostid]?.interfaces || [];
+      host.hostIp = interfaces
+        .filter((iface) => iface.useip === '1' && iface.ip)
+        .map((iface) => iface.ip)
+        .join(', ');
+    }
+  });
+  return triggers;
+}
+
 export function formatAcknowledges(triggers, users) {
   if (!users) {
     return;
@@ -288,6 +309,7 @@ export function expandUserMacros(
 const problemsHandler = {
   addTriggerDataSource,
   addTriggerHostProxy,
+  addTriggerHostIps,
   formatAcknowledges,
   setMaintenanceStatus,
   setAckButtonStatus,

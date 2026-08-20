@@ -58,6 +58,9 @@ export interface ZabbixQueryOptions {
   acknowledged?: number;
   hostsInMaintenance?: boolean;
   hostProxy?: boolean;
+  // When enabled, fetch host interfaces (host.get + selectInterfaces) to show
+  // the host IP. Off by default to avoid the extra API call.
+  hostIp?: boolean;
   limit?: number;
   useTimeRange?: boolean;
   severities?: number[];

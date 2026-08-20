@@ -230,6 +230,19 @@ export class ZabbixAPIConnector {
     return this.request('host.get', params);
   }
 
+  /**
+   * Get host interfaces for the given hosts. Minimal output — used to resolve
+   * host IP addresses for the Problems panel.
+   */
+  getHostInterfaces(hostids: string[]): Promise<any[]> {
+    const params = {
+      output: ['hostid'],
+      hostids,
+      selectInterfaces: ['ip', 'useip'],
+    };
+    return this.request('host.get', params);
+  }
+
   async getApps(hostids): Promise<any[]> {
     if (this.isZabbix54OrHigher()) {
       return [];

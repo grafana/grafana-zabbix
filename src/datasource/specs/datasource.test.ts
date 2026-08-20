@@ -101,6 +101,73 @@ describe('ZabbixDatasource', () => {
     expect(result.data).toEqual([{ refId: 'A' }, { refId: 'B' }, { refId: 'C' }, { refId: 'D' }]);
   });
 
+  describe('queryProblems host IP option', () => {
+    const buildProblemsTarget = (options: any = {}) =>
+      ({
+        showProblems: 'problems',
+        options,
+        tags: { filter: '' },
+        trigger: { filter: '' },
+        group: { filter: '' },
+        host: { filter: '' },
+        application: { filter: '' },
+        proxy: { filter: '' },
+        datasource: 'test-ds',
+      }) as any;
+
+    const buildZabbixMock = (problems: any[]) => ({
+      getProblems: jest.fn().mockResolvedValue(problems),
+      getUsers: jest.fn().mockResolvedValue([]),
+      getProxies: jest.fn().mockResolvedValue([]),
+      getHostInterfaces: jest.fn().mockResolvedValue([
+        {
+          hostid: '10001',
+          interfaces: [
+            { ip: '192.168.1.10', useip: '1' },
+            { ip: '10.0.0.5', useip: '1' },
+          ],
+        },
+      ]),
+    });
+
+    const problemWithHost = () => ({
+      name: 'Test problem',
+      suppressed: '0',
+      hosts: [{ hostid: '10001', name: 'Test host', host: 'test-host' }],
+    });
+
+    it('fetches host interfaces and sets host IP when the hostIp option is enabled', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const zabbixMock = buildZabbixMock([problemWithHost()]);
+      ds.zabbix = zabbixMock as any;
+
+      const frame = await ds.queryProblems(buildProblemsTarget({ hostIp: true }), [0, 100], {});
+
+      expect(zabbixMock.getHostInterfaces).toHaveBeenCalledWith(['10001']);
+      expect(frame.fields[0].values[0].hosts[0].hostIp).toBe('192.168.1.10, 10.0.0.5');
+    });
+
+    it('does not fetch host interfaces when the hostIp option is disabled', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const zabbixMock = buildZabbixMock([problemWithHost()]);
+      ds.zabbix = zabbixMock as any;
+
+      await ds.queryProblems(buildProblemsTarget(), [0, 100], {});
+
+      expect(zabbixMock.getHostInterfaces).not.toHaveBeenCalled();
+    });
+
+    it('does not fetch host interfaces when no problem has hosts', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const zabbixMock = buildZabbixMock([{ name: 'Hostless problem', suppressed: '0', hosts: [] }]);
+      ds.zabbix = zabbixMock as any;
+
+      await ds.queryProblems(buildProblemsTarget({ hostIp: true }), [0, 100], {});
+
+      expect(zabbixMock.getHostInterfaces).not.toHaveBeenCalled();
+    });
+  });
+
   it('mergeQueries combines data without mutating the original response', () => {
     const baseResponse = { data: [{ refId: 'A' }] } as any;
     const merged = ds.mergeQueries(

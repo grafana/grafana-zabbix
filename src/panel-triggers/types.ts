@@ -8,6 +8,7 @@ export interface ProblemsPanelOptions {
   // Fields
   hostField?: boolean;
   hostTechNameField?: boolean;
+  hostIpField?: boolean;
   hostGroups?: boolean;
   hostProxy?: boolean;
   showTags?: boolean;
@@ -63,6 +64,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   // Fields
   hostField: true,
   hostTechNameField: false,
+  hostIpField: false,
   hostProxy: false,
   hostGroups: false,
   showTags: true,
