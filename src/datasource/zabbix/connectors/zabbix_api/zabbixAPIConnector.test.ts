@@ -1,6 +1,11 @@
 import { ZabbixAPIConnector } from './zabbixAPIConnector';
 import { HostTagOperatorValue } from '../../../components/QueryEditor/types';
 import { ZabbixTagEvalType } from 'datasource/types/query';
+import { getBackendSrv } from '@grafana/runtime';
+
+jest.mock('@grafana/runtime', () => ({
+  getBackendSrv: jest.fn(),
+}));
 
 describe('Zabbix API connector', () => {
   const datasourceUID = 'test-datasource-uid';
@@ -188,6 +193,96 @@ describe('Zabbix API connector', () => {
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.symptom).toBeUndefined();
+    });
+
+    it('pushes a plain problem name to the API search parameter', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: 'High CPU load' });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toEqual({ name: 'High CPU load' });
+      expect(params.searchWildcardsEnabled).toBeUndefined();
+    });
+
+    it('enables wildcards when the problem name contains *', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: 'CPU*' });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toEqual({ name: 'CPU*' });
+      expect(params.searchWildcardsEnabled).toBe(true);
+    });
+
+    it('narrows a regex problem name by its literal substring', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: '/CPU load.*/' });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toEqual({ name: 'CPU load' });
+      expect(params.searchWildcardsEnabled).toBeUndefined();
+    });
+
+    it('does not narrow by a literal inside an optional group', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {
+        problemName: '/(Critical failure)?CPU load/',
+      });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      // "Critical failure" is optional — narrowing on it would drop plain "CPU load"
+      // problems the regex matches. Only the guaranteed literal may be pushed.
+      expect(params.search).toEqual({ name: 'CPU load' });
+    });
+
+    it('omits search when no problem name is given', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toBeUndefined();
+    });
+
+    it('pushes an alternation regex as an OR of branch literals (searchByAny)', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {
+        problemName: '/(Datastore free space|Unavailable by ICMP|Zabbix agent is not available)/',
+      });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toEqual({
+        name: ['Datastore free space', 'Unavailable by ICMP', 'Zabbix agent is not available'],
+      });
+      expect(params.searchByAny).toBe(true);
+    });
+
+    it('omits search for a negative look-ahead (exclusion) regex', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: '/^(?!.*Zabbix agent).*/' });
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.search).toBeUndefined();
+      expect(params.searchByAny).toBeUndefined();
     });
   });
 
@@ -510,6 +605,61 @@ describe('Zabbix API connector', () => {
         period_to: 7200,
         periods: 2,
       });
+    });
+  });
+
+  describe('backendAPIRequest retry on transient errors', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+      jest.clearAllMocks();
+    });
+
+    it('retries a transient 503 and succeeds once the backend recovers', async () => {
+      jest.useFakeTimers();
+      const fetchMock = jest
+        .fn()
+        .mockReturnValueOnce({ toPromise: () => Promise.reject({ status: 503 }) })
+        .mockReturnValueOnce({ toPromise: () => Promise.resolve({ data: { result: 'ok' } }) });
+      (getBackendSrv as jest.Mock).mockReturnValue({ fetch: fetchMock });
+
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      const resultPromise = zabbixAPIConnector.backendAPIRequest('host.get', {});
+
+      await jest.advanceTimersByTimeAsync(1000);
+      const result = await resultPromise;
+
+      expect(result).toBe('ok');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('gives up after exhausting retries on a persistent 503', async () => {
+      jest.useFakeTimers();
+      const fetchMock = jest.fn().mockReturnValue({ toPromise: () => Promise.reject({ status: 503 }) });
+      (getBackendSrv as jest.Mock).mockReturnValue({ fetch: fetchMock });
+
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      const resultPromise = zabbixAPIConnector.backendAPIRequest('host.get', {});
+      const assertion = expect(resultPromise).rejects.toThrow(/temporarily unavailable/i);
+
+      await jest.advanceTimersByTimeAsync(5000);
+      await assertion;
+
+      expect(fetchMock).toHaveBeenCalledTimes(3); // initial attempt + 2 retries
+    });
+
+    it('does not retry a non-transient error, e.g. a 400 validation/guardrail error', async () => {
+      const fetchMock = jest.fn().mockReturnValue({
+        toPromise: () => Promise.reject({ status: 400, data: { message: 'bad request' } }),
+      });
+      (getBackendSrv as jest.Mock).mockReturnValue({ fetch: fetchMock });
+
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+
+      await expect(zabbixAPIConnector.backendAPIRequest('host.get', {})).rejects.toEqual({
+        status: 400,
+        data: { message: 'bad request' },
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 

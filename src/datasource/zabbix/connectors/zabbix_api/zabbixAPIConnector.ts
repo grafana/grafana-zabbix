@@ -13,6 +13,18 @@ import { zabbixMethodName } from 'datasource/zabbix/types';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
 
+// Transient upstream errors: the Zabbix web frontend (nginx/apache + php-fpm)
+// is momentarily overloaded/unreachable. Worth a couple of quick retries.
+// Anything else (4xx guardrail/validation errors, auth errors, etc.) should
+// surface immediately.
+const RETRYABLE_HTTP_STATUSES = [502, 503, 504];
+const MAX_RETRY_ATTEMPTS = 2;
+const RETRY_BASE_DELAY_MS = 300;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Zabbix API Wrapper.
  * Creates Zabbix API instance with given parameters (url, credentials and other).
@@ -75,8 +87,43 @@ export class ZabbixAPIConnector {
       requestOptions.headers.Authorization = this.requestOptions.basicAuth;
     }
 
-    const response = await getBackendSrv().fetch<any>(requestOptions).toPromise();
+    const response = await this.fetchWithRetry(requestOptions, method);
     return response?.data?.result;
+  }
+
+  /**
+   * Retries the resource-endpoint call a couple of times on a transient
+   * 502/503/504 from the Zabbix web frontend before giving up. This is the
+   * shared entry point for both the query-editor autocomplete calls
+   * (groups/hosts/items/apps) and all frontend-mode queries (triggers,
+   * problems, text metrics, user macros, IT services), so it's the one
+   * place worth softening against a momentarily overloaded Zabbix.
+   */
+  private async fetchWithRetry(requestOptions: BackendSrvRequest, method: zabbixMethodName, attempt = 0): Promise<any> {
+    try {
+      return await getBackendSrv().fetch<any>(requestOptions).toPromise();
+    } catch (error: any) {
+      const status = error?.status;
+      const isTransient = RETRYABLE_HTTP_STATUSES.includes(status);
+
+      if (isTransient && attempt < MAX_RETRY_ATTEMPTS) {
+        const backoffMs = RETRY_BASE_DELAY_MS * Math.pow(3, attempt);
+        console.warn(
+          `Zabbix API request "${method}" failed with ${status}, retrying in ${backoffMs}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})`
+        );
+        await delay(backoffMs);
+        return this.fetchWithRetry(requestOptions, method, attempt + 1);
+      }
+
+      if (isTransient) {
+        throw new Error(
+          `Zabbix API is temporarily unavailable (HTTP ${status}) after ${MAX_RETRY_ATTEMPTS} retries. ` +
+            `The Zabbix server/frontend may be overloaded - check its logs and load.`
+        );
+      }
+
+      throw error;
+    }
   }
 
   /**
@@ -550,7 +597,7 @@ export class ZabbixAPIConnector {
   }
 
   getProblems(groupids, hostids, applicationids, supportsApplications, options): Promise<ZBXProblem[]> {
-    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, symptom } = options;
+    const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, problemName, symptom } = options;
 
     const params: any = {
       output: 'extend',
@@ -595,6 +642,19 @@ export class ZabbixAPIConnector {
 
     if (supportsApplications) {
       params.applicationids = applicationids;
+    }
+
+    // Push the problem-name filter to the Zabbix API so it filters at the source
+    // instead of the plugin fetching every problem and filtering client-side.
+    const nameSearch = utils.buildProblemNameSearchParams(problemName);
+    if (nameSearch.search) {
+      params.search = nameSearch.search;
+      if (nameSearch.searchWildcardsEnabled) {
+        params.searchWildcardsEnabled = true;
+      }
+      if (nameSearch.searchByAny) {
+        params.searchByAny = true;
+      }
     }
 
     if (this.supportsCauseSymptomProblems() && symptom !== undefined && symptom !== null) {
@@ -715,7 +775,7 @@ export class ZabbixAPIConnector {
   }
 
   getEventsHistory(groupids, hostids, applicationids, options) {
-    const { timeFrom, timeTo, severities, limit, value, tags, evaltype, symptom } = options;
+    const { timeFrom, timeTo, severities, limit, value, tags, evaltype, problemName, symptom } = options;
 
     const params: any = {
       output: 'extend',
@@ -753,6 +813,18 @@ export class ZabbixAPIConnector {
 
     if (evaltype) {
       params.evaltype = evaltype;
+    }
+
+    // Push the problem-name filter to the Zabbix API (see getProblems).
+    const nameSearch = utils.buildProblemNameSearchParams(problemName);
+    if (nameSearch.search) {
+      params.search = nameSearch.search;
+      if (nameSearch.searchWildcardsEnabled) {
+        params.searchWildcardsEnabled = true;
+      }
+      if (nameSearch.searchByAny) {
+        params.searchByAny = true;
+      }
     }
 
     if (this.supportsCauseSymptomProblems() && symptom !== undefined && symptom !== null) {

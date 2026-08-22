@@ -53,6 +53,12 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         defaultValue: defaultPanelOptions.pageSize,
       })
       .addBooleanSwitch({
+        path: 'showSearchFilter',
+        name: 'Show search filter',
+        description: 'Show a free-text search input above the problems table to filter rows by any column.',
+        defaultValue: defaultPanelOptions.showSearchFilter,
+      })
+      .addBooleanSwitch({
         path: 'problemTimeline',
         name: 'Problem timeline',
         defaultValue: defaultPanelOptions.problemTimeline,
