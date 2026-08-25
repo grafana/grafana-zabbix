@@ -117,7 +117,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         return target;
       });
 
-    const interpolatedTargets = this.interpolateVariablesInQueries(requestTargets, request.scopedVars);
+    // Range variables ($__range, $__range_series, etc.) must be in scope before
+    // interpolation, otherwise function params reach the backend unexpanded
+    const scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
+    const interpolatedTargets = this.interpolateVariablesInQueries(requestTargets, scopedVars);
     const backendResponse = super.query({ ...request, targets: interpolatedTargets.filter(this.isBackendTarget) });
     const dbConnectionResponsePromise = this.dbConnectionQuery({ ...request, targets: interpolatedTargets });
     const frontendResponsePromise = this.frontendQuery({ ...request, targets: interpolatedTargets });
