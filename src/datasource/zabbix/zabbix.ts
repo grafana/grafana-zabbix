@@ -343,30 +343,48 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getHosts(groupFilter?, hostFilter?): Promise<any[]> {
-    return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
+  getHosts(
+    groupFilter?: string,
+    hostFilter?: string,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<any[]> {
+    return this.getAllHosts(groupFilter, false, hostTagFilters, evalType).then((hosts) =>
+      findByFilter(hosts, hostFilter)
+    );
   }
 
   /**
    * Get list of applications belonging to given groups and hosts.
    */
-  async getAllApps(groupFilter, hostFilter): Promise<any[]> {
+  async getAllApps(
+    groupFilter,
+    hostFilter,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<any[]> {
     await this.getVersion();
     if (!this.supportsApplications()) {
       return [];
     }
 
-    return this.getHosts(groupFilter, hostFilter).then((hosts) => {
+    return this.getHosts(groupFilter, hostFilter, hostTagFilters, evalType).then((hosts) => {
       const hostids = _.map(hosts, 'hostid');
       return this.zabbixAPI.getApps(hostids);
     });
   }
 
-  async getApps(groupFilter?, hostFilter?, appFilter?): Promise<AppsResponse> {
+  async getApps(
+    groupFilter?,
+    hostFilter?,
+    appFilter?,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<AppsResponse> {
     await this.getVersion();
     const skipAppFilter = !this.supportsApplications();
 
-    return this.getHosts(groupFilter, hostFilter).then((hosts) => {
+    return this.getHosts(groupFilter, hostFilter, hostTagFilters, evalType).then((hosts) => {
       const hostids = _.map(hosts, 'hostid');
       if (appFilter && !skipAppFilter) {
         return this.zabbixAPI.getApps(hostids).then((apps) => filterByQuery(apps, appFilter));
@@ -390,8 +408,17 @@ export class Zabbix implements ZabbixConnector {
     return filterByMQuery(allMacros, macroFilter);
   }
 
-  async getItemTags(groupFilter?, hostFilter?, itemTagFilter?) {
-    const items = await this.getAllItems(groupFilter, hostFilter, null, null, {});
+  async getItemTags(
+    groupFilter?,
+    hostFilter?,
+    itemTagFilter?,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ) {
+    const items = await this.getAllItems(groupFilter, hostFilter, null, null, {
+      hostTags: hostTagFilters,
+      evaltype: evalType,
+    });
     let tags: ZBXItemTag[] = _.flatten(
       items.map((item: ZBXItem) => {
         if (item.tags) {
@@ -417,12 +444,12 @@ export class Zabbix implements ZabbixConnector {
       return this.getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options);
     }
 
-    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hosts = await this.getHosts(groupFilter, hostFilter, options.hostTags, options.evaltype);
     const hostids = _.map(hosts, 'hostid');
 
     // Support regexp in tags
     if (utils.isRegex(itemTagFilter)) {
-      const tags = await this.getItemTags(groupFilter, hostFilter, itemTagFilter);
+      const tags = await this.getItemTags(groupFilter, hostFilter, itemTagFilter, options.hostTags, options.evaltype);
       itemTagFilter = tags.map((t) => t.name).join(',');
     }
 
@@ -436,7 +463,7 @@ export class Zabbix implements ZabbixConnector {
   }
 
   async getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options: any = {}) {
-    const apps = await this.getApps(groupFilter, hostFilter, appFilter);
+    const apps = await this.getApps(groupFilter, hostFilter, appFilter, options.hostTags, options.evaltype);
     let items: any[];
 
     if (apps.appFilterEmpty) {
