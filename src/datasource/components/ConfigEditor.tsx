@@ -29,13 +29,7 @@ import {
 } from '@grafana/ui';
 import { ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types/config';
 import { gte } from 'semver';
-import {
-  ConfigSubSection,
-  convertLegacyAuthProps,
-  CustomHeadersSettings,
-  DataSourceDescription,
-  TLSSettings,
-} from '@grafana/plugin-ui';
+import { ConfigSubSection, convertLegacyAuthProps, CustomHeadersSettings, TLSSettings } from '@grafana/plugin-ui';
 import { css } from '@emotion/css';
 import { Divider } from './Divider';
 import { CONFIG_SECTION_HEADERS, LeftSidebar } from './LeftSidebar';
@@ -281,12 +275,10 @@ export const ConfigEditor = (props: Props) => {
       </div>
 
       <Box width="60%" flex="1 1 auto" minWidth={CONTAINER_MIN_WIDTH}>
-        <Box marginBottom={4}>
-          <DataSourceDescription
-            dataSourceName="Zabbix"
-            docsLink="https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/"
-            hasRequiredFields={true}
-          />
+        <Box marginBottom={2}>
+          <Text variant="bodySmall" color="secondary">
+            Fields marked with * are required
+          </Text>
         </Box>
 
         <ConfigSectionBox
