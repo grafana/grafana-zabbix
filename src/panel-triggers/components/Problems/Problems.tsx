@@ -307,7 +307,7 @@ export const ProblemList = (props: ProblemListProps) => {
           const links = getProblemsDataLinks(panelOptions.dataLinks, row.original);
           return <DataLinksCell links={links} />;
         },
-      })
+      }),
     ];
   }, [panelOptions]);
 

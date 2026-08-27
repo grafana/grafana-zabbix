@@ -49,7 +49,10 @@ export const DataLinksCell: React.FC<Props> = ({ links }) => {
       <DataLinksContextMenu links={() => links}>
         {(api) => (
           <a
-            onClick={(e) => { e.stopPropagation(); api.openMenu(e); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              api.openMenu(e);
+            }}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
