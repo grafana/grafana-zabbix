@@ -22,6 +22,14 @@ export type ZabbixDSOptions = {
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
   enableSecureSocksProxy?: boolean;
+  /** Cookies forwarded to the Zabbix web server by the Grafana proxy */
+  keepCookies?: string[];
+  /** Standard Grafana datasource HTTP options (TLS and custom headers) */
+  tlsAuth?: boolean;
+  tlsAuthWithCACert?: boolean;
+  tlsSkipVerify?: boolean;
+  serverName?: string;
+  httpHeaderName1?: string;
   /** @deprecated
    * Use `dbConnectionEnable` `dbConnectionDatasourceUID` `dbConnectionDatasourceName` `dbConnectionRetentionPolicy` instead.
    * Currently only used to support migration for older schemas.
