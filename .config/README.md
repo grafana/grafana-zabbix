@@ -13,17 +13,28 @@ to issues around working with the project.
 
 ### Extending the ESLint config
 
-Edit the `.eslintrc` file in the project root in order to extend the ESLint configuration.
+Edit the `eslint.config.mjs` file in the project root to extend the ESLint configuration. The following example disables deprecation notices for source files.
 
 **Example:**
 
-```json
-{
-  "extends": "./.config/.eslintrc",
-  "rules": {
-    "react/prop-types": "off"
-  }
-}
+```javascript
+import { defineConfig } from 'eslint/config';
+import baseConfig from './.config/eslint.config.mjs';
+
+export default defineConfig([
+  {
+    ignores: [
+      //...
+    ],
+  },
+  ...baseConfig,
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-deprecated': 'off',
+    },
+  },
+]);
 ```
 
 ---
