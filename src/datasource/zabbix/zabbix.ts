@@ -16,6 +16,7 @@ import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '..
 import { ZabbixDSOptions } from '../types/config';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import * as utils from '../utils';
+import { CLICKHOUSE_DS_ID, ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
@@ -121,7 +122,7 @@ export class Zabbix implements ZabbixConnector {
   cachingProxy: CachingProxy;
   zabbixAPI: ZabbixAPIConnector;
   getHistoryDB: any;
-  dbConnector: InfluxDBConnector | SQLConnector;
+  dbConnector: InfluxDBConnector | SQLConnector | ClickHouseConnector;
   getTrendsDB: any;
   version: string;
 
@@ -209,6 +210,8 @@ export class Zabbix implements ZabbixConnector {
         retentionPolicy: options.dbConnectionRetentionPolicy,
       };
       this.dbConnector = new InfluxDBConnector(ds, influxDBConnectorOptions);
+    } else if (ds.type === CLICKHOUSE_DS_ID) {
+      this.dbConnector = new ClickHouseConnector(ds, {});
     } else {
       this.dbConnector = new SQLConnector(ds, {});
     }
