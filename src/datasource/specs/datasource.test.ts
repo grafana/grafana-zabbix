@@ -146,11 +146,14 @@ describe('ZabbixDatasource', () => {
     const metricsTarget = { queryType: c.MODE_METRICS } as any;
     const itemIdTarget = { queryType: c.MODE_ITEMID } as any;
     const problemsTarget = { queryType: c.MODE_PROBLEMS } as any;
+    const logsTarget = { queryType: c.MODE_LOGS } as any;
 
     expect(ds.isBackendTarget(metricsTarget)).toBe(true);
     expect(ds.isBackendTarget(itemIdTarget)).toBe(true);
     expect(ds.isBackendTarget(problemsTarget)).toBe(false);
+    expect(ds.isBackendTarget(logsTarget)).toBe(false);
     expect(ds.isDBConnectionTarget(metricsTarget)).toBe(false);
+    expect(ds.isDBConnectionTarget(logsTarget)).toBe(false);
 
     ds.enableDirectDBConnection = true;
     expect(ds.isBackendTarget(metricsTarget)).toBe(false);
