@@ -27,8 +27,6 @@ jest.mock('../responseHandler', () => ({
   __esModule: true,
   default: {
     convertZabbixUnits: (resp: any) => resp,
-    convertToWide: (data: any) => data,
-    isConvertibleToWide: () => false,
   },
 }));
 
@@ -132,13 +130,6 @@ describe('ZabbixDatasource', () => {
 
     expect(merged.data).toEqual([{ refId: 'A' }, { refId: 'B' }, { refId: 'C' }, { refId: 'D' }]);
     expect(baseResponse.data).toEqual([{ refId: 'A' }]);
-  });
-
-  it('convertToWide delegates when data is convertible', () => {
-    const ds = new ZabbixDatasource(instanceSettings);
-    const response = { data: ['narrow'] } as any;
-    const result = ds.convertToWide(response);
-    expect(result.data).toEqual(['narrow']);
   });
 
   it('detects backend vs DB connection targets based on flag', () => {

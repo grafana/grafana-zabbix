@@ -11,6 +11,7 @@ godebug tlsmlkem=0
 require (
 	github.com/bitly/go-simplejson v0.5.1
 	github.com/dlclark/regexp2 v1.12.0
+	github.com/grafana/dataplane/sdata v0.0.9
 	github.com/grafana/grafana-plugin-sdk-go v0.293.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.23.2

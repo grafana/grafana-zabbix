@@ -74,7 +74,12 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 
 	seriesName := series.Meta.Name
 	valueField := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, 0)
-	valueField.Name = data.TimeSeriesValueFieldName
+	// The data plane contract takes the series name from the value field name, so it
+	// carries the Zabbix series name instead of the generic "Value".
+	valueField.Name = seriesName
+	if valueField.Name == "" {
+		valueField.Name = data.TimeSeriesValueFieldName
+	}
 
 	item := series.Meta.Item
 	if item == nil {
@@ -118,6 +123,10 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 	}
 
 	frame := data.NewFrame(seriesName, timeField, valueField)
+	frame.Meta = &data.FrameMeta{
+		Type:        data.FrameTypeTimeSeriesMulti,
+		TypeVersion: data.FrameTypeVersion{0, 1},
+	}
 
 	for _, point := range series.TS {
 		timeField.Append(point.Time)
