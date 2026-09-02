@@ -624,7 +624,12 @@ export class Zabbix implements ZabbixConnector {
       )
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
-        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+        return Promise.all([
+          Promise.resolve(problems),
+          // Let Zabbix expand the comment macros unless the client-side
+          // enrichment below will do it per problem, which needs the raw template.
+          this.zabbixAPI.getTriggersByIds(triggerids, !options?.fetchHistoricalItemValue),
+        ]);
       })
       .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
       .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
@@ -661,7 +666,12 @@ export class Zabbix implements ZabbixConnector {
       .then((query) => this.zabbixAPI.getEventsHistory(query.groupids, query.hostids, query.applicationids, options))
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
-        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+        return Promise.all([
+          Promise.resolve(problems),
+          // Let Zabbix expand the comment macros unless the client-side
+          // enrichment below will do it per problem, which needs the raw template.
+          this.zabbixAPI.getTriggersByIds(triggerids, !options?.fetchHistoricalItemValue),
+        ]);
       })
       .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
       .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
