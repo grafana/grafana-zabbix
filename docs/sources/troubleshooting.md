@@ -342,6 +342,7 @@ These errors occur when executing queries against the Zabbix data source.
 | Trends misconfiguration | If querying a long time range, verify trends are enabled and the **After** and **Range** settings match your Zabbix history and trends retention periods. |
 | Disabled items | Enable **Show disabled items** in the query options if you need to query items that are currently disabled in Zabbix. |
 | Permissions issue | Verify the Zabbix user has read access to the specific host group and host. |
+| Zabbix data collection or clock issue | Items can show no values because of a Zabbix-side collection error or a clock difference between the monitored host and the Zabbix server. Check the item status and any errors in Zabbix under **Monitoring** > **Latest data**, and verify the host and server clocks are synchronized. This is a Zabbix data problem, not a Grafana one. |
 
 ### Query timeout
 
@@ -372,6 +373,53 @@ These errors occur when executing queries against the Zabbix data source.
 | Data alignment | The plugin aligns data points to collection intervals by default, which may shift timestamps slightly. Disable **Disable data alignment** in the query options or data source configuration if you need exact Zabbix timestamps. |
 | Trends vs. history mismatch | For long time ranges, the plugin switches to trends data, which contains hourly aggregates (avg, min, max). Use the `trendValue` function to select the specific trend value type. |
 | Wrong `consolidateBy` function with Direct DB Connection | When using Direct DB Connection, the default aggregation is `AVG`. Use `consolidateBy(max)` with `groupBy(interval, max)` to get accurate maximum values. |
+
+### Host name shows the technical name instead of the visible name
+
+**Symptoms:**
+
+- Legends or alias functions show the technical host name when you expected the visible name, or the reverse.
+- Both names look identical.
+
+**Cause:**
+
+The plugin exposes two separate host-name alias tokens. `$__zbx_host` resolves to the Zabbix technical host name, and `$__zbx_host_name` resolves to the visible name. If a host has no separate visible name configured in Zabbix, both tokens return the same value, so they appear identical.
+
+**Solutions:**
+
+1. Use `$__zbx_host_name` for the visible name and `$__zbx_host` for the technical name in `setAlias` and `replaceAlias`. Refer to [Alias functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/#alias-functions).
+1. To distinguish the two names, set a visible name on the host in Zabbix under **Data collection** > **Hosts**.
+
+### Combine or calculate across multiple series
+
+**Symptoms:**
+
+- A Grafana transformation can't dynamically add or calculate values across paired or related series, such as summing matching metrics from two devices.
+
+**Cause:**
+
+Grafana transformations and the plugin's aggregate functions operate on the series returned by the query. They don't perform arbitrary per-pair math across independently queried series.
+
+**Solutions:**
+
+1. Use the plugin's aggregate functions where they fit. For example, `sumSeries` adds all series together, and `aggregateBy(interval, function)` combines series by a consolidation function. Refer to [Aggregate functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/#aggregate-functions).
+1. For calculations that transformations can't express, pre-calculate the value in Zabbix with a calculated item, then query that item in Grafana. This is more efficient and keeps the logic in one place.
+
+### Problems panel shows the same value for every problem of a trigger
+
+**Symptoms:**
+
+- In the Problems panel, all active problems from the same trigger show the same current item value, `{ITEM.VALUE}`, or operational data.
+
+**Cause:**
+
+By default, the plugin doesn't resolve each problem's item value at its creation time, so it shows the current value. This lookup is disabled by default because it queries `history.get` for every problem, which can overload the Zabbix database in large environments.
+
+**Solutions:**
+
+1. Enable the **Item value at problem time** query option to resolve each problem's item value at its creation time. Refer to [Problems](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/#problems).
+1. Leave the option off if you have many active problems and don't need per-problem historical values, to protect Zabbix from extra load.
+1. Update the plugin. Version 6.4.1 and later bound the history window and result size when the option is enabled.
 
 ## Direct DB Connection errors
 
@@ -441,6 +489,20 @@ These issues relate to slow queries or high resource usage.
 1. Reduce the dashboard auto-refresh interval.
 1. Enable Direct DB Connection to offload history queries from the Zabbix API.
 1. Avoid using `/.*/` regex in multiple variable queries, as each one triggers a broad API request.
+
+### Memory-intensive queries overload the Zabbix server
+
+**Symptoms:**
+
+- A dashboard or query consumes excessive memory on the Zabbix server.
+- The Zabbix frontend or database becomes unresponsive under normal dashboard load.
+
+**Solutions:**
+
+1. Update the plugin to the latest version. Recent releases fixed issues that multiplied API requests and enabled an expensive per-problem history lookup by default, both of which could exhaust Zabbix server resources. Restart Grafana after you update.
+1. Keep the **Item value at problem time** query option off unless you need it, and set a **Limit** on Problems queries to cap the number of results.
+1. Enable trends and Direct DB Connection so wide time ranges use pre-aggregated data and server-side aggregation.
+1. Narrow queries with specific group, host, and item filters instead of broad regex patterns like `/.*/`.
 
 ## Enable debug logging
 
