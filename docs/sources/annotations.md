@@ -66,7 +66,7 @@ Each annotation is rendered from the matching Zabbix problem:
 
 - **Title**: `Problem` when the event is active or `OK` when it's a recovery event.
 - **Text**: the problem (trigger) name, followed by acknowledgment details when the problem has been acknowledged.
-- **Tags**: the hostnames of the affected hosts when **Show hostname** is enabled.
+- **Tags**: the host names of the affected hosts when **Show hostname** is enabled.
 
 ## Examples
 
