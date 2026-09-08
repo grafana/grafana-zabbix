@@ -19,7 +19,7 @@ labels:
     - enterprise
     - cloud
 weight: 200
-last_reviewed: 2026-02-18
+review_date: 2026-09-08
 ---
 
 # Configure the Zabbix data source
@@ -34,7 +34,22 @@ Before configuring the data source, ensure you have:
 - **Zabbix API URL:** The full URL to your Zabbix API endpoint, including the `api_jsonrpc.php` path (for example, `http://zabbix.example.com/api_jsonrpc.php`).
 - **Zabbix credentials:** A username and password for a Zabbix user, or an API token. Verify the user has permissions to access the host groups and hosts you want to query in Grafana.
 
+## Install and enable the Zabbix plugin
+
+Zabbix is an app plugin, so you must install it and then enable it before the data source becomes available. Enabling the plugin is a separate step from installation.
+
+1. Click **Administration** > **Plugins and data** > **Plugins** in the left-side menu.
+1. Type `Zabbix` in the search bar and select the **Zabbix** plugin.
+1. If the plugin isn't already installed, click **Install**. For other installation methods, refer to [Install Grafana plugins](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/administration/plugin-management/).
+1. On the plugin page, click **Enable**. The data source isn't available to add until you enable the plugin.
+
+{{< admonition type="note" >}}
+In Grafana Cloud, the Zabbix plugin is installed and enabled for you after you add it from the plugin catalog.
+{{< /admonition >}}
+
 ## Add the data source
+
+After you enable the plugin, add the data source:
 
 1. Click **Connections** in the left-side menu.
 1. Click **Add new connection**.
@@ -70,6 +85,20 @@ Use a Zabbix API token to authenticate. API tokens are available in Zabbix 5.4 a
 | Setting | Description |
 |---------|-------------|
 | **API Token** | The Zabbix API token. Stored securely in Grafana. |
+
+## Configure per-user authentication
+
+Per-user authentication maps each Grafana user to a Zabbix user so that queries respect the role-based access control (RBAC) already configured in Zabbix. When enabled, the plugin authenticates to the Zabbix API as the matching Zabbix user instead of using the shared credentials configured in the **Auth type** section. Find these settings under **Additional settings** > **Other**.
+
+{{< admonition type="note" >}}
+You need Grafana Admin permissions to configure per-user authentication, because the plugin must list Grafana users to build the exclusion list. If you can't list users, contact your Grafana administrator.
+{{< /admonition >}}
+
+| Setting | Description |
+|---------|-------------|
+| **Enable per-user authentication** | Toggle to map Grafana users to Zabbix users. When enabled, the plugin authenticates each request as the matching Zabbix user. |
+| **User identity field** | The Grafana user field used to match a Zabbix user. Values: **Username** (default) or **Email**. |
+| **Exclude users from per-user authentication** | A list of Grafana users that always use the global Zabbix credentials configured under **Auth type** instead of their own Zabbix identity. Defaults to `admin`. |
 
 ## Configure trends
 
@@ -156,7 +185,7 @@ These settings are under **Additional settings** > **Other**.
 
 Click **Save & test** to verify the connection. A successful test displays the message "**Zabbix API version**" followed by the detected version number. If Direct DB Connection is enabled, the message also includes the database connector type.
 
-If the test fails, refer to the [troubleshooting guide](./troubleshooting/) for common connection issues and solutions.
+If the test fails, refer to the [troubleshooting guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/) for common connection issues and solutions.
 
 ## Provision the data source
 
@@ -219,6 +248,9 @@ The following table lists all available `jsonData` and `secureJsonData` fields f
 | `dbConnectionRetentionPolicy` | `jsonData` | InfluxDB retention policy name for long-term data. |
 | `disableReadOnlyUsersAck` | `jsonData` | Disable acknowledges for read-only users. Default: `false`. |
 | `disableDataAlignment` | `jsonData` | Disable time series data alignment. Default: `false`. |
+| `perUserAuth` | `jsonData` | Enable per-user authentication. Default: `false`. |
+| `perUserAuthField` | `jsonData` | Grafana user field used to match a Zabbix user. Values: `username` (default) or `email`. |
+| `perUserAuthExcludeUsers` | `jsonData` | List of Grafana users that always use the global Zabbix credentials. Default: `["admin"]`. |
 
 For detailed MySQL and PostgreSQL provisioning options, refer to the [MySQL provisioning](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/datasources/mysql/#provision-the-data-source) and [PostgreSQL provisioning](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/datasources/postgres/#provision-the-data-source) documentation.
 
@@ -252,7 +284,7 @@ For more information about the Grafana Terraform provider, refer to the [Grafana
 
 ## Next steps
 
-- [Build queries with the Zabbix query editor](./query-editor/)
-- [Use template variables for dynamic dashboards](./template-variables/)
-- [Set up alerting rules](./alerting/)
-- [Troubleshoot the Zabbix data source](./troubleshooting/)
+- [Build queries with the Zabbix query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/)
+- [Use template variables for dynamic dashboards](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/)
+- [Set up alerting rules](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)
+- [Troubleshoot the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/)

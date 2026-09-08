@@ -15,7 +15,7 @@ labels:
     - enterprise
     - cloud
 weight: 450
-last_reviewed: 2026-02-18
+review_date: 2026-09-08
 ---
 
 # Zabbix annotations
@@ -24,7 +24,7 @@ Annotations overlay event markers on graph panels, letting you correlate Zabbix 
 
 ## Before you begin
 
-- [Configure the Zabbix data source](./configure/).
+- [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/).
 - Understand [Grafana annotations](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/dashboards/build-dashboards/annotate-visualizations/).
 
 ## Add an annotation query
@@ -72,5 +72,5 @@ To annotate a dashboard with only high-severity and disaster-level problems from
 
 ## Next steps
 
-- [Build queries with the Zabbix query editor](./query-editor/)
-- [Set up alerting rules](./alerting/)
+- [Build queries with the Zabbix query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/)
+- [Set up alerting rules](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)

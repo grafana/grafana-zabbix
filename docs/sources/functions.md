@@ -17,7 +17,7 @@ labels:
     - enterprise
     - cloud
 weight: 350
-last_reviewed: 2026-02-18
+review_date: 2026-09-08
 ---
 
 # Zabbix functions reference
@@ -405,7 +405,7 @@ consolidateBy(consolidationFunc)
 
 Changes the consolidation function used when the number of data points exceeds the graph width in pixels. By default, the plugin uses `avg`. Valid values: `sum`, `avg`, `min`, `max`, `count`.
 
-When using [Direct DB Connection](./configure/#configure-direct-db-connection), this function directly controls the SQL aggregation function. Pair it with `groupBy` for accurate results:
+When using [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection), this function directly controls the SQL aggregation function. Pair it with `groupBy` for accurate results:
 
 ```
 consolidateBy(max) | groupBy(1h, max)

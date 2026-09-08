@@ -15,7 +15,7 @@ labels:
     - enterprise
     - cloud
 weight: 500
-last_reviewed: 2026-02-18
+review_date: 2026-09-08
 ---
 
 # Zabbix alerting
@@ -24,15 +24,15 @@ You can create Grafana alert rules that evaluate Zabbix metrics and trigger noti
 
 ## Before you begin
 
-- [Configure the Zabbix data source](./configure/).
+- [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/).
 - Understand [Grafana Alerting](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/alerting/).
 
 ## Supported query types
 
 The following query types can be used in alert rules:
 
-- **Metrics** -- query numeric time series data by group, host, and item.
-- **Item ID** -- query numeric data by specific Zabbix item IDs.
+- **Metrics**: query numeric time series data by group, host, and item.
+- **Item ID**: query numeric data by specific Zabbix item IDs.
 
 Other query types (Problems, Triggers, Services, Text, User macros) are not supported and return an error when used in alert rules.
 
@@ -57,6 +57,6 @@ For detailed instructions on configuring alert rules, evaluation groups, contact
 
 ## Next steps
 
-- [Build Metrics queries with the Zabbix query editor](./query-editor/#metrics)
+- [Build Metrics queries with the Zabbix query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/#metrics)
 - [Configure contact points for notifications](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/alerting/configure-notifications/manage-contact-points/)
-- [Troubleshoot the Zabbix data source](./troubleshooting/)
+- [Troubleshoot the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/)
