@@ -56,7 +56,7 @@ The following documents help you set up and use the Zabbix data source:
 - [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)
 - [Troubleshooting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/)
 
-## Feature highlights
+## Additional features
 
 After configuring the data source, you can:
 
