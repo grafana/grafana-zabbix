@@ -124,67 +124,72 @@ The plugin isn't installed or enabled, or a stale installation left the data sou
 1. Update to the latest version. If the error persists, remove the old plugin directory and reinstall a fresh copy from the catalog.
 1. Restart Grafana so it re-registers the data source type.
 
-## Upgrade and Infrastructure as Code issues
+## Connection errors
 
-These issues appear after upgrading the plugin, especially when the data source is managed through provisioning or Infrastructure as Code (IaC).
+These errors occur when Grafana can't reach the Zabbix API endpoint.
 
-### Dashboards break after reinstalling or recreating the data source
-
-**Symptoms:**
-
-- After a plugin reinstall, a major version jump, or an IaC redeploy, panels show a data source not found error or reference an unknown data source.
-- The data source works, but existing dashboards no longer point to it.
-
-**Cause:**
-
-Grafana identifies a data source by its UID. If a reinstall or IaC run deletes and recreates the data source without a fixed UID, Grafana assigns a new one, and dashboards that reference the old UID break.
-
-**Solutions:**
-
-Pin a stable `uid` for the data source in your provisioning YAML so it survives reinstallation and redeployment:
-
-```yaml
-datasources:
-  - name: Zabbix
-    type: alexanderzobnin-zabbix-datasource
-    uid: zabbix-main
-```
-
-If the UID already changed, either restore the previous UID in provisioning or update the affected dashboards to reference the new UID. Managing the data source entirely through provisioning keeps its configuration and UID reproducible. For provisioning details, refer to [Provision the data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#provision-the-data-source).
-
-### Automation breaks after upgrading
+### "Connection refused" or timeout errors
 
 **Symptoms:**
 
-- Automation or scripts that referenced a data source by numeric ID stop working after an upgrade.
-- Direct DB Connection can't find its database data source after an upgrade.
+- **Save & test** times out or returns a connection error.
+- Queries fail with network errors.
 
-**Cause:**
+**Possible causes and solutions:**
 
-The plugin references data sources by UID instead of the deprecated numeric ID. Automation and provisioning that used numeric IDs, including the Direct DB Connection database reference, must use the UID or name.
+| Cause | Solution |
+|-------|----------|
+| Incorrect URL | Verify the URL includes the full path to the Zabbix API endpoint, including `api_jsonrpc.php`. For example: `http://zabbix.example.com/api_jsonrpc.php`. |
+| Missing `api_jsonrpc.php` in the URL | Append `/api_jsonrpc.php` to the URL. A common mistake is providing only the Zabbix web interface URL without the API path. |
+| Firewall or network restrictions | Verify the Grafana server can reach the Zabbix server on the configured port. Check firewall rules for outbound HTTP/HTTPS access. |
+| HTTPS certificate issues | If using HTTPS, verify the certificate is valid. To skip TLS verification (not recommended for production), enable **Skip TLS Verify** in the data source configuration. |
+| Zabbix API disabled | Verify the Zabbix API is enabled. In newer versions of Zabbix, the API is enabled by default, but it may be restricted by web server configuration. |
 
-**Solutions:**
-
-1. Update automation and provisioning to reference data sources by `uid` or `name` instead of numeric `id`.
-1. For Direct DB Connection, set `dbConnectionDatasourceName`, or the database data source UID, rather than a numeric ID. The deprecated `dbConnectionDatasourceId` field is kept only to migrate older configurations.
-1. Test the upgrade in a non-production environment before you roll it out through IaC.
-
-### Performance regression after an upgrade
+### Proxy or CORS errors
 
 **Symptoms:**
 
-- Zabbix server load or dashboard latency increases noticeably after a plugin update.
-- The Problems panel is slow or overloads the Zabbix database in large environments.
-
-**Cause:**
-
-Older releases fetched a historical item value for every problem, which could overload the Zabbix frontend and database. This behavior is off by default in current releases.
+- Browser console shows CORS-related errors.
+- Queries fail when using "Browser" access mode.
 
 **Solutions:**
 
-1. Update to the latest plugin version. The per-problem historical value lookup is disabled by default in version 6.4.1 and later, which restores the earlier performance.
-1. Leave the **Item value at problem time** query option off unless you specifically need item values resolved at each problem's creation time.
-1. Prefer updating over rolling back. Rolling back reintroduces bugs that later releases fixed, such as the connection storm that caused 502 and 503 errors under normal load.
+1. Use **Server** access mode (the default) so that all API requests go through the Grafana backend rather than the browser.
+1. If you must use browser access, configure your Zabbix web server to allow CORS requests from the Grafana origin.
+
+### "invalid character" or HTML returned instead of JSON
+
+**Symptoms:**
+
+- **Save & test** or queries fail with an error such as "invalid character '<' looking for beginning of value".
+- The connection works against a direct Zabbix URL but fails through a load balancer or reverse proxy.
+
+**Cause:**
+
+The Zabbix API endpoint returned HTML or XML instead of JSON. This usually means the request reached a login page, an error page, or a proxy or load balancer response rather than `api_jsonrpc.php`. The plugin expects a JSON-RPC response and can't parse HTML.
+
+**Possible causes and solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| URL points to the web interface, not the API | Verify the URL ends with `/api_jsonrpc.php` and returns JSON when you request it directly. |
+| Load balancer or reverse proxy returns an error or login page | Confirm the proxy forwards requests to the Zabbix API unchanged, preserves the request method and body, and doesn't inject an authentication page. |
+| Web server or web application firewall blocks API requests | Allow the Grafana server to reach `api_jsonrpc.php` and exempt it from rules that return HTML challenge pages. |
+
+### TLS handshake timeout
+
+**Symptoms:**
+
+- **Save & test** or queries fail with a TLS handshake timeout.
+- The failure is intermittent or started after a network or certificate change.
+
+**Possible causes and solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| Network path or firewall blocks or throttles the connection | Verify the Grafana server can reach the Zabbix host and port. Check firewall, proxy, and load balancer rules along the path. |
+| TLS interception or protocol mismatch | Verify the certificate chain and confirm the Zabbix endpoint supports the TLS version that Grafana negotiates. |
+| Zabbix reachable only on a private network | Use Private Data Source Connect (PDC) to reach a Zabbix server that isn't exposed to Grafana Cloud. Refer to [Connect through Private Data Source Connect](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#connect-through-private-data-source-connect). |
 
 ## Authentication errors
 
@@ -254,73 +259,6 @@ Zabbix 7.0 deprecated the `auth` request parameter and replaced it with the `Aut
 
 1. Update the plugin. Current versions automatically send the API token in the `Authorization` header for Zabbix 7.0 and later.
 1. If you place Zabbix behind a reverse proxy that uses HTTP basic authentication, the plugin keeps the token in the request body, as Zabbix requires. Confirm the proxy forwards the basic authentication credentials correctly.
-
-## Connection errors
-
-These errors occur when Grafana can't reach the Zabbix API endpoint.
-
-### "Connection refused" or timeout errors
-
-**Symptoms:**
-
-- **Save & test** times out or returns a connection error.
-- Queries fail with network errors.
-
-**Possible causes and solutions:**
-
-| Cause | Solution |
-|-------|----------|
-| Incorrect URL | Verify the URL includes the full path to the Zabbix API endpoint, including `api_jsonrpc.php`. For example: `http://zabbix.example.com/api_jsonrpc.php`. |
-| Missing `api_jsonrpc.php` in the URL | Append `/api_jsonrpc.php` to the URL. A common mistake is providing only the Zabbix web interface URL without the API path. |
-| Firewall or network restrictions | Verify the Grafana server can reach the Zabbix server on the configured port. Check firewall rules for outbound HTTP/HTTPS access. |
-| HTTPS certificate issues | If using HTTPS, verify the certificate is valid. To skip TLS verification (not recommended for production), enable **Skip TLS Verify** in the data source configuration. |
-| Zabbix API disabled | Verify the Zabbix API is enabled. In newer versions of Zabbix, the API is enabled by default, but it may be restricted by web server configuration. |
-
-### Proxy or CORS errors
-
-**Symptoms:**
-
-- Browser console shows CORS-related errors.
-- Queries fail when using "Browser" access mode.
-
-**Solutions:**
-
-1. Use **Server** access mode (the default) so that all API requests go through the Grafana backend rather than the browser.
-1. If you must use browser access, configure your Zabbix web server to allow CORS requests from the Grafana origin.
-
-### "invalid character" or HTML returned instead of JSON
-
-**Symptoms:**
-
-- **Save & test** or queries fail with an error such as "invalid character '<' looking for beginning of value".
-- The connection works against a direct Zabbix URL but fails through a load balancer or reverse proxy.
-
-**Cause:**
-
-The Zabbix API endpoint returned HTML or XML instead of JSON. This usually means the request reached a login page, an error page, or a proxy or load balancer response rather than `api_jsonrpc.php`. The plugin expects a JSON-RPC response and can't parse HTML.
-
-**Possible causes and solutions:**
-
-| Cause | Solution |
-|-------|----------|
-| URL points to the web interface, not the API | Verify the URL ends with `/api_jsonrpc.php` and returns JSON when you request it directly. |
-| Load balancer or reverse proxy returns an error or login page | Confirm the proxy forwards requests to the Zabbix API unchanged, preserves the request method and body, and doesn't inject an authentication page. |
-| Web server or web application firewall blocks API requests | Allow the Grafana server to reach `api_jsonrpc.php` and exempt it from rules that return HTML challenge pages. |
-
-### TLS handshake timeout
-
-**Symptoms:**
-
-- **Save & test** or queries fail with a TLS handshake timeout.
-- The failure is intermittent or started after a network or certificate change.
-
-**Possible causes and solutions:**
-
-| Cause | Solution |
-|-------|----------|
-| Network path or firewall blocks or throttles the connection | Verify the Grafana server can reach the Zabbix host and port. Check firewall, proxy, and load balancer rules along the path. |
-| TLS interception or protocol mismatch | Verify the certificate chain and confirm the Zabbix endpoint supports the TLS version that Grafana negotiates. |
-| Zabbix reachable only on a private network | Use Private Data Source Connect (PDC) to reach a Zabbix server that isn't exposed to Grafana Cloud. Refer to [Connect through Private Data Source Connect](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#connect-through-private-data-source-connect). |
 
 ## Query errors
 
@@ -503,6 +441,68 @@ These issues relate to slow queries or high resource usage.
 1. Keep the **Item value at problem time** query option off unless you need it, and set a **Limit** on Problems queries to cap the number of results.
 1. Enable trends and Direct DB Connection so wide time ranges use pre-aggregated data and server-side aggregation.
 1. Narrow queries with specific group, host, and item filters instead of broad regex patterns like `/.*/`.
+
+## Upgrade and Infrastructure as Code issues
+
+These issues appear after upgrading the plugin, especially when the data source is managed through provisioning or Infrastructure as Code (IaC).
+
+### Dashboards break after reinstalling or recreating the data source
+
+**Symptoms:**
+
+- After a plugin reinstall, a major version jump, or an IaC redeploy, panels show a data source not found error or reference an unknown data source.
+- The data source works, but existing dashboards no longer point to it.
+
+**Cause:**
+
+Grafana identifies a data source by its UID. If a reinstall or IaC run deletes and recreates the data source without a fixed UID, Grafana assigns a new one, and dashboards that reference the old UID break.
+
+**Solutions:**
+
+Pin a stable `uid` for the data source in your provisioning YAML so it survives reinstallation and redeployment:
+
+```yaml
+datasources:
+  - name: Zabbix
+    type: alexanderzobnin-zabbix-datasource
+    uid: zabbix-main
+```
+
+If the UID already changed, either restore the previous UID in provisioning or update the affected dashboards to reference the new UID. Managing the data source entirely through provisioning keeps its configuration and UID reproducible. For provisioning details, refer to [Provision the data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#provision-the-data-source).
+
+### Automation breaks after upgrading
+
+**Symptoms:**
+
+- Automation or scripts that referenced a data source by numeric ID stop working after an upgrade.
+- Direct DB Connection can't find its database data source after an upgrade.
+
+**Cause:**
+
+The plugin references data sources by UID instead of the deprecated numeric ID. Automation and provisioning that used numeric IDs, including the Direct DB Connection database reference, must use the UID or name.
+
+**Solutions:**
+
+1. Update automation and provisioning to reference data sources by `uid` or `name` instead of numeric `id`.
+1. For Direct DB Connection, set `dbConnectionDatasourceName`, or the database data source UID, rather than a numeric ID. The deprecated `dbConnectionDatasourceId` field is kept only to migrate older configurations.
+1. Test the upgrade in a non-production environment before you roll it out through IaC.
+
+### Performance regression after an upgrade
+
+**Symptoms:**
+
+- Zabbix server load or dashboard latency increases noticeably after a plugin update.
+- The Problems panel is slow or overloads the Zabbix database in large environments.
+
+**Cause:**
+
+Older releases fetched a historical item value for every problem, which could overload the Zabbix frontend and database. This behavior is off by default in current releases.
+
+**Solutions:**
+
+1. Update to the latest plugin version. The per-problem historical value lookup is disabled by default in version 6.4.1 and later, which restores the earlier performance.
+1. Leave the **Item value at problem time** query option off unless you specifically need item values resolved at each problem's creation time.
+1. Prefer updating over rolling back. Rolling back reintroduces bugs that later releases fixed, such as the connection storm that caused 502 and 503 errors under normal load.
 
 ## Enable debug logging
 
