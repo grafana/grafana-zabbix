@@ -48,6 +48,63 @@ Zabbix is an app plugin. Installing the plugin isn't enough. You must also enabl
 
 For step-by-step instructions, refer to [Install and enable the Zabbix plugin](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#install-and-enable-the-zabbix-plugin).
 
+## Plugin version and compatibility issues
+
+Many problems are caused by running an outdated plugin or by leftover files from an old installation. Because the plugin updates independently of Grafana, keeping it current resolves a large share of issues, including data source load errors, incorrect data, high load on the Zabbix server, and AngularJS compatibility failures.
+
+### Keep the Zabbix plugin up to date
+
+Grafana doesn't update plugins automatically in self-managed instances, so an old plugin can persist across Grafana upgrades. To check your version and update:
+
+1. Go to **Administration** > **Plugins and data** > **Plugins** and select the **Zabbix** plugin.
+1. Compare the installed version with the latest version on the [Zabbix plugin catalog page](https://grafana.com/grafana/plugins/alexanderzobnin-zabbix-app/).
+1. If an update is available, click **Update**.
+1. Restart Grafana if prompted, then reload your dashboards.
+
+Confirm you're using the official plugin. The app plugin ID is `alexanderzobnin-zabbix-app`, and its data source type is `alexanderzobnin-zabbix-datasource`. Installing from unofficial sources or manually copying old builds can leave you on an unsupported version.
+
+{{< admonition type="note" >}}
+In Grafana Cloud, the plugin is kept up to date for you.
+{{< /admonition >}}
+
+### "Angular plugins are not supported" or the plugin fails to load
+
+AngularJS support was disabled by default in Grafana 11 and permanently removed in Grafana 12. Plugin versions before 4.3.0 were Angular-based and no longer load. The current plugin is React-based and requires Grafana 11.6.0 or later.
+
+**Symptoms:**
+
+- The data source shows the message "Angular plugins are not supported".
+- The plugin doesn't appear as installed, or panels show "Panel plugin not found" or "Error loading" errors.
+- The plugin worked before a Grafana upgrade and stopped working afterward.
+
+**Cause:**
+
+You're running an Angular-based plugin version from before 4.3.0, or stale files from a previous installation cause Grafana to mis-detect the plugin as Angular.
+
+**Solutions:**
+
+1. Update the Zabbix plugin to a current React-based version. The minimum React version is 4.3.0, but use the latest. The current plugin requires Grafana 11.6.0 or later.
+1. If Grafana still reports Angular after you update, remove the plugin directory completely and reinstall a fresh copy from the plugin catalog to clear stale files.
+1. Don't rely on `angular_support_enabled` in `grafana.ini`. This setting has no effect in Grafana 12, and the current React plugin doesn't need it.
+1. Restart Grafana, then enable the plugin under **Administration** > **Plugins and data** > **Plugins**.
+
+### "Could not find plugin definition for data source"
+
+**Symptoms:**
+
+- Panels show the message "Could not find plugin definition for data source".
+- The Grafana logs contain `Could not find plugin definition for data source` with `datasource_type=alexanderzobnin-zabbix-datasource`.
+
+**Cause:**
+
+The plugin isn't installed or enabled, or a stale installation left the data source type registered without a matching plugin.
+
+**Solutions:**
+
+1. Verify the plugin is installed and enabled under **Administration** > **Plugins and data** > **Plugins**.
+1. Update to the latest version. If the error persists, remove the old plugin directory and reinstall a fresh copy from the catalog.
+1. Restart Grafana so it re-registers the data source type.
+
 ## Authentication errors
 
 These errors occur when credentials are invalid, missing, or don't have the required permissions.
