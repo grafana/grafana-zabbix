@@ -62,6 +62,21 @@ These errors occur when credentials are invalid, missing, or don't have the requ
 
 These errors occur when Grafana can't reach the Zabbix API endpoint.
 
+### "Could not connect to given url" / "Invalid params" after plugin upgrade
+
+**Symptoms:**
+
+- A previously working setup stops working after upgrading to `grafana-zabbix` >= v6.3.1
+
+**Cause:**
+
+- From v6.3.1 the plugin stopped sending auth in the JSON-RPC body for Zabbix >= 7.0, now it only sends an `Authorization: Bearer <token>` header.
+
+**Solution:**
+
+- [Configure Apache/NGINX to forward authorization headers to Zabbix](https://www.zabbix.com/documentation/current/en/manual/installation/known_issues#authorization-header-forwarding)
+  * For example in Apache add the directive `CGIPassAuth On` or `SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1`.
+
 ### "Connection refused" or timeout errors
 
 **Symptoms:**
@@ -78,6 +93,7 @@ These errors occur when Grafana can't reach the Zabbix API endpoint.
 | Firewall or network restrictions | Verify the Grafana server can reach the Zabbix server on the configured port. Check firewall rules for outbound HTTP/HTTPS access. |
 | HTTPS certificate issues | If using HTTPS, verify the certificate is valid. To skip TLS verification (not recommended for production), enable **Skip TLS Verify** in the data source configuration. |
 | Zabbix API disabled | Verify the Zabbix API is enabled. In newer versions of Zabbix, the API is enabled by default, but it may be restricted by web server configuration. |
+| Authorization header forwarding not enabled on Zabbix | [Configure Apache/NGINX to forward authorization headers to Zabbix](https://www.zabbix.com/documentation/current/en/manual/installation/known_issues#authorization-header-forwarding) |
 
 ### Proxy or CORS errors
 
