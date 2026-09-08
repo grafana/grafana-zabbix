@@ -70,7 +70,7 @@ After you enable the plugin, add the data source:
 The Zabbix data source supports two authentication methods. Select the method in the **Auth type** drop-down under the **Zabbix Connection** section.
 
 {{< admonition type="note" >}}
-For Zabbix 7.0 and later, the plugin sends the API token in the `Authorization` HTTP header, as Zabbix requires. If you run Zabbix behind a reverse proxy that uses HTTP basic authentication, the plugin keeps the token in the request body instead. Keep the plugin up to date so it uses the correct method for your Zabbix version.
+For Zabbix 7.0 and later, the plugin sends the authentication token (both session tokens and API tokens) in the `Authorization` HTTP header, as Zabbix requires. If you run Zabbix 7.0 behind a reverse proxy that uses HTTP basic authentication, the plugin keeps the token in the request body instead. Zabbix 7.2 and later don't support HTTP basic authentication for API requests. Keep the plugin up to date so it uses the correct method for your Zabbix version.
 {{< /admonition >}}
 
 ### User and password
@@ -260,13 +260,15 @@ The following table lists all available `jsonData` and `secureJsonData` fields f
 | `timeout` | `jsonData` | Zabbix API connection timeout in seconds. Default: `30`. |
 | `queryTimeout` | `jsonData` | Maximum execution time for database queries in seconds. Default: `60`. |
 | `dbConnectionEnable` | `jsonData` | Enable Direct DB Connection. Default: `false`. |
-| `dbConnectionDatasourceName` | `jsonData` | Name of the Grafana data source for the Zabbix database. |
+| `dbConnectionDatasourceUID` | `jsonData` | UID of the Grafana data source for the Zabbix database. Preferred over `dbConnectionDatasourceName`. |
+| `dbConnectionDatasourceName` | `jsonData` | Name of the Grafana data source for the Zabbix database. Resolved to a UID at runtime when `dbConnectionDatasourceUID` isn't set. |
 | `dbConnectionRetentionPolicy` | `jsonData` | InfluxDB retention policy name for long-term data. |
 | `disableReadOnlyUsersAck` | `jsonData` | Disable acknowledges for read-only users. Default: `false`. |
 | `disableDataAlignment` | `jsonData` | Disable time series data alignment. Default: `false`. |
 | `perUserAuth` | `jsonData` | Enable per-user authentication. Default: `false`. |
 | `perUserAuthField` | `jsonData` | Grafana user field used to match a Zabbix user. Values: `username` (default) or `email`. |
 | `perUserAuthExcludeUsers` | `jsonData` | List of Grafana users that always use the global Zabbix credentials. Default: `["admin"]`. |
+| `enableSecureSocksProxy` | `jsonData` | Route the connection through the Grafana secure SOCKS proxy for Private Data Source Connect (PDC). Default: `false`. |
 
 For detailed MySQL and PostgreSQL provisioning options, refer to the [MySQL provisioning](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/datasources/mysql/#provision-the-data-source) and [PostgreSQL provisioning](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/datasources/postgres/#provision-the-data-source) documentation.
 
