@@ -220,6 +220,41 @@ These errors occur when credentials are invalid, missing, or don't have the requ
 1. Check that the user group has read permissions on the host groups you want to query.
 1. In the Zabbix web interface, navigate to **Administration** > **User groups** and verify the permissions tab for the relevant user group.
 
+### Account blocked after repeated failed logins
+
+**Symptoms:**
+
+- Authentication suddenly fails even though the credentials are correct.
+- The Zabbix server logs show the user or IP address as blocked.
+- The problem started after a credential change or a burst of failed requests.
+
+**Cause:**
+
+Zabbix temporarily blocks a user after several consecutive failed login attempts as brute-force protection. Repeated failed logins from Grafana, for example after a password change or when many panels retry with stale credentials, can trigger this block.
+
+**Solutions:**
+
+1. Correct the credentials in the data source configuration, then wait for the block to expire before you retry.
+1. Use an API token instead of a username and password to avoid login-attempt limits. Refer to [Configure authentication](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-authentication).
+1. Update the plugin to a current version. Older versions opened many more connections and sessions per dashboard load, which made login-limit blocks more likely.
+1. In Zabbix, review the failed-login settings and unblock the user if needed.
+
+### Authentication fails or logs show an "/auth" deprecation on Zabbix 7.0 or later
+
+**Symptoms:**
+
+- Authentication fails against Zabbix 7.0 or later.
+- The Zabbix web server logs show a deprecation warning for the `/auth` property.
+
+**Cause:**
+
+Zabbix 7.0 deprecated the `auth` request parameter and replaced it with the `Authorization` HTTP header. Older plugin versions still send the deprecated parameter.
+
+**Solutions:**
+
+1. Update the plugin. Current versions automatically send the API token in the `Authorization` header for Zabbix 7.0 and later.
+1. If you place Zabbix behind a reverse proxy that uses HTTP basic authentication, the plugin keeps the token in the request body, as Zabbix requires. Confirm the proxy forwards the basic authentication credentials correctly.
+
 ## Connection errors
 
 These errors occur when Grafana can't reach the Zabbix API endpoint.
@@ -271,6 +306,21 @@ The Zabbix API endpoint returned HTML or XML instead of JSON. This usually means
 | URL points to the web interface, not the API | Verify the URL ends with `/api_jsonrpc.php` and returns JSON when you request it directly. |
 | Load balancer or reverse proxy returns an error or login page | Confirm the proxy forwards requests to the Zabbix API unchanged, preserves the request method and body, and doesn't inject an authentication page. |
 | Web server or web application firewall blocks API requests | Allow the Grafana server to reach `api_jsonrpc.php` and exempt it from rules that return HTML challenge pages. |
+
+### TLS handshake timeout
+
+**Symptoms:**
+
+- **Save & test** or queries fail with a TLS handshake timeout.
+- The failure is intermittent or started after a network or certificate change.
+
+**Possible causes and solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| Network path or firewall blocks or throttles the connection | Verify the Grafana server can reach the Zabbix host and port. Check firewall, proxy, and load balancer rules along the path. |
+| TLS interception or protocol mismatch | Verify the certificate chain and confirm the Zabbix endpoint supports the TLS version that Grafana negotiates. |
+| Zabbix reachable only on a private network | Use Private Data Source Connect (PDC) to reach a Zabbix server that isn't exposed to Grafana Cloud. Refer to [Connect through Private Data Source Connect](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#connect-through-private-data-source-connect). |
 
 ## Query errors
 

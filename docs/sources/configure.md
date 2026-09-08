@@ -69,6 +69,10 @@ After you enable the plugin, add the data source:
 
 The Zabbix data source supports two authentication methods. Select the method in the **Auth type** drop-down under the **Zabbix Connection** section.
 
+{{< admonition type="note" >}}
+For Zabbix 7.0 and later, the plugin sends the API token in the `Authorization` HTTP header, as Zabbix requires. If you run Zabbix behind a reverse proxy that uses HTTP basic authentication, the plugin keeps the token in the request body instead. Keep the plugin up to date so it uses the correct method for your Zabbix version.
+{{< /admonition >}}
+
 ### User and password
 
 Use a Zabbix user account to authenticate with the API.
@@ -186,6 +190,18 @@ These settings are under **Additional settings** > **Other**.
 Click **Save & test** to verify the connection. A successful test displays the message "**Zabbix API version**" followed by the detected version number. If Direct DB Connection is enabled, the message also includes the database connector type.
 
 If the test fails, refer to the [troubleshooting guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/) for common connection issues and solutions.
+
+## Connect through Private Data Source Connect
+
+If your Zabbix server isn't directly reachable from Grafana, for example a Grafana Cloud stack connecting to a Zabbix server on a private network, you can use Private Data Source Connect (PDC). The Zabbix data source supports PDC through the Grafana secure SOCKS proxy.
+
+To use PDC:
+
+1. Set up a PDC connection for your Grafana Cloud stack. Refer to [Private data source connect (PDC)](https://grafana.com/docs/grafana-cloud/connect-externally-hosted/private-data-source-connect/).
+1. Edit the Zabbix data source and select your PDC connection in the **Private data source connect** settings.
+1. Click **Save & test**.
+
+PDC requires Grafana 10.0 or later. In self-managed Grafana, an administrator must enable the secure SOCKS proxy before the setting appears.
 
 ## Provision the data source
 
