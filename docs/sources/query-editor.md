@@ -149,11 +149,12 @@ Use Problems queries to retrieve Zabbix problem events. This query type returns 
 | **Host** | The host to filter. Supports regex and template variables. |
 | **Proxy** | Filter by Zabbix proxy. |
 | **Application** | Filter by application (Zabbix versions before 5.4). |
-| **Problem** | Filter by problem name. |
+| **Problem** | Filter by problem name, matched against the trigger name. A plain value must match exactly. Use a `*` wildcard (for example, `High CPU*`) or a regex wrapped in forward slashes (for example, `/CPU/`) for partial matches. |
 | **Tags** | Filter by tags in `tag1:value1, tag2:value2` format. |
 | **Tag evaluation** | How to combine multiple tag filters: AND/OR or OR. |
 | **Show** | Which problems to display: Problems (current), Recent problems, or History. |
 | **Severity** | Filter by one or more severity levels (multi-select). |
+| **Problem Type** | Filter cause and symptom problems: All Problems, Cause only, or Symptoms only. Visible on Zabbix 6.4+, which supports cause and symptom event correlation. |
 
 Expand the **Options** section to access additional settings:
 
@@ -208,6 +209,77 @@ Use `/.*/` to match all values in a field. For example, setting **Group** to `/.
 You can add processing functions to transform and aggregate query results when using **Metrics**, **Item ID**, or **Services** query types. Click the **+** button next to the query to add functions such as `groupBy`, `scale`, `delta`, `rate`, and `movingAverage`.
 
 For a complete list of available functions, refer to the [functions reference](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/).
+
+## Examples
+
+The following examples show common queries and the panel type that best fits each one.
+
+### Graph a single metric for one host
+
+Plot CPU user time for a web server on a time series panel.
+
+- **Query type:** Metrics
+- **Group:** `Linux servers`
+- **Host:** `web01`
+- **Item:** `CPU user time`
+
+### Compare a metric across a host group
+
+Show available memory for every host in a group on one time series panel. Each host appears as a separate series.
+
+- **Query type:** Metrics
+- **Group:** `Linux servers`
+- **Host:** `/.*/`
+- **Item:** `Available memory`
+
+### Show the top five hosts by a metric
+
+Reduce a noisy graph to only the five busiest hosts. Add a function to the query to rank the series.
+
+- **Query type:** Metrics
+- **Group:** `Linux servers`
+- **Host:** `/.*/`
+- **Item:** `CPU utilization`
+- **Function:** `top(5, avg)`
+
+### Aggregate multiple series into one
+
+Combine per-core CPU utilization into a single average line by grouping the matched series.
+
+- **Query type:** Metrics
+- **Host:** `web01`
+- **Item:** `/CPU .* time/`
+- **Function:** `aggregateBy(1m, avg)`
+
+### List current problems in a table
+
+Display active high-severity problems on a table panel.
+
+- **Query type:** Problems
+- **Group:** `/.*/`
+- **Host:** `/.*/`
+- **Show:** Problems
+- **Severity:** High, Disaster
+
+### Count active problems for a stat panel
+
+Show the number of current problems in a host group on a stat panel.
+
+- **Query type:** Triggers
+- **Count by:** Problems
+- **Group:** `Production`
+- **Min severity:** High
+- Enable **Count** in the query fields.
+
+### Report an SLA value
+
+Show the service level indicator for an IT service on a stat or gauge panel.
+
+- **Query type:** Services
+- **Service:** the IT service to report on
+- **SLA:** the SLA definition to evaluate
+- **Property:** SLI
+- **Interval:** Auto
 
 ## Direct DB Connection behavior
 
