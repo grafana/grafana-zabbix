@@ -1,6 +1,6 @@
 import { DataQuery } from '@grafana/schema';
 import * as c from './../constants';
-import { HostTagOperatorValue } from 'datasource/components/QueryEditor/types';
+import { HostTagOperatorValue, TagOperatorValue } from 'datasource/components/QueryEditor/types';
 
 export type QueryType =
   | typeof c.MODE_METRICS
@@ -33,6 +33,9 @@ export type ZabbixMetricsQuery = {
   slaProperty?: any;
   slaInterval?: string;
   tags?: { filter: string };
+  // Structured problem tag filters with per-tag operator (replaces the free-text
+  // `tags.filter` for problems queries since query schema 13).
+  problemTags?: ProblemTagFilter[];
   triggers?: { minSeverity: number; acknowledged: number; count: boolean };
   countTriggersBy?: 'problems' | 'items' | '';
   evaltype?: ZabbixTagEvalType;
@@ -119,4 +122,10 @@ export interface HostTagFilter {
   tag: string;
   value: string;
   operator: HostTagOperatorValue;
+}
+
+export interface ProblemTagFilter {
+  tag: string;
+  value: string;
+  operator: TagOperatorValue;
 }

@@ -582,13 +582,19 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const getProxiesPromise = showProxy ? this.zabbix.getProxies() : () => [];
     showAckButton = !this.disableReadOnlyUsersAck || userIsEditor;
 
-    // replaceTemplateVars() builds regex-like string, so we should trim it.
-    const tagsFilterStr = target.tags.filter.replace('/^', '').replace('$/', '');
-    const tags = utils.parseTags(tagsFilterStr);
-    tags.forEach((tag) => {
-      // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
-      tag.operator = 1;
-    });
+    let tags: any[];
+    if (target.problemTags?.length) {
+      tags = utils.problemTagsToQueryParam(target.problemTags);
+    } else {
+      // Legacy free-text tags filter from queries saved before schema 13.
+      // replaceTemplateVars() builds regex-like string, so we should trim it.
+      const tagsFilterStr = (target.tags?.filter ?? '').replace('/^', '').replace('$/', '');
+      tags = utils.parseTags(tagsFilterStr);
+      tags.forEach((tag) => {
+        // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
+        tag.operator = 1;
+      });
+    }
 
     const problemsOptions: any = {
       recent: showProblems === ShowProblemTypes.Recent,
@@ -955,6 +961,11 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           ...query.tags,
           filter: utils.replaceTemplateVars(this.templateSrv, query.tags?.filter, scopedVars),
         },
+        problemTags: query.problemTags?.map((tagFilter) => ({
+          ...tagFilter,
+          tag: utils.replaceTemplateVars(this.templateSrv, tagFilter.tag, scopedVars),
+          value: utils.replaceTemplateVars(this.templateSrv, tagFilter.value, scopedVars),
+        })),
         group: {
           ...query.group,
           filter: utils.replaceTemplateVars(this.templateSrv, query.group?.filter, scopedVars),

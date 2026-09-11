@@ -63,6 +63,24 @@ describe('Zabbix', () => {
     getMock.mockClear();
   });
 
+  describe('supportsProblemTagOperators', () => {
+    it.each([
+      ['5.0.0', false],
+      ['5.2.0', false],
+      ['5.4.0', true],
+      ['6.0.0', true],
+      ['7.0.0', true],
+    ])('returns %s support for Zabbix %s', (version: string, expected: boolean) => {
+      zabbix.version = version;
+      expect(zabbix.supportsProblemTagOperators()).toBe(expected);
+    });
+
+    it('returns false when the version is not known yet', () => {
+      zabbix.version = undefined;
+      expect(zabbix.supportsProblemTagOperators()).toBe(false);
+    });
+  });
+
   describe('initDBConnector', () => {
     const connectorOptions: any = { dbConnectionRetentionPolicy: 'policy' };
 

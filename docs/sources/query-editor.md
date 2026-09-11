@@ -150,7 +150,7 @@ Use Problems queries to retrieve Zabbix problem events. This query type returns 
 | **Proxy** | Filter by Zabbix proxy. |
 | **Application** | Filter by application (Zabbix versions before 5.4). |
 | **Problem** | Filter by problem name. |
-| **Tags** | Filter by tags in `tag1:value1, tag2:value2` format. |
+| **Tags** | Filter by tags. Each tag filter has a tag name, an operator, and a value. All operators offered by Zabbix are supported: Exists, Equals, Contains, Does not exist, Does not equal, and Does not contain. On Zabbix versions before 5.4 only Equals and Contains are available. Tag names and values support template variables. |
 | **Tag evaluation** | How to combine multiple tag filters: AND/OR or OR. |
 | **Show** | Which problems to display: Problems (current), Recent problems, or History. |
 | **Severity** | Filter by one or more severity levels (multi-select). |
