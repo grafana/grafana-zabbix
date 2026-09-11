@@ -91,6 +91,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
         {queryType === c.MODE_ITEMID && renderMetricOptions()}
         {queryType === c.MODE_ITSERVICE && renderMetricOptions()}
         {queryType === c.MODE_TEXT && renderTextMetricsOptions()}
+        {queryType === c.MODE_LOGS && renderLogsOptions()}
         {queryType === c.MODE_PROBLEMS && renderProblemsOptions()}
         {queryType === c.MODE_TRIGGERS && renderTriggersOptions()}
       </div>
@@ -138,6 +139,26 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
             value={queryOptions.showDisabledItems}
             onChange={() => onChange({ ...queryOptions, showDisabledItems: !queryOptions.showDisabledItems })}
           />
+        </InlineField>
+      </>
+    );
+  };
+
+  const renderLogsOptions = () => {
+    return (
+      <>
+        <InlineField label="Show disabled items" labelWidth={24}>
+          <InlineSwitch
+            value={queryOptions.showDisabledItems}
+            onChange={() => onChange({ ...queryOptions, showDisabledItems: !queryOptions.showDisabledItems })}
+          />
+        </InlineField>
+        <InlineField
+          label="Line limit"
+          labelWidth={24}
+          tooltip="Maximum number of log lines to return. The most recent lines within the time range are kept."
+        >
+          <Input width={12} type="number" defaultValue={queryOptions.limit} onBlur={onLimitChange} />
         </InlineField>
       </>
     );

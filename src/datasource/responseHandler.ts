@@ -3,6 +3,7 @@ import {
   DataFrame,
   dataFrameFromJSON,
   DataFrameJSON,
+  DataFrameType,
   DataQueryResponse,
   Field,
   FieldType,
@@ -443,6 +444,93 @@ function handleText(history, items, target, addHostName = true) {
   return convertHistory(history, items, addHostName, convertTextCallback);
 }
 
+// Zabbix log item severity (Windows event log levels) to Grafana log level.
+// Unmapped values produce an empty severity so Grafana infers the level from the line content.
+const ZBX_LOG_SEVERITY_TO_LEVEL: { [key: number]: string } = {
+  1: 'info', // Information
+  2: 'warning', // Warning
+  4: 'error', // Error
+  7: 'error', // Failure Audit
+  8: 'info', // Success Audit
+  9: 'critical', // Critical
+  10: 'debug', // Verbose
+};
+
+/**
+ * Convert Zabbix log history (value_type = 2) to a Grafana logs data frame
+ * (https://grafana.com/developers/dataplane/logs): one frame per query with
+ * timestamp/body/severity/id/labels fields and the log-lines frame type set,
+ * so the result renders in the Logs panel and the Explore logs view.
+ */
+export function handleLogs(history: any[], items: any[], target: ZabbixMetricsQuery): DataFrame {
+  const itemsById = _.keyBy(items, 'itemid');
+  const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
+
+  let entries = _.sortBy(history, (p) => Number(p.clock) * 1000 + Math.round(Number(p.ns) / 1000000));
+
+  // Line filter: keep only lines matching the regex
+  if (target.textFilter) {
+    const lineFilter = new RegExp(target.textFilter);
+    entries = entries.filter((p) => lineFilter.test(p.value));
+  }
+
+  const timestamps: number[] = [];
+  const bodies: string[] = [];
+  const severities: string[] = [];
+  const ids: string[] = [];
+  const labels: object[] = [];
+
+  for (const p of entries) {
+    const item = itemsById[p.itemid];
+    if (!item) {
+      continue;
+    }
+    const host = _.find(hosts, { hostid: item.hostid }) as any;
+
+    timestamps.push(Number(p.clock) * 1000 + Math.round(Number(p.ns) / 1000000));
+    bodies.push(p.value);
+    severities.push(ZBX_LOG_SEVERITY_TO_LEVEL[Number(p.severity)] || '');
+    // Log history entries have their own id; fall back to a synthetic one
+    ids.push(p.id != null ? String(p.id) : `${p.itemid}_${p.clock}_${p.ns}`);
+
+    const rowLabels: Record<string, string> = {
+      host: host?.name,
+      item: item.name,
+      item_key: item.key_,
+    };
+    // Log-specific metadata (eventlog items): source and event id
+    if (p.source) {
+      rowLabels.source = p.source;
+    }
+    if (p.logeventid && p.logeventid !== '0') {
+      rowLabels.logeventid = p.logeventid;
+    }
+    labels.push(rowLabels);
+  }
+
+  const frame = createDataFrame({
+    refId: target.refId,
+    fields: [
+      { name: 'timestamp', type: FieldType.time, values: timestamps },
+      { name: 'body', type: FieldType.string, values: bodies },
+      { name: 'severity', type: FieldType.string, values: severities },
+      { name: 'id', type: FieldType.string, values: ids },
+      { name: 'labels', type: FieldType.other, values: labels },
+    ],
+  });
+
+  frame.meta = {
+    type: DataFrameType.LogLines,
+    preferredVisualisationType: 'logs',
+    custom: {
+      searchWords: target.textFilter ? [target.textFilter] : [],
+      limit: target.options?.limit,
+    },
+  };
+
+  return frame;
+}
+
 function handleHistoryAsTable(history, items, target) {
   const hosts: string[] = [];
   const itemNames: string[] = [];
@@ -797,6 +885,7 @@ export default {
   convertHistory,
   handleTrends,
   handleText,
+  handleLogs,
   handleMacro,
   handleHistoryAsTable,
   handleSLAResponse,

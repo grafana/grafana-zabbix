@@ -343,8 +343,10 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getHosts(groupFilter?, hostFilter?): Promise<any[]> {
-    return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
+  getHosts(groupFilter?, hostFilter?, hostTagFilters?: HostTagFilter[], evalType?: ZabbixTagEvalType): Promise<any[]> {
+    return this.getAllHosts(groupFilter, false, hostTagFilters, evalType).then((hosts) =>
+      findByFilter(hosts, hostFilter)
+    );
   }
 
   /**
@@ -417,7 +419,7 @@ export class Zabbix implements ZabbixConnector {
       return this.getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options);
     }
 
-    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hosts = await this.getHosts(groupFilter, hostFilter, options.hostTags, options.evaltype);
     const hostids = _.map(hosts, 'hostid');
 
     // Support regexp in tags
@@ -767,6 +769,18 @@ export class Zabbix implements ZabbixConnector {
         .then((history) => responseHandler.handleTrends(history, items, valueType))
         .then(responseHandler.sortTimeseries); // Sort trend data, issue #202
     }
+  }
+
+  getHistoryLogs(items, timeRange, target) {
+    const [timeFrom, timeTo] = timeRange;
+    if (!items.length) {
+      return Promise.resolve([]);
+    }
+    const limit = target.options?.limit;
+    // With a limit, fetch the most recent entries (DESC); handleLogs() sorts lines ascending
+    return this.zabbixAPI
+      .getHistory(items, timeFrom, timeTo, limit, limit ? 'DESC' : undefined)
+      .then((history) => [responseHandler.handleLogs(history, items, target)]);
   }
 
   getHistoryText(items, timeRange, target) {
