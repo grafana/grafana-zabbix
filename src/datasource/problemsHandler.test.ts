@@ -1,4 +1,11 @@
-import { expandItemMacros, expandUserMacros, filterTriggersPre, hasUserMacro } from './problemsHandler';
+import {
+  expandItemMacros,
+  expandUserMacros,
+  filterTriggersPre,
+  hasUserMacro,
+  joinTriggersWithProblems,
+  setActionCapabilities,
+} from './problemsHandler';
 
 describe('expandItemMacros', () => {
   const item = (historicalValue?: string, originalLastvalue?: string) => ({ historicalValue, originalLastvalue });
@@ -203,5 +210,39 @@ describe('filterTriggersPre', () => {
 
     expect(filterTriggersPre(problems, target('High CPU load')).length).toBe(1);
     expect(filterTriggersPre(problems, target('')).length).toBe(2);
+  });
+});
+
+describe('setActionCapabilities', () => {
+  it('stamps the action capabilities on every problem', () => {
+    const problems: any[] = [{ eventid: '1' }, { eventid: '2' }];
+    const capabilities = { unacknowledge: true, suppress: true, rank: false };
+
+    const result = setActionCapabilities(problems, capabilities);
+
+    expect(result).toHaveLength(2);
+    result.forEach((problem) => {
+      expect(problem.actionCapabilities).toEqual({ unacknowledge: true, suppress: true, rank: false });
+    });
+  });
+});
+
+describe('joinTriggersWithProblems', () => {
+  it('copies cause_eventid from the problem to the DTO', () => {
+    const problems: any[] = [
+      {
+        eventid: '10',
+        objectid: '1',
+        clock: '1700000000',
+        cause_eventid: '42',
+        name: 'High CPU load',
+      },
+    ];
+    const triggers: any = { 1: { description: 'High CPU load' } };
+
+    const result = joinTriggersWithProblems(problems, triggers);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].cause_eventid).toBe('42');
   });
 });

@@ -1,6 +1,6 @@
 import { DataFrame, dateTime, Field, FieldType } from '@grafana/data';
 import _ from 'lodash';
-import { ProblemDTO, ZBXEvent, ZBXProblem, ZBXTrigger } from './types';
+import { ProblemActionCapabilities, ProblemDTO, ZBXEvent, ZBXProblem, ZBXTrigger } from './types';
 import { ZabbixMetricsQuery } from './types/query';
 import * as utils from './utils';
 
@@ -24,6 +24,7 @@ export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTr
         tags: p.tags,
         suppressed: p.suppressed,
         suppression_data: p.suppression_data,
+        cause_eventid: p.cause_eventid,
         description: p.name || t.description,
         comments: t.comments,
         value: t.value,
@@ -77,6 +78,7 @@ export function joinTriggersWithEvents(
         acknowledges: e.acknowledges,
         tags: e.tags,
         suppressed: e.suppressed,
+        cause_eventid: e.cause_eventid,
         description: t.description,
         comments: t.comments,
         groups: t.groups,
@@ -113,6 +115,13 @@ export function setMaintenanceStatus(triggers) {
 export function setAckButtonStatus(triggers, showAckButton) {
   _.each(triggers, (trigger) => {
     trigger.showAckButton = showAckButton;
+  });
+  return triggers;
+}
+
+export function setActionCapabilities(triggers, actionCapabilities: ProblemActionCapabilities) {
+  _.each(triggers, (trigger) => {
+    trigger.actionCapabilities = actionCapabilities;
   });
   return triggers;
 }
@@ -291,6 +300,7 @@ const problemsHandler = {
   formatAcknowledges,
   setMaintenanceStatus,
   setAckButtonStatus,
+  setActionCapabilities,
   filterTriggersPre,
   sortProblems,
   toDataFrame,
