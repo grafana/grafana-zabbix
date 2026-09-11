@@ -214,11 +214,7 @@ func applyPercentile(series timeseries.TimeSeries, params ...interface{}) (times
 }
 
 func applyScale(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
-	pFactor, err := MustString(params[0])
-	if err != nil {
-		return nil, errParsingFunctionParam(err)
-	}
-	factor, err := strconv.ParseFloat(pFactor, 64)
+	factor, err := MustFloat64(params[0])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
 	}
