@@ -65,7 +65,7 @@ After configuring the data source, you can:
 - **Create template variables** to build dynamic, reusable dashboards that switch between host groups, hosts, and items.
 - **Display Zabbix problems** using the Problems panel to monitor active triggers.
 - **Annotate graphs** with Zabbix events filtered by severity and acknowledgment status.
-- **Use Direct DB Connection** to query history data from MySQL, PostgreSQL, or InfluxDB for faster performance on wide time ranges.
+- **Use Direct DB Connection** to query history data from MySQL, PostgreSQL, InfluxDB, or ClickHouse for faster performance on wide time ranges.
 - **Use [Explore](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/explore/)** to query Zabbix data without building a dashboard.
 - **Set up [alerting rules](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/alerting/)** based on Zabbix data.
 - **Use [Grafana Assistant](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/administration/assistant/)** to explore your Zabbix infrastructure, inspect problems, and build dashboards from natural language prompts.

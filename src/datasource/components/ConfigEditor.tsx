@@ -37,9 +37,10 @@ import {
 } from '@grafana/plugin-ui';
 import { Divider } from './Divider';
 import { css } from '@emotion/css';
+import { CLICKHOUSE_DS_ID } from '../zabbix/connectors/clickhouse/clickhouseConnector';
 
 // the postgres-plugin changed it's id, so we list both the old name and the new name
-const SUPPORTED_SQL_DS = ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb'];
+const SUPPORTED_SQL_DS = ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb', CLICKHOUSE_DS_ID];
 
 const authOptions: Array<ComboboxOption<ZabbixAuthType>> = [
   { label: 'User and password', value: ZabbixAuthType.UserLogin },
@@ -422,9 +423,17 @@ export const ConfigEditor = (props: Props) => {
                   value={selectedDBDatasource}
                   options={getDirectDBDSOptions()}
                   onChange={directDBDatasourceChangeHandler(options, onOptionsChange)}
-                  placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB)"
+                  placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB, ClickHouse)"
                 />
               </Field>
+
+              {currentDSType === CLICKHOUSE_DS_ID && (
+                <Alert severity="info" title="ClickHouse history storage">
+                  Zabbix stores only history data in ClickHouse (trends are not supported), so all queries are served
+                  from history tables. Make sure the default database of the selected ClickHouse data source is set to
+                  the Zabbix history database.
+                </Alert>
+              )}
 
               {currentDSType === 'influxdb' && (
                 <Field label="Retention Policy">

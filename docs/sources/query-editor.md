@@ -221,6 +221,8 @@ consolidateBy(max) | groupBy(1h, max)
 
 Without `consolidateBy`, the database aggregates using the default `AVG` function, which may produce unexpected results when combined with `groupBy(interval, max)`.
 
+When the Direct DB Connection data source is ClickHouse (Zabbix 8.0 history storage), all queries are served from the history tables because Zabbix doesn't store trends in ClickHouse. The trends settings of the Zabbix data source have no effect on the returned data in this case.
+
 ## Next steps
 
 - [Apply functions to transform query results](./functions/)
