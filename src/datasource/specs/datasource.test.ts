@@ -1,4 +1,5 @@
 import { lastValueFrom, of } from 'rxjs';
+import { dateTime } from '@grafana/data';
 import { ZabbixDatasource } from '../datasource';
 import * as c from '../constants';
 import { DataSourceWithBackend } from '@grafana/runtime';
@@ -6,7 +7,7 @@ import { DataSourceWithBackend } from '@grafana/runtime';
 const buildRequest = () =>
   ({
     targets: [{ refId: 'A', queryType: c.MODE_METRICS }],
-    range: { from: 'now-1h', to: 'now' },
+    range: { from: dateTime('2026-01-01T00:00:00Z'), to: dateTime('2026-01-01T01:00:00Z') },
     scopedVars: {},
   }) as any;
 
@@ -99,6 +100,25 @@ describe('ZabbixDatasource', () => {
 
     const result = await resultPromise;
     expect(result.data).toEqual([{ refId: 'A' }, { refId: 'B' }, { refId: 'C' }, { refId: 'D' }]);
+  });
+
+  it('interpolates queries with range scoped vars ($__range_series, etc.)', async () => {
+    const interpolateSpy = jest
+      .spyOn(ZabbixDatasource.prototype, 'interpolateVariablesInQueries')
+      .mockReturnValue(buildRequest().targets);
+    jest.spyOn(ds, 'applyFrontendFunctions').mockImplementation((response) => response);
+    jest.spyOn(DataSourceWithBackend.prototype, 'query').mockReturnValue(of({ data: [] }));
+    jest.spyOn(ds, 'dbConnectionQuery').mockResolvedValue({ data: [] });
+    jest.spyOn(ds, 'frontendQuery').mockResolvedValue({ data: [] });
+    jest.spyOn(ds, 'annotationRequest').mockResolvedValue({ data: [] });
+
+    await lastValueFrom(ds.query(buildRequest()));
+
+    const scopedVars = interpolateSpy.mock.calls[0][1];
+    expect(scopedVars.__range_series).toEqual({ text: c.RANGE_VARIABLE_VALUE, value: c.RANGE_VARIABLE_VALUE });
+    expect(scopedVars.__range).toEqual({ text: '1h', value: '1h' });
+    expect(scopedVars.__range_s).toEqual({ text: 3600, value: 3600 });
+    expect(scopedVars.__range_ms).toEqual({ text: 3600000, value: 3600000 });
   });
 
   it('mergeQueries combines data without mutating the original response', () => {

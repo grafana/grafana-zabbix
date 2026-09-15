@@ -286,6 +286,22 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When resolving items by tag regex', () => {
+    it('returns no items without making an unfiltered request when no tags match', async () => {
+      ctx.ds.zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10001' }]);
+      ctx.ds.zabbix.getItemTags = jest.fn().mockResolvedValue([]);
+      ctx.ds.zabbix.zabbixAPI.getItems = jest.fn();
+
+      const result = await ctx.ds.zabbix.getAllItems('GroupFilter', 'HostFilter', 'AppFilter', '/^NonExistentTag/', {
+        itemtype: 'num',
+      });
+
+      expect(result).toEqual([]);
+      expect(ctx.ds.zabbix.getItemTags).toHaveBeenCalledWith('GroupFilter', 'HostFilter', '/^NonExistentTag/');
+      expect(ctx.ds.zabbix.zabbixAPI.getItems).not.toHaveBeenCalled();
+    });
+  });
+
   describe('When invoking metricFindQuery() with legacy query', () => {
     beforeEach(() => {
       ctx.ds.zabbix = {
