@@ -17,12 +17,27 @@ labels:
     - enterprise
     - cloud
 weight: 350
-last_reviewed: 2026-02-18
+review_date: 2026-09-08
 ---
 
 # Zabbix functions reference
 
-Functions let you transform, aggregate, and manipulate time series data returned by Zabbix queries. Add functions to a query by clicking the **+** button next to the query row in the query editor.
+Functions let you transform, aggregate, and manipulate time series data returned by Zabbix queries. Add functions to a query by clicking the **+** button next to the query row in the query editor. Functions are available for the **Metrics**, **Item ID**, and **Services** query types.
+
+## Chain functions
+
+You can add several functions to a query. They're applied in order, top to bottom, with each function receiving the output of the one before it. For example, the following pipeline first aligns points to 1-minute intervals, then keeps only the five highest series:
+
+```
+groupBy(1m, avg)
+top(5, avg)
+```
+
+Reorder functions in the editor by dragging them. Remove a function by clicking the **x** next to it.
+
+## Where functions run
+
+Most functions are evaluated in the plugin backend, which means they also work in Grafana alert rules. The alias functions (`setAlias`, `setAliasByRegex`, `replaceAlias`) and `consolidateBy` are resolved by the frontend or the Direct DB Connection path, so they don't affect alert evaluation. For details on using functions in alerts, refer to [Functions in alert rules](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/#functions-in-alert-rules).
 
 ## Built-in variables
 
@@ -224,7 +239,7 @@ average(interval)
 ```
 
 {{< admonition type="caution" >}}
-Deprecated. Use `aggregateBy(interval, avg)` instead.
+Deprecated and no longer supported in current plugin versions. Use `aggregateBy(interval, avg)` instead. You may still see this function in older dashboards, where it now returns a "function not supported" error until you migrate it.
 {{< /admonition >}}
 
 ### min (deprecated)
@@ -234,7 +249,7 @@ min(interval)
 ```
 
 {{< admonition type="caution" >}}
-Deprecated. Use `aggregateBy(interval, min)` instead.
+Deprecated and no longer supported in current plugin versions. Use `aggregateBy(interval, min)` instead. You may still see this function in older dashboards, where it now returns a "function not supported" error until you migrate it.
 {{< /admonition >}}
 
 ### max (deprecated)
@@ -244,7 +259,7 @@ max(interval)
 ```
 
 {{< admonition type="caution" >}}
-Deprecated. Use `aggregateBy(interval, max)` instead.
+Deprecated and no longer supported in current plugin versions. Use `aggregateBy(interval, max)` instead. You may still see this function in older dashboards, where it now returns a "function not supported" error until you migrate it.
 {{< /admonition >}}
 
 ## Filter functions
@@ -405,7 +420,7 @@ consolidateBy(consolidationFunc)
 
 Changes the consolidation function used when the number of data points exceeds the graph width in pixels. By default, the plugin uses `avg`. Valid values: `sum`, `avg`, `min`, `max`, `count`.
 
-When using [Direct DB Connection](./configure/#configure-direct-db-connection), this function directly controls the SQL aggregation function. Pair it with `groupBy` for accurate results:
+When using [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection), this function directly controls the SQL aggregation function. Pair it with `groupBy` for accurate results:
 
 ```
 consolidateBy(max) | groupBy(1h, max)
