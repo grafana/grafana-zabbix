@@ -590,6 +590,41 @@ describe('Zabbix API connector', () => {
       });
     });
   });
+
+  describe('getTriggersByIds', () => {
+    beforeAll(() => {
+      jest.spyOn(ZabbixAPIConnector.prototype, 'initVersion').mockResolvedValue('');
+    });
+
+    const callParams = async (expandComment?: boolean) => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve({}));
+
+      await (expandComment === undefined
+        ? zabbixAPIConnector.getTriggersByIds(['501'])
+        : zabbixAPIConnector.getTriggersByIds(['501'], expandComment));
+
+      const request = zabbixAPIConnector.request as jest.Mock;
+      expect(request.mock.calls[0][0]).toBe('trigger.get');
+      return request.mock.calls[0][1];
+    };
+
+    it('asks Zabbix to expand the trigger comment by default', async () => {
+      expect(await callParams()).toMatchObject({ expandComment: true });
+    });
+
+    it('omits expandComment rather than sending false', async () => {
+      // Zabbix treats the key as present-means-true, so sending false would still
+      // expand the comment and leave the per-problem expansion nothing to replace.
+      expect(await callParams(false)).not.toHaveProperty('expandComment');
+    });
+
+    it('keeps the neighbouring expand flags in both modes', async () => {
+      expect(await callParams(true)).toMatchObject({ expandDescription: true, expandData: true });
+      expect(await callParams(false)).toMatchObject({ expandDescription: true, expandData: true });
+    });
+  });
 });
 
 const triggers = [

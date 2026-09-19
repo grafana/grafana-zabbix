@@ -229,6 +229,18 @@ describe('Zabbix', () => {
 
       expect(zabbix.zabbixAPI.getHistory).toHaveBeenCalled();
     });
+
+    it('asks Zabbix to expand trigger comments when the history lookup is off', async () => {
+      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
+
+      expect(zabbix.zabbixAPI.getTriggersByIds).toHaveBeenCalledWith(['501'], true);
+    });
+
+    it('leaves trigger comments unexpanded when the history lookup will expand them per problem', async () => {
+      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, { fetchHistoricalItemValue: true });
+
+      expect(zabbix.zabbixAPI.getTriggersByIds).toHaveBeenCalledWith(['501'], false);
+    });
   });
 
   describe('enrichProblemsWithItemHistory', () => {

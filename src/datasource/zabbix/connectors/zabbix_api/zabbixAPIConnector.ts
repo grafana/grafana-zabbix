@@ -632,12 +632,21 @@ export class ZabbixAPIConnector {
     return this.request('problem.get', params).then(utils.mustArray);
   }
 
-  async getTriggersByIds(triggerids: string[]) {
+  /**
+   * `expandComment` asks Zabbix to expand macros in the trigger comment, which the
+   * Problems panel renders as "Description". Pass false only when the caller expands
+   * those macros itself per problem, because that needs the raw template.
+   *
+   * The parameter must be omitted rather than sent as false. Zabbix treats the key
+   * as present-means-true and expands the comment even when the value is false.
+   */
+  async getTriggersByIds(triggerids: string[], expandComment = true) {
     const params = {
       output: 'extend',
       triggerids: triggerids,
       expandDescription: true,
       expandData: true,
+      ...(expandComment ? { expandComment: true } : {}),
       expandExpression: true,
       monitored: true,
       skipDependent: true,
