@@ -22,6 +22,13 @@ import (
 func (ds *ZabbixDatasource) RootHandler(rw http.ResponseWriter, req *http.Request) {
 	ds.logger.Debug("Received resource call", "url", req.URL.String(), "method", req.Method)
 
+	// "/" is the mux catch-all; reject anything but the literal root path.
+	if req.URL.Path != "/" {
+		ds.logger.Error("Rejected resource call to an unsupported path", "path", req.URL.Path, "method", req.Method)
+		writeError(rw, http.StatusForbidden, ErrUnsupportedResourcePath)
+		return
+	}
+
 	_, err := rw.Write([]byte("Hello from Zabbix data source!"))
 	if err != nil {
 		ds.logger.Warn("Error writing response")
@@ -31,7 +38,9 @@ func (ds *ZabbixDatasource) RootHandler(rw http.ResponseWriter, req *http.Reques
 }
 
 func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodPost {
+	if !isAllowedResourcePath(req.Method, req.URL.Path) {
+		ds.logger.Warn("Rejected resource call to an unsupported path/method", "path", req.URL.Path, "method", req.Method)
+		writeError(rw, http.StatusForbidden, ErrUnsupportedResourcePath)
 		return
 	}
 
@@ -108,7 +117,9 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 }
 
 func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodPost {
+	if !isAllowedResourcePath(req.Method, req.URL.Path) {
+		ds.logger.Error("Rejected resource call to an unsupported path/method", "path", req.URL.Path, "method", req.Method)
+		writeError(rw, http.StatusForbidden, ErrUnsupportedResourcePath)
 		return
 	}
 
