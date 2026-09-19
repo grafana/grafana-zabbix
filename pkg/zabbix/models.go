@@ -51,7 +51,8 @@ type Item struct {
 	Delay      string     `json:"delay,omitempty"`
 	Units      string     `json:"units,omitempty"`
 	ValueMapID string     `json:"valuemapid,omitempty"`
-	Tags       []Tag  	  `json:"tags,omitempty"`
+	Tags       []Tag      `json:"tags,omitempty"`
+	LastValue  *string    `json:"lastvalue,omitempty"`
 }
 
 type ItemHost struct {
@@ -90,10 +91,10 @@ type Group struct {
 }
 
 type Host struct {
-	Name string    `json:"name"`
-	Host string    `json:"host"`
-	ID   string    `json:"hostid"`
-	Tags []Tag 	   `json:"tags,omitempty"`
+	Name string `json:"name"`
+	Host string `json:"host"`
+	ID   string `json:"hostid"`
+	Tags []Tag  `json:"tags,omitempty"`
 }
 
 type Application struct {

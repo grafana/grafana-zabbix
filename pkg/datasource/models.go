@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	MODE_METRICS   = "0"
-	MODE_ITSERVICE = "1"
-	MODE_TEXT      = "2"
-	MODE_ITEMID    = "3"
-	MODE_TRIGGERS  = "4"
-	MODE_PROBLEMS  = "5"
+	MODE_METRICS           = "0"
+	MODE_ITSERVICE         = "1"
+	MODE_TEXT              = "2"
+	MODE_ITEMID            = "3"
+	MODE_TRIGGERS          = "4"
+	MODE_PROBLEMS          = "5"
+	MODE_MULTIMETRIC_TABLE = "7"
 )
 
 type DBConnectionPostProcessingRequest struct {
@@ -65,6 +66,9 @@ type QueryModel struct {
 	TimeRange     backend.TimeRange `json:"-"`
 	MaxDataPoints int64             `json:"-"`
 	Interval      time.Duration     `json:"-"`
+
+	// Multi-metric table mode
+	TableConfig *MultiMetricTableConfig `json:"tableConfig,omitempty"`
 }
 
 // QueryOptions model
@@ -105,6 +109,54 @@ type QueryFunctionParam = interface{}
 type ScopedVar struct {
 	Text  string `json:"text"`
 	Value string `json:"value"`
+}
+
+type MultiMetricTableConfig struct {
+	EntityPattern EntityPatternConfig  `json:"entityPattern"`
+	Metrics       []MetricColumnConfig `json:"metrics"`
+	// RowSource selects what a table row represents: "entityPattern" (default when empty) discovers
+	// rows from items matching the entity pattern (LLD-style entities), while "host" produces one row
+	// per host — for non-LLD, host-level items (e.g. CPU/Memory utilization per VM) where the host is
+	// the only identifier shared between the metric columns.
+	RowSource       string `json:"rowSource"`
+	ShowGroupColumn bool   `json:"showGroupColumn"`
+	ShowHostColumn  bool   `json:"showHostColumn"`
+}
+
+// RowsFromHost returns true when table rows represent hosts rather than pattern-discovered entities.
+func (c MultiMetricTableConfig) RowsFromHost() bool {
+	return c.RowSource == "host"
+}
+
+type EntityPatternConfig struct {
+	SearchType       string                  `json:"searchType"`
+	Pattern          string                  `json:"pattern"`
+	ExtractPattern   string                  `json:"extractPattern"`
+	ExtractedColumns []ExtractedColumnConfig `json:"extractedColumns"`
+}
+
+type ExtractedColumnConfig struct {
+	Name       string `json:"name"`
+	GroupIndex int    `json:"groupIndex"`
+}
+
+type MetricColumnConfig struct {
+	ColumnName string `json:"columnName"`
+	SearchType string `json:"searchType"`
+	Pattern    string `json:"pattern"`
+	// ValueType is the item value type this column matches: "num" (unsigned/float, default when
+	// empty) or "text" (character/log/text). Text columns always use the "last" aggregation and
+	// never emit sparkline frames.
+	ValueType   string `json:"valueType"`
+	Aggregation string `json:"aggregation"` // "last", "avg", "min", "max"
+	// ShowSparkline, when true, makes the backend fetch full history for this column's
+	// items over the query time range and return it as an additional time-series frame.
+	ShowSparkline bool `json:"showSparkline"`
+}
+
+// IsText returns true when the column matches text/character/log items.
+func (m MetricColumnConfig) IsText() bool {
+	return m.ValueType == "text"
 }
 
 // ReadQuery will read and validate Settings from the DataSourceConfg
