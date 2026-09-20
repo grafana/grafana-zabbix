@@ -117,6 +117,14 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         showIf: (options) => options.layout === 'table',
       })
       .addCustomEditor({
+        id: 'resetColumnOrder',
+        path: 'columnOrder',
+        name: 'Reset column order',
+        description: 'Restore the default column order after dragging column headers.',
+        editor: ResetColumnsEditor,
+        showIf: (options) => options.layout === 'table',
+      })
+      .addCustomEditor({
         id: 'dataLinks',
         path: 'dataLinks',
         name: 'Data links',

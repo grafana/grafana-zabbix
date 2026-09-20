@@ -163,6 +163,86 @@ export const getStyles = (theme: GrafanaTheme2) => {
         background: theme.colors.primary.border,
       },
     }),
+
+    // Column reordering ------------------------------------------------------
+    // Drag handle before the header label; only visible while the pointer is over the header
+    grip: css({
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      verticalAlign: 'middle',
+      width: em(14, HEADER_FONT_PX),
+      height: em(20, HEADER_FONT_PX),
+      marginRight: theme.spacing(0.5),
+      borderRadius: theme.shape.radius.default,
+      color: theme.colors.text.disabled,
+      cursor: 'grab',
+      opacity: 0,
+      touchAction: 'none',
+      transition: 'opacity 0.15s, color 0.15s',
+      'th:hover > &': {
+        opacity: 1,
+      },
+      '&:hover': {
+        color: theme.colors.text.primary,
+      },
+      '&:active': {
+        cursor: 'grabbing',
+      },
+    }),
+    // Source column while its header is lifted
+    headerDragging: css({
+      opacity: 0.4,
+    }),
+    // 2px insertion line on the edge where the dragged column will land
+    dropBefore: css({
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        width: 2,
+        background: theme.colors.primary.main,
+        zIndex: 2,
+      },
+    }),
+    dropAfter: css({
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        right: 0,
+        width: 2,
+        background: theme.colors.primary.main,
+        zIndex: 2,
+      },
+    }),
+    // Lifted copy of the header that follows the pointer; positioned and sized from the source
+    // cell. Lives in a body portal, so px instead of the table's em scale.
+    dragOverlay: css({
+      position: 'fixed',
+      zIndex: theme.zIndex.tooltip,
+      pointerEvents: 'none',
+      display: 'flex',
+      alignItems: 'center',
+      gap: theme.spacing(0.5),
+      boxSizing: 'border-box',
+      padding: theme.spacing(0, 1.5),
+      background: theme.colors.background.secondary,
+      color: theme.colors.text.primary,
+      border: `1px solid ${theme.colors.border.medium}`,
+      borderRadius: theme.shape.radius.default,
+      boxShadow: theme.shadows.z3,
+      fontSize: HEADER_FONT_PX,
+      fontWeight: 600,
+      letterSpacing: '0.02em',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      cursor: 'grabbing',
+    }),
     row: css({
       '&:hover td': {
         background: theme.colors.action.hover,

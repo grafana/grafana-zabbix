@@ -39,6 +39,8 @@ export interface ProblemsPanelOptions {
   customLastChangeFormat?: boolean;
   lastChangeFormat?: string;
   resizedColumns?: RTResized;
+  /** Column ids in display order; empty or missing keeps the definition order */
+  columnOrder?: string[];
   allowDangerousHTML: boolean;
   // Triggers severity and colors
   triggerSeverity: TriggerSeverity[];
@@ -94,6 +96,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   customLastChangeFormat: false,
   lastChangeFormat: '',
   resizedColumns: [],
+  columnOrder: [],
   allowDangerousHTML: false,
   // Triggers severity and colors
   triggerSeverity: getDefaultSeverity(),

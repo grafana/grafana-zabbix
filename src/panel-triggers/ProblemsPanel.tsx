@@ -236,6 +236,10 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     onOptionsChange({ ...options, resizedColumns: newResized });
   };
 
+  const onColumnReorder = (columnOrder: string[]) => {
+    onOptionsChange({ ...options, columnOrder });
+  };
+
   const onTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (ctrlKey || shiftKey) {
       removeTagFilter(tag, datasource);
@@ -280,6 +284,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
         onExecuteScript={onExecuteScript}
         onProblemAck={onProblemAck}
         onColumnResize={onColumnResize}
+        onColumnReorder={onColumnReorder}
         onPageSizeChange={onPageSizeChange}
         onTagClick={onTagClick}
       />

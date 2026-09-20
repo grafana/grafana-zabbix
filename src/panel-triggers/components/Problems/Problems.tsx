@@ -1,4 +1,5 @@
 import React, { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cx } from '@emotion/css';
 import { AckProblemData } from '../AckModal';
 import { ProblemsPanelOptions, RTResized } from '../../types';
@@ -17,8 +18,10 @@ import { LastChangeCell } from './Cells/LastChangeCell';
 import { AgeCell } from './Cells/AgeCell';
 import { getProblemsDataLinks } from '../../dataLinks';
 import {
+  ColumnDef,
   ColumnFiltersState,
   ColumnResizeMode,
+  Header,
   SortingState,
   createColumnHelper,
   flexRender,
@@ -32,7 +35,7 @@ import {
 import { getDataSourceSrv, reportInteraction } from '@grafana/runtime';
 import { Icon, useStyles2 } from '@grafana/ui';
 import { ProblemDetails } from './ProblemDetails';
-import { capitalizeFirstLetter, parseCustomTagColumns } from './utils';
+import { capitalizeFirstLetter, parseCustomTagColumns, reconcileColumnOrder } from './utils';
 import { getStyles } from './Problems.styles';
 
 export interface ProblemListProps {
@@ -53,6 +56,7 @@ export interface ProblemListProps {
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onPageSizeChange?: (pageSize: number | 'auto', pageIndex: number) => void;
   onColumnResize?: (newResized: RTResized) => void;
+  onColumnReorder?: (columnOrder: string[]) => void;
 }
 
 const columnHelper = createColumnHelper<ProblemDTO>();
@@ -75,6 +79,111 @@ const SORT_ARIA = {
   desc: 'descending',
   none: 'none',
 } as const;
+
+// Columns that always stay at the end of the table and cannot be dragged
+const PINNED_COLUMN_IDS = ['expander'];
+
+// Pointer travel before a press on the grip becomes a drag, so a plain click does nothing
+const DRAG_ACTIVATION_DISTANCE = 6;
+
+// The id TanStack gives a column: the explicit id, otherwise the accessor key
+const getColumnId = (column: ColumnDef<ProblemDTO, any>): string =>
+  column.id ?? (column as { accessorKey?: string }).accessorKey ?? '';
+
+const getHeaderLabel = (header: Header<ProblemDTO, unknown>): string => {
+  const def = header.column.columnDef.header;
+  return typeof def === 'string' ? def : header.column.id;
+};
+
+/** Move one element of an array to another index, returning a new array */
+export const arrayMove = <T,>(items: T[], from: number, to: number): T[] => {
+  const next = items.slice();
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+};
+
+// A column header being dragged with the mouse; the lifted copy is drawn in a body portal
+interface ColumnDrag {
+  columnId: string;
+  /** Header the pointer is over right now, i.e. the slot the column will take */
+  overId: string | null;
+  /** Fixed-position box of the lifted header */
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+interface HeaderCellProps {
+  header: Header<ProblemDTO, unknown>;
+  styles: ReturnType<typeof getStyles>;
+  dragging: boolean;
+  /** Edge of this cell that shows the insertion line while another column is dragged over it */
+  dropSide: 'before' | 'after' | null;
+  onGripPointerDown: (event: React.PointerEvent<HTMLElement>, columnId: string) => void;
+}
+
+// Only the grip starts a drag, so clicking the label still sorts and the resize handle still
+// resizes. The cell itself is never moved (that would break the table layout); the lifted
+// header is a separate overlay and the drop target shows an insertion line instead.
+const HeaderCell = ({ header, styles, dragging, dropSide, onGripPointerDown }: HeaderCellProps) => {
+  const pinned = PINNED_COLUMN_IDS.includes(header.column.id);
+  const canSort = header.column.getCanSort();
+  const sorted = header.column.getIsSorted();
+  const label = header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext());
+
+  return (
+    <th
+      data-column-id={header.column.id}
+      style={{ width: `${header.getSize()}px` }}
+      className={cx(styles.headerCell, {
+        [styles.headerDragging]: dragging,
+        [styles.dropBefore]: dropSide === 'before',
+        [styles.dropAfter]: dropSide === 'after',
+      })}
+      aria-sort={canSort ? SORT_ARIA[sorted || 'none'] : undefined}
+    >
+      {!pinned && (
+        // Mouse-only affordance; the column order is also editable through the panel options
+        <span
+          className={styles.grip}
+          data-testid={`column-grip-${header.column.id}`}
+          title="Drag to reorder column"
+          aria-hidden="true"
+          onPointerDown={(event) => onGripPointerDown(event, header.column.id)}
+        >
+          <Icon name="draggabledots" size="sm" />
+        </span>
+      )}
+      {canSort ? (
+        <button
+          type="button"
+          className={cx(styles.headerButton, { [styles.headerSorted]: !!sorted })}
+          onClick={header.column.getToggleSortingHandler()}
+        >
+          <span className={styles.headerLabel}>{label}</span>
+          {sorted ? (
+            <Icon name={sorted === 'asc' ? 'angle-up' : 'angle-down'} size="sm" />
+          ) : (
+            <span className={styles.sortHint} data-sort-hint aria-hidden="true">
+              <Icon name="angle-down" size="sm" />
+            </span>
+          )}
+        </button>
+      ) : (
+        <span className={styles.headerLabel}>{label}</span>
+      )}
+      {header.column.getCanResize() && (
+        <div
+          onMouseDown={header.getResizeHandler()}
+          onTouchStart={header.getResizeHandler()}
+          className={cx(styles.resizer, { [styles.resizerActive]: header.column.getIsResizing() })}
+        />
+      )}
+    </th>
+  );
+};
 
 const buildCustomTagColumns = (customTagColumns?: string) => {
   const tagNames = parseCustomTagColumns(customTagColumns);
@@ -152,6 +261,7 @@ export const ProblemList = (props: ProblemListProps) => {
     onProblemAck,
     onPageSizeChange,
     onColumnResize,
+    onColumnReorder,
     onTagClick,
     loading,
     timeRange,
@@ -374,6 +484,21 @@ export const ProblemList = (props: ProblemListProps) => {
   );
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
 
+  // Column order: the saved ids are reconciled against the columns that exist right now, so
+  // renamed, removed or newly added columns (custom tags, toggled fields) never break it.
+  const defaultColumnOrder = useMemo(() => columns.map(getColumnId), [columns]);
+  const [savedColumnOrder, setSavedColumnOrder] = useState<string[]>(panelOptions.columnOrder ?? []);
+
+  // Follow the option so "Reset column order" in the editor takes effect at once
+  useEffect(() => {
+    setSavedColumnOrder(panelOptions.columnOrder ?? []);
+  }, [panelOptions.columnOrder]);
+
+  const columnOrder = useMemo(
+    () => reconcileColumnOrder(savedColumnOrder, defaultColumnOrder, PINNED_COLUMN_IDS),
+    [savedColumnOrder, defaultColumnOrder]
+  );
+
   const [sorting, setSorting] = useState<SortingState>(() => getSortingFromOption(panelOptions.sortProblems));
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -462,11 +587,18 @@ export const ProblemList = (props: ProblemListProps) => {
     columnResizeMode,
     state: {
       columnSizing,
+      columnOrder,
       pagination,
       columnVisibility,
       sorting,
       columnFilters,
       globalFilter,
+    },
+    onColumnOrderChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(columnOrder) : updater;
+      const reconciled = reconcileColumnOrder(next, defaultColumnOrder, PINNED_COLUMN_IDS);
+      setSavedColumnOrder(reconciled);
+      onColumnReorder?.(reconciled);
     },
     onPaginationChange: setPagination,
     onSortingChange: setSorting,
@@ -497,6 +629,105 @@ export const ProblemList = (props: ProblemListProps) => {
 
   const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
     onTagClick?.(tag, datasource, ctrlKey, shiftKey);
+  };
+
+  // Column reordering by dragging header grips with the mouse -------------------------------
+  const [columnDrag, setColumnDrag] = useState<ColumnDrag | null>(null);
+  // Listeners on the document for the drag in progress, so a drag can be torn down on unmount
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
+
+  const sortableColumnIds = table
+    .getVisibleLeafColumns()
+    .map((column) => column.id)
+    .filter((id) => !PINNED_COLUMN_IDS.includes(id));
+  const draggedHeader = columnDrag
+    ? table.getFlatHeaders().find((h) => h.column.id === columnDrag.columnId)
+    : undefined;
+
+  // Header cell under the pointer, among the ones a column can be dropped on
+  const findColumnAt = (clientX: number): string | null => {
+    const cells = theadRef.current?.querySelectorAll<HTMLTableCellElement>('th[data-column-id]') ?? [];
+    for (const cell of Array.from(cells)) {
+      const id = cell.dataset.columnId!;
+      const rect = cell.getBoundingClientRect();
+      if (!PINNED_COLUMN_IDS.includes(id) && clientX >= rect.left && clientX < rect.right) {
+        return id;
+      }
+    }
+    return null;
+  };
+
+  const handleGripPointerDown = (event: React.PointerEvent<HTMLElement>, columnId: string) => {
+    if (event.button !== 0 || dragCleanupRef.current) {
+      return;
+    }
+    const cell = event.currentTarget.closest('th');
+    if (!cell) {
+      return;
+    }
+    // Keeps the press from selecting header text
+    event.preventDefault();
+
+    const rect = cell.getBoundingClientRect();
+    const startX = event.clientX;
+    const grabOffsetX = startX - rect.left;
+    const doc = cell.ownerDocument;
+    let overId: string | null = null;
+    let started = false;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!started && Math.abs(moveEvent.clientX - startX) < DRAG_ACTIVATION_DISTANCE) {
+        return;
+      }
+      started = true;
+      overId = findColumnAt(moveEvent.clientX);
+      setColumnDrag({
+        columnId,
+        overId,
+        left: moveEvent.clientX - grabOffsetX,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      });
+    };
+
+    const cleanup = () => {
+      doc.removeEventListener('pointermove', onPointerMove);
+      doc.removeEventListener('pointerup', onPointerUp);
+      doc.removeEventListener('pointercancel', cleanup);
+      dragCleanupRef.current = null;
+      setColumnDrag(null);
+    };
+
+    const onPointerUp = () => {
+      const dropped = started ? overId : null;
+      cleanup();
+      if (!dropped || dropped === columnId) {
+        return;
+      }
+      // Indices in the full order (hidden columns included), so the dragged column takes the
+      // exact slot of the one it was dropped on
+      const from = columnOrder.indexOf(columnId);
+      const to = columnOrder.indexOf(dropped);
+      if (from >= 0 && to >= 0) {
+        table.setColumnOrder(arrayMove(columnOrder, from, to));
+      }
+    };
+
+    doc.addEventListener('pointermove', onPointerMove);
+    doc.addEventListener('pointerup', onPointerUp);
+    doc.addEventListener('pointercancel', cleanup);
+    dragCleanupRef.current = cleanup;
+  };
+
+  // Which edge of the header under the pointer gets the insertion line
+  const dropSideFor = (columnId: string): 'before' | 'after' | null => {
+    if (!columnDrag || columnDrag.overId !== columnId || columnDrag.columnId === columnId) {
+      return null;
+    }
+    // The dragged column lands after this one when it comes from the left
+    return sortableColumnIds.indexOf(columnDrag.columnId) < sortableColumnIds.indexOf(columnId) ? 'after' : 'before';
   };
 
   // Helper functions for pagination interactions
@@ -614,47 +845,16 @@ export const ProblemList = (props: ProblemListProps) => {
           <thead ref={theadRef}>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  const canSort = header.column.getCanSort();
-                  const sorted = header.column.getIsSorted();
-                  const label = header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext());
-                  return (
-                    <th
-                      key={header.id}
-                      style={{ width: `${header.getSize()}px` }}
-                      className={styles.headerCell}
-                      aria-sort={canSort ? SORT_ARIA[sorted || 'none'] : undefined}
-                    >
-                      {canSort ? (
-                        <button
-                          type="button"
-                          className={cx(styles.headerButton, { [styles.headerSorted]: !!sorted })}
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
-                          <span className={styles.headerLabel}>{label}</span>
-                          {sorted ? (
-                            <Icon name={sorted === 'asc' ? 'angle-up' : 'angle-down'} size="sm" />
-                          ) : (
-                            <span className={styles.sortHint} data-sort-hint aria-hidden="true">
-                              <Icon name="angle-down" size="sm" />
-                            </span>
-                          )}
-                        </button>
-                      ) : (
-                        <span className={styles.headerLabel}>{label}</span>
-                      )}
-                      {header.column.getCanResize() && (
-                        <div
-                          onMouseDown={header.getResizeHandler()}
-                          onTouchStart={header.getResizeHandler()}
-                          className={cx(styles.resizer, { [styles.resizerActive]: header.column.getIsResizing() })}
-                        />
-                      )}
-                    </th>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <HeaderCell
+                    key={header.id}
+                    header={header}
+                    styles={styles}
+                    dragging={columnDrag?.columnId === header.column.id}
+                    dropSide={dropSideFor(header.column.id)}
+                    onGripPointerDown={handleGripPointerDown}
+                  />
+                ))}
               </tr>
             ))}
           </thead>
@@ -699,6 +899,24 @@ export const ProblemList = (props: ProblemListProps) => {
             ))}
           </tbody>
         </table>
+        {/* In a body portal: the dashboard grid transforms panels, which would offset a fixed box */}
+        {columnDrag &&
+          draggedHeader &&
+          createPortal(
+            <div
+              className={styles.dragOverlay}
+              style={{
+                left: columnDrag.left,
+                top: columnDrag.top,
+                width: columnDrag.width,
+                height: columnDrag.height,
+              }}
+            >
+              <Icon name="draggabledots" size="sm" />
+              <span className={styles.headerLabel}>{getHeaderLabel(draggedHeader)}</span>
+            </div>,
+            document.body
+          )}
         {table.getRowModel().rows.length === 0 && <div className={styles.noData}>No problems found</div>}
       </div>
       <div className={styles.pagination}>

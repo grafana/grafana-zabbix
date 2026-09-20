@@ -292,7 +292,7 @@ describe('ProblemList', () => {
         .getAllByRole('columnheader')
         .find((header) => header.textContent?.includes('Age'))!;
 
-      const sortButton = within(ageHeader).getByRole('button');
+      const sortButton = within(ageHeader).getByRole('button', { name: 'Age' });
 
       // First click sorts descending (biggest age first) and shows the indicator
       fireEvent.click(sortButton);
@@ -423,7 +423,7 @@ describe('ProblemList', () => {
         const header = findHeader(label);
         expect(header).toBeDefined();
         expect(header).toHaveAttribute('aria-sort', 'none');
-        expect(within(header!).getByRole('button')).toBeInTheDocument();
+        expect(within(header!).getByRole('button', { name: label })).toBeInTheDocument();
       }
 
       const notSortable = ['Status', 'Status Icon', 'Ack', 'Tags'];
@@ -431,7 +431,7 @@ describe('ProblemList', () => {
         const header = findHeader(label);
         expect(header).toBeDefined();
         expect(header).not.toHaveAttribute('aria-sort');
-        expect(within(header!).queryByRole('button')).toBeNull();
+        expect(within(header!).queryByRole('button', { name: label })).toBeNull();
       }
     });
 
@@ -459,7 +459,7 @@ describe('ProblemList', () => {
 
         // Two clicks cover both directions; which comes first depends on the
         // column's auto sort direction, so accept either order.
-        const sortButton = within(header).getByRole('button');
+        const sortButton = within(header).getByRole('button', { name: label });
         fireEvent.click(sortButton);
         const firstClick = getHostColumn();
         fireEvent.click(sortButton);
@@ -468,6 +468,210 @@ describe('ProblemList', () => {
         expect([firstClick, secondClick]).toContainEqual(expectedAsc);
         expect([firstClick, secondClick]).toContainEqual([...expectedAsc].reverse());
       }
+    });
+  });
+
+  describe('Column order', () => {
+    const getHeaderLabels = () =>
+      within(screen.getByRole('table'))
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent?.trim());
+
+    const defaultLabels = ['Host', 'Severity', 'Status Icon', 'Status', 'Problem', 'Ack', 'Tags', 'Age', 'Time', ''];
+
+    it('renders columns in the definition order when no order is saved', () => {
+      render(<ProblemList {...defaultProps} problems={[createMockProblem('1', 1000)]} />);
+      expect(getHeaderLabels()).toEqual(defaultLabels);
+    });
+
+    it('renders columns in the saved order, slotting unknown columns in and pinning the expander last', () => {
+      // "age" is not in the saved order (its field was toggled on later), "proxy" is stale,
+      // and the expander is listed first but must stay last
+      const columnOrder = [
+        'expander',
+        'name',
+        'proxy',
+        'tags',
+        'host',
+        'priority',
+        'value',
+        'statusIcon',
+        'acknowledged',
+      ];
+      render(
+        <ProblemList
+          {...defaultProps}
+          panelOptions={{ ...defaultPanelOptions, columnOrder }}
+          problems={[createMockProblem('1', 1000)]}
+        />
+      );
+      // "age" precedes "lastchange" in the definition order, so it lands after "tags" here,
+      // in front of the unknown "lastchange" which follows it
+      expect(getHeaderLabels()).toEqual([
+        'Problem',
+        'Tags',
+        'Age',
+        'Time',
+        'Host',
+        'Severity',
+        'Status',
+        'Status Icon',
+        'Ack',
+        '',
+      ]);
+    });
+
+    it('renders body cells in the same order as the headers', () => {
+      const columnOrder = [
+        'name',
+        'host',
+        'priority',
+        'statusIcon',
+        'value',
+        'acknowledged',
+        'tags',
+        'age',
+        'lastchange',
+      ];
+      render(
+        <ProblemList
+          {...defaultProps}
+          panelOptions={{ ...defaultPanelOptions, columnOrder }}
+          problems={[createMockProblem('1', 1000)]}
+        />
+      );
+      const firstRow = within(screen.getByRole('table')).getAllByRole('row')[1];
+      const cells = within(firstRow)
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent);
+      expect(cells[0]).toContain('Test Problem 1');
+      expect(cells[1]).toContain('Test Host 1');
+    });
+
+    it('offers a reorder grip on every column except the expander', () => {
+      render(<ProblemList {...defaultProps} problems={[createMockProblem('1', 1000)]} />);
+      const headers = within(screen.getByRole('table')).getAllByRole('columnheader');
+      const grips = headers.map((header) => header.querySelector('[data-testid^="column-grip-"]'));
+      expect(grips.slice(0, -1).every(Boolean)).toBe(true);
+      expect(grips[grips.length - 1]).toBeNull();
+      // Mouse-only affordance, kept out of the accessibility tree
+      expect(grips[0]).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    describe('mouse drag', () => {
+      // Header cells are laid out side by side, 100px each, so the pointer position picks a column
+      const originalGetRect = HTMLElement.prototype.getBoundingClientRect;
+      const originalPointerEvent = window.PointerEvent;
+
+      beforeEach(() => {
+        HTMLElement.prototype.getBoundingClientRect = function () {
+          const rect = { x: 0, y: 0, top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0, toJSON: () => ({}) };
+          if (this instanceof HTMLTableCellElement && this.tagName === 'TH') {
+            const left = this.cellIndex * 100;
+            return { ...rect, x: left, left, right: left + 100, width: 100, bottom: 36, height: 36 };
+          }
+          return rect;
+        };
+        // jsdom has no PointerEvent; a MouseEvent carries the coordinates the drag reads
+        if (!window.PointerEvent) {
+          window.PointerEvent = class PointerEvent extends MouseEvent {
+            pointerId = 1;
+          } as unknown as typeof window.PointerEvent;
+        }
+      });
+
+      afterEach(() => {
+        HTMLElement.prototype.getBoundingClientRect = originalGetRect;
+        window.PointerEvent = originalPointerEvent;
+      });
+
+      const grip = (columnId: string) => screen.getByTestId(`column-grip-${columnId}`);
+
+      it('moves a column to the slot of the header it is dropped on and reports the new order', () => {
+        const onColumnReorder = jest.fn();
+        render(
+          <ProblemList {...defaultProps} onColumnReorder={onColumnReorder} problems={[createMockProblem('1', 1000)]} />
+        );
+
+        // Host (0-100px) dragged onto Status Icon (200-300px)
+        fireEvent.pointerDown(grip('host'), { button: 0, clientX: 10 });
+        fireEvent.pointerMove(document, { clientX: 150 });
+        fireEvent.pointerMove(document, { clientX: 250 });
+        // The lifted copy of the header is drawn outside the table while dragging
+        expect(screen.getAllByText('Host')).toHaveLength(2);
+        fireEvent.pointerUp(document, { clientX: 250 });
+        expect(screen.getAllByText('Host')).toHaveLength(1);
+
+        expect(getHeaderLabels()).toEqual([
+          'Severity',
+          'Status Icon',
+          'Host',
+          'Status',
+          'Problem',
+          'Ack',
+          'Tags',
+          'Age',
+          'Time',
+          '',
+        ]);
+        expect(onColumnReorder).toHaveBeenCalledTimes(1);
+        const order: string[] = onColumnReorder.mock.calls[0][0];
+        // Host took the Status Icon slot in the full order, which also lists the hidden columns
+        expect(order.indexOf('statusIcon')).toBeLessThan(order.indexOf('host'));
+        expect(order.indexOf('host')).toBeLessThan(order.indexOf('value'));
+        expect(order).toContain('hostTechName');
+        expect(order[order.length - 1]).toBe('expander');
+      });
+
+      it('shows the insertion line on the header under the pointer while dragging', () => {
+        render(<ProblemList {...defaultProps} problems={[createMockProblem('1', 1000)]} />);
+        const headers = within(screen.getByRole('table')).getAllByRole('columnheader');
+
+        fireEvent.pointerDown(grip('host'), { button: 0, clientX: 10 });
+        fireEvent.pointerMove(document, { clientX: 250 });
+        // Host comes from the left, so the line sits on the right edge of Status Icon
+        expect(headers[2].className).toMatch(/dropAfter|css-/);
+        expect(headers[2].getAttribute('class')).not.toEqual(headers[3].getAttribute('class'));
+        fireEvent.pointerUp(document, { clientX: 250 });
+        expect(headers[2].getAttribute('class')).toEqual(headers[3].getAttribute('class'));
+      });
+
+      it('ignores a plain click and a release outside the header row', () => {
+        const onColumnReorder = jest.fn();
+        render(
+          <ProblemList {...defaultProps} onColumnReorder={onColumnReorder} problems={[createMockProblem('1', 1000)]} />
+        );
+
+        // Click without moving
+        fireEvent.pointerDown(grip('host'), { button: 0, clientX: 10 });
+        fireEvent.pointerUp(document, { clientX: 10 });
+        // Wiggle under the activation distance
+        fireEvent.pointerDown(grip('host'), { button: 0, clientX: 10 });
+        fireEvent.pointerMove(document, { clientX: 14 });
+        fireEvent.pointerUp(document, { clientX: 14 });
+        // Real drag released past the last column
+        fireEvent.pointerDown(grip('host'), { button: 0, clientX: 10 });
+        fireEvent.pointerMove(document, { clientX: 5000 });
+        fireEvent.pointerUp(document, { clientX: 5000 });
+
+        expect(getHeaderLabels()).toEqual(defaultLabels);
+        expect(onColumnReorder).not.toHaveBeenCalled();
+      });
+
+      it('does not let the grip start a sort', () => {
+        render(
+          <ProblemList
+            {...defaultProps}
+            panelOptions={{ ...defaultPanelOptions, sortProblems: 'default' }}
+            problems={[createMockProblem('1', 1000)]}
+          />
+        );
+        const hostHeader = within(screen.getByRole('table')).getAllByRole('columnheader')[0];
+        fireEvent.pointerDown(grip('host'), { button: 0, clientX: 10 });
+        fireEvent.pointerUp(document, { clientX: 10 });
+        fireEvent.click(grip('host'));
+        expect(hostHeader).toHaveAttribute('aria-sort', 'none');
+      });
     });
   });
 
