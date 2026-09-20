@@ -62,6 +62,7 @@
     "lastvalue",
     "lookback",
     "mydomain",
+    "noexec",
     "opdata",
     "percpu",
     "psql",
