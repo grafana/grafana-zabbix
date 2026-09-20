@@ -185,6 +185,29 @@ These settings are under **Additional settings** > **Other**.
 | **Disable acknowledges for read-only users** | Prevents non-editor users from acknowledging problems in Grafana. |
 | **Disable data alignment** | Disables automatic alignment of time series points to the start of their collection interval. Data alignment is required for stacked graphs to render correctly. You can also toggle this per query in the query options. |
 
+## Configure gRPC message size limits
+
+Grafana and the Zabbix backend plugin exchange data over gRPC. To bound the plugin's memory usage, the plugin limits the size of a single gRPC message to 32 MB for requests it receives from Grafana and 100 MB for responses it sends back. Very large result sets, such as a Problems query across thousands of hosts or a Direct DB Connection query that returns many series, can exceed these limits and fail with an error like `grpc: received message larger than max`.
+
+If your environment needs larger messages, raise the limits in the `[plugin.alexanderzobnin-zabbix-datasource]` section of the Grafana configuration file. Grafana forwards the settings to the plugin when it starts. These are instance-level settings, so they aren't available in the data source configuration page or in data source provisioning.
+
+```ini
+[plugin.alexanderzobnin-zabbix-datasource]
+grpc_max_receive_msg_size_mb = 64
+grpc_max_send_msg_size_mb = 200
+```
+
+| Setting | Description |
+|---------|-------------|
+| `grpc_max_receive_msg_size_mb` | Maximum size in MB of a single gRPC request the plugin accepts from Grafana. Default: `32`. |
+| `grpc_max_send_msg_size_mb` | Maximum size in MB of a single gRPC response the plugin sends to Grafana. Default: `100`. |
+
+Both settings accept whole numbers from `1` to `512`. Values above `512` are clamped to `512`, and invalid values are ignored and logged as a warning when the plugin starts. Restart Grafana after you change these settings.
+
+Larger messages mean higher memory usage in both Grafana and the plugin. Before you raise the limits, consider reducing the size of the result instead: enable trends, use Direct DB Connection for server-side aggregation, apply a **Limit** to Problems queries, or narrow the query with more specific filters.
+
+For more information about the `[plugin.plugin_id]` section and about overriding configuration with environment variables, refer to [Configure Grafana](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/setup-grafana/configure-grafana/#pluginplugin_id).
+
 ## Verify the connection
 
 Click **Save & test** to verify the connection. A successful test displays the message "**Zabbix API version**" followed by the detected version number. If Direct DB Connection is enabled, the message also includes the database connector type.
