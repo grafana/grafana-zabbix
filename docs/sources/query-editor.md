@@ -19,7 +19,7 @@ labels:
     - enterprise
     - cloud
 weight: 300
-last_reviewed: 2026-02-18
+review_date: 2026-09-08
 ---
 
 # Zabbix query editor
@@ -28,7 +28,7 @@ The Zabbix query editor lets you build queries to visualize monitoring data from
 
 ## Before you begin
 
-- [Configure the Zabbix data source](./configure/).
+- [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/).
 - Verify your Zabbix user has permissions to access the host groups and hosts you want to query.
 
 ## Key concepts
@@ -149,11 +149,12 @@ Use Problems queries to retrieve Zabbix problem events. This query type returns 
 | **Host** | The host to filter. Supports regex and template variables. |
 | **Proxy** | Filter by Zabbix proxy. |
 | **Application** | Filter by application (Zabbix versions before 5.4). |
-| **Problem** | Filter by problem name. |
+| **Problem** | Filter by problem name, matched against the trigger name. A plain value must match exactly. Use a `*` wildcard (for example, `High CPU*`) or a regex wrapped in forward slashes (for example, `/CPU/`) for partial matches. |
 | **Tags** | Filter by tags in `tag1:value1, tag2:value2` format. |
 | **Tag evaluation** | How to combine multiple tag filters: AND/OR or OR. |
 | **Show** | Which problems to display: Problems (current), Recent problems, or History. |
 | **Severity** | Filter by one or more severity levels (multi-select). |
+| **Problem Type** | Filter cause and symptom problems: All Problems, Cause only, or Symptoms only. Visible on Zabbix 6.4+, which supports cause and symptom event correlation. |
 
 Expand the **Options** section to access additional settings:
 
@@ -164,7 +165,7 @@ Expand the **Options** section to access additional settings:
 | **Use time range** | Restrict results to the dashboard time range. |
 | **Hosts in maintenance** | Include hosts that are currently in maintenance. |
 | **Host proxy** | Include proxy information in the results. |
-| **Item value at problem time** | Resolve each problem's item value at its creation time (used by `{ITEM.VALUE}` and operational data) via a `history.get` lookup. Disabled by default — it adds load and can impact performance in large environments with many active problems. Leave off unless you need historical-value accuracy. |
+| **Item value at problem time** | Resolve each problem's item value at its creation time (used by `{ITEM.VALUE}` and operational data) via a `history.get` lookup. Disabled by default because it adds load and can impact performance in large environments with many active problems. Leave off unless you need historical-value accuracy. |
 | **Limit** | Maximum number of problems to return. Default: `1001`. |
 
 ### User macros
@@ -207,11 +208,82 @@ Use `/.*/` to match all values in a field. For example, setting **Group** to `/.
 
 You can add processing functions to transform and aggregate query results when using **Metrics**, **Item ID**, or **Services** query types. Click the **+** button next to the query to add functions such as `groupBy`, `scale`, `delta`, `rate`, and `movingAverage`.
 
-For a complete list of available functions, refer to the [functions reference](./functions/).
+For a complete list of available functions, refer to the [functions reference](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/).
+
+## Examples
+
+The following examples show common queries and the panel type that best fits each one.
+
+### Graph a single metric for one host
+
+Plot CPU user time for a web server on a time series panel.
+
+- **Query type:** Metrics
+- **Group:** `Linux servers`
+- **Host:** `web01`
+- **Item:** `CPU user time`
+
+### Compare a metric across a host group
+
+Show available memory for every host in a group on one time series panel. Each host appears as a separate series.
+
+- **Query type:** Metrics
+- **Group:** `Linux servers`
+- **Host:** `/.*/`
+- **Item:** `Available memory`
+
+### Show the top five hosts by a metric
+
+Reduce a noisy graph to only the five busiest hosts. Add a function to the query to rank the series.
+
+- **Query type:** Metrics
+- **Group:** `Linux servers`
+- **Host:** `/.*/`
+- **Item:** `CPU utilization`
+- **Function:** `top(5, avg)`
+
+### Aggregate multiple series into one
+
+Combine per-core CPU utilization into a single average line by grouping the matched series.
+
+- **Query type:** Metrics
+- **Host:** `web01`
+- **Item:** `/CPU .* time/`
+- **Function:** `aggregateBy(1m, avg)`
+
+### List current problems in a table
+
+Display active high-severity problems on a table panel.
+
+- **Query type:** Problems
+- **Group:** `/.*/`
+- **Host:** `/.*/`
+- **Show:** Problems
+- **Severity:** High, Disaster
+
+### Count active problems for a stat panel
+
+Show the number of current problems in a host group on a stat panel.
+
+- **Query type:** Triggers
+- **Count by:** Problems
+- **Group:** `Production`
+- **Min severity:** High
+- Enable **Count** in the query fields.
+
+### Report an SLA value
+
+Show the service level indicator for an IT service on a stat or gauge panel.
+
+- **Query type:** Services
+- **Service:** the IT service to report on
+- **SLA:** the SLA definition to evaluate
+- **Property:** SLI
+- **Interval:** Auto
 
 ## Direct DB Connection behavior
 
-When [Direct DB Connection](./configure/#configure-direct-db-connection) is enabled, the plugin retrieves history and trend data directly from the Zabbix database instead of the Zabbix API. This is transparent to the query editor -- you build queries the same way. The key difference is that the database performs server-side aggregation, which reduces data transfer and improves performance on wide time ranges.
+When [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection) is enabled, the plugin retrieves history and trend data directly from the Zabbix database instead of the Zabbix API. This is transparent to the query editor, so you build queries the same way. The key difference is that the database performs server-side aggregation, which reduces data transfer and improves performance on wide time ranges.
 
 The `consolidateBy` function directly controls the aggregation function used in database queries. When using Direct DB Connection, pair it with `groupBy` for accurate results. For example, to group values by 1-hour intervals using the maximum value:
 
@@ -223,6 +295,6 @@ Without `consolidateBy`, the database aggregates using the default `AVG` functio
 
 ## Next steps
 
-- [Apply functions to transform query results](./functions/)
-- [Use template variables for dynamic dashboards](./template-variables/)
-- [Set up alerting rules](./alerting/)
+- [Apply functions to transform query results](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/)
+- [Use template variables for dynamic dashboards](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/)
+- [Set up alerting rules](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)

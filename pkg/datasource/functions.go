@@ -22,6 +22,18 @@ var (
 	}
 )
 
+// isRangeSeriesVariable reports whether the interval param refers to the whole
+// series range. Literal macro forms are accepted because queries evaluated
+// without the frontend (e.g. alerting) receive the macro unexpanded.
+func isRangeSeriesVariable(interval string) bool {
+	switch strings.TrimSpace(interval) {
+	case RANGE_VARIABLE_VALUE, "$__range_series", "${__range_series}":
+		return true
+	default:
+		return false
+	}
+}
+
 func MustString(p QueryFunctionParam) (string, error) {
 	if pStr, ok := p.(string); ok {
 		return pStr, nil
@@ -156,7 +168,7 @@ func applyGroupBy(series timeseries.TimeSeries, params ...interface{}) (timeseri
 	}
 
 	aggFunc := getAggFunc(pAgg)
-	if pInterval == RANGE_VARIABLE_VALUE {
+	if isRangeSeriesVariable(pInterval) {
 		s := series.GroupByRange(aggFunc)
 		return s, nil
 	}
@@ -184,7 +196,7 @@ func applyPercentile(series timeseries.TimeSeries, params ...interface{}) (times
 	}
 
 	aggFunc := timeseries.AggPercentile(percentile)
-	if pInterval == RANGE_VARIABLE_VALUE {
+	if isRangeSeriesVariable(pInterval) {
 		s := series.GroupByRange(aggFunc)
 		return s, nil
 	}
@@ -202,11 +214,7 @@ func applyPercentile(series timeseries.TimeSeries, params ...interface{}) (times
 }
 
 func applyScale(series timeseries.TimeSeries, params ...interface{}) (timeseries.TimeSeries, error) {
-	pFactor, err := MustString(params[0])
-	if err != nil {
-		return nil, errParsingFunctionParam(err)
-	}
-	factor, err := strconv.ParseFloat(pFactor, 64)
+	factor, err := MustFloat64(params[0])
 	if err != nil {
 		return nil, errParsingFunctionParam(err)
 	}
@@ -326,7 +334,7 @@ func applyPercentileAgg(series []*timeseries.TimeSeriesData, params ...interface
 	}
 	aggFunc := timeseries.AggPercentile(percentile)
 
-	if pInterval == RANGE_VARIABLE_VALUE {
+	if isRangeSeriesVariable(pInterval) {
 		aggregatedSeries := timeseries.AggregateByRange(series, aggFunc)
 		aggregatedSeries.Meta.Name = fmt.Sprintf("percentileAgg(%s, %v)", pInterval, percentile)
 		return []*timeseries.TimeSeriesData{aggregatedSeries}, nil

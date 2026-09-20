@@ -423,6 +423,9 @@ export class Zabbix implements ZabbixConnector {
     // Support regexp in tags
     if (utils.isRegex(itemTagFilter)) {
       const tags = await this.getItemTags(groupFilter, hostFilter, itemTagFilter);
+      if (tags.length === 0) {
+        return [];
+      }
       itemTagFilter = tags.map((t) => t.name).join(',');
     }
 
