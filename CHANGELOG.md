@@ -1,5 +1,19 @@
 # Change Log
 
+## 6.7.0
+
+### Minor Changes
+
+🚀 Add data links to the Problems panel table layout. Link titles and URLs support problem variables (`${host}`, `${name}`, `${description}`, `${severity}`, `${triggerid}`, `${eventid}`) and tag values via `${tag_<tag_name>}`.
+
+### Patch Changes
+
+⚙️ Chore: bump transitive fast-uri to 3.1.7 to address CVE-2026-76172, CVE-2026-75975, CVE-2026-75931, and CVE-2026-75899
+⚙️ Chore: update backend dependencies, including google.golang.org/grpc 1.83.2 (CVE-2026-84304)
+🐛 Fix: Item tag regex matching no tags returns all items with Direct DB
+🐛 Fix `$__range_series` and other range macros not being expanded in query function params (e.g. `percentile($__range_series, 95)`)
+🐛 Switch to npm as package manager
+
 ## 6.6.0
 
 ### Minor Changes
