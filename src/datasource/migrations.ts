@@ -3,8 +3,9 @@ import _ from 'lodash';
 import * as c from './constants';
 import { ZabbixDSOptions } from './types/config';
 import { ZabbixMetricsQuery } from './types/query';
+import { parseLegacyProblemTags } from './utils';
 
-export const DS_QUERY_SCHEMA = 12;
+export const DS_QUERY_SCHEMA = 13;
 export const DS_CONFIG_SCHEMA = 4;
 
 /**
@@ -126,6 +127,21 @@ function migrateProblemsSeverity(target: any) {
   }
 }
 
+function migrateProblemTags(target: any) {
+  if (target.schema >= 13) {
+    return;
+  }
+  if (target.queryType !== c.MODE_PROBLEMS) {
+    return;
+  }
+  // Convert the free-text tags filter to structured tag filters. The legacy filter
+  // was queried with the Equals operator, which parseLegacyProblemTags preserves.
+  if (target.tags?.filter && !target.problemTags?.length) {
+    target.problemTags = parseLegacyProblemTags(target.tags.filter);
+    target.tags = { ...target.tags, filter: '' };
+  }
+}
+
 export function migrate(target) {
   target.resultFormat = target.resultFormat || 'time_series';
   target = fixTargetGroup(target);
@@ -141,6 +157,7 @@ export function migrate(target) {
   migrateTriggersMode(target);
   migrateNewTriggersCountModes(target);
   migrateProblemsSeverity(target);
+  migrateProblemTags(target);
 
   target.schema = DS_QUERY_SCHEMA;
   return target;
