@@ -1,4 +1,5 @@
 import { CURRENT_SCHEMA_VERSION } from './migrations';
+import { DataLink } from '@grafana/data';
 
 export interface ProblemsPanelOptions {
   schemaVersion: number;
@@ -8,6 +9,7 @@ export interface ProblemsPanelOptions {
   // Fields
   hostField?: boolean;
   hostTechNameField?: boolean;
+  hostIpField?: boolean;
   hostGroups?: boolean;
   hostProxy?: boolean;
   showTags?: boolean;
@@ -45,6 +47,8 @@ export interface ProblemsPanelOptions {
   markAckEvents?: boolean;
   // Custom tag names to display as column
   customTagColumns?: string;
+  // datalink
+  dataLinks?: DataLink[];
 }
 
 export const DEFAULT_SEVERITY: TriggerSeverity[] = [
@@ -63,6 +67,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   // Fields
   hostField: true,
   hostTechNameField: false,
+  hostIpField: false,
   hostProxy: false,
   hostGroups: false,
   showTags: true,

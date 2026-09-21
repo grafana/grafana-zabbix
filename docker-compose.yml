@@ -1,6 +1,6 @@
 # Canonical dev / e2e environment: a real Zabbix backend + Grafana with the
 # plugin, seeded with deterministic fixture data. Used for local development
-# (`yarn server`) and by the Playwright e2e workflow.
+# (`npm run server`) and by the Playwright e2e workflow.
 #
 # The Zabbix version is switchable via ZABBIX_VERSION (default 7.0, the latest LTS). Grafana only
 # starts after the e2e-data-loader has exited successfully, so tests never run

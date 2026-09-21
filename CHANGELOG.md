@@ -1,5 +1,32 @@
 # Change Log
 
+## 6.8.0
+
+### Minor Changes
+
+🚀 Problems panel: add an optional Host IP field (off by default), resolved from the host's IP-based interfaces (multiple IPs comma-separated, DNS-only hosts show an empty string). The interface lookup is gated behind a new "Host IP" query option so it adds no API overhead unless enabled.
+🚀 Problems query: support all Zabbix tag-filter operators (Exists, Equals, Contains, Does not exist, Does not equal, Does not contain) via a structured tag filter editor. Extended operators require Zabbix 5.4+. Existing free-text `tag:value` filters are migrated automatically and keep returning the same results.
+
+### Patch Changes
+
+🐛 Fix macros such as `{ITEM.VALUE}` showing unexpanded in the Problems panel Description. Since 6.4.1 the plugin asked Zabbix not to expand the trigger comment, but only expanded it itself when "Item value at problem time" was enabled, so the default query showed the raw macro text.
+📝 Docs: restore installation instructions and add an upgrade section to the docs index (the removed installation page left only aliases), update commands to the `grafana cli` subcommand since the standalone `grafana-cli` is deprecated and fails on Grafana 13.x, and fix broken installation links in the README
+🐛 fix(functions): accept numeric scale() param; add frontend/backend param-contract tests
+
+## 6.7.0
+
+### Minor Changes
+
+🚀 Add data links to the Problems panel table layout. Link titles and URLs support problem variables (`${host}`, `${name}`, `${description}`, `${severity}`, `${triggerid}`, `${eventid}`) and tag values via `${tag_<tag_name>}`.
+
+### Patch Changes
+
+⚙️ Chore: bump transitive fast-uri to 3.1.7 to address CVE-2026-76172, CVE-2026-75975, CVE-2026-75931, and CVE-2026-75899
+⚙️ Chore: update backend dependencies, including google.golang.org/grpc 1.83.2 (CVE-2026-84304)
+🐛 Fix: Item tag regex matching no tags returns all items with Direct DB
+🐛 Fix `$__range_series` and other range macros not being expanded in query function params (e.g. `percentile($__range_series, 95)`)
+🐛 Switch to npm as package manager
+
 ## 6.6.0
 
 ### Minor Changes
