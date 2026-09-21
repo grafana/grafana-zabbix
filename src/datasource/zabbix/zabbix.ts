@@ -265,6 +265,14 @@ export class Zabbix implements ZabbixConnector {
     return version ? semver.gte(version, '6.0.0') : true;
   }
 
+  // Extended tag-filter operators for problem.get/event.get (Does not contain,
+  // Does not equal, Exists, Does not exist) were introduced in Zabbix 5.4.
+  // Older versions only accept Contains (0, "Like") and Equals (1, "Equal").
+  supportsProblemTagOperators() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '5.4.0') : false;
+  }
+
   // Cause and symptom problems were introduced in Zabbix 6.4
   supportsCauseSymptomProblems() {
     const version = this.version || this.zabbixAPI.version;

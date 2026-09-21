@@ -5,6 +5,7 @@ import { DataSourceRef } from '@grafana/schema';
 import { getDataSourceSrv, config } from '@grafana/runtime';
 import { ProblemsPanelOptions, RTResized } from './types';
 import { ZabbixMetricsQuery } from '../datasource/types/query';
+import { TagOperatorValue } from '../datasource/components/QueryEditor/types';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
 import { APIExecuteScriptResponse } from '../datasource/zabbix/connectors/zabbix_api/types';
 import { ProblemList } from './components/Problems/Problems';
@@ -127,13 +128,21 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     let updated = false;
     for (const target of targets) {
       if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
-        const tagFilter = (target as ZabbixMetricsQuery).tags?.filter!;
-        let targetTags = parseTags(tagFilter);
-        const newTag = { tag: tag.tag, value: tag.value };
-        targetTags.push(newTag);
-        targetTags = _.uniqWith(targetTags, _.isEqual);
-        const newFilter = tagsToString(targetTags);
-        (target as ZabbixMetricsQuery).tags!.filter = newFilter;
+        const query = target as ZabbixMetricsQuery;
+        if (query.problemTags) {
+          // Structured tag filters (query schema 13+)
+          const newTag = { tag: tag.tag, value: tag.value, operator: TagOperatorValue.Equals };
+          query.problemTags = _.uniqWith([...query.problemTags, newTag], _.isEqual);
+        } else {
+          // Legacy free-text tags filter (queried with the Equals operator)
+          const tagFilter = query.tags?.filter!;
+          let targetTags = parseTags(tagFilter);
+          const newTag = { tag: tag.tag, value: tag.value };
+          targetTags.push(newTag);
+          targetTags = _.uniqWith(targetTags, _.isEqual);
+          const newFilter = tagsToString(targetTags);
+          query.tags!.filter = newFilter;
+        }
         updated = true;
       }
     }
@@ -151,12 +160,18 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     let updated = false;
     for (const target of targets) {
       if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
-        const tagFilter = (target as ZabbixMetricsQuery).tags?.filter!;
-        let targetTags = parseTags(tagFilter);
-        _.remove(targetTags, matchTag);
-        targetTags = _.uniqWith(targetTags, _.isEqual);
-        const newFilter = tagsToString(targetTags);
-        (target as ZabbixMetricsQuery).tags!.filter = newFilter;
+        const query = target as ZabbixMetricsQuery;
+        if (query.problemTags) {
+          // Structured tag filters (query schema 13+). Match by tag and value, whatever the operator.
+          query.problemTags = query.problemTags.filter((t) => !matchTag(t));
+        } else {
+          const tagFilter = query.tags?.filter!;
+          let targetTags = parseTags(tagFilter);
+          _.remove(targetTags, matchTag);
+          targetTags = _.uniqWith(targetTags, _.isEqual);
+          const newFilter = tagsToString(targetTags);
+          query.tags!.filter = newFilter;
+        }
         updated = true;
       }
     }
