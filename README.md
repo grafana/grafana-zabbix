@@ -23,13 +23,13 @@ Visit [plugins page](https://grafana.com/plugins) at [grafana.com](http://grafan
 
 ## Installation
 
-Install by using `grafana-cli`
+Install or upgrade by using `grafana cli` (on older Grafana versions that ship the standalone binary, use `grafana-cli` instead):
 
 ```sh
-grafana-cli plugins install alexanderzobnin-zabbix-app
+grafana cli plugins install alexanderzobnin-zabbix-app
 ```
 
-Or see more installation options in [docs](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/installation/).
+Or see more installation and upgrade options in the [docs](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/#install-the-plugin).
 
 ## Getting started
 
@@ -38,7 +38,7 @@ First, [configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/l
 ## Documentation
 
 - [About](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
-- [Installation](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/installation)
+- [Installation](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/#install-the-plugin)
 - [Getting Started](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides)
 - [Templating](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating)
 - [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/)
