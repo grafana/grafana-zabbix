@@ -1,5 +1,18 @@
 # Change Log
 
+## 6.8.0
+
+### Minor Changes
+
+🚀 Problems panel: add an optional Host IP field (off by default), resolved from the host's IP-based interfaces (multiple IPs comma-separated, DNS-only hosts show an empty string). The interface lookup is gated behind a new "Host IP" query option so it adds no API overhead unless enabled.
+🚀 Problems query: support all Zabbix tag-filter operators (Exists, Equals, Contains, Does not exist, Does not equal, Does not contain) via a structured tag filter editor. Extended operators require Zabbix 5.4+. Existing free-text `tag:value` filters are migrated automatically and keep returning the same results.
+
+### Patch Changes
+
+🐛 Fix macros such as `{ITEM.VALUE}` showing unexpanded in the Problems panel Description. Since 6.4.1 the plugin asked Zabbix not to expand the trigger comment, but only expanded it itself when "Item value at problem time" was enabled, so the default query showed the raw macro text.
+📝 Docs: restore installation instructions and add an upgrade section to the docs index (the removed installation page left only aliases), update commands to the `grafana cli` subcommand since the standalone `grafana-cli` is deprecated and fails on Grafana 13.x, and fix broken installation links in the README
+🐛 fix(functions): accept numeric scale() param; add frontend/backend param-contract tests
+
 ## 6.7.0
 
 ### Minor Changes

@@ -150,7 +150,7 @@ Use Problems queries to retrieve Zabbix problem events. This query type returns 
 | **Proxy** | Filter by Zabbix proxy. |
 | **Application** | Filter by application (Zabbix versions before 5.4). |
 | **Problem** | Filter by problem name, matched against the trigger name. A plain value must match exactly. Use a `*` wildcard (for example, `High CPU*`) or a regex wrapped in forward slashes (for example, `/CPU/`) for partial matches. |
-| **Tags** | Filter by tags in `tag1:value1, tag2:value2` format. |
+| **Tags** | Filter by tags. Each tag filter has a tag name, an operator, and a value. All operators offered by Zabbix are supported: Exists, Equals, Contains, Does not exist, Does not equal, and Does not contain. On Zabbix versions before 5.4 only Equals and Contains are available. Tag names and values support template variables. |
 | **Tag evaluation** | How to combine multiple tag filters: AND/OR or OR. |
 | **Show** | Which problems to display: Problems (current), Recent problems, or History. |
 | **Severity** | Filter by one or more severity levels (multi-select). |
@@ -165,6 +165,7 @@ Expand the **Options** section to access additional settings:
 | **Use time range** | Restrict results to the dashboard time range. |
 | **Hosts in maintenance** | Include hosts that are currently in maintenance. |
 | **Host proxy** | Include proxy information in the results. |
+| **Host IP** | Include the host IP address in the results, resolved from the host's IP-based interfaces (interfaces connecting via DNS are ignored; multiple IPs are comma-separated). Requires an additional `host.get` API call, so it's disabled by default. Enable the **Host IP** field in the Problems panel options to display it. |
 | **Item value at problem time** | Resolve each problem's item value at its creation time (used by `{ITEM.VALUE}` and operational data) via a `history.get` lookup. Disabled by default because it adds load and can impact performance in large environments with many active problems. Leave off unless you need historical-value accuracy. |
 | **Limit** | Maximum number of problems to return. Default: `1001`. |
 
