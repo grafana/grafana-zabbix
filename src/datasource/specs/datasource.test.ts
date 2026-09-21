@@ -168,7 +168,7 @@ describe('ZabbixDatasource', () => {
       expect(zabbixMock.getHostInterfaces).not.toHaveBeenCalled();
     });
   });
-  
+
   it('interpolates queries with range scoped vars ($__range_series, etc.)', async () => {
     const interpolateSpy = jest
       .spyOn(ZabbixDatasource.prototype, 'interpolateVariablesInQueries')
