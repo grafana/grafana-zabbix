@@ -181,6 +181,17 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
           />
         </InlineField>
         <InlineField
+          label="Host IP"
+          labelWidth={24}
+          tooltip="Fetch host interfaces to show the host IP address. Requires an additional API call. Disabled by default."
+        >
+          <InlineSwitch
+            data-testid="zabbix-problems-host-ip"
+            value={queryOptions.hostIp}
+            onChange={() => onChange({ ...queryOptions, hostIp: !queryOptions.hostIp })}
+          />
+        </InlineField>
+        <InlineField
           label="Item value at problem time"
           labelWidth={24}
           tooltip="Resolve each problem's item value at its creation time via history.get (for {ITEM.VALUE} / operational data). May impact performance in large environments with many active problems. Disabled by default."
