@@ -1,14 +1,15 @@
 import _ from 'lodash';
-import React, { useEffect, FormEvent } from 'react';
+import React, { useEffect, useMemo, FormEvent } from 'react';
 import { useAsyncFn } from '../../hooks/useAsyncFn';
 
-import { SelectableValue } from '@grafana/data';
+import { PanelData, SelectableValue } from '@grafana/data';
 import { Combobox, ComboboxOption, InlineField, Input, MultiSelect } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
+import { ProblemTagFilterEditor } from './ProblemTagFilterEditor';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
+import { ProblemTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 const showProblemsOptions: Array<ComboboxOption<string>> = [
@@ -26,11 +27,6 @@ const severityOptions: Array<SelectableValue<number>> = [
   { value: 5, label: 'Disaster' },
 ];
 
-const evaltypeOptions: Array<ComboboxOption<ZabbixTagEvalType>> = [
-  { label: 'AND/OR', value: ZabbixTagEvalType.AndOr },
-  { label: 'OR', value: ZabbixTagEvalType.Or },
-];
-
 const symptomOptions: Array<ComboboxOption<string>> = [
   { label: 'All Problems', value: 'all' },
   { label: 'Cause only', value: 'false' },
@@ -41,9 +37,10 @@ export interface Props {
   query: ZabbixMetricsQuery;
   datasource: ZabbixDatasource;
   onChange: (query: ZabbixMetricsQuery) => void;
+  data?: PanelData;
 }
 
-export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
+export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props) => {
   const interpolatedQuery = useInterpolatedQuery(datasource, query);
 
   const loadGroupOptions = async () => {
@@ -93,6 +90,30 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
     const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
+
+  // Tag name suggestions built from the problems the panel already fetched
+  // (problem.get selects tags) — no extra API call.
+  const problemTagOptions = useMemo(() => {
+    const tagNames: string[] = [];
+    for (const frame of data?.series ?? []) {
+      const field = frame.fields?.[0];
+      if (field?.config?.custom?.type !== 'problems') {
+        continue;
+      }
+      for (const problem of field.values ?? []) {
+        for (const tag of problem?.tags ?? []) {
+          if (tag?.tag) {
+            tagNames.push(tag.tag);
+          }
+        }
+      }
+    }
+    const options: Array<ComboboxOption<string>> = _.uniq(tagNames)
+      .sort()
+      .map((tag) => ({ value: tag, label: tag }));
+    options.unshift(...getVariableOptions());
+    return options;
+  }, [data]);
 
   const loadProxyOptions = async () => {
     const proxies = await datasource.zabbix.getProxies();
@@ -223,15 +244,15 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange }: Props) => {
           />
         </InlineField>
         <InlineField label="Tags" labelWidth={12}>
-          <Input
-            width={36}
-            defaultValue={query.tags?.filter}
-            placeholder="tag1:value1, tag2:value2"
-            onBlur={onTextFilterChange('tags')}
+          <ProblemTagFilterEditor
+            tagFilters={query.problemTags ?? []}
+            tagOptions={problemTagOptions}
+            version={datasource.zabbix.version}
+            supportsExtendedOperators={datasource.zabbix.supportsProblemTagOperators()}
+            evalType={query.evaltype}
+            onChange={(problemTags: ProblemTagFilter[]) => onChange({ ...query, problemTags })}
+            onEvalTypeChange={(evaltype: ZabbixTagEvalType) => onChange({ ...query, evaltype })}
           />
-        </InlineField>
-        <InlineField>
-          <Combobox width={15} value={query.evaltype} options={evaltypeOptions} onChange={onPropChange('evaltype')} />
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>

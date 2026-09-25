@@ -127,7 +127,14 @@ export interface ZabbixQueryEditorProps extends QueryEditorProps<
   ZabbixDSOptions
 > {}
 
-export const QueryEditor = ({ query: queryProp, datasource, onChange, onRunQuery, range }: ZabbixQueryEditorProps) => {
+export const QueryEditor = ({
+  query: queryProp,
+  datasource,
+  onChange,
+  onRunQuery,
+  range,
+  data,
+}: ZabbixQueryEditorProps) => {
   const [itemCount, setItemCount] = useState(0);
   const queryDefaults = getDefaultQuery();
   let query: ZabbixMetricsQuery = { ...queryDefaults, ...queryProp };
@@ -206,7 +213,7 @@ export const QueryEditor = ({ query: queryProp, datasource, onChange, onRunQuery
   };
 
   const renderProblemsEditor = () => {
-    return <ProblemsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+    return <ProblemsQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} data={data} />;
   };
 
   const renderTriggersEditor = () => {

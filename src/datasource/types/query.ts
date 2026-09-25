@@ -1,6 +1,6 @@
 import { DataQuery } from '@grafana/schema';
 import * as c from './../constants';
-import { HostTagOperatorValue } from 'datasource/components/QueryEditor/types';
+import { HostTagOperatorValue, TagOperatorValue } from 'datasource/components/QueryEditor/types';
 
 export type QueryType =
   | typeof c.MODE_METRICS
@@ -34,6 +34,9 @@ export type ZabbixMetricsQuery = {
   slaProperty?: any;
   slaInterval?: string;
   tags?: { filter: string };
+  // Structured problem tag filters with per-tag operator (replaces the free-text
+  // `tags.filter` for problems queries since query schema 13).
+  problemTags?: ProblemTagFilter[];
   triggers?: { minSeverity: number; acknowledged: number; count: boolean };
   countTriggersBy?: 'problems' | 'items' | '';
   evaltype?: ZabbixTagEvalType;
@@ -61,6 +64,9 @@ export interface ZabbixQueryOptions {
   acknowledged?: number;
   hostsInMaintenance?: boolean;
   hostProxy?: boolean;
+  // When enabled, fetch host interfaces (host.get + selectInterfaces) to show
+  // the host IP. Off by default to avoid the extra API call.
+  hostIp?: boolean;
   limit?: number;
   useTimeRange?: boolean;
   severities?: number[];
@@ -157,4 +163,10 @@ export interface MetricColumnConfig {
   // panel time range and returns it as an additional time-series frame, so the column
   // can be rendered as a sparkline via Grafana's "Time series to table" transformation.
   showSparkline?: boolean;
+}
+
+export interface ProblemTagFilter {
+  tag: string;
+  value: string;
+  operator: TagOperatorValue;
 }
