@@ -82,6 +82,37 @@ func TestNonCachedQuery(t *testing.T) {
 	assert.Equal(t, "testNew", result)
 }
 
+func TestServiceQueryIsNotCached(t *testing.T) {
+	serviceCalls := 0
+	zabbixClient := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		switch payload.Method {
+		case "apiinfo.version":
+			return `{"result":"6.4.0"}`
+		case "service.get":
+			serviceCalls++
+			if serviceCalls == 1 {
+				return `{"result":"statusOld"}`
+			}
+			return `{"result":"statusNew"}`
+		default:
+			return `{"result":null}`
+		}
+	})
+	query := &ZabbixAPIRequest{Method: "service.get", Params: emptyParams}
+
+	resp, err := zabbixClient.Request(context.Background(), query)
+	assert.NoError(t, err)
+	result, _ := resp.String()
+	assert.Equal(t, "statusOld", result)
+
+	resp, err = zabbixClient.Request(context.Background(), query)
+
+	assert.NoError(t, err)
+	result, _ = resp.String()
+	assert.Equal(t, "statusNew", result)
+	assert.Equal(t, 2, serviceCalls)
+}
+
 // TestVersionCacheDoesNotCollideWithAPIRequestCache covers a bug flagged in
 // review: the version used to be cached under a ZabbixAPIRequest key in the
 // same keyspace as regular *simplejson.Json API responses. A caller
