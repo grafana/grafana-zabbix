@@ -30,7 +30,8 @@ export interface ProblemsPanelOptions {
   limit?: number;
   // View options
   fontSize: string;
-  pageSize?: number;
+  /** Rows per page; 'auto' fits as many rows as the panel height allows */
+  pageSize?: number | 'auto';
   showSearchFilter?: boolean;
   problemTimeline?: boolean;
   highlightBackground?: boolean;
@@ -39,6 +40,8 @@ export interface ProblemsPanelOptions {
   customLastChangeFormat?: boolean;
   lastChangeFormat?: string;
   resizedColumns?: RTResized;
+  /** Column ids in display order; empty or missing keeps the definition order */
+  columnOrder?: string[];
   allowDangerousHTML: boolean;
   // Triggers severity and colors
   triggerSeverity: TriggerSeverity[];
@@ -86,7 +89,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   // View options
   layout: 'table',
   fontSize: '100%',
-  pageSize: 10,
+  pageSize: 'auto',
   showSearchFilter: false,
   problemTimeline: true,
   highlightBackground: false,
@@ -95,6 +98,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   customLastChangeFormat: false,
   lastChangeFormat: '',
   resizedColumns: [],
+  columnOrder: [],
   allowDangerousHTML: false,
   // Triggers severity and colors
   triggerSeverity: getDefaultSeverity(),

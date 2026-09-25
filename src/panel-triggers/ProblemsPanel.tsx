@@ -8,7 +8,7 @@ import { ZabbixMetricsQuery } from '../datasource/types/query';
 import { TagOperatorValue } from '../datasource/components/QueryEditor/types';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
 import { APIExecuteScriptResponse } from '../datasource/zabbix/connectors/zabbix_api/types';
-import { ProblemList } from './components/Problems/Problems';
+import { DEFAULT_PAGE_SIZE, ProblemList } from './components/Problems/Problems';
 import { AckProblemData } from './components/AckModal';
 import AlertList from './components/AlertList/AlertList';
 
@@ -244,12 +244,16 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     }
   };
 
-  const onPageSizeChange = (pageSize: number, pageIndex?: number) => {
+  const onPageSizeChange = (pageSize: number | 'auto', pageIndex?: number) => {
     onOptionsChange({ ...options, pageSize });
   };
 
   const onColumnResize = (newResized: RTResized) => {
     onOptionsChange({ ...options, resizedColumns: newResized });
+  };
+
+  const onColumnReorder = (columnOrder: string[]) => {
+    onOptionsChange({ ...options, columnOrder });
   };
 
   const onTagClick = (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => {
@@ -269,7 +273,8 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       <AlertList
         problems={problems}
         panelOptions={options}
-        pageSize={options.pageSize}
+        // The list layout has no auto mode; fall back to a fixed size
+        pageSize={typeof options.pageSize === 'number' ? options.pageSize : DEFAULT_PAGE_SIZE}
         fontSize={fontSizeProp}
         onProblemAck={onProblemAck}
         onTagClick={onTagClick}
@@ -295,6 +300,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
         onExecuteScript={onExecuteScript}
         onProblemAck={onProblemAck}
         onColumnResize={onColumnResize}
+        onColumnReorder={onColumnReorder}
         onPageSizeChange={onPageSizeChange}
         onTagClick={onTagClick}
       />

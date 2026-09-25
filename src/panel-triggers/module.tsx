@@ -1,4 +1,4 @@
-import { PanelPlugin } from '@grafana/data';
+import { PanelPlugin, SelectableValue } from '@grafana/data';
 import { problemsPanelChangedHandler, problemsPanelMigrationHandler } from './migrations';
 import { ProblemsPanel } from './ProblemsPanel';
 import { defaultPanelOptions, ProblemsPanelOptions } from './types';
@@ -48,10 +48,16 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
           options: fontSizeOptions,
         },
       })
-      .addNumberInput({
+      .addSelect({
         path: 'pageSize',
         name: 'Page size',
+        description: 'Rows per page. Auto fits as many rows as the panel height allows.',
         defaultValue: defaultPanelOptions.pageSize,
+        settings: {
+          options: getPageSizeOptions(),
+          // Include a previously saved custom number so the editor shows what the dashboard has
+          getOptions: async (context) => getPageSizeOptions(context.options?.pageSize),
+        },
       })
       .addBooleanSwitch({
         path: 'showSearchFilter',
@@ -107,6 +113,14 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         id: 'resetColumns',
         path: 'resizedColumns',
         name: 'Reset resized columns',
+        editor: ResetColumnsEditor,
+        showIf: (options) => options.layout === 'table',
+      })
+      .addCustomEditor({
+        id: 'resetColumnOrder',
+        path: 'columnOrder',
+        name: 'Reset column order',
+        description: 'Restore the default column order after dragging column headers.',
         editor: ResetColumnsEditor,
         showIf: (options) => options.layout === 'table',
       })
@@ -257,6 +271,21 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         category: ['Fields'],
       });
   });
+
+export const PAGE_SIZE_CHOICES = [5, 10, 20, 25, 50, 100];
+
+// Select options for the page size: Auto first, then the fixed sizes, keeping a previously
+// saved custom number so existing dashboards still show what they have.
+export const getPageSizeOptions = (current?: number | 'auto'): Array<SelectableValue<number | 'auto'>> => {
+  const sizes =
+    typeof current === 'number' && !PAGE_SIZE_CHOICES.includes(current)
+      ? [...PAGE_SIZE_CHOICES, current].sort((a, b) => a - b)
+      : PAGE_SIZE_CHOICES;
+  return [
+    { value: 'auto', label: 'Auto (fit panel height)' },
+    ...sizes.map((size) => ({ value: size, label: `${size} rows` })),
+  ];
+};
 
 const fontSizeOptions = [
   { label: '80%', value: '80%' },
