@@ -1,5 +1,11 @@
 # Change Log
 
+## 6.8.1
+
+### Patch Changes
+
+🐛 Fix security vulnerabilities (CVE-2026-69153, CVE-2026-84375)
+
 ## 6.8.0
 
 ### Minor Changes
