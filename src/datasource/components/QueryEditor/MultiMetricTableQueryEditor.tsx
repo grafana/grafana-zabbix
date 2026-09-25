@@ -1,7 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAsyncFn } from 'react-use';
 import { uniqBy } from 'lodash';
-import { Button, Checkbox, InlineField, InlineFieldRow, Input, RadioButtonGroup, Select, Stack, Icon, ComboboxOption } from '@grafana/ui';
+import {
+  Button,
+  Checkbox,
+  InlineField,
+  InlineFieldRow,
+  Input,
+  RadioButtonGroup,
+  Select,
+  Stack,
+  Icon,
+  ComboboxOption,
+} from '@grafana/ui';
 import {
   ZabbixMetricsQuery,
   MetricColumnConfig,
@@ -458,6 +469,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       <InlineFieldRow>
         <InlineField label="Show Group column" labelWidth={20}>
           <Checkbox
+            id="multimetric-show-group-column"
             value={tableConfig.showGroupColumn || false}
             onChange={(e) => {
               onChange({
@@ -473,6 +485,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
         {!rowsFromHost && (
           <InlineField label="Show Host column" labelWidth={20}>
             <Checkbox
+              id="multimetric-show-host-column"
               value={tableConfig.showHostColumn || false}
               onChange={(e) => {
                 onChange({
@@ -635,6 +648,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
             <InlineFieldRow key={index}>
               <InlineField label="Column" labelWidth={16}>
                 <Input
+                  id={`multimetric-column-name-${index}`}
                   width={20}
                   value={localMetricNames[index] ?? metric.columnName}
                   placeholder="Column name"
@@ -700,10 +714,13 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
               >
                 <Select
                   width={15}
+                  inputId={`multimetric-aggregation-${index}`}
                   value={metric.valueType === 'text' ? 'last' : metric.aggregation}
                   options={aggregationOptions}
                   disabled={metric.showSparkline || metric.valueType === 'text'}
-                  onChange={(option) => commitMetric(index, { aggregation: option.value as MetricColumnConfig['aggregation'] })}
+                  onChange={(option) =>
+                    commitMetric(index, { aggregation: option.value as MetricColumnConfig['aggregation'] })
+                  }
                 />
               </InlineField>
               {metric.valueType !== 'text' && (
@@ -713,6 +730,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
                   tooltip="Return this column as its own time-series frame (full history over the panel time range) instead of a scalar value. Render it as a sparkline by adding Grafana's 'Time series to table' transformation; one Trend column is produced per sparkline metric."
                 >
                   <Checkbox
+                    id={`multimetric-sparkline-${index}`}
                     value={metric.showSparkline || false}
                     onChange={(e) => commitMetric(index, { showSparkline: e.currentTarget.checked })}
                   />
