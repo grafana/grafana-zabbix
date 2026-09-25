@@ -578,17 +578,24 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     const showProblems = target.showProblems || ShowProblemTypes.Problems;
     const showProxy = target.options.hostProxy;
+    const showHostIp = target.options.hostIp;
 
     const getProxiesPromise = showProxy ? this.zabbix.getProxies() : () => [];
     showAckButton = !this.disableReadOnlyUsersAck || userIsEditor;
 
-    // replaceTemplateVars() builds regex-like string, so we should trim it.
-    const tagsFilterStr = target.tags.filter.replace('/^', '').replace('$/', '');
-    const tags = utils.parseTags(tagsFilterStr);
-    tags.forEach((tag) => {
-      // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
-      tag.operator = 1;
-    });
+    let tags: any[];
+    if (target.problemTags?.length) {
+      tags = utils.problemTagsToQueryParam(target.problemTags);
+    } else {
+      // Legacy free-text tags filter from queries saved before schema 13.
+      // replaceTemplateVars() builds regex-like string, so we should trim it.
+      const tagsFilterStr = (target.tags?.filter ?? '').replace('/^', '').replace('$/', '');
+      tags = utils.parseTags(tagsFilterStr);
+      tags.forEach((tag) => {
+        // Zabbix uses {"tag": "<tag>", "value": "<value>", "operator": "<operator>"} format, where 1 means Equal
+        tag.operator = 1;
+      });
+    }
 
     const problemsOptions: any = {
       recent: showProblems === ShowProblemTypes.Recent,
@@ -661,12 +668,24 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       .then((problems) => problemsHandler.sortProblems(problems, target))
       .then((problems) => problemsHandler.addTriggerDataSource(problems, target))
       .then((problems) => problemsHandler.formatAcknowledges(problems, zabbixUsers))
-      .then((problems) => problemsHandler.addTriggerHostProxy(problems, proxies));
+      .then((problems) => problemsHandler.addTriggerHostProxy(problems, proxies))
+      .then((problems) => (showHostIp ? this.addProblemsHostIp(problems) : problems));
 
     return problemsPromises.then((problems) => {
       const problemsDataFrame = problemsHandler.toDataFrame(problems, target);
       return problemsDataFrame;
     });
+  }
+
+  // Fetch interfaces only for the hosts present in the result set (one host.get
+  // call), keeping the overhead low when the Host IP option is enabled.
+  async addProblemsHostIp(problems: ProblemDTO[]): Promise<ProblemDTO[]> {
+    const hostids = _.uniq(problems.map((p) => p.hosts?.[0]?.hostid).filter(Boolean));
+    if (hostids.length === 0) {
+      return problems;
+    }
+    const hostInterfaces = await this.zabbix.getHostInterfaces(hostids);
+    return problemsHandler.addTriggerHostIps(problems, hostInterfaces);
   }
 
   /**
@@ -955,6 +974,11 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           ...query.tags,
           filter: utils.replaceTemplateVars(this.templateSrv, query.tags?.filter, scopedVars),
         },
+        problemTags: query.problemTags?.map((tagFilter) => ({
+          ...tagFilter,
+          tag: utils.replaceTemplateVars(this.templateSrv, tagFilter.tag, scopedVars),
+          value: utils.replaceTemplateVars(this.templateSrv, tagFilter.value, scopedVars),
+        })),
         group: {
           ...query.group,
           filter: utils.replaceTemplateVars(this.templateSrv, query.group?.filter, scopedVars),
