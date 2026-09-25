@@ -36,7 +36,23 @@ export type ZabbixDSOptions = {
   perUserAuth?: boolean;
   perUserAuthField?: 'username' | 'email';
   perUserAuthExcludeUsers?: string[];
+  /**
+   * Global overrides for the problem severity names and colors used by Problems panels
+   * that query this data source. Entries only need to set the fields they override;
+   * unset fields keep the plugin defaults. Panels that already have their own custom
+   * name or color for a severity keep it.
+   */
+  severityOverrides?: SeverityOverride[];
 } & DataSourceJsonData;
+
+export interface SeverityOverride {
+  /** Zabbix severity priority: 0 (Not classified) .. 5 (Disaster) */
+  priority: number;
+  /** Severity name to display. Empty or unset keeps the default. */
+  name?: string;
+  /** Severity color. Empty or unset keeps the default. */
+  color?: string;
+}
 
 /** @deprecated
  * Use `dbConnectionEnable` `dbConnectionDatasourceUID` `dbConnectionDatasourceName` `dbConnectionRetentionPolicy` instead.

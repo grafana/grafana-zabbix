@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import _ from 'lodash';
 import { dateMath, PanelProps, OrgRole } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { getDataSourceSrv, config } from '@grafana/runtime';
+import { usePanelContext } from '@grafana/ui';
 import { ProblemsPanelOptions, RTResized } from './types';
+import { ProblemsPanelInstanceState, resolveSeverity } from './severityOverrides';
 import { ZabbixMetricsQuery } from '../datasource/types/query';
 import { TagOperatorValue } from '../datasource/components/QueryEditor/types';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
@@ -18,7 +20,32 @@ interface ProblemsPanelProps extends PanelProps<ProblemsPanelOptions> {}
 
 export const ProblemsPanel = (props: ProblemsPanelProps) => {
   const { data, options, timeRange, onOptionsChange } = props;
-  const { layout, showTriggers, triggerSeverity, sortProblems } = options;
+  const { layout, showTriggers, sortProblems } = options;
+  const panelContext = usePanelContext();
+
+  // Apply global severity overrides defined in the Zabbix data source(s) this panel queries.
+  // Names and colors customized in the panel itself take precedence over the global ones.
+  const targets = data?.request?.targets;
+  const { severity: triggerSeverity, globalSeverityOverrides } = useMemo(
+    () => resolveSeverity(options.triggerSeverity, targets, (ref) => getDataSourceSrv().getInstanceSettings(ref)),
+    [options.triggerSeverity, targets]
+  );
+  const effectiveOptions = useMemo<ProblemsPanelOptions>(
+    () => (triggerSeverity === options.triggerSeverity ? options : { ...options, triggerSeverity }),
+    [options, triggerSeverity]
+  );
+
+  // Share the applied overrides with the panel options editor so it can flag them.
+  const onInstanceStateChange = panelContext?.onInstanceStateChange;
+  const instanceStateKey = JSON.stringify(globalSeverityOverrides ?? null);
+  useEffect(() => {
+    if (!onInstanceStateChange) {
+      return;
+    }
+    const state: ProblemsPanelInstanceState = { globalSeverityOverrides };
+    onInstanceStateChange(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onInstanceStateChange, instanceStateKey]);
 
   const prepareProblems = () => {
     const problems: ProblemDTO[] = [];
@@ -268,7 +295,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     return (
       <AlertList
         problems={problems}
-        panelOptions={options}
+        panelOptions={effectiveOptions}
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
         onProblemAck={onProblemAck}
@@ -285,7 +312,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     return (
       <ProblemList
         problems={problems}
-        panelOptions={options}
+        panelOptions={effectiveOptions}
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
         timeRange={timeRange}
