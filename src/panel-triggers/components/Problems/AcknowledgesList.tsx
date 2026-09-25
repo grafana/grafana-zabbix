@@ -62,6 +62,12 @@ function formatAckMessage(ack: ZBXAcknowledge): string {
     msg = msg + '(Changed severity) ';
   }
 
+  if ((action & 128) !== 0) {
+    msg = msg + '(Ranked as cause) ';
+  } else if ((action & 256) !== 0) {
+    msg = msg + '(Ranked as symptom) ';
+  }
+
   msg = msg + ack.message;
   return msg.trim();
 }
