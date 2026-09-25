@@ -30,7 +30,8 @@ export interface ProblemsPanelOptions {
   limit?: number;
   // View options
   fontSize: string;
-  pageSize?: number;
+  /** Rows per page; 'auto' fits as many rows as the panel height allows */
+  pageSize?: number | 'auto';
   showSearchFilter?: boolean;
   problemTimeline?: boolean;
   highlightBackground?: boolean;
@@ -86,7 +87,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   // View options
   layout: 'table',
   fontSize: '100%',
-  pageSize: 10,
+  pageSize: 'auto',
   showSearchFilter: false,
   problemTimeline: true,
   highlightBackground: false,

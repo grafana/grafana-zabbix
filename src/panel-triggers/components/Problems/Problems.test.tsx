@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { ProblemList, ProblemListProps } from './Problems';
+import { computeAutoPageSize, DEFAULT_PAGE_SIZE, ProblemList, ProblemListProps } from './Problems';
 import { ProblemDTO, ZBXAlert, ZBXEvent } from '../../../datasource/types';
 import { ProblemsPanelOptions, DEFAULT_SEVERITY } from '../../types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
@@ -305,7 +305,7 @@ describe('ProblemList', () => {
     });
   });
 
-  // Reads the host column cell text for each rendered row, in display order
+  // Reads the host name (first line of the host cell) for each rendered row, in display order
   const getHostColumn = () => {
     const table = screen.getByRole('table');
     const headers = within(table).getAllByRole('columnheader');
@@ -313,7 +313,9 @@ describe('ProblemList', () => {
     return within(table)
       .getAllByRole('row')
       .slice(1) // skip the header row
-      .map((row) => row.querySelectorAll('td')[hostIndex]?.textContent?.trim());
+      .map((row) =>
+        row.querySelectorAll('td')[hostIndex]?.querySelector('[data-testid="host-name"]')?.textContent?.trim()
+      );
   };
 
   describe('Sorting', () => {
@@ -335,14 +337,18 @@ describe('ProblemList', () => {
         .getAllByRole('columnheader')
         .find((header) => header.textContent?.includes('Age'))!;
 
+      const sortButton = within(ageHeader).getByRole('button');
+
       // First click sorts descending (biggest age first) and shows the indicator
-      fireEvent.click(ageHeader.querySelector('.header-content')!);
-      expect(ageHeader.textContent).toContain('▼');
+      fireEvent.click(sortButton);
+      expect(ageHeader).toHaveAttribute('aria-sort', 'descending');
+      expect(within(ageHeader).getByTestId('angle-down')).toBeInTheDocument();
       expect(getHostColumn()).toEqual(['Test Host 1', 'Test Host 3', 'Test Host 2']);
 
       // Second click toggles to ascending (smallest age, i.e. newest problem, first)
-      fireEvent.click(ageHeader.querySelector('.header-content')!);
-      expect(ageHeader.textContent).toContain('▲');
+      fireEvent.click(sortButton);
+      expect(ageHeader).toHaveAttribute('aria-sort', 'ascending');
+      expect(within(ageHeader).getByTestId('angle-up')).toBeInTheDocument();
       expect(getHostColumn()).toEqual(['Test Host 2', 'Test Host 3', 'Test Host 1']);
     });
 
@@ -439,15 +445,15 @@ describe('ProblemList', () => {
       },
     ];
 
-    // Finds a header by its label, ignoring the sort indicator glyph
+    // Finds a header by its label
     const findHeader = (label: string) => {
       const table = screen.getByRole('table');
       return within(table)
         .getAllByRole('columnheader')
-        .find((header) => header.textContent?.replace(/[⇅▲▼]/g, '').trim() === label);
+        .find((header) => header.textContent?.trim() === label);
     };
 
-    it('should show a sort indicator only on sortable columns', () => {
+    it('should expose a sort control only on sortable columns', () => {
       render(<ProblemList {...defaultProps} panelOptions={allColumnsOptions} problems={sortableColumnProblems} />);
 
       const sortable = [
@@ -467,14 +473,16 @@ describe('ProblemList', () => {
       for (const label of sortable) {
         const header = findHeader(label);
         expect(header).toBeDefined();
-        expect(header!.querySelector('.sort-indicator')).not.toBeNull();
+        expect(header).toHaveAttribute('aria-sort', 'none');
+        expect(within(header!).getByRole('button')).toBeInTheDocument();
       }
 
       const notSortable = ['Status', 'Status Icon', 'Ack', 'Tags'];
       for (const label of notSortable) {
         const header = findHeader(label);
         expect(header).toBeDefined();
-        expect(header!.querySelector('.sort-indicator')).toBeNull();
+        expect(header).not.toHaveAttribute('aria-sort');
+        expect(within(header!).queryByRole('button')).toBeNull();
       }
     });
 
@@ -503,14 +511,45 @@ describe('ProblemList', () => {
 
         // Two clicks cover both directions; which comes first depends on the
         // column's auto sort direction, so accept either order.
-        fireEvent.click(header.querySelector('.header-content')!);
+        const sortButton = within(header).getByRole('button');
+        fireEvent.click(sortButton);
         const firstClick = getHostColumn();
-        fireEvent.click(header.querySelector('.header-content')!);
+        fireEvent.click(sortButton);
         const secondClick = getHostColumn();
 
         expect([firstClick, secondClick]).toContainEqual(expectedAsc);
         expect([firstClick, secondClick]).toContainEqual([...expectedAsc].reverse());
       }
+    });
+  });
+
+  describe('Page size', () => {
+    const manyProblems = Array.from({ length: 30 }, (_, i) => createMockProblem(String(i + 1), 1000 + i));
+
+    it('uses the saved fixed page size', () => {
+      render(<ProblemList {...defaultProps} pageSize={5} problems={manyProblems} />);
+
+      expect(getHostColumn()).toHaveLength(5);
+      expect(screen.getByRole('combobox', { name: 'Rows per page' })).toHaveValue('5');
+    });
+
+    it('defaults to auto, keeping the default row count until the panel is laid out', () => {
+      render(<ProblemList {...defaultProps} pageSize="auto" problems={manyProblems} />);
+
+      expect(screen.getByRole('combobox', { name: 'Rows per page' })).toHaveValue('auto');
+      expect(getHostColumn()).toHaveLength(DEFAULT_PAGE_SIZE);
+    });
+
+    it('reports the chosen size, including switching back to auto', () => {
+      render(<ProblemList {...defaultProps} pageSize={5} problems={manyProblems} />);
+      const select = screen.getByRole('combobox', { name: 'Rows per page' });
+
+      fireEvent.change(select, { target: { value: '20' } });
+      expect(mockOnPageSizeChange).toHaveBeenLastCalledWith(20, 0);
+      expect(getHostColumn()).toHaveLength(20);
+
+      fireEvent.change(select, { target: { value: 'auto' } });
+      expect(mockOnPageSizeChange).toHaveBeenLastCalledWith('auto', 0);
     });
   });
 
@@ -528,7 +567,7 @@ describe('ProblemList', () => {
 
       render(<ProblemList {...props} />);
 
-      const searchInput = screen.getByPlaceholderText('Search problems...');
+      const searchInput = screen.getByRole('textbox', { name: 'Search problems' });
 
       // Case-insensitive match across visible columns
       fireEvent.change(searchInput, { target: { value: 'high' } });
@@ -541,5 +580,21 @@ describe('ProblemList', () => {
       fireEvent.change(searchInput, { target: { value: '' } });
       expect(getHostColumn()).toHaveLength(3);
     });
+  });
+});
+
+describe('computeAutoPageSize', () => {
+  it('fits whole rows into the available height', () => {
+    expect(computeAutoPageSize(416, 52)).toBe(8);
+    expect(computeAutoPageSize(430, 52)).toBe(8);
+  });
+
+  it('shows at least one row in a very short panel', () => {
+    expect(computeAutoPageSize(30, 52)).toBe(1);
+  });
+
+  it('falls back to the default before the panel is laid out', () => {
+    expect(computeAutoPageSize(0, 52)).toBe(DEFAULT_PAGE_SIZE);
+    expect(computeAutoPageSize(400, 0)).toBe(DEFAULT_PAGE_SIZE);
   });
 });

@@ -1,6 +1,7 @@
 import type { Configuration } from 'webpack';
 import { merge } from 'webpack-merge';
 import grafanaConfig from './.config/webpack/webpack.config';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import RemoveEmptyScriptsPlugin from 'webpack-remove-empty-scripts';
 
@@ -60,6 +61,14 @@ const config = async (env): Promise<Configuration> => {
       new RemoveEmptyScriptsPlugin({}),
       new MiniCssExtractPlugin({
         filename: 'styles/[name].css',
+      }),
+      // The scaffolded config only copies the logos named in the root plugin.json; the nested
+      // datasource and panel plugins reference their own img/ directories.
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: 'datasource/img/**/*', to: '.', noErrorOnMissing: true },
+          { from: 'panel-triggers/img/**/*', to: '.', noErrorOnMissing: true },
+        ],
       }),
     ],
   });
