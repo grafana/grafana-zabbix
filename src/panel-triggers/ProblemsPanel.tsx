@@ -11,6 +11,7 @@ import { APIExecuteScriptResponse } from '../datasource/zabbix/connectors/zabbix
 import { ProblemList } from './components/Problems/Problems';
 import { AckProblemData } from './components/AckModal';
 import AlertList from './components/AlertList/AlertList';
+import { useSoundAlerts } from './hooks/useSoundAlerts';
 
 const PROBLEM_EVENTS_LIMIT = 100;
 
@@ -261,7 +262,6 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const renderList = () => {
-    const problems = prepareProblems();
     const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
     const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
@@ -278,7 +278,6 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const renderTable = () => {
-    const problems = prepareProblems();
     const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
     const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
@@ -300,6 +299,9 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       />
     );
   };
+
+  const problems = prepareProblems();
+  useSoundAlerts(problems, options);
 
   return (
     <>
