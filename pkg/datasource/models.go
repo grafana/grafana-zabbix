@@ -116,7 +116,7 @@ type MultiMetricTableConfig struct {
 	Metrics       []MetricColumnConfig `json:"metrics"`
 	// RowSource selects what a table row represents: "entityPattern" (default when empty) discovers
 	// rows from items matching the entity pattern (LLD-style entities), while "host" produces one row
-	// per host — for non-LLD, host-level items (e.g. CPU/Memory utilization per VM) where the host is
+	// per host, for non-LLD, host-level items (e.g. CPU/Memory utilization per VM) where the host is
 	// the only identifier shared between the metric columns.
 	RowSource       string `json:"rowSource"`
 	ShowGroupColumn bool   `json:"showGroupColumn"`

@@ -36,4 +36,4 @@ Flags: `-hosts`, `-ifaces`, `-items-per-host`, `-range`, `-interval`, `-rpc` (pe
 
 The call count is comparable; the payload win comes from reading `lastvalue` instead of full history,
 and it grows with time range × interface count. The advantage shrinks for columns using a non-`last`
-aggregation (or sparklines), since those fetch history again — model that with `-multi-non-last`.
+aggregation (or sparklines), since those fetch history again; model that with `-multi-non-last`.

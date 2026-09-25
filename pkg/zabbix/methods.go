@@ -384,7 +384,7 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 
 	// Add lastvalue if requested
 	if withLastValue {
-		output = append(output, "lastvalue")
+		output = append(output, "lastvalue", "lastclock")
 	}
 
 	params := ZabbixAPIParams{

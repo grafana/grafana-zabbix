@@ -74,10 +74,10 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   const tableConfig = safeQuery.tableConfig!;
   const rowsFromHost = (tableConfig.rowSource || 'entityPattern') === 'host';
 
-  // Local state for the extract pattern (regex) — committed on blur to avoid invalid intermediate values.
+  // Local state for the extract pattern (regex), committed on blur to avoid invalid intermediate values.
   const [localExtractPattern, setLocalExtractPattern] = useState(tableConfig.entityPattern.extractPattern || '');
 
-  // Local state for the metric column name — committed on blur.
+  // Local state for the metric column name, committed on blur.
   const [localMetricNames, setLocalMetricNames] = useState(tableConfig.metrics.map((m) => m.columnName));
 
   // Load group options
@@ -182,7 +182,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   const itemNameOptions = useMemo(() => buildItemOptions(items, 'name'), [items]);
   const itemKeyOptions = useMemo(() => buildItemOptions(items, 'key_'), [items]);
 
-  // Used by the Table Rows pattern picker (unscoped — it defines the scope).
+  // Used by the Table Rows pattern picker (unscoped, since it defines the scope).
   const optionsForSearchType = (searchType: 'itemName' | 'itemKey') =>
     searchType === 'itemKey' ? itemKeyOptions : itemNameOptions;
 
@@ -496,7 +496,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
             <InlineField
               label="Rows from"
               labelWidth={16}
-              tooltip="Item pattern discovers one row per matching item/entity (LLD-style, e.g. interfaces or disks). Hosts produces one row per host — for host-level items like CPU or memory utilization, where metric columns are matched to rows by host alone."
+              tooltip="Item pattern discovers one row per matching item/entity (LLD-style, e.g. interfaces or disks). Hosts produces one row per host, for host-level items like CPU or memory utilization, where metric columns are matched to rows by host alone."
             >
               <RadioButtonGroup
                 value={tableConfig.rowSource || 'entityPattern'}
@@ -547,7 +547,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
                 label="Pattern"
                 labelWidth={16}
                 grow
-                tooltip="Exact item name/key, or /regex/. Defines the set of items rows are built from — metric columns select within this set."
+                tooltip="Exact item name/key, or /regex/. Defines the set of items rows are built from; metric columns select within this set."
               >
                 <MetricPicker
                   width={40}
@@ -656,7 +656,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
               <InlineField
                 label="Value type"
                 labelWidth={16}
-                tooltip="Numeric matches unsigned/float items. Text matches character/log/text items — those always show the last value and cannot render sparklines."
+                tooltip="Numeric matches unsigned/float items. Text matches character/log/text items; those always show the last value and cannot render sparklines."
               >
                 <RadioButtonGroup
                   value={metric.valueType || 'num'}
@@ -694,7 +694,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
                   metric.valueType === 'text'
                     ? 'Text columns always show the last value.'
                     : metric.showSparkline
-                      ? 'Not used for sparkline columns — the full series is returned.'
+                      ? 'Not used for sparkline columns since the full series is returned.'
                       : undefined
                 }
               >
@@ -738,7 +738,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
         <p style={{ margin: 0, fontSize: '12px' }}>
           <strong>How it works:</strong> Select Group/Host, choose what rows represent, then add metric columns. With
           rows from <em>Item pattern</em>, define the entity pattern (optionally extracting columns from regex capture
-          groups). With rows from <em>Hosts</em>, each host is a row — use this for host-level (non-LLD) items such as
+          groups). With rows from <em>Hosts</em>, each host is a row; use this for host-level (non-LLD) items such as
           CPU or memory utilization.
         </p>
         <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>

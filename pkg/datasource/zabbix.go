@@ -455,7 +455,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		frame.Fields = append(frame.Fields, data.NewField("Group", nil, groupValues))
 	}
 
-	// Add Host column if requested OR if there are multiple hosts. Host rows always include it —
+	// Add Host column if requested OR if there are multiple hosts. Host rows always include it:
 	// the host IS the row identity there.
 	if rowsFromHost || query.TableConfig.ShowHostColumn || hasMultipleHosts {
 		hostValues := make([]string, len(entityOrder))
@@ -519,7 +519,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		if metric.Aggregation == "last" || metric.IsText() {
 			metricValues := make(map[string]*string)
 			for _, item := range metricItems {
-				metricValues[rowKey(item)] = item.LastValue
+				metricValues[rowKey(item)] = item.CollectedLastValue()
 			}
 
 			columnValues = make([]*string, len(entityOrder))
@@ -586,7 +586,7 @@ func sparklineInterval(item *zabbix.Item, ts timeseries.TimeSeries) time.Duratio
 // The transformation groups frames by RefID and emits exactly one "Trend #<refId>" column per RefID,
 // so every sparkline metric is given its OWN RefID (the column name). This yields one sparkline column
 // per metric ("wide" layout) instead of a single Trend column with a "metric" dimension column.
-// Labels carry only the row-identifying dimensions (Host / extracted columns / Entity — or just Host
+// Labels carry only the row-identifying dimensions (Host / extracted columns / Entity, or just Host
 // when rows represent hosts) so the per-metric Trend tables can be joined or merged onto each other
 // (and onto the scalar table) on those columns.
 func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConfig, items []*zabbix.Item, history zabbix.History, pattern EntityPatternConfig, rowsFromHost bool) []*data.Frame {
@@ -605,7 +605,7 @@ func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConf
 		// Convert the raw history into a time series and align it to the item's collection interval,
 		// exactly like the normal metric path (queryNumericDataForItems). Zabbix timestamps carry
 		// nanosecond precision and history is sorted by whole-second clock only, so the raw points are
-		// off-grid and can be non-monotonic within a second — which the sparkline renders as spurious
+		// off-grid and can be non-monotonic within a second, which the sparkline renders as spurious
 		// gaps/vertical jumps. Sorting + aligning snaps points to a regular grid, drops same-frame
 		// duplicates, and interpolates single-point gaps, producing a continuous line.
 		ts := make(timeseries.TimeSeries, 0, len(points))

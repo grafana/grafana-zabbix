@@ -10,7 +10,7 @@ import (
 )
 
 // Patterns follow the plugin-wide filter convention: "/.../" is a regex, anything else must match
-// the item name/key exactly. A plain string must NOT behave as a substring regex — "CPU utilization"
+// the item name/key exactly. A plain string must NOT behave as a substring regex: "CPU utilization"
 // must not match "Process X: CPU utilization".
 func TestFilterItemsByPattern(t *testing.T) {
 	ds := MockZabbixDataSource("", 200)
@@ -47,4 +47,25 @@ func TestFilterItemsByPattern(t *testing.T) {
 		filtered := ds.filterItemsByPattern(items, "/([/", "itemName")
 		assert.Len(t, filtered, 3)
 	})
+}
+
+// Zabbix reports lastvalue "0" for items that never received a value; only lastclock == 0 tells
+// them apart from a genuine zero. Such items must render as null, not 0.
+func TestCollectedLastValue(t *testing.T) {
+	zero := "0"
+	value := "42"
+
+	neverCollected := &zabbix.Item{LastValue: &zero, LastClock: 0}
+	assert.Nil(t, neverCollected.CollectedLastValue(), "never-collected item must yield nil")
+
+	genuineZero := &zabbix.Item{LastValue: &zero, LastClock: 1700000000}
+	require.NotNil(t, genuineZero.CollectedLastValue())
+	assert.Equal(t, "0", *genuineZero.CollectedLastValue(), "a real zero must be kept")
+
+	collected := &zabbix.Item{LastValue: &value, LastClock: 1700000000}
+	require.NotNil(t, collected.CollectedLastValue())
+	assert.Equal(t, "42", *collected.CollectedLastValue())
+
+	noValue := &zabbix.Item{LastValue: nil, LastClock: 1700000000}
+	assert.Nil(t, noValue.CollectedLastValue())
 }

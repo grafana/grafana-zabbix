@@ -53,6 +53,9 @@ type Item struct {
 	ValueMapID string     `json:"valuemapid,omitempty"`
 	Tags       []Tag      `json:"tags,omitempty"`
 	LastValue  *string    `json:"lastvalue,omitempty"`
+	// LastClock is the time of the last collected value. Zabbix reports lastvalue "0" for items that never
+	// received a value, and only lastclock (0 = never updated) tells those apart from a genuine zero.
+	LastClock int64 `json:"lastclock,omitempty,string"`
 }
 
 type ItemHost struct {
@@ -111,4 +114,14 @@ type ValueMap struct {
 type ValueMapping struct {
 	Value    string `json:"value"`
 	NewValue string `json:"newvalue"`
+}
+
+// CollectedLastValue returns the item's last value, or nil when the item has never received a value.
+// Zabbix returns lastvalue "0" with lastclock 0 in that case, so lastclock is the only reliable
+// discriminator between "no data" and a genuine zero.
+func (i *Item) CollectedLastValue() *string {
+	if i.LastValue == nil || i.LastClock == 0 {
+		return nil
+	}
+	return i.LastValue
 }
