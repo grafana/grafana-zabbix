@@ -1,4 +1,5 @@
 import { lastValueFrom, of } from 'rxjs';
+import { dateTime } from '@grafana/data';
 import { ZabbixDatasource } from '../datasource';
 import * as c from '../constants';
 import { DataSourceWithBackend } from '@grafana/runtime';
@@ -6,7 +7,7 @@ import { DataSourceWithBackend } from '@grafana/runtime';
 const buildRequest = () =>
   ({
     targets: [{ refId: 'A', queryType: c.MODE_METRICS }],
-    range: { from: 'now-1h', to: 'now' },
+    range: { from: dateTime('2026-01-01T00:00:00Z'), to: dateTime('2026-01-01T01:00:00Z') },
     scopedVars: {},
   }) as any;
 
@@ -99,6 +100,92 @@ describe('ZabbixDatasource', () => {
 
     const result = await resultPromise;
     expect(result.data).toEqual([{ refId: 'A' }, { refId: 'B' }, { refId: 'C' }, { refId: 'D' }]);
+  });
+
+  describe('queryProblems host IP option', () => {
+    const buildProblemsTarget = (options: any = {}) =>
+      ({
+        showProblems: 'problems',
+        options,
+        tags: { filter: '' },
+        trigger: { filter: '' },
+        group: { filter: '' },
+        host: { filter: '' },
+        application: { filter: '' },
+        proxy: { filter: '' },
+        datasource: 'test-ds',
+      }) as any;
+
+    const buildZabbixMock = (problems: any[]) => ({
+      getProblems: jest.fn().mockResolvedValue(problems),
+      getUsers: jest.fn().mockResolvedValue([]),
+      getProxies: jest.fn().mockResolvedValue([]),
+      getHostInterfaces: jest.fn().mockResolvedValue([
+        {
+          hostid: '10001',
+          interfaces: [
+            { ip: '192.168.1.10', useip: '1' },
+            { ip: '10.0.0.5', useip: '1' },
+          ],
+        },
+      ]),
+    });
+
+    const problemWithHost = () => ({
+      name: 'Test problem',
+      suppressed: '0',
+      hosts: [{ hostid: '10001', name: 'Test host', host: 'test-host' }],
+    });
+
+    it('fetches host interfaces and sets host IP when the hostIp option is enabled', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const zabbixMock = buildZabbixMock([problemWithHost()]);
+      ds.zabbix = zabbixMock as any;
+
+      const frame = await ds.queryProblems(buildProblemsTarget({ hostIp: true }), [0, 100], {});
+
+      expect(zabbixMock.getHostInterfaces).toHaveBeenCalledWith(['10001']);
+      expect(frame.fields[0].values[0].hosts[0].hostIp).toBe('192.168.1.10, 10.0.0.5');
+    });
+
+    it('does not fetch host interfaces when the hostIp option is disabled', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const zabbixMock = buildZabbixMock([problemWithHost()]);
+      ds.zabbix = zabbixMock as any;
+
+      await ds.queryProblems(buildProblemsTarget(), [0, 100], {});
+
+      expect(zabbixMock.getHostInterfaces).not.toHaveBeenCalled();
+    });
+
+    it('does not fetch host interfaces when no problem has hosts', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const zabbixMock = buildZabbixMock([{ name: 'Hostless problem', suppressed: '0', hosts: [] }]);
+      ds.zabbix = zabbixMock as any;
+
+      await ds.queryProblems(buildProblemsTarget({ hostIp: true }), [0, 100], {});
+
+      expect(zabbixMock.getHostInterfaces).not.toHaveBeenCalled();
+    });
+  });
+
+  it('interpolates queries with range scoped vars ($__range_series, etc.)', async () => {
+    const interpolateSpy = jest
+      .spyOn(ZabbixDatasource.prototype, 'interpolateVariablesInQueries')
+      .mockReturnValue(buildRequest().targets);
+    jest.spyOn(ds, 'applyFrontendFunctions').mockImplementation((response) => response);
+    jest.spyOn(DataSourceWithBackend.prototype, 'query').mockReturnValue(of({ data: [] }));
+    jest.spyOn(ds, 'dbConnectionQuery').mockResolvedValue({ data: [] });
+    jest.spyOn(ds, 'frontendQuery').mockResolvedValue({ data: [] });
+    jest.spyOn(ds, 'annotationRequest').mockResolvedValue({ data: [] });
+
+    await lastValueFrom(ds.query(buildRequest()));
+
+    const scopedVars = interpolateSpy.mock.calls[0][1];
+    expect(scopedVars.__range_series).toEqual({ text: c.RANGE_VARIABLE_VALUE, value: c.RANGE_VARIABLE_VALUE });
+    expect(scopedVars.__range).toEqual({ text: '1h', value: '1h' });
+    expect(scopedVars.__range_s).toEqual({ text: 3600, value: 3600 });
+    expect(scopedVars.__range_ms).toEqual({ text: 3600000, value: 3600000 });
   });
 
   it('mergeQueries combines data without mutating the original response', () => {

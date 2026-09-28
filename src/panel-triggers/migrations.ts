@@ -224,6 +224,7 @@ export const problemsPanelMigrationHandler = (panel: PanelModel<Partial<Problems
     ackEventColor: panel.ackEventColor,
     markAckEvents: panel.markAckEvents,
     showEvents: panel.showEvents?.value ?? panel.showEvents,
+    dataLinks: panel.dataLinks ?? options.dataLinks,
   };
 
   return { ...legacyOptions, ...options };

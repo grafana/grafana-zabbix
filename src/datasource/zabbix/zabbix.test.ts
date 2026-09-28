@@ -63,6 +63,24 @@ describe('Zabbix', () => {
     getMock.mockClear();
   });
 
+  describe('supportsProblemTagOperators', () => {
+    it.each([
+      ['5.0.0', false],
+      ['5.2.0', false],
+      ['5.4.0', true],
+      ['6.0.0', true],
+      ['7.0.0', true],
+    ])('returns %s support for Zabbix %s', (version: string, expected: boolean) => {
+      zabbix.version = version;
+      expect(zabbix.supportsProblemTagOperators()).toBe(expected);
+    });
+
+    it('returns false when the version is not known yet', () => {
+      zabbix.version = undefined;
+      expect(zabbix.supportsProblemTagOperators()).toBe(false);
+    });
+  });
+
   describe('initDBConnector', () => {
     const connectorOptions: any = { dbConnectionRetentionPolicy: 'policy' };
 
@@ -228,6 +246,18 @@ describe('Zabbix', () => {
       await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, { fetchHistoricalItemValue: true });
 
       expect(zabbix.zabbixAPI.getHistory).toHaveBeenCalled();
+    });
+
+    it('asks Zabbix to expand trigger comments when the history lookup is off', async () => {
+      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
+
+      expect(zabbix.zabbixAPI.getTriggersByIds).toHaveBeenCalledWith(['501'], true);
+    });
+
+    it('leaves trigger comments unexpanded when the history lookup will expand them per problem', async () => {
+      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, { fetchHistoricalItemValue: true });
+
+      expect(zabbix.zabbixAPI.getTriggersByIds).toHaveBeenCalledWith(['501'], false);
     });
   });
 
