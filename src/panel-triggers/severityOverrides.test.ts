@@ -1,7 +1,7 @@
 import { DataSourceInstanceSettings } from '@grafana/data';
 import { ZABBIX_DS_ID } from '../datasource/constants';
 import { SeverityOverride } from '../datasource/types/config';
-import { applySeverityOverrides, collectSeverityOverrides, resolveSeverity } from './severityOverrides';
+import { applySeverityOverrides, collectSeverityOverrides, isSameColor, resolveSeverity } from './severityOverrides';
 import { DEFAULT_SEVERITY, TriggerSeverity } from './types';
 
 const zabbixDs = (uid: string, name: string, severityOverrides?: SeverityOverride[]) =>
@@ -73,6 +73,39 @@ describe('collectSeverityOverrides', () => {
   });
 });
 
+describe('isSameColor', () => {
+  it.each([
+    ['#ff6548', 'rgb(255, 101, 72)'],
+    ['#FF6548', 'rgb(255, 101, 72)'],
+    ['#ff6548ff', 'rgb(255, 101, 72)'],
+    ['rgba(255, 101, 72, 1)', 'rgb(255, 101, 72)'],
+    ['rgb(255,101,72)', 'rgb(255, 101, 72)'],
+    [' rgb(255, 101, 72) ', 'rgb(255, 101, 72)'],
+    ['#f00', 'rgb(255, 0, 0)'],
+    ['hsl(0, 100%, 50%)', '#ff0000'],
+  ])('treats %s and %s as the same color', (a, b) => {
+    expect(isSameColor(a, b)).toBe(true);
+    expect(isSameColor(b, a)).toBe(true);
+  });
+
+  it.each([
+    ['#ff6548', 'rgb(255, 101, 73)'],
+    ['rgba(255, 101, 72, 0.5)', 'rgb(255, 101, 72)'],
+    ['#ff6548', ''],
+    ['#ff6548', undefined],
+    [undefined, ''],
+  ])('treats %s and %s as different colors', (a, b) => {
+    expect(isSameColor(a, b)).toBe(false);
+  });
+
+  it('falls back to a text comparison for colors it cannot parse', () => {
+    expect(isSameColor('green', 'green')).toBe(true);
+    expect(isSameColor('Green', ' green ')).toBe(true);
+    expect(isSameColor('green', 'red')).toBe(false);
+    expect(isSameColor('green', '#00ff00')).toBe(false);
+  });
+});
+
 describe('applySeverityOverrides', () => {
   it('returns the panel severity untouched when there are no overrides', () => {
     const { severity, applied } = applySeverityOverrides(DEFAULT_SEVERITY, []);
@@ -92,6 +125,16 @@ describe('applySeverityOverrides', () => {
       { priority: 4, name: 'Critical', color: 'rgb(200, 0, 0)' },
       { priority: 5, name: 'Outage' },
     ]);
+  });
+
+  it('still applies the global color when the panel stores the default color as hex', () => {
+    // Grafana's color picker rewrites the default rgb(255, 101, 72) to #ff6548 as soon as its Custom tab is opened
+    const panelSeverity: TriggerSeverity[] = DEFAULT_SEVERITY.map((s) =>
+      s.priority === 4 ? { ...s, color: '#ff6548' } : s
+    );
+    const { severity, applied } = applySeverityOverrides(panelSeverity, [{ priority: 4, color: 'rgb(0, 200, 0)' }]);
+    expect(severity[4]).toEqual({ ...DEFAULT_SEVERITY[4], color: 'rgb(0, 200, 0)' });
+    expect(applied).toEqual([{ priority: 4, color: 'rgb(0, 200, 0)' }]);
   });
 
   it('keeps names and colors that were customized in the panel', () => {

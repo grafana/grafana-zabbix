@@ -1,4 +1,4 @@
-import { DataSourceInstanceSettings } from '@grafana/data';
+import { colorManipulator, DataSourceInstanceSettings } from '@grafana/data';
 import { DataQuery, DataSourceRef } from '@grafana/schema';
 import { ZABBIX_DS_ID } from '../datasource/constants';
 import { SeverityOverride, ZabbixDSOptions } from '../datasource/types/config';
@@ -31,6 +31,35 @@ type GetInstanceSettings = (
 ) => DataSourceInstanceSettings<ZabbixDSOptions> | DataSourceInstanceSettings | undefined;
 
 const hasValue = (value?: string): value is string => typeof value === 'string' && value.trim() !== '';
+
+/**
+ * Normalize a color to `r,g,b,a` so that different spellings of the same color compare equal.
+ * Grafana's color picker reports the current color back as hex (`#ff6548`) as soon as its Custom
+ * tab is opened, while the plugin defaults are stored as `rgb(255, 101, 72)`.
+ */
+function canonicalColor(color: string): string {
+  let decomposed = colorManipulator.decomposeColor(color.trim());
+  if (decomposed.type === 'hsl' || decomposed.type === 'hsla') {
+    decomposed = colorManipulator.decomposeColor(colorManipulator.hslToRgb(decomposed));
+  }
+  const [r, g, b, a = 1] = decomposed.values;
+  return `${r},${g},${b},${a}`;
+}
+
+/** Compare two colors by value, not by spelling. Unparseable colors fall back to a text comparison. */
+export function isSameColor(a?: string, b?: string): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (!hasValue(a) || !hasValue(b)) {
+    return false;
+  }
+  try {
+    return canonicalColor(a) === canonicalColor(b);
+  } catch {
+    return a.trim().toLowerCase() === b.trim().toLowerCase();
+  }
+}
 
 /**
  * Collect severity overrides from the Zabbix data sources referenced by the panel targets.
@@ -125,7 +154,7 @@ export function applySeverityOverrides(
       appliedItem.name = override.name;
       changed = true;
     }
-    if (hasValue(override.color) && item.color === defaults.color) {
+    if (hasValue(override.color) && isSameColor(item.color, defaults.color)) {
       result.color = override.color;
       appliedItem.color = override.color;
       changed = true;
