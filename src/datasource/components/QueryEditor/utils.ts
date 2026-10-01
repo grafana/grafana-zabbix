@@ -39,3 +39,23 @@ export function getHostTagOptionLabel(value: HostTagOperatorValue, version: stri
       return '';
   }
 }
+
+/**
+ * Matches a value against an item pattern following the plugin-wide filter convention:
+ * a value wrapped in slashes ("/.../") is a regex, anything else must match exactly.
+ * Used to scope suggestion dropdowns, so it errs on the permissive side: an empty pattern,
+ * an unresolved template variable, or an invalid regex do not restrict anything.
+ */
+export function matchesItemPattern(value: string, pattern: string): boolean {
+  if (!pattern || pattern.includes('$')) {
+    return true;
+  }
+  if (pattern.length > 1 && pattern.startsWith('/') && pattern.endsWith('/')) {
+    try {
+      return new RegExp(pattern.slice(1, -1)).test(value);
+    } catch {
+      return true;
+    }
+  }
+  return value === pattern;
+}

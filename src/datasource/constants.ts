@@ -14,6 +14,7 @@ export const MODE_ITEMID = '3';
 export const MODE_TRIGGERS = '4';
 export const MODE_PROBLEMS = '5';
 export const MODE_MACROS = '6';
+export const MODE_MULTIMETRIC_TABLE = '7';
 
 // Triggers severity
 export const SEV_NOT_CLASSIFIED = 0;
