@@ -1,5 +1,11 @@
 # Change Log
 
+## 6.8.2
+
+### Patch Changes
+
+🐛 Fix `{ITEM.VALUE}` resolving to the wrong value when a "Multiple PROBLEM events" trigger opens several problems within the same second.
+
 ## 6.8.1
 
 ### Patch Changes
