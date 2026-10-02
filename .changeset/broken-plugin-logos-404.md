@@ -2,4 +2,4 @@
 'grafana-zabbix': patch
 ---
 
-🐛 Fix the data source logo loading
+Fix the data source logo loading
