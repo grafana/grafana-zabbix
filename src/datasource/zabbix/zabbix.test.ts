@@ -322,6 +322,44 @@ describe('Zabbix', () => {
       expect(result[1].items[0].lastvalue).toBe('Second test');
     });
 
+    it('gives each problem its own historical value when multiple problems land in the same second (Multiple PROBLEM events)', async () => {
+      // Trigger with "PROBLEM event generation mode = Multiple" can fire several events
+      // within the same second; clock (second resolution) alone can't tell them apart, so
+      // `ns` (nanoseconds within that second) must disambiguate both the problems and the
+      // matching history records.
+      // The trigger evaluates and opens each problem right after its value lands, so a
+      // problem's ns is just after the history record that caused it, within the same second.
+      const problems: any[] = [
+        makeProblem(1000, { ns: '160000000', items: [makeItem({ lastvalue: '6' })] }),
+        makeProblem(1000, { ns: '260000000', items: [makeItem({ lastvalue: '6' })] }),
+        makeProblem(1000, { ns: '360000000', items: [makeItem({ lastvalue: '6' })] }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
+        { itemid: '601', clock: '1000', ns: '150000000', value: '9' },
+        { itemid: '601', clock: '1000', ns: '250000000', value: '2' },
+        { itemid: '601', clock: '1000', ns: '350000000', value: '6' },
+      ]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].items[0].lastvalue).toBe('9');
+      expect(result[1].items[0].lastvalue).toBe('2');
+      expect(result[2].items[0].lastvalue).toBe('6');
+    });
+
+    it('sorts history records by (clock, ns) before matching, even if the API returns them out of ns order', async () => {
+      const problems: any[] = [makeProblem(1000, { ns: '250000000', items: [makeItem({ lastvalue: '6' })] })];
+      // Same clock second, returned out of ns order.
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
+        { itemid: '601', clock: '1000', ns: '350000000', value: 'too new' },
+        { itemid: '601', clock: '1000', ns: '150000000', value: 'correct' },
+      ]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].items[0].lastvalue).toBe('correct');
+    });
+
     it('falls back to lastvalue when no history record exists at or before timestamp', async () => {
       const problems: any[] = [makeProblem(1000, { items: [makeItem({ lastvalue: 'fallback' })] })];
       zabbix.zabbixAPI.getHistory = jest
@@ -350,6 +388,37 @@ describe('Zabbix', () => {
 
       expect(result[0].description).toBe('Value: 12, Last: 99');
       expect(result[0].comments).toBe('Value received: 12 / Last value received: 99');
+    });
+
+    it('expands {ITEM.VALUE} per problem in Description, matching the support escalation repro (traps 9, 2, 6 in the same second)', async () => {
+      const problems: any[] = [
+        makeProblem(1000, {
+          ns: '160000000',
+          comments: 'Value received: {ITEM.VALUE} / Last value received: {ITEM.LASTVALUE}',
+          items: [makeItem({ lastvalue: '6' })],
+        }),
+        makeProblem(1000, {
+          ns: '260000000',
+          comments: 'Value received: {ITEM.VALUE} / Last value received: {ITEM.LASTVALUE}',
+          items: [makeItem({ lastvalue: '6' })],
+        }),
+        makeProblem(1000, {
+          ns: '360000000',
+          comments: 'Value received: {ITEM.VALUE} / Last value received: {ITEM.LASTVALUE}',
+          items: [makeItem({ lastvalue: '6' })],
+        }),
+      ];
+      zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([
+        { itemid: '601', clock: '1000', ns: '150000000', value: '9' },
+        { itemid: '601', clock: '1000', ns: '250000000', value: '2' },
+        { itemid: '601', clock: '1000', ns: '350000000', value: '6' },
+      ]);
+
+      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
+
+      expect(result[0].comments).toBe('Value received: 9 / Last value received: 6');
+      expect(result[1].comments).toBe('Value received: 2 / Last value received: 6');
+      expect(result[2].comments).toBe('Value received: 6 / Last value received: 6');
     });
 
     it('expands {ITEM.VALUE} in opdata using historical value', async () => {

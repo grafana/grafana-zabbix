@@ -10,6 +10,7 @@ import {
   hasUserMacro,
   joinTriggersWithEvents,
   joinTriggersWithProblems,
+  toPreciseTimeMs,
 } from '../problemsHandler';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
@@ -561,12 +562,18 @@ export class Zabbix implements ZabbixConnector {
       needsUserMacros ? this.zabbixAPI.getGlobalMacros() : Promise.resolve([]),
     ]);
 
-    const historyByItem = _.groupBy(history, 'itemid');
+    // Group and sort by (clock, ns): a trigger with "Multiple PROBLEM events" generation
+    // mode can fire several events within the same second, and history.get only guarantees
+    // ASC order on `clock`, so entries sharing a second need `ns` to land in the right order.
+    const historyByItem = _.mapValues(_.groupBy(history, 'itemid'), (itemHistory) =>
+      _.sortBy(itemHistory, (h) => toPreciseTimeMs(h.clock, h.ns))
+    );
 
     return problems.map((problem) => {
+      const problemTimeMs = toPreciseTimeMs(problem.timestamp, problem.ns);
       const itemResolutions = (problem.items || []).map((item) => {
         const itemHistory = historyByItem[item.itemid] || [];
-        const atTime = _.findLast(itemHistory, (h) => Number(h.clock) <= problem.timestamp);
+        const atTime = _.findLast(itemHistory, (h) => toPreciseTimeMs(h.clock, h.ns) <= problemTimeMs);
         return {
           originalLastvalue: item.lastvalue,
           historicalValue: atTime?.value,

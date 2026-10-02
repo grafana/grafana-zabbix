@@ -15,6 +15,7 @@ export function joinTriggersWithProblems(problems: ZBXProblem[], triggers: ZBXTr
     if (t) {
       const problemDTO: ProblemDTO = {
         timestamp: Number(p.clock),
+        ns: p.ns,
         triggerid: p.objectid,
         eventid: p.eventid,
         name: p.name,
@@ -69,6 +70,7 @@ export function joinTriggersWithEvents(
       const problemDTO: ProblemDTO = {
         value: valueFromEvent ? e.value : t.value,
         timestamp: Number(e.clock),
+        ns: e.ns,
         triggerid: e.objectid,
         eventid: e.eventid,
         name: e.name,
@@ -249,6 +251,18 @@ export function toDataFrame(problems: any[], query: ZabbixMetricsQuery): DataFra
 interface ItemResolution {
   historicalValue?: string;
   originalLastvalue?: string;
+}
+
+/**
+ * Zabbix problem/event and history clocks only have second resolution; `ns` (nanoseconds
+ * since the start of that second) is what Zabbix uses to order records that land in the
+ * same second. A trigger with "Multiple PROBLEM events" generation mode can fire several
+ * events within one second, so comparing on `clock` alone cannot tell them apart and would
+ * match every one of them to the same (most recent) history value. Collapsing to
+ * millisecond precision is enough to disambiguate in practice while staying a safe integer.
+ */
+export function toPreciseTimeMs(clock: number | string, ns?: number | string): number {
+  return Number(clock) * 1000 + Math.floor(Number(ns ?? 0) / 1e6);
 }
 
 export function expandItemMacros(text: string, items: ItemResolution[]): string {

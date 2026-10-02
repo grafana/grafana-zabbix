@@ -56,3 +56,7 @@ devenv/nginx/nginx.crt
 devenv/nginx/nginx.key
 
 __pycache__/
+
+# Personal local overrides for the root docker-compose.yml (e.g. port remaps),
+# see tests/e2e/README.md
+docker-compose.override.yml

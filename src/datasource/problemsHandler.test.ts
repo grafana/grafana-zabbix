@@ -4,6 +4,7 @@ import {
   expandUserMacros,
   filterTriggersPre,
   hasUserMacro,
+  toPreciseTimeMs,
 } from './problemsHandler';
 import { ZBXHost } from './types';
 
@@ -95,6 +96,26 @@ describe('addTriggerHostIps', () => {
     addTriggerHostIps(problems, hostInterfaces);
     expect(problems[0].hosts[0].hostIp).toBe('192.168.1.10');
     expect(problems[1].hosts[0].hostIp).toBe('10.0.0.5');
+  });
+});
+
+describe('toPreciseTimeMs', () => {
+  it('combines clock and ns into a millisecond-precision timestamp', () => {
+    expect(toPreciseTimeMs(1000, 250000000)).toBe(1000250);
+  });
+
+  it('accepts string clock/ns, as returned by the Zabbix API', () => {
+    expect(toPreciseTimeMs('1000', '250000000')).toBe(1000250);
+  });
+
+  it('treats a missing ns as zero', () => {
+    expect(toPreciseTimeMs(1000)).toBe(1000000);
+  });
+
+  it('orders two events within the same second by ns', () => {
+    const earlier = toPreciseTimeMs('1000', '100000000');
+    const later = toPreciseTimeMs('1000', '900000000');
+    expect(earlier).toBeLessThan(later);
   });
 });
 

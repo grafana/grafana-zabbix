@@ -45,6 +45,13 @@ For richer, version-specific scenarios — including TLS + HTTP basic auth (5.0/
 and Zabbix proxy (5.0) — use the per-version stacks under [`devenv/`](./devenv); those
 are also what the `compatibility-*` integration workflows run against.
 
+The stack also gives you a real Zabbix backend to poke at directly — a deterministic
+seeded dataset (host, items, triggers, open problems), dashboards provisioned to query
+it, and the option to log into Zabbix itself to hand-edit triggers or send test values.
+None of that is on by default (e.g. Zabbix's own UI isn't port-published), so see
+[`tests/e2e/README.md`](./tests/e2e/README.md) for how to reach it, how fixtures and
+provisioned dashboards are structured, and how to add your own.
+
 ## Testing
 
 ```sh
