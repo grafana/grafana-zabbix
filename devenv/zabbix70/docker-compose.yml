@@ -67,7 +67,7 @@ services:
       POSTGRES_DB: zabbix
 
   database:
-    image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+    image: postgres:18@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
     ports:
       - '15432:5432'
     command: postgres -c 'max_connections=1000'
