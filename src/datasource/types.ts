@@ -93,6 +93,8 @@ export interface ProblemDTO {
   triggerid?: string;
   eventid?: string;
   timestamp: number;
+  /** Nanoseconds component of the event clock, for sub-second ordering of events that land in the same second. */
+  ns?: string;
   lastchange?: string;
   lastchangeUnix?: number;
 
