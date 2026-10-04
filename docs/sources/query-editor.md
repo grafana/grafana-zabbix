@@ -79,6 +79,7 @@ Use Text queries to retrieve text and log data from Zabbix items with text value
 | Field | Description |
 |-------|-------------|
 | **Group** | The host group to query. Supports regex and template variables. |
+| **Host tag** | Filter hosts by tag (Zabbix 5.4+). Click the **+** button to add one or more tag filters. Each filter has a tag name, an operator, and an optional value. Available operators: Exists, Equals, Contains, Does not exist, Does not equal, Does not contain. When multiple filters are active, choose **AND/OR** or **OR** evaluation. Tag names and values support single-value template variables. In Text mode, the filter applies both to the Host dropdown and when the query runs. |
 | **Host** | The host to query. Supports regex and template variables. |
 | **Application** | Filter items by application. This field is always visible regardless of Zabbix version. On Zabbix 5.4+, where applications have been removed, leave this field empty. |
 | **Item** | The text item to query. Supports regex and template variables. |
