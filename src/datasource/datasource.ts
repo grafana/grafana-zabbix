@@ -979,6 +979,11 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           tag: utils.replaceTemplateVars(this.templateSrv, tagFilter.tag, scopedVars),
           value: utils.replaceTemplateVars(this.templateSrv, tagFilter.value, scopedVars),
         })),
+        hostTags: query.hostTags?.map((tagFilter) => ({
+          ...tagFilter,
+          tag: utils.replaceTemplateVars(this.templateSrv, tagFilter.tag, scopedVars),
+          value: utils.replaceTemplateVars(this.templateSrv, tagFilter.value, scopedVars),
+        })),
         group: {
           ...query.group,
           filter: utils.replaceTemplateVars(this.templateSrv, query.group?.filter, scopedVars),

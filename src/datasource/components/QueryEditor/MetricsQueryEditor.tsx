@@ -244,6 +244,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
         </InlineField>
         <InlineField label="Host tag" labelWidth={12}>
           <HostTagQueryEditor
+            hostTagFilters={query.hostTags}
             hostTagOptions={hostTagsOptions}
             evalTypeValue={query.evaltype}
             hostTagOptionsLoading={hostTagsLoading}
