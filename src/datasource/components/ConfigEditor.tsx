@@ -10,20 +10,24 @@ import {
 } from '@grafana/data';
 import {
   Alert,
+  ColorPicker,
   Combobox,
   ComboboxOption,
   Field,
   Icon,
+  IconButton,
   Input,
   Label,
   MultiSelect,
   SecretInput,
   SecureSocksProxySettings,
+  Stack,
   Switch,
   Tooltip,
   useStyles2,
 } from '@grafana/ui';
-import { ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types/config';
+import { SeverityOverride, ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types/config';
+import { DEFAULT_SEVERITY } from '../../panel-triggers/types';
 import { gte } from 'semver';
 import {
   Auth,
@@ -442,6 +446,54 @@ export const ConfigEditor = (props: Props) => {
           )}
         </ConfigSubSection>
 
+        <ConfigSubSection
+          title="Problem severity"
+          description="Override the severity names and colors used by Problems panels that query this data source. Empty fields keep the plugin defaults. Panels that already have their own custom name or color for a severity keep it."
+        >
+          {DEFAULT_SEVERITY.map((defaults) => {
+            const override = options.jsonData.severityOverrides?.find((o) => o.priority === defaults.priority);
+            const hasColorOverride = !!override?.color;
+            return (
+              <Field
+                key={defaults.priority}
+                label={defaults.severity}
+                data-testid={`severity-override-${defaults.priority}`}
+              >
+                <Stack direction="row" gap={1} alignItems="center">
+                  <Input
+                    width={30}
+                    placeholder={defaults.severity}
+                    aria-label={`${defaults.severity} name override`}
+                    value={override?.name ?? ''}
+                    onChange={(event) =>
+                      severityOverrideChangeHandler(options, onOptionsChange)(defaults.priority, {
+                        name: event.currentTarget.value,
+                      })
+                    }
+                  />
+                  <ColorPicker
+                    color={override?.color || defaults.color}
+                    onChange={(color) =>
+                      severityOverrideChangeHandler(options, onOptionsChange)(defaults.priority, { color })
+                    }
+                  />
+                  {hasColorOverride && (
+                    <IconButton
+                      name="times"
+                      size="sm"
+                      tooltip={`Reset ${defaults.severity} color to default`}
+                      aria-label={`Reset ${defaults.severity} color to default`}
+                      onClick={() =>
+                        severityOverrideChangeHandler(options, onOptionsChange)(defaults.priority, { color: undefined })
+                      }
+                    />
+                  )}
+                </Stack>
+              </Field>
+            );
+          })}
+        </ConfigSubSection>
+
         <ConfigSubSection title="Other">
           <Field label="Disable acknowledges for read-only users">
             <Switch
@@ -637,6 +689,38 @@ const jsonDataSwitchHandler =
       jsonData: {
         ...value.jsonData,
         [key]: (event.target as HTMLInputElement).checked,
+      },
+    });
+  };
+
+/**
+ * Update one severity override. Empty names and colors are dropped, and entries without any
+ * override left are removed so the stored list only contains what is actually overridden.
+ */
+export const severityOverrideChangeHandler =
+  (value: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>, onChange: Props['onOptionsChange']) =>
+  (priority: number, patch: Partial<Pick<SeverityOverride, 'name' | 'color'>>) => {
+    const current = value.jsonData.severityOverrides ?? [];
+    const existing = current.find((o) => o.priority === priority) ?? { priority };
+    const updated: SeverityOverride = { ...existing, ...patch };
+    if (!updated.name) {
+      delete updated.name;
+    }
+    if (!updated.color) {
+      delete updated.color;
+    }
+
+    const next = current.filter((o) => o.priority !== priority);
+    if (updated.name !== undefined || updated.color !== undefined) {
+      next.push(updated);
+    }
+    next.sort((a, b) => a.priority - b.priority);
+
+    onChange({
+      ...value,
+      jsonData: {
+        ...value.jsonData,
+        severityOverrides: next.length > 0 ? next : undefined,
       },
     });
   };
