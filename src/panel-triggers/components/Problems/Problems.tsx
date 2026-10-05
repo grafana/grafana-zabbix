@@ -1,5 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import moment from 'moment/moment';
+import React, { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { cx } from '@emotion/css';
 import { AckProblemData } from '../AckModal';
 import { ProblemsPanelOptions, RTResized } from '../../types';
@@ -8,13 +7,14 @@ import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/
 import { TimeRange } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { HostCell } from './Cells/HostCell';
+import { ProblemCell } from './Cells/ProblemCell';
 import { SeverityCell } from './Cells/SeverityCell';
 import { StatusIconCellV8 } from './Cells/StatusIconCell';
 import { StatusCellV8 } from './Cells/StatusCell';
 import { AckCell } from './Cells/AckCell';
 import { TagCell } from './Cells/TagCell';
 import { LastChangeCell } from './Cells/LastChangeCell';
-import { DataLinksCell } from './Cells/DataLinksCell';
+import { AgeCell } from './Cells/AgeCell';
 import { getProblemsDataLinks } from '../../dataLinks';
 import {
   ColumnFiltersState,
@@ -30,8 +30,10 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { getDataSourceSrv, reportInteraction } from '@grafana/runtime';
+import { Icon, useStyles2 } from '@grafana/ui';
 import { ProblemDetails } from './ProblemDetails';
 import { capitalizeFirstLetter, parseCustomTagColumns } from './utils';
+import { getStyles } from './Problems.styles';
 
 export interface ProblemListProps {
   problems: ProblemDTO[];
@@ -39,7 +41,8 @@ export interface ProblemListProps {
   loading?: boolean;
   timeRange?: TimeRange;
   range?: TimeRange;
-  pageSize?: number;
+  /** Rows per page; 'auto' (or undefined) fits the rows to the panel height */
+  pageSize?: number | 'auto';
   fontSize?: number;
   panelId?: number;
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
@@ -48,11 +51,30 @@ export interface ProblemListProps {
   onExecuteScript: (problem: ProblemDTO, scriptid: string, scope: string) => Promise<APIExecuteScriptResponse>;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => void;
-  onPageSizeChange?: (pageSize: number, pageIndex: number) => void;
+  onPageSizeChange?: (pageSize: number | 'auto', pageIndex: number) => void;
   onColumnResize?: (newResized: RTResized) => void;
 }
 
 const columnHelper = createColumnHelper<ProblemDTO>();
+
+export const DEFAULT_PAGE_SIZE = 10;
+
+// Row height from the mockup at the 14px base; used before any row is rendered
+const ROW_HEIGHT_EM = 52 / 14;
+
+/** Rows that fit the space left for the table body; the default until the panel is laid out */
+export const computeAutoPageSize = (availableHeight: number, rowHeight: number): number => {
+  if (availableHeight <= 0 || rowHeight <= 0) {
+    return DEFAULT_PAGE_SIZE;
+  }
+  return Math.max(1, Math.floor(availableHeight / rowHeight));
+};
+
+const SORT_ARIA = {
+  asc: 'ascending',
+  desc: 'descending',
+  none: 'none',
+} as const;
 
 const buildCustomTagColumns = (customTagColumns?: string) => {
   const tagNames = parseCustomTagColumns(customTagColumns);
@@ -85,6 +107,18 @@ const buildCustomTagColumns = (customTagColumns?: string) => {
 // Join group names the same way the cell renders them, so sorting compares
 // the visible text instead of falling back to comparing arrays.
 const joinGroupNames = (groups?: ZBXGroup[]): string => (groups ?? []).map((g) => g.name).join(', ');
+
+// Second line of the host cell: reuse the host-group or technical-name data only while
+// those columns are hidden, so nothing is shown twice.
+const getHostSubtitle = (problem: ProblemDTO, options: ProblemsPanelOptions): string | undefined => {
+  if (!options.hostGroups && problem.groups?.length) {
+    return problem.groups.map((g) => g.name).join(' / ');
+  }
+  if (!options.hostTechNameField && problem.hostTechName && problem.hostTechName !== problem.host) {
+    return problem.hostTechName;
+  }
+  return undefined;
+};
 
 // Resolve the datasource name the same way the cell renders it, so sorting
 // matches the visible text instead of comparing refs or raw uids.
@@ -129,6 +163,9 @@ export const ProblemList = (props: ProblemListProps) => {
   } = props;
 
   const rootRef = useRef(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const theadRef = useRef<HTMLTableSectionElement>(null);
+  const styles = useStyles2(getStyles);
 
   // Define columns inside component to access props via closure
   const columns = useMemo(() => {
@@ -142,7 +179,13 @@ export const ProblemList = (props: ProblemListProps) => {
         size: 120,
         enableSorting: true,
         sortingFn: 'alphanumeric',
-        cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
+        cell: ({ cell }) => (
+          <HostCell
+            name={cell.getValue()}
+            subtitle={getHostSubtitle(cell.row.original, panelOptions)}
+            maintenance={cell.row.original.hostInMaintenance}
+          />
+        ),
       }),
       columnHelper.accessor('hostTechName', {
         header: 'Host (Technical Name)',
@@ -172,7 +215,8 @@ export const ProblemList = (props: ProblemListProps) => {
       }),
       columnHelper.accessor('priority', {
         header: 'Severity',
-        size: 80,
+        // Fits the pill for the default names up to "Disaster"; longer names ellipsize with a tooltip
+        size: 96,
         sortDescFirst: true,
         sortingFn: (rowA, rowB) => {
           const a = parseInt(rowA.original.severity ?? '0', 10);
@@ -219,7 +263,15 @@ export const ProblemList = (props: ProblemListProps) => {
         minSize: 200,
         enableSorting: true,
         sortingFn: 'alphanumeric',
-        cell: ({ cell }) => <span className="problem-description">{cell.getValue()}</span>,
+        cell: ({ cell }) => (
+          <ProblemCell
+            description={cell.getValue()}
+            // Only as a subtitle while the Operational data column is hidden
+            opdata={panelOptions.opdataField ? undefined : cell.row.original.opdata}
+            // Panel data links apply to the description, like a native table cell
+            links={getProblemsDataLinks(panelOptions.dataLinks, cell.row.original)}
+          />
+        ),
       }),
       columnHelper.accessor('opdata', {
         header: 'Operational data',
@@ -261,14 +313,14 @@ export const ProblemList = (props: ProblemListProps) => {
       columnHelper.accessor('timestamp', {
         id: 'age',
         header: 'Age',
-        size: 100,
+        size: 92, // compact age such as "12h 41m"
         enableSorting: true,
         // Age counts backwards from timestamp: a newer timestamp is a smaller age.
         sortingFn: (rowA, rowB) => Number(rowB.original.timestamp) - Number(rowA.original.timestamp),
         meta: {
           className: 'problem-age',
         },
-        cell: ({ cell }) => <span>{moment.unix(cell.row.original.timestamp).fromNow(true)}</span>,
+        cell: ({ cell }) => <AgeCell timestamp={cell.row.original.timestamp} />,
       }),
       columnHelper.accessor('timestamp', {
         id: 'lastchange',
@@ -291,31 +343,25 @@ export const ProblemList = (props: ProblemListProps) => {
         id: 'expander',
         size: 60,
         meta: {
-          className: 'custom-expander',
+          className: cx('custom-expander', styles.expanderCell),
         },
-        cell: ({ row }) => (
-          <button
-            onClick={row.getToggleExpandedHandler()}
-            style={{ cursor: 'pointer' }}
-            className={row.getIsExpanded() ? 'expanded' : ''}
-          >
-            <i className="fa fa-info-circle" />
-          </button>
-        ),
-      }),
-      columnHelper.display({
-        id: 'dataLinks',
-        header: null,
-        size: 60,
-        minSize: 60,
-        maxSize: 300,
         cell: ({ row }) => {
-          const links = getProblemsDataLinks(panelOptions.dataLinks, row.original);
-          return <DataLinksCell links={links} />;
+          const expanded = row.getIsExpanded();
+          return (
+            <button
+              type="button"
+              onClick={row.getToggleExpandedHandler()}
+              className={cx(styles.expander, { [styles.expanderOpen]: expanded })}
+              aria-expanded={expanded}
+              aria-label={expanded ? 'Hide problem details' : 'Show problem details'}
+            >
+              <Icon name="angle-down" />
+            </button>
+          );
         },
       }),
     ];
-  }, [panelOptions]);
+  }, [panelOptions, styles]);
 
   // Convert resizedColumns from old format to column sizing state
   const getColumnSizingFromResized = (resized?: RTResized): Record<string, number> => {
@@ -350,8 +396,35 @@ export const ProblemList = (props: ProblemListProps) => {
     }
   }, [panelOptions.showSearchFilter]);
 
-  // Default pageSize to 10 if not provided
-  const effectivePageSize = pageSize || 10;
+  // "Auto" (the default for new panels) fits the rows to the panel height like Grafana's table;
+  // a saved number keeps that fixed size.
+  const isAutoPageSize = pageSize === 'auto' || pageSize === undefined;
+  const [autoPageSize, setAutoPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const effectivePageSize = isAutoPageSize ? autoPageSize : pageSize;
+
+  useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!isAutoPageSize || !wrapper) {
+      return undefined;
+    }
+    const measure = () => {
+      // Not laid out yet (or hidden): keep the current size rather than collapsing to one row
+      if (wrapper.clientHeight === 0) {
+        return;
+      }
+      const headHeight = theadRef.current?.offsetHeight ?? 0;
+      const firstRow = wrapper.querySelector<HTMLTableRowElement>('tbody > tr[data-row]');
+      const rowHeight = firstRow?.offsetHeight || parseFloat(getComputedStyle(wrapper).fontSize) * ROW_HEIGHT_EM;
+      setAutoPageSize(computeAutoPageSize(wrapper.clientHeight - headHeight, rowHeight));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, [isAutoPageSize, fontSize]);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -383,7 +456,6 @@ export const ProblemList = (props: ProblemListProps) => {
       tags: panelOptions.showTags,
       datasource: panelOptions.showDatasourceName,
       age: panelOptions.ageField,
-      dataLinks: Array.isArray(panelOptions.dataLinks) && panelOptions.dataLinks.length > 0,
     }),
     [panelOptions]
   );
@@ -439,7 +511,7 @@ export const ProblemList = (props: ProblemListProps) => {
     reportInteraction('grafana_zabbix_panel_page_change', { action });
   };
 
-  const reportPageSizeChange = (pageSize: number) => {
+  const reportPageSizeChange = (pageSize: number | 'auto') => {
     reportInteraction('grafana_zabbix_panel_page_size_change', { pageSize });
   };
 
@@ -485,36 +557,54 @@ export const ProblemList = (props: ProblemListProps) => {
   };
 
   const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPageSize = Number(e.target.value);
+    const newPageSize: number | 'auto' = e.target.value === 'auto' ? 'auto' : Number(e.target.value);
     reportPageSizeChange(newPageSize);
-    table.setPageSize(newPageSize);
+    if (newPageSize !== 'auto') {
+      table.setPageSize(newPageSize);
+    }
     onPageSizeChange?.(newPageSize, table.getState().pagination.pageIndex);
   };
 
   // Calculate page size options
   const pageSizeOptions = React.useMemo(() => {
     let options = [5, 10, 20, 25, 50, 100];
-    if (pageSize) {
+    if (typeof pageSize === 'number') {
       options.push(pageSize);
       options = Array.from(new Set(options)).sort((a, b) => a - b);
     }
     return options;
   }, [pageSize]);
 
+  // Counts and the visible row range follow the current search filter, not the raw input
+  const filteredRows = table.getFilteredRowModel().rows;
+  const totalRows = filteredRows.length;
+  const activeCount = filteredRows.filter((row) => row.original.value === '1').length;
+  const unacknowledgedCount = filteredRows.filter(
+    (row) => row.original.value === '1' && row.original.acknowledged !== '1'
+  ).length;
+  const { pageIndex, pageSize: currentPageSize } = table.getState().pagination;
+  const rangeStart = pageIndex * currentPageSize + 1;
+  const rangeEnd = Math.min((pageIndex + 1) * currentPageSize, totalRows);
+  const rangeLabel = totalRows === 0 ? '0 of 0' : `${rangeStart}–${rangeEnd} of ${totalRows}`;
+
   return (
-    <div className={cx('panel-problems', { [`font-size--${fontSize}`]: !!fontSize })} ref={rootRef}>
-      <div className={`react-table-v8-wrapper ${loading ? 'is-loading' : ''}`}>
-        {loading && (
-          <div className="-loading -active">
-            <div className="-loading-inner">Loading...</div>
+    <div className={cx(styles.root, 'panel-problems', { [`font-size--${fontSize}`]: !!fontSize })} ref={rootRef}>
+      {panelOptions.showSearchFilter && (
+        <div className={styles.toolbar}>
+          <div className={styles.badges}>
+            <span className={cx(styles.badge, styles.badgeActive)}>
+              <span className={styles.badgeDot} />
+              {activeCount} active
+            </span>
+            <span className={styles.badge}>{unacknowledgedCount} unacknowledged</span>
           </div>
-        )}
-        {panelOptions.showSearchFilter && (
-          <div className="problems-toolbar">
+          <div className={styles.search}>
+            <Icon name="search" className={styles.searchIcon} />
             <input
-              className="problems-search-input"
+              className={styles.searchInput}
               type="text"
-              placeholder="Search problems..."
+              aria-label="Search problems"
+              placeholder="Search host, problem, tag…"
               value={globalFilter}
               onChange={(e) => {
                 setGlobalFilter(e.target.value);
@@ -522,123 +612,154 @@ export const ProblemList = (props: ProblemListProps) => {
               }}
             />
           </div>
-        )}
-        <table className="react-table-v8">
-          <thead>
+        </div>
+      )}
+      <div ref={wrapperRef} className={cx(styles.wrapper, { [styles.wrapperLoading]: loading })}>
+        {loading && <div className={styles.loadingOverlay}>Loading...</div>}
+        {/* The react-table-v8 class scopes the expanded row (ProblemDetails) stylesheet */}
+        <table className={cx(styles.table, 'react-table-v8')}>
+          <thead ref={theadRef}>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    style={{ width: `${header.getSize()}px` }}
-                    className={header.column.getCanSort() ? 'sortable-header' : ''}
-                  >
-                    <span
-                      className="header-content"
-                      onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                {headerGroup.headers.map((header) => {
+                  const canSort = header.column.getCanSort();
+                  const sorted = header.column.getIsSorted();
+                  const label = header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext());
+                  return (
+                    <th
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
+                      className={styles.headerCell}
+                      aria-sort={canSort ? SORT_ARIA[sorted || 'none'] : undefined}
                     >
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      {header.column.getCanSort() && (
-                        <span className="sort-indicator">
-                          {{ asc: ' ▲', desc: ' ▼' }[header.column.getIsSorted() as string] ?? ' ⇅'}
-                        </span>
+                      {canSort ? (
+                        <button
+                          type="button"
+                          className={cx(styles.headerButton, { [styles.headerSorted]: !!sorted })}
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          <span className={styles.headerLabel}>{label}</span>
+                          {sorted ? (
+                            <Icon name={sorted === 'asc' ? 'angle-up' : 'angle-down'} size="sm" />
+                          ) : (
+                            <span className={styles.sortHint} data-sort-hint aria-hidden="true">
+                              <Icon name="angle-down" size="sm" />
+                            </span>
+                          )}
+                        </button>
+                      ) : (
+                        <span className={styles.headerLabel}>{label}</span>
                       )}
-                    </span>
-                    {header.column.getCanResize() && (
-                      <div
-                        onMouseDown={header.getResizeHandler()}
-                        onTouchStart={header.getResizeHandler()}
-                        className={`resizer ${header.column.getIsResizing() ? 'isResizing' : ''}`}
-                      />
-                    )}
-                  </th>
-                ))}
+                      {header.column.getCanResize() && (
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          className={cx(styles.resizer, { [styles.resizerActive]: header.column.getIsResizing() })}
+                        />
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td colSpan={table.getAllColumns().length} className="no-data-cell">
-                  <div className="rt-noData">No problems found</div>
-                </td>
-              </tr>
-            ) : (
-              table.getRowModel().rows.map((row, rowIndex) => (
-                <Fragment key={row.id}>
-                  <tr className={rowIndex % 2 === 1 ? 'even-row' : 'odd-row'}>
-                    {row.getVisibleCells().map((cell) => {
-                      const className = (cell.column.columnDef.meta as any)?.className;
-                      return (
-                        <td key={cell.id} className={className} style={{ width: `${cell.column.getSize()}px` }}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                  {row.getIsExpanded() && (
-                    <tr className={rowIndex % 2 === 1 ? 'even-row-expanded' : 'odd-row-expanded'}>
-                      <td colSpan={row.getVisibleCells().length}>
-                        <ProblemDetails
-                          original={row.original}
-                          rootWidth={rootRef?.current?.clientWidth || 0}
-                          timeRange={timeRange}
-                          showTimeline={panelOptions.problemTimeline}
-                          allowDangerousHTML={panelOptions.allowDangerousHTML}
-                          panelId={panelId}
-                          getProblemEvents={getProblemEvents}
-                          getProblemAlerts={getProblemAlerts}
-                          getScripts={getScripts}
-                          onProblemAck={onProblemAck}
-                          onExecuteScript={onExecuteScript}
-                          onTagClick={handleTagClick}
-                        />
+            {table.getRowModel().rows.map((row) => (
+              <Fragment key={row.id}>
+                <tr className={styles.row} data-row>
+                  {row.getVisibleCells().map((cell) => {
+                    const className = (cell.column.columnDef.meta as any)?.className;
+                    return (
+                      <td
+                        key={cell.id}
+                        className={cx(styles.bodyCell, className)}
+                        style={{ width: `${cell.column.getSize()}px` }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))
-            )}
+                    );
+                  })}
+                </tr>
+                {row.getIsExpanded() && (
+                  <tr>
+                    <td colSpan={row.getVisibleCells().length} className={styles.expandedCell}>
+                      <ProblemDetails
+                        original={row.original}
+                        rootWidth={rootRef?.current?.clientWidth || 0}
+                        timeRange={timeRange}
+                        showTimeline={panelOptions.problemTimeline}
+                        allowDangerousHTML={panelOptions.allowDangerousHTML}
+                        panelId={panelId}
+                        getProblemEvents={getProblemEvents}
+                        getProblemAlerts={getProblemAlerts}
+                        getScripts={getScripts}
+                        onProblemAck={onProblemAck}
+                        onExecuteScript={onExecuteScript}
+                        onTagClick={handleTagClick}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            ))}
           </tbody>
         </table>
+        {table.getRowModel().rows.length === 0 && <div className={styles.noData}>No problems found</div>}
       </div>
-      <div className="pagination-v8">
-        <div className="pagination-v8-controls">
+      <div className={styles.pagination}>
+        <span className={styles.paginationRange}>{rangeLabel}</span>
+        <div className={styles.paginationControls}>
           <button
-            className="pagination-v8-btn -btn"
+            type="button"
+            className={styles.pageButton}
             onClick={handlePreviousPage}
             disabled={!table.getCanPreviousPage()}
+            aria-label="Previous page"
           >
-            Previous
+            <Icon name="angle-left" />
           </button>
-          <span className="pagination-v8-info">
-            Page{' '}
+          <span className={styles.pageInfo}>
+            Page
             <input
               type="number"
-              className="pagination-v8-page-input"
-              value={table.getState().pagination.pageIndex + 1}
+              className={styles.pageInput}
+              aria-label="Page number"
+              value={pageIndex + 1}
               onChange={handlePageInputChange}
               onBlur={handlePageInputBlur}
               min={1}
               max={table.getPageCount()}
-            />{' '}
+            />
             of <strong>{table.getPageCount()}</strong>
           </span>
-          <select
-            name="pagination-v8-select"
-            className="pagination-v8-select"
-            value={table.getState().pagination.pageSize}
-            onChange={handlePageSizeChange}
+          <button
+            type="button"
+            className={styles.pageButton}
+            onClick={handleNextPage}
+            disabled={!table.getCanNextPage()}
+            aria-label="Next page"
           >
-            {pageSizeOptions.map((size) => (
-              <option key={size} value={size}>
-                {size} rows
-              </option>
-            ))}
-          </select>
-          <button className="pagination-v8-btn -btn" onClick={handleNextPage} disabled={!table.getCanNextPage()}>
-            Next
+            <Icon name="angle-right" />
           </button>
+          <span className={styles.pageSize}>
+            <select
+              name="pagination-v8-select"
+              className={styles.pageSizeSelect}
+              aria-label="Rows per page"
+              value={isAutoPageSize ? 'auto' : currentPageSize}
+              onChange={handlePageSizeChange}
+            >
+              <option value="auto">Auto</option>
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size} / page
+                </option>
+              ))}
+            </select>
+            <Icon name="angle-down" className={styles.pageSizeIcon} />
+          </span>
         </div>
       </div>
     </div>
