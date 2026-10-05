@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/datasource"
 
@@ -26,10 +27,7 @@ func main() {
 		CallResourceHandler: httpResourceHandler,
 		QueryDataHandler:    ds,
 		CheckHealthHandler:  ds,
-		GRPCSettings: backend.GRPCSettings{
-			MaxReceiveMsgSize: 32 * 1024 * 1024,
-			MaxSendMsgSize:    100 * 1024 * 1024,
-		},
+		GRPCSettings:        grpcSettings(pluginLogger, os.LookupEnv),
 	})
 	if err != nil {
 		pluginLogger.Error("Error starting Zabbix datasource", "error", err.Error())
