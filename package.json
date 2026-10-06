@@ -104,7 +104,7 @@
     "brace-expansion@^5": "5.0.12",
     "basic-ftp": "6.2.1"
   },
-  "packageManager": "npm@11.18.0",
+  "packageManager": "npm@12.2.0",
   "engines": {
     "node": ">=24",
     "npm": ">=11.16.0"
