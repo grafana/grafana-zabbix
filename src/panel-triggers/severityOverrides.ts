@@ -26,9 +26,16 @@ export interface ProblemsPanelInstanceState {
   globalSeverityOverrides?: GlobalSeverityOverridesState;
 }
 
+/** Severity overrides collected from the Zabbix data sources of a panel */
+export interface CollectedSeverityOverrides {
+  overrides: SeverityOverride[];
+  /** Names of the data sources the overrides were taken from */
+  datasourceNames: string[];
+}
+
 type GetInstanceSettings = (
   ref?: DataSourceRef | string | null
-) => DataSourceInstanceSettings<ZabbixDSOptions> | DataSourceInstanceSettings | undefined;
+) => Promise<DataSourceInstanceSettings<ZabbixDSOptions> | DataSourceInstanceSettings | undefined>;
 
 const hasValue = (value?: string): value is string => typeof value === 'string' && value.trim() !== '';
 
@@ -66,24 +73,21 @@ export function isSameColor(a?: string, b?: string): boolean {
  * Targets are visited in order and the first data source that defines a name or color for a
  * priority wins for that field.
  */
-export function collectSeverityOverrides(
+export async function collectSeverityOverrides(
   targets: DataQuery[] | undefined,
   getInstanceSettings: GetInstanceSettings
-): { overrides: SeverityOverride[]; datasourceNames: string[] } {
+): Promise<CollectedSeverityOverrides> {
   const merged = new Map<number, SeverityOverride>();
   const datasourceNames: string[] = [];
   const visited = new Set<string>();
 
-  for (const target of targets ?? []) {
-    if (!target?.datasource) {
-      continue;
-    }
-    let settings: DataSourceInstanceSettings | undefined;
-    try {
-      settings = getInstanceSettings(target.datasource);
-    } catch {
-      settings = undefined;
-    }
+  const targetsSettings = await Promise.all(
+    (targets ?? []).map((target) =>
+      target?.datasource ? getInstanceSettings(target.datasource).catch(() => undefined) : undefined
+    )
+  );
+
+  for (const settings of targetsSettings) {
     if (!settings || settings.type !== ZABBIX_DS_ID || visited.has(settings.uid)) {
       continue;
     }
@@ -171,14 +175,12 @@ export function applySeverityOverrides(
 }
 
 /**
- * Resolve the effective severity settings for a panel given its targets.
+ * Resolve the effective severity settings for a panel given the overrides of its data sources.
  */
 export function resolveSeverity(
   panelSeverity: TriggerSeverity[],
-  targets: DataQuery[] | undefined,
-  getInstanceSettings: GetInstanceSettings
+  { overrides, datasourceNames }: CollectedSeverityOverrides
 ): { severity: TriggerSeverity[]; globalSeverityOverrides?: GlobalSeverityOverridesState } {
-  const { overrides, datasourceNames } = collectSeverityOverrides(targets, getInstanceSettings);
   const { severity, applied } = applySeverityOverrides(panelSeverity, overrides);
   if (applied.length === 0) {
     return { severity };
