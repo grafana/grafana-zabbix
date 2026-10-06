@@ -1,6 +1,6 @@
 {
   "name": "grafana-zabbix",
-  "version": "6.9.0",
+  "version": "6.9.1",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "bugs": {
@@ -97,6 +97,12 @@
     "webpack-remove-empty-scripts": "1.1.1",
     "webpack-subresource-integrity": "5.1.0",
     "webpack-virtual-modules": "0.6.2"
+  },
+  "overrides": {
+    "brace-expansion@^1": "1.1.21",
+    "brace-expansion@^2": "2.1.7",
+    "brace-expansion@^5": "5.0.12",
+    "basic-ftp": "6.2.1"
   },
   "packageManager": "npm@11.18.0",
   "engines": {

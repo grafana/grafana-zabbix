@@ -1,5 +1,11 @@
 # Change Log
 
+## 6.9.1
+
+### Patch Changes
+
+🐛 Fix security vulnerabilities in transitive npm dependencies by pinning patched versions via package.json overrides: brace-expansion and basic-ftp.
+
 ## 6.9.0
 
 ### Minor Changes
