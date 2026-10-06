@@ -8,11 +8,20 @@ interface Props {
   icon?: string;
   width?: number;
   tooltip?: string;
+  ariaLabel?: string;
   className?: string;
   onClick(event: React.MouseEvent<HTMLButtonElement>): void;
 }
 
-export const ActionButton: FC<PropsWithChildren<Props>> = ({ icon, width, tooltip, className, children, onClick }) => {
+export const ActionButton: FC<PropsWithChildren<Props>> = ({
+  icon,
+  width,
+  tooltip,
+  ariaLabel,
+  className,
+  children,
+  onClick,
+}) => {
   const theme = useTheme();
   const styles = getStyles(theme);
   const buttonClass = cx(
@@ -25,7 +34,7 @@ export const ActionButton: FC<PropsWithChildren<Props>> = ({ icon, width, toolti
   );
 
   let button = (
-    <button className={buttonClass} onClick={onClick}>
+    <button className={buttonClass} aria-label={ariaLabel || tooltip} onClick={onClick}>
       {icon && <FAIcon icon={icon} customClass={styles.icon} />}
       {children}
     </button>
