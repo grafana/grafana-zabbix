@@ -1,5 +1,11 @@
 # Change Log
 
+## 6.9.1
+
+### Patch Changes
+
+🐛 Fix security vulnerabilities in transitive npm dependencies by pinning patched versions via package.json overrides: brace-expansion (GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p) and basic-ftp (GHSA-c475-qrg2-pj4r).
+
 ## 6.9.0
 
 ### Minor Changes
