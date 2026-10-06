@@ -1,5 +1,5 @@
 import { DataSourceInstanceSettings } from '@grafana/data';
-import { getDataSourceSrv } from '@grafana/runtime';
+import { getDataSourceInstance } from '@grafana/plugin-compat/datasources';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
@@ -16,6 +16,7 @@ import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '..
 import { ZabbixDSOptions } from '../types/config';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import * as utils from '../utils';
+import { getUIDFromID } from '../migrations';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
@@ -115,6 +116,7 @@ type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAut
     | 'cacheTTL'
     | 'dbConnectionEnable'
     | 'dbConnectionDatasourceUID'
+    | 'dbConnectionDatasourceId'
     | 'dbConnectionDatasourceName'
     | 'dbConnectionRetentionPolicy'
   >;
@@ -156,6 +158,7 @@ export class Zabbix implements ZabbixConnector {
       cacheTTL,
       dbConnectionEnable,
       dbConnectionDatasourceUID,
+      dbConnectionDatasourceId,
       dbConnectionDatasourceName,
       dbConnectionRetentionPolicy,
       uid,
@@ -176,8 +179,8 @@ export class Zabbix implements ZabbixConnector {
     this.cacheRequests();
     this.bindRequests();
 
-    if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceName)) {
-      const connectorOptions: any = { dbConnectionRetentionPolicy };
+    if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceId || dbConnectionDatasourceName)) {
+      const connectorOptions: any = { dbConnectionRetentionPolicy, dbConnectionDatasourceId };
       this.initDBConnector(dbConnectionDatasourceUID, dbConnectionDatasourceName, connectorOptions)
         .then(() => {
           this.getHistoryDB = this.cachingProxy.proxifyWithCache(
@@ -202,11 +205,21 @@ export class Zabbix implements ZabbixConnector {
     datasourceName: string | undefined,
     options: ZabbixDSOptions
   ) {
-    const ref = (datasourceUID && datasourceUID.trim()) || datasourceName;
+    let uid = datasourceUID && datasourceUID.trim();
+    // Legacy config references the DB data source by its numeric ID
+    if (!uid && options.dbConnectionDatasourceId > 0) {
+      uid = await getUIDFromID(options.dbConnectionDatasourceId);
+      if (!uid) {
+        throw new Error(
+          `Error retrieving direct db connection data source. Data source with id ${options.dbConnectionDatasourceId} not found`
+        );
+      }
+    }
+    const ref = uid || datasourceName;
     if (!ref) {
       throw new Error('Data Source UID or name must be specified for direct DB connection');
     }
-    const ds = await getDataSourceSrv().get(ref);
+    const ds = await getDataSourceInstance(ref);
 
     if (ds.type === 'influxdb') {
       const influxDBConnectorOptions: InfluxDBConnectorOptions = {

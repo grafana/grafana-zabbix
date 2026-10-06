@@ -35,11 +35,16 @@ jest.mock(
           toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } }),
         }),
       }),
-      getDataSourceSrv: jest.fn(() => ({ get: getMock })),
     };
   },
   { virtual: true }
 );
+
+const getSettingsMock = jest.fn();
+jest.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstance: (...args: unknown[]) => getMock(...args),
+  getDataSourceInstanceSettings: (...args: unknown[]) => getSettingsMock(...args),
+}));
 
 describe('Zabbix', () => {
   let consoleSpy: jest.SpyInstance;
@@ -61,6 +66,7 @@ describe('Zabbix', () => {
   afterEach(() => {
     consoleSpy.mockRestore();
     getMock.mockClear();
+    getSettingsMock.mockReset();
   });
 
   describe('supportsProblemTagOperators', () => {
@@ -84,24 +90,41 @@ describe('Zabbix', () => {
   describe('initDBConnector', () => {
     const connectorOptions: any = { dbConnectionRetentionPolicy: 'policy' };
 
-    it('calls getDataSourceSrv().get with UID when datasourceUID is provided', async () => {
+    it('calls getDataSourceInstance with UID when datasourceUID is provided', async () => {
       await zabbix.initDBConnector('my-db-uid', undefined, connectorOptions);
 
       expect(getMock).toHaveBeenCalledTimes(2);
       expect(getMock).toHaveBeenCalledWith('my-db-uid');
     });
 
-    it('calls getDataSourceSrv().get with name when only datasourceName is provided (legacy)', async () => {
+    it('calls getDataSourceInstance with name when only datasourceName is provided (legacy)', async () => {
       await zabbix.initDBConnector(undefined, 'My MySQL DS', connectorOptions);
 
       expect(getMock).toHaveBeenCalledTimes(2);
       expect(getMock).toHaveBeenCalledWith('My MySQL DS');
     });
 
-    it('calls getDataSourceSrv().get with name when datasourceUID is empty string (fallback)', async () => {
+    it('calls getDataSourceInstance with name when datasourceUID is empty string (fallback)', async () => {
       await zabbix.initDBConnector('', 'My MySQL DS', connectorOptions);
 
       expect(getMock).toHaveBeenCalledWith('My MySQL DS');
+    });
+
+    it('resolves the UID when only the numeric dbConnectionDatasourceId is provided (legacy)', async () => {
+      getSettingsMock.mockResolvedValue({ id: 42, uid: 'influx-uid' });
+
+      await zabbix.initDBConnector(undefined, 'My MySQL DS', { ...connectorOptions, dbConnectionDatasourceId: 42 });
+
+      expect(getSettingsMock).toHaveBeenCalledWith('42');
+      expect(getMock).toHaveBeenLastCalledWith('influx-uid');
+    });
+
+    it('throws when the numeric dbConnectionDatasourceId cannot be resolved (legacy)', async () => {
+      getSettingsMock.mockResolvedValue(undefined);
+
+      await expect(
+        zabbix.initDBConnector(undefined, undefined, { ...connectorOptions, dbConnectionDatasourceId: 999 })
+      ).rejects.toThrow('Error retrieving direct db connection data source. Data source with id 999 not found');
     });
   });
 
