@@ -1,29 +1,19 @@
 import _ from 'lodash';
-import { getDataSourceSrv } from '@grafana/runtime';
+import { getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
 import { getUIDFromID, migrate, migrateDSConfig, DS_CONFIG_SCHEMA, DS_QUERY_SCHEMA } from './migrations';
 import { problemTagsToQueryParam } from './utils';
 import * as c from './constants';
 
-// Mock getDataSourceSrv from @grafana/runtime
-jest.mock('@grafana/runtime', () => ({
-  getDataSourceSrv: jest.fn(),
+jest.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstanceSettings: jest.fn(),
 }));
 
-const mockedGetDataSourceSrv = getDataSourceSrv as jest.MockedFunction<typeof getDataSourceSrv>;
+const mockedGetDataSourceInstanceSettings = getDataSourceInstanceSettings as jest.MockedFunction<
+  typeof getDataSourceInstanceSettings
+>;
 
 describe('Migrations', () => {
   let ctx: any = {};
-
-  beforeEach(() => {
-    mockedGetDataSourceSrv.mockReturnValue({
-      getList: jest.fn().mockReturnValue([
-        {
-          id: 1,
-          uid: 'datasource-1',
-        },
-      ]),
-    } as any);
-  });
 
   describe('When migrating datasource config', () => {
     beforeEach(() => {
@@ -37,21 +27,36 @@ describe('Migrations', () => {
 
     it('should change direct DB connection setting to flat style', () => {
       migrateDSConfig(ctx.jsonData);
-      expect(ctx.jsonData).toMatchObject({
+      expect(ctx.jsonData).toEqual({
         dbConnectionEnable: true,
-        dbConnectionDatasourceUID: 'datasource-1',
+        dbConnectionDatasourceId: 1,
         schema: DS_CONFIG_SCHEMA,
       });
     });
 
-    it('should migrate dbConnectionDatasourceId to dbConnectionDatasourceUID', () => {
+    it('should keep dbConnectionDatasourceId so it can be resolved to a UID later', () => {
       ctx.jsonData = {
         dbConnectionDatasourceId: 1,
         dbConnectionEnable: true,
         schema: 3,
       };
       migrateDSConfig(ctx.jsonData);
-      expect(ctx.jsonData).toMatchObject({
+      expect(ctx.jsonData).toEqual({
+        dbConnectionEnable: true,
+        dbConnectionDatasourceId: 1,
+        schema: DS_CONFIG_SCHEMA,
+      });
+    });
+
+    it('should drop dbConnectionDatasourceId when the UID is already set', () => {
+      ctx.jsonData = {
+        dbConnectionDatasourceId: 1,
+        dbConnectionDatasourceUID: 'datasource-1',
+        dbConnectionEnable: true,
+        schema: 3,
+      };
+      migrateDSConfig(ctx.jsonData);
+      expect(ctx.jsonData).toEqual({
         dbConnectionEnable: true,
         dbConnectionDatasourceUID: 'datasource-1',
         schema: DS_CONFIG_SCHEMA,
@@ -83,19 +88,6 @@ describe('Migrations', () => {
       migrateDSConfig(ctx.jsonData);
       expect(ctx.jsonData.schema).toBe(DS_CONFIG_SCHEMA);
       expect(ctx.jsonData.username).toBe('zabbix');
-    });
-
-    it('should set schema to 4 when dbConnectionDatasourceId->UID migration fails (datasource not found) to avoid retry loop', () => {
-      const getList = jest.fn().mockReturnValue([{ id: 99, uid: 'other-uid' }]);
-      mockedGetDataSourceSrv.mockReturnValue({ getList } as any);
-      ctx.jsonData = {
-        dbConnectionDatasourceId: 999,
-        dbConnectionEnable: true,
-        schema: 3,
-      };
-      expect(() => migrateDSConfig(ctx.jsonData)).toThrow(
-        `Error retrieving direct db connection data source. Data source with id 999 not found`
-      );
     });
 
     it('should migrate timeout string to number when schema < 3 (including "0" and "")', () => {
@@ -207,27 +199,29 @@ describe('Migrations', () => {
   });
 
   describe('getUIDFromID', () => {
-    it('should return the matching datasource uid', () => {
-      const getList = jest.fn().mockReturnValue([
-        { id: 1, uid: 'datasource-1' },
-        { id: 2, uid: 'datasource-2' },
-      ]);
-      mockedGetDataSourceSrv.mockReturnValue({ getList } as any);
+    it('should return the matching datasource uid', async () => {
+      mockedGetDataSourceInstanceSettings.mockResolvedValue({ id: 2, uid: 'datasource-2' } as any);
 
-      const uid = getUIDFromID(2);
+      const uid = await getUIDFromID(2);
 
       expect(uid).toBe('datasource-2');
-      expect(getList).toHaveBeenCalledWith({ all: true });
+      expect(mockedGetDataSourceInstanceSettings).toHaveBeenCalledWith('2');
     });
 
-    it('should return undefined when datasource is not found', () => {
-      const getList = jest.fn().mockReturnValue([{ id: 1, uid: 'datasource-1' }]);
-      mockedGetDataSourceSrv.mockReturnValue({ getList } as any);
+    it('should return undefined when datasource is not found', async () => {
+      mockedGetDataSourceInstanceSettings.mockResolvedValue(undefined);
 
-      const uid = getUIDFromID(999);
+      const uid = await getUIDFromID(999);
 
       expect(uid).toBeUndefined();
-      expect(getList).toHaveBeenCalledWith({ all: true });
+    });
+
+    it('should return undefined when the lookup matches another datasource by uid or name', async () => {
+      mockedGetDataSourceInstanceSettings.mockResolvedValue({ id: 7, uid: '2' } as any);
+
+      const uid = await getUIDFromID(2);
+
+      expect(uid).toBeUndefined();
     });
   });
 });
