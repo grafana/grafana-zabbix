@@ -5,7 +5,7 @@ import { useAsyncFn } from '../../hooks/useAsyncFn';
 import { InlineField, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
-import { getVariableOptions, processHostTags } from './utils';
+import { buildHostTagOptions, getVariableOptions } from './utils';
 import { ZabbixDatasource } from '../../datasource';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
@@ -43,12 +43,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
 
   const loadHostTagOptions = async (group: string) => {
     const hostsWithTags = await datasource.zabbix.getAllHosts(group, true);
-    const hostTags = processHostTags(hostsWithTags ?? []);
-    let options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
-      value: tag.tag,
-      label: tag.tag,
-    }));
-    return options;
+    return buildHostTagOptions(hostsWithTags ?? []);
   };
 
   const loadHostOptions = async (group: string, hostTags?: HostTagFilter[], evalType?: ZabbixTagEvalType) => {
@@ -65,10 +60,11 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     return options;
   };
 
-  const [{ loading: hostTagsLoading, value: hostTagsOptions }, fetchHostTags] = useAsyncFn(async () => {
-    const options = await loadHostTagOptions(query.group.filter);
-    return options;
+  const [{ loading: hostTagsLoading, value: hostTagsData }, fetchHostTags] = useAsyncFn(async () => {
+    return await loadHostTagOptions(query.group.filter);
   }, [query.group.filter]);
+  const hostTagsOptions = hostTagsData?.tagOptions;
+  const hostTagValueOptions = hostTagsData?.valueOptions;
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
     const options = await loadHostOptions(
@@ -245,6 +241,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
         <InlineField label="Host tag" labelWidth={12}>
           <HostTagQueryEditor
             hostTagOptions={hostTagsOptions}
+            hostTagValueOptions={hostTagValueOptions}
+            value={query.hostTags}
             evalTypeValue={query.evaltype}
             hostTagOptionsLoading={hostTagsLoading}
             onHostTagFilterChange={onHostTagFilterChange}
