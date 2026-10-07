@@ -1,13 +1,14 @@
 import _ from 'lodash';
-import React, { useEffect, FormEvent } from 'react';
+import React, { useCallback, useEffect, FormEvent } from 'react';
 import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { InlineField, InlineSwitch, Input, ComboboxOption } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
-import { getVariableOptions } from './utils';
+import { getVariableOptions, processHostTags } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { ZabbixMetricsQuery } from '../../types/query';
+import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
+import { HostTagQueryEditor } from './HostTagQueryEditor';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 export interface Props {
@@ -34,8 +35,18 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     return options;
   }, []);
 
-  const loadHostOptions = async (group: string) => {
-    const hosts = await datasource.zabbix.getAllHosts(group);
+  const loadHostTagOptions = async (group: string) => {
+    const hostsWithTags = await datasource.zabbix.getAllHosts(group, true);
+    const hostTags = processHostTags(hostsWithTags ?? []);
+    let options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
+      value: tag.tag,
+      label: tag.tag,
+    }));
+    return options;
+  };
+
+  const loadHostOptions = async (group: string, hostTags?: HostTagFilter[], evalType?: ZabbixTagEvalType) => {
+    const hosts = await datasource.zabbix.getAllHosts(group, false, hostTags, evalType);
     let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
       value: host.name,
       label: host.name,
@@ -46,10 +57,19 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     return options;
   };
 
-  const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
-    const options = await loadHostOptions(interpolatedQuery.group.filter);
+  const [{ loading: hostTagsLoading, value: hostTagsOptions }, fetchHostTags] = useAsyncFn(async () => {
+    const options = await loadHostTagOptions(query.group.filter);
     return options;
-  }, [interpolatedQuery.group.filter]);
+  }, [query.group.filter]);
+
+  const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
+    const options = await loadHostOptions(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.hostTags,
+      interpolatedQuery.evaltype
+    );
+    return options;
+  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
@@ -67,10 +87,19 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
-  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
+  const loadItemOptions = async (
+    group: string,
+    host: string,
+    app: string,
+    itemTag: string,
+    hostTags?: HostTagFilter[],
+    evaltype?: ZabbixTagEvalType
+  ) => {
     const options = {
       itemtype: 'text',
       showDisabledItems: query.options.showDisabledItems,
+      hostTags,
+      evaltype,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
     let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
@@ -87,7 +116,9 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
       interpolatedQuery.group.filter,
       interpolatedQuery.host.filter,
       interpolatedQuery.application.filter,
-      interpolatedQuery.itemTag.filter
+      interpolatedQuery.itemTag.filter,
+      interpolatedQuery.hostTags,
+      interpolatedQuery.evaltype
     );
     return options;
   }, [
@@ -95,10 +126,14 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     interpolatedQuery.host.filter,
     interpolatedQuery.application.filter,
     interpolatedQuery.itemTag.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
   ]);
 
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
+  const hostTagFilters = interpolatedQuery.hostTags;
+  const evalType = interpolatedQuery.evaltype;
   const hostFilter = interpolatedQuery.host?.filter;
   const appFilter = interpolatedQuery.application?.filter;
   const tagFilter = interpolatedQuery.itemTag?.filter;
@@ -108,8 +143,12 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
   }, []);
 
   useEffect(() => {
-    fetchHosts();
+    fetchHostTags();
   }, [groupFilter]);
+
+  useEffect(() => {
+    fetchHosts();
+  }, [groupFilter, hostTagFilters, evalType]);
 
   useEffect(() => {
     fetchApps();
@@ -117,7 +156,7 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter]);
+  }, [groupFilter, hostFilter, appFilter, tagFilter, hostTagFilters, evalType]);
 
   const onTextFilterChange = (v: FormEvent<HTMLInputElement>) => {
     const newValue = v?.currentTarget?.value;
@@ -134,6 +173,20 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     };
   };
 
+  const onHostTagFilterChange = useCallback(
+    (hostTags: HostTagFilter[]) => {
+      onChange({ ...query, hostTags });
+    },
+    [onChange, query]
+  );
+
+  const onHostTagEvalTypeChange = useCallback(
+    (evalType: ZabbixTagEvalType) => {
+      onChange({ ...query, evaltype: evalType });
+    },
+    [onChange, query]
+  );
+
   return (
     <>
       <QueryEditorRow>
@@ -146,6 +199,17 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
             onChange={onFilterChange('group')}
             createCustomValue={true}
             placeholder="Group name"
+          />
+        </InlineField>
+        <InlineField label="Host tag" labelWidth={12}>
+          <HostTagQueryEditor
+            hostTagFilters={query.hostTags}
+            hostTagOptions={hostTagsOptions}
+            evalTypeValue={query.evaltype}
+            hostTagOptionsLoading={hostTagsLoading}
+            onHostTagFilterChange={onHostTagFilterChange}
+            onHostTagEvalTypeChange={onHostTagEvalTypeChange}
+            version={datasource.zabbix.version}
           />
         </InlineField>
         <InlineField label="Host" labelWidth={12}>
