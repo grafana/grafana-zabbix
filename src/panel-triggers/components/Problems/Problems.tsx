@@ -29,8 +29,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { getDataSourceSrv, reportInteraction } from '@grafana/runtime';
+import { reportInteraction } from '@grafana/runtime';
 import { ProblemDetails } from './ProblemDetails';
+import { getDataSourceName, useDataSourceNames } from '../../datasourceNames';
 import { capitalizeFirstLetter, parseCustomTagColumns } from './utils';
 
 export interface ProblemListProps {
@@ -86,16 +87,6 @@ const buildCustomTagColumns = (customTagColumns?: string) => {
 // the visible text instead of falling back to comparing arrays.
 const joinGroupNames = (groups?: ZBXGroup[]): string => (groups ?? []).map((g) => g.name).join(', ');
 
-// Resolve the datasource name the same way the cell renders it, so sorting
-// matches the visible text instead of comparing refs or raw uids.
-const resolveDatasourceName = (datasource?: DataSourceRef | string): string => {
-  if ((datasource as DataSourceRef)?.uid) {
-    const instance = getDataSourceSrv().getInstanceSettings((datasource as DataSourceRef).uid);
-    return instance?.name ?? String((datasource as DataSourceRef).uid);
-  }
-  return (datasource as string) ?? '';
-};
-
 // Derive the table's sorting state from the "Sort by" panel option, so the panel
 // keeps the configured ordering instead of forcing its own.
 const getSortingFromOption = (sortProblems?: ProblemsPanelOptions['sortProblems']): SortingState => {
@@ -129,6 +120,7 @@ export const ProblemList = (props: ProblemListProps) => {
   } = props;
 
   const rootRef = useRef(null);
+  const datasourceNames = useDataSourceNames(problems.map((problem) => problem.datasource));
 
   // Define columns inside component to access props via closure
   const columns = useMemo(() => {
@@ -252,11 +244,12 @@ export const ProblemList = (props: ProblemListProps) => {
         header: 'Datasource',
         size: 120,
         enableSorting: true,
+        // Sort by the visible name instead of comparing refs or raw uids
         sortingFn: (rowA, rowB) =>
-          resolveDatasourceName(rowA.original.datasource).localeCompare(
-            resolveDatasourceName(rowB.original.datasource)
+          getDataSourceName(rowA.original.datasource, datasourceNames).localeCompare(
+            getDataSourceName(rowB.original.datasource, datasourceNames)
           ),
-        cell: ({ cell }) => <span>{resolveDatasourceName(cell.getValue())}</span>,
+        cell: ({ cell }) => <span>{getDataSourceName(cell.getValue(), datasourceNames)}</span>,
       }),
       columnHelper.accessor('timestamp', {
         id: 'age',
@@ -315,7 +308,7 @@ export const ProblemList = (props: ProblemListProps) => {
         },
       }),
     ];
-  }, [panelOptions]);
+  }, [panelOptions, datasourceNames]);
 
   // Convert resizedColumns from old format to column sizing state
   const getColumnSizingFromResized = (resized?: RTResized): Record<string, number> => {
@@ -581,6 +574,7 @@ export const ProblemList = (props: ProblemListProps) => {
                       <td colSpan={row.getVisibleCells().length}>
                         <ProblemDetails
                           original={row.original}
+                          datasourceName={getDataSourceName(row.original.datasource, datasourceNames)}
                           rootWidth={rootRef?.current?.clientWidth || 0}
                           timeRange={timeRange}
                           showTimeline={panelOptions.problemTimeline}

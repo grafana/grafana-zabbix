@@ -13,7 +13,7 @@ import { ProblemDTO, ZBXTag } from '../../../datasource/types';
 import { ModalController } from '../../../components';
 import { DataSourceRef } from '@grafana/schema';
 import { Tooltip } from '@grafana/ui';
-import { getDataSourceSrv } from '@grafana/runtime';
+import { DataSourceNames, getDataSourceName, getDataSourceNames } from '../../datasourceNames';
 
 interface AlertCardProps {
   problem: ProblemDTO;
@@ -22,7 +22,35 @@ interface AlertCardProps {
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
 }
 
-export default class AlertCard extends PureComponent<AlertCardProps> {
+interface AlertCardState {
+  datasourceNames: DataSourceNames;
+}
+
+export default class AlertCard extends PureComponent<AlertCardProps, AlertCardState> {
+  state: AlertCardState = { datasourceNames: {} };
+  private unmounted = false;
+
+  componentDidMount() {
+    this.loadDatasourceName();
+  }
+
+  componentDidUpdate(prevProps: AlertCardProps) {
+    if (!_.isEqual(prevProps.problem.datasource, this.props.problem.datasource)) {
+      this.loadDatasourceName();
+    }
+  }
+
+  componentWillUnmount() {
+    this.unmounted = true;
+  }
+
+  async loadDatasourceName() {
+    const names = await getDataSourceNames([this.props.problem.datasource]);
+    if (!this.unmounted) {
+      this.setState(({ datasourceNames }) => ({ datasourceNames: { ...datasourceNames, ...names } }));
+    }
+  }
+
   handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (this.props.onTagClick) {
       this.props.onTagClick(tag, datasource, ctrlKey, shiftKey);
@@ -56,11 +84,7 @@ export default class AlertCard extends PureComponent<AlertCardProps> {
     );
     const age = moment.unix(problem.timestamp).fromNow(true);
 
-    let dsName: string = problem.datasource as string;
-    if ((problem.datasource as DataSourceRef)?.uid) {
-      const dsInstance = getDataSourceSrv().getInstanceSettings((problem.datasource as DataSourceRef).uid);
-      dsName = dsInstance.name;
-    }
+    const dsName = getDataSourceName(problem.datasource, this.state.datasourceNames);
 
     let newProblem = false;
     if (panelOptions.highlightNewerThan) {

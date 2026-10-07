@@ -1,4 +1,4 @@
-import { GetDataSourceListFilters, getDataSourceSrv } from '@grafana/runtime';
+import { getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
 import _ from 'lodash';
 import * as c from './constants';
 import { ZabbixDSOptions } from './types/config';
@@ -188,7 +188,7 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
     const dbConnectionOptions = jsonData.dbConnection;
     jsonData.dbConnectionEnable = dbConnectionOptions.enable || false;
     if (!jsonData.dbConnectionDatasourceUID && dbConnectionOptions.datasourceId > 0) {
-      jsonData.dbConnectionDatasourceUID = getUIDFromID(dbConnectionOptions.datasourceId);
+      jsonData.dbConnectionDatasourceId = dbConnectionOptions.datasourceId;
     }
     delete jsonData.dbConnection;
   }
@@ -198,17 +198,11 @@ export function migrateDSConfig(jsonData: ZabbixDSOptions) {
     jsonData.timeout = jsonData.timeout === '' ? null : Number(jsonData.timeout);
   }
 
-  // Migrate numeric datasource ID to UID
-  if (!jsonData.dbConnectionDatasourceUID && jsonData.dbConnectionDatasourceId > 0) {
-    const dbConnectionDatasourceUID = getUIDFromID(jsonData.dbConnectionDatasourceId);
-    if (!dbConnectionDatasourceUID) {
-      throw new Error(
-        `Error retrieving direct db connection data source. Data source with id ${jsonData.dbConnectionDatasourceId} not found`
-      );
-    }
-    jsonData.dbConnectionDatasourceUID = dbConnectionDatasourceUID;
+  // A numeric datasource ID can only be resolved to a UID asynchronously, so it is kept
+  // until the DB connector is initialized (see Zabbix.initDBConnector)
+  if (jsonData.dbConnectionDatasourceUID || !(jsonData.dbConnectionDatasourceId > 0)) {
+    delete jsonData.dbConnectionDatasourceId;
   }
-  delete jsonData.dbConnectionDatasourceId;
 
   jsonData.schema = DS_CONFIG_SCHEMA;
   return jsonData;
@@ -245,12 +239,8 @@ export const prepareAnnotation = (json: any) => {
   return json;
 };
 
-// exporting for testing purposes only
-export function getUIDFromID(id: number): string | undefined {
-  const dsFilters: GetDataSourceListFilters = {
-    all: true,
-  };
-  const dsList = getDataSourceSrv().getList(dsFilters);
-  const datasource = dsList.find((ds) => ds.id === id);
-  return datasource?.uid;
+export async function getUIDFromID(id: number): Promise<string | undefined> {
+  // Data source list items don't include the numeric ID, but settings can be looked up by it
+  const datasource = await getDataSourceInstanceSettings(String(id));
+  return datasource?.id === id ? datasource.uid : undefined;
 }

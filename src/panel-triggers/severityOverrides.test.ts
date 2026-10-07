@@ -28,7 +28,7 @@ const registry: Record<string, DataSourceInstanceSettings> = {
   prom: otherDs,
 };
 
-const getInstanceSettings = (ref: any) => {
+const getInstanceSettings = async (ref: any) => {
   const uid = typeof ref === 'string' ? ref : ref?.uid;
   return registry[uid];
 };
@@ -36,21 +36,24 @@ const getInstanceSettings = (ref: any) => {
 const target = (uid?: string) => ({ refId: 'A', datasource: uid ? { uid, type: ZABBIX_DS_ID } : undefined });
 
 describe('collectSeverityOverrides', () => {
-  it('returns nothing when there are no targets', () => {
-    expect(collectSeverityOverrides(undefined, getInstanceSettings)).toEqual({ overrides: [], datasourceNames: [] });
-    expect(collectSeverityOverrides([], getInstanceSettings)).toEqual({ overrides: [], datasourceNames: [] });
+  it('returns nothing when there are no targets', async () => {
+    expect(await collectSeverityOverrides(undefined, getInstanceSettings)).toEqual({
+      overrides: [],
+      datasourceNames: [],
+    });
+    expect(await collectSeverityOverrides([], getInstanceSettings)).toEqual({ overrides: [], datasourceNames: [] });
   });
 
-  it('skips targets without a data source, non-Zabbix data sources and data sources without overrides', () => {
-    const result = collectSeverityOverrides(
+  it('skips targets without a data source, non-Zabbix data sources and data sources without overrides', async () => {
+    const result = await collectSeverityOverrides(
       [target(), target('prom'), target('zbx-none'), target('missing')],
       getInstanceSettings
     );
     expect(result).toEqual({ overrides: [], datasourceNames: [] });
   });
 
-  it('reads overrides from the Zabbix data source of the target', () => {
-    const result = collectSeverityOverrides([target('zbx-a')], getInstanceSettings);
+  it('reads overrides from the Zabbix data source of the target', async () => {
+    const result = await collectSeverityOverrides([target('zbx-a')], getInstanceSettings);
     expect(result.datasourceNames).toEqual(['Zabbix A']);
     expect(result.overrides).toEqual([
       { priority: 4, name: 'Critical', color: 'rgb(200, 0, 0)' },
@@ -58,8 +61,11 @@ describe('collectSeverityOverrides', () => {
     ]);
   });
 
-  it('merges several data sources, first target wins per field, blank values are ignored', () => {
-    const result = collectSeverityOverrides([target('zbx-b'), target('zbx-a'), target('zbx-b')], getInstanceSettings);
+  it('merges several data sources, first target wins per field, blank values are ignored', async () => {
+    const result = await collectSeverityOverrides(
+      [target('zbx-b'), target('zbx-a'), target('zbx-b')],
+      getInstanceSettings
+    );
     expect(result.datasourceNames).toEqual(['Zabbix B', 'Zabbix A']);
     expect(result.overrides).toEqual([
       { priority: 4, name: 'Major', color: 'rgb(200, 0, 0)' },
@@ -67,8 +73,14 @@ describe('collectSeverityOverrides', () => {
     ]);
   });
 
-  it('accepts string data source references', () => {
-    const result = collectSeverityOverrides([{ refId: 'A', datasource: 'zbx-a' } as any], getInstanceSettings);
+  it('accepts string data source references', async () => {
+    const result = await collectSeverityOverrides([{ refId: 'A', datasource: 'zbx-a' } as any], getInstanceSettings);
+    expect(result.datasourceNames).toEqual(['Zabbix A']);
+  });
+
+  it('skips data sources whose settings fail to load', async () => {
+    const failing = async (ref: any) => (ref?.uid === 'zbx-b' ? Promise.reject(new Error('boom')) : registry[ref?.uid]);
+    const result = await collectSeverityOverrides([target('zbx-b'), target('zbx-a')], failing);
     expect(result.datasourceNames).toEqual(['Zabbix A']);
   });
 });
@@ -169,8 +181,11 @@ describe('applySeverityOverrides', () => {
 });
 
 describe('resolveSeverity', () => {
-  it('returns the effective severity and the applied overrides', () => {
-    const result = resolveSeverity(DEFAULT_SEVERITY, [target('zbx-a')], getInstanceSettings);
+  it('returns the effective severity and the applied overrides', async () => {
+    const result = resolveSeverity(
+      DEFAULT_SEVERITY,
+      await collectSeverityOverrides([target('zbx-a')], getInstanceSettings)
+    );
     expect(result.severity[4].severity).toBe('Critical');
     expect(result.globalSeverityOverrides).toEqual({
       datasourceNames: ['Zabbix A'],
@@ -181,8 +196,11 @@ describe('resolveSeverity', () => {
     });
   });
 
-  it('omits the override state when nothing applies', () => {
-    const result = resolveSeverity(DEFAULT_SEVERITY, [target('zbx-none')], getInstanceSettings);
+  it('omits the override state when nothing applies', async () => {
+    const result = resolveSeverity(
+      DEFAULT_SEVERITY,
+      await collectSeverityOverrides([target('zbx-none')], getInstanceSettings)
+    );
     expect(result.severity).toBe(DEFAULT_SEVERITY);
     expect(result.globalSeverityOverrides).toBeUndefined();
   });
