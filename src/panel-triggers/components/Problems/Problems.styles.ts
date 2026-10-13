@@ -180,6 +180,10 @@ export const getStyles = (theme: GrafanaTheme2) => {
       '&:first-of-type': {
         paddingLeft: theme.spacing(2),
       },
+      // The severity "box" style fills the whole cell
+      '&.problem-severity': {
+        position: 'relative',
+      },
     }),
     expandedCell: css({
       padding: 0,

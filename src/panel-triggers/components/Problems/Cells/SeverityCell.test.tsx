@@ -10,46 +10,73 @@ const makeCell = (value: string, original: Partial<ProblemDTO>) =>
   ({ getValue: () => value, row: { original } }) as unknown as Cell<ProblemDTO, string>;
 
 describe('SeverityCell', () => {
-  it('renders the configured severity name in its colour', () => {
-    render(
-      <SeverityCell cell={makeCell('1', { severity: '3', acknowledged: '0' })} problemSeverityDesc={DEFAULT_SEVERITY} />
-    );
+  describe('box style (default)', () => {
+    it('fills the cell with the configured severity colour', () => {
+      render(
+        <SeverityCell
+          cell={makeCell('1', { severity: '3', acknowledged: '0' })}
+          problemSeverityDesc={DEFAULT_SEVERITY}
+        />
+      );
 
-    const pill = screen.getByText('Average').parentElement!;
-    expect(pill).toHaveStyle({ color: 'rgb(255, 137, 30)' });
-    expect(pill.style.background).toContain('rgba(255, 137, 30, 0.15)');
+      const box = screen.getByTestId('severity-box');
+      expect(box).toHaveTextContent('Average');
+      expect(box).toHaveStyle({ background: 'rgb(255, 137, 30)' });
+    });
+
+    it('uses the OK colour for resolved problems', () => {
+      render(
+        <SeverityCell
+          cell={makeCell('0', { severity: '4', acknowledged: '0' })}
+          problemSeverityDesc={DEFAULT_SEVERITY}
+          okColor="rgb(1, 2, 3)"
+        />
+      );
+
+      expect(screen.getByTestId('severity-box')).toHaveStyle({ background: 'rgb(1, 2, 3)' });
+    });
+
+    it('uses the ack colour for acknowledged problems when markAckEvents is on', () => {
+      render(
+        <SeverityCell
+          cell={makeCell('1', { severity: '4', acknowledged: '1' })}
+          problemSeverityDesc={DEFAULT_SEVERITY}
+          markAckEvents
+          ackEventColor="rgb(9, 8, 7)"
+        />
+      );
+
+      expect(screen.getByTestId('severity-box')).toHaveStyle({ background: 'rgb(9, 8, 7)' });
+    });
   });
 
-  it('uses the panel severity options rather than the defaults', () => {
-    const custom = [{ priority: 3, severity: 'Medium', color: '#123456', show: true }];
-    render(<SeverityCell cell={makeCell('1', { severity: '3', acknowledged: '0' })} problemSeverityDesc={custom} />);
+  describe('pill style', () => {
+    it('renders the severity name in its colour over a tint', () => {
+      render(
+        <SeverityCell
+          cell={makeCell('1', { severity: '3', acknowledged: '0' })}
+          problemSeverityDesc={DEFAULT_SEVERITY}
+          variant="pill"
+        />
+      );
 
-    expect(screen.getByText('Medium').parentElement).toHaveStyle({ color: '#123456' });
-  });
+      const pill = screen.getByText('Average').parentElement!;
+      expect(pill).toHaveStyle({ color: 'rgb(255, 137, 30)' });
+      expect(pill.style.background).toContain('rgba(255, 137, 30, 0.15)');
+    });
 
-  it('uses the OK colour for resolved problems', () => {
-    render(
-      <SeverityCell
-        cell={makeCell('0', { severity: '4', acknowledged: '0' })}
-        problemSeverityDesc={DEFAULT_SEVERITY}
-        okColor="rgb(1, 2, 3)"
-      />
-    );
+    it('uses the panel severity options rather than the defaults', () => {
+      const custom = [{ priority: 3, severity: 'Medium', color: '#123456', show: true }];
+      render(
+        <SeverityCell
+          cell={makeCell('1', { severity: '3', acknowledged: '0' })}
+          problemSeverityDesc={custom}
+          variant="pill"
+        />
+      );
 
-    expect(screen.getByText('High').parentElement).toHaveStyle({ color: 'rgb(1, 2, 3)' });
-  });
-
-  it('uses the ack colour for acknowledged problems when markAckEvents is on', () => {
-    render(
-      <SeverityCell
-        cell={makeCell('1', { severity: '4', acknowledged: '1' })}
-        problemSeverityDesc={DEFAULT_SEVERITY}
-        markAckEvents
-        ackEventColor="rgb(9, 8, 7)"
-      />
-    );
-
-    expect(screen.getByText('High').parentElement).toHaveStyle({ color: 'rgb(9, 8, 7)' });
+      expect(screen.getByText('Medium').parentElement).toHaveStyle({ color: '#123456' });
+    });
   });
 
   it('falls back to the raw severity when it is not in the options', () => {

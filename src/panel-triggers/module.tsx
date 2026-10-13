@@ -126,6 +126,20 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         defaultValue: [],
         showIf: (options) => options.layout === 'table',
       })
+      .addRadio({
+        path: 'severityStyle',
+        name: 'Severity style',
+        description: 'Box fills the cell with the severity colour for quick scanning; Pill is a tinted badge.',
+        defaultValue: defaultPanelOptions.severityStyle,
+        settings: {
+          options: [
+            { value: 'box', label: 'Box' },
+            { value: 'pill', label: 'Pill' },
+          ],
+        },
+        category: ['Colors'],
+        showIf: (options) => options.layout === 'table',
+      })
       .addCustomEditor({
         id: 'triggerColors',
         path: 'triggerSeverity',

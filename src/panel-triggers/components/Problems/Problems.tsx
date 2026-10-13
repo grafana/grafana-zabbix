@@ -233,6 +233,7 @@ export const ProblemList = (props: ProblemListProps) => {
             markAckEvents={panelOptions.markAckEvents}
             ackEventColor={panelOptions.ackEventColor}
             okColor={panelOptions.okEventColor}
+            variant={panelOptions.severityStyle ?? 'box'}
           />
         ),
       }),

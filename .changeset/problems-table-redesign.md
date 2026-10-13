@@ -2,4 +2,4 @@
 'grafana-zabbix': minor
 ---
 
-feat(problems): redesign the Problems panel table with Grafana theme styling; severity pills, status dots, two-line host/problem cells, tag chips, compact age, restyled expanded row, data links on the problem description, "auto" page size that fits the panel height (default for new panels)
+feat(problems): redesign the Problems panel table with Grafana theme styling; severity as a colour box (default) or pill, status dots, two-line host/problem cells, tag chips, compact age, restyled expanded row, data links on the problem description, "auto" page size that fits the panel height (default for new panels)
