@@ -297,6 +297,22 @@ These errors occur when executing queries against the Zabbix data source.
 1. Increase the **Timeout** or **Query Timeout** values in the data source configuration if the defaults are too low for your environment.
 1. Use `groupBy` or `consolidateBy` functions to reduce the data point density.
 
+### "received message larger than max" or ResourceExhausted errors
+
+**Symptoms:**
+
+- A panel or the Problems panel fails to load, while the same query works for a smaller time range or fewer hosts.
+- The Grafana logs contain an error such as `rpc error: code = ResourceExhausted desc = grpc: received message larger than max`.
+
+**Cause:**
+
+Grafana and the Zabbix backend plugin exchange data over gRPC. The plugin limits the size of a single gRPC message to 32 MB for requests it receives from Grafana and 100 MB for responses it sends back. A very large result set exceeds one of these limits.
+
+**Solutions:**
+
+1. Reduce the size of the result: narrow the time range, enable trends, use Direct DB Connection for server-side aggregation, set a **Limit** on Problems queries, or use more specific group, host, and item filters.
+1. If the result is legitimately large, raise the limits with the `grpc_max_receive_msg_size_mb` and `grpc_max_send_msg_size_mb` settings in the `[plugin.alexanderzobnin-zabbix-datasource]` section of the Grafana configuration file, then restart Grafana. Refer to [Configure gRPC message size limits](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-grpc-message-size-limits).
+
 ### Incorrect data or unexpected values
 
 **Symptoms:**
