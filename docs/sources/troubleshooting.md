@@ -144,6 +144,7 @@ These errors occur when Grafana can't reach the Zabbix API endpoint.
 | Firewall or network restrictions | Verify the Grafana server can reach the Zabbix server on the configured port. Check firewall rules for outbound HTTP/HTTPS access. |
 | HTTPS certificate issues | If using HTTPS, verify the certificate is valid. To skip TLS verification (not recommended for production), enable **Skip TLS Verify** in the data source configuration. |
 | Zabbix API disabled | Verify the Zabbix API is enabled. In newer versions of Zabbix, the API is enabled by default, but it may be restricted by web server configuration. |
+| Authorization header forwarding not enabled on Zabbix | [Configure Apache/NGINX to forward authorization headers to Zabbix](https://www.zabbix.com/documentation/current/en/manual/installation/known_issues#authorization-header-forwarding) |
 
 ### Proxy or CORS errors
 
@@ -243,6 +244,21 @@ Zabbix temporarily blocks a user after several consecutive failed login attempts
 1. Use an API token instead of a username and password to avoid login-attempt limits. Refer to [Configure authentication](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-authentication).
 1. Update the plugin to a current version. Older versions opened many more connections and sessions per dashboard load, which made login-limit blocks more likely.
 1. In Zabbix, review the failed-login settings and unblock the user if needed.
+
+### "Could not connect to given url" / "Invalid params" after plugin upgrade
+
+**Symptoms:**
+
+- A previously working setup stops working after upgrading to `grafana-zabbix` >= v6.3.1
+
+**Cause:**
+
+- From v6.3.1 the plugin stopped sending auth in the JSON-RPC body for Zabbix >= 7.0, now it only sends an `Authorization: Bearer <token>` header.
+
+**Solution:**
+
+- [Configure Apache/NGINX to forward authorization headers to Zabbix](https://www.zabbix.com/documentation/current/en/manual/installation/known_issues#authorization-header-forwarding)
+  * For example in Apache add the directive `CGIPassAuth On` or `SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1`.
 
 ### Authentication fails or logs show an "/auth" deprecation on Zabbix 7.0 or later
 
