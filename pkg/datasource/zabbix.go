@@ -127,10 +127,11 @@ func (ds *ZabbixDatasourceInstance) applyDataProcessing(ctx context.Context, que
 	consolidateBy := ds.getConsolidateBy(query)
 	useTrend := ds.isUseTrend(query.TimeRange, query)
 
-	// Sort trend data (in some cases Zabbix API returns it unsorted)
-	if useTrend {
-		sortSeriesPoints(series)
-	}
+	// The data plane contract requires the time field to be sorted ascending. Zabbix
+	// sorts history by clock (second precision only, so sub-second points may still be
+	// out of order) and returns trend data unsorted in some cases. Sorting is a no-op
+	// for already sorted series.
+	sortSeriesPoints(series)
 
 	// Align time series data if possible
 	disableDataAlignment := query.Options.DisableDataAlignment || ds.Settings.DisableDataAlignment || query.QueryType == MODE_ITSERVICE
