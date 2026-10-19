@@ -510,6 +510,22 @@ export function buildProblemNameSearchParams(filter?: string): {
   return { search: { name: filter } };
 }
 
+/**
+ * Returns substrings such that every item name matched by `filter` contains at least
+ * one of them, for a Zabbix `search` (OR) pre-filter on item names, or undefined when no
+ * safe narrowing exists. Unlike problem names, wildcards get no special meaning: item
+ * filters are either a regex or an exact name.
+ */
+export function getItemNameSearchValues(filter?: string): string[] | undefined {
+  if (!filter) {
+    return undefined;
+  }
+  if (!isRegex(filter)) {
+    return [filter];
+  }
+  return extractRegexLiterals(filter) ?? undefined;
+}
+
 // Need for template variables replace
 // From Grafana's templateSrv.js
 export function escapeRegex(value) {

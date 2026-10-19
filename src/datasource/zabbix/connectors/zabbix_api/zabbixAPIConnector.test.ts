@@ -72,6 +72,43 @@ describe('Zabbix API connector', () => {
     });
   });
 
+  describe('getItems function', () => {
+    const createConnector = () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      return zabbixAPIConnector;
+    };
+
+    it('should select tags and send no name search by default', async () => {
+      const zabbixAPIConnector = createConnector();
+
+      await zabbixAPIConnector.getItems(['1'], undefined, 'num');
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.selectTags).toBe('extend');
+      expect(params.search).toBeUndefined();
+      expect(params.searchByAny).toBeUndefined();
+    });
+
+    it('should search item names, keeping items with unexpanded macros', async () => {
+      const zabbixAPIConnector = createConnector();
+
+      await zabbixAPIConnector.getItems(['1'], undefined, undefined, undefined, { nameSearch: ['CPU', 'Memory'] });
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.search).toEqual({ name: ['CPU', 'Memory', '$'] });
+      expect(params.searchByAny).toBe(true);
+    });
+
+    it('should skip tags when selectTags is false but still filter by tag', async () => {
+      const zabbixAPIConnector = createConnector();
+
+      await zabbixAPIConnector.getItems(['1'], undefined, undefined, 'component: cpu', { selectTags: false });
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.selectTags).toBeUndefined();
+      expect(params.tags).toEqual([{ tag: 'component', value: 'cpu', operator: '1' }]);
+    });
+  });
+
   describe('getHostAlerts function', () => {
     it('should return number when count is enabled and acknowledged is 1 and version is 7 or greater', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
