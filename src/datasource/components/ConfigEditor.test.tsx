@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfigEditor, Props } from './ConfigEditor';
 
@@ -169,6 +169,73 @@ describe('ConfigEditor', () => {
         })
       );
     });
+  });
+});
+
+describe('ConfigEditor severity overrides', () => {
+  it('renders one row per severity with the default name as placeholder', () => {
+    render(<ConfigEditor options={getDefaultOptions()} onOptionsChange={jest.fn()} />);
+
+    expect(screen.getByText('Problem severity')).toBeInTheDocument();
+    for (const name of ['Not classified', 'Information', 'Warning', 'Average', 'High', 'Disaster']) {
+      expect(screen.getByPlaceholderText(name)).toHaveValue('');
+    }
+  });
+
+  it('stores a name override and drops the entry again when the name is cleared', () => {
+    const onOptionsChange = jest.fn();
+    const options = getDefaultOptions();
+    render(<ConfigEditor options={options} onOptionsChange={onOptionsChange} />);
+    onOptionsChange.mockClear();
+
+    fireEvent.change(screen.getByLabelText('High name override'), { target: { value: 'Critical' } });
+    expect(onOptionsChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        jsonData: expect.objectContaining({ severityOverrides: [{ priority: 4, name: 'Critical' }] }),
+      })
+    );
+
+    const withOverride = {
+      ...options,
+      jsonData: { ...options.jsonData, severityOverrides: [{ priority: 4, name: 'Critical' }] },
+    };
+    onOptionsChange.mockClear();
+    render(<ConfigEditor options={withOverride} onOptionsChange={onOptionsChange} />);
+    onOptionsChange.mockClear();
+    const input = screen.getAllByLabelText('High name override')[1];
+    expect(input).toHaveValue('Critical');
+    fireEvent.change(input, { target: { value: '' } });
+    expect(onOptionsChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ jsonData: expect.objectContaining({ severityOverrides: undefined }) })
+    );
+  });
+
+  it('resets a color override and keeps the name of the same severity', () => {
+    const onOptionsChange = jest.fn();
+    const options = getDefaultOptions();
+    options.jsonData = {
+      ...options.jsonData,
+      severityOverrides: [
+        { priority: 2, color: '#ffff00' },
+        { priority: 5, name: 'Outage', color: '#000000' },
+      ],
+    };
+    render(<ConfigEditor options={options} onOptionsChange={onOptionsChange} />);
+    onOptionsChange.mockClear();
+
+    fireEvent.click(screen.getByLabelText('Reset Disaster color to default'));
+    expect(onOptionsChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        jsonData: expect.objectContaining({
+          severityOverrides: [
+            { priority: 2, color: '#ffff00' },
+            { priority: 5, name: 'Outage' },
+          ],
+        }),
+      })
+    );
+    // no reset button for severities without a color override
+    expect(screen.queryByLabelText('Reset High color to default')).not.toBeInTheDocument();
   });
 });
 

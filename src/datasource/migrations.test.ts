@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import { getDataSourceSrv } from '@grafana/runtime';
-import { getUIDFromID, migrateDSConfig, DS_CONFIG_SCHEMA } from './migrations';
+import { getUIDFromID, migrate, migrateDSConfig, DS_CONFIG_SCHEMA, DS_QUERY_SCHEMA } from './migrations';
+import { problemTagsToQueryParam } from './utils';
+import * as c from './constants';
 
 // Mock getDataSourceSrv from @grafana/runtime
 jest.mock('@grafana/runtime', () => ({
@@ -136,6 +138,71 @@ describe('Migrations', () => {
       expect(ctx.jsonData).toMatchObject(originalConf);
       expect(ctx.jsonData.dbConnectionEnable).toBe(true);
       expect(ctx.jsonData.dbConnectionDatasourceName).toBeDefined();
+    });
+  });
+
+  describe('When migrating problem tag filters (schema 13)', () => {
+    const problemsTarget = (overrides: any = {}) => ({
+      schema: 12,
+      queryType: c.MODE_PROBLEMS,
+      group: { filter: '' },
+      host: { filter: '' },
+      application: { filter: '' },
+      item: { filter: '' },
+      macro: { filter: '' },
+      options: {},
+      tags: { filter: 'environment:production, service' },
+      ...overrides,
+    });
+
+    it('should convert the free-text tags filter to structured filters with the Equals operator', () => {
+      const target = migrate(problemsTarget());
+
+      expect(target.problemTags).toEqual([
+        { tag: 'environment', value: 'production', operator: '1' },
+        { tag: 'service', value: '', operator: '1' },
+      ]);
+      expect(target.tags.filter).toBe('');
+      expect(target.schema).toBe(DS_QUERY_SCHEMA);
+    });
+
+    it('should produce the exact tags param the legacy text filter sent to the API', () => {
+      // Regression guard: dashboards saved before schema 13 must keep returning the
+      // same problems. The old code parsed the text filter and sent every tag with
+      // operator 1 (Equal) — the migrated structured filters must yield the same param.
+      const target = migrate(problemsTarget());
+
+      expect(problemTagsToQueryParam(target.problemTags)).toEqual([
+        { tag: 'environment', value: 'production', operator: 1 },
+        { tag: 'service', value: '', operator: 1 },
+      ]);
+    });
+
+    it('should not touch the tags filter of triggers targets', () => {
+      const target = migrate(problemsTarget({ queryType: c.MODE_TRIGGERS }));
+
+      expect(target.problemTags).toBeUndefined();
+      expect(target.tags.filter).toBe('environment:production, service');
+    });
+
+    it('should not overwrite existing structured filters', () => {
+      const problemTags = [{ tag: 'app', value: 'db', operator: '4' }];
+      const target = migrate(problemsTarget({ problemTags }));
+
+      expect(target.problemTags).toEqual(problemTags);
+    });
+
+    it('should not run again when schema is up to date', () => {
+      const target = migrate(problemsTarget({ schema: 13 }));
+
+      expect(target.problemTags).toBeUndefined();
+      expect(target.tags.filter).toBe('environment:production, service');
+    });
+
+    it('should leave targets without a tags filter unchanged', () => {
+      const target = migrate(problemsTarget({ tags: { filter: '' } }));
+
+      expect(target.problemTags).toBeUndefined();
     });
   });
 

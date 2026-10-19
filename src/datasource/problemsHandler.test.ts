@@ -1,4 +1,102 @@
-import { expandItemMacros, expandUserMacros, filterTriggersPre, hasUserMacro } from './problemsHandler';
+import {
+  addTriggerHostIps,
+  expandItemMacros,
+  expandUserMacros,
+  filterTriggersPre,
+  hasUserMacro,
+} from './problemsHandler';
+import { ZBXHost } from './types';
+
+describe('addTriggerHostIps', () => {
+  const problem = (hostid?: string): { hosts: ZBXHost[] } => ({
+    hosts: hostid ? [{ hostid, name: `Host ${hostid}`, host: `host-${hostid}` }] : [],
+  });
+
+  it('sets the IP of a single IP-based interface', () => {
+    const problems = [problem('10001')];
+    const hostInterfaces = [{ hostid: '10001', interfaces: [{ ip: '192.168.1.10', useip: '1' }] }];
+
+    addTriggerHostIps(problems, hostInterfaces);
+    expect(problems[0].hosts[0].hostIp).toBe('192.168.1.10');
+  });
+
+  it('joins multiple IP-based interfaces comma-separated', () => {
+    const problems = [problem('10001')];
+    const hostInterfaces = [
+      {
+        hostid: '10001',
+        interfaces: [
+          { ip: '192.168.1.10', useip: '1' },
+          { ip: '10.0.0.5', useip: '1' },
+        ],
+      },
+    ];
+
+    addTriggerHostIps(problems, hostInterfaces);
+    expect(problems[0].hosts[0].hostIp).toBe('192.168.1.10, 10.0.0.5');
+  });
+
+  it('sets an empty string when the host has no interfaces', () => {
+    const problems = [problem('10001')];
+    const hostInterfaces = [{ hostid: '10001', interfaces: [] }];
+
+    addTriggerHostIps(problems, hostInterfaces);
+    expect(problems[0].hosts[0].hostIp).toBe('');
+  });
+
+  it('sets an empty string when interfaces connect via DNS instead of IP', () => {
+    const problems = [problem('10001')];
+    const hostInterfaces = [
+      { hostid: '10001', interfaces: [{ ip: '192.168.1.10', dns: 'server.example.com', useip: '0' }] },
+    ];
+
+    addTriggerHostIps(problems, hostInterfaces);
+    expect(problems[0].hosts[0].hostIp).toBe('');
+  });
+
+  it('skips DNS-based and empty-IP interfaces but keeps IP-based ones', () => {
+    const problems = [problem('10001')];
+    const hostInterfaces = [
+      {
+        hostid: '10001',
+        interfaces: [
+          { ip: '', dns: 'server.example.com', useip: '0' },
+          { ip: '192.168.1.10', useip: '1' },
+          { ip: '', useip: '1' },
+        ],
+      },
+    ];
+
+    addTriggerHostIps(problems, hostInterfaces);
+    expect(problems[0].hosts[0].hostIp).toBe('192.168.1.10');
+  });
+
+  it('sets an empty string when the host is missing from the interfaces response', () => {
+    const problems = [problem('10001')];
+
+    addTriggerHostIps(problems, []);
+    expect(problems[0].hosts[0].hostIp).toBe('');
+  });
+
+  it('ignores problems without hosts', () => {
+    const problems = [problem(undefined)];
+
+    expect(() => addTriggerHostIps(problems, [])).not.toThrow();
+    expect(problems[0].hosts).toHaveLength(0);
+  });
+
+  it('maps interfaces to the matching host of each problem', () => {
+    const problems = [problem('10001'), problem('10002')];
+    const hostInterfaces = [
+      { hostid: '10001', interfaces: [{ ip: '192.168.1.10', useip: '1' }] },
+      { hostid: '10002', interfaces: [{ ip: '10.0.0.5', useip: '1' }] },
+    ];
+
+    addTriggerHostIps(problems, hostInterfaces);
+    expect(problems[0].hosts[0].hostIp).toBe('192.168.1.10');
+    expect(problems[1].hosts[0].hostIp).toBe('10.0.0.5');
+  });
+});
 
 describe('expandItemMacros', () => {
   const item = (historicalValue?: string, originalLastvalue?: string) => ({ historicalValue, originalLastvalue });

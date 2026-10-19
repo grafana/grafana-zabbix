@@ -4,8 +4,11 @@ import {
   extractRegexLiterals,
   getItemNameSearchValues,
   matchesProblemName,
+  parseLegacyProblemTags,
+  problemTagsToQueryParam,
   wildcardToRegex,
 } from './utils';
+import { TagOperatorValue } from './components/QueryEditor/types';
 
 describe('wildcardToRegex', () => {
   it('matches a prefix wildcard, anchored and case-insensitive', () => {
@@ -225,5 +228,77 @@ describe('getItemNameSearchValues', () => {
   it('returns undefined when no safe literal exists', () => {
     expect(getItemNameSearchValues('/.*/')).toBeUndefined();
     expect(getItemNameSearchValues('/^(?!.*Zabbix agent).*/')).toBeUndefined();
+  });
+});
+
+describe('parseLegacyProblemTags', () => {
+  it('converts the free-text filter to structured filters with the Equals operator', () => {
+    expect(parseLegacyProblemTags('environment:production, service:web')).toEqual([
+      { tag: 'environment', value: 'production', operator: TagOperatorValue.Equals },
+      { tag: 'service', value: 'web', operator: TagOperatorValue.Equals },
+    ]);
+  });
+
+  it('defaults a missing value to an empty string', () => {
+    expect(parseLegacyProblemTags('environment')).toEqual([
+      { tag: 'environment', value: '', operator: TagOperatorValue.Equals },
+    ]);
+  });
+
+  it('returns an empty list for an empty filter', () => {
+    expect(parseLegacyProblemTags('')).toEqual([]);
+  });
+});
+
+describe('problemTagsToQueryParam', () => {
+  it('converts operators to the numbers Zabbix expects', () => {
+    expect(
+      problemTagsToQueryParam([
+        { tag: 'environment', value: 'production', operator: TagOperatorValue.Contains },
+        { tag: 'service', value: 'web', operator: TagOperatorValue.DoesNotEqual },
+      ])
+    ).toEqual([
+      { tag: 'environment', value: 'production', operator: 0 },
+      { tag: 'service', value: 'web', operator: 3 },
+    ]);
+  });
+
+  it('omits the value for Exists and Does not exist', () => {
+    expect(
+      problemTagsToQueryParam([
+        { tag: 'environment', value: 'ignored', operator: TagOperatorValue.Exists },
+        { tag: 'service', value: '', operator: TagOperatorValue.DoesNotExist },
+      ])
+    ).toEqual([
+      { tag: 'environment', operator: 4 },
+      { tag: 'service', operator: 5 },
+    ]);
+  });
+
+  it('skips filters without a tag name', () => {
+    expect(problemTagsToQueryParam([{ tag: '', value: 'production', operator: TagOperatorValue.Contains }])).toEqual(
+      []
+    );
+  });
+
+  it('trims regex-like anchors produced by variable interpolation', () => {
+    expect(
+      problemTagsToQueryParam([{ tag: '/^environment$/', value: '/^production$/', operator: '1' as any }])
+    ).toEqual([{ tag: 'environment', value: 'production', operator: 1 }]);
+  });
+
+  it('expands a variable that interpolated to the legacy "tag:value" text format', () => {
+    expect(
+      problemTagsToQueryParam([{ tag: 'environment:production, service:web', value: '', operator: '1' as any }])
+    ).toEqual([
+      { tag: 'environment', value: 'production', operator: 1 },
+      { tag: 'service', value: 'web', operator: 1 },
+    ]);
+  });
+
+  it('keeps a colon in the tag name when a value is set', () => {
+    expect(problemTagsToQueryParam([{ tag: 'app:component', value: 'db', operator: '0' as any }])).toEqual([
+      { tag: 'app:component', value: 'db', operator: 0 },
+    ]);
   });
 });

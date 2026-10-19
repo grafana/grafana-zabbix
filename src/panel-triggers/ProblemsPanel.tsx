@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import _ from 'lodash';
 import { dateMath, PanelProps, OrgRole } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { getDataSourceSrv, config } from '@grafana/runtime';
+import { usePanelContext } from '@grafana/ui';
 import { ProblemsPanelOptions, RTResized } from './types';
+import { ProblemsPanelInstanceState, resolveSeverity } from './severityOverrides';
 import { ZabbixMetricsQuery } from '../datasource/types/query';
+import { TagOperatorValue } from '../datasource/components/QueryEditor/types';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
 import { APIExecuteScriptResponse } from '../datasource/zabbix/connectors/zabbix_api/types';
 import { ProblemList } from './components/Problems/Problems';
@@ -17,7 +20,32 @@ interface ProblemsPanelProps extends PanelProps<ProblemsPanelOptions> {}
 
 export const ProblemsPanel = (props: ProblemsPanelProps) => {
   const { data, options, timeRange, onOptionsChange } = props;
-  const { layout, showTriggers, triggerSeverity, sortProblems } = options;
+  const { layout, showTriggers, sortProblems } = options;
+  const panelContext = usePanelContext();
+
+  // Apply global severity overrides defined in the Zabbix data source(s) this panel queries.
+  // Names and colors customized in the panel itself take precedence over the global ones.
+  const targets = data?.request?.targets;
+  const { severity: triggerSeverity, globalSeverityOverrides } = useMemo(
+    () => resolveSeverity(options.triggerSeverity, targets, (ref) => getDataSourceSrv().getInstanceSettings(ref)),
+    [options.triggerSeverity, targets]
+  );
+  const effectiveOptions = useMemo<ProblemsPanelOptions>(
+    () => (triggerSeverity === options.triggerSeverity ? options : { ...options, triggerSeverity }),
+    [options, triggerSeverity]
+  );
+
+  // Share the applied overrides with the panel options editor so it can flag them.
+  const onInstanceStateChange = panelContext?.onInstanceStateChange;
+  const instanceStateKey = JSON.stringify(globalSeverityOverrides ?? null);
+  useEffect(() => {
+    if (!onInstanceStateChange) {
+      return;
+    }
+    const state: ProblemsPanelInstanceState = { globalSeverityOverrides };
+    onInstanceStateChange(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onInstanceStateChange, instanceStateKey]);
 
   const prepareProblems = () => {
     const problems: ProblemDTO[] = [];
@@ -84,6 +112,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       const host = trigger.hosts[0];
       trigger.host = host.name;
       trigger.hostTechName = host.host;
+      trigger.hostIp = host.hostIp;
       if (host.proxy) {
         trigger.proxy = host.proxy;
       }
@@ -127,13 +156,21 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     let updated = false;
     for (const target of targets) {
       if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
-        const tagFilter = (target as ZabbixMetricsQuery).tags?.filter!;
-        let targetTags = parseTags(tagFilter);
-        const newTag = { tag: tag.tag, value: tag.value };
-        targetTags.push(newTag);
-        targetTags = _.uniqWith(targetTags, _.isEqual);
-        const newFilter = tagsToString(targetTags);
-        (target as ZabbixMetricsQuery).tags!.filter = newFilter;
+        const query = target as ZabbixMetricsQuery;
+        if (query.problemTags) {
+          // Structured tag filters (query schema 13+)
+          const newTag = { tag: tag.tag, value: tag.value, operator: TagOperatorValue.Equals };
+          query.problemTags = _.uniqWith([...query.problemTags, newTag], _.isEqual);
+        } else {
+          // Legacy free-text tags filter (queried with the Equals operator)
+          const tagFilter = query.tags?.filter!;
+          let targetTags = parseTags(tagFilter);
+          const newTag = { tag: tag.tag, value: tag.value };
+          targetTags.push(newTag);
+          targetTags = _.uniqWith(targetTags, _.isEqual);
+          const newFilter = tagsToString(targetTags);
+          query.tags!.filter = newFilter;
+        }
         updated = true;
       }
     }
@@ -151,12 +188,18 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     let updated = false;
     for (const target of targets) {
       if (target.datasource?.uid === datasource?.uid || target.datasource === datasource) {
-        const tagFilter = (target as ZabbixMetricsQuery).tags?.filter!;
-        let targetTags = parseTags(tagFilter);
-        _.remove(targetTags, matchTag);
-        targetTags = _.uniqWith(targetTags, _.isEqual);
-        const newFilter = tagsToString(targetTags);
-        (target as ZabbixMetricsQuery).tags!.filter = newFilter;
+        const query = target as ZabbixMetricsQuery;
+        if (query.problemTags) {
+          // Structured tag filters (query schema 13+). Match by tag and value, whatever the operator.
+          query.problemTags = query.problemTags.filter((t) => !matchTag(t));
+        } else {
+          const tagFilter = query.tags?.filter!;
+          let targetTags = parseTags(tagFilter);
+          _.remove(targetTags, matchTag);
+          targetTags = _.uniqWith(targetTags, _.isEqual);
+          const newFilter = tagsToString(targetTags);
+          query.tags!.filter = newFilter;
+        }
         updated = true;
       }
     }
@@ -252,7 +295,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     return (
       <AlertList
         problems={problems}
-        panelOptions={options}
+        panelOptions={effectiveOptions}
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
         onProblemAck={onProblemAck}
@@ -269,7 +312,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     return (
       <ProblemList
         problems={problems}
-        panelOptions={options}
+        panelOptions={effectiveOptions}
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
         timeRange={timeRange}
