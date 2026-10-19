@@ -125,8 +125,7 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   };
 
   handleHostTagsChange = (hostTags: HostTagFilter[]) => {
-    // The editor re-emits its filters on every render pass; bail out unless something actually
-    // changed, otherwise onChange -> re-render -> onChange loops.
+    // Skip no-op emits.
     if (hostTagFiltersEqual(this.state.hostTags, hostTags)) {
       return;
     }
@@ -301,12 +300,15 @@ const HostTagFilterLoader: React.FC<HostTagFilterLoaderProps> = ({
   onHostTagEvalTypeChange,
 }) => {
   const [{ loading, value: result }, fetchTags] = useAsyncFn(async () => {
+    // zabbix.version is still unset when the editor first opens, and the operator labels depend on
+    // it (Zabbix 7.0 renamed some), so resolve it here rather than reading the sync property.
+    const version = await datasource.zabbix.getVersion();
     if (!group) {
-      return EMPTY_OPTIONS;
+      return { ...EMPTY_OPTIONS, version };
     }
     const interpolatedGroup = replaceTemplateVars(getTemplateSrv(), group, {});
     const hostsWithTags = await datasource.zabbix.getAllHosts(interpolatedGroup, true);
-    return buildHostTagOptions(hostsWithTags ?? []);
+    return { ...buildHostTagOptions(hostsWithTags ?? []), version };
   }, [datasource, group]);
 
   React.useEffect(() => {
@@ -317,7 +319,7 @@ const HostTagFilterLoader: React.FC<HostTagFilterLoaderProps> = ({
     <HostTagQueryEditor
       hostTagOptions={result?.tagOptions ?? []}
       hostTagOptionsLoading={loading}
-      version={datasource.zabbix?.version ?? ''}
+      version={result?.version ?? datasource.zabbix?.version ?? ''}
       value={value}
       evalTypeValue={evalTypeValue}
       hostTagValueOptions={result?.valueOptions}

@@ -916,6 +916,53 @@ export function replaceTemplateVars(
   return replacedTarget;
 }
 
+/**
+ * Interpolate `target` with a plain (non-regex) replace, returning one string per selected value
+ * when it references a multi-value variable: `$cls` with `Database` and `web` selected gives
+ * ['Database', 'web'] rather than the glob `{Database,web}`. Distinct multi-value variables expand
+ * to their cartesian product; repeated references to one variable take the same value. Returns []
+ * when a referenced multi-value variable has nothing selected.
+ */
+export function expandMultiValueTemplateVar(
+  templateSrv: TemplateSrv,
+  target: string,
+  scopedVars: ScopedVars = {}
+): string[] {
+  // Probe pass: record every multi-value reference in order of occurrence, keyed by variable name
+  // so repeated references share a dimension (falling back to the occurrence when the name is
+  // unavailable).
+  const occurrences: string[] = [];
+  const dimensions = new Map<string, string[]>();
+  templateSrv.replace(target, scopedVars, (value: string | string[], variable?: { name?: string }) => {
+    if (Array.isArray(value)) {
+      const key = variable?.name ? `var:${variable.name}` : `occurrence:${occurrences.length}`;
+      occurrences.push(key);
+      if (!dimensions.has(key)) {
+        dimensions.set(key, value.map(String));
+      }
+    }
+    return '';
+  });
+
+  if (dimensions.size === 0) {
+    return [templateSrv.replace(target, scopedVars)];
+  }
+
+  let combos: Array<Map<string, string>> = [new Map()];
+  for (const [key, values] of dimensions) {
+    combos = combos.flatMap((combo) => values.map((value) => new Map(combo).set(key, value)));
+  }
+
+  // The formatter is invoked in the same order on every pass, so the n-th array reference maps to
+  // the n-th recorded occurrence.
+  return combos.map((combo) => {
+    let index = 0;
+    return templateSrv.replace(target, scopedVars, (value: string | string[]) =>
+      Array.isArray(value) ? combo.get(occurrences[index++]) : String(value ?? '')
+    );
+  });
+}
+
 export function replaceVariablesInFuncParams(
   templateSrv: TemplateSrv,
   functions: MetricFunc[],

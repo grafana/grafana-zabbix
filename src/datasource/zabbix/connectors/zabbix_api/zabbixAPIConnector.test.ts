@@ -350,7 +350,7 @@ describe('Zabbix API connector', () => {
       });
     });
 
-    it('requests tags when getHostTags is true', async () => {
+    it('requests direct and inherited tags when getHostTags is true', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
       zabbixAPIConnector.version = '7.4.0';
@@ -386,16 +386,43 @@ describe('Zabbix API connector', () => {
       });
     });
 
-    it('builds request params for tag filters and applies the filter client-side', async () => {
+    it('merges inherited tags into tags, de-duplicated on tag and value', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.request = jest.fn().mockResolvedValue([
-        { hostid: '1', name: 'host-a', tags: [{ tag: 'role', value: 'api' }], inheritedTags: [] },
-        { hostid: '2', name: 'host-b', tags: [], inheritedTags: [{ tag: 'role', value: 'web' }] },
-        { hostid: '3', name: 'host-c', tags: [], inheritedTags: [{ tag: 'env', value: 'prod' }] },
+        {
+          hostid: '1',
+          name: 'db-1',
+          tags: [{ tag: 'role', value: 'api' }],
+          inheritedTags: [
+            { tag: 'role', value: 'api' },
+            { tag: 'class', value: 'database' },
+          ],
+        },
+        { hostid: '2', name: 'web-1', tags: [], inheritedTags: [{ tag: 'class', value: 'os' }] },
       ]);
       zabbixAPIConnector.version = '7.4.0';
 
-      const result = await zabbixAPIConnector.getHosts(
+      const result = await zabbixAPIConnector.getHosts(undefined, true);
+
+      expect(result).toEqual([
+        {
+          hostid: '1',
+          name: 'db-1',
+          tags: [
+            { tag: 'role', value: 'api' },
+            { tag: 'class', value: 'database' },
+          ],
+        },
+        { hostid: '2', name: 'web-1', tags: [{ tag: 'class', value: 'os' }] },
+      ]);
+    });
+
+    it('sends tag filters to the server with inheritedTags so template tags match too', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      zabbixAPIConnector.version = '7.4.0';
+
+      await zabbixAPIConnector.getHosts(
         undefined,
         false,
         [
@@ -405,112 +432,73 @@ describe('Zabbix API connector', () => {
         ZabbixTagEvalType.Or
       );
 
-      // No server-side `tags` / `evaltype` filter — we fetch all hosts with both tag lists
-      // and apply the filter client-side so inherited-tag matches are not lost.
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        evaltype: 2,
+        tags: [{ tag: 'role', value: 'api', operator: 0 }],
+        inheritedTags: true,
+      });
+    });
+
+    it('defaults evaltype to And/Or when using an unsupported evalType', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      zabbixAPIConnector.version = '7.4.0';
+
+      await zabbixAPIConnector.getHosts(
+        undefined,
+        false,
+        [{ tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals }],
+        '3' as ZabbixTagEvalType
+      );
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        evaltype: 0,
+        tags: [{ tag: 'role', value: 'api', operator: 1 }],
+        inheritedTags: true,
+      });
+    });
+
+    it('omits the inherited tag params and leaves the response untouched before Zabbix 5.0', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      const hosts = [{ hostid: '1', name: 'host-a', tags: [{ tag: 'role', value: 'api' }] }];
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue(hosts);
+      zabbixAPIConnector.version = '4.4.0';
+
+      const result = await zabbixAPIConnector.getHosts(
+        undefined,
+        true,
+        [{ tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals }],
+        ZabbixTagEvalType.AndOr
+      );
+
       expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
         output: ['hostid', 'name', 'host'],
         sortfield: 'name',
         selectTags: 'extend',
-        selectInheritedTags: 'extend',
+        evaltype: 0,
+        tags: [{ tag: 'role', value: 'api', operator: 1 }],
       });
-
-      // Only host-a carries a `role` value containing 'api'; the empty-tag filter is ignored.
-      expect(result.map((h: any) => h.hostid)).toEqual(['1']);
+      expect(result).toBe(hosts);
     });
 
-    it('matches hosts whose tags are only inherited from templates', async () => {
+    it('does not request or merge tags when only filtering', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn().mockResolvedValue([
-        { hostid: '1', name: 'db-1', tags: [], inheritedTags: [{ tag: 'class', value: 'database' }] },
-        { hostid: '2', name: 'web-1', tags: [], inheritedTags: [{ tag: 'class', value: 'os' }] },
-      ]);
+      const hosts = [{ hostid: '1', name: 'host-a' }];
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue(hosts);
       zabbixAPIConnector.version = '7.4.0';
 
       const result = await zabbixAPIConnector.getHosts(undefined, false, [
-        { tag: 'class', value: 'database', operator: HostTagOperatorValue.Equals },
+        { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
       ]);
 
-      expect(result.map((h: any) => h.hostid)).toEqual(['1']);
-    });
-
-    describe('evaltype semantics', () => {
-      const hosts = [
-        { hostid: '1', name: 'api-prod', tags: [{ tag: 'role', value: 'api' }], inheritedTags: [] },
-        { hostid: '2', name: 'web-prod', tags: [{ tag: 'role', value: 'web' }], inheritedTags: [] },
-        { hostid: '3', name: 'db-prod', tags: [{ tag: 'role', value: 'db' }], inheritedTags: [] },
-      ];
-
-      const getConnector = () => {
-        const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-        zabbixAPIConnector.request = jest.fn().mockResolvedValue(hosts);
-        zabbixAPIConnector.version = '7.4.0';
-        return zabbixAPIConnector;
-      };
-
-      it('ORs filters that share a tag name under And/Or', async () => {
-        const result = await getConnector().getHosts(
-          undefined,
-          false,
-          [
-            { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
-            { tag: 'role', value: 'web', operator: HostTagOperatorValue.Equals },
-          ],
-          ZabbixTagEvalType.AndOr
-        );
-
-        expect(result.map((h: any) => h.hostid)).toEqual(['1', '2']);
-      });
-
-      it('ANDs filters across different tag names under And/Or', async () => {
-        const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-        zabbixAPIConnector.request = jest.fn().mockResolvedValue([
-          {
-            hostid: '1',
-            name: 'api-prod',
-            tags: [
-              { tag: 'role', value: 'api' },
-              { tag: 'env', value: 'prod' },
-            ],
-            inheritedTags: [],
-          },
-          { hostid: '2', name: 'api-dev', tags: [{ tag: 'role', value: 'api' }], inheritedTags: [] },
-        ]);
-        zabbixAPIConnector.version = '7.4.0';
-
-        const result = await zabbixAPIConnector.getHosts(
-          undefined,
-          false,
-          [
-            { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
-            { tag: 'env', value: 'prod', operator: HostTagOperatorValue.Equals },
-          ],
-          ZabbixTagEvalType.AndOr
-        );
-
-        expect(result.map((h: any) => h.hostid)).toEqual(['1']);
-      });
-
-      it('ORs every filter under Or', async () => {
-        const result = await getConnector().getHosts(
-          undefined,
-          false,
-          [
-            { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
-            { tag: 'role', value: 'db', operator: HostTagOperatorValue.Equals },
-          ],
-          ZabbixTagEvalType.Or
-        );
-
-        expect(result.map((h: any) => h.hostid)).toEqual(['1', '3']);
-      });
-
-      it('matches nothing for an unrecognised operator', async () => {
-        const result = await getConnector().getHosts(undefined, false, [
-          { tag: 'role', value: 'api', operator: '99' as HostTagOperatorValue },
-        ]);
-
-        expect(result).toEqual([]);
-      });
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.selectTags).toBeUndefined();
+      expect(params.selectInheritedTags).toBeUndefined();
+      expect(result).toBe(hosts);
     });
   });
 

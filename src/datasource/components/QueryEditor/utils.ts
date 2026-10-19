@@ -62,11 +62,7 @@ export function buildHostTagOptions(hosts: Host[]): HostTagAutocompleteOptions {
   return { tagOptions, valueOptions };
 }
 
-/**
- * Field-wise comparison of two host tag filter lists. Compares the fields rather than the object
- * references so callers stay correct regardless of whether the producer reuses filter objects
- * between renders.
- */
+/** Field-wise equality of two host tag filter lists. */
 export function hostTagFiltersEqual(a: HostTagFilter[] = [], b: HostTagFilter[] = []): boolean {
   return (
     a.length === b.length &&

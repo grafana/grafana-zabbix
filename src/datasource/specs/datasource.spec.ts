@@ -627,6 +627,223 @@ describe('ZabbixDatasource', () => {
         );
       });
 
+      it('should expand a multi-value variable in a host tag value into one filter per value', async () => {
+        const scopedVars = { __sceneObject: { value: 'scene' } };
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, scoped: any, format?: Function) => {
+          if (str !== '$cls') {
+            return str;
+          }
+          return format ? format(['Database', 'web'], { name: 'cls' }) : '{Database,web}';
+        });
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            hostTags: [{ tag: '$tagName', value: '$cls', operator: '1' as any }],
+          },
+          { scopedVars }
+        );
+
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          [
+            { tag: '$tagName', value: 'Database', operator: '1' },
+            { tag: '$tagName', value: 'web', operator: '1' },
+          ],
+          undefined
+        );
+        // Both the tag name and the value are interpolated with the query's scoped variables.
+        expect(ctx.ds.templateSrv.replace).toHaveBeenCalledWith('$tagName', scopedVars);
+        expect(ctx.ds.templateSrv.replace).toHaveBeenCalledWith('$cls', scopedVars, expect.any(Function));
+      });
+
+      it('should return nothing when a positive host tag filter expands to no values', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+          return str === '$cls' && format ? format([], { name: 'cls' }) : str;
+        });
+
+        const result = await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: '',
+            hostTags: [{ tag: 'class', value: '$cls', operator: '1' as any }],
+          },
+          {}
+        );
+
+        expect(result).toEqual([]);
+        expect(ctx.ds.zabbix.getHosts).not.toHaveBeenCalled();
+      });
+
+      it('should drop a negated host tag filter that expands to no values', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+          return str === '$cls' && format ? format([], { name: 'cls' }) : str;
+        });
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            hostTags: [
+              { tag: 'class', value: '$cls', operator: '3' as any },
+              { tag: 'env', value: 'prod', operator: '1' as any },
+            ],
+          },
+          {}
+        );
+
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          [{ tag: 'env', value: 'prod', operator: '1' }],
+          undefined
+        );
+      });
+
+      it('should still match every host when the only configured filter is a negated no-op', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+          return str === '$excluded' && format ? format([], { name: 'excluded' }) : str;
+        });
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: '',
+            hostTags: [{ tag: 'class', value: '$excluded', operator: '3' as any }],
+          },
+          {}
+        );
+
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', '/.*/', [], undefined);
+      });
+
+      it('should keep an Or query when only one of the host tag filters expands to no values', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+          return str === '$cls' && format ? format([], { name: 'cls' }) : str;
+        });
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            evaltype: '2' as any,
+            hostTags: [
+              { tag: 'class', value: '$cls', operator: '1' as any },
+              { tag: 'env', value: 'prod', operator: '1' as any },
+            ],
+          },
+          {}
+        );
+
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          [{ tag: 'env', value: 'prod', operator: '1' }],
+          '2'
+        );
+      });
+
+      it('should not expand the value of Exists / Does not exist host tag filters', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+          return str === '$cls' && format ? format(['Database', 'web'], { name: 'cls' }) : str;
+        });
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            hostTags: [
+              { tag: 'class', value: '$cls', operator: '4' as any },
+              { tag: 'legacy', value: '$cls', operator: '5' as any },
+            ],
+          },
+          {}
+        );
+
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          [
+            { tag: 'class', value: '', operator: '4' },
+            { tag: 'legacy', value: '', operator: '5' },
+          ],
+          undefined
+        );
+      });
+
+      it('should keep an And/Or query when another filter on the same tag can still match', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+          return str === '$cls' && format ? format([], { name: 'cls' }) : str;
+        });
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            hostTags: [
+              { tag: 'class', value: '$cls', operator: '1' as any },
+              { tag: 'class', value: 'web', operator: '1' as any },
+            ],
+          },
+          {}
+        );
+
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+          'GroupFilter',
+          'HostFilter',
+          [{ tag: 'class', value: 'web', operator: '1' }],
+          undefined
+        );
+      });
+
+      it('should return nothing when an And/Or filter on another tag expands to no values', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+          return str === '$cls' && format ? format([], { name: 'cls' }) : str;
+        });
+
+        const result = await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: 'HostFilter',
+            hostTags: [
+              { tag: 'class', value: '$cls', operator: '1' as any },
+              { tag: 'env', value: 'prod', operator: '1' as any },
+            ],
+          },
+          {}
+        );
+
+        expect(result).toEqual([]);
+        expect(ctx.ds.zabbix.getHosts).not.toHaveBeenCalled();
+      });
+
+      it('should ignore host tag filters whose tag name interpolates to an empty string', async () => {
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string) => (str === '$tagName' ? '' : str));
+
+        await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Host,
+            group: 'GroupFilter',
+            host: '',
+            hostTags: [{ tag: '$tagName', value: 'database', operator: '1' as any }],
+          },
+          {}
+        );
+
+        // No usable filter remains, so the empty Host filter must not be coerced to /.*/.
+        expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', '', [], undefined);
+      });
+
       it('should ignore host tag filters with an empty tag name', async () => {
         await ctx.ds.metricFindQuery(
           {
@@ -767,6 +984,37 @@ describe('ZabbixDatasource', () => {
         const result = await ctx.ds.metricFindQuery('', {});
         expect(result).toEqual([]);
       });
+    });
+  });
+
+  describe('When interpolating panel queries', () => {
+    it('should interpolate host tag filters literally and expand multi-value variables', () => {
+      ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+        if (str === '$cls') {
+          return format ? format(['Database', 'web'], { name: 'cls' }) : '{Database,web}';
+        }
+        return str === '$tagName' ? 'class' : str;
+      });
+
+      const [result] = ctx.ds.interpolateVariablesInQueries(
+        [
+          {
+            refId: 'A',
+            hostTags: [{ tag: '$tagName', value: '$cls', operator: '1' as any }],
+          } as any,
+        ],
+        {}
+      );
+
+      expect(result.hostTags).toEqual([
+        { tag: 'class', value: 'Database', operator: '1' },
+        { tag: 'class', value: 'web', operator: '1' },
+      ]);
+    });
+
+    it('should leave queries without host tag filters untouched', () => {
+      const [result] = ctx.ds.interpolateVariablesInQueries([{ refId: 'A' } as any], {});
+      expect(result.hostTags).toBeUndefined();
     });
   });
 });
