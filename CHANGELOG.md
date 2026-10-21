@@ -1,5 +1,16 @@
 # Change Log
 
+## 6.10.0
+
+### Minor Changes
+
+🚀 feat(backend): Make the plugin's gRPC message size limits configurable through the `[plugin.alexanderzobnin-zabbix-datasource]` section of `grafana.ini` (`grpc_max_receive_msg_size_mb`, `grpc_max_send_msg_size_mb`). Defaults stay at 32 MB / 100 MB; values are clamped to 512 MB.
+
+### Patch Changes
+
+⚙️ Chore: update Go to 1.27.3
+🐛 Fix queries that read trends failing on Zabbix 8.0 with `Invalid parameter "/": unexpected parameter "sortfield"`. The plugin no longer sends `sortfield` and `sortorder` to `trend.get`; trend points are still sorted by time in the plugin.
+
 ## 6.9.1
 
 ### Patch Changes
