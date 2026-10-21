@@ -14,7 +14,7 @@ jobs:
     name: CI
     uses: grafana/plugin-ci-workflows/.github/workflows/ci.yml@ci-cd-workflows/v11.3.0
     with:
-      golangci-lint-version: '2.14.0'
+      golangci-lint-version: '2.15.0'
       plugin-version-suffix: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || '' }}
       # Runs Playwright e2e (tests/e2e) against the repo's docker-compose.yml,
       # which brings up a real Zabbix backend + seeded fixtures.
