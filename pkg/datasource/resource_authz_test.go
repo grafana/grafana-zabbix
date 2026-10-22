@@ -30,7 +30,7 @@ func newAuthzTestRequest(t *testing.T, serverURL string, role string, disableRea
 		JSONData:                []byte(jsonData),
 		DecryptedSecureJSONData: map[string]string{"password": "stored-pass"},
 	}
-	pluginCtx := backend.PluginContext{OrgID: 1, DataSourceInstanceSettings: &dsSettings}
+	pluginCtx := backend.PluginContext{Namespace: "default", DataSourceInstanceSettings: &dsSettings}
 
 	ctx := backend.WithPluginContext(context.Background(), pluginCtx)
 	ctx = backend.WithUser(ctx, &backend.User{Login: "caller", Role: role})
