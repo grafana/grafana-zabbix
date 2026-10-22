@@ -79,6 +79,18 @@ func (ds *ZabbixDatasource) ZabbixAPIHandler(rw http.ResponseWriter, req *http.R
 		return
 	}
 
+	// Block mutating methods (script.execute, event.acknowledge) for callers
+	// whose Grafana role is too low, before anything reaches Zabbix.
+	role := ""
+	if user := backend.UserFromContext(ctx); user != nil {
+		role = user.Role
+	}
+	if err := authorizeAPIMethod(reqData.Method, role, dsInstance.Settings.DisableReadOnlyUsersAck); err != nil {
+		ds.logger.Warn("Blocked method for insufficient role", "method", reqData.Method, "role", role)
+		writeError(rw, http.StatusForbidden, err)
+		return
+	}
+
 	// Apply per-user authentication with caching. The returned context carries
 	// the resolved per-user token and must be used for the query below.
 	ctx, err = ds.applyPerUserAuth(ctx, dsInstance, pluginCxt.DataSourceInstanceSettings.UID)
