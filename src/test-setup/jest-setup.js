@@ -3,6 +3,18 @@ import { TextEncoder, TextDecoder } from 'util';
 
 Object.assign(global, { TextDecoder, TextEncoder });
 
+// jsdom doesn't implement IntersectionObserver, which @grafana/ui scroll
+// containers (used by the Select menu) require.
+class IntersectionObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+Object.assign(global, { IntersectionObserver: IntersectionObserverStub });
+
 jest.mock(
   'grafana/app/features/templating/template_srv',
   () => {
