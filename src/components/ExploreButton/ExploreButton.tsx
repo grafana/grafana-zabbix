@@ -20,7 +20,7 @@ export const ExploreButton: FC<Props> = ({ problem, panelId, range }) => {
   );
 };
 
-const openInExplore = (problem: ProblemDTO, panelId: number, range: TimeRange) => {
+export const openInExplore = (problem: ProblemDTO, panelId: number, range: TimeRange) => {
   let query: any = {};
 
   if (problem.items?.length === 1 && problem.hosts?.length === 1) {
