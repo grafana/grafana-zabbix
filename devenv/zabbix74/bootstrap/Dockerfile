@@ -1,4 +1,4 @@
-FROM python:3.14-slim-bookworm@sha256:86f975aca15cf04a40b399eebede9aea7c82eae084d1f1a0a6ef6bcaae871a30
+FROM python:3.15-slim-bookworm@sha256:2a41267d9de9d358f77a1de356e0f16ecba8d39827855be0ce9ef4792edce402
 
 ENV ZBX_API_URL=http://zabbix-web:8080
 ENV ZBX_API_USER="Admin"
