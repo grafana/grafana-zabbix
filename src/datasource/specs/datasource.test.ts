@@ -32,6 +32,11 @@ jest.mock('../responseHandler', () => ({
   },
 }));
 
+const mockGetDataSourceInstanceSettings = jest.fn();
+jest.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstanceSettings: (...args: unknown[]) => mockGetDataSourceInstanceSettings(...args),
+}));
+
 jest.mock('../zabbix/zabbix', () => ({
   Zabbix: jest.fn().mockImplementation(() => ({})),
 }));
@@ -57,9 +62,6 @@ jest.mock('@grafana/runtime', () => {
     getTemplateSrv: jest.fn(() => ({
       replace: (value: any) => value,
       variableExists: () => false,
-    })),
-    getDataSourceSrv: jest.fn(() => ({
-      getInstanceSettings: () => undefined,
     })),
     getBackendSrv: jest.fn(),
     HealthCheckError: class {},
@@ -186,6 +188,29 @@ describe('ZabbixDatasource', () => {
     expect(scopedVars.__range).toEqual({ text: '1h', value: '1h' });
     expect(scopedVars.__range_s).toEqual({ text: 3600, value: 3600 });
     expect(scopedVars.__range_ms).toEqual({ text: 3600000, value: 3600000 });
+  });
+
+  it('replaces a data source variable in the targets with the UID it resolves to', async () => {
+    const zabbixRef = { type: 'alexanderzobnin-zabbix-datasource', uid: 'zabbix-uid' };
+    const variableRef = { type: 'alexanderzobnin-zabbix-datasource', uid: '${ds}' };
+    mockGetDataSourceInstanceSettings.mockResolvedValueOnce({ uid: '${ds}', rawRef: zabbixRef });
+    const interpolateSpy = jest
+      .spyOn(ZabbixDatasource.prototype, 'interpolateVariablesInQueries')
+      .mockImplementation((targets) => targets);
+    interpolateSpy.mockClear();
+    jest.spyOn(ds, 'applyFrontendFunctions').mockImplementation((response) => response);
+    jest.spyOn(DataSourceWithBackend.prototype, 'query').mockReturnValue(of({ data: [] }));
+    jest.spyOn(ds, 'dbConnectionQuery').mockResolvedValue({ data: [] });
+    jest.spyOn(ds, 'frontendQuery').mockResolvedValue({ data: [] });
+    jest.spyOn(ds, 'annotationRequest').mockResolvedValue({ data: [] });
+
+    const request = buildRequest();
+    request.targets[0].datasource = variableRef;
+    await lastValueFrom(ds.query(request));
+
+    expect(mockGetDataSourceInstanceSettings).toHaveBeenCalledWith(variableRef);
+    expect(interpolateSpy.mock.calls[0][0][0].datasource).toEqual(zabbixRef);
+    expect(request.targets[0].datasource).toEqual(variableRef);
   });
 
   it('mergeQueries combines data without mutating the original response', () => {
