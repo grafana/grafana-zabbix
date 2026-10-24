@@ -8,7 +8,8 @@ import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { LegacyVariableQuery, ProblemDTO, VariableQuery, VariableQueryTypes } from './types';
-import { ZabbixMetricsQuery, ShowProblemTypes } from './types/query';
+import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType, ShowProblemTypes } from './types/query';
+import { HostTagOperatorValue } from './components/QueryEditor/types';
 import { ZabbixDSOptions } from './types/config';
 import {
   BackendSrvRequest,
@@ -763,34 +764,44 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
 
     queryModel = queryModel as VariableQuery;
-    const { group, host, application, item } = queryModel;
+    const { group, application, item } = queryModel;
+
+    const evaltype = queryModel.evaltype;
+    const scopedVars = options?.scopedVars ?? {};
+    const hostTags = this.interpolateHostTagFilters(queryModel.hostTags, evaltype, scopedVars);
+    if (hostTags === null) {
+      // A tag filter expanded to no values at all, so no host can match.
+      return Promise.resolve([]);
+    }
+    // Once host tags are narrowing the host list, an empty Host filter should mean "every matching
+    // host"; findByFilter('') would otherwise return nothing. This keys off the configured filters
+    // rather than the interpolated ones, so a negated filter that expanded to a no-op still counts.
+    const hasHostTagFilters = (queryModel.hostTags ?? []).some((f) => !!this.templateSrv.replace(f.tag, scopedVars));
+    const host = !queryModel.host && hasHostTagFilters ? '/.*/' : queryModel.host;
 
     switch (queryModel.queryType) {
       case VariableQueryTypes.Group:
-        resultPromise = this.zabbix.getGroups(queryModel.group);
+        resultPromise = this.zabbix.getGroups(group);
         break;
       case VariableQueryTypes.Host:
-        resultPromise = this.zabbix.getHosts(queryModel.group, queryModel.host);
+        resultPromise = this.zabbix.getHosts(group, host, hostTags, evaltype);
         break;
       case VariableQueryTypes.Application:
-        resultPromise = this.zabbix.getApps(queryModel.group, queryModel.host, queryModel.application);
+        resultPromise = this.zabbix.getApps(group, host, application, hostTags, evaltype);
         break;
       case VariableQueryTypes.ItemTag:
-        resultPromise = this.zabbix.getItemTags(queryModel.group, queryModel.host, queryModel.itemTag);
+        resultPromise = this.zabbix.getItemTags(group, host, queryModel.itemTag, hostTags, evaltype);
         break;
       case VariableQueryTypes.Item:
-        resultPromise = this.zabbix.getItems(
-          queryModel.group,
-          queryModel.host,
-          queryModel.application,
-          queryModel.itemTag,
-          queryModel.item,
-          { showDisabledItems: queryModel.showDisabledItems }
-        );
+        resultPromise = this.zabbix.getItems(group, host, application, queryModel.itemTag, item, {
+          showDisabledItems: queryModel.showDisabledItems,
+          hostTags,
+          evaltype,
+        });
         break;
       case VariableQueryTypes.ItemValues:
         const range = options?.range;
-        resultPromise = this.zabbix.getItemValues(group, host, application, item, { range });
+        resultPromise = this.zabbix.getItemValues(group, host, application, item, { range, hostTags, evaltype });
         break;
       default:
         resultPromise = Promise.resolve([]);
@@ -949,6 +960,70 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
     return response;
   }
+
+  /**
+   * Interpolate host tag filters for host.get. Zabbix matches tag names and values literally, so a
+   * plain replace is used here: utils.replaceTemplateVars() would wrap a substituted value in /^...$/
+   * for Zabbix's regex filter syntax, which would then never match a tag. A multi-value variable in
+   * a value expands into one filter per selected value, which the server's same-tag OR then matches.
+   *
+   * Returns null when nothing can match: a positive (Equals / Contains) filter expanded to no values
+   * and, mirroring Zabbix's And/Or grouping, no other positive filter on the same tag name survived.
+   * Negated filters that expand to nothing are a no-op and are dropped.
+   */
+  interpolateHostTagFilters(
+    filters: HostTagFilter[] | undefined,
+    evaltype: ZabbixTagEvalType | undefined,
+    scopedVars: ScopedVars
+  ): HostTagFilter[] | null | undefined {
+    if (!filters) {
+      return undefined;
+    }
+
+    const result: HostTagFilter[] = [];
+    const positiveTags = new Set<string>();
+    const emptyPositiveTags = new Set<string>();
+    for (const filter of filters) {
+      const tag = this.templateSrv.replace(filter.tag, scopedVars);
+      if (!tag) {
+        continue;
+      }
+      const operator = String(filter.operator) as HostTagOperatorValue;
+      if (operator === HostTagOperatorValue.Exists || operator === HostTagOperatorValue.DoesNotExist) {
+        // The value is irrelevant for these operators (and may hold a stale entry from before the
+        // operator was switched), so do not expand it.
+        result.push({ ...filter, tag, value: '' });
+        if (operator === HostTagOperatorValue.Exists) {
+          positiveTags.add(tag);
+        }
+        continue;
+      }
+      const positive = operator === HostTagOperatorValue.Equals || operator === HostTagOperatorValue.Contains;
+      const values = utils.expandMultiValueTemplateVar(this.templateSrv, filter.value, scopedVars);
+      if (values.length === 0) {
+        if (positive) {
+          emptyPositiveTags.add(tag);
+        }
+        continue;
+      }
+      if (positive) {
+        positiveTags.add(tag);
+      }
+      for (const value of values) {
+        result.push({ ...filter, tag, value });
+      }
+    }
+
+    const unsatisfiableTags = [...emptyPositiveTags].filter((tag) => !positiveTags.has(tag));
+    if (unsatisfiableTags.length > 0) {
+      // Under And/Or every tag group has to match; under Or any surviving filter can still match.
+      if (evaltype !== ZabbixTagEvalType.Or || result.length === 0) {
+        return null;
+      }
+    }
+    return result;
+  }
+
   interpolateVariablesInQueries(queries: ZabbixMetricsQuery[], scopedVars: ScopedVars): ZabbixMetricsQuery[] {
     if (!queries || queries.length === 0) {
       return [];
@@ -958,6 +1033,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       const isOldVersion: boolean = (query as any).itservice && !query.itServiceFilter;
       return {
         ...query,
+        // These only narrow the editor's host suggestions. When nothing can match, the raw filters
+        // are kept: their literal `$var` value matches no real host either.
+        hostTags: this.interpolateHostTagFilters(query.hostTags, query.evaltype, scopedVars) ?? query.hostTags,
         itServiceFilter: isOldVersion
           ? '/.*/'
           : utils.replaceTemplateVars(this.templateSrv, query.itServiceFilter, scopedVars),

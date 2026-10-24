@@ -230,6 +230,78 @@ describe('Utils', () => {
     });
   });
 
+  describe('expandMultiValueTemplateVar()', () => {
+    const makeTemplateSrv = (values: Record<string, string | string[]>) =>
+      ({
+        replace: jest.fn((target: string, scopedVars: any, format?: Function) =>
+          target.replace(/\$(\w+)/g, (match, name) => {
+            const value = scopedVars?.[name]?.value ?? values[name];
+            if (value === undefined) {
+              return match;
+            }
+            if (format) {
+              return format(value, { name });
+            }
+            // Mirrors Grafana's default glob formatter.
+            return Array.isArray(value) ? (value.length > 1 ? `{${value.join(',')}}` : value.join(',')) : value;
+          })
+        ),
+      }) as any;
+
+    it('returns the plain replacement for a single-value variable', () => {
+      const templateSrv = makeTemplateSrv({ env: 'production' });
+      expect(utils.expandMultiValueTemplateVar(templateSrv, '$env')).toEqual(['production']);
+    });
+
+    it('returns the target untouched when it has no variables', () => {
+      const templateSrv = makeTemplateSrv({});
+      expect(utils.expandMultiValueTemplateVar(templateSrv, 'database')).toEqual(['database']);
+    });
+
+    it('expands a multi-value variable into one string per selected value', () => {
+      const templateSrv = makeTemplateSrv({ cls: ['Database', 'web'] });
+      expect(utils.expandMultiValueTemplateVar(templateSrv, '$cls')).toEqual(['Database', 'web']);
+    });
+
+    it('keeps surrounding text on each expanded value', () => {
+      const templateSrv = makeTemplateSrv({ cls: ['Database', 'web'], env: 'prod' });
+      expect(utils.expandMultiValueTemplateVar(templateSrv, '$env-$cls')).toEqual(['prod-Database', 'prod-web']);
+    });
+
+    it('expands several multi-value variables to their cartesian product', () => {
+      const templateSrv = makeTemplateSrv({ env: ['prod', 'dev'], cls: ['Database', 'web'] });
+      expect(utils.expandMultiValueTemplateVar(templateSrv, '$env-$cls')).toEqual([
+        'prod-Database',
+        'prod-web',
+        'dev-Database',
+        'dev-web',
+      ]);
+    });
+
+    it('returns no values when a multi-value variable has nothing selected', () => {
+      const templateSrv = makeTemplateSrv({ cls: [] });
+      expect(utils.expandMultiValueTemplateVar(templateSrv, '$cls')).toEqual([]);
+      expect(utils.expandMultiValueTemplateVar(templateSrv, 'prefix-$cls')).toEqual([]);
+    });
+
+    it('binds repeated references to the same variable to one value per combination', () => {
+      const templateSrv = makeTemplateSrv({ cls: ['Database', 'web'] });
+      expect(utils.expandMultiValueTemplateVar(templateSrv, '$cls/$cls')).toEqual(['Database/Database', 'web/web']);
+    });
+
+    it('treats a single selected value of a multi-value variable as one value', () => {
+      const templateSrv = makeTemplateSrv({ cls: ['Database'] });
+      expect(utils.expandMultiValueTemplateVar(templateSrv, '$cls')).toEqual(['Database']);
+    });
+
+    it('honours scoped variables', () => {
+      const templateSrv = makeTemplateSrv({ cls: ['Database', 'web'] });
+      const scopedVars = { cls: { value: 'cache' } };
+      expect(utils.expandMultiValueTemplateVar(templateSrv, '$cls', scopedVars)).toEqual(['cache']);
+      expect(templateSrv.replace).toHaveBeenCalledWith('$cls', scopedVars, expect.any(Function));
+    });
+  });
+
   describe('replaceVariablesInFuncParams()', () => {
     it('should interpolate numeric and string params with templateSrv', () => {
       const replaceMock = jest
