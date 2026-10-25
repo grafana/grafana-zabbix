@@ -68,6 +68,8 @@
     "psql",
     "singlestat",
     "slaid",
+    "sortfield",
+    "sortorder",
     "struct",
     "submatch",
     "templatig",
