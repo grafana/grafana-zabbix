@@ -63,7 +63,7 @@ The variable query editor uses a structured form with a **Query Type** drop-down
 
 All filter fields support regex patterns (for example, `/.*/` to match all values) and references to other template variables (for example, `$group`).
 
-The **Host tag** field (Zabbix 5.4+) narrows the hosts by host tag before the **Host** filter is applied. It uses the same operators and **AND/OR** / **OR** evaluation as the Host tag filter in the query editor, and tags inherited from linked templates are matched too. Leave **Host** empty to return every host that matches the tags. Tag names and values support template variables; a multi-value variable in a tag value matches any of the selected values.
+The **Host tag** field (Zabbix 5.4+) narrows the hosts by host tag before the **Host** filter is applied. It uses the same operators and **AND/OR** / **OR** evaluation as the Host tag filter in the query editor, and tags inherited from linked templates are matched too. Leave **Host** empty to return every host that matches the tags. Tag names and values support template variables; a multi-value variable in a tag value matches any of the selected values, and a variable with **All** selected places no constraint on that tag.
 
 For the **Item** and **Item values** query types, the editor shows either **Application** (Zabbix < 5.4) or **Item Tag** (Zabbix 5.4+) depending on your Zabbix server version. Only one field is visible at a time.
 

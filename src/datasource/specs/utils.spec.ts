@@ -302,6 +302,50 @@ describe('Utils', () => {
     });
   });
 
+  describe('referencesAllValue()', () => {
+    const makeTemplateSrv = (variables: Array<{ name: string; value: string | string[] }>) =>
+      ({
+        getVariables: jest.fn(() => variables.map((v) => ({ name: v.name, current: { value: v.value } }))),
+      }) as any;
+
+    it('detects a single-value variable with All selected', () => {
+      const templateSrv = makeTemplateSrv([{ name: 'cls', value: '$__all' }]);
+      expect(utils.referencesAllValue(templateSrv, '$cls')).toBe(true);
+      expect(utils.referencesAllValue(templateSrv, 'prefix-${cls}')).toBe(true);
+      expect(utils.referencesAllValue(templateSrv, '[[cls]]')).toBe(true);
+    });
+
+    it('detects a multi-value variable with All selected', () => {
+      const templateSrv = makeTemplateSrv([{ name: 'cls', value: ['$__all'] }]);
+      expect(utils.referencesAllValue(templateSrv, '$cls')).toBe(true);
+    });
+
+    it('is false for a normal selection', () => {
+      const templateSrv = makeTemplateSrv([
+        { name: 'cls', value: ['Database', 'web'] },
+        { name: 'env', value: 'prod' },
+      ]);
+      expect(utils.referencesAllValue(templateSrv, '$cls')).toBe(false);
+      expect(utils.referencesAllValue(templateSrv, '$env-$cls')).toBe(false);
+    });
+
+    it('is false when the target has no variables or references an unknown one', () => {
+      const templateSrv = makeTemplateSrv([{ name: 'cls', value: '$__all' }]);
+      expect(utils.referencesAllValue(templateSrv, 'database')).toBe(false);
+      expect(utils.referencesAllValue(templateSrv, '')).toBe(false);
+      expect(utils.referencesAllValue(templateSrv, '$other')).toBe(false);
+    });
+
+    it('is false when a scoped variable overrides the All selection', () => {
+      const templateSrv = makeTemplateSrv([{ name: 'cls', value: '$__all' }]);
+      expect(utils.referencesAllValue(templateSrv, '$cls', { cls: { value: 'cache' } })).toBe(false);
+    });
+
+    it('tolerates a templateSrv without getVariables', () => {
+      expect(utils.referencesAllValue({ replace: jest.fn() } as any, '$cls')).toBe(false);
+    });
+  });
+
   describe('replaceVariablesInFuncParams()', () => {
     it('should interpolate numeric and string params with templateSrv', () => {
       const replaceMock = jest

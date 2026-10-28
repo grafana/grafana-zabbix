@@ -768,7 +768,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     const evaltype = queryModel.evaltype;
     const scopedVars = options?.scopedVars ?? {};
-    const hostTags = this.interpolateHostTagFilters(queryModel.hostTags, evaltype, scopedVars);
+    // The editor hides host tags for Group queries, but a variable switched from Host to Group keeps
+    // them, so ignore them there rather than let an empty upstream variable empty the group list.
+    const configuredHostTags = queryModel.queryType === VariableQueryTypes.Group ? undefined : queryModel.hostTags;
+    const hostTags = this.interpolateHostTagFilters(configuredHostTags, evaltype, scopedVars);
     if (hostTags === null) {
       // A tag filter expanded to no values at all, so no host can match.
       return Promise.resolve([]);
@@ -776,7 +779,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     // Once host tags are narrowing the host list, an empty Host filter should mean "every matching
     // host"; findByFilter('') would otherwise return nothing. This keys off the configured filters
     // rather than the interpolated ones, so a negated filter that expanded to a no-op still counts.
-    const hasHostTagFilters = (queryModel.hostTags ?? []).some((f) => !!this.templateSrv.replace(f.tag, scopedVars));
+    const hasHostTagFilters = (configuredHostTags ?? []).some((f) => !!this.templateSrv.replace(f.tag, scopedVars));
     const host = !queryModel.host && hasHostTagFilters ? '/.*/' : queryModel.host;
 
     switch (queryModel.queryType) {
@@ -967,6 +970,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
    * for Zabbix's regex filter syntax, which would then never match a tag. A multi-value variable in
    * a value expands into one filter per selected value, which the server's same-tag OR then matches.
    *
+   * A filter whose tag name or value references a variable with "All" selected is dropped: as with
+   * the match-all regex in the other filter fields, All means no constraint. Grafana would otherwise
+   * substitute a custom all value literally, bypassing the multi-value expansion.
+   *
    * Returns null when nothing can match: a positive (Equals / Contains) filter expanded to no values
    * and, mirroring Zabbix's And/Or grouping, no other positive filter on the same tag name survived.
    * Negated filters that expand to nothing are a no-op and are dropped.
@@ -984,6 +991,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const positiveTags = new Set<string>();
     const emptyPositiveTags = new Set<string>();
     for (const filter of filters) {
+      if (utils.referencesAllValue(this.templateSrv, filter.tag, scopedVars)) {
+        continue;
+      }
       const tag = this.templateSrv.replace(filter.tag, scopedVars);
       if (!tag) {
         continue;
@@ -996,6 +1006,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         if (operator === HostTagOperatorValue.Exists) {
           positiveTags.add(tag);
         }
+        continue;
+      }
+      if (utils.referencesAllValue(this.templateSrv, filter.value, scopedVars)) {
         continue;
       }
       const positive = operator === HostTagOperatorValue.Equals || operator === HostTagOperatorValue.Contains;

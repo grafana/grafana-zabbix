@@ -963,6 +963,38 @@ export function expandMultiValueTemplateVar(
   });
 }
 
+const ALL_VARIABLE_VALUE = '$__all';
+
+/**
+ * True when `target` references a dashboard variable that currently has "All" selected and is not
+ * overridden by `scopedVars`. Grafana substitutes a custom all value (for example `.*`) without
+ * calling the formatter passed to `templateSrv.replace`, so expandMultiValueTemplateVar() would
+ * otherwise send that value literally.
+ */
+export function referencesAllValue(templateSrv: TemplateSrv, target: string, scopedVars: ScopedVars = {}): boolean {
+  if (!target) {
+    return false;
+  }
+  const names = new Set<string>();
+  for (const match of target.matchAll(variableRegex)) {
+    names.add(match[1] ?? match[2] ?? match[4]);
+  }
+  if (names.size === 0) {
+    return false;
+  }
+  const variables = templateSrv.getVariables?.() ?? [];
+  for (const name of names) {
+    if (scopedVars[name] !== undefined) {
+      continue;
+    }
+    const value = (variables.find((v) => v.name === name) as any)?.current?.value;
+    if (value === ALL_VARIABLE_VALUE || (Array.isArray(value) && value[0] === ALL_VARIABLE_VALUE)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function replaceVariablesInFuncParams(
   templateSrv: TemplateSrv,
   functions: MetricFunc[],

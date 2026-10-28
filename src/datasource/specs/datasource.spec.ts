@@ -844,6 +844,123 @@ describe('ZabbixDatasource', () => {
         expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', '', [], undefined);
       });
 
+      describe('with All selected on a referenced variable', () => {
+        beforeEach(() => {
+          ctx.ds.templateSrv.getVariables = jest
+            .fn()
+            .mockReturnValue([{ name: 'cls', current: { value: ['$__all'] }, allValue: '.*' }]);
+          // Grafana substitutes a custom all value without invoking the formatter.
+          ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string) => str.replace('$cls', '.*'));
+        });
+
+        afterEach(() => {
+          delete ctx.ds.templateSrv.getVariables;
+        });
+
+        it('should treat the filter as no constraint instead of sending the all value literally', async () => {
+          await ctx.ds.metricFindQuery(
+            {
+              queryType: VariableQueryTypes.Host,
+              group: 'GroupFilter',
+              host: '',
+              hostTags: [{ tag: 'class', value: '$cls', operator: '1' as any }],
+            },
+            {}
+          );
+
+          // The filter is dropped, and an empty Host still widens to every host.
+          expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', '/.*/', [], undefined);
+        });
+
+        it('should keep the other filters', async () => {
+          await ctx.ds.metricFindQuery(
+            {
+              queryType: VariableQueryTypes.Host,
+              group: 'GroupFilter',
+              host: 'HostFilter',
+              hostTags: [
+                { tag: 'class', value: '$cls', operator: '1' as any },
+                { tag: 'env', value: 'prod', operator: '1' as any },
+              ],
+            },
+            {}
+          );
+
+          expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+            'GroupFilter',
+            'HostFilter',
+            [{ tag: 'env', value: 'prod', operator: '1' }],
+            undefined
+          );
+        });
+
+        it('should drop a filter whose tag name has All selected', async () => {
+          await ctx.ds.metricFindQuery(
+            {
+              queryType: VariableQueryTypes.Host,
+              group: 'GroupFilter',
+              host: 'HostFilter',
+              hostTags: [{ tag: '$cls', value: 'database', operator: '1' as any }],
+            },
+            {}
+          );
+
+          expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', 'HostFilter', [], undefined);
+        });
+
+        it('should still expand a scoped value that overrides All', async () => {
+          const scopedVars = { cls: { value: 'cache' } };
+          ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, scoped: any, format?: Function) => {
+            if (str !== '$cls') {
+              return str;
+            }
+            return format ? format(scoped?.cls?.value, { name: 'cls' }) : scoped?.cls?.value;
+          });
+
+          await ctx.ds.metricFindQuery(
+            {
+              queryType: VariableQueryTypes.Host,
+              group: 'GroupFilter',
+              host: 'HostFilter',
+              hostTags: [{ tag: 'class', value: '$cls', operator: '1' as any }],
+            },
+            { scopedVars }
+          );
+
+          expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith(
+            'GroupFilter',
+            'HostFilter',
+            [{ tag: 'class', value: 'cache', operator: '1' }],
+            undefined
+          );
+        });
+      });
+
+      it('should ignore host tags on a Group query even when they cannot match', async () => {
+        // A variable switched from Host to Group keeps its now-hidden host tags.
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) => {
+          if (str === '$cls' && format) {
+            return format([], { name: 'cls' });
+          }
+          return str;
+        });
+
+        const result = await ctx.ds.metricFindQuery(
+          {
+            queryType: VariableQueryTypes.Group,
+            group: 'GroupFilter',
+            hostTags: [{ tag: 'class', value: '$cls', operator: '1' as any }],
+          },
+          {}
+        );
+
+        expect(ctx.ds.zabbix.getGroups).toHaveBeenCalledWith('GroupFilter');
+        expect(result).toEqual([
+          { text: 'Group1', expandable: false },
+          { text: 'Group2', expandable: false },
+        ]);
+      });
+
       it('should ignore host tag filters with an empty tag name', async () => {
         await ctx.ds.metricFindQuery(
           {
