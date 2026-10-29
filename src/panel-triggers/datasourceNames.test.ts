@@ -30,6 +30,14 @@ describe('getDataSourceNames', () => {
     expect(await getDataSourceNames(['Zabbix A', undefined])).toEqual({});
     expect(mockedGetDataSourceInstanceSettings).not.toHaveBeenCalled();
   });
+
+  it('names a data source by its UID when its lookup fails, without affecting the others', async () => {
+    mockedGetDataSourceInstanceSettings.mockRejectedValueOnce(new Error('request failed'));
+
+    const names = await getDataSourceNames([ref('zbx-a'), ref('zbx-b')]);
+
+    expect(names).toEqual({ 'zbx-a': 'zbx-a', 'zbx-b': 'Zabbix B' });
+  });
 });
 
 describe('getDataSourceName', () => {

@@ -119,7 +119,16 @@ describe('Zabbix', () => {
       expect(getMock).toHaveBeenLastCalledWith('influx-uid');
     });
 
-    it('throws when the numeric dbConnectionDatasourceId cannot be resolved (legacy)', async () => {
+    it('falls back to the name when the numeric dbConnectionDatasourceId cannot be resolved (legacy)', async () => {
+      getSettingsMock.mockResolvedValue(undefined);
+
+      await zabbix.initDBConnector(undefined, 'My MySQL DS', { ...connectorOptions, dbConnectionDatasourceId: 999 });
+
+      expect(getSettingsMock).toHaveBeenCalledWith('999');
+      expect(getMock).toHaveBeenLastCalledWith('My MySQL DS');
+    });
+
+    it('throws when the numeric dbConnectionDatasourceId cannot be resolved and there is no name (legacy)', async () => {
       getSettingsMock.mockResolvedValue(undefined);
 
       await expect(
