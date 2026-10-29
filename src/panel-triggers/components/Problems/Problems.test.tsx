@@ -10,15 +10,16 @@ jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),
   reportInteraction: jest.fn(),
   config: {},
-  getDataSourceSrv: () => ({
-    getInstanceSettings: (uid: string) =>
-      ({
-        'uid-1': { name: 'ds-b' },
-        'uid-2': { name: 'ds-d' },
-        'uid-3': { name: 'ds-a' },
-        'uid-4': { name: 'ds-c' },
-      })[uid],
-  }),
+}));
+
+jest.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstanceSettings: async (uid: string) =>
+    ({
+      'uid-1': { name: 'ds-b' },
+      'uid-2': { name: 'ds-d' },
+      'uid-3': { name: 'ds-a' },
+      'uid-4': { name: 'ds-c' },
+    })[uid],
 }));
 
 describe('ProblemList', () => {
@@ -478,8 +479,10 @@ describe('ProblemList', () => {
       }
     });
 
-    it('should sort every sortable column in both directions', () => {
+    it('should sort every sortable column in both directions', async () => {
       render(<ProblemList {...defaultProps} panelOptions={allColumnsOptions} problems={sortableColumnProblems} />);
+      // Wait for the data source names to be looked up
+      expect(await screen.findByText('ds-a')).toBeInTheDocument();
 
       // Expected ascending order per column, expressed as host row identities
       const cases: Array<[string, string[]]> = [
