@@ -14,14 +14,18 @@ const getDataSourceUIDs = (datasources: ProblemDataSource[]): string[] =>
 
 async function lookUpNames(uids: string[]): Promise<DataSourceNames> {
   const entries = await Promise.all(
-    uids.map(async (uid) => [uid, (await getDataSourceInstanceSettings(uid))?.name ?? uid])
+    uids.map(async (uid) => {
+      // A failed lookup only leaves this data source unnamed, not all of them
+      const settings = await getDataSourceInstanceSettings(uid).catch(() => undefined);
+      return [uid, settings?.name ?? uid];
+    })
   );
   return Object.fromEntries(entries);
 }
 
 /**
  * Look up the names of the data sources problems come from.
- * Data sources that can't be found are named by their UID.
+ * Data sources that can't be found or fail to load are named by their UID.
  */
 export function getDataSourceNames(datasources: ProblemDataSource[]): Promise<DataSourceNames> {
   return lookUpNames(getDataSourceUIDs(datasources));

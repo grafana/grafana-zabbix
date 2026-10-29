@@ -206,10 +206,11 @@ export class Zabbix implements ZabbixConnector {
     options: ZabbixDSOptions
   ) {
     let uid = datasourceUID && datasourceUID.trim();
-    // Legacy config references the DB data source by its numeric ID
+    // Legacy config references the DB data source by its numeric ID.
+    // If that ID no longer exists, fall back to the data source name when there is one.
     if (!uid && options.dbConnectionDatasourceId > 0) {
       uid = await getUIDFromID(options.dbConnectionDatasourceId);
-      if (!uid) {
+      if (!uid && !datasourceName) {
         throw new Error(
           `Error retrieving direct db connection data source. Data source with id ${options.dbConnectionDatasourceId} not found`
         );
