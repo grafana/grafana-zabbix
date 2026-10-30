@@ -1,5 +1,11 @@
 # Change Log
 
+## 6.10.2
+
+### Patch Changes
+
+⚙️ Chore: dependency updates
+
 ## 6.10.1
 
 ### Patch Changes
