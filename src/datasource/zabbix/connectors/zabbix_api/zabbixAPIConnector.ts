@@ -4,7 +4,7 @@ import * as utils from '../../../utils';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
 import { HostTagFilter, ShowProblemTypes, ZabbixTagEvalType } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
-import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
+import { APIExecuteScriptResponse, GetItemsOptions, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
 import { parseItemTag } from '../../../utils';
@@ -261,9 +261,11 @@ export class ZabbixAPIConnector {
    * @param  {[type]} hostids  host ids
    * @param  {[type]} appids   application ids
    * @param  {String} itemtype 'num' or 'text'
+   * @param  {Object} options  nameSearch: return only items whose name contains one of these
+   *                           substrings (or an unexpanded macro); selectTags: false to skip item tags
    * @return {[type]}          array of items
    */
-  getItems(hostids, appids, itemtype, itemTagFilter?: string): Promise<any[]> {
+  getItems(hostids, appids, itemtype, itemTagFilter?: string, options: GetItemsOptions = {}): Promise<any[]> {
     const params: any = {
       output: ['itemid', 'name', 'key_', 'value_type', 'hostid', 'status', 'state', 'units', 'valuemapid', 'delay'],
       sortfield: 'name',
@@ -286,8 +288,16 @@ export class ZabbixAPIConnector {
       params.filter.value_type = [1, 2, 4];
     }
 
+    if (options.nameSearch?.length) {
+      // Macros ($1, {$MACRO}) are expanded client-side and may resolve to the searched text, keep them too
+      params.search = { name: [...options.nameSearch, '$'] };
+      params.searchByAny = true;
+    }
+
     if (this.isZabbix54OrHigher()) {
-      params.selectTags = 'extend';
+      if (options.selectTags !== false) {
+        params.selectTags = 'extend';
+      }
       if (itemTagFilter) {
         const allTags = itemTagFilter.split(',');
         let tagsParam = [];
