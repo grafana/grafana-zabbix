@@ -3,6 +3,7 @@
   "name": "Zabbix",
   "id": "alexanderzobnin-zabbix-datasource",
   "metrics": true,
+  "logs": true,
   "annotations": true,
   "backend": true,
   "alerting": true,
