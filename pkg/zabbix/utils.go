@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dlclark/regexp2"
+	"github.com/dlclark/regexp2/v2"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
@@ -66,7 +66,6 @@ func splitKeyParams(paramStr string) []string {
 	return params
 }
 
-
 // safeRegexpCompile compiles a regex with timeout protection
 func safeRegexpCompile(pattern string) (*regexp2.Regexp, error) {
 	// Channel to receive compilation result
@@ -74,7 +73,7 @@ func safeRegexpCompile(pattern string) (*regexp2.Regexp, error) {
 		regex *regexp2.Regexp
 		err   error
 	}, 1)
-	
+
 	// Compile regex in goroutine with timeout
 	go func() {
 		regex, err := regexp2.Compile(pattern, regexp2.RE2)
@@ -83,7 +82,7 @@ func safeRegexpCompile(pattern string) (*regexp2.Regexp, error) {
 			err   error
 		}{regex, err}
 	}()
-	
+
 	// Wait for compilation or timeout
 	select {
 	case result := <-resultCh:
