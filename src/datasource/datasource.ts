@@ -377,6 +377,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   queryTextData(target, timeRange) {
     const options = {
       itemtype: 'text',
+      hostTags: target.hostTags,
+      evaltype: target.evaltype,
     };
     return this.zabbix.getItemsFromTarget(target, options).then(async (items) => {
       const result = await this.zabbix.getHistoryText(items, timeRange, target);
@@ -978,6 +980,12 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           ...tagFilter,
           tag: utils.replaceTemplateVars(this.templateSrv, tagFilter.tag, scopedVars),
           value: utils.replaceTemplateVars(this.templateSrv, tagFilter.value, scopedVars),
+        })),
+        hostTags: query.hostTags?.map((tagFilter) => ({
+          ...tagFilter,
+          // Zabbix matches host tag filters literally, so don't regex-wrap/escape them
+          tag: this.templateSrv.replace(tagFilter.tag, scopedVars),
+          value: this.templateSrv.replace(tagFilter.value, scopedVars),
         })),
         group: {
           ...query.group,

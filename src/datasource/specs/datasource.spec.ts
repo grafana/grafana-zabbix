@@ -233,6 +233,102 @@ describe('ZabbixDatasource', () => {
         expect(tableData.fields.find((f) => f.name === 'Last value')?.values[0]).toEqual('Linux last');
       });
     });
+
+    it('should pass hostTags and evaltype to getItemsFromTarget', async () => {
+      const hostTags = [{ tag: 'env', value: 'prod', operator: '0' as any }];
+      ctx.options.targets[0].hostTags = hostTags;
+      ctx.options.targets[0].evaltype = '0' as any;
+
+      await ctx.ds.frontendQuery(ctx.options);
+
+      expect(ctx.ds.zabbix.getItemsFromTarget).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          itemtype: 'text',
+          hostTags,
+          evaltype: '0',
+        })
+      );
+    });
+
+    describe('interpolateVariablesInQueries', () => {
+      beforeEach(() => {
+        ctx.ds.templateSrv = {
+          replace: jest.fn((str: string, scopedVars?: any) => {
+            if (str === undefined || str === null) {
+              return str;
+            }
+            const varName = str.replace(/^\$/, '');
+            if (scopedVars && scopedVars[varName]) {
+              return scopedVars[varName].value;
+            }
+            return str.replace(/\$tag\b/g, 'environment').replace(/\$tag_value\b/g, 'production');
+          }),
+        };
+      });
+
+      it('replaces template variables in hostTags tag and value literally', () => {
+        const query: any = {
+          refId: 'A',
+          schema: 1,
+          queryType: '2',
+          hostTags: [{ tag: '$tag', value: '$tag_value', operator: '0' }],
+        };
+
+        const result = ctx.ds.interpolateVariablesInQueries([query], {});
+
+        expect(result[0].hostTags).toEqual([{ tag: 'environment', value: 'production', operator: '0' }]);
+      });
+
+      it('resolves scoped variables in hostTags', () => {
+        const query: any = {
+          refId: 'A',
+          schema: 1,
+          queryType: '2',
+          hostTags: [{ tag: '$scoped_tag', value: '$scoped_val', operator: '1' }],
+        };
+
+        const scopedVars = {
+          scoped_tag: { value: 'datacenter' },
+          scoped_val: { value: 'us-east-1' },
+        };
+
+        const result = ctx.ds.interpolateVariablesInQueries([query], scopedVars);
+
+        expect(result[0].hostTags).toEqual([{ tag: 'datacenter', value: 'us-east-1', operator: '1' }]);
+      });
+
+      it('handles undefined hostTags', () => {
+        const query: any = {
+          refId: 'A',
+          schema: 1,
+          queryType: '2',
+        };
+
+        const result = ctx.ds.interpolateVariablesInQueries([query], {});
+
+        expect(result[0].hostTags).toBeUndefined();
+      });
+
+      it('preserves other hostTag properties during interpolation', () => {
+        const query: any = {
+          refId: 'A',
+          schema: 1,
+          queryType: '2',
+          hostTags: [
+            { tag: '$tag', value: '$tag_value', operator: '1' },
+            { tag: 'static', value: 'value', operator: '0' },
+          ],
+        };
+
+        const result = ctx.ds.interpolateVariablesInQueries([query], {});
+
+        expect(result[0].hostTags).toEqual([
+          { tag: 'environment', value: 'production', operator: '1' },
+          { tag: 'static', value: 'value', operator: '0' },
+        ]);
+      });
+    });
   });
 
   describe('When querying problems', () => {

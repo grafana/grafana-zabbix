@@ -1,10 +1,11 @@
 import { Tooltip, Button, Combobox, ComboboxOption, Stack, Input, RadioButtonGroup } from '@grafana/ui';
-import React, { FormEvent, useCallback, useEffect, useState } from 'react';
+import React, { FormEvent, useCallback, useState } from 'react';
 import { HostTagOperatorLabel, HostTagOperatorValue } from './types';
 import { HostTagFilter, ZabbixTagEvalType } from 'datasource/types/query';
 import { getHostTagOptionLabel } from './utils';
 
 interface Props {
+  hostTagFilters?: HostTagFilter[];
   hostTagOptions: ComboboxOption[];
   hostTagOptionsLoading: boolean;
   version: string;
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export const HostTagQueryEditor = ({
+  hostTagFilters = [],
   hostTagOptions,
   hostTagOptionsLoading,
   version,
@@ -21,8 +23,8 @@ export const HostTagQueryEditor = ({
   onHostTagFilterChange,
   onHostTagEvalTypeChange,
 }: Props) => {
-  const [hostTagFilters, setHostTagFilters] = useState<HostTagFilter[]>([]);
-  const [hostTagValueDrafts, setHostTagValueDrafts] = useState<string[]>([]);
+  const [valueDrafts, setValueDrafts] = useState<Record<number, string>>({});
+
   const operatorOptions: ComboboxOption[] = [
     { value: HostTagOperatorValue.Exists, label: HostTagOperatorLabel.Exists },
     { value: HostTagOperatorValue.Equals, label: HostTagOperatorLabel.Equals },
@@ -42,41 +44,50 @@ export const HostTagQueryEditor = ({
   ];
 
   const onAddHostTagFilter = useCallback(() => {
-    setHostTagFilters((prevFilters) => [
-      ...prevFilters,
-      { tag: '', value: '', operator: HostTagOperatorValue.Contains },
-    ]);
-    setHostTagValueDrafts((prevDrafts) => [...prevDrafts, '']);
-  }, []);
+    onHostTagFilterChange?.([...hostTagFilters, { tag: '', value: '', operator: HostTagOperatorValue.Contains }]);
+  }, [hostTagFilters, onHostTagFilterChange]);
 
-  const onRemoveHostTagFilter = useCallback((index: number) => {
-    setHostTagFilters((prevFilters) => prevFilters.filter((_, i) => i !== index));
-    setHostTagValueDrafts((prevDrafts) => prevDrafts.filter((_, i) => i !== index));
-  }, []);
+  const onRemoveHostTagFilter = useCallback(
+    (index: number) => {
+      onHostTagFilterChange?.(hostTagFilters.filter((_, i) => i !== index));
+      setValueDrafts((prevDrafts) => {
+        const nextDrafts: Record<number, string> = {};
+        Object.entries(prevDrafts).forEach(([key, draft]) => {
+          const i = Number(key);
+          if (i < index) {
+            nextDrafts[i] = draft;
+          } else if (i > index) {
+            nextDrafts[i - 1] = draft;
+          }
+        });
+        return nextDrafts;
+      });
+    },
+    [hostTagFilters, onHostTagFilterChange]
+  );
 
-  const setHostTagFilterName = useCallback((index: number, name: string) => {
-    setHostTagFilters((prevFilters) =>
-      prevFilters.map((filter, i) => (i === index ? { ...filter, tag: name } : filter))
-    );
-  }, []);
+  const setHostTagFilterName = useCallback(
+    (index: number, name: string) => {
+      onHostTagFilterChange?.(hostTagFilters.map((filter, i) => (i === index ? { ...filter, tag: name } : filter)));
+    },
+    [hostTagFilters, onHostTagFilterChange]
+  );
 
-  const setHostTagFilterValue = useCallback((index: number, value: string) => {
-    if (value !== undefined) {
-      setHostTagFilters((prevFilters) =>
-        prevFilters.map((filter, i) => (i === index ? { ...filter, value: value } : filter))
-      );
-    }
-  }, []);
+  const setHostTagFilterValue = useCallback(
+    (index: number, value: string) => {
+      if (value !== undefined) {
+        onHostTagFilterChange?.(hostTagFilters.map((filter, i) => (i === index ? { ...filter, value } : filter)));
+      }
+    },
+    [hostTagFilters, onHostTagFilterChange]
+  );
 
-  const setHostTagFilterOperator = useCallback((index: number, operator: HostTagOperatorValue) => {
-    setHostTagFilters((prevFilters) =>
-      prevFilters.map((filter, i) => (i === index ? { ...filter, operator } : filter))
-    );
-  }, []);
-
-  useEffect(() => {
-    onHostTagFilterChange(hostTagFilters);
-  }, [hostTagFilters]);
+  const setHostTagFilterOperator = useCallback(
+    (index: number, operator: HostTagOperatorValue) => {
+      onHostTagFilterChange?.(hostTagFilters.map((filter, i) => (i === index ? { ...filter, operator } : filter)));
+    },
+    [hostTagFilters, onHostTagFilterChange]
+  );
 
   return (
     <div>
@@ -118,18 +129,22 @@ export const HostTagQueryEditor = ({
               {filter.operator !== HostTagOperatorValue.Exists &&
                 filter.operator !== HostTagOperatorValue.DoesNotExist && (
                   <Input
-                    value={hostTagValueDrafts[index] ?? filter.value}
+                    value={valueDrafts[index] ?? filter.value}
                     onChange={(evt: FormEvent<HTMLInputElement>) => {
                       const value = evt?.currentTarget?.value ?? '';
-                      setHostTagValueDrafts((prevDrafts) => {
-                        const nextDrafts = [...prevDrafts];
-                        nextDrafts[index] = value;
+                      setValueDrafts((prevDrafts) => ({
+                        ...prevDrafts,
+                        [index]: value,
+                      }));
+                    }}
+                    onBlur={(evt: FormEvent<HTMLInputElement>) => {
+                      setHostTagFilterValue(index, evt?.currentTarget?.value);
+                      setValueDrafts((prevDrafts) => {
+                        const nextDrafts = { ...prevDrafts };
+                        delete nextDrafts[index];
                         return nextDrafts;
                       });
                     }}
-                    onBlur={(evt: FormEvent<HTMLInputElement>) =>
-                      setHostTagFilterValue(index, evt?.currentTarget?.value)
-                    }
                     width={19}
                     placeholder="Host tag value"
                   />
