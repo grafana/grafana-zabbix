@@ -73,6 +73,8 @@
     "psql",
     "singlestat",
     "slaid",
+    "sortfield",
+    "sortorder",
     "sparkline",
     "sparklines",
     "struct",
