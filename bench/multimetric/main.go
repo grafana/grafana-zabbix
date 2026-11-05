@@ -154,7 +154,7 @@ func fmtBytes(b int64) string {
 		div *= unit
 		exp++
 	}
-	return fmt.Sprintf("%.2f %ciB", float64(b)/float64(div), "KMGT"[exp])
+	return fmt.Sprintf("%.2f %ciB", float64(b)/float64(div), []rune{'K', 'M', 'G', 'T'}[exp])
 }
 
 func fmtDuration(d time.Duration) string {
@@ -172,7 +172,8 @@ type result struct {
 func printComparison(s Scenario, rpcLatency time.Duration, results ...result) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
-	fmt.Fprintln(w, "Mode\thostgroup.get\thost.get\titem.get\thistory.get\tTotal calls\tEst. payload\tEst. wall-clock @ "+rpcLatency.String())
+	header := []string{"Mode", "hostgroup.get", "host.get", "item.get", "history.get", "Total calls", "Est. payload", "Est. wall-clock @ " + rpcLatency.String()}
+	fmt.Fprintln(w, strings.Join(header, "\t"))
 	fmt.Fprintln(w, strings.Repeat("-", 110))
 
 	for _, r := range results {
