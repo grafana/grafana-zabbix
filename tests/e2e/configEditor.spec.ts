@@ -14,16 +14,16 @@ test.describe('Config editor', () => {
       { tag: '@plugins' },
       async ({ createDataSourceConfigPage, page }) => {
         await createDataSourceConfigPage({ type: PLUGIN_TYPE });
-        await expect(page.getByRole('heading', { name: 'Zabbix Connection' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Zabbix connection' })).toBeVisible();
       }
     );
 
     test('renders the connection, auth and Zabbix sections', async ({ createDataSourceConfigPage, page }) => {
       await createDataSourceConfigPage({ type: PLUGIN_TYPE });
-      await expect(page.getByText('Connection', { exact: true })).toBeVisible();
-      await expect(page.getByText('Authentication', { exact: true })).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Zabbix Connection' })).toBeVisible();
-      await expect(page.getByText('Additional settings')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Zabbix connection' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'TLS/SSL settings' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'HTTP settings' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Additional settings' })).toBeVisible();
       await expect(page.getByText('Auth type')).toBeVisible();
     });
   });
@@ -49,7 +49,7 @@ test.describe('Config editor', () => {
       const configPage = await createDataSourceConfigPage({ type: PLUGIN_TYPE });
       await page.getByRole('textbox', { name: 'Data source connection URL' }).fill(REACHABLE_URL);
       await page.getByRole('textbox', { name: 'Username' }).fill('Admin');
-      await page.getByPlaceholder('Password').fill('zabbix');
+      await page.getByPlaceholder('Enter password').fill('zabbix');
       await configPage.saveAndTest();
       await expect(page.getByText(/Zabbix API version/i)).toBeVisible({ timeout: 15000 });
     });
@@ -58,7 +58,7 @@ test.describe('Config editor', () => {
       const configPage = await createDataSourceConfigPage({ type: PLUGIN_TYPE });
       await page.getByRole('textbox', { name: 'Data source connection URL' }).fill('http://localhost:1/api_jsonrpc.php');
       await page.getByRole('textbox', { name: 'Username' }).fill('Admin');
-      await page.getByPlaceholder('Password').fill('zabbix');
+      await page.getByPlaceholder('Enter password').fill('zabbix');
       await configPage.saveAndTest();
       await expect(page.getByText(/Zabbix API version/i)).toBeHidden();
     });
