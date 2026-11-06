@@ -176,6 +176,21 @@ If you also want to use this data source for other queries, you can grant `SELEC
 GRANT SELECT ON zabbix.* TO 'grafana'@'<GRAFANA_HOST>' IDENTIFIED BY '<PASSWORD>';
 ```
 
+## Configure problem severity overrides
+
+Zabbix lets administrators rename severities and change their colors globally under **Administration** > **General** > **Trigger displaying options**. The Zabbix data source offers the same kind of global override for Grafana under **Additional settings** > **Problem severity**. It applies to every Problems panel that queries this data source, so you don't have to change the **Colors** options of each panel.
+
+| Setting | Description |
+|---------|-------------|
+| **Not classified** … **Disaster** | One row per Zabbix severity. Enter a name to override the displayed severity name, and pick a color to override the severity color. Leave the name empty and the color unchanged to keep the plugin defaults. Click the **×** next to the color to reset it to the default. |
+
+How the overrides interact with panel settings:
+
+- A Problems panel that still uses the default name or color for a severity displays the global value from the data source.
+- A Problems panel that has its own custom name or color for a severity keeps it. Dashboards saved with custom severity names or colors aren't changed by the global overrides.
+- When global overrides are in effect for a panel, the **Colors** section of the panel options shows an information banner, and each affected severity row is marked with a globe icon that shows the global value.
+- A panel that mixes several Zabbix data sources takes the overrides from its queries in order. The first data source that defines a name or color for a severity wins for that field.
+
 ## Configure other settings
 
 These settings are under **Additional settings** > **Other**.
@@ -184,6 +199,29 @@ These settings are under **Additional settings** > **Other**.
 |---------|-------------|
 | **Disable acknowledges for read-only users** | Prevents non-editor users from acknowledging problems in Grafana. |
 | **Disable data alignment** | Disables automatic alignment of time series points to the start of their collection interval. Data alignment is required for stacked graphs to render correctly. You can also toggle this per query in the query options. |
+
+## Configure gRPC message size limits
+
+Grafana and the Zabbix backend plugin exchange data over gRPC. To bound the plugin's memory usage, the plugin limits the size of a single gRPC message to 32 MB for requests it receives from Grafana and 100 MB for responses it sends back. Very large result sets, such as a Problems query across thousands of hosts or a Direct DB Connection query that returns many series, can exceed these limits and fail with an error like `grpc: received message larger than max`.
+
+If your environment needs larger messages, raise the limits in the `[plugin.alexanderzobnin-zabbix-datasource]` section of the Grafana configuration file. Grafana forwards the settings to the plugin when it starts. These are instance-level settings, so they aren't available in the data source configuration page or in data source provisioning.
+
+```ini
+[plugin.alexanderzobnin-zabbix-datasource]
+grpc_max_receive_msg_size_mb = 64
+grpc_max_send_msg_size_mb = 200
+```
+
+| Setting | Description |
+|---------|-------------|
+| `grpc_max_receive_msg_size_mb` | Maximum size in MB of a single gRPC request the plugin accepts from Grafana. Default: `32`. |
+| `grpc_max_send_msg_size_mb` | Maximum size in MB of a single gRPC response the plugin sends to Grafana. Default: `100`. |
+
+Both settings accept whole numbers from `1` to `512`. Values above `512` are clamped to `512`, and invalid values are ignored and logged as a warning when the plugin starts. Restart Grafana after you change these settings.
+
+Larger messages mean higher memory usage in both Grafana and the plugin. Before you raise the limits, consider reducing the size of the result instead: enable trends, use Direct DB Connection for server-side aggregation, apply a **Limit** to Problems queries, or narrow the query with more specific filters.
+
+For more information about the `[plugin.plugin_id]` section and about overriding configuration with environment variables, refer to [Configure Grafana](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/setup-grafana/configure-grafana/#pluginplugin_id).
 
 ## Verify the connection
 
@@ -228,6 +266,13 @@ datasources:
       dbConnectionRetentionPolicy: ''
       disableReadOnlyUsersAck: false
       disableDataAlignment: false
+      # Optional: global severity name and color overrides for Problems panels
+      severityOverrides:
+        - priority: 4
+          name: Critical
+          color: 'rgb(220, 40, 40)'
+        - priority: 5
+          name: Outage
     secureJsonData:
       password: <ZABBIX_PASSWORD>
     version: 1
@@ -267,6 +312,7 @@ The following table lists all available `jsonData` and `secureJsonData` fields f
 | `disableDataAlignment` | `jsonData` | Disable time series data alignment. Default: `false`. |
 | `perUserAuth` | `jsonData` | Enable per-user authentication. Default: `false`. |
 | `perUserAuthField` | `jsonData` | Grafana user field used to match a Zabbix user. Values: `username` (default) or `email`. |
+| `severityOverrides` | `jsonData` | Global severity name and color overrides for Problems panels. A list of objects with `priority` (0-5), and an optional `name` and `color`. Fields that are omitted keep the plugin defaults. |
 | `perUserAuthExcludeUsers` | `jsonData` | List of Grafana users that always use the global Zabbix credentials. Default: `["admin"]`. |
 | `enableSecureSocksProxy` | `jsonData` | Route the connection through the Grafana secure SOCKS proxy for Private Data Source Connect (PDC). Default: `false`. |
 
