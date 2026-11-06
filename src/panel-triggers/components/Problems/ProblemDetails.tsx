@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { css } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import moment from 'moment/moment';
 import { GrafanaTheme2, TimeRange } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
-import { Tooltip, useStyles2 } from '@grafana/ui';
+import { Button, Icon, useStyles2 } from '@grafana/ui';
 import { getDataSourceSrv } from '@grafana/runtime';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
@@ -11,13 +11,15 @@ import { AckModal, AckProblemData } from '../AckModal';
 import { EventTag } from '../EventTag';
 import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
-import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController } from '../../../components';
+import { ModalController } from '../../../components';
+import { openInExplore } from '../../../components/ExploreButton/ExploreButton';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
 import ProblemStatusBar from './ProblemStatusBar';
 import { ProblemItems } from './ProblemItems';
-import { ProblemHosts, ProblemHostsDescription } from './ProblemHosts';
+import { ProblemHosts } from './ProblemHosts';
 import { ProblemGroups } from './ProblemGroups';
-import { ProblemExpression } from './ProblemExpression';
+import { getMetaRowStyles } from './detailsStyles';
+import { em } from './Cells/cellStyles';
 
 interface Props {
   original: ProblemDTO;
@@ -48,9 +50,11 @@ export const ProblemDetails = ({
   onProblemAck,
   onTagClick,
 }: Props) => {
-  const [events, setEvents] = useState([]);
-  const [alerts, setAletrs] = useState([]);
+  const [events, setEvents] = useState<ZBXEvent[]>([]);
+  const [alerts, setAlerts] = useState<ZBXAlert[]>([]);
   const [show, setShow] = useState(false);
+  const styles = useStyles2(getStyles);
+  const metaStyles = useStyles2(getMetaRowStyles);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,7 +64,7 @@ export const ProblemDetails = ({
         setEvents(eventsData);
       }
       const alertsData = await getProblemAlerts(problem);
-      setAletrs(alertsData);
+      setAlerts(alertsData);
     };
 
     fetchData();
@@ -76,34 +80,22 @@ export const ProblemDetails = ({
     }
   };
 
-  const ackProblem = (data: AckProblemData) => {
-    const problem = original as ProblemDTO;
-    return onProblemAck(problem, data);
-  };
-
-  const getScriptsInternal = () => {
-    const problem = original as ProblemDTO;
-    return getScripts(problem);
-  };
-
-  const onExecuteScriptInternal = ({ scriptid, scope }: ExecScriptData) => {
-    const problem = original as ProblemDTO;
-    return onExecuteScript(problem, scriptid, scope);
-  };
-
   const problem = original as ProblemDTO;
-  const displayClass = show ? 'show' : '';
+
+  const ackProblem = (data: AckProblemData) => onProblemAck(problem, data);
+  const getScriptsInternal = () => getScripts(problem);
+  const onExecuteScriptInternal = ({ scriptid, scope }: ExecScriptData) => onExecuteScript(problem, scriptid, scope);
+
   const wideLayout = rootWidth > 1200;
-  const compactStatusBar = rootWidth < 800 || (problem.acknowledges && wideLayout && rootWidth < 1400);
   const age = moment.unix(problem.timestamp).fromNow(true);
   const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
   const problemSeverity = Number(problem.severity);
-  const styles = useStyles2(getStyles);
+  const hostDescriptions = (problem.hosts ?? []).map((h) => h.description).filter(Boolean);
 
   let dsName: string = original.datasource as string;
   if ((original.datasource as DataSourceRef)?.uid) {
     const dsInstance = getDataSourceSrv().getInstanceSettings((original.datasource as DataSourceRef).uid);
-    dsName = dsInstance.name;
+    dsName = dsInstance?.name ?? dsName;
   }
 
   const problemDescriptionEl = allowDangerousHTML ? (
@@ -112,157 +104,279 @@ export const ProblemDetails = ({
     <span>{problem.comments}</span>
   );
 
+  const acknowledgesSection = showAcknowledges && (
+    <section className={styles.section}>
+      <h6 className={styles.sectionTitle}>
+        <Icon name="comment-alt-message" size="sm" />
+        Acknowledges
+      </h6>
+      <AcknowledgesList acknowledges={problem.acknowledges} />
+    </section>
+  );
+
   return (
-    <div className={`problem-details-container ${displayClass}`}>
-      <div className="problem-details-body">
-        <div className={styles.problemDetails}>
-          <div className="problem-details-head">
-            <div className="problem-actions-left">
-              <ExploreButton problem={problem} panelId={panelId} range={timeRange} />
+    // The problem-details-container class scopes the timeline stylesheet. The block sticks to the
+    // visible width of the (horizontally scrollable) table so nothing hides off to the right.
+    <div
+      className={cx('problem-details-container', styles.container, { [styles.visible]: show })}
+      style={rootWidth > 0 ? { width: rootWidth } : undefined}
+    >
+      <div className={styles.layout}>
+        <div className={styles.main}>
+          <div className={styles.header}>
+            <div className={styles.actions}>
+              <Button
+                size="sm"
+                variant="secondary"
+                icon="compass"
+                onClick={() => openInExplore(problem, panelId, timeRange)}
+              >
+                Explore
+              </Button>
+              {problem.showAckButton && (
+                <>
+                  <ModalController>
+                    {({ showModal, hideModal }) => (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        icon="brackets-curly"
+                        onClick={() => {
+                          showModal(ExecScriptModal, {
+                            getScripts: getScriptsInternal,
+                            onSubmit: onExecuteScriptInternal,
+                            onDismiss: hideModal,
+                          });
+                        }}
+                      >
+                        Run script
+                      </Button>
+                    )}
+                  </ModalController>
+                  <ModalController>
+                    {({ showModal, hideModal }) => (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        icon="comment-alt-message"
+                        onClick={() => {
+                          showModal(AckModal, {
+                            canClose: problem.manual_close === '1',
+                            severity: problemSeverity,
+                            onSubmit: ackProblem,
+                            onDismiss: hideModal,
+                          });
+                        }}
+                      >
+                        Acknowledge
+                      </Button>
+                    )}
+                  </ModalController>
+                </>
+              )}
             </div>
-            {problem.showAckButton && (
-              <div className="problem-actions">
-                <ModalController>
-                  {({ showModal, hideModal }) => (
-                    <ExecScriptButton
-                      className="problem-action-button"
-                      onClick={() => {
-                        showModal(ExecScriptModal, {
-                          getScripts: getScriptsInternal,
-                          onSubmit: onExecuteScriptInternal,
-                          onDismiss: hideModal,
-                        });
-                      }}
-                    />
-                  )}
-                </ModalController>
-                <ModalController>
-                  {({ showModal, hideModal }) => (
-                    <AckButton
-                      className="problem-action-button"
-                      onClick={() => {
-                        showModal(AckModal, {
-                          canClose: problem.manual_close === '1',
-                          severity: problemSeverity,
-                          onSubmit: ackProblem,
-                          onDismiss: hideModal,
-                        });
-                      }}
-                    />
-                  )}
-                </ModalController>
-              </div>
+            <ProblemStatusBar problem={problem} alerts={alerts} />
+          </div>
+
+          <dl className={styles.facts}>
+            <dt>
+              <Icon name="clock-nine" size="sm" />
+              Age
+            </dt>
+            <dd>{age}</dd>
+            {problem.items?.length > 0 && (
+              <>
+                <dt>
+                  <Icon name="chart-line" size="sm" />
+                  Items
+                </dt>
+                <dd>
+                  <ProblemItems items={problem.items} />
+                </dd>
+              </>
             )}
-            <ProblemStatusBar problem={problem} alerts={alerts} className={compactStatusBar && 'compact'} />
-          </div>
-          <div className="problem-details-row">
-            <div className="problem-value-container">
-              <div className="problem-age">
-                <FAIcon icon="clock-o" />
-                <span>{age}</span>
-              </div>
-              {problem.items && <ProblemItems items={problem.items} />}
-            </div>
-          </div>
-          {problem.comments && (
-            <div className="problem-description-row">
-              <div className={styles.problemDescription}>
-                <Tooltip placement="right" content={problemDescriptionEl}>
-                  <span className="description-label">Description:&nbsp;</span>
-                </Tooltip>
-                {problemDescriptionEl}
-              </div>
+            {problem.comments && (
+              <>
+                <dt>
+                  <Icon name="file-alt" size="sm" />
+                  Description
+                </dt>
+                <dd className={styles.description}>{problemDescriptionEl}</dd>
+              </>
+            )}
+            {problem.expression && (
+              <>
+                <dt>
+                  <Icon name="brackets-curly" size="sm" />
+                  Expression
+                </dt>
+                <dd>
+                  <code className={styles.code}>{problem.expression}</code>
+                </dd>
+              </>
+            )}
+            {hostDescriptions.length > 0 && (
+              <>
+                <dt>
+                  <Icon name="monitor" size="sm" />
+                  Host description
+                </dt>
+                <dd className={styles.description}>{hostDescriptions.join('\n')}</dd>
+              </>
+            )}
+          </dl>
+
+          {problem.tags?.length > 0 && (
+            <div className={styles.tags}>
+              {problem.tags.map((tag) => (
+                <EventTag
+                  key={tag.tag + tag.value}
+                  variant="chip"
+                  tag={tag}
+                  datasource={problem.datasource}
+                  highlight={tag.tag === problem.correlation_tag}
+                  onClick={handleTagClick}
+                />
+              ))}
             </div>
           )}
-          {problem.items && (
-            <div>
-              <ProblemExpression problem={problem} />
-            </div>
-          )}
-          {problem.hosts && (
-            <div>
-              <ProblemHostsDescription hosts={problem.hosts} />
-            </div>
-          )}
-          {problem.tags && problem.tags.length > 0 && (
-            <div className="problem-tags">
-              {problem.tags &&
-                problem.tags.map((tag) => (
-                  <EventTag
-                    key={tag.tag + tag.value}
-                    tag={tag}
-                    datasource={problem.datasource}
-                    highlight={tag.tag === problem.correlation_tag}
-                    onClick={handleTagClick}
-                  />
-                ))}
-            </div>
-          )}
+
           {showTimeline && events.length > 0 && <ProblemTimeline events={events} timeRange={timeRange} />}
-          {showAcknowledges && !wideLayout && (
-            <div className="problem-ack-container">
-              <h6>
-                <FAIcon icon="reply-all" /> Acknowledges
-              </h6>
-              <AcknowledgesList acknowledges={problem.acknowledges} />
-            </div>
-          )}
+          {!wideLayout && acknowledgesSection}
         </div>
-        {showAcknowledges && wideLayout && (
-          <div className="problem-details-middle">
-            <div className="problem-ack-container">
-              <h6>
-                <FAIcon icon="reply-all" /> Acknowledges
-              </h6>
-              <AcknowledgesList acknowledges={problem.acknowledges} />
-            </div>
-          </div>
-        )}
-        <div className="problem-details-right">
-          <div className="problem-details-right-item">
-            <FAIcon icon="database" />
-            <span>{dsName}</span>
+
+        {wideLayout && showAcknowledges && <aside className={styles.acks}>{acknowledgesSection}</aside>}
+
+        <aside className={styles.meta}>
+          <div className={metaStyles.row} title={dsName}>
+            <Icon name="database" size="sm" className={metaStyles.icon} />
+            <span className={metaStyles.text}>{dsName}</span>
           </div>
           {problem.proxy && (
-            <div className="problem-details-right-item">
-              <FAIcon icon="cloud" />
-              <span>{problem.proxy}</span>
+            <div className={metaStyles.row} title={problem.proxy}>
+              <Icon name="cloud" size="sm" className={metaStyles.icon} />
+              <span className={metaStyles.text}>{problem.proxy}</span>
             </div>
           )}
           {problem.groups && <ProblemGroups groups={problem.groups} />}
           {problem.hosts && <ProblemHosts hosts={problem.hosts} />}
-        </div>
+        </aside>
       </div>
     </div>
   );
 };
 
 const getStyles = (theme: GrafanaTheme2) => ({
-  problemDetails: css`
-    position: relative;
-    overflow: auto;
-    flex: 1 0 550px;
-    // padding: 0.5rem 1rem 0.5rem 1.2rem;
-    padding: ${theme.spacing(0.5)} ${theme.spacing(1)} ${theme.spacing(0.5)} ${theme.spacing(1.2)};
-    display: flex;
-    flex-direction: column;
-    // white-space: pre-line;
-    font-size: ${theme.typography.bodySmall.fontSize};
-  `,
-  problemDescription: css`
-    position: relative;
-    max-height: 6rem;
-    min-height: 3rem;
-
-    &:after {
-      content: '';
-      text-align: right;
-      position: inherit;
-      bottom: 0;
-      right: 0;
-      width: 70%;
-      height: 1.5rem;
-      background: linear-gradient(to right, rgba(0, 0, 0, 0), ${theme.colors.background.canvas} 50%);
-    }
-  `,
+  container: css({
+    position: 'sticky',
+    left: 0,
+    boxSizing: 'border-box',
+    maxWidth: '100%',
+    padding: theme.spacing(2, 2, 2, 2.5),
+    background: theme.colors.background.secondary,
+    borderBottom: `1px solid ${theme.colors.border.weak}`,
+    fontSize: em(theme, 12),
+    lineHeight: 1.5,
+    whiteSpace: 'normal',
+    opacity: 0,
+    transform: 'translateY(-4px)',
+    transition: 'opacity 0.2s ease-out, transform 0.2s ease-out',
+  }),
+  visible: css({
+    opacity: 1,
+    transform: 'none',
+  }),
+  layout: css({
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing(3),
+  }),
+  main: css({
+    flex: '1 1 480px',
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1.5),
+  }),
+  header: css({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: theme.spacing(1),
+  }),
+  actions: css({
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing(1),
+  }),
+  facts: css({
+    display: 'grid',
+    gridTemplateColumns: 'max-content minmax(0, 1fr)',
+    columnGap: theme.spacing(2),
+    rowGap: theme.spacing(0.75),
+    margin: 0,
+    '& dt': {
+      display: 'flex',
+      alignItems: 'center',
+      gap: theme.spacing(0.5),
+      color: theme.colors.text.secondary,
+      whiteSpace: 'nowrap',
+    },
+    '& dd': {
+      margin: 0,
+      minWidth: 0,
+      color: theme.colors.text.primary,
+      overflowWrap: 'anywhere',
+    },
+  }),
+  description: css({
+    whiteSpace: 'pre-line',
+    maxHeight: '8em',
+    overflow: 'auto',
+  }),
+  code: css({
+    display: 'inline-block',
+    maxWidth: '100%',
+    padding: theme.spacing(0.25, 0.75),
+    borderRadius: theme.shape.radius.default,
+    background: theme.colors.background.canvas,
+    border: `1px solid ${theme.colors.border.weak}`,
+    fontFamily: theme.typography.fontFamilyMonospace,
+    fontSize: em(theme, 11),
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-all',
+  }),
+  tags: css({
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing(0.5),
+  }),
+  acks: css({
+    flex: '1 1 320px',
+    minWidth: 0,
+  }),
+  section: css({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
+  }),
+  sectionTitle: css({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(0.5),
+    margin: 0,
+    fontSize: em(theme, 11),
+    fontWeight: 600,
+    letterSpacing: '0.02em',
+    color: theme.colors.text.secondary,
+  }),
+  meta: css({
+    flex: '0 0 auto',
+    minWidth: 180,
+    maxWidth: 320,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(0.75),
+  }),
 });
