@@ -2,6 +2,7 @@ import {
   buildProblemNameSearchParams,
   extractRegexLiteral,
   extractRegexLiterals,
+  getItemNameSearchValues,
   matchesProblemName,
   parseLegacyProblemTags,
   problemTagsToQueryParam,
@@ -201,6 +202,32 @@ describe('buildProblemNameSearchParams', () => {
 
   it('skips narrowing when the only literal is inside an optional group', () => {
     expect(buildProblemNameSearchParams('/(Critical failure)?.*/')).toEqual({});
+  });
+});
+
+describe('getItemNameSearchValues', () => {
+  it('returns undefined for an empty filter', () => {
+    expect(getItemNameSearchValues('')).toBeUndefined();
+    expect(getItemNameSearchValues(undefined)).toBeUndefined();
+  });
+
+  it('uses a plain item name as is, without wildcard semantics', () => {
+    expect(getItemNameSearchValues('CPU load')).toEqual(['CPU load']);
+    expect(getItemNameSearchValues('Bytes via SQL*Net')).toEqual(['Bytes via SQL*Net']);
+  });
+
+  it('uses the guaranteed literal of a regex', () => {
+    expect(getItemNameSearchValues('/^System \\[.*\\]: .*/')).toEqual(['System ']);
+    expect(getItemNameSearchValues('/LPAR .*/')).toEqual(['LPAR ']);
+  });
+
+  it('returns one value per branch of a multi-value variable', () => {
+    expect(getItemNameSearchValues('/^(CPU load|Memory used)$/')).toEqual(['CPU load', 'Memory used']);
+  });
+
+  it('returns undefined when no safe literal exists', () => {
+    expect(getItemNameSearchValues('/.*/')).toBeUndefined();
+    expect(getItemNameSearchValues('/^(?!.*Zabbix agent).*/')).toBeUndefined();
   });
 });
 
