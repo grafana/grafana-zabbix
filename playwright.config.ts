@@ -32,8 +32,10 @@ export default defineConfig<PluginOptions>({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.GRAFANA_URL || `http://localhost:${process.env.PORT || 3000}`,
+    /* Base URL to use in actions like `await page.goto('/')`. 127.0.0.1 rather than
+     * localhost: on hosts where localhost resolves to ::1 first (macOS), the IPv4-only
+     * Docker port mapping refuses the connection. */
+    baseURL: process.env.GRAFANA_URL || `http://127.0.0.1:${process.env.PORT || 3000}`,
 
     launchOptions: {
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
