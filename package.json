@@ -42,7 +42,7 @@
     "@changesets/cli": "2.31.1",
     "@grafana/eslint-config": "9.0.0",
     "@grafana/plugin-e2e": "3.11.0",
-    "@grafana/sign-plugin": "3.3.3",
+    "@grafana/sign-plugin": "4.0.0",
     "@grafana/tsconfig": "2.2.0",
     "@playwright/test": "1.61.1",
     "@stylistic/eslint-plugin-ts": "4.4.1",
