@@ -235,6 +235,125 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When querying logs data', () => {
+    beforeEach(() => {
+      ctx.ds.replaceTemplateVars = (str) => str;
+      ctx.ds.zabbix.zabbixAPI.getHistory = jest.fn().mockReturnValue(
+        Promise.resolve([
+          {
+            id: '3',
+            clock: '1500010400',
+            itemid: '10100',
+            ns: '900111000',
+            value: 'sshd[1445]: Failed password for root',
+            severity: '4',
+            source: 'sshd',
+            logeventid: '0',
+            timestamp: '0',
+          },
+          {
+            id: '1',
+            clock: '1500010200',
+            itemid: '10100',
+            ns: '900111000',
+            value: 'systemd[1]: Started OpenSSH server daemon',
+            severity: '1',
+            source: '',
+            logeventid: '0',
+            timestamp: '0',
+          },
+          {
+            id: '2',
+            clock: '1500010300',
+            itemid: '10100',
+            ns: '900111000',
+            value: 'kernel: some unclassified line',
+            severity: '0',
+            source: '',
+            logeventid: '0',
+            timestamp: '0',
+          },
+        ])
+      );
+
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(
+        Promise.resolve([
+          {
+            hosts: [{ hostid: '10001', name: 'Zabbix server' }],
+            hostid: '10001',
+            itemid: '10100',
+            name: 'Syslog',
+            key_: 'log[/var/log/messages]',
+            value_type: '2',
+          },
+        ])
+      );
+
+      ctx.options.targets = [
+        {
+          group: { filter: '' },
+          host: { filter: 'Zabbix server' },
+          application: { filter: '' },
+          item: { filter: 'Syslog' },
+          textFilter: '',
+          queryType: '9',
+          options: {},
+        },
+      ];
+    });
+
+    it('should return a logs data frame sorted by time', async () => {
+      const result = (await ctx.ds.frontendQuery(ctx.options)) as DataQueryResponse;
+      expect(result.data.length).toBe(1);
+
+      const frame = result.data[0];
+      expect(frame.fields.map((f) => f.name)).toEqual(['timestamp', 'body', 'severity', 'id', 'labels']);
+      expect(frame.meta.preferredVisualisationType).toBe('logs');
+      expect(frame.meta.type).toBe('log-lines');
+
+      const bodyField = frame.fields.find((f) => f.name === 'body');
+      expect(bodyField.values).toEqual([
+        'systemd[1]: Started OpenSSH server daemon',
+        'kernel: some unclassified line',
+        'sshd[1445]: Failed password for root',
+      ]);
+
+      const severityField = frame.fields.find((f) => f.name === 'severity');
+      expect(severityField.values).toEqual(['info', '', 'error']);
+
+      const labelsField = frame.fields.find((f) => f.name === 'labels');
+      expect(labelsField.values[2]).toEqual({
+        host: 'Zabbix server',
+        item: 'Syslog',
+        item_key: 'log[/var/log/messages]',
+        source: 'sshd',
+      });
+    });
+
+    it('should filter log lines with the line filter regex', async () => {
+      ctx.options.targets[0].textFilter = 'Failed password';
+      const result = (await ctx.ds.frontendQuery(ctx.options)) as DataQueryResponse;
+
+      const frame = result.data[0];
+      const bodyField = frame.fields.find((f) => f.name === 'body');
+      expect(bodyField.values).toEqual(['sshd[1445]: Failed password for root']);
+      expect(frame.meta.custom.searchWords).toEqual(['Failed password']);
+    });
+
+    it('should request log items and pass the line limit to history.get', async () => {
+      ctx.options.targets[0].options = { limit: 500 };
+      await ctx.ds.frontendQuery(ctx.options);
+
+      expect(ctx.ds.zabbix.getItemsFromTarget).toHaveBeenCalledWith(
+        expect.objectContaining({ queryType: '9' }),
+        expect.objectContaining({ itemtype: 'log' })
+      );
+      const getHistoryArgs = ctx.ds.zabbix.zabbixAPI.getHistory.mock.calls[0];
+      expect(getHistoryArgs[3]).toBe(500);
+      expect(getHistoryArgs[4]).toBe('DESC');
+    });
+  });
+
   describe('When querying problems', () => {
     const buildProblemsTarget = (options: any = {}, showProblems = 'problems') => ({
       group: { filter: '' },
