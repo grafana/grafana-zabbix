@@ -14,6 +14,8 @@ import { StatusCellV8 } from './Cells/StatusCell';
 import { AckCell } from './Cells/AckCell';
 import { TagCell } from './Cells/TagCell';
 import { LastChangeCell } from './Cells/LastChangeCell';
+import { DataLinksCell } from './Cells/DataLinksCell';
+import { getProblemsDataLinks } from '../../dataLinks';
 import {
   ColumnFiltersState,
   ColumnResizeMode,
@@ -148,6 +150,12 @@ export const ProblemList = (props: ProblemListProps) => {
         enableSorting: true,
         sortingFn: 'alphanumeric',
         cell: ({ cell }) => <HostCell name={cell.getValue()} maintenance={cell.row.original.hostInMaintenance} />,
+      }),
+      columnHelper.accessor('hostIp', {
+        header: 'Host IP',
+        size: 120,
+        enableSorting: true,
+        sortingFn: 'alphanumeric',
       }),
       columnHelper.accessor('groups', {
         header: 'Host Groups',
@@ -295,6 +303,17 @@ export const ProblemList = (props: ProblemListProps) => {
           </button>
         ),
       }),
+      columnHelper.display({
+        id: 'dataLinks',
+        header: null,
+        size: 60,
+        minSize: 60,
+        maxSize: 300,
+        cell: ({ row }) => {
+          const links = getProblemsDataLinks(panelOptions.dataLinks, row.original);
+          return <DataLinksCell links={links} />;
+        },
+      }),
     ];
   }, [panelOptions]);
 
@@ -353,6 +372,7 @@ export const ProblemList = (props: ProblemListProps) => {
     () => ({
       host: panelOptions.hostField,
       hostTechName: panelOptions.hostTechNameField,
+      hostIp: panelOptions.hostIpField,
       groups: panelOptions.hostGroups,
       proxy: panelOptions.hostProxy,
       priority: panelOptions.severityField,
@@ -363,6 +383,7 @@ export const ProblemList = (props: ProblemListProps) => {
       tags: panelOptions.showTags,
       datasource: panelOptions.showDatasourceName,
       age: panelOptions.ageField,
+      dataLinks: Array.isArray(panelOptions.dataLinks) && panelOptions.dataLinks.length > 0,
     }),
     [panelOptions]
   );

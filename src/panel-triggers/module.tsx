@@ -3,6 +3,7 @@ import { problemsPanelChangedHandler, problemsPanelMigrationHandler } from './mi
 import { ProblemsPanel } from './ProblemsPanel';
 import { defaultPanelOptions, ProblemsPanelOptions } from './types';
 import { ResetColumnsEditor } from './components/ResetColumnsEditor';
+import { DataLinksEditor } from './components/DataLinksEditor';
 import { ProblemColorEditor } from './components/ProblemColorEditor';
 import { loadPluginCss } from '@grafana/runtime';
 
@@ -110,6 +111,16 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         showIf: (options) => options.layout === 'table',
       })
       .addCustomEditor({
+        id: 'dataLinks',
+        path: 'dataLinks',
+        name: 'Data links',
+        description: 'Add links to navigate from each problem row',
+        editor: DataLinksEditor,
+        category: ['Data links'],
+        defaultValue: [],
+        showIf: (options) => options.layout === 'table',
+      })
+      .addCustomEditor({
         id: 'triggerColors',
         path: 'triggerSeverity',
         name: 'Problem colors',
@@ -151,6 +162,13 @@ export const plugin = new PanelPlugin<ProblemsPanelOptions, {}>(ProblemsPanel)
         path: 'hostTechNameField',
         name: 'Technical name',
         defaultValue: defaultPanelOptions.hostTechNameField,
+        category: ['Fields'],
+      })
+      .addBooleanSwitch({
+        path: 'hostIpField',
+        name: 'Host IP',
+        description: 'Requires the "Host IP" query option to be enabled on the data source query',
+        defaultValue: defaultPanelOptions.hostIpField,
         category: ['Fields'],
       })
       .addBooleanSwitch({

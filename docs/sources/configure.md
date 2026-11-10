@@ -19,7 +19,7 @@ labels:
     - enterprise
     - cloud
 weight: 200
-last_reviewed: 2026-02-18
+review_date: 2026-09-08
 ---
 
 # Configure the Zabbix data source
@@ -34,7 +34,22 @@ Before configuring the data source, ensure you have:
 - **Zabbix API URL:** The full URL to your Zabbix API endpoint, including the `api_jsonrpc.php` path (for example, `http://zabbix.example.com/api_jsonrpc.php`).
 - **Zabbix credentials:** A username and password for a Zabbix user, or an API token. Verify the user has permissions to access the host groups and hosts you want to query in Grafana.
 
+## Install and enable the Zabbix plugin
+
+Zabbix is an app plugin, so you must install it and then enable it before the data source becomes available. Enabling the plugin is a separate step from installation.
+
+1. Click **Administration** > **Plugins and data** > **Plugins** in the left-side menu.
+1. Type `Zabbix` in the search bar and select the **Zabbix** plugin.
+1. If the plugin isn't already installed, click **Install**. For other installation methods, refer to [Install Grafana plugins](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/administration/plugin-management/).
+1. On the plugin page, click **Enable**. The data source isn't available to add until you enable the plugin.
+
+{{< admonition type="note" >}}
+In Grafana Cloud, the Zabbix plugin is installed and enabled for you after you add it from the plugin catalog.
+{{< /admonition >}}
+
 ## Add the data source
+
+After you enable the plugin, add the data source:
 
 1. Click **Connections** in the left-side menu.
 1. Click **Add new connection**.
@@ -54,6 +69,10 @@ Before configuring the data source, ensure you have:
 
 The Zabbix data source supports two authentication methods. Select the method in the **Auth type** drop-down under the **Zabbix Connection** section.
 
+{{< admonition type="note" >}}
+For Zabbix 7.0 and later, the plugin sends the authentication token (both session tokens and API tokens) in the `Authorization` HTTP header, as Zabbix requires. If you run Zabbix 7.0 behind a reverse proxy that uses HTTP basic authentication, the plugin keeps the token in the request body instead. Zabbix 7.2 and later don't support HTTP basic authentication for API requests. Keep the plugin up to date so it uses the correct method for your Zabbix version.
+{{< /admonition >}}
+
 ### User and password
 
 Use a Zabbix user account to authenticate with the API.
@@ -70,6 +89,20 @@ Use a Zabbix API token to authenticate. API tokens are available in Zabbix 5.4 a
 | Setting | Description |
 |---------|-------------|
 | **API Token** | The Zabbix API token. Stored securely in Grafana. |
+
+## Configure per-user authentication
+
+Per-user authentication maps each Grafana user to a Zabbix user so that queries respect the role-based access control (RBAC) already configured in Zabbix. When enabled, the plugin authenticates to the Zabbix API as the matching Zabbix user instead of using the shared credentials configured in the **Auth type** section. Find these settings under **Additional settings** > **Other**.
+
+{{< admonition type="note" >}}
+You need Grafana Admin permissions to configure per-user authentication, because the plugin must list Grafana users to build the exclusion list. If you can't list users, contact your Grafana administrator.
+{{< /admonition >}}
+
+| Setting | Description |
+|---------|-------------|
+| **Enable per-user authentication** | Toggle to map Grafana users to Zabbix users. When enabled, the plugin authenticates each request as the matching Zabbix user. |
+| **User identity field** | The Grafana user field used to match a Zabbix user. Values: **Username** (default) or **Email**. |
+| **Exclude users from per-user authentication** | A list of Grafana users that always use the global Zabbix credentials configured under **Auth type** instead of their own Zabbix identity. Defaults to `admin`. |
 
 ## Configure trends
 
@@ -143,6 +176,21 @@ If you also want to use this data source for other queries, you can grant `SELEC
 GRANT SELECT ON zabbix.* TO 'grafana'@'<GRAFANA_HOST>' IDENTIFIED BY '<PASSWORD>';
 ```
 
+## Configure problem severity overrides
+
+Zabbix lets administrators rename severities and change their colors globally under **Administration** > **General** > **Trigger displaying options**. The Zabbix data source offers the same kind of global override for Grafana under **Additional settings** > **Problem severity**. It applies to every Problems panel that queries this data source, so you don't have to change the **Colors** options of each panel.
+
+| Setting | Description |
+|---------|-------------|
+| **Not classified** … **Disaster** | One row per Zabbix severity. Enter a name to override the displayed severity name, and pick a color to override the severity color. Leave the name empty and the color unchanged to keep the plugin defaults. Click the **×** next to the color to reset it to the default. |
+
+How the overrides interact with panel settings:
+
+- A Problems panel that still uses the default name or color for a severity displays the global value from the data source.
+- A Problems panel that has its own custom name or color for a severity keeps it. Dashboards saved with custom severity names or colors aren't changed by the global overrides.
+- When global overrides are in effect for a panel, the **Colors** section of the panel options shows an information banner, and each affected severity row is marked with a globe icon that shows the global value.
+- A panel that mixes several Zabbix data sources takes the overrides from its queries in order. The first data source that defines a name or color for a severity wins for that field.
+
 ## Configure other settings
 
 These settings are under **Additional settings** > **Other**.
@@ -152,11 +200,46 @@ These settings are under **Additional settings** > **Other**.
 | **Disable acknowledges for read-only users** | Prevents non-editor users from acknowledging problems in Grafana. |
 | **Disable data alignment** | Disables automatic alignment of time series points to the start of their collection interval. Data alignment is required for stacked graphs to render correctly. You can also toggle this per query in the query options. |
 
+## Configure gRPC message size limits
+
+Grafana and the Zabbix backend plugin exchange data over gRPC. To bound the plugin's memory usage, the plugin limits the size of a single gRPC message to 32 MB for requests it receives from Grafana and 100 MB for responses it sends back. Very large result sets, such as a Problems query across thousands of hosts or a Direct DB Connection query that returns many series, can exceed these limits and fail with an error like `grpc: received message larger than max`.
+
+If your environment needs larger messages, raise the limits in the `[plugin.alexanderzobnin-zabbix-datasource]` section of the Grafana configuration file. Grafana forwards the settings to the plugin when it starts. These are instance-level settings, so they aren't available in the data source configuration page or in data source provisioning.
+
+```ini
+[plugin.alexanderzobnin-zabbix-datasource]
+grpc_max_receive_msg_size_mb = 64
+grpc_max_send_msg_size_mb = 200
+```
+
+| Setting | Description |
+|---------|-------------|
+| `grpc_max_receive_msg_size_mb` | Maximum size in MB of a single gRPC request the plugin accepts from Grafana. Default: `32`. |
+| `grpc_max_send_msg_size_mb` | Maximum size in MB of a single gRPC response the plugin sends to Grafana. Default: `100`. |
+
+Both settings accept whole numbers from `1` to `512`. Values above `512` are clamped to `512`, and invalid values are ignored and logged as a warning when the plugin starts. Restart Grafana after you change these settings.
+
+Larger messages mean higher memory usage in both Grafana and the plugin. Before you raise the limits, consider reducing the size of the result instead: enable trends, use Direct DB Connection for server-side aggregation, apply a **Limit** to Problems queries, or narrow the query with more specific filters.
+
+For more information about the `[plugin.plugin_id]` section and about overriding configuration with environment variables, refer to [Configure Grafana](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/setup-grafana/configure-grafana/#pluginplugin_id).
+
 ## Verify the connection
 
 Click **Save & test** to verify the connection. A successful test displays the message "**Zabbix API version**" followed by the detected version number. If Direct DB Connection is enabled, the message also includes the database connector type.
 
-If the test fails, refer to the [troubleshooting guide](./troubleshooting/) for common connection issues and solutions.
+If the test fails, refer to the [troubleshooting guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/) for common connection issues and solutions.
+
+## Connect through Private Data Source Connect
+
+If your Zabbix server isn't directly reachable from Grafana, for example a Grafana Cloud stack connecting to a Zabbix server on a private network, you can use Private Data Source Connect (PDC). The Zabbix data source supports PDC through the Grafana secure SOCKS proxy.
+
+To use PDC:
+
+1. Set up a PDC connection for your Grafana Cloud stack. Refer to [Private data source connect (PDC)](https://grafana.com/docs/grafana-cloud/connect-externally-hosted/private-data-source-connect/).
+1. Edit the Zabbix data source and select your PDC connection in the **Private data source connect** settings.
+1. Click **Save & test**.
+
+PDC requires Grafana 10.0 or later. In self-managed Grafana, an administrator must enable the secure SOCKS proxy before the setting appears.
 
 ## Provision the data source
 
@@ -183,6 +266,13 @@ datasources:
       dbConnectionRetentionPolicy: ''
       disableReadOnlyUsersAck: false
       disableDataAlignment: false
+      # Optional: global severity name and color overrides for Problems panels
+      severityOverrides:
+        - priority: 4
+          name: Critical
+          color: 'rgb(220, 40, 40)'
+        - priority: 5
+          name: Outage
     secureJsonData:
       password: <ZABBIX_PASSWORD>
     version: 1
@@ -215,10 +305,16 @@ The following table lists all available `jsonData` and `secureJsonData` fields f
 | `timeout` | `jsonData` | Zabbix API connection timeout in seconds. Default: `30`. |
 | `queryTimeout` | `jsonData` | Maximum execution time for database queries in seconds. Default: `60`. |
 | `dbConnectionEnable` | `jsonData` | Enable Direct DB Connection. Default: `false`. |
-| `dbConnectionDatasourceName` | `jsonData` | Name of the Grafana data source for the Zabbix database. |
+| `dbConnectionDatasourceUID` | `jsonData` | UID of the Grafana data source for the Zabbix database. Preferred over `dbConnectionDatasourceName`. |
+| `dbConnectionDatasourceName` | `jsonData` | Name of the Grafana data source for the Zabbix database. Resolved to a UID at runtime when `dbConnectionDatasourceUID` isn't set. |
 | `dbConnectionRetentionPolicy` | `jsonData` | InfluxDB retention policy name for long-term data. |
 | `disableReadOnlyUsersAck` | `jsonData` | Disable acknowledges for read-only users. Default: `false`. |
 | `disableDataAlignment` | `jsonData` | Disable time series data alignment. Default: `false`. |
+| `perUserAuth` | `jsonData` | Enable per-user authentication. Default: `false`. |
+| `perUserAuthField` | `jsonData` | Grafana user field used to match a Zabbix user. Values: `username` (default) or `email`. |
+| `severityOverrides` | `jsonData` | Global severity name and color overrides for Problems panels. A list of objects with `priority` (0-5), and an optional `name` and `color`. Fields that are omitted keep the plugin defaults. |
+| `perUserAuthExcludeUsers` | `jsonData` | List of Grafana users that always use the global Zabbix credentials. Default: `["admin"]`. |
+| `enableSecureSocksProxy` | `jsonData` | Route the connection through the Grafana secure SOCKS proxy for Private Data Source Connect (PDC). Default: `false`. |
 
 For detailed MySQL and PostgreSQL provisioning options, refer to the [MySQL provisioning](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/datasources/mysql/#provision-the-data-source) and [PostgreSQL provisioning](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/datasources/postgres/#provision-the-data-source) documentation.
 
@@ -252,7 +348,7 @@ For more information about the Grafana Terraform provider, refer to the [Grafana
 
 ## Next steps
 
-- [Build queries with the Zabbix query editor](./query-editor/)
-- [Use template variables for dynamic dashboards](./template-variables/)
-- [Set up alerting rules](./alerting/)
-- [Troubleshoot the Zabbix data source](./troubleshooting/)
+- [Build queries with the Zabbix query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/)
+- [Use template variables for dynamic dashboards](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/)
+- [Set up alerting rules](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)
+- [Troubleshoot the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/)
