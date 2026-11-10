@@ -22,6 +22,7 @@ export interface Props {
 
 export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountChange }: Props) => {
   const interpolatedQuery = useInterpolatedQuery(datasource, query);
+  const hostTagsKey = JSON.stringify(interpolatedQuery.hostTags ?? []);
 
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
@@ -66,9 +67,9 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
   };
 
   const [{ loading: hostTagsLoading, value: hostTagsOptions }, fetchHostTags] = useAsyncFn(async () => {
-    const options = await loadHostTagOptions(query.group.filter);
+    const options = await loadHostTagOptions(interpolatedQuery.group?.filter);
     return options;
-  }, [query.group.filter]);
+  }, [interpolatedQuery.group?.filter]);
 
   const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
     const options = await loadHostOptions(
@@ -78,7 +79,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     );
 
     return options;
-  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
+  }, [interpolatedQuery.group.filter, hostTagsKey, interpolatedQuery.evaltype]);
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
@@ -173,7 +174,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
 
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
-  const hostTagFilters = interpolatedQuery.hostTags;
   const evalType = interpolatedQuery.evaltype;
   const hostFilter = interpolatedQuery.host?.filter;
   const appFilter = interpolatedQuery.application?.filter;
@@ -190,7 +190,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
 
   useEffect(() => {
     fetchHosts();
-  }, [groupFilter, hostTagFilters, evalType]);
+  }, [groupFilter, hostTagsKey, evalType]);
 
   useEffect(() => {
     fetchApps();
@@ -244,6 +244,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
         </InlineField>
         <InlineField label="Host tag" labelWidth={12}>
           <HostTagQueryEditor
+            hostTagFilters={query.hostTags}
             hostTagOptions={hostTagsOptions}
             evalTypeValue={query.evaltype}
             hostTagOptionsLoading={hostTagsLoading}
