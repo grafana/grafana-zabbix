@@ -1,5 +1,14 @@
 # Change Log
 
+## 6.10.3
+
+### Patch Changes
+
+🐛 Enforce Grafana role checks in the backend for mutating Zabbix API calls made through the resource proxy: `script.execute` now requires the Admin role, and `event.acknowledge` requires Editor or Admin when "Disable acknowledges for read-only users" is enabled. Previously these calls were forwarded with the data source's stored credentials regardless of the caller's role.
+🐛 Security: bump moment, ip-address and fast-uri to patched versions
+🐛 Add a backend allowlist for the resource-proxy CallResource paths so only the exact `zabbix-api` and `db-connection-post` POST routes are served; any other path or method is now rejected with a 403 instead of falling through to the catch-all root handler.
+⚙️ Chore: Update dependencies
+
 ## 6.10.2
 
 ### Patch Changes
