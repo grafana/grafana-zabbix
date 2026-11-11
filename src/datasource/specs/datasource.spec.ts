@@ -470,6 +470,40 @@ describe('ZabbixDatasource', () => {
       expect(params.scope_attributes).toBeUndefined();
     });
 
+    it('should interpolate APM log filters as plain text', () => {
+      ctx.ds.templateSrv.replace = jest.fn((str) => (str ? str.replace('$svc', 'checkout') : str));
+      const [query] = ctx.ds.interpolateVariablesInQueries(
+        [
+          {
+            ...ctx.options.targets[0],
+            textFilter: '$svc failed',
+            apmFilter: {
+              service: '$svc',
+              traceId: 'abc',
+              attributes: [{ scope: 'resource', key: 'service.name', value: '$svc', operator: 0 }],
+            },
+          },
+        ],
+        {}
+      );
+      // Not wrapped into a /^...$/ regex like the item filters
+      expect(query.textFilter).toBe('checkout failed');
+      expect(query.apmFilter.service).toBe('checkout');
+      expect(query.apmFilter.traceId).toBe('abc');
+      expect(query.apmFilter.attributes[0].value).toBe('checkout');
+    });
+
+    it('should keep the regex-aware interpolation for the item logs text filter', () => {
+      ctx.ds.templateSrv.replace = jest.fn((str) => (str ? str.replace('$svc', 'checkout') : str));
+      const [query] = ctx.ds.interpolateVariablesInQueries(
+        [{ ...ctx.options.targets[0], logsSource: 'item', textFilter: '$svc' }],
+        {}
+      );
+      // utils.replaceTemplateVars is mocked to return its input, so the value stays
+      // untouched only if the plain templateSrv.replace path was not taken
+      expect(query.textFilter).toBe('$svc');
+    });
+
     it('should fail with a clear error when Zabbix is older than 8.0', async () => {
       ctx.ds.zabbix.supportsApmLogs = jest.fn().mockResolvedValue(false);
       await expect(ctx.ds.frontendQuery(ctx.options)).rejects.toThrow('APM logs require Zabbix 8.0 or higher');

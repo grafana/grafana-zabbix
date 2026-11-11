@@ -1005,15 +1005,20 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           scopedVars,
           utils.zabbixItemIdsTemplateFormat
         ),
-        textFilter: utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        // APM log filters are exact values or substrings, never regexes, so they are
+        // interpolated as plain text (replaceTemplateVars would wrap them in /^...$/)
+        textFilter:
+          query.queryType === c.MODE_LOGS && query.logsSource === c.LOGS_SOURCE_APM
+            ? this.templateSrv.replace(query.textFilter, scopedVars)
+            : utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
         apmFilter: query.apmFilter
           ? {
               ...query.apmFilter,
-              service: utils.replaceTemplateVars(this.templateSrv, query.apmFilter.service, scopedVars),
-              traceId: utils.replaceTemplateVars(this.templateSrv, query.apmFilter.traceId, scopedVars),
+              service: this.templateSrv.replace(query.apmFilter.service, scopedVars),
+              traceId: this.templateSrv.replace(query.apmFilter.traceId, scopedVars),
               attributes: query.apmFilter.attributes?.map((a) => ({
                 ...a,
-                value: utils.replaceTemplateVars(this.templateSrv, a.value, scopedVars),
+                value: this.templateSrv.replace(a.value, scopedVars),
               })),
             }
           : query.apmFilter,
