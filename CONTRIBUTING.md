@@ -35,15 +35,15 @@ npm run server       # == docker compose up --build
 npm run build && docker compose restart grafana
 ```
 
-Switch the Zabbix version with `ZABBIX_VERSION` (default `7.0`, the latest LTS):
+Switch the Zabbix version with `ZABBIX_VERSION` (default `7.0`):
 
 ```sh
 ZABBIX_VERSION=7.0 docker compose up -d --wait
 ```
 
-For richer, version-specific scenarios — including TLS + HTTP basic auth (5.0/6.0/7.0)
-and Zabbix proxy (5.0) — use the per-version stacks under [`devenv/`](./devenv); those
-are also what the `compatibility-*` integration workflows run against.
+For richer, version-specific scenarios — including TLS + HTTP basic auth (6.0/7.0) —
+use the per-version stacks under [`devenv/`](./devenv); those are also what the
+`integration` workflow runs against.
 
 ## Testing
 
@@ -59,8 +59,8 @@ npm run e2e
 End-to-end tests live in [`tests/e2e`](./tests/e2e) and run against the real Zabbix
 backend with the seeded SQL fixtures. CI runs them via the shared Plugins-CI workflow
 (`.github/workflows/push.yaml`), which brings up `docker-compose.yml` and runs the
-suite against it. Coverage across Zabbix versions is provided by the `compatibility-*`
-Go integration workflows. See [`tests/e2e/README.md`](./tests/e2e/README.md) for details.
+suite against it. Coverage across Zabbix versions is provided by the Go
+`integration` workflow. See [`tests/e2e/README.md`](./tests/e2e/README.md) for details.
 
 ## Debugging backend plugin
 

@@ -39,9 +39,8 @@ If you're new to Zabbix, the following terms are used throughout this documentat
 |------|-------------|
 | **Host group** | A logical grouping of hosts in Zabbix, such as "Linux servers" or "Network devices". |
 | **Host** | A networked device that Zabbix monitors, identified by name or IP address. |
-| **Application** | A grouping of items on a host (Zabbix versions before 5.4). Replaced by item tags in Zabbix 5.4+. |
 | **Item** | A specific metric collected from a host, such as CPU load or free memory. |
-| **Item tag** | A key-value label attached to an item (Zabbix 5.4+). Replaces applications for organizing items. |
+| **Item tag** | A key-value label attached to an item, used for organizing items. |
 | **Trigger** | A logical expression that evaluates item data and defines a problem threshold. |
 | **Problem** | An event generated when a trigger enters a problem state. |
 | **IT service** | A business-level service monitored through Zabbix SLA tracking. |
@@ -57,10 +56,9 @@ Use Metrics queries to retrieve numeric time series data from Zabbix items. This
 | Field | Description |
 |-------|-------------|
 | **Group** | The host group to query. Supports regex and template variables. |
-| **Host tag** | Filter hosts by tag (Zabbix 5.4+). Click the **+** button to add one or more tag filters. Each filter has a tag name, an operator, and an optional value. Available operators: Exists, Equals, Contains, Does not exist, Does not equal, Does not contain. When multiple filters are active, choose **AND/OR** or **OR** evaluation. |
+| **Host tag** | Filter hosts by tag. Click the **+** button to add one or more tag filters. Each filter has a tag name, an operator, and an optional value. Available operators: Exists, Equals, Contains, Does not exist, Does not equal, Does not contain. When multiple filters are active, choose **AND/OR** or **OR** evaluation. |
 | **Host** | The host to query. Supports regex and template variables. |
-| **Application** | Filter items by application. Visible on Zabbix versions before 5.4. Replaced by **Item tag** on Zabbix 5.4+. |
-| **Item tag** | Filter items by tag. Visible on Zabbix 5.4+. Replaces **Application**. Supports template variables. |
+| **Item tag** | Filter items by tag. Supports template variables. |
 | **Item** | The item to query. Supports regex and template variables. |
 
 Expand the **Options** section to access additional settings:
@@ -80,7 +78,6 @@ Use Text queries to retrieve text and log data from Zabbix items with text value
 |-------|-------------|
 | **Group** | The host group to query. Supports regex and template variables. |
 | **Host** | The host to query. Supports regex and template variables. |
-| **Application** | Filter items by application. This field is always visible regardless of Zabbix version. On Zabbix 5.4+, where applications have been removed, leave this field empty. |
 | **Item** | The text item to query. Supports regex and template variables. |
 | **Text filter** | Filter returned text values by a search string. |
 | **Use capture groups** | Extract parts of the text value using regex capture groups in the text filter. |
@@ -124,11 +121,10 @@ Use Triggers queries to count triggers matching specific criteria. This query ty
 | **Group** | The host group to filter. Supports regex and template variables. |
 | **Host** | The host to filter. Supports regex and template variables. |
 | **Proxy** | Filter by Zabbix proxy (visible when **Count by** is set to Problems). |
-| **Application** | Filter by application (Zabbix versions before 5.4). |
-| **Item tag** | Filter by item tag (Zabbix 5.4+, visible when **Count by** is set to Items). |
+| **Item tag** | Filter by item tag (visible when **Count by** is set to Items). |
 | **Problem** | Filter by problem name (visible when **Count by** is set to Problems). |
 | **Item** | Filter by item name (visible when **Count by** is set to Items). |
-| **Tags** | Filter by tags in `tag1:value1, tag2:value2` format (Zabbix 5.4+). |
+| **Tags** | Filter by tags in `tag1:value1, tag2:value2` format. |
 | **Min severity** | Minimum trigger severity: Not classified, Information, Warning, Average, High, or Disaster. |
 | **Count** | Toggle to return the count as a numeric value. |
 
@@ -148,9 +144,8 @@ Use Problems queries to retrieve Zabbix problem events. This query type returns 
 | **Group** | The host group to filter. Supports regex and template variables. |
 | **Host** | The host to filter. Supports regex and template variables. |
 | **Proxy** | Filter by Zabbix proxy. |
-| **Application** | Filter by application (Zabbix versions before 5.4). |
 | **Problem** | Filter by problem name, matched against the trigger name. A plain value must match exactly. Use a `*` wildcard (for example, `High CPU*`) or a regex wrapped in forward slashes (for example, `/CPU/`) for partial matches. |
-| **Tags** | Filter by tags. Each tag filter has a tag name, an operator, and a value. All operators offered by Zabbix are supported: Exists, Equals, Contains, Does not exist, Does not equal, and Does not contain. On Zabbix versions before 5.4 only Equals and Contains are available. Tag names and values support template variables. |
+| **Tags** | Filter by tags. Each tag filter has a tag name, an operator, and a value. All operators offered by Zabbix are supported: Exists, Equals, Contains, Does not exist, Does not equal, and Does not contain. Tag names and values support template variables. |
 | **Tag evaluation** | How to combine multiple tag filters: AND/OR or OR. |
 | **Show** | Which problems to display: Problems (current), Recent problems, or History. |
 | **Severity** | Filter by one or more severity levels (multi-select). |
@@ -181,7 +176,7 @@ Use User macros queries to retrieve Zabbix user macro values.
 
 ## Use regex in queries
 
-You can use JavaScript regular expressions in the **Group**, **Host**, **Application**, **Item tag**, and **Item** fields to match multiple values. Wrap regex patterns in forward slashes (`/pattern/`).
+You can use JavaScript regular expressions in the **Group**, **Host**, **Item tag**, and **Item** fields to match multiple values. Wrap regex patterns in forward slashes (`/pattern/`).
 
 ### Select multiple items
 

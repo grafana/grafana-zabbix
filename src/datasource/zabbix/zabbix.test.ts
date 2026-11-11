@@ -63,24 +63,6 @@ describe('Zabbix', () => {
     getMock.mockClear();
   });
 
-  describe('supportsProblemTagOperators', () => {
-    it.each([
-      ['5.0.0', false],
-      ['5.2.0', false],
-      ['5.4.0', true],
-      ['6.0.0', true],
-      ['7.0.0', true],
-    ])('returns %s support for Zabbix %s', (version: string, expected: boolean) => {
-      zabbix.version = version;
-      expect(zabbix.supportsProblemTagOperators()).toBe(expected);
-    });
-
-    it('returns false when the version is not known yet', () => {
-      zabbix.version = undefined;
-      expect(zabbix.supportsProblemTagOperators()).toBe(false);
-    });
-  });
-
   describe('initDBConnector', () => {
     const connectorOptions: any = { dbConnectionRetentionPolicy: 'policy' };
 
@@ -198,8 +180,6 @@ describe('Zabbix', () => {
       zabbix = new Zabbix(ctx);
       zabbix.getGroups = jest.fn().mockResolvedValue([{ groupid: '21' }]);
       zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '31' }]);
-      zabbix.getApps = jest.fn().mockResolvedValue([{ applicationid: '41' }]);
-      zabbix.supportsApplications = jest.fn().mockReturnValue(true);
       zabbix.zabbixAPI.getEventsHistory = jest.fn().mockResolvedValue([{ objectid: '501' }]);
       zabbix.zabbixAPI.getTriggersByIds = jest.fn().mockResolvedValue([{ triggerid: '501' }]);
       zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([]);
@@ -208,11 +188,11 @@ describe('Zabbix', () => {
     });
 
     it('builds the history query and returns filtered triggers', async () => {
-      const result = await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', 'proxy-foo', {
+      const result = await zabbix.getProblemsHistory('group.*', 'host.*', 'proxy-foo', {
         valueFromEvent: true,
       });
 
-      expect(zabbix.zabbixAPI.getEventsHistory).toHaveBeenCalledWith(['21'], ['31'], ['41'], { valueFromEvent: true });
+      expect(zabbix.zabbixAPI.getEventsHistory).toHaveBeenCalledWith(['21'], ['31'], { valueFromEvent: true });
       expect(joinTriggersWithEvents).toHaveBeenCalledWith([{ objectid: '501' }], [{ triggerid: '501' }], {
         valueFromEvent: true,
       });
@@ -220,20 +200,12 @@ describe('Zabbix', () => {
       expect(result).toEqual([{ triggerid: '501' }]);
     });
 
-    it('omits applicationids when applications are unsupported', async () => {
-      (zabbix.supportsApplications as jest.Mock).mockReturnValue(false);
-
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
-
-      expect(zabbix.zabbixAPI.getEventsHistory).toHaveBeenCalledWith(['21'], ['31'], undefined, {});
-    });
-
     it('does not fetch item history by default (fetchHistoricalItemValue off)', async () => {
       (joinTriggersWithEvents as jest.Mock).mockReturnValue([
         { triggerid: '501', timestamp: 1000, items: [{ itemid: '601', value_type: '0', lastvalue: 'x' }] },
       ]);
 
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
+      await zabbix.getProblemsHistory('group.*', 'host.*', undefined, {});
 
       expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
     });
@@ -243,19 +215,19 @@ describe('Zabbix', () => {
         { triggerid: '501', timestamp: 1000, items: [{ itemid: '601', value_type: '0', lastvalue: 'x' }] },
       ]);
 
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, { fetchHistoricalItemValue: true });
+      await zabbix.getProblemsHistory('group.*', 'host.*', undefined, { fetchHistoricalItemValue: true });
 
       expect(zabbix.zabbixAPI.getHistory).toHaveBeenCalled();
     });
 
     it('asks Zabbix to expand trigger comments when the history lookup is off', async () => {
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
+      await zabbix.getProblemsHistory('group.*', 'host.*', undefined, {});
 
       expect(zabbix.zabbixAPI.getTriggersByIds).toHaveBeenCalledWith(['501'], true);
     });
 
     it('leaves trigger comments unexpanded when the history lookup will expand them per problem', async () => {
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, { fetchHistoricalItemValue: true });
+      await zabbix.getProblemsHistory('group.*', 'host.*', undefined, { fetchHistoricalItemValue: true });
 
       expect(zabbix.zabbixAPI.getTriggersByIds).toHaveBeenCalledWith(['501'], false);
     });

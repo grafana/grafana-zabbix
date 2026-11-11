@@ -8,7 +8,6 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   queryTypes: Array<ComboboxOption<VariableQueryTypes>> = [
     { value: VariableQueryTypes.Group, label: 'Group' },
     { value: VariableQueryTypes.Host, label: 'Host' },
-    { value: VariableQueryTypes.Application, label: 'Application' },
     { value: VariableQueryTypes.ItemTag, label: 'Item tag' },
     { value: VariableQueryTypes.Item, label: 'Item' },
     { value: VariableQueryTypes.ItemValues, label: 'Item values' },
@@ -19,7 +18,6 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     queryType: VariableQueryTypes.Group,
     group: '/.*/',
     host: '',
-    application: '',
     itemTag: '',
     item: '',
     showDisabledItems: false,
@@ -72,8 +70,8 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   };
 
   handleQueryChange = () => {
-    const { queryType, group, host, application, itemTag, item, showDisabledItems } = this.state;
-    const queryModel = { queryType, group, host, application, itemTag, item, showDisabledItems };
+    const { queryType, group, host, itemTag, item, showDisabledItems } = this.state;
+    const queryModel = { queryType, group, host, itemTag, item, showDisabledItems };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
@@ -84,9 +82,9 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
       queryType: selectedItem.value,
     });
 
-    const { group, host, application, itemTag, item, showDisabledItems } = this.state;
+    const { group, host, itemTag, item, showDisabledItems } = this.state;
     const queryType = selectedItem.value;
-    const queryModel = { queryType, group, host, application, itemTag, item, showDisabledItems };
+    const queryModel = { queryType, group, host, itemTag, item, showDisabledItems };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
@@ -99,15 +97,13 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
       };
     });
 
-    const { queryType, group, host, application, itemTag, item } = this.state;
-    const queryModel = { queryType, group, host, application, itemTag, item, showDisabledItems };
+    const { queryType, group, host, itemTag, item } = this.state;
+    const queryModel = { queryType, group, host, itemTag, item, showDisabledItems };
     this.props.onChange(queryModel, `Zabbix - ${queryType}`);
   };
 
   render() {
-    const { selectedQueryType, legacyQuery, group, host, application, itemTag, item, showDisabledItems } = this.state;
-    const { datasource } = this.props;
-    const supportsItemTags = datasource?.zabbix?.isZabbix54OrHigherSync() || false;
+    const { selectedQueryType, legacyQuery, group, host, itemTag, item, showDisabledItems } = this.state;
 
     return (
       <>
@@ -146,36 +142,20 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           </InlineFieldRow>
         )}
 
-        {(selectedQueryType.value === VariableQueryTypes.Application ||
-          selectedQueryType.value === VariableQueryTypes.ItemTag ||
+        {(selectedQueryType.value === VariableQueryTypes.ItemTag ||
           selectedQueryType.value === VariableQueryTypes.Item ||
           selectedQueryType.value === VariableQueryTypes.ItemValues) && (
           <>
-            {supportsItemTags && (
-              <InlineFieldRow>
-                <InlineField label="Item Tag" labelWidth={18}>
-                  <ZabbixInput
-                    width={30}
-                    value={itemTag}
-                    onChange={(evt) => this.handleQueryUpdate(evt, 'itemTag')}
-                    onBlur={this.handleQueryChange}
-                  />
-                </InlineField>
-              </InlineFieldRow>
-            )}
-
-            {!supportsItemTags && (
-              <InlineFieldRow>
-                <InlineField label="Application" labelWidth={18}>
-                  <ZabbixInput
-                    width={30}
-                    value={application}
-                    onChange={(evt) => this.handleQueryUpdate(evt, 'application')}
-                    onBlur={this.handleQueryChange}
-                  />
-                </InlineField>
-              </InlineFieldRow>
-            )}
+            <InlineFieldRow>
+              <InlineField label="Item Tag" labelWidth={18}>
+                <ZabbixInput
+                  width={30}
+                  value={itemTag}
+                  onChange={(evt) => this.handleQueryUpdate(evt, 'itemTag')}
+                  onBlur={this.handleQueryChange}
+                />
+              </InlineField>
+            </InlineFieldRow>
 
             {(selectedQueryType.value === VariableQueryTypes.Item ||
               selectedQueryType.value === VariableQueryTypes.ItemValues) && (
