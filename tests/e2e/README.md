@@ -45,15 +45,33 @@ Run a single spec, or try another Zabbix version:
 
 ```sh
 npx playwright test tests/e2e/problemsHistoryBounded.spec.ts
-ZABBIX_VERSION=7.0 docker compose up -d --wait && npm run e2e
+ZABBIX_VERSION=8.0 docker compose up -d --wait && npm run e2e
 ```
+
+The Zabbix version is fixed when the database is first initialised. To switch an
+existing stack to another version, drop its volumes first with `docker compose down -v`.
 
 ## CI
 
-E2E tests run in CI via the shared Plugins-CI workflow ([`.github/workflows/push.yaml`](../../.github/workflows/push.yaml)),
-which brings up `docker-compose.yml` and runs `tests/e2e` against it. Coverage across
-multiple Zabbix versions is provided by the per-version `devenv/` stacks and the
-Go `integration` workflow.
+The suite runs in CI against two Zabbix versions:
+
+| Zabbix | Workflow | Grafana versions |
+| --- | --- | --- |
+| 7.0 (compose default) | Shared Plugins-CI workflow, [`.github/workflows/push.yaml`](../../.github/workflows/push.yaml) | Every version the shared workflow resolves from the plugin's `grafanaDependency` |
+| 8.0 | [`.github/workflows/e2e-zabbix-versions.yml`](../../.github/workflows/e2e-zabbix-versions.yml) | The compose default only |
+
+Both bring up `docker-compose.yml` and run `tests/e2e` against it. The shared workflow
+has no input for passing `ZABBIX_VERSION` to the compose stack, so the 8.0 run lives in
+its own workflow, which builds the plugin, starts the stack with `ZABBIX_VERSION=8.0`
+and runs `npm run e2e`. To cover another Zabbix version, add it to that workflow's
+`matrix.version`.
+
+Fixtures and specs must therefore pass on both versions. The 8.0 schema differs from
+7.0 (for example, trigger state lives in `trigger_rtdata` instead of `triggers`), so
+check a new `tests/fixtures/*.sql` file against both before opening a PR.
+
+The Go `integration` workflow separately covers the Zabbix API client against 6.0,
+7.0, 7.4 and 8.0 using the per-version `devenv/` stacks.
 
 ## Fixtures must not contain real secrets
 

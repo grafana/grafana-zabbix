@@ -1,0 +1,101 @@
+name: E2E tests (Zabbix versions)
+run-name: E2E tests (Zabbix versions)
+
+# Runs the Playwright e2e suite (tests/e2e) against the root docker-compose.yml
+# with a non-default ZABBIX_VERSION.
+#
+# The default Zabbix version (7.0) is covered by the shared Plugins-CI workflow
+# (push.yaml), which also runs the suite across the supported Grafana versions.
+# That workflow has no input for passing an environment variable or an extra
+# matrix dimension to the compose stack, so the other Zabbix versions run here:
+# one job per version, against the default Grafana image only.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-zabbix-versions-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: e2e (Zabbix ${{ matrix.version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # 7.0 is the compose default and runs in push.yaml; do not repeat it here.
+        version: ['8.0']
+    env:
+      ZABBIX_VERSION: ${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build backend
+        # Grafana runs in a linux/amd64 container on the runner, so only that
+        # binary is needed. mage is resolved from go.mod.
+        run: go run github.com/magefile/mage -v build:linux
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Zabbix ${{ matrix.version }} and Grafana
+        run: |
+          # Grafana depends_on the fixture loader completing successfully, so
+          # this fails if a tests/fixtures/*.sql file does not load on this
+          # Zabbix version's schema.
+          docker compose up -d --build
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Grafana did not become healthy in time"
+          exit 1
+
+      - name: Show stack state on startup failure
+        if: failure()
+        run: |
+          docker compose ps -a || true
+          docker compose logs --no-color --tail 300 || true
+
+      - name: Run Playwright tests
+        id: run-tests
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: failure() && steps.run-tests.outcome == 'failure'
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: playwright-report-zabbix-${{ matrix.version }}-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
