@@ -52,6 +52,15 @@ type TimeSeriesMeta struct {
 
 	// AggValue is using for sorting purposes
 	AggValue *float64
+
+	// Labels are the dimensions of a series that does not come from a Zabbix item
+	// (APM/OpenTelemetry metrics). They become the labels of the data frame field.
+	Labels map[string]string
+	// Unit is the Grafana unit id of such a series.
+	Unit string
+	// Additive marks series whose values add up over time (increases, bucket counts),
+	// so they are downsampled with sum instead of avg.
+	Additive bool
 }
 
 type AggFunc = func(points []TimePoint) *float64

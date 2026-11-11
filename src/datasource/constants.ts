@@ -15,6 +15,21 @@ export const MODE_TRIGGERS = '4';
 export const MODE_PROBLEMS = '5';
 export const MODE_MACROS = '6';
 
+// Metrics query data sources
+export const METRICS_SOURCE_ITEM = 'item';
+// APM (OpenTelemetry) metrics, Zabbix 8.0+ (apmmetric.get)
+export const METRICS_SOURCE_APM = 'apm';
+export const ZABBIX_APM_METRICS_MIN_VERSION = '8.0.0';
+// Raw data points one APM metrics query fetches by default (apmmetric.get cannot downsample)
+export const DEFAULT_APM_METRICS_MAX_POINTS = 50000;
+// Newest data points sampled to suggest services, metric names and attributes in the query editor
+export const APM_METRICS_LOOKUP_LIMIT = 5000;
+// APM metric data point types
+export const APM_METRIC_TYPE_GAUGE = 0;
+export const APM_METRIC_TYPE_SUM = 1;
+export const APM_METRIC_TYPE_HISTOGRAM = 2;
+export const APM_METRIC_TYPE_EXPONENTIAL_HISTOGRAM = 3;
+
 // Triggers severity
 export const SEV_NOT_CLASSIFIED = 0;
 export const SEV_INFORMATION = 1;

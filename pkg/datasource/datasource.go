@@ -188,7 +188,11 @@ func (ds *ZabbixDatasource) QueryData(ctx context.Context, req *backend.QueryDat
 
 				switch query.QueryType {
 				case MODE_METRICS:
-					frames, queryErr = zabbixDS.queryNumericItems(queryCtx, &query)
+					if query.MetricsSource == MetricsSourceAPM {
+						frames, queryErr = zabbixDS.queryAPMMetrics(queryCtx, &query)
+					} else {
+						frames, queryErr = zabbixDS.queryNumericItems(queryCtx, &query)
+					}
 				case MODE_ITEMID:
 					frames, queryErr = zabbixDS.queryItemIdData(queryCtx, &query)
 				default:

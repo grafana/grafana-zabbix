@@ -57,6 +57,10 @@ type QueryModel struct {
 	// Item ID mode
 	ItemIDs string `json:"itemids,omitempty"`
 
+	// Metrics mode data source: "item" (default) or "apm" (OpenTelemetry metrics, Zabbix 8.0+)
+	MetricsSource string              `json:"metricsSource,omitempty"`
+	APMMetric     APMMetricQueryModel `json:"apmMetric"`
+
 	Functions []QueryFunction `json:"functions,omitempty"`
 	Options   QueryOptions    `json:"options"`
 

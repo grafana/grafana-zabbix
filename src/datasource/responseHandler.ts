@@ -404,6 +404,12 @@ export function convertToWide(data: MutableDataFrame[]): DataFrame[] {
     length: timeField.values.length,
   };
 
+  // Keep the notices of the merged frames (e.g. a truncated APM metrics query)
+  const notices = data.flatMap((f) => f.meta?.notices ?? []);
+  if (notices.length > 0) {
+    frame.meta = { notices };
+  }
+
   return [frame];
 }
 

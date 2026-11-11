@@ -4,8 +4,16 @@ import { Combobox, ComboboxOption, InlineField, Stack } from '@grafana/ui';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';
-import { ShowProblemTypes, ZabbixMetricsQuery, ZabbixQueryOptions, ZabbixTagEvalType, QueryType } from '../types/query';
+import {
+  MetricsSource,
+  ShowProblemTypes,
+  ZabbixMetricsQuery,
+  ZabbixQueryOptions,
+  ZabbixTagEvalType,
+  QueryType,
+} from '../types/query';
 import { ZabbixDSOptions } from '../types/config';
+import { ApmMetricsQueryEditor } from './QueryEditor/ApmMetricsQueryEditor';
 import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
@@ -54,6 +62,19 @@ const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
     value: c.MODE_MACROS,
     label: 'User macros',
     description: 'User Macros',
+  },
+];
+
+const metricsSourceOptions: Array<ComboboxOption<MetricsSource>> = [
+  {
+    value: c.METRICS_SOURCE_ITEM,
+    label: 'Items',
+    description: 'Numeric Zabbix items',
+  },
+  {
+    value: c.METRICS_SOURCE_APM,
+    label: 'APM metrics',
+    description: 'OpenTelemetry metrics (Zabbix 8.0+)',
   },
 ];
 
@@ -162,6 +183,24 @@ export const QueryEditor = ({
     onChangeInternal({ ...query, options });
   };
 
+  const isApmMetrics = queryType === c.MODE_METRICS && query.metricsSource === c.METRICS_SOURCE_APM;
+  // The source is offered on Zabbix 8.0+, and for a query that already uses APM metrics
+  const showMetricsSource =
+    queryType === c.MODE_METRICS && (isApmMetrics || datasource.zabbix.supportsApmMetricsSync());
+
+  const onMetricsSourceChange = (option: ComboboxOption<MetricsSource>) => {
+    onChangeInternal({ ...query, metricsSource: option.value });
+  };
+
+  const renderApmMetricsEditor = () => {
+    return (
+      <>
+        <ApmMetricsQueryEditor query={query} datasource={datasource} range={range} onChange={onChangeInternal} />
+        <QueryFunctionsEditor query={query} onChange={onChangeInternal} />
+      </>
+    );
+  };
+
   const renderMetricsEditor = () => {
     return (
       <>
@@ -216,7 +255,7 @@ export const QueryEditor = ({
 
   return (
     <Stack direction="column">
-      {queryType === c.MODE_METRICS && <ItemCountWarning itemCount={itemCount} />}
+      {queryType === c.MODE_METRICS && !isApmMetrics && <ItemCountWarning itemCount={itemCount} />}
       <TimeRangeWarning timeRange={range} />
       <QueryEditorRow>
         <InlineField label="Query type" labelWidth={12}>
@@ -227,15 +266,33 @@ export const QueryEditor = ({
             onChange={onPropChange('queryType')}
           />
         </InlineField>
+        {showMetricsSource && (
+          <InlineField
+            label="Source"
+            labelWidth={12}
+            tooltip="Items: numeric Zabbix items. APM metrics: OpenTelemetry metrics collected by Zabbix 8.0+."
+          >
+            <Combobox<MetricsSource>
+              width={24}
+              value={query.metricsSource ?? c.METRICS_SOURCE_ITEM}
+              options={metricsSourceOptions}
+              onChange={onMetricsSourceChange}
+            />
+          </InlineField>
+        )}
       </QueryEditorRow>
-      {queryType === c.MODE_METRICS && renderMetricsEditor()}
+      {queryType === c.MODE_METRICS && !isApmMetrics && renderMetricsEditor()}
+      {isApmMetrics && renderApmMetricsEditor()}
       {queryType === c.MODE_ITEMID && renderItemIdsEditor()}
       {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
       {queryType === c.MODE_ITSERVICE && renderITServicesEditor()}
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
       {queryType === c.MODE_MACROS && renderUserMacrosEditor()}
-      <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
+      {/* Item options (trends, value mapping, disabled items) do not apply to APM metrics */}
+      {!isApmMetrics && (
+        <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
+      )}
     </Stack>
   );
 };

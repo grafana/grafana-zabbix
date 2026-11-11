@@ -223,4 +223,17 @@ describe('ZabbixDatasource', () => {
     expect(ds.isBackendTarget(metricsTarget)).toBe(false);
     expect(ds.isDBConnectionTarget(metricsTarget)).toBe(true);
   });
+
+  it('always sends APM metrics queries to the backend', () => {
+    const ds = new ZabbixDatasource(instanceSettings);
+    const apmTarget = { queryType: c.MODE_METRICS, metricsSource: c.METRICS_SOURCE_APM } as any;
+
+    expect(ds.isBackendTarget(apmTarget)).toBe(true);
+    expect(ds.isDBConnectionTarget(apmTarget)).toBe(false);
+
+    // APM metrics are not stored in the Zabbix database, Direct DB Connection does not apply
+    ds.enableDirectDBConnection = true;
+    expect(ds.isBackendTarget(apmTarget)).toBe(true);
+    expect(ds.isDBConnectionTarget(apmTarget)).toBe(false);
+  });
 });

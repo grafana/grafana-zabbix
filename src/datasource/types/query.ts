@@ -13,6 +13,47 @@ export type QueryType =
 
 type BaseQuery = { queryType: QueryType; datasourceUid?: string } & DataQuery;
 
+export type MetricsSource = typeof c.METRICS_SOURCE_ITEM | typeof c.METRICS_SOURCE_APM;
+
+// Attribute scopes apmmetric.get can filter on: data point attributes, resource attributes
+// and instrumentation scope attributes
+export type ApmMetricAttributeScope = 'metric' | 'resource' | 'scope';
+
+export interface ApmMetricAttributeFilter {
+  scope: ApmMetricAttributeScope;
+  key: string;
+  value: string;
+  // 0 Contains, 1 Equals, 2 Does not contain, 3 Does not equal, 4 Exists, 5 Does not exist
+  operator: number;
+}
+
+export type ApmSumMode = 'auto' | 'rate' | 'increase' | 'raw';
+export type ApmHistogramMode = 'quantiles' | 'average' | 'count' | 'buckets';
+export type ApmAggregation = 'sum' | 'avg' | 'min' | 'max';
+
+// APM (OpenTelemetry) metric selection of a Metrics query with metricsSource 'apm'
+export interface ApmMetricQuery {
+  // Exact service name, empty for any service
+  service?: string;
+  // Exact metric name
+  metric?: string;
+  attributes?: ApmMetricAttributeFilter[];
+  // How Sum metrics are returned. 'auto': rate for monotonic sums, raw values otherwise
+  sumMode?: ApmSumMode;
+  // How Histogram and Exponential histogram metrics are returned ('quantiles' when absent)
+  histogramMode?: ApmHistogramMode;
+  // Comma-separated quantiles between 0 and 1 ('0.5, 0.95, 0.99' when absent)
+  quantiles?: string;
+  // Labels to keep when aggregating series; empty for one series per attribute set
+  groupBy?: string[];
+  // Aggregation across grouped gauge and sum series ('sum' when absent)
+  aggregation?: ApmAggregation;
+  // Legend template, e.g. '{{service.name}} {{http.route}}'
+  legend?: string;
+  // Maximum number of raw data points to fetch
+  maxPoints?: number;
+}
+
 export type ZabbixMetricsQuery = {
   schema: number;
   group: { filter: string; name?: string };
@@ -41,6 +82,9 @@ export type ZabbixMetricsQuery = {
   evaltype?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
+  // Metrics: data source ('item' when absent)
+  metricsSource?: MetricsSource;
+  apmMetric?: ApmMetricQuery;
   // Problems
   showProblems?: ShowProblemTypes;
   // Deprecated

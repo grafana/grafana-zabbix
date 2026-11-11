@@ -4,6 +4,7 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
+import * as c from '../constants';
 import {
   expandItemMacros,
   expandUserMacros,
@@ -21,7 +22,7 @@ import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { CachingProxy } from './proxy/cachingProxy';
-import { Host, ZabbixConnector } from './types';
+import { ApmMetricAttributes, ApmMetricCatalog, ApmMetricInfo, Host, ZabbixConnector } from './types';
 
 // Bounds for the optional "historical item value at problem creation time" lookup
 // (issue #2427). These keep the single batched history.get from scanning an
@@ -281,6 +282,97 @@ export class Zabbix implements ZabbixConnector {
   supportsCauseSymptomProblems() {
     const version = this.version || this.zabbixAPI.version;
     return version ? semver.gte(version, '6.4.0') : false;
+  }
+
+  // Zabbix 8.0+ exposes APM (OpenTelemetry) metrics over the API (apmmetric.get)
+  supportsApmMetricsSync() {
+    const version = this.version || this.zabbixAPI.version;
+    // Unknown version: offer the feature, the backend reports a clear error if unsupported
+    return version ? semver.gte(version, c.ZABBIX_APM_METRICS_MIN_VERSION) : true;
+  }
+
+  /**
+   * Services and metrics seen in the newest APM data points of the time range.
+   * Zabbix has no method that lists metric names, so they are sampled from the data.
+   */
+  async getApmMetricCatalog(timeRange: number[], service?: string): Promise<ApmMetricCatalog> {
+    const [timeFrom, timeTo] = timeRange;
+    const params: any = {
+      output: ['service_name', 'metric_name', 'metric_unit', 'type'],
+      time_from: timeFrom,
+      time_till: timeTo + 1,
+      sortfield: 'time_unix',
+      sortorder: 'DESC',
+      limit: c.APM_METRICS_LOOKUP_LIMIT,
+    };
+    if (service) {
+      params.filter = { service_name: service.split('|') };
+    }
+
+    const points = (await this.zabbixAPI.getAPMMetrics(params)) || [];
+    const services = new Set<string>();
+    const metrics = new Map<string, ApmMetricInfo>();
+    for (const point of points) {
+      if (point.service_name) {
+        services.add(point.service_name);
+      }
+      if (point.metric_name && !metrics.has(point.metric_name)) {
+        metrics.set(point.metric_name, {
+          name: point.metric_name,
+          type: Number(point.type),
+          unit: point.metric_unit || '',
+        });
+      }
+    }
+    return {
+      services: Array.from(services).sort(),
+      metrics: Array.from(metrics.values()).sort((a, b) => a.name.localeCompare(b.name)),
+    };
+  }
+
+  /**
+   * Attribute keys, with the values seen for each, in the newest data points of a metric.
+   */
+  async getApmMetricAttributes(timeRange: number[], metric: string, service?: string): Promise<ApmMetricAttributes> {
+    const result: ApmMetricAttributes = { metric: {}, resource: {} };
+    if (!metric) {
+      return result;
+    }
+
+    const [timeFrom, timeTo] = timeRange;
+    const filter: any = { metric_name: metric.split('|') };
+    if (service) {
+      filter.service_name = service.split('|');
+    }
+    const points =
+      (await this.zabbixAPI.getAPMMetrics({
+        output: ['attributes', 'resource_attributes'],
+        time_from: timeFrom,
+        time_till: timeTo + 1,
+        filter,
+        sortfield: 'time_unix',
+        sortorder: 'DESC',
+        limit: c.APM_METRICS_LOOKUP_LIMIT,
+      })) || [];
+
+    const collect = (target: Record<string, string[]>, attributes: any) => {
+      // An empty attribute set is serialized as [] instead of {}
+      if (!attributes || Array.isArray(attributes)) {
+        return;
+      }
+      for (const [key, value] of Object.entries(attributes)) {
+        const values = (target[key] = target[key] || []);
+        const text = String(value);
+        if (!values.includes(text)) {
+          values.push(text);
+        }
+      }
+    };
+    for (const point of points) {
+      collect(result.metric, point.attributes);
+      collect(result.resource, point.resource_attributes);
+    }
+    return result;
   }
 
   async isZabbix54OrHigher() {

@@ -5,6 +5,7 @@ import {
   MODE_ITEMID,
   MODE_ITSERVICE,
   MODE_MACROS,
+  METRICS_SOURCE_APM,
   MODE_METRICS,
   MODE_PROBLEMS,
   MODE_TEXT,
@@ -23,7 +24,7 @@ export const trackRequest = (request: DataQueryRequest<ZabbixMetricsQuery>): voi
 
     switch (target.queryType) {
       case MODE_METRICS:
-        properties.queryType = 'Metrics';
+        properties.queryType = target.metricsSource === METRICS_SOURCE_APM ? 'APM metrics' : 'Metrics';
         break;
       case MODE_ITSERVICE:
         properties.queryType = 'Services';

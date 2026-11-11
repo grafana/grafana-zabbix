@@ -72,6 +72,42 @@ Expand the **Options** section to access additional settings:
 | **Use Zabbix value mapping** | Apply Zabbix value mappings to the returned data. |
 | **Disable data alignment** | Disable automatic alignment of data points to collection intervals. |
 
+#### APM metrics
+
+On Zabbix 8.0 and later, a Metrics query can read OpenTelemetry metrics collected by Zabbix application performance monitoring (APM) instead of Zabbix items. Set **Source** to **APM metrics**. The **Source** field isn't shown for Zabbix versions before 8.0.
+
+APM metrics have dimensions: each unique combination of attributes is a separate time series. The query returns one series per attribute set, and the resource attributes and data point attributes become labels of the series, so you can use them in the legend, in field overrides, and in transformations.
+
+{{< admonition type="note" >}}
+APM metrics require a telemetry data source configured in Zabbix and a Zabbix user that's allowed to view the metrics. For users that aren't Super admins, Zabbix restricts the returned data by the APM filters of their user groups.
+{{< /admonition >}}
+
+| Field | Description |
+|-------|-------------|
+| **Service** | The OpenTelemetry service name. Leave empty for any service. Supports template variables, including multi-value variables. |
+| **Metric** | The metric name. The drop-down shows each metric's type (Gauge, Sum, Histogram, or Exponential histogram) and unit. Supports template variables, including multi-value variables. |
+| **Attributes** | Return only the series that match all of the conditions. Click the **+** button to add a condition. Each condition has a scope (**Metric** for data point attributes, **Resource**, or **Scope**), an attribute key, an operator, and a value. Available operators: Equals, Does not equal, Contains, Does not contain, Exists, Does not exist. Keys and values support template variables. |
+| **Group by** | Aggregate the series that share the values of the selected labels, like `sum by (label)` in PromQL. Leave empty to return one series per attribute set. |
+| **Aggregation** | How grouped gauge and sum series are combined: Sum, Average, Min, or Max. Grouped histograms are always merged bucket by bucket. Visible when **Group by** is set. |
+| **Sum as** | How Sum metrics are returned. **Auto** returns the per-second rate for monotonic sums (counters) and the reported values for non-monotonic sums (up-down counters). **Rate** and **Increase** work for both cumulative and delta temporality and handle counter resets. **Raw** returns the values as reported. |
+| **Histogram as** | How Histogram and Exponential histogram metrics are returned. **Quantiles** estimates quantiles from the buckets. **Average** divides the sum of the measurements by their count. **Count rate** returns the number of measurements per second. **Buckets** returns one series per bucket with an `le` label, for the Heatmap visualization. |
+| **Quantiles** | Comma-separated quantiles between 0 and 1. The default is `0.5, 0.95, 0.99`. Each quantile is a separate series with a `quantile` label. |
+| **Legend** | A template for the series names. Use `{{label}}` for a label value and `{{__name__}}` for the metric name, for example `{{service.name}} {{http.route}}`. When empty, the series are named after the metric, followed by the labels that differ between the series. |
+| **Point limit** | The maximum number of data points to fetch from Zabbix. The default is 50,000 and the maximum is 500,000. |
+
+The **Service**, **Metric**, and attribute drop-downs list what the plugin finds in the most recent data points of the dashboard time range, because Zabbix has no API that lists metric names. If a metric isn't listed, type its name.
+
+[Functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/) apply to APM metrics the same way as to item metrics. The item options (trends, value mapping, and data alignment) don't apply.
+
+Keep the following in mind when you query APM metrics:
+
+- **Zabbix returns raw data points.** The Zabbix API can't aggregate or downsample APM metrics, so the plugin fetches every data point in the time range and processes it in the plugin backend. A query over a long time range or over many series can reach the **Point limit**. When it does, the plugin keeps the newest data points and shows a warning on the panel. Narrow the time range, add attribute filters, or raise the limit. **Group by** reduces the number of returned series, but not the number of fetched data points.
+- **Large queries take time.** The plugin fetches the data points in pages of 10,000, so that a response fits in the default PHP memory limit of the Zabbix frontend. Expect roughly one second per page.
+- **A query can return at most 1,000 series.** Add attribute filters or group by fewer labels if a query matches more.
+- **Rates and quantiles need two data points.** For metrics with cumulative temporality, the first data point of each series in the time range has no value.
+- **Summary metrics aren't available.** Zabbix stores Gauge, Sum, Histogram, and Exponential histogram metrics only.
+- **Attribute filters don't support regex.** The Zabbix API matches attributes exactly or by substring.
+
 ### Text
 
 Use Text queries to retrieve text and log data from Zabbix items with text value types (character, log, text).
@@ -252,6 +288,30 @@ Combine per-core CPU utilization into a single average line by grouping the matc
 - **Item:** `/CPU .* time/`
 - **Function:** `aggregateBy(1m, avg)`
 
+### Graph the request rate of a service by route
+
+Graph an OpenTelemetry counter collected by Zabbix APM (Zabbix 8.0+), one line per route:
+
+- **Query type:** Metrics
+- **Source:** APM metrics
+- **Service:** `checkout`
+- **Metric:** `http.server.request.count`
+- **Group by:** `http.route`
+- **Sum as:** Auto
+
+### Graph latency percentiles from a histogram
+
+Show the 50th, 95th, and 99th percentile of an OpenTelemetry histogram collected by Zabbix APM (Zabbix 8.0+):
+
+- **Query type:** Metrics
+- **Source:** APM metrics
+- **Metric:** `http.server.request.duration`
+- **Group by:** `service.name`
+- **Histogram as:** Quantiles
+- **Quantiles:** `0.5, 0.95, 0.99`
+
+To show the distribution instead, set **Histogram as** to **Buckets**, use the Heatmap visualization, and set its **Calculate from data** option to **No**.
+
 ### List current problems in a table
 
 Display active high-severity problems on a table panel.
@@ -293,6 +353,8 @@ consolidateBy(max) | groupBy(1h, max)
 ```
 
 Without `consolidateBy`, the database aggregates using the default `AVG` function, which may produce unexpected results when combined with `groupBy(interval, max)`.
+
+APM metrics aren't stored in the Zabbix database. Metrics queries with the **APM metrics** source always use the Zabbix API, also when Direct DB Connection is enabled.
 
 ## Next steps
 

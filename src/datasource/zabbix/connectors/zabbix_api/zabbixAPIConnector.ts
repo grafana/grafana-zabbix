@@ -445,6 +445,15 @@ export class ZabbixAPIConnector {
     return self.request('trend.get', params);
   }
 
+  /**
+   * Query APM (OpenTelemetry) metric data points from Zabbix 8.0+ (apmmetric.get).
+   * The method returns raw data points only: it cannot aggregate, downsample or list
+   * metric names, so callers must bound the request with time_from/time_till and limit.
+   */
+  getAPMMetrics(params: any): Promise<any[]> {
+    return this.request('apmmetric.get', params);
+  }
+
   getITService(serviceids?: any[]) {
     const params = {
       output: 'extend',

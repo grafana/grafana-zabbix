@@ -304,4 +304,26 @@ describe('Utils', () => {
       expect(scopedVars['__zbx_item_tag_service']).toEqual({ value: 'checkout' });
     });
   });
+
+  describe('APM metrics helpers', () => {
+    it('isApmMetricsTarget() matches only Metrics queries with the APM source', () => {
+      expect(utils.isApmMetricsTarget({ queryType: '0', metricsSource: 'apm' })).toBe(true);
+      expect(utils.isApmMetricsTarget({ queryType: '0', metricsSource: 'item' })).toBe(false);
+      expect(utils.isApmMetricsTarget({ queryType: '0' })).toBe(false);
+      expect(utils.isApmMetricsTarget({ queryType: '3', metricsSource: 'apm' })).toBe(false);
+    });
+
+    it('replaceApmTemplateVars() replaces values as plain text and joins multi-value variables with |', () => {
+      const templateSrv: any = {
+        replace: jest.fn((value: string, _scopedVars: any, format: (v: string | string[]) => string) =>
+          value.replace('$service', format(['checkout', 'payments'])).replace('$metric', format('http.requests'))
+        ),
+      };
+
+      expect(utils.replaceApmTemplateVars(templateSrv, '$service')).toBe('checkout|payments');
+      expect(utils.replaceApmTemplateVars(templateSrv, '$metric')).toBe('http.requests');
+      expect(utils.replaceApmTemplateVars(templateSrv, '')).toBe('');
+      expect(utils.replaceApmTemplateVars(templateSrv, undefined)).toBeUndefined();
+    });
+  });
 });
