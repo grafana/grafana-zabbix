@@ -1,6 +1,8 @@
 package datasource
 
 import (
+	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -304,5 +306,34 @@ func TestValidateAPIMethod(t *testing.T) {
 			assert.Error(t, err)
 			assert.ErrorIs(t, err, ErrAPIMethodNotAllowed)
 		})
+	}
+}
+
+func TestAuthorizeAPIMethod(t *testing.T) {
+	roles := []string{"Admin", "Editor", "Viewer", "None", ""}
+	tests := []struct {
+		method             string
+		disableReadOnlyAck bool
+		allowedRoles       []string
+	}{
+		{method: "script.execute", disableReadOnlyAck: false, allowedRoles: []string{"Admin"}},
+		{method: "script.execute", disableReadOnlyAck: true, allowedRoles: []string{"Admin"}},
+		{method: "event.acknowledge", disableReadOnlyAck: false, allowedRoles: roles},
+		{method: "event.acknowledge", disableReadOnlyAck: true, allowedRoles: []string{"Admin", "Editor"}},
+		{method: "user.get", disableReadOnlyAck: true, allowedRoles: roles},
+		{method: "host.get", disableReadOnlyAck: true, allowedRoles: roles},
+	}
+	for _, tt := range tests {
+		for _, role := range roles {
+			name := fmt.Sprintf("%s_role=%q_disableReadOnlyAck=%v", tt.method, role, tt.disableReadOnlyAck)
+			t.Run(name, func(t *testing.T) {
+				err := authorizeAPIMethod(tt.method, role, tt.disableReadOnlyAck)
+				if slices.Contains(tt.allowedRoles, role) {
+					assert.NoError(t, err)
+				} else {
+					assert.ErrorIs(t, err, ErrInsufficientRole)
+				}
+			})
+		}
 	}
 }

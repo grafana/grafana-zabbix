@@ -17,6 +17,13 @@ var (
 	ErrTimeRangeTooLarge   = errors.New("time range exceeds maximum allowed duration")
 	ErrTooManyItems        = errors.New("query would return too many items")
 	ErrAPIMethodNotAllowed = errors.New("API method is not allowed")
+	ErrInsufficientRole    = errors.New("insufficient permissions: this action requires a higher role")
+)
+
+// Grafana org roles, as reported by backend.User.Role
+const (
+	roleEditor = "Editor"
+	roleAdmin  = "Admin"
 )
 
 // Default guardrail limits
@@ -130,6 +137,26 @@ var AllowedAPIMethods = map[string]bool{
 func ValidateAPIMethod(method string) error {
 	if _, allowed := AllowedAPIMethods[method]; !allowed {
 		return backend.DownstreamError(ErrAPIMethodNotAllowed)
+	}
+	return nil
+}
+
+// authorizeAPIMethod checks whether a caller with the given Grafana org role may
+// invoke a mutating Zabbix API method. The data source talks to Zabbix with shared
+// stored credentials, so Zabbix cannot enforce this itself. Read methods are always allowed.
+//   - script.execute requires Admin.
+//   - event.acknowledge requires Editor or Admin when disableReadOnlyAck is set,
+//     mirroring the frontend rule.
+func authorizeAPIMethod(method, role string, disableReadOnlyAck bool) error {
+	switch method {
+	case "script.execute":
+		if role != roleAdmin {
+			return ErrInsufficientRole
+		}
+	case "event.acknowledge":
+		if disableReadOnlyAck && role != roleEditor && role != roleAdmin {
+			return ErrInsufficientRole
+		}
 	}
 	return nil
 }

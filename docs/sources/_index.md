@@ -29,9 +29,39 @@ The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure
 ## Requirements
 
 - Grafana 11.6.0 or later.
-- The Zabbix plugin installed and enabled in your Grafana instance. Zabbix is an app plugin, so after you install it you must also enable it on the plugin page before the data source becomes available. You can install it from **Administration** > **Plugins and data** > **Plugins**, or refer to [Install Grafana plugins](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/administration/plugin-management/) for other methods. For step-by-step instructions, refer to [Install and enable the Zabbix plugin](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#install-and-enable-the-zabbix-plugin).
+- The Zabbix plugin installed and enabled in your Grafana instance. Zabbix is an app plugin, so after you install it you must also enable it on the plugin page before the data source becomes available. Refer to [Install the plugin](#install-the-plugin) for installation and upgrade instructions, or to [Install and enable the Zabbix plugin](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#install-and-enable-the-zabbix-plugin) for step-by-step instructions.
 - A running Zabbix server with API access enabled.
 - A Zabbix user account with read permissions for the host groups and hosts you want to query.
+
+## Install the plugin
+
+Install the plugin by using one of the following methods:
+
+- In Grafana, go to **Administration** > **Plugins and data** > **Plugins**, search for **Zabbix**, and click **Install**.
+- Use the Grafana CLI:
+
+  ```sh
+  grafana cli plugins install alexanderzobnin-zabbix-app
+  ```
+
+  > **Note:** In Grafana versions that ship the standalone `grafana-cli` binary, run `grafana-cli plugins install alexanderzobnin-zabbix-app` instead. The standalone binary is deprecated in favor of the `grafana cli` subcommand.
+
+For other methods, including provisioning and Docker environments, refer to [Install Grafana plugins](https://grafana.com/docs/grafana/<GRAFANA_VERSION>/administration/plugin-management/).
+
+Restart Grafana after you install the plugin.
+
+## Upgrade the plugin
+
+Upgrade the plugin to the latest version by using one of the following methods:
+
+- In Grafana, go to **Administration** > **Plugins and data** > **Plugins**, select **Zabbix**, and click **Update** if a newer version is available.
+- Use the Grafana CLI:
+
+  ```sh
+  grafana cli plugins update alexanderzobnin-zabbix-app
+  ```
+
+Restart Grafana after you upgrade the plugin.
 
 ## Supported features
 
