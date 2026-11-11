@@ -17,6 +17,11 @@ export const MODE_MACROS = '6';
 // '7' and '8' are reserved: legacy triggers count/macros modes remapped by migrations (schema < 11)
 export const MODE_LOGS = '9';
 
+// Logs query data sources
+export const LOGS_SOURCE_ITEM = 'item';
+export const LOGS_SOURCE_APM = 'apm';
+export const ZABBIX_APM_MIN_VERSION = '8.0.0';
+
 // Triggers severity
 export const SEV_NOT_CLASSIFIED = 0;
 export const SEV_INFORMATION = 1;

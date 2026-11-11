@@ -276,6 +276,7 @@ func TestValidateAPIMethod(t *testing.T) {
 	allowedMethods := []string{
 		"host.get",
 		"history.get",
+		"apmlog.get",
 		"item.get",
 		"event.acknowledge",
 		"script.execute",

@@ -103,6 +103,7 @@ function getSLAQueryDefaults(): Partial<ZabbixMetricsQuery> {
 
 function getLogsQueryDefaults(): Partial<ZabbixMetricsQuery> {
   return {
+    logsSource: c.LOGS_SOURCE_ITEM,
     options: {
       limit: c.DEFAULT_ZABBIX_LOGS_LIMIT,
     },

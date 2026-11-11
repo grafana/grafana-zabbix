@@ -354,6 +354,137 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When querying APM logs', () => {
+    beforeEach(() => {
+      ctx.ds.replaceTemplateVars = (str) => str;
+      ctx.ds.zabbix.supportsApmLogs = jest.fn().mockResolvedValue(true);
+      ctx.ds.zabbix.zabbixAPI.getAPMLogs = jest.fn().mockResolvedValue([
+        {
+          timestamp: 1794394366205144253,
+          traceid: 'abc123',
+          spanid: 'def456',
+          trace_flags: 0,
+          severity_text: 'ERROR',
+          severity_number: 17,
+          service_name: 'checkout',
+          body: 'payment gateway timeout',
+          resource_schema_url: '',
+          resource_attributes: { 'service.name': 'checkout', 'host.name': 'node-1' },
+          scope_schema_url: '',
+          scope_name: '',
+          scope_version: '',
+          // The Zabbix PHP API serializes empty maps as []
+          scope_attributes: [],
+          log_attributes: { app: 'server' },
+          event_name: '',
+        },
+        {
+          timestamp: 1794394300000000000,
+          traceid: '',
+          spanid: '',
+          trace_flags: 0,
+          severity_text: '',
+          severity_number: 9,
+          service_name: 'payments',
+          body: 'payment settled',
+          resource_attributes: [],
+          scope_attributes: [],
+          log_attributes: [],
+          event_name: '',
+        },
+      ]);
+
+      ctx.options.targets = [
+        {
+          group: { filter: '' },
+          host: { filter: '' },
+          application: { filter: '' },
+          item: { filter: '' },
+          textFilter: '',
+          queryType: '9',
+          logsSource: 'apm',
+          apmFilter: {},
+          options: { limit: 500 },
+        },
+      ];
+    });
+
+    it('should return a logs data frame sorted by time with OTEL severity mapping', async () => {
+      const result = (await ctx.ds.frontendQuery(ctx.options)) as DataQueryResponse;
+      expect(result.data.length).toBe(1);
+
+      const frame = result.data[0];
+      expect(frame.fields.map((f) => f.name)).toEqual(['timestamp', 'body', 'severity', 'id', 'labels']);
+      expect(frame.meta.preferredVisualisationType).toBe('logs');
+      expect(frame.meta.type).toBe('log-lines');
+
+      // Ascending time order, nanoseconds converted to milliseconds
+      const timeField = frame.fields.find((f) => f.name === 'timestamp');
+      expect(timeField.values).toEqual([1794394300000, 1794394366205]);
+
+      const severityField = frame.fields.find((f) => f.name === 'severity');
+      // severity_text wins when known; falls back to severity_number ranges (9 = info)
+      expect(severityField.values).toEqual(['info', 'error']);
+
+      const labelsField = frame.fields.find((f) => f.name === 'labels');
+      expect(labelsField.values[1]).toEqual({
+        'service.name': 'checkout',
+        'host.name': 'node-1',
+        app: 'server',
+        service: 'checkout',
+        traceid: 'abc123',
+        spanid: 'def456',
+      });
+      // Empty [] attributes don't pollute labels
+      expect(labelsField.values[0]).toEqual({ service: 'payments' });
+    });
+
+    it('should build apmlog.get params from the query model', async () => {
+      ctx.options.targets[0].textFilter = 'gateway';
+      ctx.options.targets[0].apmFilter = {
+        service: 'checkout',
+        traceId: 'abc123',
+        minSeverity: 17,
+        attributes: [
+          { scope: 'resource', key: 'host.name', value: 'node-1', operator: 1 },
+          { scope: 'log', key: 'app', value: '', operator: 4 },
+          { scope: 'log', key: '', value: 'ignored', operator: 0 },
+        ],
+      };
+      await ctx.ds.frontendQuery(ctx.options);
+
+      const params = ctx.ds.zabbix.zabbixAPI.getAPMLogs.mock.calls[0][0];
+      expect(params.sortfield).toBe('timestamp');
+      expect(params.sortorder).toBe('DESC');
+      expect(params.limit).toBe(500);
+      expect(params.time_from).toBeLessThan(params.time_till);
+      expect(params.filter).toEqual({
+        service_name: 'checkout',
+        traceid: 'abc123',
+        severity_number: [17, 18, 19, 20, 21, 22, 23, 24],
+      });
+      expect(params.search).toEqual({ body: 'gateway' });
+      expect(params.resource_attributes).toEqual([{ key: 'host.name', value: 'node-1', operator: 1 }]);
+      // Filters with an empty key are dropped
+      expect(params.log_attributes).toEqual([{ key: 'app', value: '', operator: 4 }]);
+      expect(params.scope_attributes).toBeUndefined();
+    });
+
+    it('should fail with a clear error when Zabbix is older than 8.0', async () => {
+      ctx.ds.zabbix.supportsApmLogs = jest.fn().mockResolvedValue(false);
+      await expect(ctx.ds.frontendQuery(ctx.options)).rejects.toThrow('APM logs require Zabbix 8.0 or higher');
+    });
+
+    it('should not touch the item logs path when logsSource is absent', async () => {
+      delete ctx.options.targets[0].logsSource;
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockResolvedValue([]);
+      ctx.ds.zabbix.getHistoryLogs = jest.fn().mockResolvedValue([]);
+      await ctx.ds.frontendQuery(ctx.options);
+      expect(ctx.ds.zabbix.getItemsFromTarget).toHaveBeenCalled();
+      expect(ctx.ds.zabbix.zabbixAPI.getAPMLogs).not.toHaveBeenCalled();
+    });
+  });
+
   describe('When querying problems', () => {
     const buildProblemsTarget = (options: any = {}, showProblems = 'problems') => ({
       group: { filter: '' },

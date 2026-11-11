@@ -386,6 +386,14 @@ export class ZabbixAPIConnector {
   }
 
   /**
+   * Query OTEL/APM log records from Zabbix 8.0+ (apmlog.get).
+   * Timestamps in returned records are unix nanoseconds; time_from/time_till are unix seconds.
+   */
+  getAPMLogs(params: any): Promise<any[]> {
+    return this.request('apmlog.get', params);
+  }
+
+  /**
    * Perform trends query from Zabbix API
    * Use trends api extension from ZBXNEXT-1193 patch.
    *

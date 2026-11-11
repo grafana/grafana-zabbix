@@ -1,0 +1,149 @@
+# Zabbix 8.0 devenv with the APM/OpenTelemetry pipeline:
+# OTLP/gRPC -> zabbix-proxy (APM collector) -> ClickHouse <- Zabbix frontend/API (apmlog.get)
+#
+# Usage (from this directory):
+#   docker compose up -d
+# Grafana:    http://localhost:3000  (plugin from ../../dist, same as the root devenv)
+# Zabbix web: http://localhost:8188  (Admin / zabbix)
+# Seed more OTEL logs:
+#   docker compose run --rm otel-logs-seed
+services:
+  grafana:
+    extends:
+      file: ../../.config/docker-compose-base.yaml
+      service: grafana
+    volumes:
+      # Override the base ../provisioning mount so the nested datasource/dashboard
+      # mounts below create their (Docker-generated) mount-point files under a
+      # gitignored tmp dir instead of the tracked repo-root provisioning/.
+      - ../../tmp/provisioning:/etc/grafana/provisioning
+      - ../dashboards:/devenv/dashboards
+      - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
+      - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
+
+  # Zabbix 8.0 telemetry requires ClickHouse >= 26.8.17.4
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8
+    environment:
+      CLICKHOUSE_DB: zabbix
+      CLICKHOUSE_USER: zabbix
+      CLICKHOUSE_PASSWORD: zabbix
+    volumes:
+      # OTEL schema (otel_logs, otel_traces, otel_metrics_*), applied on first start
+      - ./clickhouse:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'clickhouse-client --user zabbix --password zabbix -q "SELECT 1"']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  database:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      POSTGRES_DB: zabbix
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zabbix -d zabbix']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-8.0-latest
+    ports:
+      - '10051:10051'
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DB_SERVER_HOST: database
+      DB_SERVER_PORT: 5432
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      POSTGRES_DB: zabbix
+      ZBX_TIMEOUT: 10
+
+  zabbix-web:
+    image: zabbix/zabbix-web-apache-pgsql:alpine-8.0-latest
+    ports:
+      - '8188:8080'
+    depends_on:
+      database:
+        condition: service_healthy
+      zabbix-server:
+        condition: service_started
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_PORT: 10051
+      DB_SERVER_HOST: database
+      DB_SERVER_PORT: 5432
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      POSTGRES_DB: zabbix
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://localhost:8080/ || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 40
+
+  # Registers the APM proxy and the global ClickHouse data source via the Zabbix API
+  apm-bootstrap:
+    image: zabbix/zabbix-proxy-sqlite3:alpine-8.0-latest
+    entrypoint: ['/bin/sh', '/bootstrap-apm.sh']
+    volumes:
+      - ./bootstrap/bootstrap-apm.sh:/bootstrap-apm.sh:ro
+    environment:
+      ZBX_API_URL: http://zabbix-web:8080
+    depends_on:
+      zabbix-web:
+        condition: service_healthy
+    restart: 'no'
+
+  # Active proxy with the OTLP/gRPC APM collector; writes telemetry to ClickHouse.
+  # StartAPMCollector/TelemetryProvider have no ZBX_* mapping in the stock config
+  # includes, hence the indexed ZBX_TELEMETRYPROVIDER_0 understood by the entrypoint.
+  zabbix-proxy:
+    image: zabbix/zabbix-proxy-sqlite3:alpine-8.0-latest
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      zabbix-server:
+        condition: service_started
+      apm-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      ZBX_PROXYMODE: 0
+      ZBX_HOSTNAME: apm-proxy-1
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_STARTAPMCOLLECTOR: 1
+      ZBX_APMLISTENIP: 0.0.0.0
+      ZBX_APMLISTENPORT: 4317
+      ZBX_TELEMETRYPROVIDER_0: clickhouse;url=http://clickhouse:8123,db=zabbix,username=zabbix,password=zabbix
+      ZBX_STARTTELEMETRYQUERYPOLLERS: 1
+
+  # One-shot OTEL log generator. The collector only listens once the proxy has
+  # synced its config from the server, so retry until the export succeeds.
+  otel-logs-seed:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.120.0
+    command:
+      - logs
+      - --otlp-endpoint
+      - zabbix-proxy:4317
+      - --otlp-insecure
+      - --logs
+      - '200'
+      - --rate
+      - '0'
+      - --otlp-attributes
+      - service.name="checkout"
+      - --severity-text
+      - ERROR
+      - --severity-number
+      - '17'
+      - --body
+      - payment gateway timeout while charging card
+    depends_on:
+      zabbix-proxy:
+        condition: service_started
+    restart: on-failure

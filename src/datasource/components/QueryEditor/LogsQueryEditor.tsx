@@ -2,15 +2,23 @@ import { flatten, uniqBy } from 'lodash';
 import React, { FormEvent, useCallback, useEffect } from 'react';
 import { useAsyncFn } from '../../hooks/useAsyncFn';
 
-import { InlineField, ComboboxOption, Input } from '@grafana/ui';
+import { Combobox, InlineField, ComboboxOption, Input, RadioButtonGroup } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions, processHostTags } from './utils';
 import { ZabbixDatasource } from '../../datasource';
-import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../../types/query';
+import * as c from '../../constants';
+import {
+  ApmAttributeFilter,
+  HostTagFilter,
+  LogsSource,
+  ZabbixMetricsQuery,
+  ZabbixTagEvalType,
+} from '../../types/query';
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { itemTagToString } from '../../utils';
 import { HostTagQueryEditor } from './HostTagQueryEditor';
+import { ApmAttributeFiltersEditor } from './ApmAttributeFiltersEditor';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 export interface Props {
@@ -214,93 +222,217 @@ export const LogsQueryEditor = ({ query, datasource, onChange }: Props) => {
     [onChange, query]
   );
 
+  const onApmFilterChange = (prop: string) => {
+    return (v: FormEvent<HTMLInputElement>) => {
+      const newValue = v?.currentTarget?.value;
+      if (newValue !== null) {
+        onChange({ ...query, apmFilter: { ...query.apmFilter, [prop]: newValue } });
+      }
+    };
+  };
+
+  const onApmMinSeverityChange = (option: ComboboxOption<number>) => {
+    if (option.value !== null) {
+      onChange({ ...query, apmFilter: { ...query.apmFilter, minSeverity: option.value } });
+    }
+  };
+
+  const onApmAttributesChange = useCallback(
+    (attributes: ApmAttributeFilter[]) => {
+      onChange({ ...query, apmFilter: { ...query.apmFilter, attributes } });
+    },
+    [onChange, query]
+  );
+
   const supportsApplications = datasource.zabbix.supportsApplications();
+  const logsSource: LogsSource = query.logsSource || c.LOGS_SOURCE_ITEM;
+  const apmSupported = datasource.zabbix.supportsApmLogsSync();
+
+  const logsSourceOptions = [
+    {
+      label: 'Item logs',
+      value: c.LOGS_SOURCE_ITEM as LogsSource,
+      description: 'History of items with the Log value type',
+    },
+    {
+      label: 'APM logs',
+      value: c.LOGS_SOURCE_APM as LogsSource,
+      description: apmSupported
+        ? 'OpenTelemetry logs collected via APM (Zabbix 8.0+)'
+        : 'Requires Zabbix 8.0 or higher',
+    },
+  ];
+
+  // OTEL SeverityNumber lower bounds
+  const minSeverityOptions: Array<ComboboxOption<number>> = [
+    { value: 0, label: 'Any' },
+    { value: 1, label: 'Trace' },
+    { value: 5, label: 'Debug' },
+    { value: 9, label: 'Info' },
+    { value: 13, label: 'Warn' },
+    { value: 17, label: 'Error' },
+    { value: 21, label: 'Fatal' },
+  ];
+
+  const renderApmLogsEditor = () => {
+    return (
+      <>
+        <QueryEditorRow>
+          <InlineField
+            label="Service"
+            labelWidth={12}
+            tooltip="Exact service name (OTEL service.name resource attribute). Supports template variables."
+          >
+            <Input
+              width={24}
+              defaultValue={query.apmFilter?.service}
+              onBlur={onApmFilterChange('service')}
+              placeholder="Service name"
+            />
+          </InlineField>
+          <InlineField label="Min severity" labelWidth={12}>
+            <Combobox
+              width={16}
+              value={query.apmFilter?.minSeverity ?? 0}
+              options={minSeverityOptions}
+              onChange={onApmMinSeverityChange}
+            />
+          </InlineField>
+        </QueryEditorRow>
+        <QueryEditorRow>
+          <InlineField
+            label="Body"
+            labelWidth={12}
+            tooltip="Case-insensitive substring match on the log body (server side). Supports template variables."
+          >
+            <Input
+              width={24}
+              defaultValue={query.textFilter}
+              onBlur={onTextFilterChange}
+              placeholder="Text to search in log body"
+            />
+          </InlineField>
+          <InlineField label="Trace ID" labelWidth={12}>
+            <Input
+              width={24}
+              defaultValue={query.apmFilter?.traceId}
+              onBlur={onApmFilterChange('traceId')}
+              placeholder="Trace ID"
+            />
+          </InlineField>
+        </QueryEditorRow>
+        <QueryEditorRow>
+          <InlineField
+            label="Attributes"
+            labelWidth={12}
+            tooltip="Filter by OTEL resource, scope, or log record attributes."
+          >
+            <ApmAttributeFiltersEditor value={query.apmFilter?.attributes} onChange={onApmAttributesChange} />
+          </InlineField>
+        </QueryEditorRow>
+      </>
+    );
+  };
 
   return (
     <>
       <QueryEditorRow>
-        <InlineField label="Group" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.group.filter}
-            options={groupsOptions}
-            isLoading={groupsLoading}
-            onChange={onFilterChange('group')}
-            placeholder="Group name"
-            createCustomValue={true}
-          />
-        </InlineField>
-        <InlineField label="Host tag" labelWidth={12}>
-          <HostTagQueryEditor
-            hostTagOptions={hostTagsOptions}
-            evalTypeValue={query.evaltype}
-            hostTagOptionsLoading={hostTagsLoading}
-            onHostTagFilterChange={onHostTagFilterChange}
-            onHostTagEvalTypeChange={onHostTagEvalTypeChange}
-            version={datasource.zabbix.version}
-          />
-        </InlineField>
-        <InlineField label="Host" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.host.filter}
-            options={hostOptions}
-            isLoading={hostsLoading}
-            onChange={onFilterChange('host')}
-            placeholder="Host name"
-            createCustomValue={true}
+        <InlineField label="Source" labelWidth={12}>
+          <RadioButtonGroup
+            options={logsSourceOptions}
+            value={logsSource}
+            onChange={(v: LogsSource) => onChange({ ...query, logsSource: v })}
           />
         </InlineField>
       </QueryEditorRow>
-      <QueryEditorRow>
-        {supportsApplications && (
-          <InlineField label="Application" labelWidth={12}>
-            <MetricPicker
-              width={24}
-              value={query.application.filter}
-              options={appOptions}
-              isLoading={appsLoading}
-              onChange={onFilterChange('application')}
-              createCustomValue={true}
-              placeholder="Application name"
-            />
-          </InlineField>
-        )}
-        {!supportsApplications && (
-          <InlineField label="Item tag" labelWidth={12}>
-            <MetricPicker
-              width={24}
-              value={query.itemTag.filter}
-              options={tagOptions}
-              isLoading={tagsLoading}
-              onChange={onFilterChange('itemTag')}
-              createCustomValue={true}
-              placeholder="Item tag name"
-            />
-          </InlineField>
-        )}
-        <InlineField label="Item" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.item.filter}
-            options={itemOptions}
-            isLoading={itemsLoading}
-            onChange={onFilterChange('item')}
-            createCustomValue={true}
-            placeholder="Item name"
-          />
-        </InlineField>
-      </QueryEditorRow>
-      <QueryEditorRow>
-        <InlineField label="Line filter" labelWidth={12}>
-          <Input
-            width={24}
-            defaultValue={query.textFilter}
-            onBlur={onTextFilterChange}
-            placeholder="Regex to filter log lines"
-          />
-        </InlineField>
-      </QueryEditorRow>
+      {logsSource === c.LOGS_SOURCE_APM && renderApmLogsEditor()}
+      {logsSource === c.LOGS_SOURCE_ITEM && (
+        <>
+          <QueryEditorRow>
+            <InlineField label="Group" labelWidth={12}>
+              <MetricPicker
+                width={24}
+                value={query.group.filter}
+                options={groupsOptions}
+                isLoading={groupsLoading}
+                onChange={onFilterChange('group')}
+                placeholder="Group name"
+                createCustomValue={true}
+              />
+            </InlineField>
+            <InlineField label="Host tag" labelWidth={12}>
+              <HostTagQueryEditor
+                hostTagOptions={hostTagsOptions}
+                evalTypeValue={query.evaltype}
+                hostTagOptionsLoading={hostTagsLoading}
+                onHostTagFilterChange={onHostTagFilterChange}
+                onHostTagEvalTypeChange={onHostTagEvalTypeChange}
+                version={datasource.zabbix.version}
+              />
+            </InlineField>
+            <InlineField label="Host" labelWidth={12}>
+              <MetricPicker
+                width={24}
+                value={query.host.filter}
+                options={hostOptions}
+                isLoading={hostsLoading}
+                onChange={onFilterChange('host')}
+                placeholder="Host name"
+                createCustomValue={true}
+              />
+            </InlineField>
+          </QueryEditorRow>
+          <QueryEditorRow>
+            {supportsApplications && (
+              <InlineField label="Application" labelWidth={12}>
+                <MetricPicker
+                  width={24}
+                  value={query.application.filter}
+                  options={appOptions}
+                  isLoading={appsLoading}
+                  onChange={onFilterChange('application')}
+                  createCustomValue={true}
+                  placeholder="Application name"
+                />
+              </InlineField>
+            )}
+            {!supportsApplications && (
+              <InlineField label="Item tag" labelWidth={12}>
+                <MetricPicker
+                  width={24}
+                  value={query.itemTag.filter}
+                  options={tagOptions}
+                  isLoading={tagsLoading}
+                  onChange={onFilterChange('itemTag')}
+                  createCustomValue={true}
+                  placeholder="Item tag name"
+                />
+              </InlineField>
+            )}
+            <InlineField label="Item" labelWidth={12}>
+              <MetricPicker
+                width={24}
+                value={query.item.filter}
+                options={itemOptions}
+                isLoading={itemsLoading}
+                onChange={onFilterChange('item')}
+                createCustomValue={true}
+                placeholder="Item name"
+              />
+            </InlineField>
+          </QueryEditorRow>
+          <QueryEditorRow>
+            <InlineField label="Line filter" labelWidth={12}>
+              <Input
+                width={24}
+                defaultValue={query.textFilter}
+                onBlur={onTextFilterChange}
+                placeholder="Regex to filter log lines"
+              />
+            </InlineField>
+          </QueryEditorRow>
+        </>
+      )}
     </>
   );
 };

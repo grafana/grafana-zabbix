@@ -399,6 +399,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
    * Query target data for Logs (items with the Log value type)
    */
   queryLogsData(target, timeRange) {
+    if (target.logsSource === c.LOGS_SOURCE_APM) {
+      return this.queryApmLogsData(target, timeRange);
+    }
     const options = {
       itemtype: 'log',
       showDisabledItems: target.options?.showDisabledItems,
@@ -408,6 +411,17 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return this.zabbix.getItemsFromTarget(target, options).then((items) => {
       return this.zabbix.getHistoryLogs(items, timeRange, target);
     });
+  }
+
+  /**
+   * Query APM/OTEL logs via apmlog.get (Zabbix 8.0+)
+   */
+  async queryApmLogsData(target, timeRange) {
+    const supported = await this.zabbix.supportsApmLogs();
+    if (!supported) {
+      throw new Error('APM logs require Zabbix 8.0 or higher');
+    }
+    return this.zabbix.getApmLogs(target, timeRange);
   }
 
   /**
@@ -973,6 +987,17 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           utils.zabbixItemIdsTemplateFormat
         ),
         textFilter: utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        apmFilter: query.apmFilter
+          ? {
+              ...query.apmFilter,
+              service: utils.replaceTemplateVars(this.templateSrv, query.apmFilter.service, scopedVars),
+              traceId: utils.replaceTemplateVars(this.templateSrv, query.apmFilter.traceId, scopedVars),
+              attributes: query.apmFilter.attributes?.map((a) => ({
+                ...a,
+                value: utils.replaceTemplateVars(this.templateSrv, a.value, scopedVars),
+              })),
+            }
+          : query.apmFilter,
         functions: utils.replaceVariablesInFuncParams(this.templateSrv, query.functions, scopedVars),
         tags: {
           ...query.tags,

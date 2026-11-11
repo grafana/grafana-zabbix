@@ -4,6 +4,7 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
+import * as c from '../constants';
 import {
   expandItemMacros,
   expandUserMacros,
@@ -269,6 +270,18 @@ export class Zabbix implements ZabbixConnector {
   supportsCauseSymptomProblems() {
     const version = this.version || this.zabbixAPI.version;
     return version ? semver.gte(version, '6.4.0') : false;
+  }
+
+  // Zabbix 8.0+ exposes OTEL/APM data over the API (apmlog.get and friends)
+  async supportsApmLogs() {
+    const version = await this.getVersion();
+    return version ? semver.gte(version, c.ZABBIX_APM_MIN_VERSION) : false;
+  }
+
+  supportsApmLogsSync() {
+    const version = this.version || this.zabbixAPI.version;
+    // Unknown version: offer the feature, the query path reports a clear error if unsupported
+    return version ? semver.gte(version, c.ZABBIX_APM_MIN_VERSION) : true;
   }
 
   async isZabbix54OrHigher() {
@@ -781,6 +794,60 @@ export class Zabbix implements ZabbixConnector {
     return this.zabbixAPI
       .getHistory(items, timeFrom, timeTo, limit, limit ? 'DESC' : undefined)
       .then((history) => [responseHandler.handleLogs(history, items, target)]);
+  }
+
+  /**
+   * Query OTEL/APM logs (Zabbix 8.0+, apmlog.get). Fetches the most recent
+   * records (DESC + limit); handleAPMLogs() re-sorts lines ascending.
+   */
+  async getApmLogs(target: ZabbixMetricsQuery, timeRange: number[]) {
+    const [timeFrom, timeTo] = timeRange;
+    const params: any = {
+      time_from: timeFrom,
+      time_till: timeTo,
+      sortfield: 'timestamp',
+      sortorder: 'DESC',
+      limit: target.options?.limit || c.DEFAULT_ZABBIX_LOGS_LIMIT,
+    };
+
+    const apmFilter = target.apmFilter || {};
+    const filter: any = {};
+    if (apmFilter.service) {
+      filter.service_name = apmFilter.service;
+    }
+    if (apmFilter.traceId) {
+      filter.traceid = apmFilter.traceId;
+    }
+    if (apmFilter.minSeverity) {
+      // OTEL SeverityNumber is 1..24; filter accepts a value list, so expand the lower bound
+      filter.severity_number = _.range(apmFilter.minSeverity, 25);
+    }
+    if (Object.keys(filter).length > 0) {
+      params.filter = filter;
+    }
+
+    if (target.textFilter) {
+      // Server-side case-insensitive substring match on the log body
+      params.search = { body: target.textFilter };
+    }
+
+    const attributes = (apmFilter.attributes || []).filter((a) => a.key);
+    const byScope = {
+      resource: 'resource_attributes',
+      scope: 'scope_attributes',
+      log: 'log_attributes',
+    };
+    for (const [scope, param] of Object.entries(byScope)) {
+      const scopeAttrs = attributes
+        .filter((a) => a.scope === scope)
+        .map((a) => ({ key: a.key, value: a.value || '', operator: a.operator }));
+      if (scopeAttrs.length > 0) {
+        params[param] = scopeAttrs;
+      }
+    }
+
+    const records = await this.zabbixAPI.getAPMLogs(params);
+    return [responseHandler.handleAPMLogs(records, target)];
   }
 
   getHistoryText(items, timeRange, target) {
