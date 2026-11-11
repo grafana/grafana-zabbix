@@ -9,6 +9,56 @@ jest.mock('@grafana/runtime', () => ({
 
 describe('Zabbix API connector', () => {
   const datasourceUID = 'test-datasource-uid';
+
+  describe('item order', () => {
+    beforeAll(() => {
+      jest.spyOn(ZabbixAPIConnector.prototype, 'initVersion').mockResolvedValue('');
+    });
+
+    const hostsAndIDs = (items: any[]) => items.map((item) => `${item.hosts[0].name}:${item.itemid}`);
+
+    // Zabbix 8.0 returns items sharing a name in arbitrary order, so the tie has to be broken in the plugin.
+    it('should order items sharing a name by host name and then by itemid in getItems', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '8.0.0';
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([
+        { itemid: '9000271', name: 'CPU utilization', key_: 'system.cpu.util', hosts: [{ name: 'router-b' }] },
+        { itemid: '9000281', name: 'CPU utilization', key_: 'system.cpu.util', hosts: [{ name: 'vm-c' }] },
+        { itemid: '9000261', name: 'CPU utilization', key_: 'system.cpu.util', hosts: [{ name: 'router-a' }] },
+        { itemid: '1000', name: 'Memory', key_: 'vm.memory.size[used]', hosts: [{ name: 'router-a' }] },
+        { itemid: '999', name: 'Memory', key_: 'vm.memory.size[free]', hosts: [{ name: 'router-a' }] },
+        { itemid: '5', name: 'memory', key_: 'vm.memory.size', hosts: [{ name: 'router-a' }] },
+        { itemid: '4', name: 'Uptime', key_: 'system.uptime', hosts: [{ name: 'vm-c' }] },
+      ]);
+
+      const items = await zabbixAPIConnector.getItems(['1', '2', '3'], 'num');
+
+      // The order of different names is kept as returned by the API ("memory" stays before "Uptime").
+      expect(hostsAndIDs(items)).toEqual([
+        'router-a:9000261',
+        'router-b:9000271',
+        'vm-c:9000281',
+        'router-a:999',
+        'router-a:1000',
+        'router-a:5',
+        'vm-c:4',
+      ]);
+    });
+
+    it('should order items by numeric itemid in getItemsByIDs', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '8.0.0';
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([
+        { itemid: '9000271', name: 'CPU utilization', key_: 'system.cpu.util', hosts: [{ name: 'router-b' }] },
+        { itemid: '10000000', name: 'CPU utilization', key_: 'system.cpu.util', hosts: [{ name: 'vm-c' }] },
+        { itemid: '9000261', name: 'CPU utilization', key_: 'system.cpu.util', hosts: [{ name: 'router-a' }] },
+      ]);
+
+      const items = await zabbixAPIConnector.getItemsByIDs(['10000000', '9000271', '9000261']);
+
+      expect(hostsAndIDs(items)).toEqual(['router-a:9000261', 'router-b:9000271', 'vm-c:10000000']);
+    });
+  });
   describe('getProxies function', () => {
     beforeAll(() => {
       jest.spyOn(ZabbixAPIConnector.prototype, 'initVersion').mockResolvedValue('');

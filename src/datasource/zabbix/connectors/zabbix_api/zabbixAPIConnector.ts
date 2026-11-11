@@ -278,7 +278,7 @@ export class ZabbixAPIConnector {
       params.evaltype = 2;
     }
 
-    return this.request('item.get', params).then(utils.expandItems);
+    return this.request('item.get', params).then(sortItemsByNameTieBreak).then(utils.expandItems);
   }
 
   getItemsByIDs(itemids) {
@@ -290,7 +290,7 @@ export class ZabbixAPIConnector {
       selectTags: 'extend',
     };
 
-    return this.request('item.get', params).then((items) => utils.expandItems(items));
+    return this.request('item.get', params).then((items) => utils.expandItems(sortItemsByID(items)));
   }
 
   getMacros(hostids) {
@@ -1128,4 +1128,61 @@ function getParamsKeyByVersion(
     default:
       return '';
   }
+}
+
+/**
+ * Compares Zabbix object IDs (decimal strings) numerically.
+ */
+function compareIDs(a: string, b: string): number {
+  const idA = String(a ?? '');
+  const idB = String(b ?? '');
+  if (idA.length !== idB.length) {
+    return idA.length - idB.length;
+  }
+  return idA < idB ? -1 : idA > idB ? 1 : 0;
+}
+
+/**
+ * Makes the order of items that share a name deterministic.
+ * The items are expected to be sorted by name already (item.get with sortfield "name"), and that order is kept
+ * as is, so the name collation stays the one of the Zabbix database. Zabbix before 8.0 returned items with equal
+ * names in itemid order, but Zabbix 8.0 returns them in arbitrary order, so each run of equal names is ordered
+ * by host name, then by itemid.
+ */
+export function sortItemsByNameTieBreak<T extends { itemid: string; name: string; hosts?: Array<{ name: string }> }>(
+  items: T[]
+): T[] {
+  if (!Array.isArray(items)) {
+    return items;
+  }
+  const compare = (a: T, b: T) => {
+    const hostA = a.hosts?.[0]?.name ?? '';
+    const hostB = b.hosts?.[0]?.name ?? '';
+    if (hostA !== hostB) {
+      return hostA < hostB ? -1 : 1;
+    }
+    return compareIDs(a.itemid, b.itemid);
+  };
+  for (let start = 0; start < items.length;) {
+    let end = start + 1;
+    while (end < items.length && items[end].name === items[start].name) {
+      end++;
+    }
+    if (end - start > 1) {
+      items.splice(start, end - start, ...items.slice(start, end).sort(compare));
+    }
+    start = end;
+  }
+  return items;
+}
+
+/**
+ * Sorts items by itemid. item.get without sortfield returned items in itemid order before Zabbix 8.0,
+ * but the order is arbitrary in Zabbix 8.0.
+ */
+export function sortItemsByID<T extends { itemid: string }>(items: T[]): T[] {
+  if (!Array.isArray(items)) {
+    return items;
+  }
+  return items.sort((a, b) => compareIDs(a.itemid, b.itemid));
 }

@@ -381,6 +381,73 @@ func TestGetItemsByIDs(t *testing.T) {
 	assert.Equal(t, []interface{}{"1"}, lastRequest.Params["itemids"].([]interface{}))
 }
 
+func itemHostsAndIDs(items []*Item) []string {
+	result := make([]string, 0, len(items))
+	for _, item := range items {
+		result = append(result, itemHostName(item)+":"+item.ID)
+	}
+	return result
+}
+
+// Zabbix 8.0 returns items sharing a name in arbitrary order, so the tie has to be broken in the plugin.
+func TestGetAllItemsOrdersSameNamedItems(t *testing.T) {
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "item.get" {
+			return `{"result":[
+				{"itemid":"9000271","name":"CPU utilization","key_":"system.cpu.util","hosts":[{"hostid":"2","name":"router-b"}]},
+				{"itemid":"9000281","name":"CPU utilization","key_":"system.cpu.util","hosts":[{"hostid":"3","name":"vm-c"}]},
+				{"itemid":"9000261","name":"CPU utilization","key_":"system.cpu.util","hosts":[{"hostid":"1","name":"router-a"}]},
+				{"itemid":"1000","name":"Memory","key_":"vm.memory.size[used]","hosts":[{"hostid":"1","name":"router-a"}]},
+				{"itemid":"999","name":"Memory","key_":"vm.memory.size[free]","hosts":[{"hostid":"1","name":"router-a"}]},
+				{"itemid":"5","name":"memory","key_":"vm.memory.size","hosts":[{"hostid":"1","name":"router-a"}]},
+				{"itemid":"4","name":"Uptime","key_":"system.uptime","hosts":[{"hostid":"3","name":"vm-c"}]}
+			]}`
+		}
+
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"8.0.0"}`
+		}
+
+		return `{"result":null}`
+	})
+
+	items, err := client.GetAllItems(context.Background(), []string{"1", "2", "3"}, "num", false, "")
+	require.NoError(t, err)
+	// Same names are ordered by host name, then by numeric itemid. The order of different names is kept as
+	// returned by the API ("memory" stays before "Uptime").
+	assert.Equal(t, []string{
+		"router-a:9000261",
+		"router-b:9000271",
+		"vm-c:9000281",
+		"router-a:999",
+		"router-a:1000",
+		"router-a:5",
+		"vm-c:4",
+	}, itemHostsAndIDs(items))
+}
+
+func TestGetItemsByIDsOrdersItemsByID(t *testing.T) {
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "item.get" {
+			return `{"result":[
+				{"itemid":"9000271","name":"CPU utilization","hosts":[{"hostid":"2","name":"router-b"}]},
+				{"itemid":"10000000","name":"CPU utilization","hosts":[{"hostid":"3","name":"vm-c"}]},
+				{"itemid":"9000261","name":"CPU utilization","hosts":[{"hostid":"1","name":"router-a"}]}
+			]}`
+		}
+
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"8.0.0"}`
+		}
+
+		return `{"result":null}`
+	})
+
+	items, err := client.GetItemsByIDs(context.Background(), []string{"10000000", "9000271", "9000261"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"router-a:9000261", "router-b:9000271", "vm-c:10000000"}, itemHostsAndIDs(items))
+}
+
 func TestGetAllHosts(t *testing.T) {
 	client := NewZabbixClientWithResponses(t, map[string]string{
 		"host.get": `{"result":[{"hostid":"10","name":"web01"}]}`,

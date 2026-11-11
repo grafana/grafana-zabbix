@@ -352,6 +352,7 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, itemtype st
 		return nil, err
 	}
 
+	sortItemsByNameTieBreak(items)
 	items = expandItems(items)
 	return items, err
 }
@@ -376,6 +377,7 @@ func (ds *Zabbix) GetItemsByIDs(ctx context.Context, itemids []string) ([]*Item,
 		return nil, err
 	}
 
+	sortItemsByID(items)
 	items = expandItems(items)
 	return items, err
 }

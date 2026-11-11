@@ -3,6 +3,7 @@ package zabbix
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -33,6 +34,54 @@ func expandItems(items []*Item) []*Item {
 		items[i].Name = items[i].ExpandItemName()
 	}
 	return items
+}
+
+// sortItemsByNameTieBreak makes the order of items that share a name deterministic.
+// The items are expected to be sorted by name already (item.get with sortfield "name"),
+// and that order is kept as is, so the name collation stays the one of the Zabbix database.
+// Zabbix before 8.0 returned items with equal names in itemid order, but Zabbix 8.0 returns
+// them in arbitrary order, so each run of equal names is ordered by host name, then by itemid.
+func sortItemsByNameTieBreak(items []*Item) {
+	for start := 0; start < len(items); {
+		end := start + 1
+		for end < len(items) && items[end].Name == items[start].Name {
+			end++
+		}
+		if end-start > 1 {
+			run := items[start:end]
+			sort.SliceStable(run, func(i, j int) bool {
+				hostI, hostJ := itemHostName(run[i]), itemHostName(run[j])
+				if hostI != hostJ {
+					return hostI < hostJ
+				}
+				return compareIDs(run[i].ID, run[j].ID) < 0
+			})
+		}
+		start = end
+	}
+}
+
+// sortItemsByID sorts items by itemid. item.get without sortfield returned items in itemid
+// order before Zabbix 8.0, but the order is arbitrary in Zabbix 8.0.
+func sortItemsByID(items []*Item) {
+	sort.SliceStable(items, func(i, j int) bool {
+		return compareIDs(items[i].ID, items[j].ID) < 0
+	})
+}
+
+func itemHostName(item *Item) string {
+	if len(item.Hosts) > 0 {
+		return item.Hosts[0].Name
+	}
+	return ""
+}
+
+// compareIDs compares Zabbix object IDs (decimal strings) numerically.
+func compareIDs(a, b string) int {
+	if len(a) != len(b) {
+		return len(a) - len(b)
+	}
+	return strings.Compare(a, b)
 }
 
 func splitKeyParams(paramStr string) []string {
