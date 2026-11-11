@@ -5,10 +5,18 @@ import { ShowProblemTypes, ZabbixTagEvalType } from '../../types/query';
 
 const metricPickerSpy = jest.fn();
 const comboboxSpy = jest.fn();
+const problemTagFilterEditorSpy = jest.fn();
 
 jest.mock('../../../components', () => ({
   MetricPicker: (props: any) => {
     metricPickerSpy(props);
+    return null;
+  },
+}));
+
+jest.mock('./ProblemTagFilterEditor', () => ({
+  ProblemTagFilterEditor: (props: any) => {
+    problemTagFilterEditorSpy(props);
     return null;
   },
 }));
@@ -51,6 +59,8 @@ const buildDatasource = (overrides: Partial<any> = {}) => {
     getProxies: jest.fn().mockResolvedValue([]),
     supportsApplications: jest.fn(() => true),
     supportsCauseSymptomProblems: jest.fn(() => true),
+    supportsProblemTagOperators: jest.fn(() => true),
+    version: '7.0.0',
     ...overrides,
   };
 
@@ -69,6 +79,116 @@ describe('ProblemsQueryEditor', () => {
   beforeEach(() => {
     metricPickerSpy.mockClear();
     comboboxSpy.mockClear();
+    problemTagFilterEditorSpy.mockClear();
+  });
+
+  describe('Tags filter', () => {
+    it('passes structured tag filters and version support to the tag filter editor', () => {
+      const datasource = buildDatasource();
+      const problemTags = [{ tag: 'environment', value: 'production', operator: '0' }];
+      const query = { ...baseQuery, problemTags };
+
+      render(<ProblemsQueryEditor query={query} datasource={datasource as any} onChange={jest.fn()} />);
+
+      expect(problemTagFilterEditorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tagFilters: problemTags,
+          supportsExtendedOperators: true,
+          version: '7.0.0',
+          evalType: ZabbixTagEvalType.AndOr,
+        })
+      );
+      expect(datasource.zabbix.supportsProblemTagOperators).toHaveBeenCalled();
+    });
+
+    it('defaults to no tag filters when the query has none', () => {
+      const datasource = buildDatasource();
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={jest.fn()} />);
+
+      expect(problemTagFilterEditorSpy).toHaveBeenCalledWith(expect.objectContaining({ tagFilters: [] }));
+    });
+
+    it('reports extended operators as unsupported for Zabbix < 5.4', () => {
+      const datasource = buildDatasource({
+        supportsProblemTagOperators: jest.fn(() => false),
+      });
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={jest.fn()} />);
+
+      expect(problemTagFilterEditorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ supportsExtendedOperators: false })
+      );
+    });
+
+    it('writes tag filter changes to query.problemTags', () => {
+      const datasource = buildDatasource();
+      const onChange = jest.fn();
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={onChange} />);
+
+      const newTags = [{ tag: 'service', value: 'web', operator: '1' }];
+      problemTagFilterEditorSpy.mock.calls[0][0].onChange(newTags);
+
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ problemTags: newTags }));
+    });
+
+    it('builds tag name suggestions from the problems the panel already fetched', () => {
+      const datasource = buildDatasource();
+      const data: any = {
+        series: [
+          {
+            fields: [
+              {
+                config: { custom: { type: 'problems' } },
+                values: [
+                  { tags: [{ tag: 'service', value: 'web' }] },
+                  {
+                    tags: [
+                      { tag: 'environment', value: 'production' },
+                      { tag: 'service', value: 'db' },
+                    ],
+                  },
+                  {},
+                ],
+              },
+            ],
+          },
+          // Non-problems frames (e.g. other queries in the panel) must be ignored
+          { fields: [{ config: {}, values: [1, 2, 3] }] },
+        ],
+      };
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={jest.fn()} data={data} />);
+
+      expect(problemTagFilterEditorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tagOptions: [
+            { value: 'environment', label: 'environment' },
+            { value: 'service', label: 'service' },
+          ],
+        })
+      );
+    });
+
+    it('offers no tag suggestions when the panel has no data yet', () => {
+      const datasource = buildDatasource();
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={jest.fn()} />);
+
+      expect(problemTagFilterEditorSpy).toHaveBeenCalledWith(expect.objectContaining({ tagOptions: [] }));
+    });
+
+    it('writes eval type changes to query.evaltype', () => {
+      const datasource = buildDatasource();
+      const onChange = jest.fn();
+
+      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={onChange} />);
+
+      problemTagFilterEditorSpy.mock.calls[0][0].onEvalTypeChange(ZabbixTagEvalType.Or);
+
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ evaltype: ZabbixTagEvalType.Or }));
+    });
   });
 
   it('uses proxy name when host is missing', async () => {

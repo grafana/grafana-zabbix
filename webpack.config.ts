@@ -1,6 +1,7 @@
 import type { Configuration } from 'webpack';
 import { merge } from 'webpack-merge';
 import grafanaConfig from './.config/webpack/webpack.config';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import RemoveEmptyScriptsPlugin from 'webpack-remove-empty-scripts';
 
@@ -60,6 +61,17 @@ const config = async (env): Promise<Configuration> => {
       new RemoveEmptyScriptsPlugin({}),
       new MiniCssExtractPlugin({
         filename: 'styles/[name].css',
+      }),
+      // The managed .config/bundler/copyFiles.ts only copies the logo declared in
+      // the root src/plugin.json (the app). It doesn't know about the nested
+      // datasource/panel-triggers plugin.json files, so their own logos
+      // (img/icn-zabbix-datasource.svg, img/icn-zabbix-problems-panel.svg) never
+      // reached dist, leaving broken logo icons in Grafana's UI.
+      new CopyWebpackPlugin({
+        patterns: [
+          { from: 'datasource/img', to: 'datasource/img' },
+          { from: 'panel-triggers/img', to: 'panel-triggers/img' },
+        ],
       }),
     ],
   });

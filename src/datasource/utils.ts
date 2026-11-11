@@ -16,7 +16,8 @@ import {
 } from '@grafana/data';
 import * as metricFunctions from './metricFunctions';
 import dataProcessor from './dataProcessor';
-import { MetricFunc, ZabbixMetricsQuery } from './types/query';
+import { MetricFunc, ProblemTagFilter, ZabbixMetricsQuery } from './types/query';
+import { TagOperatorValue } from './components/QueryEditor/types';
 import { TemplateSrv } from '@grafana/runtime';
 
 /*
@@ -649,6 +650,52 @@ export function parseTags(tagStr: string): any[] {
     return { tag: tagParts[0]?.trim(), value: tagParts[1]?.trim() };
   });
   return tags;
+}
+
+/**
+ * Converts the legacy free-text problem tags filter ("tag1:value1, tag2:value2") into
+ * structured tag filters. Legacy filters were always queried with the Equals operator.
+ */
+export function parseLegacyProblemTags(tagStr: string): ProblemTagFilter[] {
+  return parseTags(tagStr)
+    .filter((t) => t.tag)
+    .map((t) => ({ tag: t.tag, value: t.value ?? '', operator: TagOperatorValue.Equals }));
+}
+
+/**
+ * Builds the `tags` parameter of problem.get/event.get from structured tag filters.
+ * Skips filters without a tag name, converts operators to the numbers Zabbix expects
+ * and omits the value for Exists/Does not exist, which ignore it.
+ */
+export function problemTagsToQueryParam(problemTags: ProblemTagFilter[]): any[] {
+  const apiTags = [];
+  for (const tagFilter of problemTags) {
+    // Template variable interpolation wraps values into a regex-like string, trim it.
+    const tag = trimRegexAnchors(tagFilter.tag ?? '').trim();
+    const value = trimRegexAnchors(tagFilter.value ?? '').trim();
+    const operator = Number(tagFilter.operator ?? TagOperatorValue.Contains);
+    if (!tag) {
+      continue;
+    }
+    if (operator === Number(TagOperatorValue.Exists) || operator === Number(TagOperatorValue.DoesNotExist)) {
+      apiTags.push({ tag, operator });
+    } else if (!value && tag.includes(':')) {
+      // A template variable in the tag field may expand to the legacy "tag:value" text
+      // format (possibly comma-separated) — split it like the old free-text filter did.
+      for (const parsed of parseTags(tag)) {
+        if (parsed.tag) {
+          apiTags.push({ tag: parsed.tag, value: parsed.value ?? '', operator });
+        }
+      }
+    } else {
+      apiTags.push({ tag, value, operator });
+    }
+  }
+  return apiTags;
+}
+
+function trimRegexAnchors(str: string): string {
+  return str.replace('/^', '').replace('$/', '');
 }
 
 // Parses string representation of tag into the object

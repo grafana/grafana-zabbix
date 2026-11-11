@@ -65,6 +65,7 @@ const REQUESTS_TO_PROXYFY = [
   'getValueMappings',
   'getSLAList',
   'getUsers',
+  'getHostInterfaces',
 ];
 
 const REQUESTS_TO_CACHE = [
@@ -80,6 +81,7 @@ const REQUESTS_TO_CACHE = [
   'getValueMappings',
   'getSLAList',
   'getUsers',
+  'getHostInterfaces',
 ];
 
 const REQUESTS_TO_BIND = [
@@ -104,6 +106,7 @@ const REQUESTS_TO_BIND = [
   'getValueMappings',
   'getSLAList',
   'getUsers',
+  'getHostInterfaces',
 ];
 
 type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAuth' | 'withCredentials' | 'uid'> &
@@ -144,6 +147,7 @@ export class Zabbix implements ZabbixConnector {
   getValueMappings: () => Promise<any>;
   getSLAList: () => Promise<any>;
   getUsers: () => Promise<any>;
+  getHostInterfaces: (hostids: string[]) => Promise<any>;
 
   constructor(options: ZabbixOptions) {
     const {
@@ -263,6 +267,14 @@ export class Zabbix implements ZabbixConnector {
   supportSLA() {
     const version = this.version || this.zabbixAPI.version;
     return version ? semver.gte(version, '6.0.0') : true;
+  }
+
+  // Extended tag-filter operators for problem.get/event.get (Does not contain,
+  // Does not equal, Exists, Does not exist) were introduced in Zabbix 5.4.
+  // Older versions only accept Contains (0, "Like") and Equals (1, "Equal").
+  supportsProblemTagOperators() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '5.4.0') : false;
   }
 
   // Cause and symptom problems were introduced in Zabbix 6.4
@@ -624,7 +636,12 @@ export class Zabbix implements ZabbixConnector {
       )
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
-        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+        return Promise.all([
+          Promise.resolve(problems),
+          // Let Zabbix expand the comment macros unless the client-side
+          // enrichment below will do it per problem, which needs the raw template.
+          this.zabbixAPI.getTriggersByIds(triggerids, !options?.fetchHistoricalItemValue),
+        ]);
       })
       .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
       .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
@@ -661,7 +678,12 @@ export class Zabbix implements ZabbixConnector {
       .then((query) => this.zabbixAPI.getEventsHistory(query.groupids, query.hostids, query.applicationids, options))
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
-        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+        return Promise.all([
+          Promise.resolve(problems),
+          // Let Zabbix expand the comment macros unless the client-side
+          // enrichment below will do it per problem, which needs the raw template.
+          this.zabbixAPI.getTriggersByIds(triggerids, !options?.fetchHistoricalItemValue),
+        ]);
       })
       .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
       .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
