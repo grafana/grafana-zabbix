@@ -398,6 +398,52 @@ describe('Zabbix API connector', () => {
     });
   });
 
+  describe('getTrend', () => {
+    const items = [
+      { itemid: '1', value_type: '0' },
+      { itemid: '2', value_type: '3' },
+    ];
+
+    it('sends only the parameters trend.get accepts (Zabbix 8.0 rejects trend, sortfield and sortorder)', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '8.0.0';
+      const trends = [{ itemid: '1', clock: '100', value_avg: '1' }];
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue(trends);
+
+      const result = await zabbixAPIConnector.getTrend(items, 100, 200);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledTimes(1);
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('trend.get', {
+        output: 'extend',
+        itemids: ['1', '2'],
+        time_from: 100,
+        time_till: 200,
+      });
+      expect(result).toEqual(trends);
+    });
+
+    it('omits time_till for relative queries', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+
+      await zabbixAPIConnector.getTrend(items, 100, undefined);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('trend.get', {
+        output: 'extend',
+        itemids: ['1', '2'],
+        time_from: 100,
+      });
+    });
+
+    it('does not call the API when there are no items', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.request = jest.fn();
+
+      await expect(zabbixAPIConnector.getTrend([], 100, 200)).resolves.toEqual([]);
+      expect(zabbixAPIConnector.request).not.toHaveBeenCalled();
+    });
+  });
+
   describe('getSLA', () => {
     it('defaults empty slaInterval to auto and builds SLA intervals', () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);

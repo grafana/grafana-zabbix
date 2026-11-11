@@ -47,7 +47,6 @@ export class ZabbixAPIConnector {
     };
 
     this.getTrend = this.getTrend_ZBXNEXT1193;
-    //getTrend = getTrend_30;
 
     this.initVersion();
   }
@@ -377,46 +376,24 @@ export class ZabbixAPIConnector {
    * @return {Array}  Array of Zabbix trend objects
    */
   getTrend_ZBXNEXT1193(items, timeFrom, timeTill) {
-    // Group items by value type and perform request for each value type
-    const grouped_items = _.groupBy(items, 'value_type');
-    const promises = _.map(grouped_items, (items, value_type) => {
-      const itemids = _.map(items, 'itemid');
-      const params: any = {
-        output: 'extend',
-        trend: value_type,
-        itemids: itemids,
-        sortfield: 'clock',
-        sortorder: 'ASC',
-        time_from: timeFrom,
-      };
+    if (!items?.length) {
+      return Promise.resolve([]);
+    }
 
-      // Relative queries (e.g. last hour) don't include an end time
-      if (timeTill) {
-        params.time_till = timeTill;
-      }
-
-      return this.request('trend.get', params);
-    });
-
-    return Promise.all(promises).then(_.flatten);
-  }
-
-  getTrend_30(items, time_from, time_till, value_type) {
-    const self = this;
-    const itemids = _.map(items, 'itemid');
-
+    // trend.get takes no `trend`, `sortfield` or `sortorder` parameters and Zabbix 8.0 rejects them.
+    // The API resolves the trend table from each item's value type, and the caller sorts the points.
     const params: any = {
-      output: ['itemid', 'clock', value_type],
-      itemids: itemids,
-      time_from: time_from,
+      output: 'extend',
+      itemids: _.map(items, 'itemid'),
+      time_from: timeFrom,
     };
 
     // Relative queries (e.g. last hour) don't include an end time
-    if (time_till) {
-      params.time_till = time_till;
+    if (timeTill) {
+      params.time_till = timeTill;
     }
 
-    return self.request('trend.get', params);
+    return this.request('trend.get', params);
   }
 
   getITService(serviceids?: any[]) {
