@@ -816,6 +816,37 @@ export function isMacrosDataFrame(data: DataFrame): boolean {
   return data.name === 'macros';
 }
 
+export function isTracesDataFrame(data: DataFrame): boolean {
+  return data.meta?.preferredVisualisationType === 'trace' || data.meta?.custom?.zabbixTraces === true;
+}
+
+const DURATION_UNITS_NS: Record<string, number> = {
+  ns: 1,
+  us: 1e3,
+  µs: 1e3,
+  ms: 1e6,
+  s: 1e9,
+  m: 60e9,
+  h: 3600e9,
+};
+
+/**
+ * Parse a span/trace duration like "250us", "100ms" or "1.5s" to nanoseconds.
+ * A bare number is milliseconds. Returns undefined for empty input and throws
+ * on anything else that is not a duration.
+ */
+export function parseDurationToNs(duration?: string): number | undefined {
+  const value = (duration ?? '').trim();
+  if (value === '') {
+    return undefined;
+  }
+  const match = value.match(/^(\d+(?:\.\d+)?)\s*(ns|us|µs|ms|s|m|h)?$/);
+  if (!match) {
+    throw new Error(`Invalid duration "${duration}". Use a number with a unit: ns, us, ms, s, m or h.`);
+  }
+  return Math.round(Number(match[1]) * DURATION_UNITS_NS[match[2] ?? 'ms']);
+}
+
 export function nonTimeSeriesDataFrame(data: DataFrame): boolean {
   return !data.fields.find((f) => f.type === FieldType.time || f.name === TIME_SERIES_TIME_FIELD_NAME);
 }

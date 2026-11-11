@@ -91,6 +91,7 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
         {queryType === c.MODE_ITEMID && renderMetricOptions()}
         {queryType === c.MODE_ITSERVICE && renderMetricOptions()}
         {queryType === c.MODE_TEXT && renderTextMetricsOptions()}
+        {queryType === c.MODE_TRACES && renderTracesOptions()}
         {queryType === c.MODE_PROBLEMS && renderProblemsOptions()}
         {queryType === c.MODE_TRIGGERS && renderTriggersOptions()}
       </div>
@@ -140,6 +141,18 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
           />
         </InlineField>
       </>
+    );
+  };
+
+  const renderTracesOptions = () => {
+    return (
+      <InlineField
+        label="Limit"
+        labelWidth={24}
+        tooltip="Maximum number of traces a search returns. The most recent traces within the time range are kept."
+      >
+        <Input width={12} type="number" defaultValue={queryOptions.limit} onBlur={onLimitChange} />
+      </InlineField>
     );
   };
 

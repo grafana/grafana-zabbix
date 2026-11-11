@@ -167,6 +167,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           return [];
         }
         return this.queryTextData(target, timeRange);
+      } else if (target.queryType === c.MODE_TRACES) {
+        // APM traces query
+        return this.queryTracesData(target, timeRange);
       } else if (target.queryType === c.MODE_ITSERVICE) {
         // IT services query
         const isOldVersion = oldVersionTargets.includes(target.refId);
@@ -195,6 +198,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           isDataFrame(data[0]) &&
           !utils.isProblemsDataFrame(data[0]) &&
           !utils.isMacrosDataFrame(data[0]) &&
+          !utils.isTracesDataFrame(data[0]) &&
           !utils.nonTimeSeriesDataFrame(data[0])
         ) {
           data = responseHandler.alignFrames(data);
@@ -385,6 +389,21 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       }
       return (result as any[]).map((s) => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
     });
+  }
+
+  /**
+   * Query APM/OTEL traces (Zabbix 8.0+): a trace search via apmtrace.get, or the
+   * spans of a single trace via apmspan.get
+   */
+  async queryTracesData(target, timeRange) {
+    const supported = await this.zabbix.supportsApmTraces();
+    if (!supported) {
+      throw new Error('APM traces require Zabbix 8.0 or higher');
+    }
+    if (target.tracesQueryMode === c.TRACES_MODE_TRACE_ID) {
+      return this.zabbix.getApmTraceSpans(target, timeRange);
+    }
+    return this.zabbix.getApmTraces(target, timeRange, { uid: this.uid, name: this.name });
   }
 
   /**
@@ -969,6 +988,22 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           utils.zabbixItemIdsTemplateFormat
         ),
         textFilter: utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        // Trace filters are exact values or substrings, never regexes, so they are
+        // interpolated as plain text (replaceTemplateVars would wrap them in /^...$/)
+        traceFilter: query.traceFilter
+          ? {
+              ...query.traceFilter,
+              traceId: this.templateSrv.replace(query.traceFilter.traceId, scopedVars),
+              service: this.templateSrv.replace(query.traceFilter.service, scopedVars),
+              spanName: this.templateSrv.replace(query.traceFilter.spanName, scopedVars),
+              minDuration: this.templateSrv.replace(query.traceFilter.minDuration, scopedVars),
+              maxDuration: this.templateSrv.replace(query.traceFilter.maxDuration, scopedVars),
+              attributes: query.traceFilter.attributes?.map((a) => ({
+                ...a,
+                value: this.templateSrv.replace(a.value, scopedVars),
+              })),
+            }
+          : query.traceFilter,
         functions: utils.replaceVariablesInFuncParams(this.templateSrv, query.functions, scopedVars),
         tags: {
           ...query.tags,

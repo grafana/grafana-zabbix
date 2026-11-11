@@ -4,6 +4,7 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
+import * as c from '../constants';
 import {
   expandItemMacros,
   expandUserMacros,
@@ -281,6 +282,18 @@ export class Zabbix implements ZabbixConnector {
   supportsCauseSymptomProblems() {
     const version = this.version || this.zabbixAPI.version;
     return version ? semver.gte(version, '6.4.0') : false;
+  }
+
+  // Zabbix 8.0+ exposes OTEL/APM data over the API (apmtrace.get, apmspan.get)
+  async supportsApmTraces() {
+    const version = await this.getVersion();
+    return version ? semver.gte(version, c.ZABBIX_APM_MIN_VERSION) : false;
+  }
+
+  supportsApmTracesSync() {
+    const version = this.version || this.zabbixAPI.version;
+    // Unknown version: offer the feature, the query path reports a clear error if unsupported
+    return version ? semver.gte(version, c.ZABBIX_APM_MIN_VERSION) : true;
   }
 
   async isZabbix54OrHigher() {
@@ -789,6 +802,84 @@ export class Zabbix implements ZabbixConnector {
         .then((history) => responseHandler.handleTrends(history, items, valueType))
         .then(responseHandler.sortTimeseries); // Sort trend data, issue #202
     }
+  }
+
+  /**
+   * Search OTEL/APM traces (Zabbix 8.0+, apmtrace.get). Returns the most recent
+   * traces first. A trace matches when any of its spans matches the filters.
+   */
+  async getApmTraces(target: ZabbixMetricsQuery, timeRange: number[], linkDatasource?: { uid: string; name: string }) {
+    const [timeFrom, timeTo] = timeRange;
+    const params: any = {
+      time_from: timeFrom,
+      time_till: timeTo,
+      sortfield: 'timestamp',
+      sortorder: 'DESC',
+      limit: target.options?.limit || c.DEFAULT_ZABBIX_TRACES_LIMIT,
+    };
+
+    const traceFilter = target.traceFilter || {};
+    const filter: any = {};
+    if (traceFilter.service) {
+      filter.service_name = traceFilter.service;
+    }
+    if (traceFilter.status) {
+      filter.status_code = traceFilter.status;
+    }
+    if (Object.keys(filter).length > 0) {
+      params.filter = filter;
+    }
+    if (traceFilter.spanName) {
+      // Case-insensitive substring match on the span name
+      params.search = { span_name: traceFilter.spanName };
+    }
+
+    const minDuration = utils.parseDurationToNs(traceFilter.minDuration);
+    if (minDuration !== undefined) {
+      params.min_duration = minDuration;
+    }
+    const maxDuration = utils.parseDurationToNs(traceFilter.maxDuration);
+    if (maxDuration !== undefined) {
+      params.max_duration = maxDuration;
+    }
+
+    const attributes = (traceFilter.attributes || []).filter((a) => a.key);
+    const byScope = {
+      resource: 'resource_attributes',
+      span: 'span_attributes',
+    };
+    for (const [scope, param] of Object.entries(byScope)) {
+      const scopeAttrs = attributes
+        .filter((a) => a.scope === scope)
+        .map((a) => ({ key: a.key, value: a.value || '', operator: a.operator }));
+      if (scopeAttrs.length > 0) {
+        params[param] = scopeAttrs;
+      }
+    }
+
+    const traces = await this.zabbixAPI.getAPMTraces(params);
+    return [responseHandler.handleAPMTraceSearch(traces, target, linkDatasource)];
+  }
+
+  /**
+   * Query all spans of one trace (Zabbix 8.0+, apmspan.get). apmspan.get only
+   * returns spans that start inside the time range, so the range is widened by
+   * the maximum trace duration Zabbix itself assumes in apmtrace.get.
+   */
+  async getApmTraceSpans(target: ZabbixMetricsQuery, timeRange: number[]) {
+    const traceId = (target.traceFilter?.traceId || '').trim();
+    if (!traceId) {
+      return [];
+    }
+    const [timeFrom, timeTo] = timeRange;
+    const spans = await this.zabbixAPI.getAPMSpans({
+      time_from: Math.max(0, timeFrom - c.APM_TRACE_MAX_DURATION),
+      time_till: timeTo + c.APM_TRACE_MAX_DURATION,
+      traceids: [traceId],
+      sortfield: 'timestamp',
+      sortorder: 'ASC',
+    });
+    return [responseHandler.handleAPMTraceSpans(spans, target)];
   }
 
   getHistoryText(items, timeRange, target) {
