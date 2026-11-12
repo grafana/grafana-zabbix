@@ -196,7 +196,7 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
-  getHosts(
+  async getHosts(
     groupids: string[],
     getHostTags?: boolean,
     hostTagFilters?: HostTagFilter[],
@@ -210,24 +210,58 @@ export class ZabbixAPIConnector {
       params.groupids = groupids;
     }
 
+    // ensure only non empty tag keys are being sent
+    const activeFilters = hostTagFilters?.filter((tagFilter) => tagFilter.tag !== '') ?? [];
+    const wantsTags = getHostTags || activeFilters.length > 0;
+
+    if (wantsTags) {
+      // Await the version rather than reading this.version, which initVersion() sets asynchronously:
+      // losing that race would build the wrong params and CachingProxy would then cache the result.
+      await this.initVersion();
+    }
+    // host.get gained selectInheritedTags and the inheritedTags filter flag in Zabbix 5.0.
+    const supportsInheritedTags = wantsTags && semver.gte(this.version, '5.0.0');
+
     if (getHostTags) {
-      params.output.push('tags');
       params.selectTags = 'extend';
+      if (supportsInheritedTags) {
+        // Also return tags inherited from linked templates; merged into `tags` below.
+        params.selectInheritedTags = 'extend';
+      }
     }
 
-    if (hostTagFilters && hostTagFilters.length > 0) {
-      params.selectTags = 'extend';
+    if (activeFilters.length > 0) {
       params.evaltype = evalType === ZabbixTagEvalType.Or || evalType === ZabbixTagEvalType.AndOr ? +evalType : 0;
-
-      // ensure only non empty tag keys are being sent
       // convert operator to number since that is the expected type in Zabbix.
-      params.tags = hostTagFilters
-        .filter((tagFilter) => tagFilter.tag !== '')
-        .map((tagFilter) => {
-          return { ...tagFilter, operator: +tagFilter.operator };
-        });
+      params.tags = activeFilters.map((tagFilter) => ({ ...tagFilter, operator: +tagFilter.operator }));
+      if (supportsInheritedTags) {
+        // Apply the `tags` filter to template-inherited tags as well as direct host tags. Matching
+        // (operators, And/Or grouping, negation, case folding) stays on the server this way.
+        params.inheritedTags = true;
+      }
     }
-    return this.request('host.get', params);
+
+    const hosts: any[] = await this.request('host.get', params);
+    if (!params.selectInheritedTags || !Array.isArray(hosts)) {
+      return hosts;
+    }
+    // Merge inheritedTags into tags so downstream code (autocomplete, processHostTags) sees a single
+    // combined list. De-dupe on tag+value.
+    return hosts.map((h) => {
+      const direct = Array.isArray(h?.tags) ? h.tags : [];
+      const inherited = Array.isArray(h?.inheritedTags) ? h.inheritedTags : [];
+      const combined: any[] = [];
+      const seen = new Set<string>();
+      for (const t of [...direct, ...inherited]) {
+        const key = (t?.tag ?? '') + '\t' + (t?.value ?? '');
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(t);
+        }
+      }
+      const { inheritedTags: _omit, ...rest } = h;
+      return { ...rest, tags: combined };
+    });
   }
 
   /**

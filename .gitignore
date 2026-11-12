@@ -56,3 +56,8 @@ devenv/nginx/nginx.crt
 devenv/nginx/nginx.key
 
 __pycache__/
+
+# Local environment files can hold secrets
+.env
+.env.*
+!.env.example

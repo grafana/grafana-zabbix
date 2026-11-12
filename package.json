@@ -1,6 +1,6 @@
 {
   "name": "grafana-zabbix",
-  "version": "6.9.1",
+  "version": "6.10.3",
   "description": "Zabbix plugin for Grafana",
   "homepage": "http://grafana-zabbix.org",
   "bugs": {
@@ -29,19 +29,19 @@
   },
   "dependencies": {
     "@emotion/css": "11.13.5",
-    "@grafana/data": "13.1.1",
+    "@grafana/data": "13.1.9",
     "@grafana/plugin-ui": "0.17.3",
-    "@grafana/runtime": "13.1.1",
-    "@grafana/schema": "13.1.1",
-    "@grafana/ui": "13.1.1",
+    "@grafana/runtime": "13.1.9",
+    "@grafana/schema": "13.1.9",
+    "@grafana/ui": "13.1.9",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "rxjs": "7.8.2"
   },
   "devDependencies": {
-    "@changesets/cli": "2.31.1",
+    "@changesets/cli": "3.0.3",
     "@grafana/eslint-config": "9.0.0",
-    "@grafana/plugin-e2e": "3.11.0",
+    "@grafana/plugin-e2e": "4.0.0",
     "@grafana/sign-plugin": "3.3.3",
     "@grafana/tsconfig": "2.2.0",
     "@playwright/test": "1.61.1",
@@ -71,14 +71,14 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-webpack-plugin": "6.0.0",
     "fork-ts-checker-webpack-plugin": "9.1.0",
-    "glob": "13.0.6",
+    "glob": "14.0.2",
     "identity-obj-proxy": "3.0.0",
     "imports-loader": "5.0.0",
     "jest": "30.4.2",
     "jest-environment-jsdom": "30.4.1",
     "lodash": "4.18.1",
     "mini-css-extract-plugin": "2.10.2",
-    "moment": "2.30.1",
+    "moment": "2.31.0",
     "postcss": "8.5.28",
     "postcss-loader": "8.2.1",
     "prettier": "3.9.5",
@@ -102,7 +102,19 @@
     "brace-expansion@^1": "1.1.21",
     "brace-expansion@^2": "2.1.7",
     "brace-expansion@^5": "5.0.12",
-    "basic-ftp": "6.2.1"
+    "basic-ftp": "6.2.1",
+    "@jest/reporters": {
+      "glob@>=10.0.0 <14.0.2": "14.0.4"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.5"
+    },
+    "jest-config": {
+      "glob@>=10.0.0 <14.0.2": "14.0.4"
+    },
+    "jest-runtime": {
+      "glob@>=10.0.0 <14.0.2": "14.0.4"
+    }
   },
   "packageManager": "npm@11.18.0",
   "engines": {
