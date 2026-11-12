@@ -318,8 +318,15 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getHosts(groupFilter?, hostFilter?): Promise<any[]> {
-    return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
+  getHosts(
+    groupFilter?: string,
+    hostFilter?: string,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<any[]> {
+    return this.getAllHosts(groupFilter, false, hostTagFilters, evalType).then((hosts) =>
+      findByFilter(hosts, hostFilter)
+    );
   }
 
   async getAllMacros(groupFilter, hostFilter) {
@@ -333,8 +340,17 @@ export class Zabbix implements ZabbixConnector {
     return filterByMQuery(allMacros, macroFilter);
   }
 
-  async getItemTags(groupFilter?, hostFilter?, itemTagFilter?) {
-    const items = await this.getAllItems(groupFilter, hostFilter, null, {});
+  async getItemTags(
+    groupFilter?,
+    hostFilter?,
+    itemTagFilter?,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ) {
+    const items = await this.getAllItems(groupFilter, hostFilter, null, {
+      hostTags: hostTagFilters,
+      evaltype: evalType,
+    });
     let tags: ZBXItemTag[] = _.flatten(
       items.map((item: ZBXItem) => {
         if (item.tags) {
@@ -350,12 +366,12 @@ export class Zabbix implements ZabbixConnector {
   }
 
   async getAllItems(groupFilter: string, hostFilter: string, itemTagFilter: string, options: any = {}): Promise<any[]> {
-    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hosts = await this.getHosts(groupFilter, hostFilter, options.hostTags, options.evaltype);
     const hostids = _.map(hosts, 'hostid');
 
     // Support regexp in tags
     if (utils.isRegex(itemTagFilter)) {
-      const tags = await this.getItemTags(groupFilter, hostFilter, itemTagFilter);
+      const tags = await this.getItemTags(groupFilter, hostFilter, itemTagFilter, options.hostTags, options.evaltype);
       if (tags.length === 0) {
         return [];
       }
