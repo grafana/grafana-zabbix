@@ -235,6 +235,34 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When querying numeric data', () => {
+    it('passes target with hostTags and evaltype to getItemsFromTarget', async () => {
+      const hostTags = [{ tag: 'product', value: 'A', operator: '1' as any }];
+      const target = {
+        group: { filter: 'Servers' },
+        host: { filter: '.*' },
+        application: { filter: '' },
+        itemTag: { filter: '' },
+        item: { filter: 'CPU' },
+        hostTags,
+        evaltype: '0' as any,
+        options: { showDisabledItems: false },
+        functions: [],
+      };
+
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockResolvedValue([]);
+      ctx.ds.queryNumericDataForItems = jest.fn().mockResolvedValue([]);
+      ctx.ds.handleBackendPostProcessingResponse = jest.fn().mockResolvedValue([]);
+
+      await ctx.ds.queryNumericData(target, [100, 200], false, {});
+
+      expect(ctx.ds.zabbix.getItemsFromTarget).toHaveBeenCalledWith(target, {
+        itemtype: 'num',
+        showDisabledItems: false,
+      });
+    });
+  });
+
   describe('When querying problems', () => {
     const buildProblemsTarget = (options: any = {}, showProblems = 'problems') => ({
       group: { filter: '' },

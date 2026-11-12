@@ -2,8 +2,45 @@ package zabbix
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 )
+
+type StringInt string
+
+func (s *StringInt) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		*s = StringInt(str)
+		return nil
+	}
+	var num int64
+	if err := json.Unmarshal(data, &num); err == nil {
+		*s = StringInt(strconv.FormatInt(num, 10))
+		return nil
+	}
+	var f float64
+	if err := json.Unmarshal(data, &f); err == nil {
+		*s = StringInt(strconv.FormatInt(int64(f), 10))
+		return nil
+	}
+	return nil
+}
+
+func (s StringInt) Int() int {
+	i, _ := strconv.Atoi(string(s))
+	return i
+}
+
+func (s StringInt) String() string {
+	return string(s)
+}
+
+type HostTagFilter struct {
+	Tag      string    `json:"tag"`
+	Value    string    `json:"value"`
+	Operator StringInt `json:"operator"`
+}
 
 type ZabbixDatasourceSettingsDTO struct {
 	Trends      bool   `json:"trends"`

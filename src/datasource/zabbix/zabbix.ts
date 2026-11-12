@@ -292,10 +292,14 @@ export class Zabbix implements ZabbixConnector {
     return this.version ? semver.gte(this.version, '5.4.0') : false;
   }
 
-  getItemsFromTarget(target, options) {
+  getItemsFromTarget(target, options: any = {}) {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    const filters = _.map(parts, (p) => target[p].filter);
-    return this.getItems(...filters, options);
+    const filters = _.map(parts, (p) => target[p]?.filter);
+    return this.getItems(...filters, {
+      ...options,
+      hostTags: options.hostTags ?? target.hostTags,
+      evaltype: options.evaltype ?? target.evaltype,
+    });
   }
 
   getMacrosFromTarget(target) {
@@ -306,8 +310,11 @@ export class Zabbix implements ZabbixConnector {
 
   async getHostsApsFromTarget(target): Promise<[ZBXHost[], ZBXApp[]]> {
     const parts = ['group', 'host', 'application'];
-    const filters = parts.map((p) => target[p].filter);
-    const results = await Promise.all([this.getHosts(...filters), this.getApps(...filters)]);
+    const filters = parts.map((p) => target[p]?.filter);
+    const results = await Promise.all([
+      this.getHosts(...filters, target.hostTags, target.evaltype),
+      this.getApps(...filters, target.hostTags, target.evaltype),
+    ]);
     const hosts = results[0];
     let apps: AppsResponse = results[1];
     if (apps.appFilterEmpty) {
@@ -316,11 +323,15 @@ export class Zabbix implements ZabbixConnector {
     return [hosts, apps];
   }
 
-  async getHostsFromICTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
+  async getHostsFromICTarget(target, options: any = {}): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    const filters = parts.map((p) => target[p].filter);
+    const filters = parts.map((p) => target[p]?.filter);
     const [hosts, apps] = await this.getHostsApsFromTarget(target);
-    const items = await this.getItems(...filters, options);
+    const items = await this.getItems(...filters, {
+      ...options,
+      hostTags: options.hostTags ?? target.hostTags,
+      evaltype: options.evaltype ?? target.evaltype,
+    });
     return [hosts, apps, items];
   }
 
@@ -457,6 +468,9 @@ export class Zabbix implements ZabbixConnector {
     }
 
     const hosts = await this.getHosts(groupFilter, hostFilter, options.hostTags, options.evaltype);
+    if (!hosts || hosts.length === 0) {
+      return [];
+    }
     const hostids = _.map(hosts, 'hostid');
 
     // Support regexp in tags
@@ -482,9 +496,15 @@ export class Zabbix implements ZabbixConnector {
     let items: any[];
 
     if (apps.appFilterEmpty) {
+      if (!apps.hostids || apps.hostids.length === 0) {
+        return [];
+      }
       items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype, undefined);
     } else {
       const appids = _.map(apps, 'applicationid');
+      if (appids.length === 0) {
+        return [];
+      }
       items = await this.zabbixAPI.getItems(undefined, appids, options.itemtype, undefined);
     }
 
