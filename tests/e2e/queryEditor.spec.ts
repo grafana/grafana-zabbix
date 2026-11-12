@@ -43,7 +43,7 @@ test.describe('Query editor', () => {
 
   test('renders the metrics filter fields', async ({ explorePage, page }) => {
     await explorePage.datasource.set(DS_NAME);
-    for (const label of ['Group', 'Host', 'Item']) {
+    for (const label of ['Group', 'Host tag', 'Host', 'Item']) {
       await expect(page.getByText(label, { exact: true })).toBeVisible();
     }
   });
@@ -68,5 +68,29 @@ test.describe('Query editor with fixture data', () => {
 
     const res = await problemResponse;
     expect(res.status()).toBe(200);
+  });
+
+  test('a metrics query with hostTags sends hostTags to datasource query', async ({ page }) => {
+    const metricsQuery = {
+      queryType: '0',
+      group: { filter: '/.*/' },
+      host: { filter: '/.*/' },
+      item: { filter: 'E2E item 0' },
+      hostTags: [{ tag: 'environment', value: 'production', operator: '0' }],
+      evaltype: '0',
+    };
+
+    const dsQueryRequest = page.waitForRequest(
+      (req) => req.url().includes('/api/ds/query') && (req.postData() || '').includes('E2E item 0'),
+      { timeout: 20000 }
+    );
+
+    await page.goto(exploreUrl(metricsQuery));
+
+    const req = await dsQueryRequest;
+    const body = JSON.parse(req.postData()!);
+    const target = body.queries[0];
+    expect(target.hostTags).toEqual([{ tag: 'environment', value: 'production', operator: '0' }]);
+    expect(target.evaltype).toBe('0');
   });
 });
