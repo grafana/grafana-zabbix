@@ -1,6 +1,7 @@
 import { BusEventWithPayload } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { ComboboxOption } from '@grafana/ui';
+import { HostTagFilter, ZabbixTagEvalType } from './types/query';
 
 // The paths of these files have moved around in Grafana and they don't resolve properly
 // either. Safer not to bother trying to import them just for type hinting.
@@ -75,6 +76,8 @@ export interface VariableQuery {
   item?: string;
   macro?: string;
   showDisabledItems?: boolean;
+  hostTags?: HostTagFilter[];
+  evaltype?: ZabbixTagEvalType;
 }
 
 export type LegacyVariableQuery = VariableQuery | string;
