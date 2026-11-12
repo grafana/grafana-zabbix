@@ -55,12 +55,14 @@ The variable query editor uses a structured form with a **Query Type** drop-down
 | Query type | Returns | Filter fields |
 |------------|---------|---------------|
 | **Group** | Host group names | Group |
-| **Host** | Host names | Group, Host |
-| **Item tag** | Item tag values | Group, Host, Item Tag |
-| **Item** | Item names | Group, Host, Item Tag, Item |
-| **Item values** | Current item values | Group, Host, Item Tag, Item |
+| **Host** | Host names | Group, Host tag, Host |
+| **Item tag** | Item tag values | Group, Host tag, Host, Item Tag |
+| **Item** | Item names | Group, Host tag, Host, Item Tag, Item |
+| **Item values** | Current item values | Group, Host tag, Host, Item Tag, Item |
 
 All filter fields support regex patterns (for example, `/.*/` to match all values) and references to other template variables (for example, `$group`).
+
+The **Host tag** field narrows the hosts by host tag before the **Host** filter is applied. It uses the same operators and **AND/OR** / **OR** evaluation as the Host tag filter in the query editor, and tags inherited from linked templates are matched too. Leave **Host** empty to return every host that matches the tags. Tag names and values support template variables; a multi-value variable in a tag value matches any of the selected values, and a variable with **All** selected places no constraint on that tag.
 
 When the **Item** query type is selected, you can also toggle **Show disabled items** to include disabled items in the results.
 
