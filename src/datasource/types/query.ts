@@ -9,9 +9,32 @@ export type QueryType =
   | typeof c.MODE_ITEMID
   | typeof c.MODE_TRIGGERS
   | typeof c.MODE_PROBLEMS
-  | typeof c.MODE_MACROS;
+  | typeof c.MODE_MACROS
+  | typeof c.MODE_LOGS;
 
 type BaseQuery = { queryType: QueryType; datasourceUid?: string } & DataQuery;
+
+export type LogsSource = typeof c.LOGS_SOURCE_ITEM | typeof c.LOGS_SOURCE_APM;
+
+// OTEL attribute scopes of the Zabbix 8.0 APM log object (apmlog.get)
+export type ApmAttributeScope = 'resource' | 'scope' | 'log';
+
+export interface ApmAttributeFilter {
+  scope: ApmAttributeScope;
+  key: string;
+  value: string;
+  // apmlog.get attribute operators: 0 Contains, 1 Equals, 2 Does not contain,
+  // 3 Does not equal, 4 Exists, 5 Does not exist
+  operator: number;
+}
+
+export interface ApmLogsFilter {
+  service?: string;
+  traceId?: string;
+  // OTEL SeverityNumber lower bound (1-24), 0 = any
+  minSeverity?: number;
+  attributes?: ApmAttributeFilter[];
+}
 
 export type ZabbixMetricsQuery = {
   schema: number;
@@ -41,6 +64,9 @@ export type ZabbixMetricsQuery = {
   evaltype?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
+  // Logs: data source ('item' when absent, for queries saved before APM support)
+  logsSource?: LogsSource;
+  apmFilter?: ApmLogsFilter;
   // Problems
   showProblems?: ShowProblemTypes;
   // Deprecated

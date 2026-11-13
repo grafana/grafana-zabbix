@@ -3,6 +3,7 @@ import {
   DataFrame,
   dataFrameFromJSON,
   DataFrameJSON,
+  DataFrameType,
   DataQueryResponse,
   Field,
   FieldType,
@@ -443,6 +444,206 @@ function handleText(history, items, target, addHostName = true) {
   return convertHistory(history, items, addHostName, convertTextCallback);
 }
 
+// OTEL SeverityText to Grafana log level (apmlog.get severity_text, case-insensitive)
+const OTEL_SEVERITY_TEXT_TO_LEVEL: { [key: string]: string } = {
+  trace: 'trace',
+  debug: 'debug',
+  info: 'info',
+  information: 'info',
+  warn: 'warning',
+  warning: 'warning',
+  error: 'error',
+  err: 'error',
+  fatal: 'critical',
+  critical: 'critical',
+};
+
+// OTEL SeverityNumber (1-24) to Grafana log level: 1-4 TRACE, 5-8 DEBUG,
+// 9-12 INFO, 13-16 WARN, 17-20 ERROR, 21-24 FATAL. 0/unknown = let Grafana infer.
+function otelSeverityNumberToLevel(severityNumber: number): string {
+  if (severityNumber >= 1 && severityNumber <= 4) {
+    return 'trace';
+  } else if (severityNumber <= 8) {
+    return 'debug';
+  } else if (severityNumber <= 12) {
+    return 'info';
+  } else if (severityNumber <= 16) {
+    return 'warning';
+  } else if (severityNumber <= 20) {
+    return 'error';
+  } else if (severityNumber <= 24) {
+    return 'critical';
+  }
+  return '';
+}
+
+// The Zabbix PHP API serializes empty attribute maps as [] instead of {}
+function normalizeApmAttributes(attributes: any): Record<string, string> {
+  if (!attributes || Array.isArray(attributes)) {
+    return {};
+  }
+  return attributes;
+}
+
+/**
+ * Convert Zabbix 8.0 APM log records (apmlog.get) to a Grafana logs data frame,
+ * with the same shape and meta as handleLogs(). Record timestamps are unix
+ * nanoseconds (JSON numbers above Number.MAX_SAFE_INTEGER, so only safe to use
+ * at millisecond precision).
+ */
+export function handleAPMLogs(records: any[], target: ZabbixMetricsQuery): DataFrame {
+  const entries = _.sortBy(records || [], (r) => Number(r.timestamp));
+
+  const timestamps: number[] = [];
+  const bodies: string[] = [];
+  const severities: string[] = [];
+  const ids: string[] = [];
+  const labels: object[] = [];
+
+  for (let i = 0; i < entries.length; i++) {
+    const r = entries[i];
+    timestamps.push(Math.floor(Number(r.timestamp) / 1000000));
+    bodies.push(r.body ?? '');
+    severities.push(
+      OTEL_SEVERITY_TEXT_TO_LEVEL[(r.severity_text || '').toLowerCase()] ||
+        otelSeverityNumberToLevel(Number(r.severity_number))
+    );
+    // Nanosecond timestamps lose precision in JSON numbers, so add the row index for uniqueness
+    ids.push(`${r.timestamp}_${i}`);
+
+    const rowLabels: Record<string, string> = {
+      ...normalizeApmAttributes(r.resource_attributes),
+      ...normalizeApmAttributes(r.scope_attributes),
+      ...normalizeApmAttributes(r.log_attributes),
+    };
+    if (r.service_name) {
+      rowLabels.service = r.service_name;
+    }
+    if (r.traceid) {
+      rowLabels.traceid = r.traceid;
+    }
+    if (r.spanid) {
+      rowLabels.spanid = r.spanid;
+    }
+    if (r.event_name) {
+      rowLabels.event_name = r.event_name;
+    }
+    if (r.scope_name) {
+      rowLabels.scope = r.scope_name;
+    }
+    labels.push(rowLabels);
+  }
+
+  const frame = createDataFrame({
+    refId: target.refId,
+    fields: [
+      { name: 'timestamp', type: FieldType.time, values: timestamps },
+      { name: 'body', type: FieldType.string, values: bodies },
+      { name: 'severity', type: FieldType.string, values: severities },
+      { name: 'id', type: FieldType.string, values: ids },
+      { name: 'labels', type: FieldType.other, values: labels },
+    ],
+  });
+
+  frame.meta = {
+    type: DataFrameType.LogLines,
+    preferredVisualisationType: 'logs',
+    custom: {
+      searchWords: target.textFilter ? [target.textFilter] : [],
+      limit: target.options?.limit,
+    },
+  };
+
+  return frame;
+}
+
+// Zabbix log item severity (Windows event log levels) to Grafana log level.
+// Unmapped values produce an empty severity so Grafana infers the level from the line content.
+const ZBX_LOG_SEVERITY_TO_LEVEL: { [key: number]: string } = {
+  1: 'info', // Information
+  2: 'warning', // Warning
+  4: 'error', // Error
+  7: 'error', // Failure Audit
+  8: 'info', // Success Audit
+  9: 'critical', // Critical
+  10: 'debug', // Verbose
+};
+
+/**
+ * Convert Zabbix log history (value_type = 2) to a Grafana logs data frame
+ * (https://grafana.com/developers/dataplane/logs): one frame per query with
+ * timestamp/body/severity/id/labels fields and the log-lines frame type set,
+ * so the result renders in the Logs panel and the Explore logs view.
+ */
+export function handleLogs(history: any[], items: any[], target: ZabbixMetricsQuery): DataFrame {
+  const itemsById = _.keyBy(items, 'itemid');
+  const hosts = _.uniqBy(_.flatten(_.map(items, 'hosts')), 'hostid');
+
+  let entries = _.sortBy(history, (p) => Number(p.clock) * 1000 + Math.round(Number(p.ns) / 1000000));
+
+  // Line filter: keep only lines matching the regex
+  if (target.textFilter) {
+    const lineFilter = new RegExp(target.textFilter);
+    entries = entries.filter((p) => lineFilter.test(p.value));
+  }
+
+  const timestamps: number[] = [];
+  const bodies: string[] = [];
+  const severities: string[] = [];
+  const ids: string[] = [];
+  const labels: object[] = [];
+
+  for (const p of entries) {
+    const item = itemsById[p.itemid];
+    if (!item) {
+      continue;
+    }
+    const host = _.find(hosts, { hostid: item.hostid }) as any;
+
+    timestamps.push(Number(p.clock) * 1000 + Math.round(Number(p.ns) / 1000000));
+    bodies.push(p.value);
+    severities.push(ZBX_LOG_SEVERITY_TO_LEVEL[Number(p.severity)] || '');
+    // Log history entries have their own id; fall back to a synthetic one
+    ids.push(p.id != null ? String(p.id) : `${p.itemid}_${p.clock}_${p.ns}`);
+
+    const rowLabels: Record<string, string> = {
+      host: host?.name,
+      item: item.name,
+      item_key: item.key_,
+    };
+    // Log-specific metadata (eventlog items): source and event id
+    if (p.source) {
+      rowLabels.source = p.source;
+    }
+    if (p.logeventid && p.logeventid !== '0') {
+      rowLabels.logeventid = p.logeventid;
+    }
+    labels.push(rowLabels);
+  }
+
+  const frame = createDataFrame({
+    refId: target.refId,
+    fields: [
+      { name: 'timestamp', type: FieldType.time, values: timestamps },
+      { name: 'body', type: FieldType.string, values: bodies },
+      { name: 'severity', type: FieldType.string, values: severities },
+      { name: 'id', type: FieldType.string, values: ids },
+      { name: 'labels', type: FieldType.other, values: labels },
+    ],
+  });
+
+  frame.meta = {
+    type: DataFrameType.LogLines,
+    preferredVisualisationType: 'logs',
+    custom: {
+      searchWords: target.textFilter ? [target.textFilter] : [],
+      limit: target.options?.limit,
+    },
+  };
+
+  return frame;
+}
+
 function handleHistoryAsTable(history, items, target) {
   const hosts: string[] = [];
   const itemNames: string[] = [];
@@ -797,6 +998,8 @@ export default {
   convertHistory,
   handleTrends,
   handleText,
+  handleLogs,
+  handleAPMLogs,
   handleMacro,
   handleHistoryAsTable,
   handleSLAResponse,

@@ -91,6 +91,44 @@ Expand the **Options** section to access additional settings:
 |--------|-------------|
 | **Show disabled items** | Include disabled items in the item drop-down. |
 
+### Logs
+
+Use Logs queries to retrieve log data from Zabbix. Results are returned as log lines and render in the Logs panel and the Explore logs view.
+
+The **Source** selector chooses where the log lines come from:
+
+- **Item logs** (default) — history of items with the Log value type (`log[]`, `logrt[]`, `eventlog[]` and similar keys). Log entry metadata (severity, source, and event ID for Windows event log items) is mapped to the log line's level and labels.
+- **APM logs** — OpenTelemetry log records collected through the Zabbix APM collector (requires Zabbix 8.0 or higher with a configured ClickHouse telemetry data source). OTEL severity, service name, trace/span IDs, and resource/scope/log attributes are mapped to the log line's level and labels.
+
+#### Item logs fields
+
+| Field | Description |
+|-------|-------------|
+| **Group** | The host group to query. Supports regex and template variables. |
+| **Host tag** | Filter hosts by tag (Zabbix 5.4+). Click the **+** button to add one or more tag filters. Each filter has a tag name, an operator, and an optional value. When multiple filters are active, choose **AND/OR** or **OR** evaluation. |
+| **Host** | The host to query. Supports regex and template variables. |
+| **Application** | Filter items by application. Visible on Zabbix versions before 5.4. Replaced by **Item tag** on Zabbix 5.4+. |
+| **Item tag** | Filter items by tag. Visible on Zabbix 5.4+. Replaces **Application**. Supports template variables. |
+| **Item** | The log item to query. Supports regex and template variables. |
+| **Line filter** | A regular expression used to keep only matching log lines. |
+
+#### APM logs fields
+
+| Field | Description |
+|-------|-------------|
+| **Service** | Exact service name (the OTEL `service.name` resource attribute). Supports template variables. |
+| **Min severity** | The minimum OTEL severity to return: Any, Trace, Debug, Info, Warn, Error, or Fatal. |
+| **Body** | Case-insensitive substring match on the log body, applied server side. Supports template variables. |
+| **Trace ID** | Return only log records that belong to the given trace. |
+| **Attributes** | Filter by OTEL attributes. Each filter has a scope (Resource, Scope, or Log), a key, an operator (Contains, Equals, Does not contain, Does not equal, Exists, Does not exist), and a value. |
+
+Expand the **Options** section to access additional settings:
+
+| Option | Description |
+|--------|-------------|
+| **Show disabled items** | Include disabled items in the item drop-down (Item logs source only). |
+| **Line limit** | The maximum number of log lines to return. The most recent lines within the time range are kept. Default: 1000. |
+
 ### Services
 
 Use Services queries to retrieve IT service SLA data from Zabbix.

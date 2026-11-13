@@ -168,6 +168,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           return [];
         }
         return this.queryTextData(target, timeRange);
+      } else if (target.queryType === c.MODE_LOGS) {
+        // Logs query
+        // Don't request undefined targets
+        if (!target.group || !target.host || !target.item) {
+          return [];
+        }
+        return this.queryLogsData(target, timeRange);
       } else if (target.queryType === c.MODE_ITSERVICE) {
         // IT services query
         const isOldVersion = oldVersionTargets.includes(target.refId);
@@ -196,6 +203,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           isDataFrame(data[0]) &&
           !utils.isProblemsDataFrame(data[0]) &&
           !utils.isMacrosDataFrame(data[0]) &&
+          !utils.isLogsDataFrame(data[0]) &&
           !utils.nonTimeSeriesDataFrame(data[0])
         ) {
           data = responseHandler.alignFrames(data);
@@ -386,6 +394,35 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       }
       return (result as any[]).map((s) => responseHandler.seriesToDataFrame(s, target, [], FieldType.string));
     });
+  }
+
+  /**
+   * Query target data for Logs (items with the Log value type)
+   */
+  queryLogsData(target, timeRange) {
+    if (target.logsSource === c.LOGS_SOURCE_APM) {
+      return this.queryApmLogsData(target, timeRange);
+    }
+    const options = {
+      itemtype: 'log',
+      showDisabledItems: target.options?.showDisabledItems,
+      hostTags: target.hostTags,
+      evaltype: target.evaltype,
+    };
+    return this.zabbix.getItemsFromTarget(target, options).then((items) => {
+      return this.zabbix.getHistoryLogs(items, timeRange, target);
+    });
+  }
+
+  /**
+   * Query APM/OTEL logs via apmlog.get (Zabbix 8.0+)
+   */
+  async queryApmLogsData(target, timeRange) {
+    const supported = await this.zabbix.supportsApmLogs();
+    if (!supported) {
+      throw new Error('APM logs require Zabbix 8.0 or higher');
+    }
+    return this.zabbix.getApmLogs(target, timeRange);
   }
 
   /**
@@ -1068,7 +1105,23 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           scopedVars,
           utils.zabbixItemIdsTemplateFormat
         ),
-        textFilter: utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        // APM log filters are exact values or substrings, never regexes, so they are
+        // interpolated as plain text (replaceTemplateVars would wrap them in /^...$/)
+        textFilter:
+          query.queryType === c.MODE_LOGS && query.logsSource === c.LOGS_SOURCE_APM
+            ? this.templateSrv.replace(query.textFilter, scopedVars)
+            : utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        apmFilter: query.apmFilter
+          ? {
+              ...query.apmFilter,
+              service: this.templateSrv.replace(query.apmFilter.service, scopedVars),
+              traceId: this.templateSrv.replace(query.apmFilter.traceId, scopedVars),
+              attributes: query.apmFilter.attributes?.map((a) => ({
+                ...a,
+                value: this.templateSrv.replace(a.value, scopedVars),
+              })),
+            }
+          : query.apmFilter,
         functions: utils.replaceVariablesInFuncParams(this.templateSrv, query.functions, scopedVars),
         tags: {
           ...query.tags,

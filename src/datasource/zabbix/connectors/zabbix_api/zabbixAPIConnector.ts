@@ -321,6 +321,10 @@ export class ZabbixAPIConnector {
       // Return only text metrics
       params.filter.value_type = [1, 2, 4];
     }
+    if (itemtype === 'log') {
+      // Return only log items
+      params.filter.value_type = [2];
+    }
 
     if (options.nameSearch?.length) {
       // Macros ($1, {$MACRO}) are expanded client-side and may resolve to the searched text, keep them too
@@ -406,7 +410,7 @@ export class ZabbixAPIConnector {
    * @param  {Number} timeTill   Time in seconds
    * @return {Array}  Array of Zabbix history objects
    */
-  getHistory(items, timeFrom, timeTill, limit?) {
+  getHistory(items, timeFrom, timeTill, limit?, sortOrder?: 'ASC' | 'DESC') {
     // Group items by value type and perform request for each value type
     const grouped_items = _.groupBy(items, 'value_type');
     const promises = _.map(grouped_items, (items, value_type) => {
@@ -416,7 +420,8 @@ export class ZabbixAPIConnector {
         history: value_type,
         itemids: itemids,
         sortfield: 'clock',
-        sortorder: 'ASC',
+        // DESC is used with a limit to get the most recent entries (log queries)
+        sortorder: sortOrder || 'ASC',
         time_from: timeFrom,
       };
 
@@ -435,6 +440,14 @@ export class ZabbixAPIConnector {
     });
 
     return Promise.all(promises).then(_.flatten);
+  }
+
+  /**
+   * Query OTEL/APM log records from Zabbix 8.0+ (apmlog.get).
+   * Timestamps in returned records are unix nanoseconds; time_from/time_till are unix seconds.
+   */
+  getAPMLogs(params: any): Promise<any[]> {
+    return this.request('apmlog.get', params);
   }
 
   /**

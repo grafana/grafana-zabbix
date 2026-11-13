@@ -14,6 +14,13 @@ export const MODE_ITEMID = '3';
 export const MODE_TRIGGERS = '4';
 export const MODE_PROBLEMS = '5';
 export const MODE_MACROS = '6';
+// '7' and '8' are reserved: legacy triggers count/macros modes remapped by migrations (schema < 11)
+export const MODE_LOGS = '9';
+
+// Logs query data sources
+export const LOGS_SOURCE_ITEM = 'item';
+export const LOGS_SOURCE_APM = 'apm';
+export const ZABBIX_APM_MIN_VERSION = '8.0.0';
 
 // Triggers severity
 export const SEV_NOT_CLASSIFIED = 0;
@@ -49,6 +56,7 @@ export const MIN_SLA_INTERVAL = 3600;
 export const RANGE_VARIABLE_VALUE = 'range_series';
 
 export const DEFAULT_ZABBIX_PROBLEMS_LIMIT = 1001;
+export const DEFAULT_ZABBIX_LOGS_LIMIT = 1000;
 
 export const ITEM_COUNT_WARNING_THRESHOLD = 500;
 
