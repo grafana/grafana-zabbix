@@ -1,4 +1,4 @@
-FROM python:3.13-slim-bullseye@sha256:e98b521460ee75bca92175c16247bdf7275637a8faaeb2bcfa19d879ae5c4b9a
+FROM python:3.15-slim-bookworm@sha256:96599df822d0e1c6bb700014a05c7f3c8cabc6e0f7ff3c4f9f69cee033b4b5d9
 
 ENV ZBX_API_URL=http://zabbix-web:8080
 ENV ZBX_API_USER="Admin"

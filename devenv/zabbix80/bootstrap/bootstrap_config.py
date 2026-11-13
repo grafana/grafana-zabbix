@@ -15,7 +15,9 @@ print(zabbix_url, zabbix_user, zabbix_password, zabbix_test_user, zabbix_test_pa
 zapi = None
 for i in range(30):
   try:
-    zapi = ZabbixAPI(zabbix_url)
+    # zabbix_utils rejects Zabbix versions newer than the ones it was released
+    # against; skip that check so a library lagging behind 8.0 still works.
+    zapi = ZabbixAPI(zabbix_url, skip_version_check=True)
     zapi.login(user=zabbix_user, password=zabbix_password)
     print("Connected to Zabbix API Version %s" % zapi.api_version())
     break
@@ -95,6 +97,16 @@ roles = zapi.role.get(output="extend", filter={"name": "User role"})
 if not roles:
   roles = zapi.role.get(output="extend")
 roleid = roles[0]['roleid']
+
+# Zabbix 8.0 ships new installations with API access disabled for every role
+# except "Super admin role". The per-user auth tests call the API as the test
+# user, so enable API access for its role.
+try:
+  zapi.role.update(roleid=roleid, rules={"api.access": "1"})
+  print("Enabled API access for role %s" % roleid)
+except Exception as e:
+  print("Failed to enable API access for role %s: %s" % (roleid, e))
+  sys.exit(1)
 
 user_create_params = {
   "username": zabbix_test_user,

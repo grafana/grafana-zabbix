@@ -51,28 +51,12 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     return options;
   }, [interpolatedQuery.group.filter]);
 
-  const loadAppOptions = async (group: string, host: string) => {
-    const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
-      value: app.name,
-      label: app.name,
-    }));
-    options = _.uniqBy(options, (o) => o.value);
-    options.unshift(...getVariableOptions());
-    return options;
-  };
-
-  const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
-    const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
-    return options;
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
-
-  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
+  const loadItemOptions = async (group: string, host: string, itemTag: string) => {
     const options = {
       itemtype: 'text',
       showDisabledItems: query.options.showDisabledItems,
     };
-    const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
+    const items = await datasource.zabbix.getAllItems(group, host, itemTag, options);
     let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
@@ -86,21 +70,14 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
     const options = await loadItemOptions(
       interpolatedQuery.group.filter,
       interpolatedQuery.host.filter,
-      interpolatedQuery.application.filter,
       interpolatedQuery.itemTag.filter
     );
     return options;
-  }, [
-    interpolatedQuery.group.filter,
-    interpolatedQuery.host.filter,
-    interpolatedQuery.application.filter,
-    interpolatedQuery.itemTag.filter,
-  ]);
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter, interpolatedQuery.itemTag.filter]);
 
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
   const hostFilter = interpolatedQuery.host?.filter;
-  const appFilter = interpolatedQuery.application?.filter;
   const tagFilter = interpolatedQuery.itemTag?.filter;
 
   useEffect(() => {
@@ -112,12 +89,8 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
   }, [groupFilter]);
 
   useEffect(() => {
-    fetchApps();
-  }, [groupFilter, hostFilter]);
-
-  useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter]);
+  }, [groupFilter, hostFilter, tagFilter]);
 
   const onTextFilterChange = (v: FormEvent<HTMLInputElement>) => {
     const newValue = v?.currentTarget?.value;
@@ -161,17 +134,6 @@ export const TextMetricsQueryEditor = ({ query, datasource, onChange }: Props) =
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
-        <InlineField label="Application" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.application.filter}
-            options={appOptions}
-            isLoading={appsLoading}
-            onChange={onFilterChange('application')}
-            createCustomValue={true}
-            placeholder="Application name"
-          />
-        </InlineField>
         <InlineField label="Item" labelWidth={12}>
           <MetricPicker
             width={24}

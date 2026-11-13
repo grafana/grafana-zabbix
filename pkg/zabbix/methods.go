@@ -123,48 +123,7 @@ func (ds *Zabbix) GetItems(
 		itemTagFilter = strings.Join(tagStrs, ",")
 	}
 	ds.logger.Debug("Fetching items with filters", "hostCount", len(hostids), "itemType", itemType, "showDisabled", showDisabled, "hasItemTagFilter", len(itemTagFilter) > 0)
-	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	return filterItemsByQuery(allItems, itemFilter)
-}
-
-func (ds *Zabbix) GetItemsBefore54(
-	ctx context.Context,
-	groupFilter string,
-	hostFilter string,
-	appFilter string,
-	itemFilter string,
-	itemType string,
-	showDisabled bool,
-) ([]*Item, error) {
-	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
-	if err != nil {
-		return nil, err
-	}
-	hostids := make([]string, 0)
-	for _, host := range hosts {
-		hostids = append(hostids, host.ID)
-	}
-
-	apps, err := ds.GetApps(ctx, groupFilter, hostFilter, appFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	appids := make([]string, 0)
-	for _, app := range apps {
-		appids = append(appids, app.ID)
-	}
-
-	var allItems []*Item
-	if len(appids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "")
-	} else if appFilter == "" && len(hostids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
-	}
+	allItems, err = ds.GetAllItems(ctx, hostids, itemType, showDisabled, itemTagFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -198,49 +157,6 @@ func filterItemsByQuery(items []*Item, filter string) ([]*Item, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetApps(ctx context.Context, groupFilter string, hostFilter string, appFilter string) ([]Application, error) {
-	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
-	if err != nil {
-		return nil, err
-	}
-	hostids := make([]string, 0)
-	for _, host := range hosts {
-		hostids = append(hostids, host.ID)
-	}
-	allApps, err := ds.GetAllApps(ctx, hostids)
-	if err != nil {
-		return nil, err
-	}
-
-	return filterAppsByQuery(allApps, appFilter)
-}
-
-func filterAppsByQuery(items []Application, filter string) ([]Application, error) {
-	re, err := parseFilter(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	filteredItems := make([]Application, 0)
-	for _, i := range items {
-		name := i.Name
-		if re != nil {
-			match, err := re.MatchString(name)
-			if err != nil {
-				return nil, err
-			}
-			if match {
-				filteredItems = append(filteredItems, i)
-			}
-		} else if name == filter {
-			filteredItems = append(filteredItems, i)
-		}
-
-	}
-
-	return filteredItems, nil
-}
-
 func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilter string, tagFilter string) ([]Tag, error) {
 	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
 	if err != nil {
@@ -255,7 +171,7 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 	itemType := "num"
 	showDisabled := false
 
-	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+	allItems, err = ds.GetAllItems(ctx, hostids, itemType, showDisabled, "")
 	if err != nil {
 		return nil, err
 	}
@@ -379,15 +295,15 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool, itemTagFilter string) ([]*Item, error) {
+func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, itemtype string, showDisabled bool, itemTagFilter string) ([]*Item, error) {
 	params := ZabbixAPIParams{
-		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
-		"sortfield":      "name",
-		"webitems":       true,
-		"filter":         map[string]interface{}{},
-		"selectHosts":    []string{"hostid", "name"},
-		"hostids":        hostids,
-		"applicationids": appids,
+		"output":      []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
+		"sortfield":   "name",
+		"webitems":    true,
+		"filter":      map[string]interface{}{},
+		"selectHosts": []string{"hostid", "name"},
+		"selectTags":  "extend",
+		"hostids":     hostids,
 	}
 
 	filter := params["filter"].(map[string]interface{})
@@ -398,30 +314,27 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 		filter["value_type"] = []int{1, 2, 4}
 	}
 
-	if ds.version >= 54 {
-		params["selectTags"] = "extend"
-		if len(itemTagFilter) > 0 {
-			allTags := strings.Split(itemTagFilter, ",")
-			tagsParams := make([]map[string]string, 0)
-			for _, tagStr := range allTags {
-				tag := parseItemTag(tagStr)
-				tagParam := map[string]string{
-					"tag":      tag.Tag,
-					"value":    tag.Value,
-					"operator": "1",
-				}
-				tagsParams = append(tagsParams, tagParam)
+	if len(itemTagFilter) > 0 {
+		allTags := strings.Split(itemTagFilter, ",")
+		tagsParams := make([]map[string]string, 0)
+		for _, tagStr := range allTags {
+			tag := parseItemTag(tagStr)
+			tagParam := map[string]string{
+				"tag":      tag.Tag,
+				"value":    tag.Value,
+				"operator": "1",
 			}
-			// tags order should be handled for higher cache hit ratio
-			sort.Slice(tagsParams, func(i, j int) bool {
-				if tagsParams[i]["tag"] != tagsParams[j]["tag"] {
-					return tagsParams[i]["tag"] < tagsParams[j]["tag"]
-				}
-				return tagsParams[i]["value"] < tagsParams[j]["value"]
-			})
-			params["tags"] = tagsParams
-			params["evaltype"] = 2
+			tagsParams = append(tagsParams, tagParam)
 		}
+		// tags order should be handled for higher cache hit ratio
+		sort.Slice(tagsParams, func(i, j int) bool {
+			if tagsParams[i]["tag"] != tagsParams[j]["tag"] {
+				return tagsParams[i]["tag"] < tagsParams[j]["tag"]
+			}
+			return tagsParams[i]["value"] < tagsParams[j]["value"]
+		})
+		params["tags"] = tagsParams
+		params["evaltype"] = 2
 	}
 
 	if !showDisabled {
@@ -439,6 +352,7 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 		return nil, err
 	}
 
+	sortItemsByNameTieBreak(items)
 	items = expandItems(items)
 	return items, err
 }
@@ -449,11 +363,7 @@ func (ds *Zabbix) GetItemsByIDs(ctx context.Context, itemids []string) ([]*Item,
 		"output":      []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
 		"webitems":    true,
 		"selectHosts": []string{"hostid", "name"},
-	}
-
-	// Item tags were introduced in Zabbix 5.4; older versions don't support selectTags.
-	if ds.version >= 54 {
-		params["selectTags"] = "extend"
+		"selectTags":  "extend",
 	}
 
 	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "item.get", Params: params})
@@ -467,24 +377,9 @@ func (ds *Zabbix) GetItemsByIDs(ctx context.Context, itemids []string) ([]*Item,
 		return nil, err
 	}
 
+	sortItemsByID(items)
 	items = expandItems(items)
 	return items, err
-}
-
-func (ds *Zabbix) GetAllApps(ctx context.Context, hostids []string) ([]Application, error) {
-	params := ZabbixAPIParams{
-		"output":  "extend",
-		"hostids": hostids,
-	}
-
-	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "application.get", Params: params})
-	if err != nil {
-		return nil, err
-	}
-
-	var apps []Application
-	err = convertTo(result, &apps)
-	return apps, err
 }
 
 func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string) ([]Host, error) {

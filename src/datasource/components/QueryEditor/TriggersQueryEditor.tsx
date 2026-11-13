@@ -69,28 +69,8 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   }, [interpolatedQuery.group.filter]);
 
-  const loadAppOptions = async (group: string, host: string) => {
-    const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
-      value: app.name,
-      label: app.name,
-    }));
-    options = _.uniqBy(options, (o) => o.value);
-    options.unshift(...getVariableOptions());
-    return options;
-  };
-
-  const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
-    const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
-    return options;
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
-
   const loadTagOptions = async (group: string, host: string) => {
-    const tagsAvailable = await datasource.zabbix.isZabbix54OrHigher();
-    if (!tagsAvailable) {
-      return [];
-    }
-    const items = await datasource.zabbix.getAllItems(group, host, null, null, {});
+    const items = await datasource.zabbix.getAllItems(group, host, null, {});
     const tags: ZBXItemTag[] = _.flatten(items.map((item: ZBXItem) => item.tags || []));
 
     const tagList = _.uniqBy(tags, (t) => t.tag + t.value || '').map((t) => itemTagToString(t));
@@ -123,12 +103,12 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     return options;
   }, []);
 
-  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string) => {
+  const loadItemOptions = async (group: string, host: string, itemTag: string) => {
     const options = {
       itemtype: 'num',
       showDisabledItems: query.options.showDisabledItems,
     };
-    const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
+    const items = await datasource.zabbix.getAllItems(group, host, itemTag, options);
     let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
       value: item.name,
       label: item.name,
@@ -142,21 +122,14 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     const options = await loadItemOptions(
       interpolatedQuery.group.filter,
       interpolatedQuery.host.filter,
-      interpolatedQuery.application.filter,
       interpolatedQuery.itemTag.filter
     );
     return options;
-  }, [
-    interpolatedQuery.group.filter,
-    interpolatedQuery.host.filter,
-    interpolatedQuery.application.filter,
-    interpolatedQuery.itemTag.filter,
-  ]);
+  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter, interpolatedQuery.itemTag.filter]);
 
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
   const hostFilter = interpolatedQuery.host?.filter;
-  const appFilter = interpolatedQuery.application?.filter;
   const tagFilter = interpolatedQuery.itemTag?.filter;
 
   useEffect(() => {
@@ -168,10 +141,6 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
   }, [groupFilter]);
 
   useEffect(() => {
-    fetchApps();
-  }, [groupFilter, hostFilter]);
-
-  useEffect(() => {
     fetchItemTags();
   }, [groupFilter, hostFilter]);
 
@@ -181,7 +150,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter]);
+  }, [groupFilter, hostFilter, tagFilter]);
 
   const onTextFilterChange = (prop: string) => {
     return (v: FormEvent<HTMLInputElement>) => {
@@ -211,8 +180,6 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
       onChange({ ...query, countTriggersBy: option.value! });
     }
   };
-
-  const supportsApplications = datasource.zabbix.supportsApplications();
 
   return (
     <>
@@ -259,20 +226,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
         )}
       </QueryEditorRow>
       <QueryEditorRow>
-        {supportsApplications && (
-          <InlineField label="Application" labelWidth={12}>
-            <MetricPicker
-              width={24}
-              value={query.application?.filter}
-              options={appOptions}
-              isLoading={appsLoading}
-              onChange={onFilterChange('application')}
-              createCustomValue={true}
-              placeholder="Application name"
-            />
-          </InlineField>
-        )}
-        {!supportsApplications && query.countTriggersBy === 'items' && (
+        {query.countTriggersBy === 'items' && (
           <InlineField label="Item tag" labelWidth={12}>
             <MetricPicker
               width={24}
@@ -310,16 +264,14 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
             />
           </InlineField>
         )}
-        {!supportsApplications && (
-          <InlineField label="Tags" labelWidth={12}>
-            <Input
-              width={24}
-              defaultValue={query.tags?.filter}
-              placeholder="tag1:value1, tag2:value2"
-              onBlur={onTextFilterChange('tags')}
-            />
-          </InlineField>
-        )}
+        <InlineField label="Tags" labelWidth={12}>
+          <Input
+            width={24}
+            defaultValue={query.tags?.filter}
+            placeholder="tag1:value1, tag2:value2"
+            onBlur={onTextFilterChange('tags')}
+          />
+        </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
         <InlineField label="Min severity" labelWidth={12}>

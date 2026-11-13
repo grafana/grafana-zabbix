@@ -28,11 +28,26 @@ INSERT INTO items (itemid, hostid, type, key_, name, value_type, status, delay) 
 ON CONFLICT DO NOTHING;
 INSERT INTO item_rtdata (itemid, state) VALUES (9000001, 0), (9000002, 0) ON CONFLICT DO NOTHING;
 
--- triggers in PROBLEM state (value 1), enabled (status 0), High severity (priority 4)
-INSERT INTO triggers (triggerid, description, expression, value, status, priority, flags) VALUES
-  (9000001, 'E2E problem 0 on {HOST.NAME}', '{9000001}=1', 1, 0, 4, 0),
-  (9000002, 'E2E problem 1 on {HOST.NAME}', '{9000002}=1', 1, 0, 4, 0)
+-- triggers (PROBLEM state is set below), enabled (status 0), High severity (priority 4)
+INSERT INTO triggers (triggerid, description, expression, status, priority, flags) VALUES
+  (9000001, 'E2E problem 0 on {HOST.NAME}', '{9000001}=1', 0, 4, 0),
+  (9000002, 'E2E problem 1 on {HOST.NAME}', '{9000002}=1', 0, 4, 0)
 ON CONFLICT DO NOTHING;
+
+-- Trigger state (value 1 = PROBLEM). Up to Zabbix 7.4 it is the triggers.value
+-- column; Zabbix 8.0 moved it to the trigger_rtdata table.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = current_schema() AND table_name = 'triggers' AND column_name = 'value'
+  ) THEN
+    UPDATE triggers SET value = 1 WHERE triggerid IN (9000001, 9000002);
+  ELSE
+    INSERT INTO trigger_rtdata (triggerid, value) VALUES (9000001, 1), (9000002, 1)
+    ON CONFLICT (triggerid) DO UPDATE SET value = EXCLUDED.value;
+  END IF;
+END $$;
 
 -- functions link each item to its trigger (trigger expression references the functionid)
 INSERT INTO functions (functionid, itemid, triggerid, name, parameter) VALUES

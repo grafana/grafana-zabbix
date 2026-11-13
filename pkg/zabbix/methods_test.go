@@ -197,32 +197,6 @@ func TestGetItemsWithRegexItemTagFilterNoMatch(t *testing.T) {
 	assert.Len(t, items, 0, "Expected empty list when regex itemTagFilter matches no tags. Without fix, this would return 2 items.")
 }
 
-func TestGetItemsBefore54(t *testing.T) {
-	client := NewZabbixClientWithResponses(t, map[string]string{
-		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"}]}`,
-		"host.get":      `{"result":[{"hostid":"10","name":"web01"}]}`,
-		"application.get": `{
-			"result":[
-				{"applicationid":"50","name":"Databases"},
-				{"applicationid":"60","name":"Apps"}
-			]
-		}`,
-		"item.get": `{
-			"result":[
-				{"itemid":"500","name":"DB Size"},
-				{"itemid":"600","name":"API latency"}
-			]
-		}`,
-		"apiinfo.version": `{"result":"5.0.0"}`,
-	})
-
-	items, err := client.GetItemsBefore54(context.Background(), "Servers", "web01", "Databases", "/DB/", "num", false)
-	require.NoError(t, err)
-	if assert.Len(t, items, 1) {
-		assert.Equal(t, "500", items[0].ID)
-	}
-}
-
 func TestFilterItemsByQuery(t *testing.T) {
 	items := []*Item{
 		{Name: "CPU usage"},
@@ -238,43 +212,6 @@ func TestFilterItemsByQuery(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, filtered, 1)
 	assert.Equal(t, "Memory usage", filtered[0].Name)
-}
-
-func TestGetApps(t *testing.T) {
-	client := NewZabbixClientWithResponses(t, map[string]string{
-		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"}]}`,
-		"host.get":      `{"result":[{"hostid":"10","name":"web01"}]}`,
-		"application.get": `{
-			"result":[
-				{"applicationid":"50","name":"API"},
-				{"applicationid":"60","name":"DB"}
-			]
-		}`,
-		"apiinfo.version": `{"result":"6.4.0"}`,
-	})
-
-	apps, err := client.GetApps(context.Background(), "Servers", "web01", "/^API/")
-	require.NoError(t, err)
-	if assert.Len(t, apps, 1) {
-		assert.Equal(t, "50", apps[0].ID)
-	}
-}
-
-func TestFilterAppsByQuery(t *testing.T) {
-	apps := []Application{
-		{Name: "API"},
-		{Name: "DB"},
-	}
-
-	filtered, err := filterAppsByQuery(apps, "/^A/")
-	require.NoError(t, err)
-	assert.Len(t, filtered, 1)
-	assert.Equal(t, "API", filtered[0].Name)
-
-	filtered, err = filterAppsByQuery(apps, "DB")
-	require.NoError(t, err)
-	assert.Len(t, filtered, 1)
-	assert.Equal(t, "DB", filtered[0].Name)
 }
 
 func TestGetItemTags(t *testing.T) {
@@ -399,7 +336,6 @@ func TestGetAllItemsBuildsParams(t *testing.T) {
 	items, err := client.GetAllItems(
 		context.Background(),
 		[]string{"10"},
-		nil,
 		"num",
 		false,
 		"Env: prod, Application: api",
@@ -445,16 +381,71 @@ func TestGetItemsByIDs(t *testing.T) {
 	assert.Equal(t, []interface{}{"1"}, lastRequest.Params["itemids"].([]interface{}))
 }
 
-func TestGetAllApps(t *testing.T) {
-	client := NewZabbixClientWithResponses(t, map[string]string{
-		"application.get": `{"result":[{"applicationid":"10","name":"API"}]}`,
-		"apiinfo.version": `{"result":"6.4.0"}`,
+func itemHostsAndIDs(items []*Item) []string {
+	result := make([]string, 0, len(items))
+	for _, item := range items {
+		result = append(result, itemHostName(item)+":"+item.ID)
+	}
+	return result
+}
+
+// Zabbix 8.0 returns items sharing a name in arbitrary order, so the tie has to be broken in the plugin.
+func TestGetAllItemsOrdersSameNamedItems(t *testing.T) {
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "item.get" {
+			return `{"result":[
+				{"itemid":"9000271","name":"CPU utilization","key_":"system.cpu.util","hosts":[{"hostid":"2","name":"router-b"}]},
+				{"itemid":"9000281","name":"CPU utilization","key_":"system.cpu.util","hosts":[{"hostid":"3","name":"vm-c"}]},
+				{"itemid":"9000261","name":"CPU utilization","key_":"system.cpu.util","hosts":[{"hostid":"1","name":"router-a"}]},
+				{"itemid":"1000","name":"Memory","key_":"vm.memory.size[used]","hosts":[{"hostid":"1","name":"router-a"}]},
+				{"itemid":"999","name":"Memory","key_":"vm.memory.size[free]","hosts":[{"hostid":"1","name":"router-a"}]},
+				{"itemid":"5","name":"memory","key_":"vm.memory.size","hosts":[{"hostid":"1","name":"router-a"}]},
+				{"itemid":"4","name":"Uptime","key_":"system.uptime","hosts":[{"hostid":"3","name":"vm-c"}]}
+			]}`
+		}
+
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"8.0.0"}`
+		}
+
+		return `{"result":null}`
 	})
 
-	apps, err := client.GetAllApps(context.Background(), []string{"1"})
+	items, err := client.GetAllItems(context.Background(), []string{"1", "2", "3"}, "num", false, "")
 	require.NoError(t, err)
-	assert.Len(t, apps, 1)
-	assert.Equal(t, "API", apps[0].Name)
+	// Same names are ordered by host name, then by numeric itemid. The order of different names is kept as
+	// returned by the API ("memory" stays before "Uptime").
+	assert.Equal(t, []string{
+		"router-a:9000261",
+		"router-b:9000271",
+		"vm-c:9000281",
+		"router-a:999",
+		"router-a:1000",
+		"router-a:5",
+		"vm-c:4",
+	}, itemHostsAndIDs(items))
+}
+
+func TestGetItemsByIDsOrdersItemsByID(t *testing.T) {
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "item.get" {
+			return `{"result":[
+				{"itemid":"9000271","name":"CPU utilization","hosts":[{"hostid":"2","name":"router-b"}]},
+				{"itemid":"10000000","name":"CPU utilization","hosts":[{"hostid":"3","name":"vm-c"}]},
+				{"itemid":"9000261","name":"CPU utilization","hosts":[{"hostid":"1","name":"router-a"}]}
+			]}`
+		}
+
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"8.0.0"}`
+		}
+
+		return `{"result":null}`
+	})
+
+	items, err := client.GetItemsByIDs(context.Background(), []string{"10000000", "9000271", "9000261"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"router-a:9000261", "router-b:9000271", "vm-c:10000000"}, itemHostsAndIDs(items))
 }
 
 func TestGetAllHosts(t *testing.T) {

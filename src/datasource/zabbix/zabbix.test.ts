@@ -63,24 +63,6 @@ describe('Zabbix', () => {
     getMock.mockClear();
   });
 
-  describe('supportsProblemTagOperators', () => {
-    it.each([
-      ['5.0.0', false],
-      ['5.2.0', false],
-      ['5.4.0', true],
-      ['6.0.0', true],
-      ['7.0.0', true],
-    ])('returns %s support for Zabbix %s', (version: string, expected: boolean) => {
-      zabbix.version = version;
-      expect(zabbix.supportsProblemTagOperators()).toBe(expected);
-    });
-
-    it('returns false when the version is not known yet', () => {
-      zabbix.version = undefined;
-      expect(zabbix.supportsProblemTagOperators()).toBe(false);
-    });
-  });
-
   describe('initDBConnector', () => {
     const connectorOptions: any = { dbConnectionRetentionPolicy: 'policy' };
 
@@ -185,7 +167,6 @@ describe('Zabbix', () => {
 
   describe('getItems', () => {
     beforeEach(() => {
-      zabbix.isZabbix54OrHigher = jest.fn().mockReturnValue(true);
       zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10' }]);
       zabbix.getMacros = jest.fn().mockResolvedValue([]);
       zabbix.zabbixAPI.getItems = jest.fn().mockResolvedValue([
@@ -195,17 +176,17 @@ describe('Zabbix', () => {
     });
 
     it('does not push the item filter down by default', async () => {
-      await zabbix.getItems('/.*/', 'host', undefined, undefined, '/MVS busy/');
-      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {});
+      await zabbix.getItems('/.*/', 'host', undefined, '/MVS busy/');
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, {});
     });
 
     it('pushes the item filter down and still applies it client-side', async () => {
-      const items = await zabbix.getItems('/.*/', 'host', undefined, undefined, '/^System \\[.*\\]: MVS busy/', {
+      const items = await zabbix.getItems('/.*/', 'host', undefined, '/^System \\[.*\\]: MVS busy/', {
         pushDownItemFilter: true,
         selectTags: false,
       });
 
-      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, {
         nameSearch: [': MVS busy'],
         selectTags: false,
       });
@@ -213,64 +194,8 @@ describe('Zabbix', () => {
     });
 
     it('sends no name search when the filter has no safe literal', async () => {
-      await zabbix.getItems('/.*/', 'host', undefined, undefined, '/.*/', { pushDownItemFilter: true });
-      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {});
-    });
-
-    describe('before Zabbix 5.4', () => {
-      const pushDownOptions = { pushDownItemFilter: true, selectTags: false };
-      const expectedAPIOptions = { nameSearch: [': MVS busy'], selectTags: false };
-
-      beforeEach(() => {
-        zabbix.isZabbix54OrHigher = jest.fn().mockReturnValue(false);
-      });
-
-      it('pushes the item filter down when no application filter is set', async () => {
-        const apps: any = ['10'];
-        apps.hostids = ['10'];
-        apps.appFilterEmpty = true;
-        zabbix.getApps = jest.fn().mockResolvedValue(apps);
-
-        const items = await zabbix.getItems(
-          '/.*/',
-          'host',
-          '',
-          undefined,
-          '/^System \\[.*\\]: MVS busy/',
-          pushDownOptions
-        );
-
-        expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
-          ['10'],
-          undefined,
-          undefined,
-          undefined,
-          expectedAPIOptions
-        );
-        expect(items.map((i) => i.itemid)).toEqual(['1']);
-      });
-
-      it('pushes the item filter down when filtering by application', async () => {
-        zabbix.getApps = jest.fn().mockResolvedValue([{ applicationid: '20', name: 'Mainview' }]);
-
-        const items = await zabbix.getItems(
-          '/.*/',
-          'host',
-          'Mainview',
-          undefined,
-          '/^System \\[.*\\]: MVS busy/',
-          pushDownOptions
-        );
-
-        expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
-          undefined,
-          ['20'],
-          undefined,
-          undefined,
-          expectedAPIOptions
-        );
-        expect(items.map((i) => i.itemid)).toEqual(['1']);
-      });
+      await zabbix.getItems('/.*/', 'host', undefined, '/.*/', { pushDownItemFilter: true });
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, {});
     });
   });
 
@@ -289,8 +214,6 @@ describe('Zabbix', () => {
       zabbix = new Zabbix(ctx);
       zabbix.getGroups = jest.fn().mockResolvedValue([{ groupid: '21' }]);
       zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '31' }]);
-      zabbix.getApps = jest.fn().mockResolvedValue([{ applicationid: '41' }]);
-      zabbix.supportsApplications = jest.fn().mockReturnValue(true);
       zabbix.zabbixAPI.getEventsHistory = jest.fn().mockResolvedValue([{ objectid: '501' }]);
       zabbix.zabbixAPI.getTriggersByIds = jest.fn().mockResolvedValue([{ triggerid: '501' }]);
       zabbix.zabbixAPI.getHistory = jest.fn().mockResolvedValue([]);
@@ -299,11 +222,11 @@ describe('Zabbix', () => {
     });
 
     it('builds the history query and returns filtered triggers', async () => {
-      const result = await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', 'proxy-foo', {
+      const result = await zabbix.getProblemsHistory('group.*', 'host.*', 'proxy-foo', {
         valueFromEvent: true,
       });
 
-      expect(zabbix.zabbixAPI.getEventsHistory).toHaveBeenCalledWith(['21'], ['31'], ['41'], { valueFromEvent: true });
+      expect(zabbix.zabbixAPI.getEventsHistory).toHaveBeenCalledWith(['21'], ['31'], { valueFromEvent: true });
       expect(joinTriggersWithEvents).toHaveBeenCalledWith([{ objectid: '501' }], [{ triggerid: '501' }], {
         valueFromEvent: true,
       });
@@ -311,20 +234,12 @@ describe('Zabbix', () => {
       expect(result).toEqual([{ triggerid: '501' }]);
     });
 
-    it('omits applicationids when applications are unsupported', async () => {
-      (zabbix.supportsApplications as jest.Mock).mockReturnValue(false);
-
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
-
-      expect(zabbix.zabbixAPI.getEventsHistory).toHaveBeenCalledWith(['21'], ['31'], undefined, {});
-    });
-
     it('does not fetch item history by default (fetchHistoricalItemValue off)', async () => {
       (joinTriggersWithEvents as jest.Mock).mockReturnValue([
         { triggerid: '501', timestamp: 1000, items: [{ itemid: '601', value_type: '0', lastvalue: 'x' }] },
       ]);
 
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
+      await zabbix.getProblemsHistory('group.*', 'host.*', undefined, {});
 
       expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
     });
@@ -334,19 +249,19 @@ describe('Zabbix', () => {
         { triggerid: '501', timestamp: 1000, items: [{ itemid: '601', value_type: '0', lastvalue: 'x' }] },
       ]);
 
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, { fetchHistoricalItemValue: true });
+      await zabbix.getProblemsHistory('group.*', 'host.*', undefined, { fetchHistoricalItemValue: true });
 
       expect(zabbix.zabbixAPI.getHistory).toHaveBeenCalled();
     });
 
     it('asks Zabbix to expand trigger comments when the history lookup is off', async () => {
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, {});
+      await zabbix.getProblemsHistory('group.*', 'host.*', undefined, {});
 
       expect(zabbix.zabbixAPI.getTriggersByIds).toHaveBeenCalledWith(['501'], true);
     });
 
     it('leaves trigger comments unexpanded when the history lookup will expand them per problem', async () => {
-      await zabbix.getProblemsHistory('group.*', 'host.*', 'app.*', undefined, { fetchHistoricalItemValue: true });
+      await zabbix.getProblemsHistory('group.*', 'host.*', undefined, { fetchHistoricalItemValue: true });
 
       expect(zabbix.zabbixAPI.getTriggersByIds).toHaveBeenCalledWith(['501'], false);
     });
