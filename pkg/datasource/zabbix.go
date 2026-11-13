@@ -47,24 +47,11 @@ func (ds *ZabbixDatasourceInstance) TestConnection(ctx context.Context) (string,
 func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query *QueryModel) ([]*data.Frame, error) {
 	groupFilter := query.Group.Filter
 	hostFilter := query.Host.Filter
-	appFilter := query.Application.Filter
 	itemTagFilter := query.ItemTag.Filter
 	itemFilter := query.Item.Filter
 	showDisabled := query.Options.ShowDisabledItems
 
-	var items []*zabbix.Item
-	var err error
-	zabbixVersion, err := ds.zabbix.GetVersion(ctx)
-	if err != nil {
-		ds.logger.Warn("Error getting Zabbix version")
-	}
-
-	if zabbixVersion >= 54 {
-		items, err = ds.zabbix.GetItems(ctx, groupFilter, hostFilter, itemTagFilter, itemFilter, "num", showDisabled)
-	} else {
-		items, err = ds.zabbix.GetItemsBefore54(ctx, groupFilter, hostFilter, appFilter, itemFilter, "num", showDisabled)
-	}
-
+	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, itemTagFilter, itemFilter, "num", showDisabled)
 	if err != nil {
 		return nil, err
 	}

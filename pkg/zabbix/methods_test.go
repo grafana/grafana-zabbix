@@ -197,32 +197,6 @@ func TestGetItemsWithRegexItemTagFilterNoMatch(t *testing.T) {
 	assert.Len(t, items, 0, "Expected empty list when regex itemTagFilter matches no tags. Without fix, this would return 2 items.")
 }
 
-func TestGetItemsBefore54(t *testing.T) {
-	client := NewZabbixClientWithResponses(t, map[string]string{
-		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"}]}`,
-		"host.get":      `{"result":[{"hostid":"10","name":"web01"}]}`,
-		"application.get": `{
-			"result":[
-				{"applicationid":"50","name":"Databases"},
-				{"applicationid":"60","name":"Apps"}
-			]
-		}`,
-		"item.get": `{
-			"result":[
-				{"itemid":"500","name":"DB Size"},
-				{"itemid":"600","name":"API latency"}
-			]
-		}`,
-		"apiinfo.version": `{"result":"5.0.0"}`,
-	})
-
-	items, err := client.GetItemsBefore54(context.Background(), "Servers", "web01", "Databases", "/DB/", "num", false)
-	require.NoError(t, err)
-	if assert.Len(t, items, 1) {
-		assert.Equal(t, "500", items[0].ID)
-	}
-}
-
 func TestFilterItemsByQuery(t *testing.T) {
 	items := []*Item{
 		{Name: "CPU usage"},
@@ -238,43 +212,6 @@ func TestFilterItemsByQuery(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, filtered, 1)
 	assert.Equal(t, "Memory usage", filtered[0].Name)
-}
-
-func TestGetApps(t *testing.T) {
-	client := NewZabbixClientWithResponses(t, map[string]string{
-		"hostgroup.get": `{"result":[{"groupid":"1","name":"Servers"}]}`,
-		"host.get":      `{"result":[{"hostid":"10","name":"web01"}]}`,
-		"application.get": `{
-			"result":[
-				{"applicationid":"50","name":"API"},
-				{"applicationid":"60","name":"DB"}
-			]
-		}`,
-		"apiinfo.version": `{"result":"6.4.0"}`,
-	})
-
-	apps, err := client.GetApps(context.Background(), "Servers", "web01", "/^API/")
-	require.NoError(t, err)
-	if assert.Len(t, apps, 1) {
-		assert.Equal(t, "50", apps[0].ID)
-	}
-}
-
-func TestFilterAppsByQuery(t *testing.T) {
-	apps := []Application{
-		{Name: "API"},
-		{Name: "DB"},
-	}
-
-	filtered, err := filterAppsByQuery(apps, "/^A/")
-	require.NoError(t, err)
-	assert.Len(t, filtered, 1)
-	assert.Equal(t, "API", filtered[0].Name)
-
-	filtered, err = filterAppsByQuery(apps, "DB")
-	require.NoError(t, err)
-	assert.Len(t, filtered, 1)
-	assert.Equal(t, "DB", filtered[0].Name)
 }
 
 func TestGetItemTags(t *testing.T) {
@@ -399,7 +336,6 @@ func TestGetAllItemsBuildsParams(t *testing.T) {
 	items, err := client.GetAllItems(
 		context.Background(),
 		[]string{"10"},
-		nil,
 		"num",
 		false,
 		"Env: prod, Application: api",
@@ -443,18 +379,6 @@ func TestGetItemsByIDs(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, items, 1)
 	assert.Equal(t, []interface{}{"1"}, lastRequest.Params["itemids"].([]interface{}))
-}
-
-func TestGetAllApps(t *testing.T) {
-	client := NewZabbixClientWithResponses(t, map[string]string{
-		"application.get": `{"result":[{"applicationid":"10","name":"API"}]}`,
-		"apiinfo.version": `{"result":"6.4.0"}`,
-	})
-
-	apps, err := client.GetAllApps(context.Background(), []string{"1"})
-	require.NoError(t, err)
-	assert.Len(t, apps, 1)
-	assert.Equal(t, "API", apps[0].Name)
 }
 
 func TestGetAllHosts(t *testing.T) {

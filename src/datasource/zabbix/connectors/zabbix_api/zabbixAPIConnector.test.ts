@@ -83,7 +83,7 @@ describe('Zabbix API connector', () => {
     it('should select tags and send no name search by default', async () => {
       const zabbixAPIConnector = createConnector();
 
-      await zabbixAPIConnector.getItems(['1'], undefined, 'num');
+      await zabbixAPIConnector.getItems(['1'], 'num');
       const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
       expect(params.selectTags).toBe('extend');
       expect(params.search).toBeUndefined();
@@ -93,7 +93,7 @@ describe('Zabbix API connector', () => {
     it('should search item names, keeping items with unexpanded macros', async () => {
       const zabbixAPIConnector = createConnector();
 
-      await zabbixAPIConnector.getItems(['1'], undefined, undefined, undefined, { nameSearch: ['CPU', 'Memory'] });
+      await zabbixAPIConnector.getItems(['1'], undefined, undefined, { nameSearch: ['CPU', 'Memory'] });
       const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
       expect(params.search).toEqual({ name: ['CPU', 'Memory', '$'] });
       expect(params.searchByAny).toBe(true);
@@ -102,7 +102,7 @@ describe('Zabbix API connector', () => {
     it('should skip tags when selectTags is false but still filter by tag', async () => {
       const zabbixAPIConnector = createConnector();
 
-      await zabbixAPIConnector.getItems(['1'], undefined, undefined, 'component: cpu', { selectTags: false });
+      await zabbixAPIConnector.getItems(['1'], undefined, 'component: cpu', { selectTags: false });
       const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
       expect(params.selectTags).toBeUndefined();
       expect(params.tags).toEqual([{ tag: 'component', value: 'cpu', operator: '1' }]);
@@ -115,7 +115,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve(triggers));
 
-      const result = await zabbixAPIConnector.getHostAlerts(undefined, undefined, { count: true, acknowledged: 1 });
+      const result = await zabbixAPIConnector.getHostAlerts(undefined, { count: true, acknowledged: 1 });
       expect(result).toBe(0);
     });
   });
@@ -126,7 +126,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve(triggers));
 
-      const result = await zabbixAPIConnector.getHostICAlerts(undefined, undefined, undefined, {
+      const result = await zabbixAPIConnector.getHostICAlerts(undefined, undefined, {
         count: true,
         acknowledged: 1,
       });
@@ -140,7 +140,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve(triggers));
 
-      const result = await zabbixAPIConnector.getHostPCAlerts(undefined, undefined, undefined, {
+      const result = await zabbixAPIConnector.getHostPCAlerts(undefined, undefined, {
         count: true,
         acknowledged: 1,
       });
@@ -164,12 +164,12 @@ describe('Zabbix API connector', () => {
   });
 
   describe('getProblems', () => {
-    it('sends full filter payload with application ids when supported', async () => {
+    it('sends full filter payload', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([{ eventid: '1' }]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], true, {
+      await zabbixAPIConnector.getProblems(['21'], ['31'], {
         timeFrom: 100,
         timeTo: 200,
         recent: 'true',
@@ -192,7 +192,6 @@ describe('Zabbix API connector', () => {
         evaltype: 1,
         groupids: ['21'],
         hostids: ['31'],
-        applicationids: ['41'],
         recent: 'true',
         severities: [3, 4],
         acknowledged: 0,
@@ -203,23 +202,12 @@ describe('Zabbix API connector', () => {
       });
     });
 
-    it('omits applicationids when applications are unsupported', async () => {
-      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.version = '7.0.0';
-      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([{ eventid: '1' }]));
-
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {});
-
-      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
-      expect(params.applicationids).toBeUndefined();
-    });
-
     it.each([true, false])('sends symptom=%s when version is 6.4 or greater', async (symptom) => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.version = '6.4.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { symptom });
+      await zabbixAPIConnector.getProblems(['21'], ['31'], { symptom });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.symptom).toBe(symptom);
@@ -230,7 +218,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { symptom });
+      await zabbixAPIConnector.getProblems(['21'], ['31'], { symptom });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.symptom).toBeUndefined();
@@ -241,7 +229,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '6.2.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { symptom: true });
+      await zabbixAPIConnector.getProblems(['21'], ['31'], { symptom: true });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.symptom).toBeUndefined();
@@ -252,7 +240,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: 'High CPU load' });
+      await zabbixAPIConnector.getProblems(['21'], ['31'], { problemName: 'High CPU load' });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.search).toEqual({ name: 'High CPU load' });
@@ -264,7 +252,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: 'CPU*' });
+      await zabbixAPIConnector.getProblems(['21'], ['31'], { problemName: 'CPU*' });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.search).toEqual({ name: 'CPU*' });
@@ -276,7 +264,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: '/CPU load.*/' });
+      await zabbixAPIConnector.getProblems(['21'], ['31'], { problemName: '/CPU load.*/' });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.search).toEqual({ name: 'CPU load' });
@@ -288,7 +276,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {
+      await zabbixAPIConnector.getProblems(['21'], ['31'], {
         problemName: '/(Critical failure)?CPU load/',
       });
 
@@ -303,7 +291,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {});
+      await zabbixAPIConnector.getProblems(['21'], ['31'], {});
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.search).toBeUndefined();
@@ -314,7 +302,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, {
+      await zabbixAPIConnector.getProblems(['21'], ['31'], {
         problemName: '/(Datastore free space|Unavailable by ICMP|Zabbix agent is not available)/',
       });
 
@@ -330,7 +318,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getProblems(['21'], ['31'], ['41'], false, { problemName: '/^(?!.*Zabbix agent).*/' });
+      await zabbixAPIConnector.getProblems(['21'], ['31'], { problemName: '/^(?!.*Zabbix agent).*/' });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.search).toBeUndefined();
@@ -344,7 +332,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '6.4.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], { symptom: false });
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], { symptom: false });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.symptom).toBe(false);
@@ -355,7 +343,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '6.2.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], { symptom: true });
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], { symptom: true });
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.symptom).toBeUndefined();
@@ -366,7 +354,7 @@ describe('Zabbix API connector', () => {
       zabbixAPIConnector.version = '7.0.0';
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
 
-      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], {});
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], {});
 
       const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
       expect(params.symptom).toBeUndefined();
