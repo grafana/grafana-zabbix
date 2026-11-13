@@ -796,11 +796,20 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           showDisabledItems: queryModel.showDisabledItems,
           hostTags,
           evaltype,
+          // Variables only use item names: no tags needed, and let Zabbix pre-filter by name
+          pushDownItemFilter: true,
+          selectTags: false,
         });
         break;
       case VariableQueryTypes.ItemValues:
         const range = options?.range;
-        resultPromise = this.zabbix.getItemValues(group, host, item, { range, hostTags, evaltype });
+        resultPromise = this.zabbix.getItemValues(group, host, item, {
+          range,
+          hostTags,
+          evaltype,
+          pushDownItemFilter: true,
+          selectTags: false,
+        });
         break;
       default:
         resultPromise = Promise.resolve([]);
