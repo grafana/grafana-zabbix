@@ -271,9 +271,10 @@ const MIN_LITERAL_LENGTH = 3;
  * qualifies. Conservative: character classes are skipped (alternatives, not guaranteed),
  * optionally-quantified characters are dropped, escaped characters end the run, and a
  * group quantified with `?`, `*` or `{...}` has ALL of its contents retracted — nothing
- * inside an optional group is guaranteed. A group quantified with `+` (one or more)
- * keeps its contents. Look-around groups never reach this function (the caller bails
- * on `(?` patterns).
+ * inside an optional group is guaranteed. So does a group containing an alternation
+ * (`CPU (user|system)`): no single branch of it is guaranteed. A group quantified with
+ * `+` (one or more) keeps its contents. Look-around groups never reach this function
+ * (the caller bails on `(?` patterns).
  */
 function guaranteedLiteralForBranch(pattern: string): string | null {
   // Metacharacters that terminate a literal run while keeping the run intact.
@@ -281,8 +282,10 @@ function guaranteedLiteralForBranch(pattern: string): string | null {
   const terminators = new Set(['.', '+', '^', '$', '}', '|']);
   const runs: string[] = [];
   // For each open group, the number of runs committed before it — used to retract
-  // every run the group contributed when it turns out to be optionally quantified.
+  // every run the group contributed when it turns out to be optional or an alternation.
   const groupMarks: number[] = [];
+  // For each open group, whether a `|` appeared directly inside it.
+  const groupHasAlternation: boolean[] = [];
   let current = '';
   const flush = (dropLast: boolean) => {
     if (dropLast) {
@@ -313,10 +316,19 @@ function guaranteedLiteralForBranch(pattern: string): string | null {
     } else if (ch === '(') {
       flush(false);
       groupMarks.push(runs.length);
+      groupHasAlternation.push(false);
+    } else if (ch === '|' && groupHasAlternation.length > 0) {
+      flush(false);
+      groupHasAlternation[groupHasAlternation.length - 1] = true;
     } else if (ch === ')') {
       flush(false);
       const mark = groupMarks.pop() ?? 0;
+      const hasAlternation = groupHasAlternation.pop() ?? false;
       const next = pattern[i + 1];
+      // Only one branch of an alternation group matches, so none of its runs is guaranteed.
+      if (hasAlternation) {
+        runs.length = mark;
+      }
       // `?` / `*` make the whole group optional and `{...}` may (e.g. {0,2}) — none of
       // the runs committed inside it are guaranteed, so retract them all. `+` keeps the
       // group mandatory (at least one occurrence), so its runs stay.

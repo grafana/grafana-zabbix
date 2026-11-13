@@ -216,6 +216,62 @@ describe('Zabbix', () => {
       await zabbix.getItems('/.*/', 'host', undefined, undefined, '/.*/', { pushDownItemFilter: true });
       expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {});
     });
+
+    describe('before Zabbix 5.4', () => {
+      const pushDownOptions = { pushDownItemFilter: true, selectTags: false };
+      const expectedAPIOptions = { nameSearch: [': MVS busy'], selectTags: false };
+
+      beforeEach(() => {
+        zabbix.isZabbix54OrHigher = jest.fn().mockReturnValue(false);
+      });
+
+      it('pushes the item filter down when no application filter is set', async () => {
+        const apps: any = ['10'];
+        apps.hostids = ['10'];
+        apps.appFilterEmpty = true;
+        zabbix.getApps = jest.fn().mockResolvedValue(apps);
+
+        const items = await zabbix.getItems(
+          '/.*/',
+          'host',
+          '',
+          undefined,
+          '/^System \\[.*\\]: MVS busy/',
+          pushDownOptions
+        );
+
+        expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
+          ['10'],
+          undefined,
+          undefined,
+          undefined,
+          expectedAPIOptions
+        );
+        expect(items.map((i) => i.itemid)).toEqual(['1']);
+      });
+
+      it('pushes the item filter down when filtering by application', async () => {
+        zabbix.getApps = jest.fn().mockResolvedValue([{ applicationid: '20', name: 'Mainview' }]);
+
+        const items = await zabbix.getItems(
+          '/.*/',
+          'host',
+          'Mainview',
+          undefined,
+          '/^System \\[.*\\]: MVS busy/',
+          pushDownOptions
+        );
+
+        expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
+          undefined,
+          ['20'],
+          undefined,
+          undefined,
+          expectedAPIOptions
+        );
+        expect(items.map((i) => i.itemid)).toEqual(['1']);
+      });
+    });
   });
 
   describe('getProblemsHistory', () => {
