@@ -931,6 +931,11 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   isBackendTarget = (target: any): boolean => {
+    // APM metrics are only available over the Zabbix API, also with Direct DB Connection
+    if (utils.isApmMetricsTarget(target)) {
+      return true;
+    }
+
     if (this.enableDirectDBConnection) {
       return false;
     }
@@ -939,6 +944,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   };
 
   isDBConnectionTarget = (target: any): boolean => {
+    if (utils.isApmMetricsTarget(target)) {
+      return false;
+    }
     return this.enableDirectDBConnection && (target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID);
   };
 
@@ -1069,6 +1077,23 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           utils.zabbixItemIdsTemplateFormat
         ),
         textFilter: utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        apmMetric: query.apmMetric
+          ? {
+              ...query.apmMetric,
+              service: utils.replaceApmTemplateVars(this.templateSrv, query.apmMetric.service, scopedVars),
+              metric: utils.replaceApmTemplateVars(this.templateSrv, query.apmMetric.metric, scopedVars),
+              quantiles: this.templateSrv.replace(query.apmMetric.quantiles, scopedVars),
+              legend: this.templateSrv.replace(query.apmMetric.legend, scopedVars),
+              groupBy: query.apmMetric.groupBy?.flatMap((label) =>
+                (utils.replaceApmTemplateVars(this.templateSrv, label, scopedVars) ?? '').split('|')
+              ),
+              attributes: query.apmMetric.attributes?.map((a) => ({
+                ...a,
+                key: this.templateSrv.replace(a.key, scopedVars),
+                value: this.templateSrv.replace(a.value, scopedVars),
+              })),
+            }
+          : query.apmMetric,
         functions: utils.replaceVariablesInFuncParams(this.templateSrv, query.functions, scopedVars),
         tags: {
           ...query.tags,

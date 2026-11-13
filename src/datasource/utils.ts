@@ -834,6 +834,23 @@ export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | nu
   });
 }
 
+/** A Metrics query that reads APM (OpenTelemetry) metrics instead of Zabbix items */
+export function isApmMetricsTarget(target: { queryType?: string; metricsSource?: string }): boolean {
+  return target?.queryType === c.MODE_METRICS && target?.metricsSource === c.METRICS_SOURCE_APM;
+}
+
+/**
+ * Interpolate variables in an APM filter value. APM filters are exact values, never
+ * regexes, so the value is replaced as plain text. A multi-value variable becomes
+ * "a|b", which the backend reads as a list of names.
+ */
+export function replaceApmTemplateVars(templateSrv: TemplateSrv, value: string | undefined, scopedVars?: ScopedVars) {
+  if (!value) {
+    return value;
+  }
+  return templateSrv.replace(value, scopedVars, (v: string | string[]) => (Array.isArray(v) ? v.join('|') : v));
+}
+
 export function isProblemsDataFrame(data: DataFrame): boolean {
   return (
     data.fields.length && data.fields[0].type === FieldType.other && data.fields[0].config.custom['type'] === 'problems'

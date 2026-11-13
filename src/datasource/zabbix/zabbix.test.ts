@@ -641,4 +641,68 @@ describe('Zabbix', () => {
       expect(result).toEqual([{ serviceid: '1' }]);
     });
   });
+
+  describe('APM metrics lookups', () => {
+    it('supportsApmMetricsSync() requires Zabbix 8.0', () => {
+      zabbix.version = '7.4.2';
+      expect(zabbix.supportsApmMetricsSync()).toBe(false);
+      zabbix.version = '8.0.0';
+      expect(zabbix.supportsApmMetricsSync()).toBe(true);
+    });
+
+    it('getApmMetricCatalog() lists the services and metrics seen in the sampled data points', async () => {
+      const getAPMMetrics = jest.fn().mockResolvedValue([
+        { service_name: 'payments', metric_name: 'http.requests', metric_unit: '{request}', type: 1 },
+        { service_name: 'checkout', metric_name: 'http.requests', metric_unit: '{request}', type: 1 },
+        { service_name: 'checkout', metric_name: 'http.duration', metric_unit: 's', type: 2 },
+      ]);
+      zabbix.zabbixAPI.getAPMMetrics = getAPMMetrics;
+
+      const catalog = await zabbix.getApmMetricCatalog([1000, 2000], 'checkout|payments');
+
+      expect(catalog.services).toEqual(['checkout', 'payments']);
+      expect(catalog.metrics).toEqual([
+        { name: 'http.duration', type: 2, unit: 's' },
+        { name: 'http.requests', type: 1, unit: '{request}' },
+      ]);
+      expect(getAPMMetrics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          output: ['service_name', 'metric_name', 'metric_unit', 'type'],
+          time_from: 1000,
+          time_till: 2001,
+          sortorder: 'DESC',
+          filter: { service_name: ['checkout', 'payments'] },
+        })
+      );
+      expect(getAPMMetrics.mock.calls[0][0].limit).toBeGreaterThan(0);
+    });
+
+    it('getApmMetricAttributes() collects attribute keys and values per scope', async () => {
+      const getAPMMetrics = jest.fn().mockResolvedValue([
+        { attributes: { 'http.route': '/pay', status: '200' }, resource_attributes: { 'host.name': 'web-1' } },
+        { attributes: { 'http.route': '/cart', status: '200' }, resource_attributes: { 'host.name': 'web-1' } },
+        // Zabbix serializes an empty attribute set as []
+        { attributes: [], resource_attributes: [] },
+      ]);
+      zabbix.zabbixAPI.getAPMMetrics = getAPMMetrics;
+
+      const attributes = await zabbix.getApmMetricAttributes([1000, 2000], 'http.requests', 'checkout');
+
+      expect(attributes).toEqual({
+        metric: { 'http.route': ['/pay', '/cart'], status: ['200'] },
+        resource: { 'host.name': ['web-1'] },
+      });
+      expect(getAPMMetrics).toHaveBeenCalledWith(
+        expect.objectContaining({ filter: { metric_name: ['http.requests'], service_name: ['checkout'] } })
+      );
+    });
+
+    it('getApmMetricAttributes() does not query without a metric', async () => {
+      const getAPMMetrics = jest.fn();
+      zabbix.zabbixAPI.getAPMMetrics = getAPMMetrics;
+
+      expect(await zabbix.getApmMetricAttributes([1000, 2000], '')).toEqual({ metric: {}, resource: {} });
+      expect(getAPMMetrics).not.toHaveBeenCalled();
+    });
+  });
 });
