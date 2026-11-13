@@ -75,22 +75,6 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
     return options;
   }, [interpolatedQuery.group.filter]);
 
-  const loadAppOptions = async (group: string, host: string) => {
-    const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
-      value: app.name ?? '',
-      label: app.name ?? '',
-    }));
-    options = _.uniqBy(options, (o) => o.value);
-    options.unshift(...getVariableOptions());
-    return options;
-  };
-
-  const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
-    const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
-    return options;
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
-
   // Tag name suggestions built from the problems the panel already fetched
   // (problem.get selects tags) — no extra API call.
   const problemTagOptions = useMemo(() => {
@@ -132,7 +116,6 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
 
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
-  const hostFilter = interpolatedQuery.host?.filter;
 
   useEffect(() => {
     fetchGroups();
@@ -141,10 +124,6 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
   useEffect(() => {
     fetchHosts();
   }, [groupFilter]);
-
-  useEffect(() => {
-    fetchApps();
-  }, [groupFilter, hostFilter]);
 
   useEffect(() => {
     fetchProxies();
@@ -181,7 +160,6 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
     }
   };
 
-  const supportsApplications = datasource.zabbix.supportsApplications();
   const supportsCauseSymptomProblems = datasource.zabbix.supportsCauseSymptomProblems();
 
   return (
@@ -222,19 +200,6 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
-        {supportsApplications && (
-          <InlineField label="Application" labelWidth={12}>
-            <MetricPicker
-              width={24}
-              value={query.application?.filter}
-              options={appOptions}
-              isLoading={appsLoading}
-              onChange={onFilterChange('application')}
-              createCustomValue={true}
-              placeholder="Application name"
-            />
-          </InlineField>
-        )}
         <InlineField label="Problem" labelWidth={12}>
           <Input
             width={24}
@@ -248,7 +213,6 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
             tagFilters={query.problemTags ?? []}
             tagOptions={problemTagOptions}
             version={datasource.zabbix.version}
-            supportsExtendedOperators={datasource.zabbix.supportsProblemTagOperators()}
             evalType={query.evaltype}
             onChange={(problemTags: ProblemTagFilter[]) => onChange({ ...query, problemTags })}
             onEvalTypeChange={(evaltype: ZabbixTagEvalType) => onChange({ ...query, evaltype })}

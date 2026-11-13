@@ -46,7 +46,6 @@ Use the following fields to filter which Zabbix problems appear as annotations.
 |-------|-------------|
 | **Group** | Filter by host group. Select from the drop-down or type a custom value. Supports regex and template variables. |
 | **Host** | Filter by host. Select from the drop-down or type a custom value. Supports regex and template variables. |
-| **Application** | Filter by application. Select from the drop-down or type a custom value. Supports regex and template variables. |
 | **Problem** | Filter by problem name, matched against the trigger name. A plain value must match the name exactly. To match partially, use a regex wrapped in forward slashes (for example, `/CPU/`) or a `*` wildcard (for example, `High CPU*`). Leave empty to include all problems. |
 | **Min severity** | Show only events at or above this severity level: Not classified, Information, Warning, Average, High, or Disaster. |
 

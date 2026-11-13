@@ -62,7 +62,6 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
   queryType: c.MODE_METRICS,
   group: { filter: '' },
   host: { filter: '' },
-  application: { filter: '' },
   itemTag: { filter: '' },
   item: { filter: '' },
   macro: { filter: '' },
