@@ -20,6 +20,7 @@ import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
+import { GetItemsOptions } from './connectors/zabbix_api/types';
 import { CachingProxy } from './proxy/cachingProxy';
 import { Host, ZabbixConnector } from './types';
 
@@ -378,7 +379,7 @@ export class Zabbix implements ZabbixConnector {
       itemTagFilter = tags.map((t) => t.name).join(',');
     }
 
-    let items = await this.zabbixAPI.getItems(hostids, options.itemtype, itemTagFilter);
+    let items = await this.zabbixAPI.getItems(hostids, options.itemtype, itemTagFilter, getItemsAPIOptions(options));
 
     if (!options.showDisabledItems) {
       items = _.filter(items, { status: '0' });
@@ -403,8 +404,17 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getItems(groupFilter?, hostFilter?, itemTagFilter?, itemFilter?, options = {}) {
-    return this.getAllItems(groupFilter, hostFilter, itemTagFilter, options).then((items) =>
+  /**
+   * Options besides those of getAllItems():
+   *   pushDownItemFilter: also send substrings derived from itemFilter to Zabbix, so hosts
+   *   with many items don't return all of them just to be filtered here.
+   */
+  getItems(groupFilter?, hostFilter?, itemTagFilter?, itemFilter?, options: any = {}) {
+    const { pushDownItemFilter, ...allItemsOptions } = options;
+    if (pushDownItemFilter) {
+      allItemsOptions.nameSearch = utils.getItemNameSearchValues(itemFilter);
+    }
+    return this.getAllItems(groupFilter, hostFilter, itemTagFilter, allItemsOptions).then((items) =>
       filterByQuery(items, itemFilter)
     );
   }
@@ -737,6 +747,14 @@ export class Zabbix implements ZabbixConnector {
  * @param  name visible name
  * @return      array with finded element or empty array
  */
+// Picks the zabbixAPI.getItems() options, leaving out unset ones so the request cache key stays stable
+function getItemsAPIOptions(options: any = {}): GetItemsOptions {
+  return _.pickBy(
+    { nameSearch: options.nameSearch, selectTags: options.selectTags },
+    (value) => value !== undefined
+  ) as GetItemsOptions;
+}
+
 function findByName(list, name) {
   const finded = _.find(list, { name: name });
   if (finded) {

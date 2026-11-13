@@ -165,6 +165,40 @@ describe('Zabbix', () => {
     });
   });
 
+  describe('getItems', () => {
+    beforeEach(() => {
+      zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10' }]);
+      zabbix.getMacros = jest.fn().mockResolvedValue([]);
+      zabbix.zabbixAPI.getItems = jest.fn().mockResolvedValue([
+        { itemid: '1', name: 'System [SYSA]: MVS busy', key_: 'k', status: '0', hosts: [{ hostid: '10' }] },
+        { itemid: '2', name: 'System [SYSB]: zIIP busy', key_: 'k', status: '0', hosts: [{ hostid: '10' }] },
+      ]);
+    });
+
+    it('does not push the item filter down by default', async () => {
+      await zabbix.getItems('/.*/', 'host', undefined, '/MVS busy/');
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, {});
+    });
+
+    it('pushes the item filter down and still applies it client-side', async () => {
+      const items = await zabbix.getItems('/.*/', 'host', undefined, '/^System \\[.*\\]: MVS busy/', {
+        pushDownItemFilter: true,
+        selectTags: false,
+      });
+
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, {
+        nameSearch: [': MVS busy'],
+        selectTags: false,
+      });
+      expect(items.map((i) => i.itemid)).toEqual(['1']);
+    });
+
+    it('sends no name search when the filter has no safe literal', async () => {
+      await zabbix.getItems('/.*/', 'host', undefined, '/.*/', { pushDownItemFilter: true });
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, {});
+    });
+  });
+
   describe('getProblemsHistory', () => {
     const ctx = {
       uid: 'test-ds-uid',
