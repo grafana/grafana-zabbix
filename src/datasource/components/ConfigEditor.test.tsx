@@ -176,6 +176,9 @@ describe('ConfigEditor severity overrides', () => {
   it('renders one row per severity with the default name as placeholder', () => {
     render(<ConfigEditor options={getDefaultOptions()} onOptionsChange={jest.fn()} />);
 
+    // With no settings configured, the Additional settings section starts collapsed
+    fireEvent.click(screen.getByRole('heading', { name: 'Additional settings' }));
+
     expect(screen.getByText('Problem severity')).toBeInTheDocument();
     for (const name of ['Not classified', 'Information', 'Warning', 'Average', 'High', 'Disaster']) {
       expect(screen.getByPlaceholderText(name)).toHaveValue('');
@@ -186,6 +189,8 @@ describe('ConfigEditor severity overrides', () => {
     const onOptionsChange = jest.fn();
     const options = getDefaultOptions();
     render(<ConfigEditor options={options} onOptionsChange={onOptionsChange} />);
+    // With no settings configured, the Additional settings section starts collapsed
+    fireEvent.click(screen.getByRole('heading', { name: 'Additional settings' }));
     onOptionsChange.mockClear();
 
     fireEvent.change(screen.getByLabelText('High name override'), { target: { value: 'Critical' } });
