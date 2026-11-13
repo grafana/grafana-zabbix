@@ -183,6 +183,97 @@ describe('Zabbix', () => {
     });
   });
 
+  describe('getItems', () => {
+    beforeEach(() => {
+      zabbix.isZabbix54OrHigher = jest.fn().mockReturnValue(true);
+      zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10' }]);
+      zabbix.getMacros = jest.fn().mockResolvedValue([]);
+      zabbix.zabbixAPI.getItems = jest.fn().mockResolvedValue([
+        { itemid: '1', name: 'System [SYSA]: MVS busy', key_: 'k', status: '0', hosts: [{ hostid: '10' }] },
+        { itemid: '2', name: 'System [SYSB]: zIIP busy', key_: 'k', status: '0', hosts: [{ hostid: '10' }] },
+      ]);
+    });
+
+    it('does not push the item filter down by default', async () => {
+      await zabbix.getItems('/.*/', 'host', undefined, undefined, '/MVS busy/');
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {});
+    });
+
+    it('pushes the item filter down and still applies it client-side', async () => {
+      const items = await zabbix.getItems('/.*/', 'host', undefined, undefined, '/^System \\[.*\\]: MVS busy/', {
+        pushDownItemFilter: true,
+        selectTags: false,
+      });
+
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {
+        nameSearch: [': MVS busy'],
+        selectTags: false,
+      });
+      expect(items.map((i) => i.itemid)).toEqual(['1']);
+    });
+
+    it('sends no name search when the filter has no safe literal', async () => {
+      await zabbix.getItems('/.*/', 'host', undefined, undefined, '/.*/', { pushDownItemFilter: true });
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {});
+    });
+
+    describe('before Zabbix 5.4', () => {
+      const pushDownOptions = { pushDownItemFilter: true, selectTags: false };
+      const expectedAPIOptions = { nameSearch: [': MVS busy'], selectTags: false };
+
+      beforeEach(() => {
+        zabbix.isZabbix54OrHigher = jest.fn().mockReturnValue(false);
+      });
+
+      it('pushes the item filter down when no application filter is set', async () => {
+        const apps: any = ['10'];
+        apps.hostids = ['10'];
+        apps.appFilterEmpty = true;
+        zabbix.getApps = jest.fn().mockResolvedValue(apps);
+
+        const items = await zabbix.getItems(
+          '/.*/',
+          'host',
+          '',
+          undefined,
+          '/^System \\[.*\\]: MVS busy/',
+          pushDownOptions
+        );
+
+        expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
+          ['10'],
+          undefined,
+          undefined,
+          undefined,
+          expectedAPIOptions
+        );
+        expect(items.map((i) => i.itemid)).toEqual(['1']);
+      });
+
+      it('pushes the item filter down when filtering by application', async () => {
+        zabbix.getApps = jest.fn().mockResolvedValue([{ applicationid: '20', name: 'Mainview' }]);
+
+        const items = await zabbix.getItems(
+          '/.*/',
+          'host',
+          'Mainview',
+          undefined,
+          '/^System \\[.*\\]: MVS busy/',
+          pushDownOptions
+        );
+
+        expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
+          undefined,
+          ['20'],
+          undefined,
+          undefined,
+          expectedAPIOptions
+        );
+        expect(items.map((i) => i.itemid)).toEqual(['1']);
+      });
+    });
+  });
+
   describe('getProblemsHistory', () => {
     const ctx = {
       uid: 'test-ds-uid',
