@@ -120,6 +120,10 @@ describe('ZabbixDatasource', () => {
       getProblems: jest.fn().mockResolvedValue(problems),
       getUsers: jest.fn().mockResolvedValue([]),
       getProxies: jest.fn().mockResolvedValue([]),
+      getVersion: jest.fn().mockResolvedValue('7.0.0'),
+      supportsUnacknowledge: jest.fn().mockReturnValue(true),
+      supportsProblemSuppression: jest.fn().mockReturnValue(true),
+      supportsCauseSymptomProblems: jest.fn().mockReturnValue(true),
       getHostInterfaces: jest.fn().mockResolvedValue([
         {
           hostid: '10001',

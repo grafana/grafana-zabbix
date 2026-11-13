@@ -73,6 +73,7 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
                 }-${index}`}
                 problem={problem}
                 panelOptions={panelOptions}
+                panelProblems={problems}
                 onTagClick={this.handleTagClick}
                 onProblemAck={this.handleProblemAck}
               />
