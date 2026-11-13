@@ -406,16 +406,46 @@ describe('ZabbixDatasource', () => {
         };
       });
       const tests = [
-        { query: '*.*.*.*', expect: ['/.*/', '/.*/', undefined, '/.*/', { showDisabledItems: undefined }] },
-        { query: '.*.*.*', expect: ['', '/.*/', undefined, '/.*/', { showDisabledItems: undefined }] },
+        {
+          query: '*.*.*.*',
+          expect: [
+            '/.*/',
+            '/.*/',
+            undefined,
+            '/.*/',
+            { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false },
+          ],
+        },
+        {
+          query: '.*.*.*',
+          expect: [
+            '',
+            '/.*/',
+            undefined,
+            '/.*/',
+            { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false },
+          ],
+        },
         {
           query: 'Backend.backend01.*.*',
-          expect: ['Backend', 'backend01', undefined, '/.*/', { showDisabledItems: undefined }],
+          expect: [
+            'Backend',
+            'backend01',
+            undefined,
+            '/.*/',
+            { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false },
+          ],
         },
         {
           // The application part of a legacy query is ignored.
           query: 'Back*.*.cpu.*',
-          expect: ['Back*', '/.*/', undefined, '/.*/', { showDisabledItems: undefined }],
+          expect: [
+            'Back*',
+            '/.*/',
+            undefined,
+            '/.*/',
+            { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false },
+          ],
         },
       ];
 
@@ -958,6 +988,8 @@ describe('ZabbixDatasource', () => {
         const result = await ctx.ds.metricFindQuery(query, {});
         expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'TagFilter', 'ItemFilter', {
           showDisabledItems: undefined,
+          pushDownItemFilter: true,
+          selectTags: false,
         });
         expect(result).toEqual([
           { text: 'Item1', expandable: false },
@@ -978,6 +1010,8 @@ describe('ZabbixDatasource', () => {
         const result = await ctx.ds.metricFindQuery(query, {});
         expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'TagFilter', 'ItemFilter', {
           showDisabledItems: true,
+          pushDownItemFilter: true,
+          selectTags: false,
         });
         expect(result).toEqual([
           { text: 'Item1', expandable: false },
@@ -1018,6 +1052,8 @@ describe('ZabbixDatasource', () => {
         const result = await ctx.ds.metricFindQuery(query, options);
         expect(ctx.ds.zabbix.getItemValues).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'ItemFilter', {
           range: options.range,
+          pushDownItemFilter: true,
+          selectTags: false,
         });
         expect(result).toEqual([
           { text: 'Value1', expandable: false },

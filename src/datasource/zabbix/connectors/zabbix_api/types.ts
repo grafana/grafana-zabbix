@@ -23,6 +23,11 @@ export type JSONRPCRequestParams = { [key: string]: any };
 
 export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'CONNECT' | 'OPTIONS' | 'TRACE';
 
+export interface GetItemsOptions {
+  nameSearch?: string[];
+  selectTags?: boolean;
+}
+
 export type GFRequestOptions = { [key: string]: any };
 
 export interface ZabbixRequestResponse {
