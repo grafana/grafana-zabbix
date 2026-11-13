@@ -1,5 +1,5 @@
 import { getTemplateSrv } from '@grafana/runtime';
-import { getHostTagOptionLabel, getVariableOptions, processHostTags } from './utils';
+import { getHostTagOptionLabel, getVariableOptions, matchesItemPattern, processHostTags } from './utils';
 import { HostTagOperatorLabel, HostTagOperatorLabelBefore70, HostTagOperatorValue } from './types';
 
 jest.mock(
@@ -85,5 +85,23 @@ describe('QueryEditor utils', () => {
     it('returns empty string for unsupported values', () => {
       expect(getHostTagOptionLabel(HostTagOperatorValue.Equals, '7.2.0')).toBe('');
     });
+  });
+});
+
+describe('matchesItemPattern', () => {
+  it('matches plain strings exactly (no substring match)', () => {
+    expect(matchesItemPattern('CPU utilization', 'CPU utilization')).toBe(true);
+    expect(matchesItemPattern('Process X: CPU utilization', 'CPU utilization')).toBe(false);
+  });
+
+  it('matches /regex/ patterns as substring regex', () => {
+    expect(matchesItemPattern('Process X: CPU utilization', '/CPU utilization/')).toBe(true);
+    expect(matchesItemPattern('Memory utilization', '/CPU/')).toBe(false);
+  });
+
+  it('does not restrict on empty pattern, template variables or invalid regex', () => {
+    expect(matchesItemPattern('anything', '')).toBe(true);
+    expect(matchesItemPattern('anything', '$pattern')).toBe(true);
+    expect(matchesItemPattern('anything', '/([/')).toBe(true);
   });
 });
