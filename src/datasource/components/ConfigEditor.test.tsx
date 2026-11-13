@@ -1,17 +1,24 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfigEditor, Props } from './ConfigEditor';
 
-const mockGetList = jest.fn();
 jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),
   config: {},
-  getDataSourceSrv: () => ({
-    getList: mockGetList,
-    get: jest.fn().mockResolvedValue({ uid: 'mysql-uid', name: 'MySQL Zabbix' }),
-  }),
 }));
+
+const mockGetDataSourceInstanceList = jest.fn();
+const mockGetDataSourceInstanceSettings = jest.fn();
+jest.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstanceList: (...args: unknown[]) => mockGetDataSourceInstanceList(...args),
+  getDataSourceInstanceSettings: (...args: unknown[]) => mockGetDataSourceInstanceSettings(...args),
+}));
+
+const dbDatasources = [
+  { id: 1, uid: 'mysql-uid', name: 'MySQL Zabbix', type: 'mysql' },
+  { id: 2, uid: 'influx-uid', name: 'InfluxDB', type: 'influxdb' },
+];
 
 jest.mock('@grafana/ui', () => ({
   ...jest.requireActual('@grafana/ui'),
@@ -28,6 +35,11 @@ jest.mock('@grafana/ui', () => ({
     );
   },
 }));
+
+beforeEach(() => {
+  mockGetDataSourceInstanceList.mockResolvedValue([]);
+  mockGetDataSourceInstanceSettings.mockResolvedValue(undefined);
+});
 
 describe('ConfigEditor', () => {
   beforeAll(() => {
@@ -141,23 +153,29 @@ describe('ConfigEditor', () => {
 
   describe('Direct DB datasource selection', () => {
     beforeEach(() => {
-      mockGetList.mockReturnValue([
-        { id: 1, uid: 'mysql-uid', name: 'MySQL Zabbix', type: 'mysql' },
-        { id: 2, uid: 'influx-uid', name: 'InfluxDB', type: 'influxdb' },
-      ]);
+      // List items don't include the numeric id
+      mockGetDataSourceInstanceList.mockResolvedValue(dbDatasources.map(({ id, ...item }) => item));
+      mockGetDataSourceInstanceSettings.mockImplementation(async (ref: string) =>
+        dbDatasources.find((ds) => ds.uid === ref || ds.name === ref || String(ds.id) === ref)
+      );
+    });
+
+    it('lists the supported SQL and InfluxDB data sources', async () => {
+      render(<ConfigEditor options={getDBConnectionOptions()} onOptionsChange={jest.fn()} />);
+
+      expect(await screen.findByRole('button', { name: 'MySQL Zabbix' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'InfluxDB' })).toBeInTheDocument();
+      expect(mockGetDataSourceInstanceList).toHaveBeenCalledWith({
+        type: ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb'],
+      });
     });
 
     it('calls onOptionsChange with dbConnectionDatasourceUID when user selects a DB datasource', async () => {
-      const options = getDefaultOptions();
-      options.jsonData = {
-        ...options.jsonData,
-        dbConnectionEnable: true,
-      };
       const onOptionsChangeSpy = jest.fn();
 
-      render(<ConfigEditor options={options} onOptionsChange={onOptionsChangeSpy} />);
+      render(<ConfigEditor options={getDBConnectionOptions()} onOptionsChange={onOptionsChangeSpy} />);
 
-      const mysqlButton = screen.getByRole('button', { name: 'MySQL Zabbix' });
+      const mysqlButton = await screen.findByRole('button', { name: 'MySQL Zabbix' });
       await userEvent.click(mysqlButton);
 
       expect(onOptionsChangeSpy).toHaveBeenCalledWith(
@@ -168,6 +186,38 @@ describe('ConfigEditor', () => {
           }),
         })
       );
+    });
+
+    it('selects the DB datasource referenced by its numeric id (legacy)', async () => {
+      render(
+        <ConfigEditor options={getDBConnectionOptions({ dbConnectionDatasourceId: 2 })} onOptionsChange={jest.fn()} />
+      );
+
+      expect(await screen.findByText('Retention Policy')).toBeInTheDocument();
+      expect(mockGetDataSourceInstanceSettings).toHaveBeenCalledWith('2');
+    });
+
+    it('looks up the UID of the DB datasource referenced by its name (legacy)', async () => {
+      const onOptionsChangeSpy = jest.fn();
+
+      render(
+        <ConfigEditor
+          options={getDBConnectionOptions({ dbConnectionDatasourceName: 'MySQL Zabbix' })}
+          onOptionsChange={onOptionsChangeSpy}
+        />
+      );
+
+      await waitFor(() =>
+        expect(onOptionsChangeSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            jsonData: expect.objectContaining({
+              dbConnectionDatasourceUID: 'mysql-uid',
+              dbConnectionDatasourceName: 'MySQL Zabbix',
+            }),
+          })
+        )
+      );
+      expect(mockGetDataSourceInstanceSettings).toHaveBeenCalledWith('MySQL Zabbix');
     });
   });
 });
@@ -271,4 +321,9 @@ function getDefaultOptions(): Props['options'] {
     secureJsonFields: {},
     withCredentials: false,
   };
+}
+
+function getDBConnectionOptions(jsonData: Partial<Props['options']['jsonData']> = {}): Props['options'] {
+  const options = getDefaultOptions();
+  return { ...options, jsonData: { ...options.jsonData, dbConnectionEnable: true, ...jsonData } };
 }
