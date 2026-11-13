@@ -28,7 +28,6 @@ export const SHOW_ALL_EVENTS = [0, 1];
 export const SHOW_OK_EVENTS = 1;
 
 // Acknowledge
-export const ZBX_ACK_ACTION_NONE = 0;
 export const ZBX_ACK_ACTION_CLOSE = 1;
 export const ZBX_ACK_ACTION_ACK = 2;
 export const ZBX_ACK_ACTION_ADD_MESSAGE = 4;

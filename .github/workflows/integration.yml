@@ -26,11 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # 5.0 / 6.0 front Zabbix with nginx (TLS + HTTP basic auth).
-          - version: '5.0'
-            devenv: zabbix50
-            integration-var: INTEGRATION_TEST50
-            url: https://localhost/api_jsonrpc.php
+          # 6.0 fronts Zabbix with nginx (TLS + HTTP basic auth).
           - version: '6.0'
             devenv: zabbix60
             integration-var: INTEGRATION_TEST60
@@ -40,13 +36,13 @@ jobs:
             devenv: zabbix70
             integration-var: INTEGRATION_TEST70
             url: http://localhost:8188/api_jsonrpc.php
-          - version: '7.2'
-            devenv: zabbix72
-            integration-var: INTEGRATION_TEST72
-            url: http://localhost:8188/api_jsonrpc.php
           - version: '7.4'
             devenv: zabbix74
             integration-var: INTEGRATION_TEST74
+            url: http://localhost:8188/api_jsonrpc.php
+          - version: '8.0'
+            devenv: zabbix80
+            integration-var: INTEGRATION_TEST80
             url: http://localhost:8188/api_jsonrpc.php
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

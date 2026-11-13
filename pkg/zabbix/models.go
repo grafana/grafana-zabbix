@@ -96,11 +96,6 @@ type Host struct {
 	Tags []Tag 	   `json:"tags,omitempty"`
 }
 
-type Application struct {
-	Name string `json:"name"`
-	ID   string `json:"applicationid"`
-}
-
 type ValueMap struct {
 	ID       string         `json:"valuemapid"`
 	Name     string         `json:"name"`

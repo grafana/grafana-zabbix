@@ -9,8 +9,6 @@ interface Props {
   // Tag name suggestions (template variables and tags of the problems the panel fetched)
   tagOptions?: Array<ComboboxOption<string>>;
   version: string;
-  // Zabbix >= 5.4 (problem.get/event.get accept operators other than Contains/Equals)
-  supportsExtendedOperators: boolean;
   evalType?: ZabbixTagEvalType;
   onChange: (tagFilters: ProblemTagFilter[]) => void;
   onEvalTypeChange: (evalType: ZabbixTagEvalType) => void;
@@ -25,7 +23,6 @@ export const ProblemTagFilterEditor = ({
   tagFilters,
   tagOptions,
   version,
-  supportsExtendedOperators,
   evalType,
   onChange,
   onEvalTypeChange,
@@ -33,27 +30,21 @@ export const ProblemTagFilterEditor = ({
   const [valueDrafts, setValueDrafts] = useState<Record<number, string>>({});
 
   const operatorOptions: Array<ComboboxOption<TagOperatorValue>> = [
-    ...(supportsExtendedOperators
-      ? [{ value: TagOperatorValue.Exists, label: TagOperatorLabel.Exists as string }]
-      : []),
+    { value: TagOperatorValue.Exists, label: TagOperatorLabel.Exists },
     { value: TagOperatorValue.Equals, label: TagOperatorLabel.Equals },
     { value: TagOperatorValue.Contains, label: TagOperatorLabel.Contains },
-    ...(supportsExtendedOperators
-      ? [
-          {
-            value: TagOperatorValue.DoesNotExist,
-            label: getHostTagOptionLabel(TagOperatorValue.DoesNotExist, version),
-          },
-          {
-            value: TagOperatorValue.DoesNotEqual,
-            label: getHostTagOptionLabel(TagOperatorValue.DoesNotEqual, version),
-          },
-          {
-            value: TagOperatorValue.DoesNotContain,
-            label: getHostTagOptionLabel(TagOperatorValue.DoesNotContain, version),
-          },
-        ]
-      : []),
+    {
+      value: TagOperatorValue.DoesNotExist,
+      label: getHostTagOptionLabel(TagOperatorValue.DoesNotExist, version),
+    },
+    {
+      value: TagOperatorValue.DoesNotEqual,
+      label: getHostTagOptionLabel(TagOperatorValue.DoesNotEqual, version),
+    },
+    {
+      value: TagOperatorValue.DoesNotContain,
+      label: getHostTagOptionLabel(TagOperatorValue.DoesNotContain, version),
+    },
   ];
 
   const onAddTagFilter = useCallback(() => {

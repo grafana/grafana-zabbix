@@ -33,6 +33,7 @@ Before configuring the data source, ensure you have:
 - **Grafana permissions:** Organization administrator role.
 - **Zabbix API URL:** The full URL to your Zabbix API endpoint, including the `api_jsonrpc.php` path (for example, `http://zabbix.example.com/api_jsonrpc.php`).
 - **Zabbix credentials:** A username and password for a Zabbix user, or an API token. Verify the user has permissions to access the host groups and hosts you want to query in Grafana.
+- **Zabbix API access:** A user role that allows the Zabbix user to call the Zabbix API. On Zabbix 8.0, API access is disabled by default for most roles. Refer to [Configure Zabbix user permissions](#configure-zabbix-user-permissions).
 
 ## Install and enable the Zabbix plugin
 
@@ -84,11 +85,78 @@ Use a Zabbix user account to authenticate with the API.
 
 ### API token
 
-Use a Zabbix API token to authenticate. API tokens are available in Zabbix 5.4 and later.
+Use a Zabbix API token to authenticate.
 
 | Setting | Description |
 |---------|-------------|
 | **API Token** | The Zabbix API token. Stored securely in Grafana. |
+
+## Configure Zabbix user permissions
+
+The plugin reads all data through the Zabbix API, so the Zabbix user that the data source authenticates as needs both data permissions and API access. For API token authentication, this is the user that owns the token.
+
+- **Data permissions:** The user must belong to a user group with read access to the host groups you want to query. Zabbix returns only the hosts, items, and problems that the user has permission to see.
+- **API access:** The user's role must have access to the Zabbix API enabled, and must allow the [API methods that the plugin calls](#zabbix-api-methods-used-by-the-plugin).
+
+### Enable API access for the user role
+
+Starting with Zabbix 8.0, access to the API is disabled by default:
+
+- On new Zabbix 8.0 installations, API access is disabled for the built-in **User role**, **Admin role**, and **Guest role**, and for every role you create. Only **Super admin role** has API access.
+- On installations upgraded to Zabbix 8.0, existing roles keep their API access settings, but API access is disabled for every role you create after the upgrade.
+
+A user with a role that doesn't have API access can still log in, so **Save & test** might succeed, but every query fails with a `No permissions to call "<method>"` error.
+
+To enable API access for a role:
+
+1. In the Zabbix web interface, go to **Users** > **User roles**.
+1. Select the role assigned to the Zabbix user that the data source uses. To avoid changing a built-in role, create a dedicated role for Grafana instead and assign it to the user.
+1. In the **Access to API** section, select the **Enabled** checkbox.
+1. Optional: To restrict the role to the methods that the plugin needs, set **API methods** to **Allow list** and add the methods listed in [Zabbix API methods used by the plugin](#zabbix-api-methods-used-by-the-plugin).
+1. Click **Update**.
+
+{{< admonition type="caution" >}}
+On Zabbix 8.0, an **Allow list** with no methods denies access to all API methods. Earlier Zabbix versions ignored an empty allow list and allowed all methods. When you upgrade to Zabbix 8.0, the upgrade adds the `*` wildcard to existing roles that have an empty allow list, so those roles keep working. To allow all methods in a new role, select **Deny list** and leave the list empty, or add `*` to the allow list.
+{{< /admonition >}}
+
+If you use [per-user authentication](#configure-per-user-authentication), every Zabbix user that a Grafana user maps to needs a role with API access, not only the user configured in the data source.
+
+For more information, refer to [User roles](https://www.zabbix.com/documentation/8.0/en/manual/web_interface/frontend_sections/users/user_roles) in the Zabbix documentation.
+
+### Zabbix API methods used by the plugin
+
+If you restrict a role with an API allow list, add the methods for the features you use. With a deny list, make sure that none of these methods are denied. The list also applies to Zabbix versions earlier than 8.0.
+
+| API method | Used for | Required |
+|------------|----------|----------|
+| `hostgroup.get` | Host groups in queries, template variables, and the query editor. | Yes |
+| `host.get` | Hosts in queries, template variables, and the query editor. Host details in problems. | Yes |
+| `item.get` | Items, item tags, and last values. | Yes |
+| `history.get` | History data for metric and text queries. | Yes |
+| `trend.get` | Trend data for long time ranges. | Yes, unless trends are disabled or read through Direct DB Connection |
+| `valuemap.get` | Value mappings for item values. | Yes |
+| `usermacro.get` | User macros queries and macro expansion in item names. | Yes |
+| `problem.get` | Problems queries and the Problems panel. | For problems |
+| `trigger.get` | Problems and triggers queries, annotations, and the Problems panel. | For problems, triggers, and annotations |
+| `event.get` | Problem history, acknowledgments, and annotations. | For problems, triggers, and annotations |
+| `user.get` | Names of the users who acknowledged a problem. | For problems |
+| `proxy.get` | Proxy filter and proxy names in problems and triggers queries. | For problems and triggers |
+| `alert.get` | Notifications sent for a problem, shown in the problem details. | For the Problems panel |
+| `event.acknowledge` | Acknowledging a problem, adding a message, changing severity, or closing a problem from the Problems panel. | Optional |
+| `script.get` | Listing the scripts available for a host in the Problems panel. | Optional |
+| `script.execute` | Running a script from the Problems panel. | Optional |
+| `service.get` | Services queries. | For services and SLA |
+| `sla.get` | SLA definitions in services queries. | For services and SLA |
+| `sla.getsli` | SLA and SLI values in services queries. | For services and SLA |
+| `user.get`, `token.get`, `token.create`, `token.generate` | Looking up the matching Zabbix user and generating an API token for it. Called with the credentials configured in the data source. | For per-user authentication |
+
+The plugin also calls `apiinfo.version` to detect the Zabbix version and, with **User and password** authentication, `user.login` to open a session. Zabbix doesn't require authentication for these two methods, and the API methods list of a role doesn't apply to them.
+
+Some methods also depend on other settings of the role:
+
+- `event.acknowledge` requires the matching options under **Access to actions**, such as **Add problem comments**, **Acknowledge problems**, **Change severity**, and **Close problems**.
+- `script.execute` requires **Execute scripts** under **Access to actions**.
+- The `token.*` methods require **Manage API tokens** under **Access to actions**. With per-user authentication, the user configured in the data source manages tokens for other users, which Zabbix allows only for roles with this permission.
 
 ## Configure per-user authentication
 
@@ -97,6 +165,8 @@ Per-user authentication maps each Grafana user to a Zabbix user so that queries 
 {{< admonition type="note" >}}
 You need Grafana Admin permissions to configure per-user authentication, because the plugin must list Grafana users to build the exclusion list. If you can't list users, contact your Grafana administrator.
 {{< /admonition >}}
+
+The Zabbix user configured in the **Auth type** section looks up the matching Zabbix user and generates an API token for it, so its role needs additional API methods. Every mapped Zabbix user also needs a role with API access. Refer to [Configure Zabbix user permissions](#configure-zabbix-user-permissions).
 
 | Setting | Description |
 |---------|-------------|

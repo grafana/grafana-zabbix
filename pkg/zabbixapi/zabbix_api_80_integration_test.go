@@ -19,11 +19,11 @@ import (
 // ZABBIX_USER - Username for authentication
 // ZABBIX_PASSWORD - Password for authentication
 // ZABBIX_TARGET_USER - Username for per-user authentication
-// To run locally, start devenv/zabbix72 and run INTEGRATION_TEST72=true ZABBIX_URL="http://localhost:8188/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" ZABBIX_TARGET_USER="grafana_test" go test -v ./pkg/zabbixapi/...
+// To run locally, start devenv/zabbix80 and run INTEGRATION_TEST80=true ZABBIX_URL="http://localhost:8188/api_jsonrpc.php" ZABBIX_USER="Admin" ZABBIX_PASSWORD="zabbix" ZABBIX_TARGET_USER="grafana_test" go test -v ./pkg/zabbixapi/...
 
-func TestIntegrationZabbixAPI72(t *testing.T) {
+func TestIntegrationZabbixAPI80(t *testing.T) {
 	// Skip if not running integration tests
-	if os.Getenv("INTEGRATION_TEST72") != "true" {
+	if os.Getenv("INTEGRATION_TEST80") != "true" {
 		t.Skip("Skipping integration test")
 	}
 
@@ -32,7 +32,7 @@ func TestIntegrationZabbixAPI72(t *testing.T) {
 	zabbixUser := os.Getenv("ZABBIX_USER")
 	zabbixPassword := os.Getenv("ZABBIX_PASSWORD")
 	targetUsername := os.Getenv("ZABBIX_TARGET_USER")
-	zabbixVersion := 72
+	zabbixVersion := 80
 
 	// Validate required environment variables
 	require.NotEmpty(t, zabbixURL, "ZABBIX_URL environment variable is required")

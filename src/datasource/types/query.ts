@@ -17,7 +17,8 @@ export type ZabbixMetricsQuery = {
   schema: number;
   group: { filter: string; name?: string };
   host: { filter: string; name?: string };
-  application: { filter: string; name?: string };
+  /** @deprecated Applications were removed in Zabbix 5.4. Only read when migrating saved queries to `itemTag`. */
+  application?: { filter: string; name?: string };
   itemTag: { filter: string; name?: string };
   item: { filter: string; name?: string };
   macro: { filter: string; macro?: string };

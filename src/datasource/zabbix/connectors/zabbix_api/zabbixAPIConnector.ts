@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import semver from 'semver';
 import * as utils from '../../../utils';
-import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
+import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE } from '../../../constants';
 import { HostTagFilter, ShowProblemTypes, ZabbixTagEvalType } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, GetItemsOptions, JSONRPCError, ZBXScript } from './types';
@@ -155,10 +155,6 @@ export class ZabbixAPIConnector {
     return this.getVersionPromise;
   }
 
-  isZabbix54OrHigher() {
-    return semver.gte(this.version, '5.4.0');
-  }
-
   // Cause and symptom problems were introduced in Zabbix 6.4
   supportsCauseSymptomProblems() {
     return this.version ? semver.gte(this.version, '6.4.0') : false;
@@ -170,7 +166,7 @@ export class ZabbixAPIConnector {
 
   acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number) {
     if (!action) {
-      action = semver.gte(this.version, '4.0.0') ? ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
+      action = ZBX_ACK_ACTION_ADD_MESSAGE;
     }
 
     const params: any = {
@@ -277,29 +273,15 @@ export class ZabbixAPIConnector {
     return this.request('host.get', params);
   }
 
-  async getApps(hostids): Promise<any[]> {
-    if (this.isZabbix54OrHigher()) {
-      return [];
-    }
-
-    const params = {
-      output: 'extend',
-      hostids: hostids,
-    };
-
-    return this.request('application.get', params);
-  }
-
   /**
    * Get Zabbix items
    * @param  {[type]} hostids  host ids
-   * @param  {[type]} appids   application ids
    * @param  {String} itemtype 'num' or 'text'
    * @param  {Object} options  nameSearch: return only items whose name contains one of these
    *                           substrings (or an unexpanded macro); selectTags: false to skip item tags
    * @return {[type]}          array of items
    */
-  getItems(hostids, appids, itemtype, itemTagFilter?: string, options: GetItemsOptions = {}): Promise<any[]> {
+  getItems(hostids, itemtype, itemTagFilter?: string, options: GetItemsOptions = {}): Promise<any[]> {
     const params: any = {
       output: ['itemid', 'name', 'key_', 'value_type', 'hostid', 'status', 'state', 'units', 'valuemapid', 'delay'],
       sortfield: 'name',
@@ -309,9 +291,6 @@ export class ZabbixAPIConnector {
     };
     if (hostids) {
       params.hostids = hostids;
-    }
-    if (appids) {
-      params.applicationids = appids;
     }
     if (itemtype === 'num') {
       // Return only numeric metrics
@@ -328,21 +307,19 @@ export class ZabbixAPIConnector {
       params.searchByAny = true;
     }
 
-    if (this.isZabbix54OrHigher()) {
-      if (options.selectTags !== false) {
-        params.selectTags = 'extend';
+    if (options.selectTags !== false) {
+      params.selectTags = 'extend';
+    }
+    if (itemTagFilter) {
+      const allTags = itemTagFilter.split(',');
+      let tagsParam = [];
+      for (let i = 0; i < allTags.length; i++) {
+        const tag = parseItemTag(allTags[i]);
+        tagsParam.push({ tag: tag.tag, value: tag.value, operator: '1' });
       }
-      if (itemTagFilter) {
-        const allTags = itemTagFilter.split(',');
-        let tagsParam = [];
-        for (let i = 0; i < allTags.length; i++) {
-          const tag = parseItemTag(allTags[i]);
-          tagsParam.push({ tag: tag.tag, value: tag.value, operator: '1' });
-        }
-        params.tags = tagsParam;
-        // Use OR eval type
-        params.evaltype = 2;
-      }
+      params.tags = tagsParam;
+      // Use OR eval type
+      params.evaltype = 2;
     }
 
     return this.request('item.get', params).then(utils.expandItems);
@@ -354,11 +331,8 @@ export class ZabbixAPIConnector {
       output: ['itemid', 'name', 'key_', 'value_type', 'hostid', 'status', 'state', 'units', 'valuemapid', 'delay'],
       webitems: true,
       selectHosts: ['hostid', 'name'],
+      selectTags: 'extend',
     };
-
-    if (this.isZabbix54OrHigher()) {
-      params.selectTags = 'extend';
-    }
 
     return this.request('item.get', params).then((items) => utils.expandItems(items));
   }
@@ -621,7 +595,7 @@ export class ZabbixAPIConnector {
     return sliResponse;
   }
 
-  getProblems(groupids, hostids, applicationids, supportsApplications, options): Promise<ZBXProblem[]> {
+  getProblems(groupids, hostids, options): Promise<ZBXProblem[]> {
     const { timeFrom, timeTo, recent, severities, limit, acknowledged, tags, evaltype, problemName, symptom } = options;
 
     const params: any = {
@@ -663,10 +637,6 @@ export class ZabbixAPIConnector {
     if (timeFrom || timeTo) {
       params.time_from = timeFrom;
       params.time_till = timeTo;
-    }
-
-    if (supportsApplications) {
-      params.applicationids = applicationids;
     }
 
     // Push the problem-name filter to the Zabbix API so it filters at the source
@@ -732,14 +702,13 @@ export class ZabbixAPIConnector {
     return triggers;
   }
 
-  async getTriggers(groupids, hostids, applicationids, options) {
+  async getTriggers(groupids, hostids, options) {
     const { showTriggers, maintenance, timeFrom, timeTo } = options;
 
     const params: any = {
       output: 'extend',
       groupids: groupids,
       hostids: hostids,
-      applicationids: applicationids,
       expandDescription: true,
       expandData: true,
       expandComment: true,
@@ -808,7 +777,7 @@ export class ZabbixAPIConnector {
     return this.request('event.get', params).then(utils.mustArray);
   }
 
-  getEventsHistory(groupids, hostids, applicationids, options) {
+  getEventsHistory(groupids, hostids, options) {
     const { timeFrom, timeTo, severities, limit, value, tags, evaltype, problemName, symptom } = options;
 
     const params: any = {
@@ -826,7 +795,6 @@ export class ZabbixAPIConnector {
       selectSuppressionData: ['maintenanceid', 'suppress_until'],
       groupids,
       hostids,
-      applicationids,
     };
 
     if (limit) {
@@ -931,7 +899,7 @@ export class ZabbixAPIConnector {
     return this.request('trigger.get', params);
   }
 
-  async getHostAlerts(hostids, applicationids, options): Promise<ZBXTrigger[]> {
+  async getHostAlerts(hostids, options): Promise<ZBXTrigger[]> {
     const { minSeverity, acknowledged, tags, count, timeFrom, timeTo } = options;
     const params: any = {
       output: 'extend',
@@ -953,10 +921,6 @@ export class ZabbixAPIConnector {
       if (acknowledged === 0) {
         params.withLastEventUnacknowledged = true;
       }
-    }
-
-    if (applicationids && applicationids.length) {
-      params.applicationids = applicationids;
     }
 
     if (timeFrom || timeTo) {
@@ -986,7 +950,7 @@ export class ZabbixAPIConnector {
     return triggers;
   }
 
-  getHostICAlerts(hostids, applicationids, itemids, options) {
+  getHostICAlerts(hostids, itemids, options) {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
     const params: any = {
       output: 'extend',
@@ -1009,10 +973,6 @@ export class ZabbixAPIConnector {
       if (acknowledged === 0) {
         params.withLastEventUnacknowledged = true;
       }
-    }
-
-    if (applicationids && applicationids.length) {
-      params.applicationids = applicationids;
     }
 
     if (itemids && itemids.length) {
@@ -1041,7 +1001,7 @@ export class ZabbixAPIConnector {
     });
   }
 
-  getHostPCAlerts(hostids, applicationids, triggerids, options) {
+  getHostPCAlerts(hostids, triggerids, options) {
     const { minSeverity, acknowledged, count, timeFrom, timeTo } = options;
     const params: any = {
       output: 'extend',
@@ -1062,10 +1022,6 @@ export class ZabbixAPIConnector {
 
     if (count && acknowledged !== 0 && acknowledged !== 1) {
       params.countOutput = true;
-    }
-
-    if (applicationids && applicationids.length) {
-      params.applicationids = applicationids;
     }
 
     if (timeFrom || timeTo) {
