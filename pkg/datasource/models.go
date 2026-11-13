@@ -48,11 +48,10 @@ type QueryModel struct {
 	Mode      int64  `json:"mode"`
 	QueryType string `json:"-"`
 
-	Group       QueryFilter `json:"group"`
-	Host        QueryFilter `json:"host"`
-	Application QueryFilter `json:"application"`
-	ItemTag     QueryFilter `json:"itemTag"`
-	Item        QueryFilter `json:"item"`
+	Group   QueryFilter `json:"group"`
+	Host    QueryFilter `json:"host"`
+	ItemTag QueryFilter `json:"itemTag"`
+	Item    QueryFilter `json:"item"`
 
 	// Item ID mode
 	ItemIDs string `json:"itemids,omitempty"`

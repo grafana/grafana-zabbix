@@ -1,7 +1,6 @@
 export type zabbixMethodName =
   | 'alert.get'
   | 'apiinfo.version'
-  | 'application.get'
   | 'event.acknowledge'
   | 'event.get'
   | 'history.get'
@@ -28,9 +27,9 @@ export interface ZabbixConnector {
   getItemsByIDs: (itemids) => Promise<any>;
   getEvents: (objectids, timeFrom, timeTo, showEvents, limit?) => Promise<any>;
   getAlerts: (itemids, timeFrom?, timeTo?) => Promise<any>;
-  getHostAlerts: (hostids, applicationids, options?) => Promise<any>;
-  getHostICAlerts: (hostids, applicationids, itemids, options?) => Promise<any>;
-  getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
+  getHostAlerts: (hostids, options?) => Promise<any>;
+  getHostICAlerts: (hostids, itemids, options?) => Promise<any>;
+  getHostPCAlerts: (hostids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
   acknowledgeEvent: (eventid, message) => Promise<any>;
@@ -44,12 +43,9 @@ export interface ZabbixConnector {
 
   getGroups: (groupFilter?) => any;
   getHosts: (groupFilter?, hostFilter?) => any;
-  getApps: (groupFilter?, hostFilter?, appFilter?) => any;
   getUMacros: (groupFilter?, hostFilter?, macroFilter?) => any;
-  getItems: (groupFilter?, hostFilter?, appFilter?, itemTagFilter?, itemFilter?, options?) => any;
+  getItems: (groupFilter?, hostFilter?, itemTagFilter?, itemFilter?, options?) => any;
   getSLA: (itservices, timeRange, target, slaInterval: string, options?) => any;
-
-  supportsApplications: () => boolean;
 }
 
 export interface Host {
