@@ -9,9 +9,39 @@ export type QueryType =
   | typeof c.MODE_ITEMID
   | typeof c.MODE_TRIGGERS
   | typeof c.MODE_PROBLEMS
-  | typeof c.MODE_MACROS;
+  | typeof c.MODE_MACROS
+  | typeof c.MODE_TRACES;
 
 type BaseQuery = { queryType: QueryType; datasourceUid?: string } & DataQuery;
+
+// OTEL attribute scopes that apmtrace.get can filter on
+export type ApmAttributeScope = 'resource' | 'span';
+
+export interface ApmAttributeFilter {
+  scope: ApmAttributeScope;
+  key: string;
+  value: string;
+  // Attribute operators: 0 Contains, 1 Equals, 2 Does not contain,
+  // 3 Does not equal, 4 Exists, 5 Does not exist
+  operator: number;
+}
+
+export type TracesQueryMode = typeof c.TRACES_MODE_SEARCH | typeof c.TRACES_MODE_TRACE_ID;
+
+export type ApmTraceStatus = '' | 'Error' | 'Ok' | 'Unset';
+
+export interface ApmTracesFilter {
+  // Trace ID mode
+  traceId?: string;
+  // Search mode. A trace matches when any of its spans matches all the filters.
+  service?: string;
+  spanName?: string;
+  status?: ApmTraceStatus;
+  // Trace duration bounds, e.g. "100ms", "1.5s" (a bare number is milliseconds)
+  minDuration?: string;
+  maxDuration?: string;
+  attributes?: ApmAttributeFilter[];
+}
 
 export type ZabbixMetricsQuery = {
   schema: number;
@@ -41,6 +71,9 @@ export type ZabbixMetricsQuery = {
   evaltype?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
+  // Traces: 'search' when absent
+  tracesQueryMode?: TracesQueryMode;
+  traceFilter?: ApmTracesFilter;
   // Problems
   showProblems?: ShowProblemTypes;
   // Deprecated

@@ -235,6 +235,209 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When querying APM traces', () => {
+    const rootSpan = {
+      timestamp: 1794395793272265511,
+      traceid: '1848624bf20f11dd306f290773d05407',
+      spanid: '776a2fc61b92770e',
+      parent_spanid: '',
+      trace_state: '',
+      span_name: 'lets-go',
+      span_kind: 'Client',
+      service_name: 'checkout',
+      resource_attributes: { 'service.name': 'checkout' },
+      scope_name: 'telemetrygen',
+      scope_version: '1.2',
+      span_attributes: { 'http.method': 'GET' },
+      duration: 369000,
+      status_code: 'Error',
+      status_message: 'boom',
+      events: [{ timestamp: 1794395793272300000, name: 'exception', attributes: { 'exception.type': 'Timeout' } }],
+      links: [{ traceid: 'aaaa', spanid: 'bbbb', trace_state: '', attributes: [] }],
+    };
+    const childSpan = {
+      ...rootSpan,
+      timestamp: 1794395793272388511,
+      spanid: '1de19d2036b3804d',
+      parent_spanid: '776a2fc61b92770e',
+      span_name: 'okey-dokey-1',
+      span_kind: 'Server',
+      // The Zabbix PHP API serializes empty maps as []
+      span_attributes: [],
+      duration: 123000,
+      status_code: 'Unset',
+      status_message: '',
+      events: [],
+      links: [],
+    };
+
+    beforeEach(() => {
+      ctx.ds.uid = 'zabbix-uid';
+      ctx.ds.zabbix.supportsApmTraces = jest.fn().mockResolvedValue(true);
+      ctx.ds.zabbix.zabbixAPI.getAPMTraces = jest.fn().mockResolvedValue([
+        { ...rootSpan, has_root_span: 1, span_count: 4, error_count: 4 },
+        { ...childSpan, traceid: 'ffff', has_root_span: 0, span_count: 1, error_count: 0 },
+      ]);
+      ctx.ds.zabbix.zabbixAPI.getAPMSpans = jest.fn().mockResolvedValue([childSpan, rootSpan]);
+
+      ctx.options.targets = [
+        {
+          refId: 'A',
+          queryType: '10',
+          tracesQueryMode: 'search',
+          traceFilter: {},
+          options: { limit: 50 },
+        },
+      ];
+    });
+
+    it('should return a table of traces with a link to the trace', async () => {
+      const result = await ctx.ds.frontendQuery(ctx.options);
+      const frame = result.data[0];
+      expect(frame.meta.preferredVisualisationType).toBe('table');
+      expect(frame.fields.map((f) => f.name)).toEqual([
+        'Trace ID',
+        'Start time',
+        'Service',
+        'Name',
+        'Duration',
+        'Spans',
+        'Errors',
+      ]);
+
+      const field = (name: string) => frame.fields.find((f) => f.name === name);
+      expect(field('Trace ID').values).toEqual(['1848624bf20f11dd306f290773d05407', 'ffff']);
+      // Nanoseconds to milliseconds
+      expect(field('Start time').values[0]).toBe(1794395793272);
+      expect(field('Duration').values).toEqual([369000, 123000]);
+      expect(field('Duration').config.unit).toBe('ns');
+      expect(field('Spans').values).toEqual([4, 1]);
+      expect(field('Errors').values).toEqual([4, 0]);
+      // A trace whose root span has not arrived is marked as such
+      expect(field('Name').values).toEqual(['lets-go', '<root span not yet received> okey-dokey-1']);
+
+      const link = field('Trace ID').config.links[0];
+      expect(link.internal.datasourceUid).toBe('zabbix-uid');
+      expect(link.internal.query).toEqual({
+        queryType: '10',
+        tracesQueryMode: 'traceId',
+        traceFilter: { traceId: '${__value.raw}' },
+      });
+    });
+
+    it('should build apmtrace.get params from the query model', async () => {
+      ctx.options.targets[0].traceFilter = {
+        service: 'checkout',
+        spanName: 'lets',
+        status: 'Error',
+        minDuration: '100us',
+        maxDuration: '1.5s',
+        attributes: [
+          { scope: 'resource', key: 'host.name', value: 'node-1', operator: 1 },
+          { scope: 'span', key: 'http.method', value: 'GET', operator: 0 },
+          { scope: 'span', key: '', value: 'ignored', operator: 0 },
+        ],
+      };
+      await ctx.ds.frontendQuery(ctx.options);
+
+      const params = ctx.ds.zabbix.zabbixAPI.getAPMTraces.mock.calls[0][0];
+      expect(params.sortfield).toBe('timestamp');
+      expect(params.sortorder).toBe('DESC');
+      expect(params.limit).toBe(50);
+      expect(params.time_from).toBeLessThan(params.time_till);
+      expect(params.filter).toEqual({ service_name: 'checkout', status_code: 'Error' });
+      expect(params.search).toEqual({ span_name: 'lets' });
+      expect(params.min_duration).toBe(100000);
+      expect(params.max_duration).toBe(1500000000);
+      expect(params.resource_attributes).toEqual([{ key: 'host.name', value: 'node-1', operator: 1 }]);
+      // Filters with an empty key are dropped
+      expect(params.span_attributes).toEqual([{ key: 'http.method', value: 'GET', operator: 0 }]);
+    });
+
+    it('should send no filters for an empty search', async () => {
+      await ctx.ds.frontendQuery(ctx.options);
+      const params = ctx.ds.zabbix.zabbixAPI.getAPMTraces.mock.calls[0][0];
+      expect(Object.keys(params).sort()).toEqual(['limit', 'sortfield', 'sortorder', 'time_from', 'time_till']);
+    });
+
+    it('should reject an invalid duration', async () => {
+      ctx.options.targets[0].traceFilter = { minDuration: 'fast' };
+      await expect(ctx.ds.frontendQuery(ctx.options)).rejects.toThrow('Invalid duration "fast"');
+    });
+
+    it('should return a trace frame for a trace ID query', async () => {
+      ctx.options.targets[0].tracesQueryMode = 'traceId';
+      ctx.options.targets[0].traceFilter = { traceId: ' 1848624bf20f11dd306f290773d05407 ' };
+      const result = await ctx.ds.frontendQuery(ctx.options);
+
+      const params = ctx.ds.zabbix.zabbixAPI.getAPMSpans.mock.calls[0][0];
+      expect(params.traceids).toEqual(['1848624bf20f11dd306f290773d05407']);
+      expect(ctx.ds.zabbix.zabbixAPI.getAPMTraces).not.toHaveBeenCalled();
+
+      const frame = result.data[0];
+      expect(frame.meta.preferredVisualisationType).toBe('trace');
+      const field = (name: string) => frame.fields.find((f) => f.name === name).values;
+      // Sorted by start time: root first
+      expect(field('spanID')).toEqual(['776a2fc61b92770e', '1de19d2036b3804d']);
+      expect(field('parentSpanID')).toEqual([undefined, '776a2fc61b92770e']);
+      expect(field('operationName')).toEqual(['lets-go', 'okey-dokey-1']);
+      expect(field('serviceName')).toEqual(['checkout', 'checkout']);
+      expect(field('kind')).toEqual(['client', 'server']);
+      expect(field('statusCode')).toEqual([2, 0]);
+      expect(field('statusMessage')).toEqual(['boom', '']);
+      // Nanoseconds to milliseconds
+      expect(field('duration')).toEqual([0.369, 0.123]);
+      expect(field('startTime')[0]).toBeCloseTo(1794395793272.2656, 3);
+      expect(field('serviceTags')[0]).toEqual([{ key: 'service.name', value: 'checkout' }]);
+      expect(field('tags')).toEqual([[{ key: 'http.method', value: 'GET' }], []]);
+      expect(field('logs')[0]).toEqual([
+        {
+          timestamp: expect.closeTo(1794395793272.3, 3),
+          name: 'exception',
+          fields: [{ key: 'exception.type', value: 'Timeout' }],
+        },
+      ]);
+      expect(field('references')[0]).toEqual([{ traceID: 'aaaa', spanID: 'bbbb', tags: [] }]);
+      expect(field('instrumentationLibraryName')).toEqual(['telemetrygen', 'telemetrygen']);
+    });
+
+    it('should widen the time range of a trace ID query by the maximum trace duration', async () => {
+      ctx.options.targets[0].tracesQueryMode = 'traceId';
+      ctx.options.targets[0].traceFilter = { traceId: 'abc' };
+      await ctx.ds.frontendQuery(ctx.options);
+      const searchTarget = { ...ctx.options.targets[0], tracesQueryMode: 'search' };
+      await ctx.ds.frontendQuery({ ...ctx.options, targets: [searchTarget] });
+
+      const spanParams = ctx.ds.zabbix.zabbixAPI.getAPMSpans.mock.calls[0][0];
+      const traceParams = ctx.ds.zabbix.zabbixAPI.getAPMTraces.mock.calls[0][0];
+      expect(traceParams.time_from - spanParams.time_from).toBe(3600);
+      expect(spanParams.time_till - traceParams.time_till).toBe(3600);
+    });
+
+    it('should not query without a trace ID', async () => {
+      ctx.options.targets[0].tracesQueryMode = 'traceId';
+      const result = await ctx.ds.frontendQuery(ctx.options);
+      expect(result.data).toEqual([]);
+      expect(ctx.ds.zabbix.zabbixAPI.getAPMSpans).not.toHaveBeenCalled();
+    });
+
+    it('should fail with a clear error when Zabbix is older than 8.0', async () => {
+      ctx.ds.zabbix.supportsApmTraces = jest.fn().mockResolvedValue(false);
+      await expect(ctx.ds.frontendQuery(ctx.options)).rejects.toThrow('APM traces require Zabbix 8.0 or higher');
+    });
+
+    it('should interpolate trace filters as plain text', () => {
+      ctx.ds.templateSrv.replace = jest.fn((str) => (str ? str.replace('$svc', 'checkout') : str));
+      const [query] = ctx.ds.interpolateVariablesInQueries(
+        [{ ...ctx.options.targets[0], traceFilter: { service: '$svc', traceId: 'abc' } }],
+        {}
+      );
+      // Not wrapped into a /^...$/ regex like the item filters
+      expect(query.traceFilter.service).toBe('checkout');
+      expect(query.traceFilter.traceId).toBe('abc');
+    });
+  });
+
   describe('When querying problems', () => {
     const buildProblemsTarget = (options: any = {}, showProblems = 'problems') => ({
       group: { filter: '' },

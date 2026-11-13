@@ -1,6 +1,8 @@
 export type zabbixMethodName =
   | 'alert.get'
   | 'apiinfo.version'
+  | 'apmspan.get'
+  | 'apmtrace.get'
   | 'application.get'
   | 'event.acknowledge'
   | 'event.get'

@@ -91,6 +91,43 @@ Expand the **Options** section to access additional settings:
 |--------|-------------|
 | **Show disabled items** | Include disabled items in the item drop-down. |
 
+### Traces
+
+Use Traces queries to explore distributed traces collected through the Zabbix APM collector (OpenTelemetry). Traces require Zabbix 8.0 or higher with a configured ClickHouse telemetry data source.
+
+The **Query mode** selector chooses what the query returns:
+
+- **Search** (default) — a table of the most recent traces that match the filters, with the trace ID, start time, root service and span name, duration, span count, and error count. Click a trace ID to open that trace in Explore.
+- **Trace ID** — all spans of one trace, rendered in the trace view in Explore and in the Traces panel.
+
+#### Search fields
+
+A trace matches when at least one of its spans matches all the filters.
+
+| Field | Description |
+|-------|-------------|
+| **Service** | Exact service name (the OTEL `service.name` resource attribute). Supports template variables. |
+| **Span name** | Case-insensitive substring match on the span name. Supports template variables. |
+| **Status** | The span status to look for: Any, Error, Ok, or Unset. |
+| **Min duration** / **Max duration** | Bounds on the trace duration, for example `100ms` or `1.5s`. Supported units: `ns`, `us`, `ms`, `s`, `m`, `h`. A number without a unit is milliseconds. |
+| **Attributes** | Filter by OTEL attributes. Each filter has a scope (Resource or Span), a key, an operator (Contains, Equals, Does not contain, Does not equal, Exists, Does not exist), and a value. |
+
+#### Trace ID fields
+
+| Field | Description |
+|-------|-------------|
+| **Trace ID** | The ID of the trace to show. The trace must have spans within the selected time range; the range is extended by one hour on each side. Supports template variables. |
+
+Expand the **Options** section to access additional settings:
+
+| Option | Description |
+|--------|-------------|
+| **Limit** | The maximum number of traces a search returns. The most recent traces within the time range are kept. Default: 1000. |
+
+{{< admonition type="note" >}}
+Zabbix users who are not Super admins only see traces allowed by the APM filters of their user groups.
+{{< /admonition >}}
+
 ### Services
 
 Use Services queries to retrieve IT service SLA data from Zabbix.

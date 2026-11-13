@@ -438,6 +438,22 @@ export class ZabbixAPIConnector {
   }
 
   /**
+   * Query OTEL/APM traces from Zabbix 8.0+ (apmtrace.get): one record per trace,
+   * carrying the root span (or the earliest span when the root is missing) plus
+   * span_count/error_count. duration and timestamp are nanoseconds.
+   */
+  getAPMTraces(params: any): Promise<any[]> {
+    return this.request('apmtrace.get', params);
+  }
+
+  /**
+   * Query OTEL/APM spans from Zabbix 8.0+ (apmspan.get).
+   */
+  getAPMSpans(params: any): Promise<any[]> {
+    return this.request('apmspan.get', params);
+  }
+
+  /**
    * Perform trends query from Zabbix API
    * Use trends api extension from ZBXNEXT-1193 patch.
    *
