@@ -378,6 +378,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   queryTextData(target, timeRange) {
     const options = {
       itemtype: 'text',
+      showDisabledItems: target.options.showDisabledItems,
     };
     return this.zabbix.getItemsFromTarget(target, options).then(async (items) => {
       const result = await this.zabbix.getHistoryText(items, timeRange, target);
