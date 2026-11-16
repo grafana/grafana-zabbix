@@ -1,5 +1,5 @@
 import { DataSourceInstanceSettings } from '@grafana/data';
-import { getDataSourceSrv } from '@grafana/runtime';
+import { getDataSourceInstance } from '@grafana/plugin-compat/datasources';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
@@ -16,6 +16,8 @@ import { ProblemDTO, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 import { ZabbixDSOptions } from '../types/config';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import * as utils from '../utils';
+import { getUIDFromID } from '../migrations';
+import { CLICKHOUSE_DS_ID, ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
@@ -109,6 +111,7 @@ type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAut
     | 'cacheTTL'
     | 'dbConnectionEnable'
     | 'dbConnectionDatasourceUID'
+    | 'dbConnectionDatasourceId'
     | 'dbConnectionDatasourceName'
     | 'dbConnectionRetentionPolicy'
   >;
@@ -118,7 +121,9 @@ export class Zabbix implements ZabbixConnector {
   cachingProxy: CachingProxy;
   zabbixAPI: ZabbixAPIConnector;
   getHistoryDB: any;
-  dbConnector: InfluxDBConnector | SQLConnector;
+  dbConnector: InfluxDBConnector | SQLConnector | ClickHouseConnector;
+  /** Settles when the DB connector set up by the constructor is ready, or failed */
+  dbConnectorReady: Promise<void> = Promise.resolve();
   getTrendsDB: any;
   version: string;
 
@@ -150,6 +155,7 @@ export class Zabbix implements ZabbixConnector {
       cacheTTL,
       dbConnectionEnable,
       dbConnectionDatasourceUID,
+      dbConnectionDatasourceId,
       dbConnectionDatasourceName,
       dbConnectionRetentionPolicy,
       uid,
@@ -170,9 +176,13 @@ export class Zabbix implements ZabbixConnector {
     this.cacheRequests();
     this.bindRequests();
 
-    if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceName)) {
-      const connectorOptions: any = { dbConnectionRetentionPolicy };
-      this.initDBConnector(dbConnectionDatasourceUID, dbConnectionDatasourceName, connectorOptions)
+    if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceId || dbConnectionDatasourceName)) {
+      const connectorOptions: any = { dbConnectionRetentionPolicy, dbConnectionDatasourceId };
+      this.dbConnectorReady = this.initDBConnector(
+        dbConnectionDatasourceUID,
+        dbConnectionDatasourceName,
+        connectorOptions
+      )
         .then(() => {
           this.getHistoryDB = this.cachingProxy.proxifyWithCache(
             this.dbConnector.getHistory,
@@ -196,17 +206,30 @@ export class Zabbix implements ZabbixConnector {
     datasourceName: string | undefined,
     options: ZabbixDSOptions
   ) {
-    const ref = (datasourceUID && datasourceUID.trim()) || datasourceName;
+    let uid = datasourceUID && datasourceUID.trim();
+    // Legacy config references the DB data source by its numeric ID.
+    // If that ID no longer exists, fall back to the data source name when there is one.
+    if (!uid && options.dbConnectionDatasourceId > 0) {
+      uid = await getUIDFromID(options.dbConnectionDatasourceId);
+      if (!uid && !datasourceName) {
+        throw new Error(
+          `Error retrieving direct db connection data source. Data source with id ${options.dbConnectionDatasourceId} not found`
+        );
+      }
+    }
+    const ref = uid || datasourceName;
     if (!ref) {
       throw new Error('Data Source UID or name must be specified for direct DB connection');
     }
-    const ds = await getDataSourceSrv().get(ref);
+    const ds = await getDataSourceInstance(ref);
 
     if (ds.type === 'influxdb') {
       const influxDBConnectorOptions: InfluxDBConnectorOptions = {
         retentionPolicy: options.dbConnectionRetentionPolicy,
       };
       this.dbConnector = new InfluxDBConnector(ds, influxDBConnectorOptions);
+    } else if (ds.type === CLICKHOUSE_DS_ID) {
+      this.dbConnector = new ClickHouseConnector(ds, {});
     } else {
       this.dbConnector = new SQLConnector(ds, {});
     }
@@ -234,6 +257,9 @@ export class Zabbix implements ZabbixConnector {
    * Perform test query for Zabbix API and external history DB.
    */
   async testDataSource() {
+    // The DB connector is set up asynchronously, so a test right after the data source
+    // is created would otherwise skip it
+    await this.dbConnectorReady;
     if (this.enableDirectDBConnection && this.dbConnector) {
       const testResult = await this.dbConnector.testDataSource();
       return testResult;
