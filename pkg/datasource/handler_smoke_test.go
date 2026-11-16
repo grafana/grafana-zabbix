@@ -90,7 +90,7 @@ func newHandlerTestRequest(t *testing.T, serverURL string, user *backend.User) *
 		}`),
 		DecryptedSecureJSONData: map[string]string{"password": "stored-pass"},
 	}
-	pluginCtx := backend.PluginContext{OrgID: 1, DataSourceInstanceSettings: &dsSettings}
+	pluginCtx := backend.PluginContext{Namespace: "default", DataSourceInstanceSettings: &dsSettings}
 
 	ctx := backend.WithPluginContext(context.Background(), pluginCtx)
 	if user != nil {

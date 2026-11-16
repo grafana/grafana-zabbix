@@ -76,8 +76,10 @@ func TestGetHistory(t *testing.T) {
 
 func TestGetTrend(t *testing.T) {
 	var capturedIDs []string
+	var capturedParams map[string]interface{}
 	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
 		if payload.Method == "trend.get" {
+			capturedParams = payload.Params
 			for _, raw := range payload.Params["itemids"].([]interface{}) {
 				capturedIDs = append(capturedIDs, raw.(string))
 			}
@@ -100,6 +102,9 @@ func TestGetTrend(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, trend, 1)
 	assert.ElementsMatch(t, []string{"100", "200"}, capturedIDs)
+	// Zabbix 8.0 rejects trend.get requests with sortfield or sortorder.
+	assert.NotContains(t, capturedParams, "sortfield")
+	assert.NotContains(t, capturedParams, "sortorder")
 }
 
 func TestGetItems(t *testing.T) {

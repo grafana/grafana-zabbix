@@ -4,11 +4,8 @@ import AlertCard from './AlertCard';
 import { ProblemDTO } from '../../../datasource/types';
 import { ProblemsPanelOptions, DEFAULT_SEVERITY } from '../../types';
 
-jest.mock('@grafana/runtime', () => ({
-  ...jest.requireActual('@grafana/runtime'),
-  getDataSourceSrv: () => ({
-    getInstanceSettings: () => ({ name: 'test-ds' }),
-  }),
+jest.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstanceSettings: async (uid: string) => (uid === 'zabbix-uid' ? { name: 'Zabbix' } : undefined),
 }));
 
 describe('AlertCard', () => {
@@ -96,5 +93,17 @@ describe('AlertCard', () => {
 
     // Only the AlertHost span should be present, no extra empty hostname span
     expect(container.querySelectorAll('.zabbix-hostname')).toHaveLength(1);
+  });
+
+  it('should render the name of the data source the problem comes from', async () => {
+    const problem = {
+      ...createMockProblem(),
+      datasource: { type: 'alexanderzobnin-zabbix-datasource', uid: 'zabbix-uid' },
+    };
+    const panelOptions = { ...defaultPanelOptions, showDatasourceName: true };
+
+    render(<AlertCard problem={problem} panelOptions={panelOptions} />);
+
+    expect(await screen.findByText('Zabbix')).toBeInTheDocument();
   });
 });
