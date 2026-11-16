@@ -24,11 +24,26 @@ INSERT INTO items (itemid, hostid, type, key_, name, value_type, status, delay) 
 ON CONFLICT DO NOTHING;
 INSERT INTO item_rtdata (itemid, state) VALUES (9000101, 0) ON CONFLICT DO NOTHING;
 
--- Trigger in PROBLEM state (value 1), enabled (status 0), High severity (priority 4).
+-- Trigger (PROBLEM state is set below), enabled (status 0), High severity (priority 4).
 -- `comments` is the field the Problems panel shows as "Description".
-INSERT INTO triggers (triggerid, description, expression, value, status, priority, flags, comments) VALUES
-  (9000101, 'E2E macro trigger', '{9000101}=1', 1, 0, 4, 0, 'Current value: {ITEM.VALUE}')
+INSERT INTO triggers (triggerid, description, expression, status, priority, flags, comments) VALUES
+  (9000101, 'E2E macro trigger', '{9000101}=1', 0, 4, 0, 'Current value: {ITEM.VALUE}')
 ON CONFLICT DO NOTHING;
+
+-- Trigger state (value 1 = PROBLEM). Up to Zabbix 7.4 it is the triggers.value
+-- column; Zabbix 8.0 moved it to the trigger_rtdata table.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = current_schema() AND table_name = 'triggers' AND column_name = 'value'
+  ) THEN
+    UPDATE triggers SET value = 1 WHERE triggerid IN (9000101);
+  ELSE
+    INSERT INTO trigger_rtdata (triggerid, value) VALUES (9000101, 1)
+    ON CONFLICT (triggerid) DO UPDATE SET value = EXCLUDED.value;
+  END IF;
+END $$;
 
 INSERT INTO functions (functionid, itemid, triggerid, name, parameter) VALUES
   (9000101, 9000101, 9000101, 'last', '$')

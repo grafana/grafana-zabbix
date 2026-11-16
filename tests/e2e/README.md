@@ -9,7 +9,7 @@ that run against a **real Zabbix backend** with deterministic fixture data.
 | --- | --- |
 | `*.spec.ts`, `*.test.ts` | The tests. |
 | `../fixtures/*.sql` | Deterministic dataset, loaded into the Zabbix DB on startup. |
-| `../../provisioning/datasources/` | Provisioned Zabbix data source (`uid: zabbix-e2e`). |
+| `../../provisioning/datasources/` | Provisioned data sources: the Zabbix data source (`uid: zabbix-e2e`), a PostgreSQL data source for the Zabbix DB (direct DB connection tests), a Zabbix data source with a global severity override, and a ClickHouse data source (`uid: clickhouse-e2e`, no live server) for the Direct DB Connection config editor test. |
 | `../../provisioning/dashboards/` | Provisioned dashboards used by tests, loaded via `readProvisionedDashboard`. |
 
 Provisioning lives at the repo root (`provisioning/`), the default `provisioningRootDir`
