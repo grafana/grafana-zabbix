@@ -3,6 +3,7 @@ import { test, expect } from '@grafana/plugin-e2e';
 const PLUGIN_TYPE = 'alexanderzobnin-zabbix-datasource';
 const PROVISIONED_FILE = 'datasources.yml';
 const DS_NAME = 'Zabbix E2E';
+const CLICKHOUSE_DS_NAME = 'ClickHouse E2E';
 // The Grafana backend runs the health check from inside the Compose network,
 // so it reaches Zabbix at the service name, not localhost.
 const REACHABLE_URL = 'http://zabbix-web:8080/api_jsonrpc.php';
@@ -70,7 +71,7 @@ test.describe('Config editor', () => {
   // delete it afterwards.
   test.describe('direct DB connection', () => {
     const DB_DS_NAME = 'E2E Zabbix DB';
-    const DB_PICKER_PLACEHOLDER = 'Select a DB datasource (MySQL, PostgreSQL, InfluxDB)';
+    const DB_PICKER_PLACEHOLDER = 'Select a DB datasource (MySQL, PostgreSQL, InfluxDB, ClickHouse)';
 
     const zabbixDataSource = (jsonData: Record<string, unknown>) => ({
       type: PLUGIN_TYPE,
@@ -149,6 +150,32 @@ test.describe('Config editor', () => {
       } finally {
         await grafanaAPIClient.deleteDataSourceByUID(ds.uid);
       }
+    });
+
+    // The ClickHouse data source (uid: clickhouse-e2e) is provisioned without a
+    // live ClickHouse server behind it: this test covers only the config editor
+    // surface — the picker listing the ClickHouse datasource type and the
+    // ClickHouse-specific notice rendering on selection.
+    test('lists a ClickHouse data source and shows the history-only notice when selected', async ({
+      createDataSourceConfigPage,
+      readProvisionedDataSource,
+      page,
+    }) => {
+      const clickhouse = await readProvisionedDataSource({ fileName: PROVISIONED_FILE, name: CLICKHOUSE_DS_NAME });
+      await createDataSourceConfigPage({ type: PLUGIN_TYPE });
+
+      await page.getByRole('switch', { name: 'Enable Direct DB Connection' }).check({ force: true });
+
+      const dsPicker = page.getByPlaceholder(DB_PICKER_PLACEHOLDER);
+      await dsPicker.click();
+      await page.getByRole('option', { name: clickhouse.name }).click();
+      await expect(dsPicker).toHaveValue(clickhouse.name);
+
+      // ClickHouse holds only history data (no trends), which the editor
+      // surfaces in an info alert; the InfluxDB-only field must not render.
+      await expect(page.getByText('ClickHouse history storage')).toBeVisible();
+      await expect(page.getByText(/trends are not supported/i)).toBeVisible();
+      await expect(page.getByText('Retention Policy')).toBeHidden();
     });
   });
 });

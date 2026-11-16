@@ -427,6 +427,7 @@ export const ConfigEditor = (props: Props) => {
         <ConfigSubSection title="Direct DB Connection">
           <Field label="Enable Direct DB Connection">
             <Switch
+              label="Enable Direct DB Connection"
               value={options.jsonData.dbConnectionEnable}
               onChange={jsonDataSwitchHandler('dbConnectionEnable', options, onOptionsChange)}
             />

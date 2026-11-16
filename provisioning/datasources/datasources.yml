@@ -43,3 +43,18 @@ datasources:
           name: E2E Critical
     secureJsonData:
       password: zabbix
+
+  # ClickHouse data source for the Direct DB Connection config editor e2e test.
+  # No live ClickHouse server is running in the e2e stack: the test only
+  # verifies the config editor lists it in the Direct DB Connection picker and
+  # renders the ClickHouse-specific UI. Requires the grafana-clickhouse-datasource
+  # plugin, installed via GF_INSTALL_PLUGINS in docker-compose.yml.
+  - name: ClickHouse E2E
+    type: grafana-clickhouse-datasource
+    uid: clickhouse-e2e
+    jsonData:
+      host: clickhouse
+      port: 9000
+      protocol: native
+      defaultDatabase: zabbix
+      username: default
