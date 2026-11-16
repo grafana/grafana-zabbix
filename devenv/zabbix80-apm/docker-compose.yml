@@ -12,6 +12,11 @@ services:
     extends:
       file: ../../.config/docker-compose-base.yaml
       service: grafana
+    # Override the base container_name so this stack can run next to the root devenv
+    container_name: zbx-apm-dev-grafana
+    environment:
+      # For the APM logs Direct DB Connection path (datasources-apm.yaml)
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
     volumes:
       # Override the base ../provisioning mount so the nested datasource/dashboard
       # mounts below create their (Docker-generated) mount-point files under a
@@ -19,6 +24,7 @@ services:
       - ../../tmp/provisioning:/etc/grafana/provisioning
       - ../dashboards:/devenv/dashboards
       - '../datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml'
+      - './datasources-apm.yaml:/etc/grafana/provisioning/datasources/datasources-apm.yaml'
       - '../dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml'
 
   # Zabbix 8.0 telemetry requires ClickHouse >= 26.8.17.4

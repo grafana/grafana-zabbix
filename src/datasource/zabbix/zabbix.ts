@@ -903,6 +903,17 @@ export class Zabbix implements ZabbixConnector {
    */
   async getApmLogs(target: ZabbixMetricsQuery, timeRange: number[]) {
     const [timeFrom, timeTo] = timeRange;
+
+    // With a Direct DB Connection to the ClickHouse telemetry storage, read the
+    // OTEL log records from the otel_logs table instead of the apmlog.get API
+    if (this.enableDirectDBConnection) {
+      await this.dbConnectorReady;
+      if (this.dbConnector instanceof ClickHouseConnector) {
+        const records = await this.dbConnector.getAPMLogs(target, timeFrom, timeTo);
+        return [responseHandler.handleAPMLogs(records, target)];
+      }
+    }
+
     const params: any = {
       time_from: timeFrom,
       time_till: timeTo,

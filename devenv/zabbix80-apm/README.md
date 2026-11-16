@@ -19,6 +19,13 @@ docker compose up -d
 - Zabbix web: http://localhost:8188 (Admin / zabbix)
 - ClickHouse: internal only (`clickhouse:8123`, user/password/db `zabbix`)
 
+Grafana provisions two Zabbix data sources (`../datasources.yaml` plus
+`datasources-apm.yaml`): `zabbix` queries APM logs through `apmlog.get`, while
+`zabbix-apm-directdb` has a Direct DB Connection to the `clickhouse-apm` data
+source and reads APM logs straight from the `otel_logs` table (the
+`grafana-clickhouse-datasource` plugin is installed via `GF_INSTALL_PLUGINS`,
+so the first Grafana start needs internet access).
+
 `apm-bootstrap` registers the active proxy `apm-proxy-1` with APM collection
 enabled and points the global APM data source (Administration > Data source)
 at ClickHouse. `otel-logs-seed` pushes 200 ERROR log records for the `checkout`

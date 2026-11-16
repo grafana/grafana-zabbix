@@ -1,6 +1,10 @@
 import { DataSourceApi, PluginType } from '@grafana/data';
 import { compactQuery } from '../utils';
-import { ClickHouseConnector, handleClickHouseResponse } from '../zabbix/connectors/clickhouse/clickhouseConnector';
+import {
+  ClickHouseConnector,
+  handleClickHouseLogsResponse,
+  handleClickHouseResponse,
+} from '../zabbix/connectors/clickhouse/clickhouseConnector';
 
 const datasourceRequestMock = jest.fn().mockResolvedValue({ data: { results: {} } });
 
@@ -123,6 +127,132 @@ describe('ClickHouseConnector', () => {
         },
       });
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('When building APM logs query', () => {
+    it('should select apmlog.get-shaped columns from otel_logs with the time range and limit', () => {
+      const query = compactQuery(ctx.connector.buildAPMLogsQuery({ options: { limit: 500 } }, 15000, 15100));
+      expect(query).toContain('toUnixTimestamp64Nano(Timestamp) AS timestamp');
+      expect(query).toContain('toJSONString(ResourceAttributes) AS resource_attributes');
+      expect(query).toContain('FROM otel_logs');
+      expect(query).toContain('Timestamp >= toDateTime64(15000, 9) AND Timestamp <= toDateTime64(15100, 9)');
+      expect(query).toContain('ORDER BY Timestamp DESC LIMIT 500');
+    });
+
+    it('should apply the default limit when the target sets none', () => {
+      const query = ctx.connector.buildAPMLogsQuery({}, 15000, 15100);
+      expect(query).toContain('LIMIT 1000');
+    });
+
+    it('should filter by service, trace ID, min severity and body', () => {
+      const target = {
+        apmFilter: { service: 'checkout', traceId: 'abc123', minSeverity: 13 },
+        textFilter: 'timeout',
+      };
+      const query = ctx.connector.buildAPMLogsQuery(target, 15000, 15100);
+      expect(query).toContain("ServiceName = 'checkout'");
+      expect(query).toContain("TraceId = 'abc123'");
+      expect(query).toContain('SeverityNumber >= 13');
+      expect(query).toContain("positionCaseInsensitive(Body, 'timeout') > 0");
+    });
+
+    it('should build attribute conditions per scope and operator', () => {
+      const target = {
+        apmFilter: {
+          attributes: [
+            { scope: 'resource', key: 'env', value: 'dev', operator: 0 },
+            { scope: 'scope', key: 'lib', value: 'otel', operator: 1 },
+            { scope: 'log', key: 'tenant', value: 'acme', operator: 2 },
+            { scope: 'log', key: 'code', value: '500', operator: 3 },
+            { scope: 'log', key: 'user', value: '', operator: 4 },
+            { scope: 'log', key: 'debug', value: '', operator: 5 },
+            { scope: 'log', key: '', value: 'skipped: no key', operator: 0 },
+          ],
+        },
+      };
+      const query = ctx.connector.buildAPMLogsQuery(target, 15000, 15100);
+      expect(query).toContain(
+        "(mapContains(ResourceAttributes, 'env') AND positionCaseInsensitive(ResourceAttributes['env'], 'dev') > 0)"
+      );
+      expect(query).toContain("(mapContains(ScopeAttributes, 'lib') AND ScopeAttributes['lib'] = 'otel')");
+      expect(query).toContain(
+        "(NOT mapContains(LogAttributes, 'tenant') OR positionCaseInsensitive(LogAttributes['tenant'], 'acme') = 0)"
+      );
+      expect(query).toContain("(NOT mapContains(LogAttributes, 'code') OR LogAttributes['code'] != '500')");
+      expect(query).toContain("mapContains(LogAttributes, 'user')");
+      expect(query).toContain("NOT mapContains(LogAttributes, 'debug')");
+      expect(query).not.toContain('skipped: no key');
+    });
+
+    it('should escape quotes and backslashes in filter values', () => {
+      const target = {
+        apmFilter: { service: "o'brien" },
+        textFilter: 'C:\\temp',
+      };
+      const query = ctx.connector.buildAPMLogsQuery(target, 15000, 15100);
+      expect(query).toContain("ServiceName = 'o\\'brien'");
+      expect(query).toContain("positionCaseInsensitive(Body, 'C:\\\\temp') > 0");
+    });
+  });
+
+  describe('getAPMLogs', () => {
+    it('should convert the columnar response to apmlog.get-shaped records', async () => {
+      ctx.connector.invokeClickHouseQuery = jest.fn().mockResolvedValue([
+        {
+          schema: {
+            fields: [
+              { name: 'timestamp' },
+              { name: 'body' },
+              { name: 'severity_number' },
+              { name: 'service_name' },
+              { name: 'resource_attributes' },
+              { name: 'log_attributes' },
+            ],
+          },
+          data: {
+            values: [
+              [1700000001000000000, 1700000000000000000],
+              ['second line', 'first line'],
+              [17, 9],
+              ['checkout', 'payments'],
+              ['{"service.name":"checkout"}', '{}'],
+              ['not json', '{"tenant":"acme"}'],
+            ],
+          },
+        },
+      ]);
+
+      const records = await ctx.connector.getAPMLogs({ apmFilter: { service: 'checkout' } }, 15000, 15100);
+
+      expect(ctx.connector.invokeClickHouseQuery).toHaveBeenCalledWith(expect.stringContaining('FROM otel_logs'));
+      expect(records).toEqual([
+        {
+          timestamp: 1700000001000000000,
+          body: 'second line',
+          severity_number: 17,
+          service_name: 'checkout',
+          resource_attributes: { 'service.name': 'checkout' },
+          log_attributes: {},
+        },
+        {
+          timestamp: 1700000000000000000,
+          body: 'first line',
+          severity_number: 9,
+          service_name: 'payments',
+          resource_attributes: {},
+          log_attributes: { tenant: 'acme' },
+        },
+      ]);
+    });
+
+    it('should handle empty and malformed responses', async () => {
+      ctx.connector.invokeClickHouseQuery = jest.fn().mockResolvedValue(null);
+      expect(await ctx.connector.getAPMLogs({}, 15000, 15100)).toEqual([]);
+
+      expect(handleClickHouseLogsResponse(null)).toEqual([]);
+      expect(handleClickHouseLogsResponse([null])).toEqual([]);
+      expect(handleClickHouseLogsResponse([{ schema: { fields: [] }, data: { values: [] } } as any])).toEqual([]);
     });
   });
 
