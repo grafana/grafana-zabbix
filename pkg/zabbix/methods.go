@@ -62,13 +62,13 @@ func (ds *Zabbix) GetTrend(ctx context.Context, items []*Item, timeRange backend
 }
 
 func (ds *Zabbix) getTrend(ctx context.Context, itemids []string, timeRange backend.TimeRange) (Trend, error) {
+	// trend.get does not support sortfield/sortorder and Zabbix 8.0 rejects them.
+	// Trend points are sorted by the datasource after the request.
 	params := ZabbixAPIParams{
 		"output":    "extend",
 		"itemids":   itemids,
 		"time_from": timeRange.From.Unix(),
 		"time_till": timeRange.To.Unix(),
-		"sortfield": "clock",
-		"sortorder": "ASC",
 	}
 
 	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "trend.get", Params: params})

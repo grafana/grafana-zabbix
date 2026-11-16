@@ -4,7 +4,6 @@ import moment from 'moment/moment';
 import { GrafanaTheme2, TimeRange } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { Button, Icon, useStyles2 } from '@grafana/ui';
-import { getDataSourceSrv } from '@grafana/runtime';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { AckModal, AckProblemData } from '../AckModal';
@@ -23,6 +22,7 @@ import { em } from './Cells/cellStyles';
 
 interface Props {
   original: ProblemDTO;
+  datasourceName: string;
   rootWidth: number;
   timeRange: TimeRange;
   showTimeline?: boolean;
@@ -38,6 +38,7 @@ interface Props {
 
 export const ProblemDetails = ({
   original,
+  datasourceName,
   rootWidth,
   timeRange,
   showTimeline,
@@ -91,12 +92,6 @@ export const ProblemDetails = ({
   const showAcknowledges = problem.acknowledges && problem.acknowledges.length !== 0;
   const problemSeverity = Number(problem.severity);
   const hostDescriptions = (problem.hosts ?? []).map((h) => h.description).filter(Boolean);
-
-  let dsName: string = original.datasource as string;
-  if ((original.datasource as DataSourceRef)?.uid) {
-    const dsInstance = getDataSourceSrv().getInstanceSettings((original.datasource as DataSourceRef).uid);
-    dsName = dsInstance?.name ?? dsName;
-  }
 
   const problemDescriptionEl = allowDangerousHTML ? (
     <span dangerouslySetInnerHTML={{ __html: problem.comments }} />
@@ -248,9 +243,9 @@ export const ProblemDetails = ({
         {wideLayout && showAcknowledges && <aside className={styles.acks}>{acknowledgesSection}</aside>}
 
         <aside className={styles.meta}>
-          <div className={metaStyles.row} title={dsName}>
+          <div className={metaStyles.row} title={datasourceName}>
             <Icon name="database" size="sm" className={metaStyles.icon} />
-            <span className={metaStyles.text}>{dsName}</span>
+            <span className={metaStyles.text}>{datasourceName}</span>
           </div>
           {problem.proxy && (
             <div className={metaStyles.row} title={problem.proxy}>

@@ -38,7 +38,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		{
 			name: "Uncached Datasource (nothing in cache)",
 			pluginContext: backend.PluginContext{
-				OrgID:                      1,
+				Namespace:                  "default",
 				DataSourceInstanceSettings: &basicDsSettings,
 			},
 			want: basicDS.(*ZabbixDatasourceInstance),
@@ -46,7 +46,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		{
 			name: "Cached Datasource",
 			pluginContext: backend.PluginContext{
-				OrgID:                      1,
+				Namespace:                  "default",
 				DataSourceInstanceSettings: &basicDsSettings,
 			},
 			want: basicDS.(*ZabbixDatasourceInstance),
@@ -54,7 +54,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		{
 			name: "Cached then modified",
 			pluginContext: backend.PluginContext{
-				OrgID:                      1,
+				Namespace:                  "default",
 				DataSourceInstanceSettings: &modifiedDatasourceSettings,
 			},
 			want: modifiedDatasource.(*ZabbixDatasourceInstance),

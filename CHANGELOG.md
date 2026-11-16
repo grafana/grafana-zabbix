@@ -1,5 +1,37 @@
 # Change Log
 
+## 6.10.3
+
+### Patch Changes
+
+🐛 Enforce Grafana role checks in the backend for mutating Zabbix API calls made through the resource proxy: `script.execute` now requires the Admin role, and `event.acknowledge` requires Editor or Admin when "Disable acknowledges for read-only users" is enabled. Previously these calls were forwarded with the data source's stored credentials regardless of the caller's role.
+🐛 Security: bump moment, ip-address and fast-uri to patched versions
+🐛 Add a backend allowlist for the resource-proxy CallResource paths so only the exact `zabbix-api` and `db-connection-post` POST routes are served; any other path or method is now rejected with a 403 instead of falling through to the catch-all root handler.
+⚙️ Chore: Update dependencies
+
+## 6.10.2
+
+### Patch Changes
+
+⚙️ Chore: dependency updates
+
+## 6.10.1
+
+### Patch Changes
+
+⚙️ Chore: dependency updates
+
+## 6.10.0
+
+### Minor Changes
+
+🚀 feat(backend): Make the plugin's gRPC message size limits configurable through the `[plugin.alexanderzobnin-zabbix-datasource]` section of `grafana.ini` (`grpc_max_receive_msg_size_mb`, `grpc_max_send_msg_size_mb`). Defaults stay at 32 MB / 100 MB; values are clamped to 512 MB.
+
+### Patch Changes
+
+⚙️ Chore: update Go to 1.27.3
+🐛 Fix queries that read trends failing on Zabbix 8.0 with `Invalid parameter "/": unexpected parameter "sortfield"`. The plugin no longer sends `sortfield` and `sortorder` to `trend.get`; trend points are still sorted by time in the plugin.
+
 ## 6.9.1
 
 ### Patch Changes
