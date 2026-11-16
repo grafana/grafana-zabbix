@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -26,6 +27,14 @@ type DBConnectionPostProcessingRequest struct {
 	Query     QueryModel                     `json:"query"`
 	TimeRange TimeRangePostProcessingRequest `json:"timeRange"`
 	Series    []*timeseries.TimeSeriesData   `json:"series"`
+
+	// APM metrics read from the telemetry database (Metrics query with metricsSource "apm")
+	APMPoints []zabbix.APMMetricPoint `json:"apmPoints,omitempty"`
+	// True when the database held more points than the query's point limit
+	APMTruncated bool `json:"apmTruncated,omitempty"`
+	// Query interval and max data points: the query model does not carry them
+	IntervalMs    int64 `json:"intervalMs,omitempty"`
+	MaxDataPoints int64 `json:"maxDataPoints,omitempty"`
 }
 
 type TimeRangePostProcessingRequest struct {

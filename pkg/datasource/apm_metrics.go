@@ -191,6 +191,37 @@ func (ds *ZabbixDatasourceInstance) queryAPMMetrics(ctx context.Context, query *
 		return nil, err
 	}
 
+	return ds.processAPMPoints(query, points, truncated, quantiles, maxPoints)
+}
+
+// processAPMMetricsFromDB converts APM data points that the frontend read from the
+// telemetry database (Direct DB Connection with ClickHouse) instead of the Zabbix API.
+// The points are already downsampled per series to the query interval, keeping the
+// shape of raw data points: the last point of an interval for cumulative metrics,
+// the sum of the points for delta metrics.
+func (ds *ZabbixDatasourceInstance) processAPMMetricsFromDB(query *QueryModel, points []zabbix.APMMetricPoint, truncated bool) ([]*data.Frame, error) {
+	quantiles, err := parseAPMQuantiles(query.APMMetric.Quantiles)
+	if err != nil {
+		return nil, backend.DownstreamError(err)
+	}
+
+	maxPoints := query.APMMetric.MaxPoints
+	if maxPoints <= 0 {
+		maxPoints = DefaultAPMMaxPoints
+	}
+
+	// The database returns the newest points first
+	sort.SliceStable(points, func(i, j int) bool {
+		return points[i].TimeUnix < points[j].TimeUnix
+	})
+
+	return ds.processAPMPoints(query, points, truncated, quantiles, maxPoints)
+}
+
+// processAPMPoints turns data points sorted by time into data frames.
+func (ds *ZabbixDatasourceInstance) processAPMPoints(query *QueryModel, points []zabbix.APMMetricPoint, truncated bool, quantiles []float64, maxPoints int) ([]*data.Frame, error) {
+	apmQuery := query.APMMetric
+
 	series := buildAPMSeries(points, apmQuery.SumMode)
 	if len(apmQuery.GroupBy) > 0 {
 		step := query.Interval
@@ -208,7 +239,7 @@ func (ds *ZabbixDatasourceInstance) queryAPMMetrics(ctx context.Context, query *
 	}
 	nameAPMSeries(tsSeries, apmQuery.Legend)
 
-	tsSeries, err = applyFunctions(tsSeries, query.Functions)
+	tsSeries, err := applyFunctions(tsSeries, query.Functions)
 	if err != nil {
 		return nil, err
 	}

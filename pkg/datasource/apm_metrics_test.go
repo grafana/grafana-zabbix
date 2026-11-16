@@ -487,3 +487,58 @@ func TestReadQueryAPMMetrics(t *testing.T) {
 	assert.Equal(t, []string{"http.route"}, query.APMMetric.GroupBy)
 	assert.Equal(t, 1000, query.APMMetric.MaxPoints)
 }
+
+func TestProcessAPMMetricsFromDB(t *testing.T) {
+	monotonic := func(ts int64, value float64) zabbix.APMMetricPoint {
+		p := apmPoint(zabbix.APMMetricTypeSum, ts, value, nil)
+		p.IsMonotonic = true
+		p.MetricUnit = "{request}"
+		return p
+	}
+	// The database returns the newest points first
+	points := []zabbix.APMMetricPoint{monotonic(30, 250), monotonic(20, 150), monotonic(10, 100)}
+
+	ds := newAPMTestDatasource(t, "8.0.0", "[]", nil)
+	query := apmTestQuery(APMMetricQueryModel{Metric: "m", MaxPoints: 2})
+
+	frames, err := ds.processAPMMetricsFromDB(query, points, true)
+	require.NoError(t, err)
+	require.Len(t, frames, 1)
+
+	value := frames[0].Fields[1]
+	assert.Equal(t, "reqps", value.Config.Unit)
+	require.Equal(t, 2, value.Len())
+	assert.InDelta(t, 5, *value.At(0).(*float64), 1e-9)
+	assert.InDelta(t, 10, *value.At(1).(*float64), 1e-9)
+
+	require.NotNil(t, frames[0].Meta)
+	assert.Contains(t, frames[0].Meta.Notices[0].Text, "newest 2")
+
+	_, err = ds.processAPMMetricsFromDB(apmTestQuery(APMMetricQueryModel{Metric: "m", Quantiles: "x"}), points, false)
+	assert.Error(t, err)
+}
+
+func TestDBConnectionPostProcessingRequestAPM(t *testing.T) {
+	var req DBConnectionPostProcessingRequest
+	err := json.Unmarshal([]byte(`{
+		"query": {"queryType": "0", "metricsSource": "apm", "apmMetric": {"metric": "m"}},
+		"timeRange": {"from": 0, "to": 100},
+		"intervalMs": 15000,
+		"maxDataPoints": 500,
+		"apmTruncated": true,
+		"apmPoints": [
+			{"type": 2, "service_name": "checkout", "metric_name": "m", "resource_attributes": {"host.name": "web-1"},
+			 "attributes": {}, "time_unix": 1794433025954728676, "start_time_unix": 1794433020949270091,
+			 "aggregation_temporality": 2, "count": 10, "sum": 1.5, "bucket_counts": [0, 4, 6], "explicit_bounds": [0.1, 1]}
+		]
+	}`), &req)
+	require.NoError(t, err)
+
+	assert.Equal(t, MetricsSourceAPM, req.Query.MetricsSource)
+	assert.EqualValues(t, 15000, req.IntervalMs)
+	assert.True(t, req.APMTruncated)
+	require.Len(t, req.APMPoints, 1)
+	assert.Equal(t, int64(1794433025954728676), req.APMPoints[0].TimeUnix)
+	assert.Equal(t, []float64{0, 4, 6}, req.APMPoints[0].BucketCounts)
+	assert.Equal(t, "web-1", req.APMPoints[0].ResourceAttributes["host.name"])
+}

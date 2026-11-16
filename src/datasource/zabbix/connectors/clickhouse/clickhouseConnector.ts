@@ -12,6 +12,14 @@ import _ from 'lodash';
 import { compactQuery } from '../../../utils';
 import { consolidateByFunc, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP } from '../dbConnector';
 import { ClickHouseConnectorOptions } from '../types';
+import {
+  APM_METRIC_TABLES,
+  ApmMetricPointsQueryOptions,
+  buildApmMetricAttributesQuery,
+  buildApmMetricCatalogQuery,
+  buildApmMetricPointsQuery,
+  buildApmMetricTablesQuery,
+} from './apmMetrics';
 
 export const CLICKHOUSE_DS_ID = 'grafana-clickhouse-datasource';
 
@@ -76,6 +84,69 @@ export class ClickHouseConnector {
       GROUP BY metric, time
       ORDER BY time ASC
     `;
+  }
+
+  /**
+   * Whether the database of the ClickHouse data source holds the Zabbix 8.0 telemetry
+   * tables for APM (OpenTelemetry) metrics. Zabbix can keep telemetry in another
+   * database than history, in which case APM metrics have to be read through the API.
+   */
+  async hasApmMetricTables(): Promise<boolean> {
+    const rows = await this.queryRows(buildApmMetricTablesQuery());
+    return Number(rows[0]?.tables) === APM_METRIC_TABLES.length;
+  }
+
+  /**
+   * APM metric data points, newest first and downsampled to one point per series and
+   * interval. Every point is returned as a JSON object string with the property names
+   * of the apmmetric.get API. The strings are not parsed here: nanosecond timestamps
+   * do not fit a JavaScript number, and the plugin backend reads them as they are.
+   */
+  async getApmMetricPoints(options: ApmMetricPointsQueryOptions): Promise<string[]> {
+    const rows = await this.queryRows(buildApmMetricPointsQuery(options));
+    return rows.map((row) => String(row.point));
+  }
+
+  /** Distinct services and metrics that have data in the time range. */
+  getApmMetricCatalogRows(timeFrom: number, timeTill: number, services: string[], limit: number) {
+    return this.queryRows(buildApmMetricCatalogQuery(timeFrom, timeTill, services, limit));
+  }
+
+  /** Distinct attribute sets of a metric, with the attribute maps parsed. */
+  async getApmMetricAttributeRows(
+    timeFrom: number,
+    timeTill: number,
+    metrics: string[],
+    services: string[],
+    limit: number
+  ) {
+    const rows = await this.queryRows(buildApmMetricAttributesQuery(timeFrom, timeTill, metrics, services, limit));
+    return rows.map((row) => ({
+      attributes: JSON.parse(row.attributes || '{}'),
+      resource_attributes: JSON.parse(row.resource_attributes || '{}'),
+    }));
+  }
+
+  /**
+   * Runs a query and returns its rows as objects keyed by column name. The query is
+   * sent as it is: compacting whitespace would also change quoted filter values.
+   */
+  async queryRows(query: string): Promise<Array<Record<string, any>>> {
+    const frames: DataFrameJSON[] = (await this.invokeClickHouseQuery(query)) || [];
+    const rows: Array<Record<string, any>> = [];
+    for (const frame of frames) {
+      const fields = frame?.schema?.fields ?? [];
+      const values = frame?.data?.values ?? [];
+      const length = values[0]?.length ?? 0;
+      for (let i = 0; i < length; i++) {
+        const row: Record<string, any> = {};
+        fields.forEach((field, column) => {
+          row[field.name] = values[column][i];
+        });
+        rows.push(row);
+      }
+    }
+    return rows;
   }
 
   invokeClickHouseQuery(query: string) {

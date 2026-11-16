@@ -45,6 +45,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   disableReadOnlyUsersAck: boolean;
   disableDataAlignment: boolean;
   enableDirectDBConnection: boolean;
+  // Set once the Direct DB Connection finished initializing (see query())
+  dbConnectorChecked = false;
   enableDebugLog: boolean;
   instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>;
   zabbix: Zabbix;
@@ -102,6 +104,17 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
    * @return {Object} Grafana metrics object with timeseries data for each target.
    */
   query(request: DataQueryRequest<ZabbixMetricsQuery>): Observable<DataQueryResponse> {
+    // Whether APM metrics are read from ClickHouse or through the API is known only once
+    // the Direct DB Connection is initialized: wait for it before routing the first query
+    if (this.enableDirectDBConnection && !this.dbConnectorChecked && request.targets.some(utils.isApmMetricsTarget)) {
+      return from(Promise.resolve(this.zabbix.dbConnectorReady)).pipe(
+        switchMap(() => {
+          this.dbConnectorChecked = true;
+          return this.query(request);
+        })
+      );
+    }
+
     trackRequest(request);
 
     // Migrate old targets
@@ -231,7 +244,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         const timeRange = this.buildTimeRange(request, target);
         const useTrends = this.isUseTrends(timeRange, target);
 
-        if (!target.queryType || target.queryType === c.MODE_METRICS) {
+        if (utils.isApmMetricsTarget(target)) {
+          return this.queryApmMetricsDB(target, timeRange, request);
+        } else if (!target.queryType || target.queryType === c.MODE_METRICS) {
           return this.queryNumericData(target, timeRange, useTrends, request);
         } else if (target.queryType === c.MODE_ITEMID) {
           // Item ID query
@@ -307,6 +322,58 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       to: timeRange[1],
     };
     return await this.invokeDataProcessingQuery(history, target, range);
+  }
+
+  /**
+   * Query APM (OpenTelemetry) metrics from the Zabbix telemetry tables in ClickHouse
+   * (Direct DB Connection). ClickHouse downsamples the data points to the query
+   * interval, the plugin backend converts them the same way as points read through
+   * the Zabbix API.
+   */
+  async queryApmMetricsDB(target: ZabbixMetricsQuery, timeRange: number[], request): Promise<any> {
+    const apmQuery = target.apmMetric ?? {};
+    if (!apmQuery.metric) {
+      // The query is not complete yet
+      return [];
+    }
+
+    const limit = Math.min(
+      Math.max(Math.floor(Number(apmQuery.maxPoints)) || c.DEFAULT_APM_METRICS_MAX_POINTS, 1),
+      c.MAX_APM_METRICS_MAX_POINTS
+    );
+    const intervalMs = Math.max(Number(request.intervalMs) || 0, 1000);
+    const intervalSec = Math.ceil(intervalMs / 1000);
+
+    // One extra point tells whether the result was cut
+    const points = await this.zabbix.getApmMetricPointsDB(apmQuery, timeRange, intervalSec, limit + 1);
+    const truncated = points.length > limit;
+    if (truncated) {
+      points.length = limit;
+    }
+
+    // The points are JSON object strings: they are put into the request body as they
+    // are, because nanosecond timestamps do not survive JSON.parse
+    const head = JSON.stringify({
+      query: target,
+      timeRange: { from: timeRange[0], to: timeRange[1] },
+      intervalMs: intervalSec * 1000,
+      maxDataPoints: request.maxDataPoints,
+      apmTruncated: truncated,
+    });
+    const body = `${head.slice(0, -1)},"apmPoints":[${points.join(',')}]}`;
+
+    const response: any = await lastValueFrom(
+      getBackendSrv().fetch<any>({
+        url: `/api/datasources/uid/${this.instanceSettings.uid}/resources/db-connection-post`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        hideFromInspector: false,
+        data: body,
+      })
+    );
+    return this.handleBackendPostProcessingResponse(response.data, request, target);
   }
 
   async invokeDataProcessingQuery(timeSeriesData, query, timeRange) {
@@ -939,9 +1006,10 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   }
 
   isBackendTarget = (target: any): boolean => {
-    // APM metrics are only available over the Zabbix API, also with Direct DB Connection
+    // APM metrics use the Zabbix API, unless Direct DB Connection is a ClickHouse
+    // database that holds the Zabbix telemetry tables
     if (utils.isApmMetricsTarget(target)) {
-      return true;
+      return !this.isApmMetricsDirectDB();
     }
 
     if (this.enableDirectDBConnection) {
@@ -953,10 +1021,14 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   isDBConnectionTarget = (target: any): boolean => {
     if (utils.isApmMetricsTarget(target)) {
-      return false;
+      return this.isApmMetricsDirectDB();
     }
     return this.enableDirectDBConnection && (target.queryType === c.MODE_METRICS || target.queryType === c.MODE_ITEMID);
   };
+
+  isApmMetricsDirectDB(): boolean {
+    return this.enableDirectDBConnection && this.zabbix.apmMetricsDirectDB === true;
+  }
 
   mergeQueries(
     queryResponse: DataQueryResponse,

@@ -13,6 +13,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // Resource handler describes handlers for the resources populated by plugin in plugin.go, like:
@@ -175,9 +176,17 @@ func (ds *ZabbixDatasource) DBConnectionPostProcessingHandler(rw http.ResponseWr
 	reqData.Query.TimeRange.From = time.Unix(reqData.TimeRange.From, 0)
 	reqData.Query.TimeRange.To = time.Unix(reqData.TimeRange.To, 0)
 
-	frames, err := dsInstance.applyDataProcessing(ctx, &reqData.Query, reqData.Series, true)
+	var frames []*data.Frame
+	if reqData.Query.MetricsSource == MetricsSourceAPM {
+		reqData.Query.Interval = time.Duration(reqData.IntervalMs) * time.Millisecond
+		reqData.Query.MaxDataPoints = reqData.MaxDataPoints
+		frames, err = dsInstance.processAPMMetricsFromDB(&reqData.Query, reqData.APMPoints, reqData.APMTruncated)
+	} else {
+		frames, err = dsInstance.applyDataProcessing(ctx, &reqData.Query, reqData.Series, true)
+	}
 	if err != nil {
 		writeError(rw, http.StatusInternalServerError, err)
+		return
 	}
 
 	resultJson, err := json.Marshal(frames)

@@ -22,6 +22,7 @@ export const METRICS_SOURCE_APM = 'apm';
 export const ZABBIX_APM_METRICS_MIN_VERSION = '8.0.0';
 // Raw data points one APM metrics query fetches by default (apmmetric.get cannot downsample)
 export const DEFAULT_APM_METRICS_MAX_POINTS = 50000;
+export const MAX_APM_METRICS_MAX_POINTS = 500000;
 // Newest data points sampled to suggest services, metric names and attributes in the query editor
 export const APM_METRICS_LOOKUP_LIMIT = 5000;
 // APM metric data point types

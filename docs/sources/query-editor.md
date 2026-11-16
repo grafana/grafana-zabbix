@@ -101,7 +101,7 @@ The **Service**, **Metric**, and attribute drop-downs list what the plugin finds
 
 Keep the following in mind when you query APM metrics:
 
-- **Zabbix returns raw data points.** The Zabbix API can't aggregate or downsample APM metrics, so the plugin fetches every data point in the time range and processes it in the plugin backend. A query over a long time range or over many series can reach the **Point limit**. When it does, the plugin keeps the newest data points and shows a warning on the panel. Narrow the time range, add attribute filters, or raise the limit. **Group by** reduces the number of returned series, but not the number of fetched data points.
+- **The Zabbix API returns raw data points.** The Zabbix API can't aggregate or downsample APM metrics, so the plugin fetches every data point in the time range and processes it in the plugin backend. A query over a long time range or over many series can reach the **Point limit**. When it does, the plugin keeps the newest data points and shows a warning on the panel. Narrow the time range, add attribute filters, or raise the limit. **Group by** reduces the number of returned series, but not the number of fetched data points. To have the database downsample the data instead, refer to [APM metrics with Direct DB Connection](#apm-metrics-with-direct-db-connection).
 - **Large queries take time.** The plugin fetches the data points in pages of 10,000, so that a response fits in the default PHP memory limit of the Zabbix frontend. Expect roughly one second per page.
 - **A query can return at most 1,000 series.** Add attribute filters or group by fewer labels if a query matches more.
 - **Rates and quantiles need two data points.** For metrics with cumulative temporality, the first data point of each series in the time range has no value.
@@ -356,7 +356,16 @@ Without `consolidateBy`, the database aggregates using the default `AVG` functio
 
 When the Direct DB Connection data source is ClickHouse (Zabbix 8.0 history storage), all queries are served from the history tables because Zabbix doesn't store trends in ClickHouse. The trends settings of the Zabbix data source have no effect on the returned data in this case.
 
-Direct DB Connection doesn't apply to APM metrics. Metrics queries with the **APM metrics** source always use the Zabbix API, also when Direct DB Connection is enabled.
+### APM metrics with Direct DB Connection
+
+When the Direct DB Connection data source is ClickHouse and its database holds the Zabbix telemetry tables (`otel_metrics_gauge`, `otel_metrics_sum`, `otel_metrics_histogram`, and `otel_metrics_exponential_histogram`), Metrics queries with the **APM metrics** source read from ClickHouse instead of the Zabbix API. The plugin detects the tables automatically. You build the queries the same way and get the same series, with the following differences:
+
+- **The data is downsampled in ClickHouse.** Each series is reduced to one data point per query interval before it's returned: the average for gauges, the last value for cumulative sums and histograms, and the total for delta sums and histograms. Long time ranges therefore need far fewer data points than through the Zabbix API, where every raw data point is fetched. The **Point limit** applies to the downsampled data points.
+- **The drop-downs are complete.** The **Service**, **Metric**, and attribute drop-downs list everything that has data in the dashboard time range, instead of a sample of the most recent data points.
+- **Zabbix permissions don't apply.** As with item data, queries run with the credentials of the ClickHouse data source, so the APM filters of Zabbix user groups aren't enforced.
+- **Alert rules still use the Zabbix API.** Alert rules are evaluated by the plugin backend, which can't query another data source.
+
+If Zabbix keeps its telemetry data in a different ClickHouse database or server than the one the Direct DB Connection data source points to, the tables aren't found and APM metrics keep using the Zabbix API. For any other Direct DB Connection data source type, APM metrics always use the Zabbix API.
 
 ## Next steps
 
