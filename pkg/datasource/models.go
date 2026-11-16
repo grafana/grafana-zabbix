@@ -3,7 +3,9 @@ package datasource
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
@@ -119,6 +121,8 @@ func ReadQuery(query backend.DataQuery) (QueryModel, error) {
 		return model, backend.DownstreamError(fmt.Errorf("could not read query: %w", err))
 	}
 
+	migrateApplicationFilter(query.JSON, &model)
+
 	if model.QueryType == "" {
 		queryJSON, err := simplejson.NewJson(query.JSON)
 		if err != nil {
@@ -136,4 +140,39 @@ func ReadQuery(query backend.DataQuery) (QueryModel, error) {
 	}
 
 	return model, nil
+}
+
+var regexFilterPattern = regexp.MustCompile(`^/(.+)/([a-z]*)$`)
+
+// applicationFilterToItemTagFilter converts an application filter to the equivalent item
+// tag filter. Zabbix turns each application into an "Application: <name>" item tag when
+// upgrading to 5.4. A regex filter becomes a regex over the whole tag string; a leading
+// "^" keeps anchoring the application name. Mirrors the frontend query migration.
+func applicationFilterToItemTagFilter(appFilter string) string {
+	matches := regexFilterPattern.FindStringSubmatch(appFilter)
+	if matches == nil {
+		return "Application: " + appFilter
+	}
+	pattern, flags := matches[1], matches[2]
+	name := ".*(?:" + pattern + ")"
+	if strings.HasPrefix(pattern, "^") {
+		name = "(?:" + pattern[1:] + ")"
+	}
+	return "/^Application: " + name + "/" + flags
+}
+
+// migrateApplicationFilter carries a saved application filter over to the item tag filter
+// when the query has none. Queries evaluated without going through the query editor (alert
+// rules, for example) still hold the application filter they were saved with.
+func migrateApplicationFilter(queryJSON []byte, model *QueryModel) {
+	if model.ItemTag.Filter != "" {
+		return
+	}
+	var legacy struct {
+		Application QueryFilter `json:"application"`
+	}
+	if err := json.Unmarshal(queryJSON, &legacy); err != nil || legacy.Application.Filter == "" {
+		return
+	}
+	model.ItemTag.Filter = applicationFilterToItemTagFilter(legacy.Application.Filter)
 }

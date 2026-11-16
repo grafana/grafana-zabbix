@@ -1,7 +1,14 @@
 import _ from 'lodash';
 import { getDataSourceSrv } from '@grafana/runtime';
-import { getUIDFromID, migrate, migrateDSConfig, DS_CONFIG_SCHEMA, DS_QUERY_SCHEMA } from './migrations';
-import { problemTagsToQueryParam } from './utils';
+import {
+  applicationFilterToItemTagFilter,
+  getUIDFromID,
+  migrate,
+  migrateDSConfig,
+  DS_CONFIG_SCHEMA,
+  DS_QUERY_SCHEMA,
+} from './migrations';
+import { buildRegex, problemTagsToQueryParam } from './utils';
 import * as c from './constants';
 
 // Mock getDataSourceSrv from @grafana/runtime
@@ -203,6 +210,85 @@ describe('Migrations', () => {
       const target = migrate(problemsTarget({ tags: { filter: '' } }));
 
       expect(target.problemTags).toBeUndefined();
+    });
+  });
+
+  describe('When migrating application filters', () => {
+    const metricsTarget = (overrides: any = {}) => ({
+      schema: DS_QUERY_SCHEMA,
+      queryType: c.MODE_METRICS,
+      group: { filter: 'Linux servers' },
+      host: { filter: 'backend01' },
+      application: { filter: '' },
+      itemTag: { filter: '' },
+      item: { filter: '/.*/' },
+      ...overrides,
+    });
+
+    it('should move the application filter to an empty item tag filter', () => {
+      // The shape every query saved since item tags were added has: itemTag present but empty.
+      const target = migrate(metricsTarget({ application: { filter: 'CPU' } }));
+      expect(target.itemTag).toEqual({ filter: 'Application: CPU' });
+      expect(target.application).toBeUndefined();
+    });
+
+    it('should move the application filter when the query has no item tag filter at all', () => {
+      const legacy = metricsTarget({ application: { filter: 'CPU' } });
+      delete legacy.itemTag;
+      const target = migrate(legacy);
+      expect(target.itemTag).toEqual({ filter: 'Application: CPU' });
+      expect(target.application).toBeUndefined();
+    });
+
+    it('should keep an existing item tag filter and drop the application filter', () => {
+      const target = migrate(
+        metricsTarget({ application: { filter: 'CPU' }, itemTag: { filter: 'component: memory' } })
+      );
+      expect(target.itemTag).toEqual({ filter: 'component: memory' });
+      expect(target.application).toBeUndefined();
+    });
+
+    it('should leave the item tag filter empty when there is no application filter', () => {
+      const target = migrate(metricsTarget());
+      expect(target.itemTag).toEqual({ filter: '' });
+      expect(target.application).toBeUndefined();
+    });
+
+    it('should not bring the filter back after the user clears the item tag filter', () => {
+      const migrated = migrate(metricsTarget({ application: { filter: 'CPU' } }));
+      const cleared = migrate({ ...migrated, itemTag: { filter: '' } });
+      expect(cleared.itemTag).toEqual({ filter: '' });
+    });
+
+    it('should keep template variables in the application filter', () => {
+      const target = migrate(metricsTarget({ application: { filter: '$app' } }));
+      expect(target.itemTag).toEqual({ filter: 'Application: $app' });
+    });
+
+    describe('with a regex application filter', () => {
+      const matches = (appFilter: string, appName: string) =>
+        buildRegex(applicationFilterToItemTagFilter(appFilter)).test(`Application: ${appName}`);
+
+      it('should produce a regex over the whole tag string', () => {
+        expect(applicationFilterToItemTagFilter('/CPU/')).toBe('/^Application: .*(?:CPU)/');
+        expect(applicationFilterToItemTagFilter('/^CPU/i')).toBe('/^Application: (?:CPU)/i');
+      });
+
+      it('should match the same application names as the original filter', () => {
+        expect(matches('/CPU/', 'CPU')).toBe(true);
+        expect(matches('/CPU/', 'Linux CPU load')).toBe(true);
+        expect(matches('/CPU/', 'Memory')).toBe(false);
+        expect(matches('/^CPU/', 'CPU load')).toBe(true);
+        expect(matches('/^CPU/', 'Linux CPU')).toBe(false);
+        expect(matches('/CPU|Memory/', 'Memory')).toBe(true);
+        expect(matches('/^(CPU|Memory)$/', 'Memory')).toBe(true);
+        expect(matches('/^(CPU|Memory)$/', 'Memory usage')).toBe(false);
+        expect(matches('/cpu/i', 'CPU')).toBe(true);
+      });
+
+      it('should not match tags other than Application', () => {
+        expect(buildRegex(applicationFilterToItemTagFilter('/CPU/')).test('component: CPU')).toBe(false);
+      });
     });
   });
 

@@ -77,13 +77,36 @@ function migrateProblemSort(target) {
   }
 }
 
+const REGEX_FILTER = /^\/(.*)\/([gmi]*)$/;
+
+/**
+ * Converts an application filter to the equivalent item tag filter. Zabbix turns each
+ * application into an `Application: <name>` item tag when upgrading to 5.4.
+ * A regex filter becomes a regex over the whole `Application: <name>` tag string; a
+ * leading `^` keeps anchoring the application name.
+ */
+export function applicationFilterToItemTagFilter(appFilter: string): string {
+  const regex = appFilter.match(REGEX_FILTER);
+  if (!regex) {
+    return `Application: ${appFilter}`;
+  }
+  const [, pattern, flags] = regex;
+  const name = pattern.startsWith('^') ? `(?:${pattern.slice(1)})` : `.*(?:${pattern})`;
+  return `/^Application: ${name}/${flags}`;
+}
+
+// Applications were removed in Zabbix 5.4 and the plugin no longer filters by them.
+// Carry a saved application filter over to the item tag filter, unless one is already
+// set, and drop the application so this runs once per query.
 function migrateApplications(target) {
   if (!target.itemTag) {
     target.itemTag = { filter: '' };
-    if (target.application?.filter) {
-      target.itemTag.filter = `Application: ${target.application?.filter}`;
-    }
   }
+  const appFilter = target.application?.filter;
+  if (appFilter && !target.itemTag.filter) {
+    target.itemTag = { ...target.itemTag, filter: applicationFilterToItemTagFilter(appFilter) };
+  }
+  delete target.application;
 }
 
 function migrateSLAProperty(target) {
