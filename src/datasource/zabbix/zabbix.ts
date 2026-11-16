@@ -127,6 +127,8 @@ export class Zabbix implements ZabbixConnector {
   zabbixAPI: ZabbixAPIConnector;
   getHistoryDB: any;
   dbConnector: InfluxDBConnector | SQLConnector;
+  /** Settles when the DB connector set up by the constructor is ready, or failed */
+  dbConnectorReady: Promise<void> = Promise.resolve();
   getTrendsDB: any;
   version: string;
 
@@ -181,7 +183,11 @@ export class Zabbix implements ZabbixConnector {
 
     if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceId || dbConnectionDatasourceName)) {
       const connectorOptions: any = { dbConnectionRetentionPolicy, dbConnectionDatasourceId };
-      this.initDBConnector(dbConnectionDatasourceUID, dbConnectionDatasourceName, connectorOptions)
+      this.dbConnectorReady = this.initDBConnector(
+        dbConnectionDatasourceUID,
+        dbConnectionDatasourceName,
+        connectorOptions
+      )
         .then(() => {
           this.getHistoryDB = this.cachingProxy.proxifyWithCache(
             this.dbConnector.getHistory,
@@ -254,6 +260,9 @@ export class Zabbix implements ZabbixConnector {
    * Perform test query for Zabbix API and external history DB.
    */
   async testDataSource() {
+    // The DB connector is set up asynchronously, so a test right after the data source
+    // is created would otherwise skip it
+    await this.dbConnectorReady;
     if (this.enableDirectDBConnection && this.dbConnector) {
       const testResult = await this.dbConnector.testDataSource();
       return testResult;

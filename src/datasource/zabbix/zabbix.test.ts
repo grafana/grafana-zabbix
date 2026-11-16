@@ -137,6 +137,23 @@ describe('Zabbix', () => {
     });
   });
 
+  describe('testDataSource', () => {
+    it('waits for the DB connector the constructor sets up before testing it', async () => {
+      let resolveDataSource: (ds: unknown) => void = () => {};
+      getMock.mockImplementationOnce(() => new Promise((resolve) => (resolveDataSource = resolve)));
+      const zabbixWithPendingDB = new Zabbix(ctx);
+
+      const testResult = zabbixWithPendingDB.testDataSource();
+      resolveDataSource({
+        type: 'influxdb',
+        name: 'InfluxDB DS',
+        testDatasource: jest.fn().mockResolvedValue({ status: 'success' }),
+      });
+
+      await expect(testResult).resolves.toMatchObject({ dsType: 'influxdb', dsName: 'InfluxDB DS' });
+    });
+  });
+
   describe('When querying proxies', () => {
     beforeEach(() => {
       zabbix.zabbixAPI.getProxies = jest.fn().mockResolvedValue([
