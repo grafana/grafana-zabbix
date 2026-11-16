@@ -435,7 +435,14 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 		params["monitored"] = true
 	}
 
-	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "item.get", Params: params})
+	// lastvalue/lastclock are live metric values, so a request asking for them must not be served
+	// from (or stored in) the response cache that item.get otherwise uses for item metadata.
+	request := ds.Request
+	if withLastValue {
+		request = ds.requestUncached
+	}
+
+	result, err := request(ctx, &ZabbixAPIRequest{Method: "item.get", Params: params})
 	if err != nil {
 		return nil, err
 	}

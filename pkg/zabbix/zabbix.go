@@ -198,6 +198,23 @@ func isNotAuthorized(err error) bool {
 		strings.Contains(message, "Not authorized.")
 }
 
+// requestUncached performs an API request without reading from or writing to the response cache.
+//
+// Requests whose response carries live metric values must use it: item.get is cached for the data
+// source cache TTL (1h by default) because it normally returns item metadata only, so an item.get
+// asking for lastvalue/lastclock would otherwise keep serving the same values for that long.
+func (ds *Zabbix) requestUncached(ctx context.Context, apiReq *ZabbixAPIRequest) (*simplejson.Json, error) {
+	version, err := ds.GetVersion(ctx)
+	if err != nil {
+		ds.logger.Error("Error querying Zabbix version", "error", err)
+		ds.version = -1
+	} else {
+		ds.version = version
+	}
+
+	return ds.request(ctx, apiReq.Method, apiReq.Params)
+}
+
 // GetItemsWithLastValue fetches items of the given type ("num" or "text") with their lastvalue populated.
 func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, itemType string) ([]*Item, error) {
 	var allItems []*Item
