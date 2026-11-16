@@ -41,6 +41,16 @@ func TestReadQueryMigratesApplicationFilter(t *testing.T) {
 			expected: "",
 		},
 		{
+			name:     "match-all regex application filter is dropped",
+			json:     `{"queryType":"0","application":{"filter":"/.*/"},"itemTag":{"filter":""}}`,
+			expected: "",
+		},
+		{
+			name:     "application filter with a template variable is dropped",
+			json:     `{"queryType":"0","application":{"filter":"$app"},"itemTag":{"filter":""}}`,
+			expected: "",
+		},
+		{
 			name:     "regex application filter",
 			json:     `{"queryType":"0","application":{"filter":"/^CPU/i"},"itemTag":{"filter":""}}`,
 			expected: "/^Application: (?:CPU)/i",
@@ -77,4 +87,20 @@ func TestApplicationFilterToItemTagFilterRegex(t *testing.T) {
 	// Never matches tags other than Application.
 	m := regexFilterPattern.FindStringSubmatch(applicationFilterToItemTagFilter("/CPU/"))
 	assert.False(t, regexp.MustCompile(m[1]).MatchString("component: CPU"))
+}
+
+func TestApplicationFilterToItemTagFilterDropped(t *testing.T) {
+	dropped := []string{
+		// Match-all regexes.
+		"/.*/", "/^.*$/", "/^.*/", "/.*$/", "/.+/", "//", "/.*/i",
+		// Template variables.
+		"$app", "${app}", "${app:regex}", "[[app]]", "/$app/", "CPU $suffix", "/^(${app:pipe})$/",
+	}
+	for _, filter := range dropped {
+		assert.Equal(t, "", applicationFilterToItemTagFilter(filter), "filter %q", filter)
+	}
+
+	// A trailing $ anchor alone is not a variable and not match-all.
+	assert.Equal(t, "/^Application: (?:CPU$)/", applicationFilterToItemTagFilter("/^CPU$/"))
+	assert.Equal(t, "Application: CPU", applicationFilterToItemTagFilter("CPU"))
 }

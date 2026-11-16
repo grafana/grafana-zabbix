@@ -142,18 +142,36 @@ func ReadQuery(query backend.DataQuery) (QueryModel, error) {
 	return model, nil
 }
 
-var regexFilterPattern = regexp.MustCompile(`^/(.+)/([a-z]*)$`)
+var regexFilterPattern = regexp.MustCompile(`^/(.*)/([a-z]*)$`)
+
+// templateVariablePattern matches Grafana template variables: $name, ${name...} and [[name]].
+var templateVariablePattern = regexp.MustCompile(`\$\w+|\$\{\w+|\[\[.+?\]\]`)
+
+// matchAllPatterns are regex bodies that match every application name, once any ^ and $
+// anchors are removed.
+var matchAllPatterns = map[string]bool{"": true, ".*": true, ".+": true}
 
 // applicationFilterToItemTagFilter converts an application filter to the equivalent item
 // tag filter. Zabbix turns each application into an "Application: <name>" item tag when
 // upgrading to 5.4. A regex filter becomes a regex over the whole tag string; a leading
 // "^" keeps anchoring the application name. Mirrors the frontend query migration.
+//
+// It returns an empty string, meaning no filter, when carrying the filter over would hide
+// items that are returned today: a match-all regex such as /.*/ would keep only items that
+// still carry an Application tag, and a filter with a template variable would depend on a
+// variable that can no longer be populated with application names.
 func applicationFilterToItemTagFilter(appFilter string) string {
+	if templateVariablePattern.MatchString(appFilter) {
+		return ""
+	}
 	matches := regexFilterPattern.FindStringSubmatch(appFilter)
 	if matches == nil {
 		return "Application: " + appFilter
 	}
 	pattern, flags := matches[1], matches[2]
+	if matchAllPatterns[strings.TrimSuffix(strings.TrimPrefix(pattern, "^"), "$")] {
+		return ""
+	}
 	name := ".*(?:" + pattern + ")"
 	if strings.HasPrefix(pattern, "^") {
 		name = "(?:" + pattern[1:] + ")"

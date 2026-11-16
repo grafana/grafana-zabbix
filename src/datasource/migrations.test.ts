@@ -252,9 +252,29 @@ describe('Migrations', () => {
       expect(cleared.itemTag).toEqual({ filter: '' });
     });
 
-    it('should keep template variables in the application filter', () => {
-      const target = migrate(metricsTarget({ application: { filter: '$app' } }));
-      expect(target.itemTag).toEqual({ filter: 'Application: $app' });
+    it.each(['$app', '${app}', '${app:regex}', '[[app]]', '/$app/', 'CPU $suffix', '/^(${app:pipe})$/'])(
+      'should drop an application filter that uses a template variable (%s)',
+      (filter) => {
+        // Application variables no longer resolve, so the filter would empty the panel.
+        const target = migrate(metricsTarget({ application: { filter } }));
+        expect(target.itemTag).toEqual({ filter: '' });
+        expect(target.application).toBeUndefined();
+      }
+    );
+
+    it.each(['/.*/', '/^.*$/', '/^.*/', '/.*$/', '/.+/', '//', '/.*/i'])(
+      'should drop a match-all application filter (%s)',
+      (filter) => {
+        // An Application tag regex would hide items that have no Application tag.
+        const target = migrate(metricsTarget({ application: { filter } }));
+        expect(target.itemTag).toEqual({ filter: '' });
+        expect(target.application).toBeUndefined();
+      }
+    );
+
+    it('should still migrate regex filters that only end with a $ anchor', () => {
+      const target = migrate(metricsTarget({ application: { filter: '/^CPU$/' } }));
+      expect(target.itemTag).toEqual({ filter: '/^Application: (?:CPU$)/' });
     });
 
     describe('with a regex application filter', () => {
