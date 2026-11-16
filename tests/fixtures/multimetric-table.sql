@@ -127,9 +127,12 @@ DELETE FROM history      WHERE itemid BETWEEN 9000201 AND 9000299;
 DELETE FROM history_uint WHERE itemid BETWEEN 9000201 AND 9000299;
 DELETE FROM history_str  WHERE itemid BETWEEN 9000201 AND 9000299;
 
--- interface counters (bps): base + sawtooth over 60 samples; eth2(DMZ) is a genuine constant 0
+-- interface counters (bps): base + sawtooth over 60 samples; eth2(DMZ) is a genuine constant 0.
+-- The sawtooth phase is counted back from the newest sample (not taken from the absolute clock),
+-- so the newest value, which is what the "last" aggregation returns, is always exactly `base`
+-- no matter when the fixture is loaded.
 INSERT INTO history_uint (itemid, clock, value, ns)
-SELECT s.itemid, gs, s.base + (gs / 300 % 60) * s.step, 0
+SELECT s.itemid, gs, s.base + ((EXTRACT(EPOCH FROM now())::int - gs) / 300 % 60) * s.step, 0
 FROM (VALUES
   (9000211, 5000000, 50000), (9000212, 2000000, 20000),
   (9000221, 1000000, 10000), (9000222,  800000,  8000),
@@ -157,9 +160,10 @@ FROM unnest(ARRAY[9000263, 9000273, 9000283]::bigint[]) AS it
 CROSS JOIN generate_series(EXTRACT(EPOCH FROM now())::int - 604800, EXTRACT(EPOCH FROM now())::int, 300) AS gs
 ON CONFLICT DO NOTHING;
 
--- float utilization (%): base + sawtooth; 9000285 (vm-c Swap utilization) has no history on purpose
+-- float utilization (%): base + sawtooth (newest value = base, see above); 9000285 (vm-c Swap
+-- utilization) has no history on purpose
 INSERT INTO history (itemid, clock, value, ns)
-SELECT s.itemid, gs, (s.base + (gs / 300 % s.period) * s.step)::double precision, 0
+SELECT s.itemid, gs, (s.base + ((EXTRACT(EPOCH FROM now())::int - gs) / 300 % s.period) * s.step)::double precision, 0
 FROM (VALUES
   (9000261, 10.0, 1.0,  40),
   (9000262, 40.0, 0.5,  20),

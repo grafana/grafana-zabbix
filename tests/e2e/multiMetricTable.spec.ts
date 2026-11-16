@@ -11,6 +11,9 @@ import { test, expect, PluginFixture, PlaywrightArgs } from '@grafana/plugin-e2e
  *   - e2e-mm-router-b: eth0(WAN), eth1(LAN); the eth1 Speed item never received a value.
  *   - e2e-mm-vm-c: host-level items only; its Swap utilization item never received a value.
  *
+ * Sawtooth items are seeded so that their newest value always equals the sawtooth base,
+ * which keeps the "last" values asserted below independent of when the fixture was loaded.
+ *
  * Each panel of provisioning/dashboards/multimetric-table.json covers one scenario. The
  * tests open a panel in view mode, capture the backend response (the frames carry the
  * exact values, including nulls) and check what the table renders.
@@ -101,8 +104,8 @@ test.describe('Multi-metric Table: rows from Item pattern (LLD entities)', () =>
     // Rows are de-duplicated per host + extracted values; values join on the same key.
     expect(row(table, { Host: ROUTER_A, Interface: 'eth0' })).toMatchObject({
       Alias: 'WAN',
-      'Bits in': '6000000',
-      'Bits out': '2400000',
+      'Bits in': '5000000',
+      'Bits out': '2000000',
       Status: '1',
       Speed: '1000000000',
       Description: 'Uplink to ISP',
@@ -117,11 +120,11 @@ test.describe('Multi-metric Table: rows from Item pattern (LLD entities)', () =>
     });
 
     // An item that never received a value is null, not the "0" Zabbix reports as lastvalue.
-    expect(row(table, { Host: ROUTER_B, Interface: 'eth1' })).toMatchObject({ Speed: null, 'Bits in': '1080000' });
+    expect(row(table, { Host: ROUTER_B, Interface: 'eth1' })).toMatchObject({ Speed: null, 'Bits in': '900000' });
 
     const panel = dashboardPage.getPanelByTitle('1. LLD rows (Item pattern): extracted columns, multi-host, last');
     await expect(panel.fieldNames).toContainText(['Host', 'Interface', 'Alias', 'Bits in', 'Bits out', 'Status']);
-    await expect(panel.data).toContainText([ROUTER_A, 'eth0', 'WAN', '6000000']);
+    await expect(panel.data).toContainText([ROUTER_A, 'eth0', 'WAN', '5000000']);
   });
 
   test('history aggregations for a single host with Group and Host columns', async ({
@@ -179,8 +182,8 @@ test.describe('Multi-metric Table: rows from Item pattern (LLD entities)', () =>
     expect(rows(table)).toHaveLength(5);
     // Interface comes from the key (net.if.in[eth0]), values are matched on keys too.
     expect(row(table, { Host: ROUTER_B, Interface: 'eth0' })).toMatchObject({
-      'Bits in': '4800000',
-      'Bits out': '1800000',
+      'Bits in': '4000000',
+      'Bits out': '1500000',
       Status: '1',
     });
   });
@@ -214,7 +217,7 @@ test.describe('Multi-metric Table: rows from Hosts', () => {
     // "CPU utilization" is an exact match: the "Process zabbix_server: CPU utilization"
     // item (constant 2.5) on router-a must not be picked up.
     const routerA = row(table, { Host: ROUTER_A });
-    expect(routerA).toMatchObject({ Group: 'E2E Multi-metric', CPU: '30', Memory: '40', OS: 'Linux 6.8.0 router-a' });
+    expect(routerA).toMatchObject({ Group: 'E2E Multi-metric', CPU: '10', Memory: '40', OS: 'Linux 6.8.0 router-a' });
     expect(routerA.CPU).not.toBe('2.5');
 
     // vm-c has a Swap item that never received a value (Zabbix reports lastvalue "0"),
@@ -247,7 +250,7 @@ test.describe('Multi-metric Table: rows from Hosts', () => {
 
     expect(fieldNames(table)).toEqual(['Host', 'CPU']);
     expect(rows(table).map((r) => [r.Host, r.CPU])).toEqual([
-      [ROUTER_A, '30'],
+      [ROUTER_A, '10'],
       [ROUTER_B, '30'],
       [VM_C, '60'],
     ]);
