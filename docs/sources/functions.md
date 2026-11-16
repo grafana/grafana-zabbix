@@ -24,6 +24,8 @@ review_date: 2026-09-08
 
 Functions let you transform, aggregate, and manipulate time series data returned by Zabbix queries. Add functions to a query by clicking the **+** button next to the query row in the query editor. Functions are available for the **Metrics**, **Item ID**, and **Services** query types.
 
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-functions-dashboard.png" alt="Dashboard of six panels built with Zabbix functions: stacked CPU time per host, raw CPU samples with an aggregateBy(10m, avg) line, a 30-day daily min/max band and average from trendValue and groupBy, load average with average and median across hosts, requests per second with a sumSeries total, and API latency with movingAverage and percentile" width="1600" height="1070" >}}
+
 ## Chain functions
 
 You can add several functions to a query. They're applied in order, top to bottom, with each function receiving the output of the one before it. For example, the following pipeline first aligns points to 1-minute intervals, then keeps only the five highest series:
