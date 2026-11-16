@@ -47,6 +47,13 @@ services:
       POSTGRES_USER: zabbix
       POSTGRES_PASSWORD: zabbix
       POSTGRES_DB: zabbix
+    # The server creates the database schema on first start and only begins
+    # listening once that is done, so an open trapper port means the schema exists.
+    healthcheck:
+      test: ['CMD-SHELL', 'nc -z localhost 10051 || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 60
 
   zabbix-web:
     image: zabbix/zabbix-web-apache-pgsql:alpine-${ZABBIX_VERSION:-7.0}-latest
@@ -73,10 +80,13 @@ services:
   # order, then exits. Grafana waits for it. New feature-specific fixtures can live
   # alongside seed.sql without creating merge conflicts when multiple PRs add
   # fixtures. $$f (not $f) so docker compose passes a literal $ to the shell.
-  # Depends on zabbix-web being healthy so the Zabbix DB schema already exists.
+  # Depends on zabbix-server being healthy so the Zabbix DB schema already exists:
+  # zabbix-web can report healthy while the server is still creating it.
   e2e-data-loader:
     image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
     depends_on:
+      zabbix-server:
+        condition: service_healthy
       zabbix-web:
         condition: service_healthy
     entrypoint:

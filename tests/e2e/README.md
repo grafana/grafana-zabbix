@@ -20,7 +20,9 @@ for `@grafana/plugin-e2e` and the path the base Docker Compose mounts into Grafa
 The root [`docker-compose.yml`](../../docker-compose.yml) brings up PostgreSQL, the
 Zabbix server/web, a one-shot `e2e-data-loader`, and Grafana. Grafana `depends_on`
 the loader with `service_completed_successfully`, so tests never start against an
-empty backend.
+empty backend. The loader in turn waits for `zabbix-server` to be healthy (trapper
+port open), because the server creates the database schema on first start and
+`zabbix-web` can report healthy before that has finished.
 
 `e2e-data-loader` runs every `tests/fixtures/*.sql` file in lexicographic order via `psql`,
 so new feature-specific fixtures can live alongside `seed.sql` without merge
@@ -45,15 +47,34 @@ Run a single spec, or try another Zabbix version:
 
 ```sh
 npx playwright test tests/e2e/problemsHistoryBounded.spec.ts
-ZABBIX_VERSION=7.0 docker compose up -d --wait && npm run e2e
+ZABBIX_VERSION=8.0 docker compose up -d --wait && npm run e2e
 ```
+
+The Zabbix version is fixed when the database is first initialised. To switch an
+existing stack to another version, drop its volumes first with `docker compose down -v`.
 
 ## CI
 
-E2E tests run in CI via the shared Plugins-CI workflow ([`.github/workflows/push.yaml`](../../.github/workflows/push.yaml)),
-which brings up `docker-compose.yml` and runs `tests/e2e` against it. Coverage across
-multiple Zabbix versions is provided by the per-version `devenv/` stacks and the
-`compatibility-*` Go integration workflows.
+The suite runs in CI against two Zabbix versions:
+
+| Zabbix | Workflow | Grafana versions |
+| --- | --- | --- |
+| 7.0 (compose default) | Shared Plugins-CI workflow, [`.github/workflows/push.yaml`](../../.github/workflows/push.yaml) | Every version the shared workflow resolves from the plugin's `grafanaDependency` |
+| 8.0 | [`.github/workflows/e2e-zabbix-versions.yml`](../../.github/workflows/e2e-zabbix-versions.yml) | The compose default only |
+
+Both bring up `docker-compose.yml` and run `tests/e2e` against it. The shared workflow
+has no input for passing `ZABBIX_VERSION` to the compose stack, so the 8.0 run lives in
+its own workflow, which builds the plugin, starts the stack with `ZABBIX_VERSION=8.0`
+and runs `npm run e2e`. To cover another Zabbix version, add it to that workflow's
+`matrix.version`.
+
+Fixtures and specs must therefore pass on both versions. The 8.0 schema differs from
+7.0 (for example, trigger state lives in `trigger_rtdata` instead of `triggers`), so
+check a new `tests/fixtures/*.sql` file against both before opening a PR.
+
+The Go integration workflow ([`.github/workflows/integration.yml`](../../.github/workflows/integration.yml))
+separately covers the Zabbix API client across more Zabbix versions, using the
+per-version `devenv/` stacks.
 
 ## Fixtures must not contain real secrets
 
