@@ -12,6 +12,7 @@ import _ from 'lodash';
 import { compactQuery } from '../../../utils';
 import { consolidateByFunc, DEFAULT_QUERY_LIMIT, HISTORY_TO_TABLE_MAP } from '../dbConnector';
 import { ClickHouseConnectorOptions } from '../types';
+import { buildTraceSearchQuery, buildTraceSpansQuery, clickHouseFramesToRows, toApmSpans } from './apmTraces';
 
 export const CLICKHOUSE_DS_ID = 'grafana-clickhouse-datasource';
 
@@ -76,6 +77,24 @@ export class ClickHouseConnector {
       GROUP BY metric, time
       ORDER BY time ASC
     `;
+  }
+
+  /**
+   * Search OTEL traces in the Zabbix 8.0 otel_traces table. Takes the
+   * parameters of apmtrace.get and returns records in the same shape.
+   */
+  async getApmTraces(params: any): Promise<any[]> {
+    const frames = await this.invokeClickHouseQuery(buildTraceSearchQuery(params));
+    return clickHouseFramesToRows(frames);
+  }
+
+  /**
+   * Query the spans of traces from the Zabbix 8.0 otel_traces table. Takes the
+   * parameters of apmspan.get and returns records in the same shape.
+   */
+  async getApmSpans(params: any): Promise<any[]> {
+    const frames = await this.invokeClickHouseQuery(buildTraceSpansQuery(params));
+    return toApmSpans(clickHouseFramesToRows(frames));
   }
 
   invokeClickHouseQuery(query: string) {

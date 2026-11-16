@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { datasourceSrvMock, templateSrvMock } from '../../test-setup/mocks';
 import { VariableQueryTypes } from '../types';
 import { ZabbixDatasource } from 'datasource/datasource';
+import { ClickHouseConnector } from '../zabbix/connectors/clickhouse/clickhouseConnector';
 // firstValueFrom removed - tests call frontendQuery directly for text queries
 import * as utils from '../utils';
 import { from } from 'rxjs';
@@ -421,6 +422,36 @@ describe('ZabbixDatasource', () => {
     it('should fail with a clear error when Zabbix is older than 8.0', async () => {
       ctx.ds.zabbix.supportsApmTraces = jest.fn().mockResolvedValue(false);
       await expect(ctx.ds.frontendQuery(ctx.options)).rejects.toThrow('APM traces require Zabbix 8.0 or higher');
+    });
+
+    it('should read traces from ClickHouse when it is the Direct DB Connection', async () => {
+      const connector = Object.create(ClickHouseConnector.prototype);
+      connector.getApmTraces = jest.fn().mockResolvedValue([rootSpan]);
+      connector.getApmSpans = jest.fn().mockResolvedValue([rootSpan]);
+      ctx.ds.zabbix.enableDirectDBConnection = true;
+      ctx.ds.zabbix.dbConnector = connector;
+
+      const search = await ctx.ds.frontendQuery(ctx.options);
+      expect(connector.getApmTraces).toHaveBeenCalledWith(
+        expect.objectContaining({ sortfield: 'timestamp', limit: 50 })
+      );
+      expect(ctx.ds.zabbix.zabbixAPI.getAPMTraces).not.toHaveBeenCalled();
+      expect(search.data[0].fields.find((f) => f.name === 'Trace ID').values).toEqual([rootSpan.traceid]);
+
+      ctx.options.targets[0].tracesQueryMode = 'traceId';
+      ctx.options.targets[0].traceFilter = { traceId: rootSpan.traceid };
+      const trace = await ctx.ds.frontendQuery(ctx.options);
+      expect(connector.getApmSpans).toHaveBeenCalledWith(expect.objectContaining({ traceids: [rootSpan.traceid] }));
+      expect(ctx.ds.zabbix.zabbixAPI.getAPMSpans).not.toHaveBeenCalled();
+      expect(trace.data[0].meta.preferredVisualisationType).toBe('trace');
+    });
+
+    it('should keep using the Zabbix API when the Direct DB Connection is not ClickHouse', async () => {
+      ctx.ds.zabbix.enableDirectDBConnection = true;
+      ctx.ds.zabbix.dbConnector = { getApmTraces: jest.fn() };
+      await ctx.ds.frontendQuery(ctx.options);
+      expect(ctx.ds.zabbix.zabbixAPI.getAPMTraces).toHaveBeenCalled();
+      expect(ctx.ds.zabbix.dbConnector.getApmTraces).not.toHaveBeenCalled();
     });
 
     it('should interpolate trace filters as plain text', () => {

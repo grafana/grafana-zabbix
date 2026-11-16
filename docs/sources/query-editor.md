@@ -128,6 +128,8 @@ Expand the **Options** section to access additional settings:
 Zabbix users who are not Super admins only see traces allowed by the APM filters of their user groups.
 {{< /admonition >}}
 
+When [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection) is enabled with a ClickHouse data source, Traces queries read the `otel_traces` table directly instead of calling the Zabbix API. The query editor and the results are the same. Refer to [ClickHouse history storage](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#clickhouse-history-storage) for the requirements.
+
 ### Services
 
 Use Services queries to retrieve IT service SLA data from Zabbix.

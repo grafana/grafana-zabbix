@@ -886,6 +886,27 @@ export class Zabbix implements ZabbixConnector {
   }
 
   /**
+   * Where APM traces are read from: the ClickHouse telemetry storage when the
+   * Direct DB Connection points to a ClickHouse data source, the Zabbix API
+   * (apmtrace.get, apmspan.get) otherwise.
+   */
+  async getApmTracesSource(): Promise<{
+    getApmTraces: (params: any) => Promise<any[]>;
+    getApmSpans: (params: any) => Promise<any[]>;
+  }> {
+    if (this.enableDirectDBConnection) {
+      await this.dbConnectorReady;
+      if (this.dbConnector instanceof ClickHouseConnector) {
+        return this.dbConnector;
+      }
+    }
+    return {
+      getApmTraces: (params) => this.zabbixAPI.getAPMTraces(params),
+      getApmSpans: (params) => this.zabbixAPI.getAPMSpans(params),
+    };
+  }
+
+  /**
    * Search OTEL/APM traces (Zabbix 8.0+, apmtrace.get). Returns the most recent
    * traces first. A trace matches when any of its spans matches the filters.
    */
@@ -938,7 +959,7 @@ export class Zabbix implements ZabbixConnector {
       }
     }
 
-    const traces = await this.zabbixAPI.getAPMTraces(params);
+    const traces = await (await this.getApmTracesSource()).getApmTraces(params);
     return [responseHandler.handleAPMTraceSearch(traces, target, linkDatasource)];
   }
 
@@ -953,7 +974,9 @@ export class Zabbix implements ZabbixConnector {
       return [];
     }
     const [timeFrom, timeTo] = timeRange;
-    const spans = await this.zabbixAPI.getAPMSpans({
+    const spans = await (
+      await this.getApmTracesSource()
+    ).getApmSpans({
       time_from: Math.max(0, timeFrom - c.APM_TRACE_MAX_DURATION),
       time_till: timeTo + c.APM_TRACE_MAX_DURATION,
       traceids: [traceId],
