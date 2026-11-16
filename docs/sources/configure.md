@@ -205,6 +205,7 @@ These settings are under **Additional settings** > **Other**.
 |---------|-------------|
 | **Disable acknowledges for read-only users** | Prevents non-editor users from acknowledging problems in Grafana. |
 | **Disable data alignment** | Disables automatic alignment of time series points to the start of their collection interval. Data alignment is required for stacked graphs to render correctly. You can also toggle this per query in the query options. |
+| **Show problem annotations on metric panels** | Turns on [panel problem annotations](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/annotations/#annotate-a-panel-with-its-items-problems) for every Metrics and Item ID query that doesn't set them itself. Each query can still turn them on or off in its **Problem annotations** section. Off by default. When on, each panel that uses this data source makes up to two extra Zabbix API calls per refresh. |
 
 ## Configure gRPC message size limits
 
@@ -316,6 +317,7 @@ The following table lists all available `jsonData` and `secureJsonData` fields f
 | `dbConnectionRetentionPolicy` | `jsonData` | InfluxDB retention policy name for long-term data. |
 | `disableReadOnlyUsersAck` | `jsonData` | Disable acknowledges for read-only users. Default: `false`. |
 | `disableDataAlignment` | `jsonData` | Disable time series data alignment. Default: `false`. |
+| `problemAnnotationsByDefault` | `jsonData` | Show problem annotations on Metrics and Item ID queries that don't set them themselves. Default: `false`. |
 | `perUserAuth` | `jsonData` | Enable per-user authentication. Default: `false`. |
 | `perUserAuthField` | `jsonData` | Grafana user field used to match a Zabbix user. Values: `username` (default) or `email`. |
 | `severityOverrides` | `jsonData` | Global severity name and color overrides for Problems panels. A list of objects with `priority` (0-5), and an optional `name` and `color`. Fields that are omitted keep the plugin defaults. |

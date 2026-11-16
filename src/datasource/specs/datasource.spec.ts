@@ -283,6 +283,237 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When querying dashboard annotations', () => {
+    const problems = [
+      {
+        name: 'High CPU',
+        value: '1',
+        timestamp: '1700000000',
+        hosts: [{ name: 'web-01' }],
+        acknowledges: [{ message: 'on it', name: 'Admin', surname: '', clock: '1700000100' }],
+      },
+      { name: 'Low memory', value: '1', timestamp: '1700000200', hosts: [{ name: 'db-01' }], acknowledges: [] },
+    ];
+
+    const buildAnnotationTarget = (options: any = {}) => ({
+      group: { filter: '' },
+      host: { filter: '' },
+      application: { filter: '' },
+      trigger: { filter: '' },
+      fromAnnotations: true,
+      options: { minSeverity: 0, showOkEvents: false, hideAcknowledged: false, showHostname: false, ...options },
+    });
+
+    beforeEach(() => {
+      ctx.ds.zabbix.getProblemsHistory = jest.fn().mockResolvedValue(problems);
+    });
+
+    it('keeps acknowledged events and omits hostnames by default', async () => {
+      const events = await ctx.ds.annotationQueryLegacy({ ...ctx.options, targets: [buildAnnotationTarget()] });
+
+      expect(events.map((e: any) => e.text.split('<br>')[0])).toEqual(['High CPU', 'Low memory']);
+      expect(events.every((e: any) => e.tags.length === 0)).toBe(true);
+    });
+
+    it('hides acknowledged events when options.hideAcknowledged is set', async () => {
+      const target = buildAnnotationTarget({ hideAcknowledged: true });
+
+      const events = await ctx.ds.annotationQueryLegacy({ ...ctx.options, targets: [target] });
+
+      expect(events).toHaveLength(1);
+      expect(events[0].text).toBe('Low memory');
+    });
+
+    it('tags events with hostnames when options.showHostname is set', async () => {
+      const target = buildAnnotationTarget({ showHostname: true });
+
+      const events = await ctx.ds.annotationQueryLegacy({ ...ctx.options, targets: [target] });
+
+      expect(events.map((e: any) => e.tags)).toEqual([['web-01'], ['db-01']]);
+    });
+  });
+
+  describe('When querying problem annotations for metric queries', () => {
+    const metricsTarget = (problemAnnotations?: any, extra: any = {}) => ({
+      refId: 'A',
+      queryType: '0',
+      group: { filter: 'Linux' },
+      host: { filter: 'web-01' },
+      application: { filter: '' },
+      itemTag: { filter: '' },
+      item: { filter: 'CPU utilization' },
+      options: {},
+      problemAnnotations,
+      ...extra,
+    });
+
+    const triggerA = { triggerid: '10', description: 'High CPU', priority: '4', items: [{ itemid: '1' }] };
+    const triggerB = { triggerid: '11', description: 'Low memory', priority: '2', items: [{ itemid: '2' }] };
+    const ids = (res: any) => res.data[0].fields.find((f: any) => f.name === 'id').values;
+    const itemIds = (entries: Array<[string, string[]]>) => new Map(entries.map(([ref, v]) => [ref, new Set(v)]));
+
+    beforeEach(() => {
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockResolvedValue([{ itemid: '1' }, { itemid: '2' }]);
+      ctx.ds.zabbix.getItemTriggers = jest.fn().mockResolvedValue([triggerA, triggerB]);
+      ctx.ds.zabbix.getTriggerEvents = jest.fn().mockResolvedValue([
+        { eventid: '101', objectid: '10', clock: '1700000300', value: '0', name: 'High CPU', severity: '0' },
+        {
+          eventid: '200',
+          objectid: '10',
+          clock: '1700000900',
+          value: '1',
+          name: 'High CPU',
+          severity: '4',
+          r_eventid: '0',
+          acknowledged: '1',
+        },
+        {
+          eventid: '100',
+          objectid: '10',
+          clock: '1700000000',
+          value: '1',
+          name: 'High CPU',
+          severity: '4',
+          r_eventid: '101',
+        },
+        {
+          eventid: '300',
+          objectid: '11',
+          clock: '1700000100',
+          value: '1',
+          name: 'Low memory',
+          severity: '2',
+          r_eventid: '0',
+        },
+      ]);
+    });
+
+    it('does nothing for queries saved without the setting', async () => {
+      const res = await ctx.ds.queryProblemAnnotations({ ...ctx.options, targets: [metricsTarget()] });
+
+      expect(res.data).toEqual([]);
+      expect(ctx.ds.zabbix.getItemsFromTarget).not.toHaveBeenCalled();
+      expect(ctx.ds.zabbix.getItemTriggers).not.toHaveBeenCalled();
+      expect(ctx.ds.zabbix.getTriggerEvents).not.toHaveBeenCalled();
+    });
+
+    it('uses the item ids of the returned series without resolving the query again', async () => {
+      const target = metricsTarget({ enabled: true });
+
+      await ctx.ds.queryProblemAnnotations({ ...ctx.options, targets: [target] }, itemIds([['A', ['2']]]));
+
+      expect(ctx.ds.zabbix.getItemsFromTarget).not.toHaveBeenCalled();
+      expect(ctx.ds.zabbix.getItemTriggers).toHaveBeenCalledWith(['2']);
+      // Only the trigger of item 2
+      expect(ctx.ds.zabbix.getTriggerEvents.mock.calls[0][0]).toEqual(['11']);
+    });
+
+    it('resolves the query only when its series carry no item ids', async () => {
+      const target = metricsTarget({ enabled: true });
+
+      await ctx.ds.queryProblemAnnotations({ ...ctx.options, targets: [target] }, itemIds([['B', ['9']]]));
+
+      expect(ctx.ds.zabbix.getItemsFromTarget).toHaveBeenCalledTimes(1);
+      expect(ctx.ds.zabbix.getItemTriggers).toHaveBeenCalledWith(['1', '2']);
+    });
+
+    it('annotates with problems, ending each region at its recovery from the same events call', async () => {
+      const target = metricsTarget({ enabled: true });
+
+      const res = await ctx.ds.queryProblemAnnotations({ ...ctx.options, targets: [target] });
+
+      expect(ctx.ds.zabbix.getTriggerEvents).toHaveBeenCalledTimes(1);
+      const [triggerids, , , limit] = ctx.ds.zabbix.getTriggerEvents.mock.calls[0];
+      expect(triggerids).toEqual(['10', '11']);
+      expect(limit).toBe(2000);
+      expect(res.data).toHaveLength(1);
+      expect(res.data[0].meta.dataTopic).toBe('annotations');
+      expect(ids(res)).toEqual(['200', '100', '300']);
+      const timeEnd = res.data[0].fields.find((f: any) => f.name === 'timeEnd').values;
+      expect(timeEnd[1]).toBe(1700000300000);
+    });
+
+    it('makes one trigger and one events call for a panel with several queries', async () => {
+      const targets = [
+        metricsTarget({ enabled: true, minSeverity: 4 }),
+        metricsTarget({ enabled: true, triggerFilter: '/memory/' }, { refId: 'B' }),
+      ];
+
+      const res = await ctx.ds.queryProblemAnnotations(
+        { ...ctx.options, targets },
+        itemIds([
+          ['A', ['1']],
+          ['B', ['2']],
+        ])
+      );
+
+      expect(ctx.ds.zabbix.getItemTriggers).toHaveBeenCalledTimes(1);
+      expect(ctx.ds.zabbix.getItemTriggers).toHaveBeenCalledWith(['1', '2']);
+      expect(ctx.ds.zabbix.getTriggerEvents).toHaveBeenCalledTimes(1);
+      expect(ctx.ds.zabbix.getTriggerEvents.mock.calls[0][0]).toEqual(['10', '11']);
+      // A: CPU problems at High or above; B: memory problems of any severity
+      expect(ids(res)).toEqual(['200', '100', '300']);
+    });
+
+    it("applies each query's own filters", async () => {
+      const targets = [
+        metricsTarget({ enabled: true, hideAcknowledged: true }),
+        metricsTarget({ enabled: true, minSeverity: 3 }, { refId: 'B' }),
+      ];
+
+      const res = await ctx.ds.queryProblemAnnotations(
+        { ...ctx.options, targets },
+        itemIds([
+          ['A', ['1']],
+          ['B', ['2']],
+        ])
+      );
+
+      // A hides acknowledged 200; B's Warning 300 is below Average
+      expect(ids(res)).toEqual(['100']);
+    });
+
+    it('skips the events call when the trigger filter matches nothing', async () => {
+      const target = metricsTarget({ enabled: true, triggerFilter: 'No such trigger' });
+
+      const res = await ctx.ds.queryProblemAnnotations({ ...ctx.options, targets: [target] });
+
+      expect(ctx.ds.zabbix.getTriggerEvents).not.toHaveBeenCalled();
+      expect(res.data).toEqual([]);
+    });
+
+    it('uses item ids directly for Item ID queries', async () => {
+      const target = metricsTarget({ enabled: true }, { queryType: '3', itemids: '5, 6' });
+
+      await ctx.ds.queryProblemAnnotations({ ...ctx.options, targets: [target] });
+
+      expect(ctx.ds.zabbix.getItemsFromTarget).not.toHaveBeenCalled();
+      expect(ctx.ds.zabbix.getItemTriggers).toHaveBeenCalledWith(['5', '6']);
+    });
+
+    it('turns on for every metric query when the data source default is on', async () => {
+      ctx.ds.problemAnnotationsByDefault = true;
+
+      const res = await ctx.ds.queryProblemAnnotations({
+        ...ctx.options,
+        targets: [metricsTarget(), metricsTarget({ enabled: false }, { refId: 'B', item: { filter: 'Memory' } })],
+      });
+
+      expect(ctx.ds.zabbix.getItemsFromTarget).toHaveBeenCalledTimes(1);
+      expect(res.data).toHaveLength(1);
+    });
+
+    it('returns no annotations instead of failing the panel when the API errors', async () => {
+      ctx.ds.zabbix.getItemTriggers = jest.fn().mockRejectedValue(new Error('boom'));
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const res = await ctx.ds.queryProblemAnnotations({ ...ctx.options, targets: [metricsTarget({ enabled: true })] });
+
+      expect(res.data).toEqual([]);
+      warn.mockRestore();
+    });
+  });
+
   describe('When resolving items by tag regex', () => {
     it('returns no items without making an unfiltered request when no tags match', async () => {
       ctx.ds.zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10001' }]);
@@ -1165,6 +1396,21 @@ describe('ZabbixDatasource', () => {
     it('should leave queries without host tag filters untouched', () => {
       const [result] = ctx.ds.interpolateVariablesInQueries([{ refId: 'A' } as any], {});
       expect(result.hostTags).toBeUndefined();
+    });
+
+    it('should interpolate the problem annotations trigger filter like the item filter', () => {
+      // utils.replaceTemplateVars is stubbed in this spec; make it resolve one variable
+      (utils.replaceTemplateVars as jest.Mock).mockImplementation((_srv, prop) =>
+        prop === '$trig' ? '/^High CPU$/' : prop
+      );
+      const problemAnnotations = { enabled: true, minSeverity: 2, triggerFilter: '$trig' };
+
+      const [result] = ctx.ds.interpolateVariablesInQueries([{ refId: 'A', problemAnnotations } as any], {});
+
+      expect(result.problemAnnotations).toEqual({ enabled: true, minSeverity: 2, triggerFilter: '/^High CPU$/' });
+      // The saved query keeps the variable
+      expect(problemAnnotations.triggerFilter).toBe('$trig');
+      (utils.replaceTemplateVars as jest.Mock).mockImplementation((_srv, prop) => prop);
     });
   });
 });

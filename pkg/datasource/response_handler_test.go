@@ -73,3 +73,19 @@ func TestSeriesToDataFrameItemTagScopedVars(t *testing.T) {
 	assert.Equal(t, ScopedVar{Value: "checkout"}, scopedVars["__zbx_item_tag_service"])
 	assert.Equal(t, ScopedVar{Value: "prod"}, scopedVars["__zbx_item_tag_Env"])
 }
+
+func TestSeriesToDataFrameItemIDScopedVar(t *testing.T) {
+	withItem := seriesToDataFrame(&timeseries.TimeSeriesData{
+		Meta: timeseries.TimeSeriesMeta{Name: "CPU load", Item: &zabbix.Item{ID: "23456", Name: "CPU load"}},
+	}, nil)
+	valueField, _ := withItem.FieldByName(data.TimeSeriesValueFieldName)
+	scopedVars := valueField.Config.Custom["scopedVars"].(map[string]ScopedVar)
+	assert.Equal(t, ScopedVar{Value: "23456"}, scopedVars["__zbx_item_id"])
+
+	// Series built by functions from several items have no item
+	aggregated := seriesToDataFrame(&timeseries.TimeSeriesData{Meta: timeseries.TimeSeriesMeta{Name: "sumSeries"}}, nil)
+	valueField, _ = aggregated.FieldByName(data.TimeSeriesValueFieldName)
+	scopedVars = valueField.Config.Custom["scopedVars"].(map[string]ScopedVar)
+	_, ok := scopedVars["__zbx_item_id"]
+	assert.False(t, ok)
+}

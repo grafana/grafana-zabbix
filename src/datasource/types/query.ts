@@ -41,6 +41,8 @@ export type ZabbixMetricsQuery = {
   evaltype?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
+  // Metrics / Item ID queries: annotate the panel with problems of the queried items' triggers
+  problemAnnotations?: ProblemAnnotationsOptions;
   // Problems
   showProblems?: ShowProblemTypes;
   // Deprecated
@@ -48,6 +50,25 @@ export type ZabbixMetricsQuery = {
   itemFilter?: string;
   macroFilter?: string;
 } & BaseQuery;
+
+/**
+ * Panel annotations built from the problems of the triggers that reference the
+ * items a Metrics or Item ID query returns. Every field is optional so queries
+ * saved before this existed keep their behavior.
+ */
+export interface ProblemAnnotationsOptions {
+  /** Unset follows the data source default (`problemAnnotationsByDefault`). */
+  enabled?: boolean;
+  minSeverity?: number;
+  hideAcknowledged?: boolean;
+  /**
+   * Restricts which of the queried items' triggers are used, matched on the trigger
+   * name like the other metric filters: an exact name, a `/regex/` (several triggers,
+   * or exclusions with a negative lookahead) or a template variable. Empty or unset
+   * means every trigger of the queried items.
+   */
+  triggerFilter?: string;
+}
 
 export interface ZabbixQueryOptions {
   showDisabledItems?: boolean;

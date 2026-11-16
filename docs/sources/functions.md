@@ -343,6 +343,7 @@ Alias functions change the display names of time series. The following template 
 | `$__zbx_item`, `$__zbx_item_name` | Item name. |
 | `$__zbx_item_key` | Item key. |
 | `$__zbx_item_interval` | Item collection interval (delay). |
+| `$__zbx_item_id` | ID of the item. Not set on series built from several items, for example by `sumSeries()`. |
 | `$__zbx_host_name` | Visible name of the host. |
 | `$__zbx_host` | Technical name of the host. |
 | `$__zbx_host_id` | ID of the host. |

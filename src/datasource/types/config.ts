@@ -43,6 +43,11 @@ export type ZabbixDSOptions = {
    * name or color for a severity keep it.
    */
   severityOverrides?: SeverityOverride[];
+  /**
+   * Annotate Metrics and Item ID queries with the problems of their items' triggers
+   * unless a query sets `problemAnnotations.enabled` itself. Off by default.
+   */
+  problemAnnotationsByDefault?: boolean;
 } & DataSourceJsonData;
 
 export interface SeverityOverride {
