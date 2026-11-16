@@ -1,7 +1,7 @@
 apiVersion: 1
 
-# Provisioned Zabbix data source for end-to-end tests. Stable UID so tests can
-# navigate to it / provisioned dashboards directly.
+# Provisioned data sources for end-to-end tests. Stable UIDs so tests can
+# navigate to them / provisioned dashboards directly.
 datasources:
   - name: Zabbix E2E
     type: alexanderzobnin-zabbix-datasource
@@ -13,5 +13,33 @@ datasources:
       trends: true
       trendsFrom: '7d'
       trendsRange: '4d'
+    secureJsonData:
+      password: zabbix
+
+  # The names below must not contain "Zabbix E2E": the data source picker matches
+  # by substring, and tests select the data source above by that name.
+
+  # The Zabbix database, as the target of the direct DB connection tests.
+  - name: E2E Zabbix DB
+    type: grafana-postgresql-datasource
+    uid: e2e-zabbix-db
+    url: database:5432
+    user: zabbix
+    jsonData:
+      database: zabbix
+      sslmode: disable
+    secureJsonData:
+      password: zabbix
+
+  # Zabbix data source with a global severity override, for the Problems panel tests.
+  - name: E2E Zabbix severity overrides
+    type: alexanderzobnin-zabbix-datasource
+    uid: e2e-zabbix-severity-overrides
+    url: http://zabbix-web:8080/api_jsonrpc.php
+    jsonData:
+      username: Admin
+      severityOverrides:
+        - priority: 4
+          name: E2E Critical
     secureJsonData:
       password: zabbix
