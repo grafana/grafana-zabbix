@@ -26,6 +26,8 @@ review_date: 2026-09-08
 
 The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure. You can query metrics, display problems and triggers, monitor IT service SLA data, create annotations from Zabbix events, and build interactive dashboards with template variables. The plugin also supports querying historical data directly from the Zabbix database for improved performance on large time ranges.
 
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-infrastructure-overview-dashboard.png" alt="Grafana dashboard with Zabbix data: stat panels, a gauge, the Problems panel listing active problems by severity, and time series of CPU utilization, network traffic, load average, and memory utilization per host" width="1600" height="1340" >}}
+
 ## Requirements
 
 - Grafana 11.6.0 or later.

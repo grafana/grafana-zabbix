@@ -54,6 +54,8 @@ Select a query type from the drop-down at the top of the query editor. The avail
 
 Use Metrics queries to retrieve numeric time series data from Zabbix items. This is the most common query type for building graphs and dashboards.
 
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-query-editor-metrics.png" alt="Panel editor with a stacked CPU time graph and a Metrics query that filters by the $group and $host variables, the component: cpu item tag, and a CPU time item regex, with the setAliasByRegex function applied" width="1254" height="929" >}}
+
 | Field | Description |
 |-------|-------------|
 | **Group** | The host group to query. Supports regex and template variables. |
@@ -142,6 +144,10 @@ Expand the **Options** section to access additional settings:
 ### Problems
 
 Use Problems queries to retrieve Zabbix problem events. This query type returns tabular data suitable for table panels and the Problems panel.
+
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-problems-panel.png" alt="Problems panel listing active Zabbix problems with host, color-coded severity, status, problem name, acknowledgment count, tags, and time" width="1600" height="640" >}}
+
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-query-editor-problems.png" alt="Problems query editor with Group, Host, Proxy, Problem, Tags, Show, Severity, and Problem Type fields" width="1254" height="288" >}}
 
 | Field | Description |
 |-------|-------------|
