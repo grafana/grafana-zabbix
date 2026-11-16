@@ -16,7 +16,6 @@ import {
   config,
   getBackendSrv,
   getTemplateSrv,
-  getDataSourceSrv,
   HealthCheckError,
   DataSourceWithBackend,
   TemplateSrv,
@@ -37,6 +36,7 @@ import {
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
 import { from, lastValueFrom, map, Observable, switchMap } from 'rxjs';
+import { getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
 
 export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, ZabbixDSOptions> {
   trends: boolean;
@@ -86,6 +86,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       cacheTTL: ttl,
       dbConnectionEnable: this.enableDirectDBConnection,
       dbConnectionDatasourceUID: jsonData.dbConnectionDatasourceUID,
+      dbConnectionDatasourceId: jsonData.dbConnectionDatasourceId,
       dbConnectionDatasourceName: jsonData.dbConnectionDatasourceName,
       dbConnectionRetentionPolicy: jsonData.dbConnectionRetentionPolicy,
       uid: instanceSettings.uid,
@@ -110,14 +111,21 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         const target = _.cloneDeep(t);
         return migrations.migrate(target);
       })
-      .map((target) => {
-        let ds = getDataSourceSrv().getInstanceSettings(target?.datasource);
+      .map(async (target) => {
+        let ds = await getDataSourceInstanceSettings(target?.datasource);
         if (ds?.rawRef?.uid) {
           return { ...target, datasource: { ...target?.datasource, uid: ds.rawRef?.uid } };
         }
         return target;
       });
 
+    return from(Promise.all(requestTargets)).pipe(switchMap((targets) => this.queryTargets(request, targets)));
+  }
+
+  queryTargets(
+    request: DataQueryRequest<ZabbixMetricsQuery>,
+    requestTargets: ZabbixMetricsQuery[]
+  ): Observable<DataQueryResponse> {
     // Range variables ($__range, $__range_series, etc.) must be in scope before
     // interpolation, otherwise function params reach the backend unexpanded
     const scopedVars = Object.assign({}, request.scopedVars, utils.getRangeScopedVars(request.range));
@@ -837,11 +845,20 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           showDisabledItems: queryModel.showDisabledItems,
           hostTags,
           evaltype,
+          // Variables only use item names: no tags needed, and let Zabbix pre-filter by name
+          pushDownItemFilter: true,
+          selectTags: false,
         });
         break;
       case VariableQueryTypes.ItemValues:
         const range = options?.range;
-        resultPromise = this.zabbix.getItemValues(group, host, application, item, { range, hostTags, evaltype });
+        resultPromise = this.zabbix.getItemValues(group, host, application, item, {
+          range,
+          hostTags,
+          evaltype,
+          pushDownItemFilter: true,
+          selectTags: false,
+        });
         break;
       default:
         resultPromise = Promise.resolve([]);

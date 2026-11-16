@@ -48,6 +48,10 @@ jobs:
             devenv: zabbix74
             integration-var: INTEGRATION_TEST74
             url: http://localhost:8188/api_jsonrpc.php
+          - version: '8.0'
+            devenv: zabbix80
+            integration-var: INTEGRATION_TEST80
+            url: http://localhost:8188/api_jsonrpc.php
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

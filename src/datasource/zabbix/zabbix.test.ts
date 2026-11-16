@@ -1,5 +1,8 @@
 import { joinTriggersWithEvents } from '../problemsHandler';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
+import { ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector';
+import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
+import { SQLConnector } from './connectors/sql/sqlConnector';
 import { Zabbix } from './zabbix';
 
 jest.mock('../problemsHandler', () => ({
@@ -35,11 +38,16 @@ jest.mock(
           toPromise: () => jest.fn().mockResolvedValue({ data: { result: '' } }),
         }),
       }),
-      getDataSourceSrv: jest.fn(() => ({ get: getMock })),
     };
   },
   { virtual: true }
 );
+
+const getSettingsMock = jest.fn();
+jest.mock('@grafana/plugin-compat/datasources', () => ({
+  getDataSourceInstance: (...args: unknown[]) => getMock(...args),
+  getDataSourceInstanceSettings: (...args: unknown[]) => getSettingsMock(...args),
+}));
 
 describe('Zabbix', () => {
   let consoleSpy: jest.SpyInstance;
@@ -61,6 +69,7 @@ describe('Zabbix', () => {
   afterEach(() => {
     consoleSpy.mockRestore();
     getMock.mockClear();
+    getSettingsMock.mockReset();
   });
 
   describe('supportsProblemTagOperators', () => {
@@ -84,24 +93,97 @@ describe('Zabbix', () => {
   describe('initDBConnector', () => {
     const connectorOptions: any = { dbConnectionRetentionPolicy: 'policy' };
 
-    it('calls getDataSourceSrv().get with UID when datasourceUID is provided', async () => {
+    it('calls getDataSourceInstance with UID when datasourceUID is provided', async () => {
       await zabbix.initDBConnector('my-db-uid', undefined, connectorOptions);
 
       expect(getMock).toHaveBeenCalledTimes(2);
       expect(getMock).toHaveBeenCalledWith('my-db-uid');
     });
 
-    it('calls getDataSourceSrv().get with name when only datasourceName is provided (legacy)', async () => {
+    it('calls getDataSourceInstance with name when only datasourceName is provided (legacy)', async () => {
       await zabbix.initDBConnector(undefined, 'My MySQL DS', connectorOptions);
 
       expect(getMock).toHaveBeenCalledTimes(2);
       expect(getMock).toHaveBeenCalledWith('My MySQL DS');
     });
 
-    it('calls getDataSourceSrv().get with name when datasourceUID is empty string (fallback)', async () => {
+    it('calls getDataSourceInstance with name when datasourceUID is empty string (fallback)', async () => {
       await zabbix.initDBConnector('', 'My MySQL DS', connectorOptions);
 
       expect(getMock).toHaveBeenCalledWith('My MySQL DS');
+    });
+
+    it('resolves the UID when only the numeric dbConnectionDatasourceId is provided (legacy)', async () => {
+      getSettingsMock.mockResolvedValue({ id: 42, uid: 'influx-uid' });
+
+      await zabbix.initDBConnector(undefined, 'My MySQL DS', { ...connectorOptions, dbConnectionDatasourceId: 42 });
+
+      expect(getSettingsMock).toHaveBeenCalledWith('42');
+      expect(getMock).toHaveBeenLastCalledWith('influx-uid');
+    });
+
+    it('falls back to the name when the numeric dbConnectionDatasourceId cannot be resolved (legacy)', async () => {
+      getSettingsMock.mockResolvedValue(undefined);
+
+      await zabbix.initDBConnector(undefined, 'My MySQL DS', { ...connectorOptions, dbConnectionDatasourceId: 999 });
+
+      expect(getSettingsMock).toHaveBeenCalledWith('999');
+      expect(getMock).toHaveBeenLastCalledWith('My MySQL DS');
+    });
+
+    it('throws when the numeric dbConnectionDatasourceId cannot be resolved and there is no name (legacy)', async () => {
+      getSettingsMock.mockResolvedValue(undefined);
+
+      await expect(
+        zabbix.initDBConnector(undefined, undefined, { ...connectorOptions, dbConnectionDatasourceId: 999 })
+      ).rejects.toThrow('Error retrieving direct db connection data source. Data source with id 999 not found');
+    });
+
+    it('creates InfluxDBConnector for influxdb datasource type', async () => {
+      await zabbix.initDBConnector('my-db-uid', undefined, connectorOptions);
+
+      expect(zabbix.dbConnector).toBeInstanceOf(InfluxDBConnector);
+    });
+
+    it('creates ClickHouseConnector for ClickHouse datasource type', async () => {
+      getMock.mockResolvedValueOnce({
+        id: 43,
+        name: 'ClickHouse DS',
+        type: 'grafana-clickhouse-datasource',
+        meta: {},
+      });
+      await zabbix.initDBConnector('my-clickhouse-uid', undefined, connectorOptions);
+
+      expect(zabbix.dbConnector).toBeInstanceOf(ClickHouseConnector);
+    });
+
+    it('creates SQLConnector for SQL datasource types', async () => {
+      getMock.mockResolvedValueOnce({
+        id: 44,
+        name: 'MySQL DS',
+        type: 'mysql',
+        meta: {},
+      });
+      await zabbix.initDBConnector('my-mysql-uid', undefined, connectorOptions);
+
+      expect(zabbix.dbConnector).toBeInstanceOf(SQLConnector);
+    });
+  });
+
+  describe('testDataSource', () => {
+    it('waits for the DB connector the constructor sets up before testing it', async () => {
+      let resolveDataSource: (ds: unknown) => void = () => {};
+      getMock.mockImplementationOnce(() => new Promise((resolve) => (resolveDataSource = resolve)));
+      const zabbixWithPendingDB = new Zabbix(ctx);
+
+      const testResult = zabbixWithPendingDB.testDataSource();
+      resolveDataSource({
+        type: 'influxdb',
+        name: 'InfluxDB DS',
+        testDatasource: jest.fn().mockResolvedValue({ status: 'success' }),
+      });
+
+      await expect(testResult).resolves.toMatchObject({ dsType: 'influxdb', dsName: 'InfluxDB DS' });
     });
   });
 
@@ -179,6 +261,97 @@ describe('Zabbix', () => {
         const triggerids = triggers.map((t) => t.triggerid);
         expect(triggerids).toEqual(['5', '6']);
         done();
+      });
+    });
+  });
+
+  describe('getItems', () => {
+    beforeEach(() => {
+      zabbix.isZabbix54OrHigher = jest.fn().mockReturnValue(true);
+      zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10' }]);
+      zabbix.getMacros = jest.fn().mockResolvedValue([]);
+      zabbix.zabbixAPI.getItems = jest.fn().mockResolvedValue([
+        { itemid: '1', name: 'System [SYSA]: MVS busy', key_: 'k', status: '0', hosts: [{ hostid: '10' }] },
+        { itemid: '2', name: 'System [SYSB]: zIIP busy', key_: 'k', status: '0', hosts: [{ hostid: '10' }] },
+      ]);
+    });
+
+    it('does not push the item filter down by default', async () => {
+      await zabbix.getItems('/.*/', 'host', undefined, undefined, '/MVS busy/');
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {});
+    });
+
+    it('pushes the item filter down and still applies it client-side', async () => {
+      const items = await zabbix.getItems('/.*/', 'host', undefined, undefined, '/^System \\[.*\\]: MVS busy/', {
+        pushDownItemFilter: true,
+        selectTags: false,
+      });
+
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {
+        nameSearch: [': MVS busy'],
+        selectTags: false,
+      });
+      expect(items.map((i) => i.itemid)).toEqual(['1']);
+    });
+
+    it('sends no name search when the filter has no safe literal', async () => {
+      await zabbix.getItems('/.*/', 'host', undefined, undefined, '/.*/', { pushDownItemFilter: true });
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {});
+    });
+
+    describe('before Zabbix 5.4', () => {
+      const pushDownOptions = { pushDownItemFilter: true, selectTags: false };
+      const expectedAPIOptions = { nameSearch: [': MVS busy'], selectTags: false };
+
+      beforeEach(() => {
+        zabbix.isZabbix54OrHigher = jest.fn().mockReturnValue(false);
+      });
+
+      it('pushes the item filter down when no application filter is set', async () => {
+        const apps: any = ['10'];
+        apps.hostids = ['10'];
+        apps.appFilterEmpty = true;
+        zabbix.getApps = jest.fn().mockResolvedValue(apps);
+
+        const items = await zabbix.getItems(
+          '/.*/',
+          'host',
+          '',
+          undefined,
+          '/^System \\[.*\\]: MVS busy/',
+          pushDownOptions
+        );
+
+        expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
+          ['10'],
+          undefined,
+          undefined,
+          undefined,
+          expectedAPIOptions
+        );
+        expect(items.map((i) => i.itemid)).toEqual(['1']);
+      });
+
+      it('pushes the item filter down when filtering by application', async () => {
+        zabbix.getApps = jest.fn().mockResolvedValue([{ applicationid: '20', name: 'Mainview' }]);
+
+        const items = await zabbix.getItems(
+          '/.*/',
+          'host',
+          'Mainview',
+          undefined,
+          '/^System \\[.*\\]: MVS busy/',
+          pushDownOptions
+        );
+
+        expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
+          undefined,
+          ['20'],
+          undefined,
+          undefined,
+          expectedAPIOptions
+        );
+        expect(items.map((i) => i.itemid)).toEqual(['1']);
       });
     });
   });
