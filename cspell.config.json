@@ -37,6 +37,7 @@
   "words": [
     "alexanderzobnin",
     "applicationids",
+    "clickhouse",
     "datapoint",
     "datapoints",
     "datasource",
@@ -70,6 +71,7 @@
     "slaid",
     "sortfield",
     "sortorder",
+    "sslmode",
     "struct",
     "submatch",
     "templatig",

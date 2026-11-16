@@ -57,7 +57,7 @@ Use Metrics queries to retrieve numeric time series data from Zabbix items. This
 | Field | Description |
 |-------|-------------|
 | **Group** | The host group to query. Supports regex and template variables. |
-| **Host tag** | Filter hosts by tag (Zabbix 5.4+). Click the **+** button to add one or more tag filters. Each filter has a tag name, an operator, and an optional value. Available operators: Exists, Equals, Contains, Does not exist, Does not equal, Does not contain. When multiple filters are active, choose **AND/OR** or **OR** evaluation. |
+| **Host tag** | Filter hosts by tag (Zabbix 5.4+). Click the **+** button to add one or more tag filters. Each filter has a tag name, an operator, and an optional value. Available operators: Exists, Equals, Contains, Does not exist, Does not equal, Does not contain. When multiple filters are active, choose **AND/OR** or **OR** evaluation. Tags inherited from linked templates are matched too. Tag names and values support template variables; a multi-value variable in a tag value matches any of the selected values. |
 | **Host** | The host to query. Supports regex and template variables. |
 | **Application** | Filter items by application. Visible on Zabbix versions before 5.4. Replaced by **Item tag** on Zabbix 5.4+. |
 | **Item tag** | Filter items by tag. Visible on Zabbix 5.4+. Replaces **Application**. Supports template variables. |
@@ -330,6 +330,8 @@ consolidateBy(max) | groupBy(1h, max)
 ```
 
 Without `consolidateBy`, the database aggregates using the default `AVG` function, which may produce unexpected results when combined with `groupBy(interval, max)`.
+
+When the Direct DB Connection data source is ClickHouse (Zabbix 8.0 history storage), all queries are served from the history tables because Zabbix doesn't store trends in ClickHouse. The trends settings of the Zabbix data source have no effect on the returned data in this case.
 
 ## Next steps
 
