@@ -19,6 +19,9 @@ services:
       # Avoid the onboarding splash during e2e runs and when browsing the dev
       # environment manually.
       GF_FEATURE_TOGGLES_splashScreen: 'false'
+      # The Direct DB Connection e2e test needs the ClickHouse datasource type
+      # to exist so the config editor's datasource picker can list it.
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
 
   database:
     image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42

@@ -160,13 +160,13 @@ describe('ConfigEditor', () => {
       );
     });
 
-    it('lists the supported SQL and InfluxDB data sources', async () => {
+    it('lists the supported SQL, InfluxDB and ClickHouse data sources', async () => {
       render(<ConfigEditor options={getDBConnectionOptions()} onOptionsChange={jest.fn()} />);
 
       expect(await screen.findByRole('button', { name: 'MySQL Zabbix' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'InfluxDB' })).toBeInTheDocument();
       expect(mockGetDataSourceInstanceList).toHaveBeenCalledWith({
-        type: ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb'],
+        type: ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb', 'grafana-clickhouse-datasource'],
       });
     });
 
