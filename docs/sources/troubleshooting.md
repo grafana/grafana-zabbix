@@ -213,6 +213,23 @@ These errors occur when credentials are invalid, missing, or don't have the requ
 | Zabbix user lacks permissions | Verify the user has read access to the host groups and hosts you want to query. In Zabbix, navigate to **Administration** > **Users** to check permissions. |
 | API token expired or revoked | Generate a new API token in the Zabbix web interface and update the data source configuration. |
 
+### "No permissions to call" a Zabbix API method
+
+**Symptoms:**
+
+- Queries fail with `Application error. No permissions to call "hostgroup.get".` or the same error for another API method.
+- **Save & test** might succeed, because the Zabbix user can log in, but the group, host, and item drop-downs are empty and panels show errors.
+- The problem starts after you install or upgrade to Zabbix 8.0, create a Zabbix user or role, or enable per-user authentication.
+
+**Possible causes and solutions:**
+
+| Cause | Solution |
+|-------|----------|
+| API access is disabled for the user's role. On new Zabbix 8.0 installations, API access is disabled by default for every role except **Super admin role**. On upgraded installations, it's disabled for roles created after the upgrade. | In Zabbix, go to **Users** > **User roles**, select the role of the Zabbix user that the data source uses, and select **Enabled** in the **Access to API** section. Refer to [Enable API access for the user role](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#enable-api-access-for-the-user-role). |
+| The role uses an API allow list that doesn't include the method, or a deny list that includes it. On Zabbix 8.0, an empty allow list denies all methods. | Add the method named in the error to the allow list, or remove it from the deny list. For all the methods to allow, refer to [Zabbix API methods used by the plugin](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#zabbix-api-methods-used-by-the-plugin). |
+| Per-user authentication is enabled and the Zabbix user mapped to the Grafana user has a role without API access. | Enable API access for the roles of all mapped Zabbix users, not only for the user configured in the data source. |
+| An action is disabled for the role. For example, `event.acknowledge` and `script.execute` depend on the options under **Access to actions**. | In the role, enable the matching options under **Access to actions**, such as **Acknowledge problems** or **Execute scripts**. |
+
 ### "No API access" or empty drop-downs
 
 **Symptoms:**
