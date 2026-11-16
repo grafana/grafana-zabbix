@@ -26,7 +26,7 @@ export class ClickHouseConnector {
   }
 
   /**
-   * Try to invoke test query for one of Zabbix database tables.
+   * Test the connection by running the ClickHouse data source's own health check.
    */
   async testDataSource() {
     const result = await this.datasource.testDatasource();
