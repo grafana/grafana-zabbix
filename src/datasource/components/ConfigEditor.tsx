@@ -11,7 +11,6 @@ import {
 import {
   Alert,
   ColorPicker,
-  Combobox,
   ComboboxOption,
   Field,
   Icon,
@@ -26,6 +25,7 @@ import {
   Tooltip,
   useStyles2,
 } from '@grafana/ui';
+import { Combobox } from '../../components/Combobox/Combobox';
 import { SeverityOverride, ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types/config';
 import { DEFAULT_SEVERITY } from '../../panel-triggers/types';
 import { gte } from 'semver';

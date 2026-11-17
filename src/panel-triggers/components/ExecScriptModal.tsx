@@ -1,17 +1,8 @@
 import React, { PureComponent, ReactNode } from 'react';
 import { css } from '@emotion/css';
 import { GrafanaTheme } from '@grafana/data';
-import {
-  Button,
-  Spinner,
-  Modal,
-  stylesFactory,
-  withTheme,
-  Themeable,
-  ButtonGroup,
-  Combobox,
-  ComboboxOption,
-} from '@grafana/ui';
+import { Button, Spinner, Modal, stylesFactory, withTheme, Themeable, ButtonGroup, ComboboxOption } from '@grafana/ui';
+import { Combobox } from '../../components/Combobox/Combobox';
 import { ZBXScript, APIExecuteScriptResponse } from '../../datasource/zabbix/connectors/zabbix_api/types';
 import { FAIcon } from '../../components';
 

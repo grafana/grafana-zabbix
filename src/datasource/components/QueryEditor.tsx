@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { QueryEditorProps } from '@grafana/data';
-import { Combobox, ComboboxOption, InlineField, Stack } from '@grafana/ui';
+import { ComboboxOption, InlineField, Stack } from '@grafana/ui';
+import { Combobox } from '../../components/Combobox/Combobox';
 import * as c from '../constants';
 import { migrate, DS_QUERY_SCHEMA } from '../migrations';
 import { ZabbixDatasource } from '../datasource';

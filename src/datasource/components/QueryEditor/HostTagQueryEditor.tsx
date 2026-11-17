@@ -1,4 +1,5 @@
-import { Tooltip, Button, Combobox, ComboboxOption, Stack, RadioButtonGroup } from '@grafana/ui';
+import { Tooltip, Button, ComboboxOption, Stack, RadioButtonGroup } from '@grafana/ui';
+import { Combobox } from '../../../components/Combobox/Combobox';
 import React, { useCallback } from 'react';
 import { HostTagOperatorLabel, HostTagOperatorValue } from './types';
 import { HostTagFilter, ZabbixTagEvalType } from 'datasource/types/query';
