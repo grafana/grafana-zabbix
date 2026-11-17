@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { css } from '@emotion/css';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { css, cx } from '@emotion/css';
 import moment from 'moment/moment';
 import { GrafanaTheme2, TimeRange } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
@@ -12,6 +12,7 @@ import AcknowledgesList from './AcknowledgesList';
 import ProblemTimeline from './ProblemTimeline';
 import { AckButton, ExecScriptButton, ExploreButton, FAIcon, ModalController } from '../../../components';
 import { ExecScriptData, ExecScriptModal } from '../ExecScriptModal';
+import { ProblemDescriptionModal } from '../ProblemDescriptionModal';
 import ProblemStatusBar from './ProblemStatusBar';
 import { ProblemItems } from './ProblemItems';
 import { ProblemHosts, ProblemHostsDescription } from './ProblemHosts';
@@ -102,6 +103,31 @@ export const ProblemDetails = ({
   const problemSeverity = Number(problem.severity);
   const styles = useStyles2(getStyles);
 
+  // Tooltip replaces its child's ref, so measure the description through its wrapper. The
+  // description node can be re-created while the row expands, so read it fresh on every
+  // measurement and ignore zero-size (detached or not yet laid out) readings.
+  const [descriptionClipped, setDescriptionClipped] = useState(false);
+  const descriptionObserver = useRef<ResizeObserver | null>(null);
+  const descriptionWrapperRef = useCallback((wrapper: HTMLDivElement | null) => {
+    descriptionObserver.current?.disconnect();
+    descriptionObserver.current = null;
+    if (!wrapper) {
+      return;
+    }
+    const measure = () => {
+      const el = wrapper.firstElementChild as HTMLElement | null;
+      if (el && el.clientHeight > 0) {
+        setDescriptionClipped(el.scrollHeight > el.clientHeight + 1);
+      }
+    };
+    measure();
+    if (typeof ResizeObserver !== 'undefined') {
+      descriptionObserver.current = new ResizeObserver(measure);
+      descriptionObserver.current.observe(wrapper);
+    }
+  }, []);
+  useEffect(() => () => descriptionObserver.current?.disconnect(), []);
+
   const problemDescriptionEl = allowDangerousHTML ? (
     <span dangerouslySetInnerHTML={{ __html: problem.comments }} />
   ) : (
@@ -162,12 +188,36 @@ export const ProblemDetails = ({
           </div>
           {problem.comments && (
             <div className="problem-description-row">
-              <div className={styles.problemDescription}>
-                <Tooltip placement="right" content={problemDescriptionEl}>
-                  <span className="description-label">Description:&nbsp;</span>
-                </Tooltip>
-                {problemDescriptionEl}
-              </div>
+              <ModalController>
+                {({ showModal, hideModal }) => {
+                  const openDescription = () =>
+                    showModal(ProblemDescriptionModal, { problem, allowDangerousHTML, onDismiss: hideModal });
+                  // Tooltip overrides its child's onKeyDown, so Enter/Space are handled on this
+                  // wrapper, which receives the event bubbling up from the focused description.
+                  const onKeyDown = (e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openDescription();
+                    }
+                  };
+                  return (
+                    <div onKeyDown={onKeyDown} ref={descriptionWrapperRef}>
+                      <Tooltip content="Click to open the full description" placement="top">
+                        <div
+                          className={cx(styles.problemDescription, descriptionClipped && styles.descriptionClipped)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Open the full problem description"
+                          onClick={openDescription}
+                        >
+                          <span className="description-label">Description:&nbsp;</span>
+                          {problemDescriptionEl}
+                        </div>
+                      </Tooltip>
+                    </div>
+                  );
+                }}
+              </ModalController>
             </div>
           )}
           {problem.items && (
@@ -249,16 +299,20 @@ const getStyles = (theme: GrafanaTheme2) => ({
     position: relative;
     max-height: 6rem;
     min-height: 3rem;
+    overflow: hidden;
+    /* The table cell sets nowrap; the preview must wrap inside the details pane. */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+    border-radius: ${theme.shape.radius.default};
 
-    &:after {
-      content: '';
-      text-align: right;
-      position: inherit;
-      bottom: 0;
-      right: 0;
-      width: 70%;
-      height: 1.5rem;
-      background: linear-gradient(to right, rgba(0, 0, 0, 0), ${theme.colors.background.canvas} 50%);
+    &:hover,
+    &:focus-visible {
+      background: ${theme.colors.action.hover};
     }
+  `,
+  // Fade the last visible line out when the text is cut off, hinting there is more.
+  descriptionClipped: css`
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent);
   `,
 });
