@@ -23,7 +23,7 @@ export default function ProblemStatusBar(props: ProblemStatusBarProps) {
 
   return (
     <div className={`problem-statusbar ${className || ''}`}>
-      <ProblemStatusBarItem icon="wrench" fired={maintenance} tooltip="Host maintenance" />
+      <ProblemStatusBarItem icon="wrench" fired={maintenance} tooltip="Suppressed (maintenance or manual)" />
       <ProblemStatusBarItem icon="globe" fired={link} link={link && problem.url} tooltip="External link" />
       <ProblemStatusBarItem icon="bullhorn" fired={multiEvent} tooltip="Trigger generates multiple problem events" />
       <ProblemStatusBarItem

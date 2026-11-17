@@ -163,7 +163,7 @@ Expand the **Options** section to access additional settings:
 | **Acknowledged** | Filter by acknowledgment status: all triggers, unacknowledged, or acknowledged. |
 | **Sort by** | Sort order: Default, Last change, or Severity. |
 | **Use time range** | Restrict results to the dashboard time range. |
-| **Hosts in maintenance** | Include hosts that are currently in maintenance. |
+| **Suppressed problems** | Include problems that are suppressed in Zabbix, either by a maintenance period or manually from the Zabbix frontend (Zabbix 6.2+). Disabled by default, so suppressed problems are hidden. |
 | **Host proxy** | Include proxy information in the results. |
 | **Host IP** | Include the host IP address in the results, resolved from the host's IP-based interfaces (interfaces connecting via DNS are ignored; multiple IPs are comma-separated). Requires an additional `host.get` API call, so it's disabled by default. Enable the **Host IP** field in the Problems panel options to display it. |
 | **Item value at problem time** | Resolve each problem's item value at its creation time (used by `{ITEM.VALUE}` and operational data) via a `history.get` lookup. Disabled by default because it adds load and can impact performance in large environments with many active problems. Leave off unless you need historical-value accuracy. |
