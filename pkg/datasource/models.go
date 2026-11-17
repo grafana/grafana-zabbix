@@ -53,6 +53,8 @@ type QueryModel struct {
 	Application QueryFilter `json:"application"`
 	ItemTag     QueryFilter `json:"itemTag"`
 	Item        QueryFilter `json:"item"`
+	// "0" (AND/OR) or "2" (OR, default) for comma-separated item tags
+	ItemTagEvalType string `json:"itemTagEvalType,omitempty"`
 
 	// Item ID mode
 	ItemIDs string `json:"itemids,omitempty"`

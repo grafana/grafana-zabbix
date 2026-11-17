@@ -1,3 +1,5 @@
+import { ZabbixTagEvalType } from '../../../types/query';
+
 export interface JSONRPCRequest {
   jsonrpc: '2.0' | string;
   method: string;
@@ -26,6 +28,7 @@ export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 
 export interface GetItemsOptions {
   nameSearch?: string[];
   selectTags?: boolean;
+  itemTagEvalType?: ZabbixTagEvalType;
 }
 
 export type GFRequestOptions = { [key: string]: any };

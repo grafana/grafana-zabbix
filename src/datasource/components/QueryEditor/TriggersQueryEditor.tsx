@@ -3,8 +3,9 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { SelectableValue } from '@grafana/data';
-import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
+import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input, Stack } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
+import { ItemTagEvalTypeSelect } from './ItemTagEvalTypeSelect';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
 import { itemTagToString } from '../../utils';
@@ -127,6 +128,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     const options = {
       itemtype: 'num',
       showDisabledItems: query.options.showDisabledItems,
+      itemTagEvalType: query.itemTagEvalType,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
     let itemOptions: Array<ComboboxOption<string>> = items?.map((item) => ({
@@ -151,6 +153,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
     interpolatedQuery.host.filter,
     interpolatedQuery.application.filter,
     interpolatedQuery.itemTag.filter,
+    query.itemTagEvalType,
   ]);
 
   // Update suggestions on every metric change
@@ -181,7 +184,7 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter]);
+  }, [groupFilter, hostFilter, appFilter, tagFilter, query.itemTagEvalType]);
 
   const onTextFilterChange = (prop: string) => {
     return (v: FormEvent<HTMLInputElement>) => {
@@ -274,15 +277,22 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
         )}
         {!supportsApplications && query.countTriggersBy === 'items' && (
           <InlineField label="Item tag" labelWidth={12}>
-            <MetricPicker
-              width={24}
-              value={query.itemTag.filter}
-              options={tagOptions}
-              isLoading={tagsLoading}
-              onChange={onFilterChange('itemTag')}
-              createCustomValue={true}
-              placeholder="Item tag name"
-            />
+            <Stack direction="row" gap={1}>
+              <MetricPicker
+                width={24}
+                value={query.itemTag.filter}
+                options={tagOptions}
+                isLoading={tagsLoading}
+                onChange={onFilterChange('itemTag')}
+                createCustomValue={true}
+                placeholder="Item tag name"
+              />
+              <ItemTagEvalTypeSelect
+                tagFilter={query.itemTag.filter}
+                value={query.itemTagEvalType}
+                onChange={(itemTagEvalType) => onChange({ ...query, itemTagEvalType })}
+              />
+            </Stack>
           </InlineField>
         )}
         {query.countTriggersBy === 'problems' && (

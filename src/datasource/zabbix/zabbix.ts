@@ -322,7 +322,7 @@ export class Zabbix implements ZabbixConnector {
   getItemsFromTarget(target, options) {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
     const filters = _.map(parts, (p) => target[p].filter);
-    return this.getItems(...filters, options);
+    return this.getItems(...filters, { ...options, itemTagEvalType: target.itemTagEvalType });
   }
 
   getMacrosFromTarget(target) {
@@ -347,7 +347,7 @@ export class Zabbix implements ZabbixConnector {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
     const filters = parts.map((p) => target[p].filter);
     const [hosts, apps] = await this.getHostsApsFromTarget(target);
-    const items = await this.getItems(...filters, options);
+    const items = await this.getItems(...filters, { ...options, itemTagEvalType: target.itemTagEvalType });
     return [hosts, apps, items];
   }
 
@@ -493,6 +493,8 @@ export class Zabbix implements ZabbixConnector {
         return [];
       }
       itemTagFilter = tags.map((t) => t.name).join(',');
+      // A regex expands to every matching tag; requiring all of them would match almost nothing
+      options = { ...options, itemTagEvalType: ZabbixTagEvalType.Or };
     }
 
     let items = await this.zabbixAPI.getItems(
@@ -939,7 +941,7 @@ export class Zabbix implements ZabbixConnector {
 // Picks the zabbixAPI.getItems() options, leaving out unset ones so the request cache key stays stable
 function getItemsAPIOptions(options: any = {}): GetItemsOptions {
   return _.pickBy(
-    { nameSearch: options.nameSearch, selectTags: options.selectTags },
+    { nameSearch: options.nameSearch, selectTags: options.selectTags, itemTagEvalType: options.itemTagEvalType },
     (value) => value !== undefined
   ) as GetItemsOptions;
 }

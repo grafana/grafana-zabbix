@@ -189,6 +189,7 @@ func TestItemTagCache(t *testing.T) {
 		"num",
 		false,
 		"Application: test, interface: test",
+		"",
 	)
 
 	assert.NoError(t, err)
@@ -213,6 +214,7 @@ func TestItemTagCache(t *testing.T) {
 		false,
 		// change tag order
 		"interface: test, Application: test",
+		"",
 	)
 
 	assert.NoError(t, err)

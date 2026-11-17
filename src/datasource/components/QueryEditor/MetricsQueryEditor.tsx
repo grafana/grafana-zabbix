@@ -2,7 +2,7 @@ import { flatten, uniqBy } from 'lodash';
 import React, { useCallback, useEffect } from 'react';
 import { useAsyncFn } from '../../hooks/useAsyncFn';
 
-import { InlineField, ComboboxOption } from '@grafana/ui';
+import { InlineField, ComboboxOption, Stack } from '@grafana/ui';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { buildHostTagOptions, getVariableOptions } from './utils';
@@ -11,6 +11,7 @@ import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../../type
 import { ZBXItem, ZBXItemTag } from '../../types';
 import { itemTagToString } from '../../utils';
 import { HostTagQueryEditor } from './HostTagQueryEditor';
+import { ItemTagEvalTypeSelect } from './ItemTagEvalTypeSelect';
 import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
 
 export interface Props {
@@ -121,6 +122,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     const options = {
       itemtype: 'num',
       showDisabledItems: query.options.showDisabledItems,
+      itemTagEvalType: query.itemTagEvalType,
     };
     const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
 
@@ -165,6 +167,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     interpolatedQuery.application.filter,
     interpolatedQuery.itemTag.filter,
     interpolatedQuery.item.filter,
+    query.itemTagEvalType,
   ]);
 
   // Update suggestions on every metric change
@@ -198,7 +201,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter, itemFilter]);
+  }, [groupFilter, hostFilter, appFilter, tagFilter, itemFilter, query.itemTagEvalType]);
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {
@@ -278,15 +281,22 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
         )}
         {!supportsApplications && (
           <InlineField label="Item tag" labelWidth={12}>
-            <MetricPicker
-              width={24}
-              value={query.itemTag.filter}
-              options={tagOptions}
-              isLoading={tagsLoading}
-              onChange={onFilterChange('itemTag')}
-              createCustomValue={true}
-              placeholder="Item tag name"
-            />
+            <Stack direction="row" gap={1}>
+              <MetricPicker
+                width={24}
+                value={query.itemTag.filter}
+                options={tagOptions}
+                isLoading={tagsLoading}
+                onChange={onFilterChange('itemTag')}
+                createCustomValue={true}
+                placeholder="Item tag name"
+              />
+              <ItemTagEvalTypeSelect
+                tagFilter={query.itemTag.filter}
+                value={query.itemTagEvalType}
+                onChange={(itemTagEvalType) => onChange({ ...query, itemTagEvalType })}
+              />
+            </Stack>
           </InlineField>
         )}
         <InlineField label="Item" labelWidth={12}>
