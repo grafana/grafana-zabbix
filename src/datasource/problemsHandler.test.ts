@@ -4,6 +4,7 @@ import {
   expandUserMacros,
   filterTriggersPre,
   hasUserMacro,
+  setMaintenanceStatus,
 } from './problemsHandler';
 import { ZBXHost } from './types';
 
@@ -301,5 +302,25 @@ describe('filterTriggersPre', () => {
 
     expect(filterTriggersPre(problems, target('High CPU load')).length).toBe(1);
     expect(filterTriggersPre(problems, target('')).length).toBe(2);
+  });
+});
+
+describe('suppressed problems', () => {
+  const target = (hostsInMaintenance: boolean) => ({ trigger: { filter: '' }, options: { hostsInMaintenance } });
+  const problems = (): any[] => [
+    // Manual suppression (Zabbix 6.2+): suppression_data carries the user, no maintenance.
+    { name: 'Manually suppressed', suppressed: '1', suppression_data: [{ maintenanceid: '0', userid: '1' }] },
+    { name: 'Maintenance', suppressed: '1', suppression_data: [{ maintenanceid: '3', userid: '0' }] },
+    { name: 'Normal', suppressed: '0', suppression_data: [] },
+  ];
+
+  it('hides every suppressed problem when the option is off', () => {
+    const result = filterTriggersPre(setMaintenanceStatus(problems()), target(false));
+    expect(result.map((p) => p.name)).toEqual(['Normal']);
+  });
+
+  it('shows suppressed problems when the option is on', () => {
+    const result = filterTriggersPre(setMaintenanceStatus(problems()), target(true));
+    expect(result.map((p) => p.name)).toEqual(['Manually suppressed', 'Maintenance', 'Normal']);
   });
 });
