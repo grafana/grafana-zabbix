@@ -20,6 +20,7 @@
 🐛 Look up data sources with the async APIs from `@grafana/plugin-compat` instead of the deprecated `getDataSourceSrv()`, so the plugin keeps working once Grafana loads data sources lazily. Older Grafana versions fall back to the previous APIs.
 🐛 Fix: Problem name and item variable regex filters with an alternation inside a group (e.g. `/^CPU (user|system)$/`) no longer miss matches when narrowed on the Zabbix side
 🐛 Fix: Item and Item values template variables no longer fetch every item of the host (with tags) from Zabbix; the item name filter is pushed down to the Zabbix API
+🐛 Fix host tag filtering during Metrics query execution: queries configured with host tags now constrain returned series to matching hosts in both backend (Go) and direct DB connection execution paths. Closes #2594.
 
 ## 6.10.3
 
