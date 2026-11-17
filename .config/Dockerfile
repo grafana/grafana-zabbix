@@ -7,7 +7,7 @@ ARG anonymous_auth_enabled=true
 ARG development=false
 ARG TARGETARCH
 
-ARG GO_VERSION=1.26.5
+ARG GO_VERSION=1.27.3
 ARG GO_ARCH=${TARGETARCH:-amd64}
 
 ENV DEV "${development}"

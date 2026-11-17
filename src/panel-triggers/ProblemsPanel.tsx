@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import _ from 'lodash';
 import { dateMath, PanelProps, OrgRole } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
-import { getDataSourceSrv, config } from '@grafana/runtime';
+import { config } from '@grafana/runtime';
+import { getDataSourceInstance, getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
+import { usePanelContext } from '@grafana/ui';
 import { ProblemsPanelOptions, RTResized } from './types';
+import {
+  CollectedSeverityOverrides,
+  collectSeverityOverrides,
+  ProblemsPanelInstanceState,
+  resolveSeverity,
+} from './severityOverrides';
 import { ZabbixMetricsQuery } from '../datasource/types/query';
 import { TagOperatorValue } from '../datasource/components/QueryEditor/types';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
@@ -14,12 +22,51 @@ import AlertList from './components/AlertList/AlertList';
 import { useSoundAlerts } from './hooks/useSoundAlerts';
 
 const PROBLEM_EVENTS_LIMIT = 100;
+const NO_SEVERITY_OVERRIDES: CollectedSeverityOverrides = { overrides: [], datasourceNames: [] };
 
 interface ProblemsPanelProps extends PanelProps<ProblemsPanelOptions> {}
 
 export const ProblemsPanel = (props: ProblemsPanelProps) => {
   const { data, options, timeRange, onOptionsChange } = props;
-  const { layout, showTriggers, triggerSeverity, sortProblems } = options;
+  const { layout, showTriggers, sortProblems } = options;
+  const panelContext = usePanelContext();
+
+  // Apply global severity overrides defined in the Zabbix data source(s) this panel queries.
+  // Names and colors customized in the panel itself take precedence over the global ones.
+  const targets = data?.request?.targets;
+  const [severityOverrides, setSeverityOverrides] = useState<CollectedSeverityOverrides>(NO_SEVERITY_OVERRIDES);
+  useEffect(() => {
+    let active = true;
+    collectSeverityOverrides(targets, getDataSourceInstanceSettings).then((collected) => {
+      if (active) {
+        // Keep the previous state when nothing changed, so a refresh doesn't re-render the problems
+        setSeverityOverrides((previous) => (_.isEqual(previous, collected) ? previous : collected));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [targets]);
+  const { severity: triggerSeverity, globalSeverityOverrides } = useMemo(
+    () => resolveSeverity(options.triggerSeverity, severityOverrides),
+    [options.triggerSeverity, severityOverrides]
+  );
+  const effectiveOptions = useMemo<ProblemsPanelOptions>(
+    () => (triggerSeverity === options.triggerSeverity ? options : { ...options, triggerSeverity }),
+    [options, triggerSeverity]
+  );
+
+  // Share the applied overrides with the panel options editor so it can flag them.
+  const onInstanceStateChange = panelContext?.onInstanceStateChange;
+  const instanceStateKey = JSON.stringify(globalSeverityOverrides ?? null);
+  useEffect(() => {
+    if (!onInstanceStateChange) {
+      return;
+    }
+    const state: ProblemsPanelInstanceState = { globalSeverityOverrides };
+    onInstanceStateChange(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onInstanceStateChange, instanceStateKey]);
 
   const prepareProblems = () => {
     const problems: ProblemDTO[] = [];
@@ -188,7 +235,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     const triggerids = [problem.triggerid];
     const timeFrom = Math.ceil(dateMath.toDateTime(timeRange.from, {}).unix());
     const timeTo = Math.ceil(dateMath.toDateTime(timeRange.to, {}).unix());
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
     return ds.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
   };
 
@@ -197,13 +244,13 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       return Promise.resolve([]);
     }
     const eventids = [problem.eventid];
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
     return ds.zabbix.getEventAlerts(eventids);
   };
 
   const getScripts = async (problem: ProblemDTO) => {
     const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
     return ds.zabbix.getScripts([hostid]);
   };
 
@@ -213,7 +260,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     scope: string
   ): Promise<APIExecuteScriptResponse> => {
     const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
 
     switch (scope) {
       case '4': // Event action
@@ -230,7 +277,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     const eventid = problem.eventid;
     const grafana_user = config.bootData.user.name;
     const ack_message = grafana_user + ' (Grafana): ' + message;
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
     const userIsEditor =
       config.bootData.user.isGrafanaAdmin ||
       config.bootData.user.orgRole === OrgRole.Editor ||
@@ -268,7 +315,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     return (
       <AlertList
         problems={problems}
-        panelOptions={options}
+        panelOptions={effectiveOptions}
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
         onProblemAck={onProblemAck}
@@ -284,7 +331,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     return (
       <ProblemList
         problems={problems}
-        panelOptions={options}
+        panelOptions={effectiveOptions}
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
         timeRange={timeRange}
