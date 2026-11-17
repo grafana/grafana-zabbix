@@ -189,6 +189,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       } else if (target.queryType === c.MODE_MACROS) {
         // UserMacro query
         return this.queryUserMacrosData(target);
+      } else if (target.queryType === c.MODE_INVENTORY) {
+        return this.queryInventoryData(target);
       } else {
         return [];
       }
@@ -454,6 +456,16 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const hostmacroids = _.map(macros, 'hostmacroid');
     const userMacros = await this.zabbix.getUserMacros(hostmacroids);
     return responseHandler.handleMacro(userMacros, target);
+  }
+
+  async queryInventoryData(target: ZabbixMetricsQuery) {
+    const hosts = await this.zabbix.getHosts(target.group.filter, target.host.filter);
+    if (!hosts.length) {
+      return [];
+    }
+    const fields = target.inventoryFields?.length ? target.inventoryFields : c.DEFAULT_INVENTORY_FIELDS;
+    const inventory = await this.zabbix.getHostInventory(_.map(hosts, 'hostid'), fields);
+    return responseHandler.handleInventory(inventory, fields, target);
   }
 
   async queryTriggersData(target: ZabbixMetricsQuery, timeRange, request) {

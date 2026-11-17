@@ -69,6 +69,7 @@ const REQUESTS_TO_PROXYFY = [
   'getSLAList',
   'getUsers',
   'getHostInterfaces',
+  'getHostInventory',
 ];
 
 const REQUESTS_TO_CACHE = [
@@ -85,6 +86,7 @@ const REQUESTS_TO_CACHE = [
   'getSLAList',
   'getUsers',
   'getHostInterfaces',
+  'getHostInventory',
 ];
 
 const REQUESTS_TO_BIND = [
@@ -110,6 +112,7 @@ const REQUESTS_TO_BIND = [
   'getSLAList',
   'getUsers',
   'getHostInterfaces',
+  'getHostInventory',
 ];
 
 type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAuth' | 'withCredentials' | 'uid'> &
@@ -154,6 +157,7 @@ export class Zabbix implements ZabbixConnector {
   getSLAList: () => Promise<any>;
   getUsers: () => Promise<any>;
   getHostInterfaces: (hostids: string[]) => Promise<any>;
+  getHostInventory: (hostids: string[], fields: string[]) => Promise<any>;
 
   constructor(options: ZabbixOptions) {
     const {

@@ -277,6 +277,16 @@ export class ZabbixAPIConnector {
     return this.request('host.get', params);
   }
 
+  getHostInventory(hostids: string[], fields: string[]): Promise<any[]> {
+    const params = {
+      output: ['hostid', 'name'],
+      hostids,
+      selectInventory: fields,
+      sortfield: 'name',
+    };
+    return this.request('host.get', params);
+  }
+
   async getApps(hostids): Promise<any[]> {
     if (this.isZabbix54OrHigher()) {
       return [];

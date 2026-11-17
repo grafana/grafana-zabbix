@@ -40,6 +40,7 @@ export interface ZabbixConnector {
   getUserMacros: (hostmacroids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
   getHostInterfaces: (hostids: string[]) => Promise<any>;
+  getHostInventory: (hostids: string[], fields: string[]) => Promise<any>;
   getVersion: () => Promise<string>;
 
   getGroups: (groupFilter?) => any;
