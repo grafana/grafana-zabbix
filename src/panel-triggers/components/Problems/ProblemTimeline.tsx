@@ -4,6 +4,8 @@ import _ from 'lodash';
 import moment from 'moment';
 import { ZBXAcknowledge, ZBXEvent } from '../../../datasource/types';
 import { TimeRange } from '@grafana/data';
+import { TimeZone } from '@grafana/schema';
+import { formatUnixTime } from '../../utils';
 import {
   DEFAULT_OK_COLOR,
   DEFAULT_PROBLEM_COLOR,
@@ -16,6 +18,7 @@ import {
 export interface ProblemTimelineProps {
   events: ZBXEvent[];
   timeRange: TimeRange;
+  timeZone?: TimeZone;
   okColor?: string;
   problemColor?: string;
   eventRegionHeight?: number;
@@ -166,6 +169,7 @@ export default class ProblemTimeline extends PureComponent<ProblemTimelineProps,
           eventInfo={this.state.eventInfo}
           show={this.state.showEventInfo}
           left={padding}
+          timeZone={this.props.timeZone}
         />
         <svg className="event-timeline-canvas" viewBox={`0 0 ${boxWidth} ${boxHeight}`}>
           <defs>
@@ -250,6 +254,7 @@ interface TimelineInfoContainerProps {
   show?: boolean;
   left?: number;
   className?: string;
+  timeZone?: TimeZone;
 }
 
 class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
@@ -260,11 +265,10 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
   };
 
   render() {
-    const { event, eventInfo, show, className, left } = this.props;
+    const { event, eventInfo, show, className, left, timeZone } = this.props;
     let infoItems, durationItem;
     if (event) {
-      const ts = moment(Number(event.clock) * 1000);
-      const tsFormatted = ts.format('HH:mm:ss');
+      const tsFormatted = formatUnixTime(event.clock, 'HH:mm:ss', timeZone);
       infoItems = [
         <span key="ts" className="event-timestamp">
           <span className="event-timestamp-label">Time:&nbsp;</span>
@@ -283,8 +287,7 @@ class TimelineInfoContainer extends PureComponent<TimelineInfoContainerProps> {
       );
     }
     if (eventInfo && eventInfo.timestamp) {
-      const ts = moment(eventInfo.timestamp * 1000);
-      const tsFormatted = ts.format('HH:mm:ss');
+      const tsFormatted = formatUnixTime(eventInfo.timestamp, 'HH:mm:ss', timeZone);
       infoItems = [
         <span key="ts" className="event-timestamp">
           <span className="event-timestamp-label">Time:&nbsp;</span>

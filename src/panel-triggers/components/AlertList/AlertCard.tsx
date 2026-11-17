@@ -11,13 +11,14 @@ import AlertAcknowledges from './AlertAcknowledges';
 import AlertIcon from './AlertIcon';
 import { ProblemDTO, ZBXTag } from '../../../datasource/types';
 import { ModalController } from '../../../components';
-import { DataSourceRef } from '@grafana/schema';
+import { DataSourceRef, TimeZone } from '@grafana/schema';
 import { Tooltip } from '@grafana/ui';
 import { DataSourceNames, getDataSourceName, getDataSourceNames } from '../../datasourceNames';
 
 interface AlertCardProps {
   problem: ProblemDTO;
   panelOptions: ProblemsPanelOptions;
+  timeZone?: TimeZone;
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
 }
@@ -80,7 +81,8 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
 
     const lastchange = formatLastChange(
       problem.timestamp,
-      panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat
+      panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat,
+      this.props.timeZone
     );
     const age = moment.unix(problem.timestamp).fromNow(true);
 
@@ -206,6 +208,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
                 {({ showModal, hideModal }) => (
                   <AlertAcknowledgesButton
                     problem={problem}
+                    timeZone={this.props.timeZone}
                     onClick={() => {
                       showModal(AckModal, {
                         canClose: problem.manual_close === '1',
@@ -304,6 +307,7 @@ function AlertSeverity(props) {
 
 interface AlertAcknowledgesButtonProps {
   problem: ProblemDTO;
+  timeZone?: TimeZone;
   onClick: (event?) => void;
 }
 
@@ -313,7 +317,7 @@ class AlertAcknowledgesButton extends PureComponent<AlertAcknowledgesButtonProps
   };
 
   renderTooltipContent = () => {
-    return <AlertAcknowledges problem={this.props.problem} onClick={this.handleClick} />;
+    return <AlertAcknowledges problem={this.props.problem} timeZone={this.props.timeZone} onClick={this.handleClick} />;
   };
 
   render() {
