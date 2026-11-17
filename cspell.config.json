@@ -36,6 +36,7 @@
   "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
   "words": [
     "alexanderzobnin",
+    "amannn",
     "applicationids",
     "clickhouse",
     "datapoint",
