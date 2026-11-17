@@ -8,9 +8,19 @@ import { isNewProblem } from '../utils';
 // one happens, so it must be kept around rather than recreated per alert.
 let sharedAudioContext: AudioContext | null = null;
 
+type PendingTone = { type: 'beep' | 'alarm'; volume: number };
+
+// The latest alert skipped while the context was suspended by autoplay policy.
+// It plays once the pending resume() settles after a user gesture; only the
+// latest is kept so the first interaction does not release a burst of tones.
+let pendingTone: PendingTone | null = null;
+let resumePending = false;
+
 // Test-only: drops the cached context so each test starts from a clean slate.
 export function resetSharedAudioContext(): void {
   sharedAudioContext = null;
+  pendingTone = null;
+  resumePending = false;
 }
 
 function getAudioContext(): AudioContext | null {
@@ -31,16 +41,37 @@ function playTone(type: 'beep' | 'alarm', volume: number): void {
     return;
   }
 
-  if (ctx.state === 'suspended') {
-    // Autoplay policy: the context resumes only once the user has interacted
-    // with the page. Kicking resume() off here makes later alerts audible.
-    ctx.resume().catch(() => {});
-  }
   if (ctx.state !== 'running') {
-    console.warn('Zabbix panel: sound alert skipped, audio is blocked until you interact with the page');
+    // Autoplay policy: the context resumes only once the user has interacted
+    // with the page. Remember this alert and play it when the resume settles.
+    pendingTone = { type, volume };
+    console.warn('Zabbix panel: audio is blocked until you interact with the page, the alert will play once allowed');
+    if (resumePending) {
+      return;
+    }
+    resumePending = true;
+    ctx
+      .resume()
+      .then(() => {
+        resumePending = false;
+        if (pendingTone && ctx.state === 'running') {
+          const tone = pendingTone;
+          pendingTone = null;
+          startTone(ctx, tone.type, tone.volume);
+        }
+      })
+      .catch(() => {
+        resumePending = false;
+      });
     return;
   }
 
+  // A current alert supersedes one still waiting on a resume
+  pendingTone = null;
+  startTone(ctx, type, volume);
+}
+
+function startTone(ctx: AudioContext, type: 'beep' | 'alarm', volume: number): void {
   const gainNode = ctx.createGain();
   gainNode.gain.value = Math.max(0, Math.min(1, volume / 100));
   gainNode.connect(ctx.destination);

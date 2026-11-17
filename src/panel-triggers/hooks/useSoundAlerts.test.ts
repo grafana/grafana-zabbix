@@ -1,4 +1,4 @@
-import { renderHook, RenderHookResult } from '@testing-library/react';
+import { act, renderHook, RenderHookResult } from '@testing-library/react';
 import { ProblemDTO } from 'datasource/types';
 import { ProblemsPanelOptions } from '../types';
 import { resetSharedAudioContext, useSoundAlerts } from './useSoundAlerts';
@@ -194,7 +194,7 @@ describe('useSoundAlerts', () => {
     expect(mockAudioContext.close).not.toHaveBeenCalled();
   });
 
-  it('skips playback and requests a resume while the context is suspended by autoplay policy', () => {
+  it('defers playback and requests a resume while the context is suspended by autoplay policy', () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     mockAudioContext.state = 'suspended';
 
@@ -205,6 +205,46 @@ describe('useSoundAlerts', () => {
     expect(mockAudioContext.resume).toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('blocked until you interact'));
     warn.mockRestore();
+  });
+
+  it('plays the deferred alert once the resume settles', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockAudioContext.state = 'suspended';
+
+    const { rerender } = renderSeeded([], makeOptions({}));
+    rerender({ problems: [makeProblem({ eventid: '2' })], options: makeOptions({}) });
+    expect(mockOscillator.start).not.toHaveBeenCalled();
+
+    // The user interacts: the context becomes running and the pending
+    // resume() promise settles.
+    mockAudioContext.state = 'running';
+    await act(async () => {});
+
+    expect(mockOscillator.start).toHaveBeenCalledTimes(1);
+  });
+
+  it('plays only the latest deferred alert, not a burst, when the resume settles', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockAudioContext.state = 'suspended';
+
+    const options = makeOptions({ soundVolume: 80 });
+    const { rerender } = renderSeeded([], options);
+    rerender({ problems: [makeProblem({ eventid: '2' })], options });
+    const laterOptions = makeOptions({ soundVolume: 40 });
+    rerender({ problems: [makeProblem({ eventid: '2' }), makeProblem({ eventid: '3' })], options: laterOptions });
+    expect(mockAudioContext.resume).toHaveBeenCalledTimes(1);
+
+    mockAudioContext.state = 'running';
+    await act(async () => {});
+
+    // One tone, with the settings of the latest skipped alert.
+    expect(mockOscillator.start).toHaveBeenCalledTimes(1);
+    expect(mockGainNode.gain.value).toBe(0.4);
+
+    // Nothing left pending: a later quiet refresh does not play again.
+    rerender({ problems: [makeProblem({ eventid: '2' }), makeProblem({ eventid: '3' })], options: laterOptions });
+    await act(async () => {});
+    expect(mockOscillator.start).toHaveBeenCalledTimes(1);
   });
 
   it('plays a custom URL with the configured volume', () => {
