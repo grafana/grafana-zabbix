@@ -164,11 +164,21 @@ export class ZabbixAPIConnector {
     return this.version ? semver.gte(this.version, '6.4.0') : false;
   }
 
+  // Unacknowledge action was introduced in Zabbix 5.0
+  supportsUnacknowledge() {
+    return this.version ? semver.gte(this.version, '5.0.0') : false;
+  }
+
+  // Manual problem suppression was introduced in Zabbix 6.2
+  supportsProblemSuppression() {
+    return this.version ? semver.gte(this.version, '6.2.0') : false;
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
 
-  acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number) {
+  acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number, suppress_until?: number) {
     if (!action) {
       action = semver.gte(this.version, '4.0.0') ? ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
     }
@@ -181,6 +191,11 @@ export class ZabbixAPIConnector {
 
     if (severity !== undefined) {
       params.severity = severity;
+    }
+
+    // Required when action contains the "suppress event" flag; 0 means suppress indefinitely
+    if (suppress_until !== undefined) {
+      params.suppress_until = suppress_until;
     }
 
     return this.request('event.acknowledge', params);

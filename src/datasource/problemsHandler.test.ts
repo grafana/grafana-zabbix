@@ -4,6 +4,7 @@ import {
   expandUserMacros,
   filterTriggersPre,
   hasUserMacro,
+  setActionCapabilities,
 } from './problemsHandler';
 import { ZBXHost } from './types';
 
@@ -301,5 +302,19 @@ describe('filterTriggersPre', () => {
 
     expect(filterTriggersPre(problems, target('High CPU load')).length).toBe(1);
     expect(filterTriggersPre(problems, target('')).length).toBe(2);
+  });
+});
+
+describe('setActionCapabilities', () => {
+  it('stamps the action capabilities on every problem', () => {
+    const problems: any[] = [{ eventid: '1' }, { eventid: '2' }];
+    const capabilities = { unacknowledge: true, suppress: true };
+
+    const result = setActionCapabilities(problems, capabilities);
+
+    expect(result).toHaveLength(2);
+    result.forEach((problem) => {
+      expect(problem.actionCapabilities).toEqual({ unacknowledge: true, suppress: true });
+    });
   });
 });

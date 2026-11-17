@@ -141,6 +141,17 @@ export interface ProblemDTO {
 
   showAckButton?: boolean;
   type?: string;
+
+  /** Action capabilities of the connected Zabbix server, see problemsHandler.setActionCapabilities(). */
+  actionCapabilities?: ProblemActionCapabilities;
+}
+
+/** Which problem update actions the connected Zabbix server supports (depends on its version). */
+export interface ProblemActionCapabilities {
+  /** Unacknowledge, Zabbix 5.0+ */
+  unacknowledge?: boolean;
+  /** Manual suppress/unsuppress, Zabbix 6.2+ */
+  suppress?: boolean;
 }
 
 export interface ZBXProblem {

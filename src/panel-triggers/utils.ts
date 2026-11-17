@@ -33,3 +33,18 @@ export const getNextRefIdChar = (queries: DataQuery[]): string => {
   });
   return nextLetter || 'A';
 };
+
+/** Compute AckModal action visibility from the problem state and the server's action capabilities. */
+export function getAckModalActionProps(problem: ProblemDTO) {
+  const capabilities = problem.actionCapabilities || {};
+  const isAcknowledged = problem.acknowledged === '1';
+  const isSuppressed = problem.suppressed === '1';
+
+  return {
+    canAck: !isAcknowledged,
+    canClose: problem.manual_close === '1',
+    canUnack: !!capabilities.unacknowledge && isAcknowledged,
+    canSuppress: !!capabilities.suppress && !isSuppressed,
+    canUnsuppress: !!capabilities.suppress && isSuppressed,
+  };
+}
