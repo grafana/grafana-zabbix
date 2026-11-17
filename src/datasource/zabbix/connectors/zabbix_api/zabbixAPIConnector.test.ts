@@ -827,6 +827,17 @@ describe('Zabbix API connector', () => {
         suppress_until: 1700003600,
       });
     });
+
+    it('passes cause_eventid for the rank as symptom action', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 256, undefined, undefined, '100500');
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 256,
+        cause_eventid: '100500',
+      });
+    });
   });
 
   describe('version capabilities', () => {
@@ -850,6 +861,14 @@ describe('Zabbix API connector', () => {
       ['7.0.0', true],
     ])('supportsProblemSuppression for version %s is %s', (version, expected) => {
       expect(createConnector(version).supportsProblemSuppression()).toBe(expected);
+    });
+
+    it.each([
+      ['6.2.0', false],
+      ['6.4.0', true],
+      ['7.0.0', true],
+    ])('supportsCauseSymptomProblems for version %s is %s', (version, expected) => {
+      expect(createConnector(version).supportsCauseSymptomProblems()).toBe(expected);
     });
   });
 

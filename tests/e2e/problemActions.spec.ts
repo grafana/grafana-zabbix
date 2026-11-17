@@ -4,18 +4,19 @@ import { Page } from '@playwright/test';
 /**
  * End-to-end tests for the Problems panel user actions against the real
  * provisioned Zabbix backend (7.0 by default, which supports every action):
- * acknowledge, unacknowledge, suppress (indefinite / duration / until date)
- * and unsuppress.
+ * acknowledge, unacknowledge, suppress (indefinite / duration / until date),
+ * unsuppress, rank as cause and rank as symptom.
  *
- * The tests use the seeded problem (tests/fixtures/seed.sql):
+ * The tests use the two seeded problems (tests/fixtures/seed.sql):
  *   - eventid 9000001 "E2E problem 0 on e2e-fixture-host"
+ *   - eventid 9000002 "E2E problem 1 on e2e-fixture-host"
  *
  * Tests run serially and every mutation is paired with its inverse action
- * (ack -> unack, suppress -> unsuppress), so the fixture ends in the same
- * state it started and reruns stay deterministic.
+ * (ack -> unack, suppress -> unsuppress, rank symptom -> rank cause), so the
+ * fixture ends in the same state it started and reruns stay deterministic.
  *
- * Zabbix processes suppression changes asynchronously (task manager), so
- * state-flip assertions reload the dashboard until the new state is visible.
+ * Zabbix processes suppression and rank changes asynchronously (task manager),
+ * so state-flip assertions reload the dashboard until the new state is visible.
  */
 
 test.describe.configure({ mode: 'serial' });
@@ -26,6 +27,9 @@ const DASHBOARD_FILE = 'problems-disabled.json';
 const DASHBOARD_SUPPRESSED_VISIBLE_FILE = 'problems-suppressed.json';
 
 const CAUSE_PROBLEM = { eventid: '9000001', name: 'E2E problem 0 on e2e-fixture-host' };
+const SYMPTOM_PROBLEM = { eventid: '9000002', name: 'E2E problem 1 on e2e-fixture-host' };
+const CAUSE_OPTION_LABEL = `e2e-fixture-host: ${CAUSE_PROBLEM.name}`;
+const SYMPTOM_OPTION_LABEL = `e2e-fixture-host: ${SYMPTOM_PROBLEM.name}`;
 
 const isZabbixApi = (url: string) => url.includes('/resources/zabbix-api');
 const isAcknowledge = (postData: string | null | undefined) => !!postData && postData.includes('"event.acknowledge"');
@@ -82,8 +86,8 @@ const submitAndCaptureAck = async (page: Page) => {
 
 /**
  * Reload the dashboard and open the problem's update modal until the expected
- * actions are offered. Retries because Zabbix applies suppression changes
- * asynchronously via its task manager.
+ * actions are offered. Retries because Zabbix applies suppression and rank
+ * changes asynchronously via its task manager.
  */
 const expectModalActionsEventually = async (
   fixtures,
@@ -124,11 +128,11 @@ test('offers only the state-appropriate actions for a fresh problem', async ({
 }) => {
   await openModalForProblem({ gotoDashboardPage, readProvisionedDashboard }, page, CAUSE_PROBLEM.name);
 
-  for (const label of ['Acknowledge', 'Change severity', 'Suppress']) {
+  for (const label of ['Acknowledge', 'Change severity', 'Suppress', 'Rank as symptom']) {
     await expect(modal(page).getByText(label, { exact: true })).toBeVisible();
   }
-  // Not acknowledged, not suppressed, trigger has no manual close
-  for (const label of ['Unacknowledge', 'Unsuppress', 'Close problem']) {
+  // Not acknowledged, not suppressed, already a cause, trigger has no manual close
+  for (const label of ['Unacknowledge', 'Unsuppress', 'Rank as cause', 'Close problem']) {
     await expect(modal(page).getByText(label, { exact: true })).toBeHidden();
   }
 });
@@ -260,4 +264,45 @@ test('unsuppresses the problem, bringing it back to the default panel', async ({
 
   await expectProblemListedEventually(fixtures, page, CAUSE_PROBLEM.name, true);
   await expectModalActionsEventually(fixtures, page, CAUSE_PROBLEM.name, ['Suppress'], ['Unsuppress']);
+});
+
+test('ranks a problem as symptom via the cause event dropdown', async ({
+  gotoDashboardPage,
+  readProvisionedDashboard,
+  page,
+}) => {
+  const fixtures = { gotoDashboardPage, readProvisionedDashboard };
+  await openModalForProblem(fixtures, page, SYMPTOM_PROBLEM.name);
+
+  await toggleAction(page, 'Rank as symptom');
+  await modal(page).getByLabel('Cause event').click();
+  // The dropdown offers other cause problems from the panel, not the problem itself
+  await expect(page.getByText(CAUSE_OPTION_LABEL, { exact: true })).toBeVisible();
+  await expect(page.getByText(SYMPTOM_OPTION_LABEL, { exact: true })).toBeHidden();
+  await page.getByText(CAUSE_OPTION_LABEL, { exact: true }).click();
+
+  const { params, status } = await submitAndCaptureAck(page);
+
+  expect(status).toBe(200);
+  expect(params.eventids).toBe(SYMPTOM_PROBLEM.eventid);
+  // rank as symptom (256) + always-on add message (4)
+  expect(params.action).toBe(260);
+  expect(params.cause_eventid).toBe(CAUSE_PROBLEM.eventid);
+
+  await expectModalActionsEventually(fixtures, page, SYMPTOM_PROBLEM.name, ['Rank as cause'], ['Rank as symptom']);
+});
+
+test('ranks the symptom back as cause', async ({ gotoDashboardPage, readProvisionedDashboard, page }) => {
+  const fixtures = { gotoDashboardPage, readProvisionedDashboard };
+  await openModalForProblem(fixtures, page, SYMPTOM_PROBLEM.name);
+
+  await toggleAction(page, 'Rank as cause');
+  const { params, status } = await submitAndCaptureAck(page);
+
+  expect(status).toBe(200);
+  expect(params.eventids).toBe(SYMPTOM_PROBLEM.eventid);
+  // rank as cause (128) + always-on add message (4)
+  expect(params.action).toBe(132);
+
+  await expectModalActionsEventually(fixtures, page, SYMPTOM_PROBLEM.name, ['Rank as symptom'], ['Rank as cause']);
 });

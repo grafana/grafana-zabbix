@@ -27,6 +27,8 @@ interface Props {
   showTimeline?: boolean;
   panelId?: number;
   allowDangerousHTML?: boolean;
+  /** All problems currently shown in the panel, used as candidates for the cause event selection. */
+  panelProblems?: ProblemDTO[];
   getProblemEvents: (problem: ProblemDTO) => Promise<ZBXEvent[]>;
   getProblemAlerts: (problem: ProblemDTO) => Promise<ZBXAlert[]>;
   getScripts: (problem: ProblemDTO) => Promise<ZBXScript[]>;
@@ -43,6 +45,7 @@ export const ProblemDetails = ({
   showTimeline,
   panelId,
   allowDangerousHTML,
+  panelProblems,
   getProblemAlerts,
   getProblemEvents,
   getScripts,
@@ -138,7 +141,7 @@ export const ProblemDetails = ({
                       className="problem-action-button"
                       onClick={() => {
                         showModal(AckModal, {
-                          ...getAckModalActionProps(problem),
+                          ...getAckModalActionProps(problem, panelProblems),
                           severity: problemSeverity,
                           onSubmit: ackProblem,
                           onDismiss: hideModal,

@@ -28,6 +28,8 @@ describe('AcknowledgesList', () => {
     ['32', '(Suppressed) test message'],
     ['64', '(Unsuppressed) test message'],
     ['8', '(Changed severity) test message'],
+    ['128', '(Ranked as cause) test message'],
+    ['256', '(Ranked as symptom) test message'],
   ])('decodes action %s as "%s"', (action, expected) => {
     renderWithAction(action);
     expect(screen.getByText(expected)).toBeInTheDocument();

@@ -35,18 +35,18 @@ window bound observable. It targets the current Zabbix schema and is idempotent.
 ## Mutating tests must restore the fixture
 
 `problemActions.spec.ts` exercises the Problems panel user actions (acknowledge,
-unacknowledge, suppress, unsuppress) against the real backend, so it
-**mutates** the seeded problems. It runs serially and pairs every action with
-its inverse (ack → unack, suppress → unsuppress), leaving the fixture in its
-seeded state so reruns and the other read-only specs stay deterministic.
-Follow the same convention for any new mutating test.
+unacknowledge, suppress, unsuppress, rank as cause/symptom) against the real
+backend, so it **mutates** the seeded problems. It runs serially and pairs every
+action with its inverse (ack → unack, suppress → unsuppress, rank symptom → rank
+cause), leaving the fixture in its seeded state so reruns and the other read-only
+specs stay deterministic. Follow the same convention for any new mutating test.
 
 Two panel dashboards exist for it: `problems-disabled.json` (default panel
 options — suppressed problems are hidden) and `problems-suppressed.json`
 (same query with "Show hosts in maintenance" on, which makes suppressed
 problems visible so the Unsuppress action is reachable). Zabbix applies
-suppression changes asynchronously via its task manager, so state-flip
-assertions reload the dashboard until the new state appears.
+suppression and rank changes asynchronously via its task manager, so
+state-flip assertions reload the dashboard until the new state appears.
 
 ## Running locally
 

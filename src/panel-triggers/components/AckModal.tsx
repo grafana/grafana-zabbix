@@ -9,6 +9,8 @@ import {
   ZBX_ACK_ACTION_UNACK,
   ZBX_ACK_ACTION_SUPPRESS,
   ZBX_ACK_ACTION_UNSUPPRESS,
+  ZBX_ACK_ACTION_RANK_CAUSE,
+  ZBX_ACK_ACTION_RANK_SYMPTOM,
 } from '../../datasource/constants';
 import {
   Button,
@@ -18,6 +20,7 @@ import {
   Checkbox,
   Input,
   RadioButtonGroup,
+  Select,
   stylesFactory,
   withTheme,
   Themeable,
@@ -25,7 +28,7 @@ import {
   ButtonGroup,
 } from '@grafana/ui';
 import { FAIcon } from '../../components';
-import { GrafanaTheme } from '@grafana/data';
+import { GrafanaTheme, SelectableValue } from '@grafana/data';
 
 const KEYBOARD_ENTER_KEY = 13;
 const KEYBOARD_ESCAPE_KEY = 27;
@@ -43,6 +46,12 @@ interface Props extends Themeable {
   canSuppress?: boolean;
   /** Problem is suppressed and the server supports manual suppression (Zabbix 6.2+) */
   canUnsuppress?: boolean;
+  /** Problem is a symptom and the server supports event ranking (Zabbix 6.4+) */
+  canRankAsCause?: boolean;
+  /** Problem is a cause and the server supports event ranking (Zabbix 6.4+) */
+  canRankAsSymptom?: boolean;
+  /** Problems from the panel which can be selected as the cause event */
+  causeEvents?: Array<SelectableValue<string>>;
   severity?: number;
   withBackdrop?: boolean;
   onSubmit: (data?: AckProblemData) => Promise<any> | any;
@@ -65,6 +74,9 @@ interface State {
   suppressDuration: string;
   suppressDate: string;
   suppressInputError: string;
+  rankAsCause: boolean;
+  rankAsSymptom: boolean;
+  causeEventid: string;
   loading: boolean;
 }
 
@@ -75,6 +87,8 @@ export interface AckProblemData {
   severity?: number;
   /** Unix timestamp until which the event must be suppressed, 0 for indefinite suppression */
   suppress_until?: number;
+  /** Cause event ID, required for the "rank as symptom" action */
+  cause_eventid?: string;
 }
 
 type SuppressUntilMode = 'indefinite' | 'duration' | 'date';
@@ -118,6 +132,9 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
       suppressDuration: '1h',
       suppressDate: '',
       suppressInputError: '',
+      rankAsCause: false,
+      rankAsSymptom: false,
+      causeEventid: '',
       loading: false,
     };
   }
@@ -201,6 +218,26 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     });
   };
 
+  onRankAsCauseToggle = () => {
+    this.setState({
+      rankAsCause: !this.state.rankAsCause,
+      rankAsSymptom: false,
+      error: false,
+    });
+  };
+
+  onRankAsSymptomToggle = () => {
+    this.setState({
+      rankAsSymptom: !this.state.rankAsSymptom,
+      rankAsCause: false,
+      error: false,
+    });
+  };
+
+  onCauseEventChange = (option: SelectableValue<string>) => {
+    this.setState({ causeEventid: option?.value || '', error: false });
+  };
+
   onChangeSelectedSeverity = (v) => {
     this.setState({ selectedSeverity: v });
   };
@@ -237,11 +274,32 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
   };
 
   submit = () => {
-    const { acknowledge, unacknowledge, changeSeverity, closeProblem, suppress, unsuppress } = this.state;
+    const {
+      acknowledge,
+      unacknowledge,
+      changeSeverity,
+      closeProblem,
+      suppress,
+      unsuppress,
+      rankAsCause,
+      rankAsSymptom,
+    } = this.state;
 
-    const actionSelected = acknowledge || unacknowledge || changeSeverity || closeProblem || suppress || unsuppress;
+    const actionSelected =
+      acknowledge ||
+      unacknowledge ||
+      changeSeverity ||
+      closeProblem ||
+      suppress ||
+      unsuppress ||
+      rankAsCause ||
+      rankAsSymptom;
     if (!this.state.value && !actionSelected) {
       return this.setError('Enter message text or select an action');
+    }
+
+    if (rankAsSymptom && !this.state.causeEventid.trim()) {
+      return this.setError('Select the cause event to rank this problem as symptom');
     }
 
     const ackData: AckProblemData = {
@@ -275,6 +333,13 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     }
     if (unsuppress) {
       action += ZBX_ACK_ACTION_UNSUPPRESS;
+    }
+    if (rankAsCause) {
+      action += ZBX_ACK_ACTION_RANK_CAUSE;
+    }
+    if (rankAsSymptom) {
+      action += ZBX_ACK_ACTION_RANK_SYMPTOM;
+      ackData.cause_eventid = this.state.causeEventid.trim();
     }
     ackData.action = action;
 
@@ -333,7 +398,8 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
   }
 
   renderActions(styles: ReturnType<typeof getStyles>) {
-    const { canAck, canClose, canUnack, canSuppress, canUnsuppress } = this.props;
+    const { canAck, canClose, canUnack, canSuppress, canUnsuppress, canRankAsCause, canRankAsSymptom, causeEvents } =
+      this.props;
 
     const actions = [
       canAck && (
@@ -374,6 +440,33 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
           value={this.state.unsuppress}
           onChange={this.onUnsuppressToggle}
         />
+      ),
+      canRankAsCause && (
+        <Checkbox
+          key="rank-cause"
+          label="Rank as cause"
+          value={this.state.rankAsCause}
+          onChange={this.onRankAsCauseToggle}
+        />
+      ),
+      canRankAsSymptom && (
+        <Checkbox
+          key="rank-symptom"
+          label="Rank as symptom"
+          value={this.state.rankAsSymptom}
+          onChange={this.onRankAsSymptomToggle}
+        />
+      ),
+      canRankAsSymptom && this.state.rankAsSymptom && (
+        <div key="cause-event" className={styles.causeEventSelect}>
+          <Select
+            aria-label="Cause event"
+            placeholder="Select cause event"
+            options={causeEvents || []}
+            value={(causeEvents || []).find((option) => option.value === this.state.causeEventid) || null}
+            onChange={this.onCauseEventChange}
+          />
+        </div>
       ),
       canClose && (
         <Checkbox
@@ -509,6 +602,9 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
     `,
     ackError: css`
       color: ${red};
+    `,
+    causeEventSelect: css`
+      min-width: 20rem;
     `,
     buttonGroup: css`
       justify-content: center;
