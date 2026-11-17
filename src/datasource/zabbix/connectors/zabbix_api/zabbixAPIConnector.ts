@@ -340,8 +340,8 @@ export class ZabbixAPIConnector {
           tagsParam.push({ tag: tag.tag, value: tag.value, operator: '1' });
         }
         params.tags = tagsParam;
-        // Use OR eval type
-        params.evaltype = 2;
+        // OR by default; AND/OR requires every distinct tag name to match
+        params.evaltype = options.itemTagEvalType === ZabbixTagEvalType.AndOr ? 0 : 2;
       }
     }
 

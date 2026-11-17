@@ -60,7 +60,7 @@ Use Metrics queries to retrieve numeric time series data from Zabbix items. This
 | **Host tag** | Filter hosts by tag (Zabbix 5.4+). Click the **+** button to add one or more tag filters. Each filter has a tag name, an operator, and an optional value. Available operators: Exists, Equals, Contains, Does not exist, Does not equal, Does not contain. When multiple filters are active, choose **AND/OR** or **OR** evaluation. Tags inherited from linked templates are matched too. Tag names and values support template variables; a multi-value variable in a tag value matches any of the selected values. |
 | **Host** | The host to query. Supports regex and template variables. |
 | **Application** | Filter items by application. Visible on Zabbix versions before 5.4. Replaced by **Item tag** on Zabbix 5.4+. |
-| **Item tag** | Filter items by tag. Visible on Zabbix 5.4+. Replaces **Application**. Supports template variables. |
+| **Item tag** | Filter items by tag. Visible on Zabbix 5.4+. Replaces **Application**. Supports template variables. Separate several tags with commas (`component: cpu, env: prod`). By default (**OR**) items with any of the tags match. Select **AND/OR** to match only items that have every tag name; values listed for the same tag name are still combined with OR. A regular expression always matches with OR. |
 | **Item** | The item to query. Supports regex and template variables. |
 
 Expand the **Options** section to access additional settings:
@@ -125,7 +125,7 @@ Use Triggers queries to count triggers matching specific criteria. This query ty
 | **Host** | The host to filter. Supports regex and template variables. |
 | **Proxy** | Filter by Zabbix proxy (visible when **Count by** is set to Problems). |
 | **Application** | Filter by application (Zabbix versions before 5.4). |
-| **Item tag** | Filter by item tag (Zabbix 5.4+, visible when **Count by** is set to Items). |
+| **Item tag** | Filter by item tag (Zabbix 5.4+, visible when **Count by** is set to Items). Supports the same **OR** and **AND/OR** matching for comma-separated tags as the metrics editor. |
 | **Problem** | Filter by problem name (visible when **Count by** is set to Problems). |
 | **Item** | Filter by item name (visible when **Count by** is set to Items). |
 | **Tags** | Filter by tags in `tag1:value1, tag2:value2` format (Zabbix 5.4+). |

@@ -39,6 +39,8 @@ export type ZabbixMetricsQuery = {
   triggers?: { minSeverity: number; acknowledged: number; count: boolean };
   countTriggersBy?: 'problems' | 'items' | '';
   evaltype?: ZabbixTagEvalType;
+  // How comma-separated item tags combine; unset keeps the historical OR behaviour.
+  itemTagEvalType?: ZabbixTagEvalType;
   functions?: MetricFunc[];
   options?: ZabbixQueryOptions;
   // Problems
