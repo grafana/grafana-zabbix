@@ -283,6 +283,47 @@ describe('ZabbixDatasource', () => {
     });
   });
 
+  describe('When querying annotations', () => {
+    const problems = [
+      { name: 'High CPU', value: '1', timestamp: 100, hosts: [{ name: 'web01' }], acknowledges: [] },
+      {
+        name: 'Disk full',
+        value: '1',
+        timestamp: 200,
+        hosts: [{ name: 'db01' }],
+        acknowledges: [{ clock: 150, username: 'Admin', name: 'Zabbix', surname: 'Administrator', message: 'On it' }],
+      },
+    ];
+    const buildAnnotationTarget = (options: any = {}) => ({
+      group: { filter: '' },
+      host: { filter: '' },
+      application: { filter: '' },
+      trigger: { filter: '' },
+      options: { minSeverity: 0, showOkEvents: false, hideAcknowledged: false, showHostname: false, ...options },
+    });
+    const run = (options: any = {}) =>
+      ctx.ds.annotationQueryLegacy({ range: ctx.options.range, targets: [buildAnnotationTarget(options)] });
+
+    beforeEach(() => {
+      ctx.ds.zabbix.getProblemsHistory = jest.fn().mockResolvedValue(problems);
+    });
+
+    it('hides acknowledged events when options.hideAcknowledged is set', async () => {
+      expect((await run()).map((a) => a.time)).toEqual([100000, 200000]);
+      expect((await run({ hideAcknowledged: true })).map((a) => a.time)).toEqual([100000]);
+    });
+
+    it('adds host names as tags when options.showHostname is set', async () => {
+      expect((await run()).map((a) => a.tags)).toEqual([[], []]);
+      expect((await run({ showHostname: true })).map((a) => a.tags)).toEqual([['web01'], ['db01']]);
+    });
+
+    it('shows the acknowledging user login', async () => {
+      const [, acked] = await run();
+      expect(acked.text).toContain('Admin (Zabbix Administrator)');
+    });
+  });
+
   describe('When resolving items by tag regex', () => {
     it('returns no items without making an unfiltered request when no tags match', async () => {
       ctx.ds.zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10001' }]);

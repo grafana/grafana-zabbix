@@ -604,7 +604,8 @@ export function formatAcknowledges(acknowledges) {
           '<tr><td><i>' +
           timestamp.format('DD MMM YYYY HH:mm:ss') +
           '</i></td><td>' +
-          ack.alias +
+          // Zabbix 5.4 renamed the user login field from alias to username
+          (ack.username ?? ack.alias) +
           ' (' +
           ack.name +
           ' ' +
