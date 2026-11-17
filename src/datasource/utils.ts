@@ -945,6 +945,16 @@ export function replaceTemplateVars(
 }
 
 /**
+ * Interpolate template variables in a Text query filter. The filter is applied to the item value
+ * as a regular expression pattern (not a /.../ literal), so the result must not be wrapped in
+ * '/^...$/' the way replaceTemplateVars() does for the Zabbix API filters. Variable values are
+ * regex-escaped, and a multi-value variable becomes a (a|b|c) group.
+ */
+export function replaceTextFilterVars(templateSrv: TemplateSrv, target: string, scopedVars: ScopedVars) {
+  return templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
+}
+
+/**
  * Interpolate `target` with a plain (non-regex) replace, returning one string per selected value
  * when it references a multi-value variable: `$cls` with `Database` and `web` selected gives
  * ['Database', 'web'] rather than the glob `{Database,web}`. Distinct multi-value variables expand

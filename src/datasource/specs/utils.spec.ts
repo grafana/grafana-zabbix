@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import * as utils from '../utils';
-import { replaceTemplateVars, zabbixTemplateFormat } from '../utils';
+import { replaceTemplateVars, replaceTextFilterVars, zabbixTemplateFormat } from '../utils';
 
 describe('Utils', () => {
   describe('expandItemName()', () => {
@@ -227,6 +227,45 @@ describe('Utils', () => {
       let expected_result = '/^(backend01|backend02)$/';
 
       testReplacingVariable(target, template_var_value, expected_result, done);
+    });
+  });
+
+  describe('replaceTextFilterVars()', () => {
+    // Minimal stand-in for Grafana's templateSrv.replace(): substitutes $client through the given format.
+    function buildTemplateSrv(value: string | string[]) {
+      return {
+        replace: jest.fn((target: string, _scoped: any, format?: (v: any) => string) =>
+          target.replace(/\$client/g, () => (format ? format(value) : String(value)))
+        ),
+      } as any;
+    }
+
+    it('should not wrap the interpolated filter in /^...$/', () => {
+      const result = replaceTextFilterVars(buildTemplateSrv('E5:D9:EA:D7:D5:EA'), '.*$client.*', {});
+      expect(result).toBe('.*E5:D9:EA:D7:D5:EA.*');
+    });
+
+    it('should produce a pattern that matches the item value', () => {
+      const line = 'UP E5:D9:EA:D7:D5:EA ssid=ThisNetworkHasNoWires ch=116 rssi=0 if=phy1-ap0';
+      const bare = replaceTextFilterVars(buildTemplateSrv('E5:D9:EA:D7:D5:EA'), '$client', {});
+      const captured = replaceTextFilterVars(buildTemplateSrv('E5:D9:EA:D7:D5:EA'), '(.*$client.*)', {});
+      expect(new RegExp(bare).exec(line)?.[0]).toBe('E5:D9:EA:D7:D5:EA');
+      expect(new RegExp(captured).exec(line)?.[1]).toBe(line);
+    });
+
+    it('should escape regex characters in the variable value', () => {
+      const result = replaceTextFilterVars(buildTemplateSrv('a.b'), 'x $client', {});
+      expect(result).toBe('x a\\.b');
+    });
+
+    it('should join multiple values into an alternation group', () => {
+      const result = replaceTextFilterVars(buildTemplateSrv(['a', 'b']), 'x $client', {});
+      expect(result).toBe('x (a|b)');
+    });
+
+    it('should leave a filter without variables unchanged', () => {
+      const result = replaceTextFilterVars(buildTemplateSrv('a'), 'Linux (.*)', {});
+      expect(result).toBe('Linux (.*)');
     });
   });
 

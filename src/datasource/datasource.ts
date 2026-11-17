@@ -1077,7 +1077,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           scopedVars,
           utils.zabbixItemIdsTemplateFormat
         ),
-        textFilter: utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        textFilter: utils.replaceTextFilterVars(this.templateSrv, query.textFilter, scopedVars),
         functions: utils.replaceVariablesInFuncParams(this.templateSrv, query.functions, scopedVars),
         tags: {
           ...query.tags,
