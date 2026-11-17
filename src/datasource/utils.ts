@@ -834,6 +834,19 @@ export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | nu
   });
 }
 
+/**
+ * Replace a raw item value with its Zabbix value mapping text. Returns the value unchanged when the
+ * item has no mapping or the mapping has no entry for the value. Only exact-match entries are
+ * considered, as in getValueMapping().
+ */
+export function mapValueWithZabbixMapping(item, valueMappings: any[] | undefined, value) {
+  const mapping = valueMappings?.find((m) => m.valuemapid === item?.valuemapid);
+  const entry = (mapping?.mappings as any[] | undefined)?.find(
+    (m) => (m.type === undefined || String(m.type) === '0') && m.value === String(value)
+  );
+  return entry ? entry.newvalue : value;
+}
+
 export function isProblemsDataFrame(data: DataFrame): boolean {
   return (
     data.fields.length && data.fields[0].type === FieldType.other && data.fields[0].config.custom['type'] === 'problems'

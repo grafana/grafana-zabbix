@@ -898,12 +898,12 @@ export class Zabbix implements ZabbixConnector {
     }
   }
 
-  getHistoryText(items, timeRange, target) {
+  getHistoryText(items, timeRange, target, valueMappings?: any[]) {
     const [timeFrom, timeTo] = timeRange;
     if (items.length) {
       return this.zabbixAPI.getHistory(items, timeFrom, timeTo).then((history) => {
         if (target.resultFormat === 'table') {
-          return responseHandler.handleHistoryAsTable(history, items, target);
+          return responseHandler.handleHistoryAsTable(history, items, target, valueMappings);
         } else {
           return responseHandler.handleText(history, items, target);
         }

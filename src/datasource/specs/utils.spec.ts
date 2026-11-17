@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import * as utils from '../utils';
-import { replaceTemplateVars, zabbixTemplateFormat } from '../utils';
+import { replaceTemplateVars, zabbixTemplateFormat, mapValueWithZabbixMapping } from '../utils';
 
 describe('Utils', () => {
   describe('expandItemName()', () => {
@@ -227,6 +227,35 @@ describe('Utils', () => {
       let expected_result = '/^(backend01|backend02)$/';
 
       testReplacingVariable(target, template_var_value, expected_result, done);
+    });
+  });
+
+  describe('mapValueWithZabbixMapping()', () => {
+    const mappings = [
+      {
+        valuemapid: '7',
+        mappings: [
+          { type: '0', value: '10.0.0.1', newvalue: 'gateway' },
+          { type: '4', value: '^10\\.', newvalue: 'lan' },
+        ],
+      },
+    ];
+
+    it('should return the mapped text for an exact match', () => {
+      expect(mapValueWithZabbixMapping({ valuemapid: '7' }, mappings, '10.0.0.1')).toBe('gateway');
+    });
+
+    it('should return the value unchanged when there is no matching entry', () => {
+      expect(mapValueWithZabbixMapping({ valuemapid: '7' }, mappings, '10.0.0.2')).toBe('10.0.0.2');
+    });
+
+    it('should return the value unchanged when the item has no mapping', () => {
+      expect(mapValueWithZabbixMapping({ valuemapid: '0' }, mappings, '10.0.0.1')).toBe('10.0.0.1');
+      expect(mapValueWithZabbixMapping({ valuemapid: '7' }, undefined, '10.0.0.1')).toBe('10.0.0.1');
+    });
+
+    it('should keep a null value as null', () => {
+      expect(mapValueWithZabbixMapping({ valuemapid: '7' }, mappings, null)).toBeNull();
     });
   });
 
