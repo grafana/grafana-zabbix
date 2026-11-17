@@ -1,5 +1,26 @@
 # Change Log
 
+## 6.11.0
+
+### Minor Changes
+
+🚀 Add ClickHouse support for Direct DB Connection. Zabbix 8.0 can store item value history in ClickHouse, and the plugin can now query it directly: select a `grafana-clickhouse-datasource` data source in the Direct DB Connection settings (make sure its default database points to the Zabbix history database, `zabbix` by default). Since Zabbix stores only history data in ClickHouse (trends are not calculated or stored there), all queries - including wide time ranges that would normally switch to trends - are served from the history tables with server-side aggregation.
+🚀 Host tag filter in template variables: add a "Host tag" picker to the Host, Application, Item tag, Item and Item values variable query types so dashboards can filter hosts by tag (e.g. `class:database`, `platform:globalspec`) without per-host-group workarounds. Closes #1682.
+
+🚀 Host tag filtering now matches tags inherited from linked templates, not just directly-assigned host tags — applies to both the panel editor and the variable editor. The filter is sent to `host.get` with `inheritedTags: true` (Zabbix 5.0+), so matching stays on the server. A multi-value variable in a tag value expands to one filter per selected value.
+
+🚀 Tag-name and tag-value autocomplete in the host tag picker now suggests options observed across the host inventory (direct + inherited).
+
+🐛 Saved host-tag filters now repopulate the editor on reload, in both the panel editor and the variable editor.
+
+🐛 Template variables in host tag names and values are now interpolated in the panel editor's host tag filter.
+
+### Patch Changes
+
+🐛 Look up data sources with the async APIs from `@grafana/plugin-compat` instead of the deprecated `getDataSourceSrv()`, so the plugin keeps working once Grafana loads data sources lazily. Older Grafana versions fall back to the previous APIs.
+🐛 Fix: Problem name and item variable regex filters with an alternation inside a group (e.g. `/^CPU (user|system)$/`) no longer miss matches when narrowed on the Zabbix side
+🐛 Fix: Item and Item values template variables no longer fetch every item of the host (with tags) from Zabbix; the item name filter is pushed down to the Zabbix API
+
 ## 6.10.3
 
 ### Patch Changes

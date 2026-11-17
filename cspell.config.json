@@ -63,6 +63,7 @@
     "lastchange",
     "lastvalue",
     "lookback",
+    "globalspec",
     "mydomain",
     "noexec",
     "opdata",
