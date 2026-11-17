@@ -3,14 +3,44 @@ import { ProblemDTO } from 'datasource/types';
 import { ProblemsPanelOptions } from '../types';
 import { isNewProblem } from '../utils';
 
-function playTone(type: 'beep' | 'alarm', volume: number): void {
+// A single shared AudioContext: browsers cap the number of live contexts per
+// page, and a context created before any user gesture stays suspended until
+// one happens, so it must be kept around rather than recreated per alert.
+let sharedAudioContext: AudioContext | null = null;
+
+// Test-only: drops the cached context so each test starts from a clean slate.
+export function resetSharedAudioContext(): void {
+  sharedAudioContext = null;
+}
+
+function getAudioContext(): AudioContext | null {
   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
   if (!AudioContextClass) {
     console.warn('Zabbix panel: Web Audio API not supported in this browser');
+    return null;
+  }
+  if (!sharedAudioContext) {
+    sharedAudioContext = new AudioContextClass();
+  }
+  return sharedAudioContext;
+}
+
+function playTone(type: 'beep' | 'alarm', volume: number): void {
+  const ctx = getAudioContext();
+  if (!ctx) {
     return;
   }
 
-  const ctx = new AudioContextClass();
+  if (ctx.state === 'suspended') {
+    // Autoplay policy: the context resumes only once the user has interacted
+    // with the page. Kicking resume() off here makes later alerts audible.
+    ctx.resume().catch(() => {});
+  }
+  if (ctx.state !== 'running') {
+    console.warn('Zabbix panel: sound alert skipped, audio is blocked until you interact with the page');
+    return;
+  }
+
   const gainNode = ctx.createGain();
   gainNode.gain.value = Math.max(0, Math.min(1, volume / 100));
   gainNode.connect(ctx.destination);
@@ -33,8 +63,10 @@ function playTone(type: 'beep' | 'alarm', volume: number): void {
     oscillator.stop(ctx.currentTime + 0.8);
   }
 
-  // Clean up AudioContext after playback ends
-  oscillator.onended = () => ctx.close();
+  oscillator.onended = () => {
+    oscillator.disconnect();
+    gainNode.disconnect();
+  };
 }
 
 function playCustomUrl(url: string, volume: number): HTMLAudioElement {
@@ -46,8 +78,19 @@ function playCustomUrl(url: string, volume: number): HTMLAudioElement {
   return audio;
 }
 
-export function useSoundAlerts(problems: ProblemDTO[], options: ProblemsPanelOptions): void {
-  const prevIdsRef = useRef<Set<string>>(new Set());
+const problemId = (p: ProblemDTO) => String(p.eventid ?? p.triggerid ?? '');
+
+/**
+ * Plays a sound when new problems appear.
+ *
+ * `ready` must be true only for a completed refresh: loading and error states
+ * are ignored so that an empty result from a failed query does not make every
+ * problem look new on the next successful one.
+ */
+export function useSoundAlerts(problems: ProblemDTO[], options: ProblemsPanelOptions, ready = true): void {
+  // null until the first completed refresh seeds it: problems already present
+  // at mount (or when the feature is re-enabled) are known, not new.
+  const prevIdsRef = useRef<Set<string> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const {
@@ -67,18 +110,33 @@ export function useSoundAlerts(problems: ProblemDTO[], options: ProblemsPanelOpt
         audioRef.current.pause();
         audioRef.current = null;
       }
+      // Re-enabling must reseed silently instead of replaying the current list
+      prevIdsRef.current = null;
       return;
     }
 
+    if (!ready) {
+      return;
+    }
+
+    if (prevIdsRef.current === null) {
+      // First completed refresh: seed the known ids without playing
+      prevIdsRef.current = new Set(problems.map(problemId).filter(Boolean));
+      return;
+    }
     const prevIds = prevIdsRef.current;
 
-    const matchingProblems = problems.filter((p) => {
+    // Resolved problems (OK state) can still be listed by the panel; they must
+    // not sound, and must not keep a repeating alert going.
+    const activeProblems = problems.filter((p) => p.value !== '0');
+
+    const matchingProblems = activeProblems.filter((p) => {
       const severity = Number(p.severity ?? p.priority ?? 0);
       return severity >= soundMinSeverity;
     });
 
     const newProblems = matchingProblems.filter((p) => {
-      const id = String(p.eventid ?? p.triggerid ?? '');
+      const id = problemId(p);
       if (!id) {
         return false;
       }
@@ -97,10 +155,17 @@ export function useSoundAlerts(problems: ProblemDTO[], options: ProblemsPanelOpt
       }
     }
 
-    // Update the set of known problem IDs
-    prevIdsRef.current = new Set(problems.map((p) => String(p.eventid ?? p.triggerid ?? '')).filter(Boolean));
+    // Add to the known set instead of replacing it, so ids seen before an
+    // empty or filtered-down result are still known afterwards.
+    for (const p of problems) {
+      const id = problemId(p);
+      if (id) {
+        prevIds.add(id);
+      }
+    }
   }, [
     problems,
+    ready,
     soundAlerts,
     soundMinSeverity,
     soundTone,

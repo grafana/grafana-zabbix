@@ -1,4 +1,4 @@
-import { test, expect } from '@grafana/plugin-e2e';
+import { test, expect, DashboardPage } from '@grafana/plugin-e2e';
 import type { Locator, Page } from '@playwright/test';
 
 /**
@@ -8,30 +8,47 @@ import type { Locator, Page } from '@playwright/test';
  * dependent options shown only while the feature is enabled and the custom
  * URL input shown only for the "Custom" sound type.
  *
- * Behavior: a dashboard provisioned with sound alerts enabled
- * (problems-sound.json, highlightNewerThan=90d so the seeded fixture problems
- * count as "new") must create a Web Audio context exactly once on load and
- * must not play again on a refresh that brings no new problems.
+ * Behavior, against dashboards provisioned with sound alerts enabled
+ * (problems-sound*.json, highlightNewerThan=90d so the seeded fixture problems
+ * stay inside the "new problem" window):
+ *
+ *   - The first completed refresh seeds the known problems silently, so a
+ *     reload never replays the problems already on screen.
+ *   - While the page has had no user interaction the AudioContext is suspended
+ *     by autoplay policy and playback is skipped with a console warning.
+ *   - After a user gesture, "Repeat while active" plays on refresh cycles as
+ *     long as matching problems persist.
  *
  * Requires the e2e environment (docker-compose) with seeded fixtures.
  */
 
-// Count AudioContext instantiations before any page script runs. The built-in
-// tones are played through the Web Audio API, one context per playback.
+// Count actual playbacks: an oscillator is only created after the suspended
+// check passes, so this counts audible tones rather than context creations.
 async function instrumentAudio(page: Page) {
   await page.addInitScript(() => {
-    (window as any).__audioContextCount = 0;
-    const OriginalAudioContext = window.AudioContext;
-    (window as any).AudioContext = class extends OriginalAudioContext {
-      constructor(...args: any[]) {
-        super(...(args as []));
-        (window as any).__audioContextCount++;
-      }
+    (window as any).__oscillatorCount = 0;
+    const original = AudioContext.prototype.createOscillator;
+    AudioContext.prototype.createOscillator = function (...args: []) {
+      (window as any).__oscillatorCount++;
+      return original.apply(this, args);
     };
   });
 }
 
-const audioContextCount = (page: Page) => page.evaluate(() => (window as any).__audioContextCount as number);
+const playbackCount = (page: Page) => page.evaluate(() => (window as any).__oscillatorCount as number);
+
+// A trusted user gesture that unlocks audio without changing any state:
+// open the time picker and close it again.
+async function userGesture(dashboardPage: DashboardPage, page: Page) {
+  await dashboardPage.getByGrafanaSelector(dashboardPage.ctx.selectors.components.TimePicker.openButton).click();
+  await page.keyboard.press('Escape');
+}
+
+async function refreshAndWait(dashboardPage: DashboardPage, page: Page) {
+  await dashboardPage.refreshDashboard();
+  await dashboardPage.waitForPanelsQueriesToComplete();
+  await page.waitForTimeout(500);
+}
 
 test.describe('Problems panel sound alert editor options', () => {
   test('sound alert options are revealed by the enable switch and the custom sound type', async ({
@@ -94,7 +111,7 @@ test.describe('Problems panel sound alert editor options', () => {
 });
 
 test.describe('Problems panel sound alert playback', () => {
-  test('plays a tone once for new problems and not again on refresh', async ({
+  test('seeds the problems on screen silently and does not replay them on refresh', async ({
     gotoDashboardPage,
     readProvisionedDashboard,
     page,
@@ -104,16 +121,54 @@ test.describe('Problems panel sound alert playback', () => {
     const dashboard = await readProvisionedDashboard({ fileName: 'problems-sound.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
     await dashboardPage.waitForPanelsQueriesToComplete();
+    await page.waitForTimeout(1000);
 
-    // The seeded fixture problems are High severity and within the 90d
-    // "new problem" window, so the panel must play the tone exactly once.
-    await expect.poll(() => audioContextCount(page), { timeout: 15000 }).toBe(1);
+    // The seeded fixture problems are already on screen on the first refresh,
+    // so they are known, not new: nothing plays on load.
+    expect(await playbackCount(page)).toBe(0);
 
-    // A refresh without new problems must not play again (soundRepeat is off).
-    await dashboardPage.refreshDashboard();
+    // Unlock audio so a skip cannot be mistaken for the suspended context.
+    await userGesture(dashboardPage, page);
+    await refreshAndWait(dashboardPage, page);
+
+    // No new problems and repeat is off: still silent.
+    expect(await playbackCount(page)).toBe(0);
+  });
+
+  test('repeat mode plays on refresh cycles while matching problems persist', async ({
+    gotoDashboardPage,
+    readProvisionedDashboard,
+    page,
+  }) => {
+    await instrumentAudio(page);
+
+    const dashboard = await readProvisionedDashboard({ fileName: 'problems-sound-repeat.json' });
+    const dashboardPage = await gotoDashboardPage(dashboard);
     await dashboardPage.waitForPanelsQueriesToComplete();
-    await page.waitForTimeout(1500);
-    expect(await audioContextCount(page)).toBe(1);
+    await page.waitForTimeout(1000);
+
+    // First refresh seeds silently even in repeat mode.
+    expect(await playbackCount(page)).toBe(0);
+
+    // Unlock audio for browsers that enforce the autoplay policy (headed
+    // runs; headless Chromium does not enforce it). The resume after the
+    // gesture is asynchronous, so allow a few refresh cycles for the first
+    // tone. The suspended-skip itself is covered by unit tests.
+    await userGesture(dashboardPage, page);
+    await expect
+      .poll(
+        async () => {
+          await refreshAndWait(dashboardPage, page);
+          return playbackCount(page);
+        },
+        { timeout: 30000 }
+      )
+      .toBeGreaterThanOrEqual(1);
+
+    // And with matching problems persisting, every refresh plays again.
+    const before = await playbackCount(page);
+    await refreshAndWait(dashboardPage, page);
+    expect(await playbackCount(page)).toBeGreaterThan(before);
   });
 
   test('does not play when sound alerts are disabled', async ({
@@ -126,8 +181,8 @@ test.describe('Problems panel sound alert playback', () => {
     const dashboard = await readProvisionedDashboard({ fileName: 'problems-enabled.json' });
     const dashboardPage = await gotoDashboardPage(dashboard);
     await dashboardPage.waitForPanelsQueriesToComplete();
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(1000);
 
-    expect(await audioContextCount(page)).toBe(0);
+    expect(await playbackCount(page)).toBe(0);
   });
 });

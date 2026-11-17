@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import _ from 'lodash';
-import { dateMath, PanelProps, OrgRole } from '@grafana/data';
+import { dateMath, LoadingState, PanelProps, OrgRole } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { config } from '@grafana/runtime';
 import { getDataSourceInstance, getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
@@ -347,8 +347,15 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     );
   };
 
-  const problems = prepareProblems();
-  useSoundAlerts(problems, options);
+  // Keyed on the data and the options that shape the list, so the array
+  // identity is stable across unrelated re-renders (resize, column changes)
+  // and the sound alerts effect fires only when the problems can have changed.
+  const problems = useMemo(
+    () => prepareProblems(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prepareProblems reads only these inputs
+    [data, showTriggers, sortProblems, triggerSeverity, options.allowDangerousHTML]
+  );
+  useSoundAlerts(problems, options, data.state === LoadingState.Done);
 
   return (
     <>
