@@ -1,0 +1,47 @@
+name: PR Title
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-title:
+    name: Validate Conventional Commits format
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Validate PR title
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Allowed types. Keep aligned with https://www.conventionalcommits.org/
+          # and with the changelog-sections in release-please-config.json.
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            docs
+            test
+            build
+            ci
+            chore
+            revert
+          # Require the subject to start with a lowercase letter.
+          subjectPattern: ^[a-z].+$
+          subjectPatternError: |
+            The subject (after the "type:" prefix) must start with a lowercase letter.
+            Example: "fix(traces): preserve trace-ID link optimization on cold cache"
