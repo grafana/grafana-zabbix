@@ -5,7 +5,7 @@ run-name: E2E tests (Zabbix versions)
 # with a non-default ZABBIX_VERSION.
 #
 # The default Zabbix version (7.0) is covered by the shared Plugins-CI workflow
-# (push.yaml), which also runs the suite across the supported Grafana versions.
+# (push.yml), which also runs the suite across the supported Grafana versions.
 # That workflow has no input for passing an environment variable or an extra
 # matrix dimension to the compose stack, so the other Zabbix versions run here:
 # one job per version, against the default Grafana image only.
@@ -17,9 +17,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions: {}
+
 concurrency:
-  group: e2e-zabbix-versions-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   e2e:
@@ -31,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 7.0 is the compose default and runs in push.yaml; do not repeat it here.
+        # 7.0 is the compose default and runs in push.yml; do not repeat it here.
         version: ['8.0']
     env:
       ZABBIX_VERSION: ${{ matrix.version }}
@@ -70,7 +72,7 @@ jobs:
           # Zabbix version's schema.
           docker compose up -d --build
           for _ in $(seq 1 90); do
-            if curl -fsS http://localhost:3000/api/health >/dev/null; then
+            if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
               exit 0
             fi
             sleep 2
