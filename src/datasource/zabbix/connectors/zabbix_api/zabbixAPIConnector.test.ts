@@ -339,6 +339,28 @@ describe('Zabbix API connector', () => {
   });
 
   describe('getEventsHistory', () => {
+    it('selects the suppressing userid when version is 6.2 or greater', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.2.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.selectSuppressionData).toEqual(['maintenanceid', 'userid', 'suppress_until']);
+    });
+
+    it('does not select userid before 6.2, where suppression data has no such field', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.selectSuppressionData).toEqual(['maintenanceid', 'suppress_until']);
+    });
+
     it('sends symptom when version is 6.4 or greater', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.version = '6.4.0';
@@ -732,6 +754,102 @@ describe('Zabbix API connector', () => {
         period_to: 7200,
         periods: 1,
       });
+    });
+  });
+
+  describe('acknowledgeEvent', () => {
+    const createConnector = (version = '7.0.0') => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = version;
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve({ eventids: ['10'] }));
+      return zabbixAPIConnector;
+    };
+
+    it('defaults to add message action when no action is passed and version is 4.0+', async () => {
+      const connector = createConnector('6.0.0');
+      await connector.acknowledgeEvent('10', 'a message');
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 4,
+      });
+    });
+
+    it('defaults to no action when version is below 4.0', async () => {
+      const connector = createConnector('3.4.0');
+      await connector.acknowledgeEvent('10', 'a message');
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 0,
+      });
+    });
+
+    it('passes the action bitmask and severity', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', 'a message', 14, 5);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 14,
+        severity: 5,
+      });
+    });
+
+    it('passes unacknowledge action without extra params', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 16);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 16,
+      });
+    });
+
+    it('passes suppress_until for the suppress action, including 0 for indefinite suppression', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 32, undefined, 0);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 32,
+        suppress_until: 0,
+      });
+    });
+
+    it('passes a non-zero suppress_until timestamp', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 32, undefined, 1700003600);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 32,
+        suppress_until: 1700003600,
+      });
+    });
+  });
+
+  describe('version capabilities', () => {
+    const createConnector = (version: string) => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = version;
+      return zabbixAPIConnector;
+    };
+
+    it.each([
+      ['4.4.0', false],
+      ['5.0.0', true],
+      ['7.0.0', true],
+    ])('supportsUnacknowledge for version %s is %s', (version, expected) => {
+      expect(createConnector(version).supportsUnacknowledge()).toBe(expected);
+    });
+
+    it.each([
+      ['6.0.0', false],
+      ['6.2.0', true],
+      ['7.0.0', true],
+    ])('supportsProblemSuppression for version %s is %s', (version, expected) => {
+      expect(createConnector(version).supportsProblemSuppression()).toBe(expected);
     });
   });
 

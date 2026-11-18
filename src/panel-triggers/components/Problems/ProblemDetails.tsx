@@ -19,6 +19,7 @@ import { ProblemHosts } from './ProblemHosts';
 import { ProblemGroups } from './ProblemGroups';
 import { getMetaRowStyles } from './detailsStyles';
 import { em } from './Cells/cellStyles';
+import { getAckModalActionProps } from '../../utils';
 
 interface Props {
   original: ProblemDTO;
@@ -158,7 +159,7 @@ export const ProblemDetails = ({
                         aria-label="Acknowledge problem"
                         onClick={() => {
                           showModal(AckModal, {
-                            canClose: problem.manual_close === '1',
+                            ...getAckModalActionProps(problem),
                             severity: problemSeverity,
                             onSubmit: ackProblem,
                             onDismiss: hideModal,
