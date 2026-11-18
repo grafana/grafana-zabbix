@@ -4,6 +4,7 @@ import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
 import semver from 'semver';
+import * as c from '../constants';
 import {
   expandItemMacros,
   expandUserMacros,
@@ -14,7 +15,7 @@ import {
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 import { ZabbixDSOptions } from '../types/config';
-import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
+import { ApmMetricQuery, HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import * as utils from '../utils';
 import { MODE_METRICS } from '../constants';
 import { getUIDFromID } from '../migrations';
@@ -25,7 +26,7 @@ import { InfluxDBConnectorOptions } from './connectors/types';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { GetItemsOptions } from './connectors/zabbix_api/types';
 import { CachingProxy } from './proxy/cachingProxy';
-import { Host, ZabbixConnector } from './types';
+import { ApmMetricAttributes, ApmMetricCatalog, ApmMetricInfo, Host, ZabbixConnector } from './types';
 
 // Bounds for the optional "historical item value at problem creation time" lookup
 // (issue #2427). These keep the single batched history.get from scanning an
@@ -124,12 +125,67 @@ type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAut
     | 'dbConnectionRetentionPolicy'
   >;
 
+/** "a|b" (a multi-value variable) -> ['a', 'b'] */
+function splitApmNames(value?: string): string[] {
+  return (value ?? '')
+    .split('|')
+    .map((name) => name.trim())
+    .filter((name) => name !== '');
+}
+
+/** Services and metrics found in APM data points or in distinct rows of the telemetry tables */
+function buildApmMetricCatalog(points: any[]): ApmMetricCatalog {
+  const services = new Set<string>();
+  const metrics = new Map<string, ApmMetricInfo>();
+  for (const point of points) {
+    if (point.service_name) {
+      services.add(point.service_name);
+    }
+    if (point.metric_name && !metrics.has(point.metric_name)) {
+      metrics.set(point.metric_name, {
+        name: point.metric_name,
+        type: Number(point.type),
+        unit: point.metric_unit || '',
+      });
+    }
+  }
+  return {
+    services: Array.from(services).sort(),
+    metrics: Array.from(metrics.values()).sort((a, b) => a.name.localeCompare(b.name)),
+  };
+}
+
+function buildApmMetricAttributes(points: any[]): ApmMetricAttributes {
+  const result: ApmMetricAttributes = { metric: {}, resource: {} };
+  const collect = (target: Record<string, string[]>, attributes: any) => {
+    // The API serializes an empty attribute set as [] instead of {}
+    if (!attributes || Array.isArray(attributes)) {
+      return;
+    }
+    for (const [key, value] of Object.entries(attributes)) {
+      const values = (target[key] = target[key] || []);
+      const text = String(value);
+      if (!values.includes(text)) {
+        values.push(text);
+      }
+    }
+  };
+  for (const point of points) {
+    collect(result.metric, point.attributes);
+    collect(result.resource, point.resource_attributes);
+  }
+  return result;
+}
+
 export class Zabbix implements ZabbixConnector {
   enableDirectDBConnection: boolean;
   cachingProxy: CachingProxy;
   zabbixAPI: ZabbixAPIConnector;
   getHistoryDB: any;
   dbConnector: InfluxDBConnector | SQLConnector | ClickHouseConnector;
+  // True once the Direct DB Connection is known to be a ClickHouse database holding the
+  // Zabbix telemetry tables: APM metrics are then read from it instead of the API
+  apmMetricsDirectDB = false;
   /** Settles when the DB connector set up by the constructor is ready, or failed */
   dbConnectorReady: Promise<void> = Promise.resolve();
   getTrendsDB: any;
@@ -209,6 +265,7 @@ export class Zabbix implements ZabbixConnector {
             this.dbConnector
           );
         })
+        .then(() => this.detectApmMetricsDirectDB())
         .catch((err) => {
           console.warn('Zabbix: Direct DB connection init failed.', err);
         });
@@ -315,6 +372,126 @@ export class Zabbix implements ZabbixConnector {
   supportsCauseSymptomProblems() {
     const version = this.version || this.zabbixAPI.version;
     return version ? semver.gte(version, '6.4.0') : false;
+  }
+
+  /**
+   * APM metrics can be read through Direct DB Connection when its data source is a
+   * ClickHouse database with the Zabbix telemetry tables. Zabbix may keep telemetry in
+   * a different database than history; APM metrics then stay on the API.
+   */
+  async detectApmMetricsDirectDB() {
+    this.apmMetricsDirectDB = false;
+    if (!(this.dbConnector instanceof ClickHouseConnector)) {
+      return;
+    }
+    try {
+      this.apmMetricsDirectDB = await this.dbConnector.hasApmMetricTables();
+    } catch (err) {
+      console.warn('Zabbix: could not check the ClickHouse database for APM metric tables.', err);
+    }
+  }
+
+  /**
+   * APM metric data points read from ClickHouse (Direct DB Connection), newest first,
+   * one JSON object string per point, downsampled to the given interval.
+   */
+  getApmMetricPointsDB(
+    apmQuery: ApmMetricQuery,
+    timeRange: number[],
+    intervalSec: number,
+    limit: number
+  ): Promise<string[]> {
+    const [timeFrom, timeTill] = timeRange;
+    return (this.dbConnector as ClickHouseConnector).getApmMetricPoints({
+      services: splitApmNames(apmQuery.service),
+      metrics: splitApmNames(apmQuery.metric),
+      attributes: apmQuery.attributes,
+      timeFrom,
+      timeTill,
+      intervalSec,
+      limit,
+    });
+  }
+
+  // Zabbix 8.0+ exposes APM (OpenTelemetry) metrics over the API (apmmetric.get)
+  supportsApmMetricsSync() {
+    const version = this.version || this.zabbixAPI.version;
+    // Unknown version: offer the feature, the backend reports a clear error if unsupported
+    return version ? semver.gte(version, c.ZABBIX_APM_METRICS_MIN_VERSION) : true;
+  }
+
+  /**
+   * Services and metrics seen in the newest APM data points of the time range.
+   * Zabbix has no method that lists metric names, so they are sampled from the data.
+   */
+  async getApmMetricCatalog(timeRange: number[], service?: string): Promise<ApmMetricCatalog> {
+    const [timeFrom, timeTo] = timeRange;
+    const services = splitApmNames(service);
+
+    if (this.apmMetricsDirectDB) {
+      // ClickHouse lists the distinct metrics of the whole time range
+      const rows = await (this.dbConnector as ClickHouseConnector).getApmMetricCatalogRows(
+        timeFrom,
+        timeTo,
+        services,
+        c.APM_METRICS_LOOKUP_LIMIT
+      );
+      return buildApmMetricCatalog(rows);
+    }
+
+    const params: any = {
+      output: ['service_name', 'metric_name', 'metric_unit', 'type'],
+      time_from: timeFrom,
+      time_till: timeTo + 1,
+      sortfield: 'time_unix',
+      sortorder: 'DESC',
+      limit: c.APM_METRICS_LOOKUP_LIMIT,
+    };
+    if (services.length > 0) {
+      params.filter = { service_name: services };
+    }
+    return buildApmMetricCatalog((await this.zabbixAPI.getAPMMetrics(params)) || []);
+  }
+
+  /**
+   * Attribute keys, with the values seen for each, in the data points of a metric:
+   * the newest ones when read through the API, all of the time range from ClickHouse.
+   */
+  async getApmMetricAttributes(timeRange: number[], metric: string, service?: string): Promise<ApmMetricAttributes> {
+    const metrics = splitApmNames(metric);
+    if (metrics.length === 0) {
+      return buildApmMetricAttributes([]);
+    }
+
+    const [timeFrom, timeTo] = timeRange;
+    const services = splitApmNames(service);
+
+    if (this.apmMetricsDirectDB) {
+      const rows = await (this.dbConnector as ClickHouseConnector).getApmMetricAttributeRows(
+        timeFrom,
+        timeTo,
+        metrics,
+        services,
+        c.APM_METRICS_LOOKUP_LIMIT
+      );
+      return buildApmMetricAttributes(rows);
+    }
+
+    const filter: any = { metric_name: metrics };
+    if (services.length > 0) {
+      filter.service_name = services;
+    }
+    const points =
+      (await this.zabbixAPI.getAPMMetrics({
+        output: ['attributes', 'resource_attributes'],
+        time_from: timeFrom,
+        time_till: timeTo + 1,
+        filter,
+        sortfield: 'time_unix',
+        sortorder: 'DESC',
+        limit: c.APM_METRICS_LOOKUP_LIMIT,
+      })) || [];
+    return buildApmMetricAttributes(points);
   }
 
   // Unacknowledge action was introduced in Zabbix 5.0

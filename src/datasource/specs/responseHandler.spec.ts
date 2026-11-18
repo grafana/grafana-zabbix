@@ -1,5 +1,5 @@
-import { FieldType } from '@grafana/data';
-import { seriesToDataFrame } from '../responseHandler';
+import { FieldType, MutableDataFrame } from '@grafana/data';
+import { convertToWide, seriesToDataFrame } from '../responseHandler';
 import { ZabbixMetricsQuery } from '../types/query';
 
 describe('responseHandler', () => {
@@ -29,6 +29,29 @@ describe('responseHandler', () => {
         item: 'CPU load',
         item_key: 'system.cpu.load',
       });
+    });
+  });
+
+  describe('convertToWide()', () => {
+    it('keeps the labels of the value fields and the notices of the merged frames', () => {
+      const frame = (name: string, labels: Record<string, string>, notices?: any[]) =>
+        new MutableDataFrame({
+          refId: 'A',
+          name,
+          meta: notices ? { notices } : undefined,
+          fields: [
+            { name: 'Time', type: FieldType.time, values: [1000, 2000] },
+            { name: 'Value', type: FieldType.number, values: [1, 2], labels },
+          ],
+        });
+      const notice = { severity: 'warning', text: 'only the newest 50000 are shown' };
+
+      const [wide] = convertToWide([frame('a', { state: 'used' }, [notice]), frame('b', { state: 'free' })]);
+
+      expect(wide.fields.map((f) => f.name)).toEqual(['Time', 'a', 'b']);
+      expect(wide.fields[1].labels).toEqual({ state: 'used' });
+      expect(wide.fields[2].labels).toEqual({ state: 'free' });
+      expect(wide.meta?.notices).toEqual([notice]);
     });
   });
 });

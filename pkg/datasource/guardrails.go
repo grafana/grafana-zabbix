@@ -110,6 +110,7 @@ func ValidateItemCount(count int, maxItems int) error {
 var AllowedAPIMethods = map[string]bool{
 	"alert.get":         true,
 	"apiinfo.version":   true,
+	"apmmetric.get":     true,
 	"application.get":   true,
 	"event.acknowledge": true,
 	"event.get":         true,

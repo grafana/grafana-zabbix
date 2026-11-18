@@ -2,7 +2,7 @@ import { lastValueFrom, of } from 'rxjs';
 import { dateTime } from '@grafana/data';
 import { ZabbixDatasource } from '../datasource';
 import * as c from '../constants';
-import { DataSourceWithBackend } from '@grafana/runtime';
+import { DataSourceWithBackend, getBackendSrv } from '@grafana/runtime';
 
 const buildRequest = () =>
   ({
@@ -250,5 +250,119 @@ describe('ZabbixDatasource', () => {
     ds.enableDirectDBConnection = true;
     expect(ds.isBackendTarget(metricsTarget)).toBe(false);
     expect(ds.isDBConnectionTarget(metricsTarget)).toBe(true);
+  });
+
+  it('always sends APM metrics queries to the backend', () => {
+    const ds = new ZabbixDatasource(instanceSettings);
+    const apmTarget = { queryType: c.MODE_METRICS, metricsSource: c.METRICS_SOURCE_APM } as any;
+
+    expect(ds.isBackendTarget(apmTarget)).toBe(true);
+    expect(ds.isDBConnectionTarget(apmTarget)).toBe(false);
+
+    // APM metrics are not stored in the Zabbix database, Direct DB Connection does not apply
+    ds.enableDirectDBConnection = true;
+    expect(ds.isBackendTarget(apmTarget)).toBe(true);
+    expect(ds.isDBConnectionTarget(apmTarget)).toBe(false);
+  });
+
+  describe('APM metrics through Direct DB Connection', () => {
+    const apmTarget = {
+      refId: 'A',
+      queryType: c.MODE_METRICS,
+      metricsSource: c.METRICS_SOURCE_APM,
+      apmMetric: { metric: 'http.requests', maxPoints: 2 },
+    } as any;
+
+    it('routes APM metrics to the database only when ClickHouse holds the telemetry tables', () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      ds.enableDirectDBConnection = true;
+
+      ds.zabbix = { apmMetricsDirectDB: false } as any;
+      expect(ds.isBackendTarget(apmTarget)).toBe(true);
+      expect(ds.isDBConnectionTarget(apmTarget)).toBe(false);
+
+      ds.zabbix = { apmMetricsDirectDB: true } as any;
+      expect(ds.isBackendTarget(apmTarget)).toBe(false);
+      expect(ds.isDBConnectionTarget(apmTarget)).toBe(true);
+
+      // Without Direct DB Connection the flag is irrelevant
+      ds.enableDirectDBConnection = false;
+      expect(ds.isBackendTarget(apmTarget)).toBe(true);
+      expect(ds.isDBConnectionTarget(apmTarget)).toBe(false);
+    });
+
+    it('waits for the Direct DB Connection before routing the first APM query', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      ds.enableDirectDBConnection = true;
+      const ready = createDeferred<void>();
+      ds.zabbix = { apmMetricsDirectDB: false, dbConnectorReady: ready.promise } as any;
+
+      jest.spyOn(ZabbixDatasource.prototype, 'interpolateVariablesInQueries').mockReturnValue([apmTarget]);
+      jest.spyOn(ds, 'applyFrontendFunctions').mockImplementation((response) => response);
+      jest.spyOn(ds, 'frontendQuery').mockResolvedValue({ data: [] });
+      jest.spyOn(ds, 'annotationRequest').mockResolvedValue({ data: [] });
+      const backendQuery = jest.spyOn(DataSourceWithBackend.prototype, 'query').mockReturnValue(of({ data: [] }));
+      backendQuery.mockClear();
+      const dbQuery = jest.spyOn(ds, 'dbConnectionQuery').mockResolvedValue({ data: [{ refId: 'A' }] });
+
+      const resultPromise = lastValueFrom(ds.query({ ...buildRequest(), targets: [apmTarget] }));
+      await Promise.resolve();
+      expect(backendQuery).not.toHaveBeenCalled();
+
+      // The connector turns out to be a ClickHouse database with the telemetry tables
+      (ds.zabbix as any).apmMetricsDirectDB = true;
+      ready.resolve();
+
+      const result = await resultPromise;
+      expect(result.data).toEqual([{ refId: 'A' }]);
+      expect(backendQuery.mock.calls[0][0].targets).toEqual([]);
+      expect(dbQuery).toHaveBeenCalled();
+      expect(ds.dbConnectorChecked).toBe(true);
+    });
+
+    it('queryApmMetricsDB() sends the downsampled points to the backend as they are', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const getApmMetricPointsDB = jest
+        .fn()
+        .mockResolvedValue([
+          '{"type":0,"time_unix":1794433025954728676,"value":3}',
+          '{"type":0,"time_unix":1794433020954728676,"value":2}',
+          '{"type":0,"time_unix":1794433015954728676,"value":1}',
+        ]);
+      ds.zabbix = { getApmMetricPointsDB } as any;
+      const fetch = jest.fn().mockReturnValue(of({ data: [] }));
+      (getBackendSrv as jest.Mock).mockReturnValue({ fetch });
+      jest.spyOn(ds, 'handleBackendPostProcessingResponse').mockReturnValue(['frames'] as any);
+
+      const request = { intervalMs: 30500, maxDataPoints: 800 } as any;
+      const result = await ds.queryApmMetricsDB(apmTarget, [1000, 2000], request);
+
+      expect(result).toEqual(['frames']);
+      // Interval rounded up to seconds, one point more than the limit to detect truncation
+      expect(getApmMetricPointsDB).toHaveBeenCalledWith(apmTarget.apmMetric, [1000, 2000], 31, 3);
+
+      const options = fetch.mock.calls[0][0];
+      expect(options.url).toBe('/api/datasources/uid/test-ds-uid/resources/db-connection-post');
+      expect(typeof options.data).toBe('string');
+      // Nanosecond timestamps are kept exactly: the points are never parsed in the browser
+      expect(options.data).toContain('"apmPoints":[{"type":0,"time_unix":1794433025954728676,"value":3},');
+      const body = JSON.parse(options.data);
+      expect(body.query).toEqual(apmTarget);
+      expect(body.timeRange).toEqual({ from: 1000, to: 2000 });
+      expect(body.intervalMs).toBe(31000);
+      expect(body.maxDataPoints).toBe(800);
+      // Three points for a limit of two: the oldest one is dropped
+      expect(body.apmTruncated).toBe(true);
+      expect(body.apmPoints).toHaveLength(2);
+    });
+
+    it('queryApmMetricsDB() returns nothing for an incomplete query', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const getApmMetricPointsDB = jest.fn();
+      ds.zabbix = { getApmMetricPointsDB } as any;
+
+      expect(await ds.queryApmMetricsDB({ ...apmTarget, apmMetric: {} }, [1000, 2000], {})).toEqual([]);
+      expect(getApmMetricPointsDB).not.toHaveBeenCalled();
+    });
   });
 });

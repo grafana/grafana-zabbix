@@ -1,6 +1,7 @@
 export type zabbixMethodName =
   | 'alert.get'
   | 'apiinfo.version'
+  | 'apmmetric.get'
   | 'application.get'
   | 'event.acknowledge'
   | 'event.get'
@@ -21,6 +22,25 @@ export type zabbixMethodName =
   | 'user.get'
   | 'usermacro.get'
   | 'valuemap.get';
+
+// A metric seen in APM (OpenTelemetry) data, Zabbix 8.0+
+export interface ApmMetricInfo {
+  name: string;
+  // 0 Gauge, 1 Sum, 2 Histogram, 3 Exponential histogram
+  type: number;
+  unit: string;
+}
+
+export interface ApmMetricCatalog {
+  services: string[];
+  metrics: ApmMetricInfo[];
+}
+
+// Attribute keys and the values seen for each, per attribute scope
+export interface ApmMetricAttributes {
+  metric: Record<string, string[]>;
+  resource: Record<string, string[]>;
+}
 
 export interface ZabbixConnector {
   getHistory: (items, timeFrom, timeTill) => Promise<any>;
