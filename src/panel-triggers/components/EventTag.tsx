@@ -1,7 +1,7 @@
 import React from 'react';
-import { css } from '@emotion/css';
-import { Icon, Tooltip, useStyles2 } from '@grafana/ui';
-import { GrafanaTheme2 } from '@grafana/data';
+import { css, cx } from '@emotion/css';
+import { Icon, Tooltip, useStyles2, useTheme2 } from '@grafana/ui';
+import { colorManipulator, GrafanaTheme2 } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { ZBXTag } from '../../datasource/types';
 
@@ -95,9 +95,12 @@ interface Props {
   datasource: DataSourceRef | string;
   highlight?: boolean;
   onClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
+  /** 'chip' renders a theme-coloured chip (Problems table); default keeps the per-name colours */
+  variant?: 'default' | 'chip';
 }
 
-export const EventTag = ({ tag, datasource, highlight, onClick }: Props) => {
+export const EventTag = ({ tag, datasource, highlight, onClick, variant = 'default' }: Props) => {
+  const theme = useTheme2();
   const styles = useStyles2(getStyles);
   const onClickInternal = (event) => {
     if (onClick) {
@@ -105,14 +108,39 @@ export const EventTag = ({ tag, datasource, highlight, onClick }: Props) => {
     }
   };
 
-  const tagColor = getTagColorsFromName(tag.tag);
-  const style: React.CSSProperties = {
-    background: tagColor.color,
-    borderColor: tagColor.borderColor,
-  };
+  const isChip = variant === 'chip';
+  let style: React.CSSProperties;
+  if (isChip) {
+    // Chips are coloured by "name:value" so equal tags share a colour across rows: the lighter
+    // shade carries the text on dark backgrounds, the darker one on light, over a 15% tint.
+    const valueColor = getTagColorsFromName(tag.value ? `${tag.tag}:${tag.value}` : tag.tag);
+    let accent = theme.isLight ? valueColor.color : valueColor.borderColor;
+    // The palette spans very dark and very light shades; keep the accent readable on the theme background
+    const luminance = colorManipulator.getLuminance(accent);
+    if (!theme.isLight && luminance < 0.2) {
+      accent = colorManipulator.lighten(accent, 0.45);
+    } else if (theme.isLight && luminance > 0.12) {
+      accent = colorManipulator.darken(accent, 0.35);
+    }
+    style = {
+      color: accent,
+      background: colorManipulator.alpha(accent, 0.15),
+      borderColor: colorManipulator.alpha(accent, 0.5),
+    };
+  } else {
+    const tagColor = getTagColorsFromName(tag.tag);
+    style = {
+      background: tagColor.color,
+      borderColor: tagColor.borderColor,
+    };
+  }
+  const className = isChip
+    ? cx(styles.chip, { [styles.chipHighlighted]: highlight })
+    : `label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`;
 
   const isUrl = URLPattern.test(tag.value);
-  let tagElement = <>{tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`}</>;
+  const tagText = tag.value ? `${tag.tag}: ${tag.value}` : `${tag.tag}`;
+  let tagElement = <>{tagText}</>;
   if (isUrl) {
     tagElement = (
       <Tooltip placement="top" content={tag.value}>
@@ -127,11 +155,7 @@ export const EventTag = ({ tag, datasource, highlight, onClick }: Props) => {
   return (
     // TODO: show tooltip when click feature is fixed
     // <Tooltip placement="bottom" content="Click to add tag filter or Ctrl/Shift+click to remove">
-    <span
-      className={`label label-tag zbx-tag ${highlight ? 'highlighted' : ''}`}
-      style={style}
-      onClick={onClickInternal}
-    >
+    <span className={className} style={style} onClick={onClickInternal} title={isChip ? tagText : undefined}>
       {tagElement}
     </span>
     // </Tooltip>
@@ -142,4 +166,30 @@ const getStyles = (theme: GrafanaTheme2) => ({
   icon: css`
     margin-right: ${theme.spacing(0.5)};
   `,
+  chip: css({
+    display: 'inline-flex',
+    alignItems: 'center',
+    verticalAlign: 'middle',
+    maxWidth: '100%',
+    // 20px tall at the 14px base; em here is relative to the chip's own 11px font
+    height: `${20 / 11}em`,
+    padding: theme.spacing(0, 0.75),
+    borderRadius: 3,
+    fontSize: `${11 / theme.typography.fontSize}em`,
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    border: '1px solid transparent',
+    cursor: 'pointer',
+    '&:hover': {
+      textDecoration: 'underline',
+    },
+    '& a': {
+      color: 'inherit',
+    },
+  }),
+  chipHighlighted: css({
+    boxShadow: `0 0 0 2px ${theme.colors.warning.border}`,
+  }),
 });

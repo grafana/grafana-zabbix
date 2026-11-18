@@ -54,7 +54,11 @@ test('expands the Description macro without a history lookup by default', async 
   expect(params.expandComment).toBe(true);
 
   const panel = page.getByRole('region', { name: 'Problems with macro in Description' });
-  await panel.getByRole('row').filter({ hasText: 'E2E macro trigger' }).locator('button:has(i.fa-info-circle)').click();
+  await panel
+    .getByRole('row')
+    .filter({ hasText: 'E2E macro trigger' })
+    .getByRole('button', { name: 'Show problem details' })
+    .click();
 
   await expect(panel).toContainText(EXPANDED_DESCRIPTION);
   await expect(panel).not.toContainText(RAW_MACRO);
@@ -82,7 +86,11 @@ test('leaves the Description raw for the plugin to expand when the history looku
   expect(params).not.toHaveProperty('expandComment');
 
   const panel = page.getByRole('region', { name: 'Problems with macro in Description (item value at problem time)' });
-  await panel.getByRole('row').filter({ hasText: 'E2E macro trigger' }).locator('button:has(i.fa-info-circle)').click();
+  await panel
+    .getByRole('row')
+    .filter({ hasText: 'E2E macro trigger' })
+    .getByRole('button', { name: 'Show problem details' })
+    .click();
 
   await expect(panel).toContainText(EXPANDED_DESCRIPTION);
   await expect(panel).not.toContainText(RAW_MACRO);
