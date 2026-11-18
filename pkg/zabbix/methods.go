@@ -529,11 +529,75 @@ func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string, hostTagFil
 		version, err := ds.GetVersion(ctx)
 		if err != nil {
 			ds.logger.Warn("Failed to detect Zabbix version for inheritedTags", "error", err)
+		} else if version >= 80 {
+			return ds.getHostsMatchingInheritedTags(ctx, params)
 		} else if version >= 50 {
+			// Match the tag filter against tags inherited from linked templates as well as the host's own tags.
 			params["inheritedTags"] = true
 		}
 	}
 
+	return ds.requestHosts(ctx, params)
+}
+
+// getHostsMatchingInheritedTags runs a tag-filtered host.get that matches tags on the host itself or on its
+// linked templates, on Zabbix 8.0 and later.
+//
+// Zabbix 8.0 evaluates inheritedTags correctly only for hosts that have at least one linked template: hosts
+// without templates are dropped by positive filters (Equals, Contains, Exists) and wrongly kept by negative
+// ones (Not exists, Not equal). So hosts with templates are taken from an inheritedTags query, and hosts
+// without templates from a plain one, where their own tags are all the tags they have.
+func (ds *Zabbix) getHostsMatchingInheritedTags(ctx context.Context, params ZabbixAPIParams) ([]Host, error) {
+	withInheritedParams := ZabbixAPIParams{"inheritedTags": true, "selectParentTemplates": []string{"templateid"}}
+	ownOnlyParams := ZabbixAPIParams{"selectParentTemplates": []string{"templateid"}}
+	for k, v := range params {
+		withInheritedParams[k] = v
+		ownOnlyParams[k] = v
+	}
+
+	withInherited, err := ds.requestHostsWithTemplates(ctx, withInheritedParams)
+	if err != nil {
+		return nil, err
+	}
+	ownOnly, err := ds.requestHostsWithTemplates(ctx, ownOnlyParams)
+	if err != nil {
+		return nil, err
+	}
+
+	hosts := make([]Host, 0, len(withInherited)+len(ownOnly))
+	for _, h := range withInherited {
+		if len(h.ParentTemplates) > 0 {
+			hosts = append(hosts, h.Host)
+		}
+	}
+	for _, h := range ownOnly {
+		if len(h.ParentTemplates) == 0 {
+			hosts = append(hosts, h.Host)
+		}
+	}
+	sort.SliceStable(hosts, func(i, j int) bool { return hosts[i].Name < hosts[j].Name })
+	return hosts, nil
+}
+
+type hostWithParentTemplates struct {
+	Host
+	ParentTemplates []struct {
+		ID string `json:"templateid"`
+	} `json:"parentTemplates"`
+}
+
+func (ds *Zabbix) requestHostsWithTemplates(ctx context.Context, params ZabbixAPIParams) ([]hostWithParentTemplates, error) {
+	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "host.get", Params: params})
+	if err != nil {
+		return nil, err
+	}
+
+	var hosts []hostWithParentTemplates
+	err = convertTo(result, &hosts)
+	return hosts, err
+}
+
+func (ds *Zabbix) requestHosts(ctx context.Context, params ZabbixAPIParams) ([]Host, error) {
 	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "host.get", Params: params})
 	if err != nil {
 		return nil, err
