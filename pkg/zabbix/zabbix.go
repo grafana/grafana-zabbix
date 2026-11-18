@@ -197,3 +197,58 @@ func isNotAuthorized(err error) bool {
 		strings.Contains(message, "Not authorised.") ||
 		strings.Contains(message, "Not authorized.")
 }
+
+// requestUncached performs an API request without reading from or writing to the response cache.
+//
+// Requests whose response carries live metric values must use it: item.get is cached for the data
+// source cache TTL (1h by default) because it normally returns item metadata only, so an item.get
+// asking for lastvalue/lastclock would otherwise keep serving the same values for that long.
+func (ds *Zabbix) requestUncached(ctx context.Context, apiReq *ZabbixAPIRequest) (*simplejson.Json, error) {
+	version, err := ds.GetVersion(ctx)
+	if err != nil {
+		ds.logger.Error("Error querying Zabbix version", "error", err)
+		ds.version = -1
+	} else {
+		ds.version = version
+	}
+
+	return ds.request(ctx, apiReq.Method, apiReq.Params)
+}
+
+// GetItemsWithLastValue fetches items of the given type ("num" or "text") with their lastvalue populated,
+// on the hosts matching the group/host filters and the optional host tag filters.
+func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, itemType string, hostTagFilters []HostTagFilter, evalType string) ([]*Item, error) {
+	var allItems []*Item
+	hosts, err := z.GetHosts(ctx, groupFilter, hostFilter, hostTagFilters, evalType)
+	if err != nil {
+		return nil, err
+	}
+	if len(hosts) == 0 {
+		return allItems, nil
+	}
+
+	hostids := make([]string, 0)
+	for _, host := range hosts {
+		hostids = append(hostids, host.ID)
+	}
+
+	if isRegex(itemTagFilter) {
+		tags, err := z.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter, hostTagFilters, evalType)
+		if err != nil {
+			return nil, err
+		}
+		var tagStrs []string
+		for _, t := range tags {
+			tagStrs = append(tagStrs, itemTagToString(t))
+		}
+		itemTagFilter = strings.Join(tagStrs, ",")
+	}
+
+	// Request with lastvalue
+	allItems, err = z.GetAllItems(ctx, hostids, nil, itemType, false, itemTagFilter, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return filterItemsByQuery(allItems, itemFilter)
+}
