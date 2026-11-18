@@ -146,7 +146,13 @@ export class Zabbix implements ZabbixConnector {
   getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
-  acknowledgeEvent: (eventid: string, message: string, action?: number, severity?: number) => Promise<any>;
+  acknowledgeEvent: (
+    eventid: string,
+    message: string,
+    action?: number,
+    severity?: number,
+    suppress_until?: number
+  ) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
@@ -310,6 +316,18 @@ export class Zabbix implements ZabbixConnector {
   supportsCauseSymptomProblems() {
     const version = this.version || this.zabbixAPI.version;
     return version ? semver.gte(version, '6.4.0') : false;
+  }
+
+  // Unacknowledge action was introduced in Zabbix 5.0
+  supportsUnacknowledge() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '5.0.0') : false;
+  }
+
+  // Manual problem suppression was introduced in Zabbix 6.2
+  supportsProblemSuppression() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '6.2.0') : false;
   }
 
   // Zabbix 8.0+ exposes OTEL/APM data over the API (apmtrace.get, apmspan.get)
