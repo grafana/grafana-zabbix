@@ -146,7 +146,13 @@ export class Zabbix implements ZabbixConnector {
   getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
-  acknowledgeEvent: (eventid: string, message: string, action?: number, severity?: number) => Promise<any>;
+  acknowledgeEvent: (
+    eventid: string,
+    message: string,
+    action?: number,
+    severity?: number,
+    suppress_until?: number
+  ) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
@@ -322,6 +328,18 @@ export class Zabbix implements ZabbixConnector {
     const version = this.version || this.zabbixAPI.version;
     // Unknown version: offer the feature, the query path reports a clear error if unsupported
     return version ? semver.gte(version, c.ZABBIX_APM_MIN_VERSION) : true;
+  }
+
+  // Unacknowledge action was introduced in Zabbix 5.0
+  supportsUnacknowledge() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '5.0.0') : false;
+  }
+
+  // Manual problem suppression was introduced in Zabbix 6.2
+  supportsProblemSuppression() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '6.2.0') : false;
   }
 
   async isZabbix54OrHigher() {

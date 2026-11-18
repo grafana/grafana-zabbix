@@ -700,6 +700,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
     const getUsersPromise = this.zabbix.getUsers();
 
+    // Which problem update actions the Zabbix server supports depends on its version
+    await this.zabbix.getVersion();
+    const actionCapabilities = {
+      unacknowledge: this.zabbix.supportsUnacknowledge(),
+      suppress: this.zabbix.supportsProblemSuppression(),
+    };
+
     let proxies;
     let zabbixUsers;
     const problemsPromises = Promise.all([getProblemsPromise, getProxiesPromise, getUsersPromise])
@@ -710,6 +717,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       })
       .then((problems) => problemsHandler.setMaintenanceStatus(problems))
       .then((problems) => problemsHandler.setAckButtonStatus(problems, showAckButton))
+      .then((problems) => problemsHandler.setActionCapabilities(problems, actionCapabilities))
       .then((problems) => problemsHandler.filterTriggersPre(problems, target))
       .then((problems) => problemsHandler.sortProblems(problems, target))
       .then((problems) => problemsHandler.addTriggerDataSource(problems, target))
