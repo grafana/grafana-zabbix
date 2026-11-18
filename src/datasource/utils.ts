@@ -836,8 +836,9 @@ export function getValueMapping(item, valueMappings: any[]): ValueMapping[] | nu
 
 /**
  * Replace a raw item value with its Zabbix value mapping text. Returns the value unchanged when the
- * item has no mapping or the mapping has no entry for the value. Only exact-match entries are
- * considered, as in getValueMapping().
+ * item has no mapping or the mapping has no entry for the value. Only exact-match entries (type 0)
+ * are applied here. Unlike getValueMapping(), which converts every entry type to a field mapping,
+ * range, regexp and default entries are ignored.
  */
 export function mapValueWithZabbixMapping(item, valueMappings: any[] | undefined, value) {
   const mapping = valueMappings?.find((m) => m.valuemapid === item?.valuemapid);
