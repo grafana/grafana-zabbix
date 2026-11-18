@@ -72,6 +72,43 @@ describe('Zabbix API connector', () => {
     });
   });
 
+  describe('getItems function', () => {
+    const createConnector = () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      return zabbixAPIConnector;
+    };
+
+    it('should select tags and send no name search by default', async () => {
+      const zabbixAPIConnector = createConnector();
+
+      await zabbixAPIConnector.getItems(['1'], undefined, 'num');
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.selectTags).toBe('extend');
+      expect(params.search).toBeUndefined();
+      expect(params.searchByAny).toBeUndefined();
+    });
+
+    it('should search item names, keeping items with unexpanded macros', async () => {
+      const zabbixAPIConnector = createConnector();
+
+      await zabbixAPIConnector.getItems(['1'], undefined, undefined, undefined, { nameSearch: ['CPU', 'Memory'] });
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.search).toEqual({ name: ['CPU', 'Memory', '$'] });
+      expect(params.searchByAny).toBe(true);
+    });
+
+    it('should skip tags when selectTags is false but still filter by tag', async () => {
+      const zabbixAPIConnector = createConnector();
+
+      await zabbixAPIConnector.getItems(['1'], undefined, undefined, 'component: cpu', { selectTags: false });
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.selectTags).toBeUndefined();
+      expect(params.tags).toEqual([{ tag: 'component', value: 'cpu', operator: '1' }]);
+    });
+  });
+
   describe('getHostAlerts function', () => {
     it('should return number when count is enabled and acknowledged is 1 and version is 7 or greater', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
@@ -302,6 +339,28 @@ describe('Zabbix API connector', () => {
   });
 
   describe('getEventsHistory', () => {
+    it('selects the suppressing userid when version is 6.2 or greater', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.2.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.selectSuppressionData).toEqual(['maintenanceid', 'userid', 'suppress_until']);
+    });
+
+    it('does not select userid before 6.2, where suppression data has no such field', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.selectSuppressionData).toEqual(['maintenanceid', 'suppress_until']);
+    });
+
     it('sends symptom when version is 6.4 or greater', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.version = '6.4.0';
@@ -339,7 +398,7 @@ describe('Zabbix API connector', () => {
   describe('getHosts', () => {
     it('passes base params and group ids', () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn();
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
 
       zabbixAPIConnector.getHosts(['1', '2']);
 
@@ -350,24 +409,79 @@ describe('Zabbix API connector', () => {
       });
     });
 
-    it('requests tags when getHostTags is true', () => {
+    it('requests direct and inherited tags when getHostTags is true', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn();
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      zabbixAPIConnector.version = '7.4.0';
 
-      zabbixAPIConnector.getHosts(undefined, true);
+      await zabbixAPIConnector.getHosts(undefined, true);
 
       expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
-        output: ['hostid', 'name', 'host', 'tags'],
+        output: ['hostid', 'name', 'host'],
         sortfield: 'name',
         selectTags: 'extend',
+        selectInheritedTags: 'extend',
       });
     });
 
-    it('builds tag filters with numeric operator and evaltype', () => {
+    it('resolves the version before building params so selectInheritedTags is not dropped', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn();
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      // Version not resolved yet — getHosts must await initVersion() rather than reading a version
+      // that is still undefined.
+      zabbixAPIConnector.version = undefined;
+      jest.spyOn(zabbixAPIConnector, 'initVersion').mockImplementation(async () => {
+        zabbixAPIConnector.version = '7.4.0';
+        return '7.4.0';
+      });
 
-      zabbixAPIConnector.getHosts(
+      await zabbixAPIConnector.getHosts(undefined, true);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        selectTags: 'extend',
+        selectInheritedTags: 'extend',
+      });
+    });
+
+    it('merges inherited tags into tags, de-duplicated on tag and value', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([
+        {
+          hostid: '1',
+          name: 'db-1',
+          tags: [{ tag: 'role', value: 'api' }],
+          inheritedTags: [
+            { tag: 'role', value: 'api' },
+            { tag: 'class', value: 'database' },
+          ],
+        },
+        { hostid: '2', name: 'web-1', tags: [], inheritedTags: [{ tag: 'class', value: 'os' }] },
+      ]);
+      zabbixAPIConnector.version = '7.4.0';
+
+      const result = await zabbixAPIConnector.getHosts(undefined, true);
+
+      expect(result).toEqual([
+        {
+          hostid: '1',
+          name: 'db-1',
+          tags: [
+            { tag: 'role', value: 'api' },
+            { tag: 'class', value: 'database' },
+          ],
+        },
+        { hostid: '2', name: 'web-1', tags: [{ tag: 'class', value: 'os' }] },
+      ]);
+    });
+
+    it('sends tag filters to the server with inheritedTags so template tags match too', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      zabbixAPIConnector.version = '7.4.0';
+
+      await zabbixAPIConnector.getHosts(
         undefined,
         false,
         [
@@ -380,24 +494,44 @@ describe('Zabbix API connector', () => {
       expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
         output: ['hostid', 'name', 'host'],
         sortfield: 'name',
-        selectTags: 'extend',
         evaltype: 2,
         tags: [{ tag: 'role', value: 'api', operator: 0 }],
+        inheritedTags: true,
       });
     });
 
-    it('builds tag filters with numeric operator and default evaltype when using unsupported evalType', () => {
+    it('defaults evaltype to And/Or when using an unsupported evalType', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
-      zabbixAPIConnector.request = jest.fn();
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+      zabbixAPIConnector.version = '7.4.0';
 
-      zabbixAPIConnector.getHosts(
+      await zabbixAPIConnector.getHosts(
         undefined,
         false,
-        [
-          { tag: 'role', value: 'api', operator: HostTagOperatorValue.Contains },
-          { tag: '', value: 'ignore me', operator: HostTagOperatorValue.Equals },
-        ],
+        [{ tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals }],
         '3' as ZabbixTagEvalType
+      );
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        evaltype: 0,
+        tags: [{ tag: 'role', value: 'api', operator: 1 }],
+        inheritedTags: true,
+      });
+    });
+
+    it('omits the inherited tag params and leaves the response untouched before Zabbix 5.0', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      const hosts = [{ hostid: '1', name: 'host-a', tags: [{ tag: 'role', value: 'api' }] }];
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue(hosts);
+      zabbixAPIConnector.version = '4.4.0';
+
+      const result = await zabbixAPIConnector.getHosts(
+        undefined,
+        true,
+        [{ tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals }],
+        ZabbixTagEvalType.AndOr
       );
 
       expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
@@ -405,8 +539,25 @@ describe('Zabbix API connector', () => {
         sortfield: 'name',
         selectTags: 'extend',
         evaltype: 0,
-        tags: [{ tag: 'role', value: 'api', operator: 0 }],
+        tags: [{ tag: 'role', value: 'api', operator: 1 }],
       });
+      expect(result).toBe(hosts);
+    });
+
+    it('does not request or merge tags when only filtering', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      const hosts = [{ hostid: '1', name: 'host-a' }];
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue(hosts);
+      zabbixAPIConnector.version = '7.4.0';
+
+      const result = await zabbixAPIConnector.getHosts(undefined, false, [
+        { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
+      ]);
+
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.selectTags).toBeUndefined();
+      expect(params.selectInheritedTags).toBeUndefined();
+      expect(result).toBe(hosts);
     });
   });
 
@@ -603,6 +754,137 @@ describe('Zabbix API connector', () => {
         period_to: 7200,
         periods: 1,
       });
+    });
+  });
+
+  describe('acknowledgeEvent', () => {
+    const createConnector = (version = '7.0.0') => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = version;
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve({ eventids: ['10'] }));
+      return zabbixAPIConnector;
+    };
+
+    it('defaults to add message action when no action is passed and version is 4.0+', async () => {
+      const connector = createConnector('6.0.0');
+      await connector.acknowledgeEvent('10', 'a message');
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 4,
+      });
+    });
+
+    it('defaults to no action when version is below 4.0', async () => {
+      const connector = createConnector('3.4.0');
+      await connector.acknowledgeEvent('10', 'a message');
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 0,
+      });
+    });
+
+    it('passes the action bitmask and severity', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', 'a message', 14, 5);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: 'a message',
+        action: 14,
+        severity: 5,
+      });
+    });
+
+    it('passes unacknowledge action without extra params', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 16);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 16,
+      });
+    });
+
+    it('passes suppress_until for the suppress action, including 0 for indefinite suppression', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 32, undefined, 0);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 32,
+        suppress_until: 0,
+      });
+    });
+
+    it('passes a non-zero suppress_until timestamp', async () => {
+      const connector = createConnector();
+      await connector.acknowledgeEvent('10', '', 32, undefined, 1700003600);
+      expect(connector.request).toHaveBeenCalledWith('event.acknowledge', {
+        eventids: '10',
+        message: '',
+        action: 32,
+        suppress_until: 1700003600,
+      });
+    });
+  });
+
+  describe('version capabilities', () => {
+    const createConnector = (version: string) => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = version;
+      return zabbixAPIConnector;
+    };
+
+    it.each([
+      ['4.4.0', false],
+      ['5.0.0', true],
+      ['7.0.0', true],
+    ])('supportsUnacknowledge for version %s is %s', (version, expected) => {
+      expect(createConnector(version).supportsUnacknowledge()).toBe(expected);
+    });
+
+    it.each([
+      ['6.0.0', false],
+      ['6.2.0', true],
+      ['7.0.0', true],
+    ])('supportsProblemSuppression for version %s is %s', (version, expected) => {
+      expect(createConnector(version).supportsProblemSuppression()).toBe(expected);
+    });
+  });
+
+  describe('getTriggersByIds', () => {
+    beforeAll(() => {
+      jest.spyOn(ZabbixAPIConnector.prototype, 'initVersion').mockResolvedValue('');
+    });
+
+    const callParams = async (expandComment?: boolean) => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '7.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve({}));
+
+      await (expandComment === undefined
+        ? zabbixAPIConnector.getTriggersByIds(['501'])
+        : zabbixAPIConnector.getTriggersByIds(['501'], expandComment));
+
+      const request = zabbixAPIConnector.request as jest.Mock;
+      expect(request.mock.calls[0][0]).toBe('trigger.get');
+      return request.mock.calls[0][1];
+    };
+
+    it('asks Zabbix to expand the trigger comment by default', async () => {
+      expect(await callParams()).toMatchObject({ expandComment: true });
+    });
+
+    it('omits expandComment rather than sending false', async () => {
+      // Zabbix treats the key as present-means-true, so sending false would still
+      // expand the comment and leave the per-problem expansion nothing to replace.
+      expect(await callParams(false)).not.toHaveProperty('expandComment');
+    });
+
+    it('keeps the neighbouring expand flags in both modes', async () => {
+      expect(await callParams(true)).toMatchObject({ expandDescription: true, expandData: true });
+      expect(await callParams(false)).toMatchObject({ expandDescription: true, expandData: true });
     });
   });
 });

@@ -19,9 +19,12 @@ services:
       # Avoid the onboarding splash during e2e runs and when browsing the dev
       # environment manually.
       GF_FEATURE_TOGGLES_splashScreen: 'false'
+      # The Direct DB Connection e2e test needs the ClickHouse datasource type
+      # to exist so the config editor's datasource picker can list it.
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
 
   database:
-    image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+    image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
     command: postgres -c 'max_connections=200'
     environment:
       POSTGRES_USER: zabbix
@@ -72,7 +75,7 @@ services:
   # fixtures. $$f (not $f) so docker compose passes a literal $ to the shell.
   # Depends on zabbix-web being healthy so the Zabbix DB schema already exists.
   e2e-data-loader:
-    image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+    image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
     depends_on:
       zabbix-web:
         condition: service_healthy

@@ -62,12 +62,15 @@ const config = async (env): Promise<Configuration> => {
       new MiniCssExtractPlugin({
         filename: 'styles/[name].css',
       }),
-      // The scaffolded config only copies the logos named in the root plugin.json; the nested
-      // datasource and panel plugins reference their own img/ directories.
+      // The managed .config/bundler/copyFiles.ts only copies the logo declared in
+      // the root src/plugin.json (the app). It doesn't know about the nested
+      // datasource/panel-triggers plugin.json files, so their own logos
+      // (img/icn-zabbix-datasource.svg, img/icn-zabbix-problems-panel.svg) never
+      // reached dist, leaving broken logo icons in Grafana's UI.
       new CopyWebpackPlugin({
         patterns: [
-          { from: 'datasource/img/**/*', to: '.', noErrorOnMissing: true },
-          { from: 'panel-triggers/img/**/*', to: '.', noErrorOnMissing: true },
+          { from: 'datasource/img', to: 'datasource/img' },
+          { from: 'panel-triggers/img', to: 'panel-triggers/img' },
         ],
       }),
     ],

@@ -4,7 +4,7 @@ import * as utils from '../../../utils';
 import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } from '../../../constants';
 import { HostTagFilter, ShowProblemTypes, ZabbixTagEvalType } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
-import { APIExecuteScriptResponse, JSONRPCError, ZBXScript } from './types';
+import { APIExecuteScriptResponse, GetItemsOptions, JSONRPCError, ZBXScript } from './types';
 import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
 import { parseItemTag } from '../../../utils';
@@ -164,11 +164,21 @@ export class ZabbixAPIConnector {
     return this.version ? semver.gte(this.version, '6.4.0') : false;
   }
 
+  // Unacknowledge action was introduced in Zabbix 5.0
+  supportsUnacknowledge() {
+    return this.version ? semver.gte(this.version, '5.0.0') : false;
+  }
+
+  // Manual problem suppression was introduced in Zabbix 6.2
+  supportsProblemSuppression() {
+    return this.version ? semver.gte(this.version, '6.2.0') : false;
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
 
-  acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number) {
+  acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number, suppress_until?: number) {
     if (!action) {
       action = semver.gte(this.version, '4.0.0') ? ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
     }
@@ -181,6 +191,11 @@ export class ZabbixAPIConnector {
 
     if (severity !== undefined) {
       params.severity = severity;
+    }
+
+    // Required when action contains the "suppress event" flag; 0 means suppress indefinitely
+    if (suppress_until !== undefined) {
+      params.suppress_until = suppress_until;
     }
 
     return this.request('event.acknowledge', params);
@@ -196,7 +211,7 @@ export class ZabbixAPIConnector {
     return this.request('hostgroup.get', params);
   }
 
-  getHosts(
+  async getHosts(
     groupids: string[],
     getHostTags?: boolean,
     hostTagFilters?: HostTagFilter[],
@@ -210,24 +225,58 @@ export class ZabbixAPIConnector {
       params.groupids = groupids;
     }
 
+    // ensure only non empty tag keys are being sent
+    const activeFilters = hostTagFilters?.filter((tagFilter) => tagFilter.tag !== '') ?? [];
+    const wantsTags = getHostTags || activeFilters.length > 0;
+
+    if (wantsTags) {
+      // Await the version rather than reading this.version, which initVersion() sets asynchronously:
+      // losing that race would build the wrong params and CachingProxy would then cache the result.
+      await this.initVersion();
+    }
+    // host.get gained selectInheritedTags and the inheritedTags filter flag in Zabbix 5.0.
+    const supportsInheritedTags = wantsTags && semver.gte(this.version, '5.0.0');
+
     if (getHostTags) {
-      params.output.push('tags');
       params.selectTags = 'extend';
+      if (supportsInheritedTags) {
+        // Also return tags inherited from linked templates; merged into `tags` below.
+        params.selectInheritedTags = 'extend';
+      }
     }
 
-    if (hostTagFilters && hostTagFilters.length > 0) {
-      params.selectTags = 'extend';
+    if (activeFilters.length > 0) {
       params.evaltype = evalType === ZabbixTagEvalType.Or || evalType === ZabbixTagEvalType.AndOr ? +evalType : 0;
-
-      // ensure only non empty tag keys are being sent
       // convert operator to number since that is the expected type in Zabbix.
-      params.tags = hostTagFilters
-        .filter((tagFilter) => tagFilter.tag !== '')
-        .map((tagFilter) => {
-          return { ...tagFilter, operator: +tagFilter.operator };
-        });
+      params.tags = activeFilters.map((tagFilter) => ({ ...tagFilter, operator: +tagFilter.operator }));
+      if (supportsInheritedTags) {
+        // Apply the `tags` filter to template-inherited tags as well as direct host tags. Matching
+        // (operators, And/Or grouping, negation, case folding) stays on the server this way.
+        params.inheritedTags = true;
+      }
     }
-    return this.request('host.get', params);
+
+    const hosts: any[] = await this.request('host.get', params);
+    if (!params.selectInheritedTags || !Array.isArray(hosts)) {
+      return hosts;
+    }
+    // Merge inheritedTags into tags so downstream code (autocomplete, processHostTags) sees a single
+    // combined list. De-dupe on tag+value.
+    return hosts.map((h) => {
+      const direct = Array.isArray(h?.tags) ? h.tags : [];
+      const inherited = Array.isArray(h?.inheritedTags) ? h.inheritedTags : [];
+      const combined: any[] = [];
+      const seen = new Set<string>();
+      for (const t of [...direct, ...inherited]) {
+        const key = (t?.tag ?? '') + '\t' + (t?.value ?? '');
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(t);
+        }
+      }
+      const { inheritedTags: _omit, ...rest } = h;
+      return { ...rest, tags: combined };
+    });
   }
 
   /**
@@ -261,9 +310,11 @@ export class ZabbixAPIConnector {
    * @param  {[type]} hostids  host ids
    * @param  {[type]} appids   application ids
    * @param  {String} itemtype 'num' or 'text'
+   * @param  {Object} options  nameSearch: return only items whose name contains one of these
+   *                           substrings (or an unexpanded macro); selectTags: false to skip item tags
    * @return {[type]}          array of items
    */
-  getItems(hostids, appids, itemtype, itemTagFilter?: string): Promise<any[]> {
+  getItems(hostids, appids, itemtype, itemTagFilter?: string, options: GetItemsOptions = {}): Promise<any[]> {
     const params: any = {
       output: ['itemid', 'name', 'key_', 'value_type', 'hostid', 'status', 'state', 'units', 'valuemapid', 'delay'],
       sortfield: 'name',
@@ -286,8 +337,16 @@ export class ZabbixAPIConnector {
       params.filter.value_type = [1, 2, 4];
     }
 
+    if (options.nameSearch?.length) {
+      // Macros ($1, {$MACRO}) are expanded client-side and may resolve to the searched text, keep them too
+      params.search = { name: [...options.nameSearch, '$'] };
+      params.searchByAny = true;
+    }
+
     if (this.isZabbix54OrHigher()) {
-      params.selectTags = 'extend';
+      if (options.selectTags !== false) {
+        params.selectTags = 'extend';
+      }
       if (itemTagFilter) {
         const allTags = itemTagFilter.split(',');
         let tagsParam = [];
@@ -645,12 +704,21 @@ export class ZabbixAPIConnector {
     return this.request('problem.get', params).then(utils.mustArray);
   }
 
-  async getTriggersByIds(triggerids: string[]) {
+  /**
+   * `expandComment` asks Zabbix to expand macros in the trigger comment, which the
+   * Problems panel renders as "Description". Pass false only when the caller expands
+   * those macros itself per problem, because that needs the raw template.
+   *
+   * The parameter must be omitted rather than sent as false. Zabbix treats the key
+   * as present-means-true and expands the comment even when the value is false.
+   */
+  async getTriggersByIds(triggerids: string[], expandComment = true) {
     const params = {
       output: 'extend',
       triggerids: triggerids,
       expandDescription: true,
       expandData: true,
+      ...(expandComment ? { expandComment: true } : {}),
       expandExpression: true,
       monitored: true,
       skipDependent: true,
@@ -770,7 +838,10 @@ export class ZabbixAPIConnector {
       sortorder: 'DESC',
       selectTags: 'extend',
       [getParamsKeyByVersion('selectAcknowledges', this.version, 'event.get')]: 'extend',
-      selectSuppressionData: ['maintenanceid', 'suppress_until'],
+      // userid (who suppressed the problem manually) exists since Zabbix 6.2
+      selectSuppressionData: this.supportsProblemSuppression()
+        ? ['maintenanceid', 'userid', 'suppress_until']
+        : ['maintenanceid', 'suppress_until'],
       groupids,
       hostids,
       applicationids,

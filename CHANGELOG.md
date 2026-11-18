@@ -1,5 +1,95 @@
 # Change Log
 
+## 6.11.0
+
+### Minor Changes
+
+🚀 Add ClickHouse support for Direct DB Connection. Zabbix 8.0 can store item value history in ClickHouse, and the plugin can now query it directly: select a `grafana-clickhouse-datasource` data source in the Direct DB Connection settings (make sure its default database points to the Zabbix history database, `zabbix` by default). Since Zabbix stores only history data in ClickHouse (trends are not calculated or stored there), all queries - including wide time ranges that would normally switch to trends - are served from the history tables with server-side aggregation.
+🚀 Host tag filter in template variables: add a "Host tag" picker to the Host, Application, Item tag, Item and Item values variable query types so dashboards can filter hosts by tag (e.g. `class:database`, `platform:globalspec`) without per-host-group workarounds. Closes #1682.
+
+🚀 Host tag filtering now matches tags inherited from linked templates, not just directly-assigned host tags — applies to both the panel editor and the variable editor. The filter is sent to `host.get` with `inheritedTags: true` (Zabbix 5.0+), so matching stays on the server. A multi-value variable in a tag value expands to one filter per selected value.
+
+🚀 Tag-name and tag-value autocomplete in the host tag picker now suggests options observed across the host inventory (direct + inherited).
+
+🐛 Saved host-tag filters now repopulate the editor on reload, in both the panel editor and the variable editor.
+
+🐛 Template variables in host tag names and values are now interpolated in the panel editor's host tag filter.
+
+### Patch Changes
+
+🐛 Look up data sources with the async APIs from `@grafana/plugin-compat` instead of the deprecated `getDataSourceSrv()`, so the plugin keeps working once Grafana loads data sources lazily. Older Grafana versions fall back to the previous APIs.
+🐛 Fix: Problem name and item variable regex filters with an alternation inside a group (e.g. `/^CPU (user|system)$/`) no longer miss matches when narrowed on the Zabbix side
+🐛 Fix: Item and Item values template variables no longer fetch every item of the host (with tags) from Zabbix; the item name filter is pushed down to the Zabbix API
+🐛 Fix host tag filtering during Metrics query execution: queries configured with host tags now constrain returned series to matching hosts in both backend (Go) and direct DB connection execution paths. Closes #2594.
+
+## 6.10.3
+
+### Patch Changes
+
+🐛 Enforce Grafana role checks in the backend for mutating Zabbix API calls made through the resource proxy: `script.execute` now requires the Admin role, and `event.acknowledge` requires Editor or Admin when "Disable acknowledges for read-only users" is enabled. Previously these calls were forwarded with the data source's stored credentials regardless of the caller's role.
+🐛 Security: bump moment, ip-address and fast-uri to patched versions
+🐛 Add a backend allowlist for the resource-proxy CallResource paths so only the exact `zabbix-api` and `db-connection-post` POST routes are served; any other path or method is now rejected with a 403 instead of falling through to the catch-all root handler.
+⚙️ Chore: Update dependencies
+
+## 6.10.2
+
+### Patch Changes
+
+⚙️ Chore: dependency updates
+
+## 6.10.1
+
+### Patch Changes
+
+⚙️ Chore: dependency updates
+
+## 6.10.0
+
+### Minor Changes
+
+🚀 feat(backend): Make the plugin's gRPC message size limits configurable through the `[plugin.alexanderzobnin-zabbix-datasource]` section of `grafana.ini` (`grpc_max_receive_msg_size_mb`, `grpc_max_send_msg_size_mb`). Defaults stay at 32 MB / 100 MB; values are clamped to 512 MB.
+
+### Patch Changes
+
+⚙️ Chore: update Go to 1.27.3
+🐛 Fix queries that read trends failing on Zabbix 8.0 with `Invalid parameter "/": unexpected parameter "sortfield"`. The plugin no longer sends `sortfield` and `sortorder` to `trend.get`; trend points are still sorted by time in the plugin.
+
+## 6.9.1
+
+### Patch Changes
+
+🐛 Fix security vulnerabilities in transitive npm dependencies by pinning patched versions via package.json overrides: brace-expansion and basic-ftp.
+
+## 6.9.0
+
+### Minor Changes
+
+🚀 feat(problems): Add global problem severity name and color overrides to the data source settings. They apply to every Problems panel that queries the data source; panels with their own custom severity name or color keep it, and the panel's Colors options flag the rows where a global override is in effect.
+
+### Patch Changes
+
+🐛 Fix the data source logo loading
+🐛 Do not cache Zabbix IT Service responses, so status changes appear without waiting for the configured cache TTL.
+
+## 6.8.1
+
+### Patch Changes
+
+🐛 Fix security vulnerabilities (CVE-2026-69153, CVE-2026-84375)
+
+## 6.8.0
+
+### Minor Changes
+
+🚀 Problems panel: add an optional Host IP field (off by default), resolved from the host's IP-based interfaces (multiple IPs comma-separated, DNS-only hosts show an empty string). The interface lookup is gated behind a new "Host IP" query option so it adds no API overhead unless enabled.
+🚀 Problems query: support all Zabbix tag-filter operators (Exists, Equals, Contains, Does not exist, Does not equal, Does not contain) via a structured tag filter editor. Extended operators require Zabbix 5.4+. Existing free-text `tag:value` filters are migrated automatically and keep returning the same results.
+
+### Patch Changes
+
+🐛 Fix macros such as `{ITEM.VALUE}` showing unexpanded in the Problems panel Description. Since 6.4.1 the plugin asked Zabbix not to expand the trigger comment, but only expanded it itself when "Item value at problem time" was enabled, so the default query showed the raw macro text.
+📝 Docs: restore installation instructions and add an upgrade section to the docs index (the removed installation page left only aliases), update commands to the `grafana cli` subcommand since the standalone `grafana-cli` is deprecated and fails on Grafana 13.x, and fix broken installation links in the README
+🐛 fix(functions): accept numeric scale() param; add frontend/backend param-contract tests
+
 ## 6.7.0
 
 ### Minor Changes

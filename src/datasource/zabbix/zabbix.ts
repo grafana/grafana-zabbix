@@ -1,5 +1,5 @@
 import { DataSourceInstanceSettings } from '@grafana/data';
-import { getDataSourceSrv } from '@grafana/runtime';
+import { getDataSourceInstance } from '@grafana/plugin-compat/datasources';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
@@ -16,10 +16,14 @@ import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '..
 import { ZabbixDSOptions } from '../types/config';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import * as utils from '../utils';
+import { MODE_METRICS } from '../constants';
+import { getUIDFromID } from '../migrations';
+import { CLICKHOUSE_DS_ID, ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
 import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
+import { GetItemsOptions } from './connectors/zabbix_api/types';
 import { CachingProxy } from './proxy/cachingProxy';
 import { Host, ZabbixConnector } from './types';
 
@@ -115,6 +119,7 @@ type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAut
     | 'cacheTTL'
     | 'dbConnectionEnable'
     | 'dbConnectionDatasourceUID'
+    | 'dbConnectionDatasourceId'
     | 'dbConnectionDatasourceName'
     | 'dbConnectionRetentionPolicy'
   >;
@@ -124,7 +129,9 @@ export class Zabbix implements ZabbixConnector {
   cachingProxy: CachingProxy;
   zabbixAPI: ZabbixAPIConnector;
   getHistoryDB: any;
-  dbConnector: InfluxDBConnector | SQLConnector;
+  dbConnector: InfluxDBConnector | SQLConnector | ClickHouseConnector;
+  /** Settles when the DB connector set up by the constructor is ready, or failed */
+  dbConnectorReady: Promise<void> = Promise.resolve();
   getTrendsDB: any;
   version: string;
 
@@ -138,7 +145,13 @@ export class Zabbix implements ZabbixConnector {
   getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
-  acknowledgeEvent: (eventid, message) => Promise<any>;
+  acknowledgeEvent: (
+    eventid: string,
+    message: string,
+    action?: number,
+    severity?: number,
+    suppress_until?: number
+  ) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
@@ -156,6 +169,7 @@ export class Zabbix implements ZabbixConnector {
       cacheTTL,
       dbConnectionEnable,
       dbConnectionDatasourceUID,
+      dbConnectionDatasourceId,
       dbConnectionDatasourceName,
       dbConnectionRetentionPolicy,
       uid,
@@ -176,9 +190,13 @@ export class Zabbix implements ZabbixConnector {
     this.cacheRequests();
     this.bindRequests();
 
-    if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceName)) {
-      const connectorOptions: any = { dbConnectionRetentionPolicy };
-      this.initDBConnector(dbConnectionDatasourceUID, dbConnectionDatasourceName, connectorOptions)
+    if (dbConnectionEnable && (dbConnectionDatasourceUID || dbConnectionDatasourceId || dbConnectionDatasourceName)) {
+      const connectorOptions: any = { dbConnectionRetentionPolicy, dbConnectionDatasourceId };
+      this.dbConnectorReady = this.initDBConnector(
+        dbConnectionDatasourceUID,
+        dbConnectionDatasourceName,
+        connectorOptions
+      )
         .then(() => {
           this.getHistoryDB = this.cachingProxy.proxifyWithCache(
             this.dbConnector.getHistory,
@@ -202,17 +220,30 @@ export class Zabbix implements ZabbixConnector {
     datasourceName: string | undefined,
     options: ZabbixDSOptions
   ) {
-    const ref = (datasourceUID && datasourceUID.trim()) || datasourceName;
+    let uid = datasourceUID && datasourceUID.trim();
+    // Legacy config references the DB data source by its numeric ID.
+    // If that ID no longer exists, fall back to the data source name when there is one.
+    if (!uid && options.dbConnectionDatasourceId > 0) {
+      uid = await getUIDFromID(options.dbConnectionDatasourceId);
+      if (!uid && !datasourceName) {
+        throw new Error(
+          `Error retrieving direct db connection data source. Data source with id ${options.dbConnectionDatasourceId} not found`
+        );
+      }
+    }
+    const ref = uid || datasourceName;
     if (!ref) {
       throw new Error('Data Source UID or name must be specified for direct DB connection');
     }
-    const ds = await getDataSourceSrv().get(ref);
+    const ds = await getDataSourceInstance(ref);
 
     if (ds.type === 'influxdb') {
       const influxDBConnectorOptions: InfluxDBConnectorOptions = {
         retentionPolicy: options.dbConnectionRetentionPolicy,
       };
       this.dbConnector = new InfluxDBConnector(ds, influxDBConnectorOptions);
+    } else if (ds.type === CLICKHOUSE_DS_ID) {
+      this.dbConnector = new ClickHouseConnector(ds, {});
     } else {
       this.dbConnector = new SQLConnector(ds, {});
     }
@@ -240,6 +271,9 @@ export class Zabbix implements ZabbixConnector {
    * Perform test query for Zabbix API and external history DB.
    */
   async testDataSource() {
+    // The DB connector is set up asynchronously, so a test right after the data source
+    // is created would otherwise skip it
+    await this.dbConnectorReady;
     if (this.enableDirectDBConnection && this.dbConnector) {
       const testResult = await this.dbConnector.testDataSource();
       return testResult;
@@ -283,6 +317,18 @@ export class Zabbix implements ZabbixConnector {
     return version ? semver.gte(version, '6.4.0') : false;
   }
 
+  // Unacknowledge action was introduced in Zabbix 5.0
+  supportsUnacknowledge() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '5.0.0') : false;
+  }
+
+  // Manual problem suppression was introduced in Zabbix 6.2
+  supportsProblemSuppression() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '6.2.0') : false;
+  }
+
   async isZabbix54OrHigher() {
     const version = await this.zabbixAPI.initVersion();
     return version ? semver.gte(version, '5.4.0') : false;
@@ -292,10 +338,15 @@ export class Zabbix implements ZabbixConnector {
     return this.version ? semver.gte(this.version, '5.4.0') : false;
   }
 
-  getItemsFromTarget(target, options) {
+  getItemsFromTarget(target, options: any = {}) {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    const filters = _.map(parts, (p) => target[p].filter);
-    return this.getItems(...filters, options);
+    const filters = _.map(parts, (p) => target[p]?.filter);
+    const isMetrics = isMetricsQuery(target);
+    return this.getItems(...filters, {
+      ...options,
+      hostTags: options.hostTags ?? (isMetrics ? target.hostTags : undefined),
+      evaltype: options.evaltype ?? (isMetrics ? target.evaltype : undefined),
+    });
   }
 
   getMacrosFromTarget(target) {
@@ -306,8 +357,14 @@ export class Zabbix implements ZabbixConnector {
 
   async getHostsApsFromTarget(target): Promise<[ZBXHost[], ZBXApp[]]> {
     const parts = ['group', 'host', 'application'];
-    const filters = parts.map((p) => target[p].filter);
-    const results = await Promise.all([this.getHosts(...filters), this.getApps(...filters)]);
+    const filters = parts.map((p) => target[p]?.filter);
+    const isMetrics = isMetricsQuery(target);
+    const hostTags = isMetrics ? target.hostTags : undefined;
+    const evaltype = isMetrics ? target.evaltype : undefined;
+    const results = await Promise.all([
+      this.getHosts(filters[0], filters[1], hostTags, evaltype),
+      this.getApps(...filters, hostTags, evaltype),
+    ]);
     const hosts = results[0];
     let apps: AppsResponse = results[1];
     if (apps.appFilterEmpty) {
@@ -316,11 +373,16 @@ export class Zabbix implements ZabbixConnector {
     return [hosts, apps];
   }
 
-  async getHostsFromICTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
+  async getHostsFromICTarget(target, options: any = {}): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    const filters = parts.map((p) => target[p].filter);
+    const filters = parts.map((p) => target[p]?.filter);
     const [hosts, apps] = await this.getHostsApsFromTarget(target);
-    const items = await this.getItems(...filters, options);
+    const isMetrics = isMetricsQuery(target);
+    const items = await this.getItems(...filters, {
+      ...options,
+      hostTags: options.hostTags ?? (isMetrics ? target.hostTags : undefined),
+      evaltype: options.evaltype ?? (isMetrics ? target.evaltype : undefined),
+    });
     return [hosts, apps, items];
   }
 
@@ -355,30 +417,48 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getHosts(groupFilter?, hostFilter?): Promise<any[]> {
-    return this.getAllHosts(groupFilter).then((hosts) => findByFilter(hosts, hostFilter));
+  getHosts(
+    groupFilter?: string,
+    hostFilter?: string,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<any[]> {
+    return this.getAllHosts(groupFilter, false, hostTagFilters, evalType).then((hosts) =>
+      findByFilter(hosts, hostFilter)
+    );
   }
 
   /**
    * Get list of applications belonging to given groups and hosts.
    */
-  async getAllApps(groupFilter, hostFilter): Promise<any[]> {
+  async getAllApps(
+    groupFilter,
+    hostFilter,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<any[]> {
     await this.getVersion();
     if (!this.supportsApplications()) {
       return [];
     }
 
-    return this.getHosts(groupFilter, hostFilter).then((hosts) => {
+    return this.getHosts(groupFilter, hostFilter, hostTagFilters, evalType).then((hosts) => {
       const hostids = _.map(hosts, 'hostid');
       return this.zabbixAPI.getApps(hostids);
     });
   }
 
-  async getApps(groupFilter?, hostFilter?, appFilter?): Promise<AppsResponse> {
+  async getApps(
+    groupFilter?,
+    hostFilter?,
+    appFilter?,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ): Promise<AppsResponse> {
     await this.getVersion();
     const skipAppFilter = !this.supportsApplications();
 
-    return this.getHosts(groupFilter, hostFilter).then((hosts) => {
+    return this.getHosts(groupFilter, hostFilter, hostTagFilters, evalType).then((hosts) => {
       const hostids = _.map(hosts, 'hostid');
       if (appFilter && !skipAppFilter) {
         return this.zabbixAPI.getApps(hostids).then((apps) => filterByQuery(apps, appFilter));
@@ -402,8 +482,17 @@ export class Zabbix implements ZabbixConnector {
     return filterByMQuery(allMacros, macroFilter);
   }
 
-  async getItemTags(groupFilter?, hostFilter?, itemTagFilter?) {
-    const items = await this.getAllItems(groupFilter, hostFilter, null, null, {});
+  async getItemTags(
+    groupFilter?,
+    hostFilter?,
+    itemTagFilter?,
+    hostTagFilters?: HostTagFilter[],
+    evalType?: ZabbixTagEvalType
+  ) {
+    const items = await this.getAllItems(groupFilter, hostFilter, null, null, {
+      hostTags: hostTagFilters,
+      evaltype: evalType,
+    });
     let tags: ZBXItemTag[] = _.flatten(
       items.map((item: ZBXItem) => {
         if (item.tags) {
@@ -429,19 +518,28 @@ export class Zabbix implements ZabbixConnector {
       return this.getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options);
     }
 
-    const hosts = await this.getHosts(groupFilter, hostFilter);
+    const hosts = await this.getHosts(groupFilter, hostFilter, options.hostTags, options.evaltype);
+    if (!hosts || hosts.length === 0) {
+      return [];
+    }
     const hostids = _.map(hosts, 'hostid');
 
     // Support regexp in tags
     if (utils.isRegex(itemTagFilter)) {
-      const tags = await this.getItemTags(groupFilter, hostFilter, itemTagFilter);
+      const tags = await this.getItemTags(groupFilter, hostFilter, itemTagFilter, options.hostTags, options.evaltype);
       if (tags.length === 0) {
         return [];
       }
       itemTagFilter = tags.map((t) => t.name).join(',');
     }
 
-    let items = await this.zabbixAPI.getItems(hostids, undefined, options.itemtype, itemTagFilter);
+    let items = await this.zabbixAPI.getItems(
+      hostids,
+      undefined,
+      options.itemtype,
+      itemTagFilter,
+      getItemsAPIOptions(options)
+    );
 
     if (!options.showDisabledItems) {
       items = _.filter(items, { status: '0' });
@@ -451,14 +549,32 @@ export class Zabbix implements ZabbixConnector {
   }
 
   async getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options: any = {}) {
-    const apps = await this.getApps(groupFilter, hostFilter, appFilter);
+    const apps = await this.getApps(groupFilter, hostFilter, appFilter, options.hostTags, options.evaltype);
     let items: any[];
 
     if (apps.appFilterEmpty) {
-      items = await this.zabbixAPI.getItems(apps.hostids, undefined, options.itemtype, undefined);
+      if (!apps.hostids || apps.hostids.length === 0) {
+        return [];
+      }
+      items = await this.zabbixAPI.getItems(
+        apps.hostids,
+        undefined,
+        options.itemtype,
+        undefined,
+        getItemsAPIOptions(options)
+      );
     } else {
       const appids = _.map(apps, 'applicationid');
-      items = await this.zabbixAPI.getItems(undefined, appids, options.itemtype, undefined);
+      if (appids.length === 0) {
+        return [];
+      }
+      items = await this.zabbixAPI.getItems(
+        undefined,
+        appids,
+        options.itemtype,
+        undefined,
+        getItemsAPIOptions(options)
+      );
     }
 
     if (!options.showDisabledItems) {
@@ -484,8 +600,17 @@ export class Zabbix implements ZabbixConnector {
     });
   }
 
-  getItems(groupFilter?, hostFilter?, appFilter?, itemTagFilter?, itemFilter?, options = {}) {
-    return this.getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, options).then((items) =>
+  /**
+   * Options besides those of getAllItems():
+   *   pushDownItemFilter: also send substrings derived from itemFilter to Zabbix, so hosts
+   *   with many items don't return all of them just to be filtered here.
+   */
+  getItems(groupFilter?, hostFilter?, appFilter?, itemTagFilter?, itemFilter?, options: any = {}) {
+    const { pushDownItemFilter, ...allItemsOptions } = options;
+    if (pushDownItemFilter) {
+      allItemsOptions.nameSearch = utils.getItemNameSearchValues(itemFilter);
+    }
+    return this.getAllItems(groupFilter, hostFilter, appFilter, itemTagFilter, allItemsOptions).then((items) =>
       filterByQuery(items, itemFilter)
     );
   }
@@ -636,7 +761,12 @@ export class Zabbix implements ZabbixConnector {
       )
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
-        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+        return Promise.all([
+          Promise.resolve(problems),
+          // Let Zabbix expand the comment macros unless the client-side
+          // enrichment below will do it per problem, which needs the raw template.
+          this.zabbixAPI.getTriggersByIds(triggerids, !options?.fetchHistoricalItemValue),
+        ]);
       })
       .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
       .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
@@ -673,7 +803,12 @@ export class Zabbix implements ZabbixConnector {
       .then((query) => this.zabbixAPI.getEventsHistory(query.groupids, query.hostids, query.applicationids, options))
       .then((problems) => {
         const triggerids = problems?.map((problem) => problem.objectid);
-        return Promise.all([Promise.resolve(problems), this.zabbixAPI.getTriggersByIds(triggerids)]);
+        return Promise.all([
+          Promise.resolve(problems),
+          // Let Zabbix expand the comment macros unless the client-side
+          // enrichment below will do it per problem, which needs the raw template.
+          this.zabbixAPI.getTriggersByIds(triggerids, !options?.fetchHistoricalItemValue),
+        ]);
       })
       .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
       .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
@@ -845,6 +980,18 @@ export class Zabbix implements ZabbixConnector {
  * @param  name visible name
  * @return      array with finded element or empty array
  */
+function isMetricsQuery(target: any): boolean {
+  return !target?.queryType || target.queryType === MODE_METRICS;
+}
+
+// Picks the zabbixAPI.getItems() options, leaving out unset ones so the request cache key stays stable
+function getItemsAPIOptions(options: any = {}): GetItemsOptions {
+  return _.pickBy(
+    { nameSearch: options.nameSearch, selectTags: options.selectTags },
+    (value) => value !== undefined
+  ) as GetItemsOptions;
+}
+
 function findByName(list, name) {
   const finded = _.find(list, { name: name });
   if (finded) {

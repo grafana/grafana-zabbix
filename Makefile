@@ -6,7 +6,7 @@ install:
 	npm ci
 	# Backend
 	go install -v ./pkg/
-	go install golang.org/x/lint/golint@latest
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 
 deps-go:
 	go install -v ./pkg/
@@ -70,7 +70,7 @@ clean:
 .PHONY: lint
 lint:
 	npm run lint
-	golint -min_confidence=1.1 -set_exit_status pkg/...
+	golangci-lint run ./pkg/...
 
 sign-package:
 	npm run sign

@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import _ from 'lodash';
-import { dateMath, PanelProps, OrgRole } from '@grafana/data';
+import { dateMath, LoadingState, PanelProps, OrgRole } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
-import { getDataSourceSrv, config } from '@grafana/runtime';
+import { config } from '@grafana/runtime';
+import { getDataSourceInstance, getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
+import { usePanelContext } from '@grafana/ui';
 import { ProblemsPanelOptions, RTResized } from './types';
+import {
+  CollectedSeverityOverrides,
+  collectSeverityOverrides,
+  ProblemsPanelInstanceState,
+  resolveSeverity,
+} from './severityOverrides';
 import { ZabbixMetricsQuery } from '../datasource/types/query';
 import { TagOperatorValue } from '../datasource/components/QueryEditor/types';
 import { ProblemDTO, ZBXQueryUpdatedEvent, ZBXTag } from '../datasource/types';
@@ -11,14 +19,54 @@ import { APIExecuteScriptResponse } from '../datasource/zabbix/connectors/zabbix
 import { DEFAULT_PAGE_SIZE, ProblemList } from './components/Problems/Problems';
 import { AckProblemData } from './components/AckModal';
 import AlertList from './components/AlertList/AlertList';
+import { useSoundAlerts } from './hooks/useSoundAlerts';
 
 const PROBLEM_EVENTS_LIMIT = 100;
+const NO_SEVERITY_OVERRIDES: CollectedSeverityOverrides = { overrides: [], datasourceNames: [] };
 
 interface ProblemsPanelProps extends PanelProps<ProblemsPanelOptions> {}
 
 export const ProblemsPanel = (props: ProblemsPanelProps) => {
   const { data, options, timeRange, onOptionsChange } = props;
-  const { layout, showTriggers, triggerSeverity, sortProblems } = options;
+  const { layout, showTriggers, sortProblems } = options;
+  const panelContext = usePanelContext();
+
+  // Apply global severity overrides defined in the Zabbix data source(s) this panel queries.
+  // Names and colors customized in the panel itself take precedence over the global ones.
+  const targets = data?.request?.targets;
+  const [severityOverrides, setSeverityOverrides] = useState<CollectedSeverityOverrides>(NO_SEVERITY_OVERRIDES);
+  useEffect(() => {
+    let active = true;
+    collectSeverityOverrides(targets, getDataSourceInstanceSettings).then((collected) => {
+      if (active) {
+        // Keep the previous state when nothing changed, so a refresh doesn't re-render the problems
+        setSeverityOverrides((previous) => (_.isEqual(previous, collected) ? previous : collected));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [targets]);
+  const { severity: triggerSeverity, globalSeverityOverrides } = useMemo(
+    () => resolveSeverity(options.triggerSeverity, severityOverrides),
+    [options.triggerSeverity, severityOverrides]
+  );
+  const effectiveOptions = useMemo<ProblemsPanelOptions>(
+    () => (triggerSeverity === options.triggerSeverity ? options : { ...options, triggerSeverity }),
+    [options, triggerSeverity]
+  );
+
+  // Share the applied overrides with the panel options editor so it can flag them.
+  const onInstanceStateChange = panelContext?.onInstanceStateChange;
+  const instanceStateKey = JSON.stringify(globalSeverityOverrides ?? null);
+  useEffect(() => {
+    if (!onInstanceStateChange) {
+      return;
+    }
+    const state: ProblemsPanelInstanceState = { globalSeverityOverrides };
+    onInstanceStateChange(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onInstanceStateChange, instanceStateKey]);
 
   const prepareProblems = () => {
     const problems: ProblemDTO[] = [];
@@ -187,7 +235,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     const triggerids = [problem.triggerid];
     const timeFrom = Math.ceil(dateMath.toDateTime(timeRange.from, {}).unix());
     const timeTo = Math.ceil(dateMath.toDateTime(timeRange.to, {}).unix());
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
     return ds.zabbix.getEvents(triggerids, timeFrom, timeTo, [0, 1], PROBLEM_EVENTS_LIMIT);
   };
 
@@ -196,13 +244,13 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       return Promise.resolve([]);
     }
     const eventids = [problem.eventid];
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
     return ds.zabbix.getEventAlerts(eventids);
   };
 
   const getScripts = async (problem: ProblemDTO) => {
     const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
     return ds.zabbix.getScripts([hostid]);
   };
 
@@ -212,7 +260,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
     scope: string
   ): Promise<APIExecuteScriptResponse> => {
     const hostid = problem.hosts?.length ? problem.hosts[0].hostid : null;
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
 
     switch (scope) {
       case '4': // Event action
@@ -225,11 +273,11 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
-    const { message, action, severity } = data;
+    const { message, action, severity, suppress_until } = data;
     const eventid = problem.eventid;
     const grafana_user = config.bootData.user.name;
     const ack_message = grafana_user + ' (Grafana): ' + message;
-    const ds: any = await getDataSourceSrv().get(problem.datasource);
+    const ds: any = await getDataSourceInstance(problem.datasource);
     const userIsEditor =
       config.bootData.user.isGrafanaAdmin ||
       config.bootData.user.orgRole === OrgRole.Editor ||
@@ -238,7 +286,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       return { message: 'You have no permissions to acknowledge events.' };
     }
     if (eventid) {
-      return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity);
+      return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity, suppress_until);
     } else {
       return { message: 'Trigger has no events. Nothing to acknowledge.' };
     }
@@ -265,14 +313,13 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const renderList = () => {
-    const problems = prepareProblems();
     const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
     const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
     return (
       <AlertList
         problems={problems}
-        panelOptions={options}
+        panelOptions={effectiveOptions}
         // The list layout has no auto mode; fall back to a fixed size
         pageSize={typeof options.pageSize === 'number' ? options.pageSize : DEFAULT_PAGE_SIZE}
         fontSize={fontSizeProp}
@@ -283,14 +330,13 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const renderTable = () => {
-    const problems = prepareProblems();
     const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
     const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
     return (
       <ProblemList
         problems={problems}
-        panelOptions={options}
+        panelOptions={effectiveOptions}
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
         timeRange={timeRange}
@@ -306,6 +352,16 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       />
     );
   };
+
+  // Keyed on the data and the options that shape the list, so the array
+  // identity is stable across unrelated re-renders (resize, column changes)
+  // and the sound alerts effect fires only when the problems can have changed.
+  const problems = useMemo(
+    () => prepareProblems(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prepareProblems reads only these inputs
+    [data, showTriggers, sortProblems, triggerSeverity, options.allowDangerousHTML]
+  );
+  useSoundAlerts(problems, options, data.state === LoadingState.Done);
 
   return (
     <>

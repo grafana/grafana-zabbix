@@ -38,7 +38,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		{
 			name: "Uncached Datasource (nothing in cache)",
 			pluginContext: backend.PluginContext{
-				OrgID:                      1,
+				Namespace:                  "default",
 				DataSourceInstanceSettings: &basicDsSettings,
 			},
 			want: basicDS.(*ZabbixDatasourceInstance),
@@ -46,7 +46,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		{
 			name: "Cached Datasource",
 			pluginContext: backend.PluginContext{
-				OrgID:                      1,
+				Namespace:                  "default",
 				DataSourceInstanceSettings: &basicDsSettings,
 			},
 			want: basicDS.(*ZabbixDatasourceInstance),
@@ -54,7 +54,7 @@ func TestZabbixBackend_getCachedDatasource(t *testing.T) {
 		{
 			name: "Cached then modified",
 			pluginContext: backend.PluginContext{
-				OrgID:                      1,
+				Namespace:                  "default",
 				DataSourceInstanceSettings: &modifiedDatasourceSettings,
 			},
 			want: modifiedDatasource.(*ZabbixDatasourceInstance),
@@ -168,4 +168,38 @@ func TestQueryData_QueryTimeoutErrorMessage(t *testing.T) {
 	assert.Assert(t, strings.Contains(timeoutMsg, "5s"))
 	assert.Assert(t, strings.Contains(timeoutMsg, "automatically terminated"))
 	assert.Assert(t, strings.Contains(timeoutMsg, "prevent excessive resource consumption"))
+}
+
+func TestReadQuery_HostTags(t *testing.T) {
+	queryJSON := `{
+		"queryType": "0",
+		"group": {"filter": "Servers"},
+		"host": {"filter": ".*"},
+		"item": {"filter": "CPU"},
+		"hostTags": [
+			{"tag": "product", "value": "A", "operator": "1"},
+			{"tag": "env", "value": "prod", "operator": 0}
+		],
+		"evaltype": "2"
+	}`
+
+	dataQuery := backend.DataQuery{
+		RefID: "A",
+		JSON:  []byte(queryJSON),
+	}
+
+	model, err := ReadQuery(dataQuery)
+	assert.NilError(t, err)
+	assert.Equal(t, "0", model.QueryType)
+	assert.Equal(t, "Servers", model.Group.Filter)
+	assert.Equal(t, ".*", model.Host.Filter)
+	assert.Equal(t, "CPU", model.Item.Filter)
+	assert.Equal(t, "2", string(model.EvalType))
+	assert.Equal(t, 2, len(model.HostTags))
+	assert.Equal(t, "product", model.HostTags[0].Tag)
+	assert.Equal(t, "A", model.HostTags[0].Value)
+	assert.Equal(t, 1, model.HostTags[0].Operator.Int())
+	assert.Equal(t, "env", model.HostTags[1].Tag)
+	assert.Equal(t, "prod", model.HostTags[1].Value)
+	assert.Equal(t, 0, model.HostTags[1].Operator.Int())
 }

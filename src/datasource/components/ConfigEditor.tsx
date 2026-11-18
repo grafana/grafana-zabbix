@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { getDataSourceSrv, config, GetDataSourceListFilters } from '@grafana/runtime';
+import { config } from '@grafana/runtime';
+import { getDataSourceInstanceList, getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
 import {
   DataSourceInstanceSettings,
-  DataSourceJsonData,
   DataSourcePluginOptionsEditorProps,
   DataSourceSettings,
   GrafanaTheme2,
@@ -10,21 +10,26 @@ import {
 } from '@grafana/data';
 import {
   Alert,
+  ColorPicker,
   Combobox,
   ComboboxOption,
   Field,
   Icon,
+  IconButton,
   Input,
   Label,
   MultiSelect,
   SecretInput,
   SecureSocksProxySettings,
+  Stack,
   Switch,
   Tooltip,
   useStyles2,
 } from '@grafana/ui';
-import { ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types/config';
+import { SeverityOverride, ZabbixAuthType, ZabbixDSOptions, ZabbixSecureJSONData } from '../types/config';
+import { DEFAULT_SEVERITY } from '../../panel-triggers/types';
 import { gte } from 'semver';
+import { getUIDFromID } from '../migrations';
 import {
   Auth,
   ConfigSection,
@@ -37,9 +42,12 @@ import {
 } from '@grafana/plugin-ui';
 import { Divider } from './Divider';
 import { css } from '@emotion/css';
+import { CLICKHOUSE_DS_ID } from '../zabbix/connectors/clickhouse/clickhouseConnector';
 
 // the postgres-plugin changed it's id, so we list both the old name and the new name
-const SUPPORTED_SQL_DS = ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb'];
+const SUPPORTED_SQL_DS = ['mysql', 'grafana-postgresql-datasource', 'postgres', 'influxdb', CLICKHOUSE_DS_ID];
+
+type DirectDBDatasource = Pick<DataSourceInstanceSettings, 'uid' | 'name' | 'type'>;
 
 const authOptions: Array<ComboboxOption<ZabbixAuthType>> = [
   { label: 'User and password', value: ZabbixAuthType.UserLogin },
@@ -51,19 +59,29 @@ export const ConfigEditor = (props: Props) => {
   const styles = useStyles2(getStyles);
   const { options, onOptionsChange } = props;
 
+  const [directDBDatasources, setDirectDBDatasources] = useState<DirectDBDatasource[]>([]);
+  // UID of the DB data source for legacy config that references it by its numeric id
+  const [legacyDBDatasourceUID, setLegacyDBDatasourceUID] = useState<string>();
+
+  useEffect(() => {
+    getDirectDBDatasources().then(setDirectDBDatasources);
+
+    const id = options.jsonData.dbConnectionDatasourceId;
+    if (id !== undefined && id !== null) {
+      getUIDFromID(id).then(setLegacyDBDatasourceUID);
+    }
+  }, []);
+
   // Derive selectedDBDatasource and currentDSType from options (prefer UID; fallback to id for legacy config)
   const { selectedDBDatasource, currentDSType } = useMemo(() => {
     if (!options.jsonData.dbConnectionEnable) {
       return { selectedDBDatasource: null, currentDSType: '' };
     }
-    const dsList = getDirectDBDatasources();
-    const uid = options.jsonData.dbConnectionDatasourceUID;
     const id = options.jsonData.dbConnectionDatasourceId;
-    const selectedDs = uid
-      ? dsList.find((d) => d.uid === uid)
-      : id !== undefined && id !== null
-        ? dsList.find((d) => d.id === id)
-        : undefined;
+    const uid =
+      options.jsonData.dbConnectionDatasourceUID ||
+      (id !== undefined && id !== null ? legacyDBDatasourceUID : undefined);
+    const selectedDs = uid ? directDBDatasources.find((d) => d.uid === uid) : undefined;
     return {
       selectedDBDatasource: selectedDs ? { label: selectedDs.name, value: selectedDs.uid } : null,
       currentDSType: selectedDs?.type || '',
@@ -72,6 +90,8 @@ export const ConfigEditor = (props: Props) => {
     options.jsonData.dbConnectionEnable,
     options.jsonData.dbConnectionDatasourceUID,
     options.jsonData.dbConnectionDatasourceId,
+    legacyDBDatasourceUID,
+    directDBDatasources,
   ]);
 
   const [grafanaUsers, setGrafanaUsers] = useState<Array<SelectableValue<string>>>([
@@ -149,20 +169,18 @@ export const ConfigEditor = (props: Props) => {
     ) {
       const dsName = options.jsonData.dbConnectionDatasourceName;
       if (dsName) {
-        getDataSourceSrv()
-          .get(dsName)
-          .then((ds) => {
-            if (ds?.uid) {
-              onOptionsChange({
-                ...options,
-                jsonData: {
-                  ...options.jsonData,
-                  dbConnectionDatasourceUID: ds.uid,
-                  dbConnectionDatasourceName: ds.name,
-                },
-              });
-            }
-          });
+        getDataSourceInstanceSettings(dsName).then((ds) => {
+          if (ds?.uid) {
+            onOptionsChange({
+              ...options,
+              jsonData: {
+                ...options.jsonData,
+                dbConnectionDatasourceUID: ds.uid,
+                dbConnectionDatasourceName: ds.name,
+              },
+            });
+          }
+        });
       }
     }
   }, []);
@@ -409,6 +427,7 @@ export const ConfigEditor = (props: Props) => {
         <ConfigSubSection title="Direct DB Connection">
           <Field label="Enable Direct DB Connection">
             <Switch
+              label="Enable Direct DB Connection"
               value={options.jsonData.dbConnectionEnable}
               onChange={jsonDataSwitchHandler('dbConnectionEnable', options, onOptionsChange)}
             />
@@ -420,11 +439,19 @@ export const ConfigEditor = (props: Props) => {
                 <Combobox
                   width={40}
                   value={selectedDBDatasource}
-                  options={getDirectDBDSOptions()}
-                  onChange={directDBDatasourceChangeHandler(options, onOptionsChange)}
-                  placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB)"
+                  options={getDirectDBDSOptions(directDBDatasources)}
+                  onChange={directDBDatasourceChangeHandler(options, onOptionsChange, directDBDatasources)}
+                  placeholder="Select a DB datasource (MySQL, PostgreSQL, InfluxDB, ClickHouse)"
                 />
               </Field>
+
+              {currentDSType === CLICKHOUSE_DS_ID && (
+                <Alert severity="info" title="ClickHouse history storage">
+                  Zabbix stores only history data in ClickHouse (trends are not supported), so all queries are served
+                  from history tables. Make sure the default database of the selected ClickHouse data source is set to
+                  the Zabbix history database.
+                </Alert>
+              )}
 
               {currentDSType === 'influxdb' && (
                 <Field label="Retention Policy">
@@ -440,6 +467,54 @@ export const ConfigEditor = (props: Props) => {
               )}
             </>
           )}
+        </ConfigSubSection>
+
+        <ConfigSubSection
+          title="Problem severity"
+          description="Override the severity names and colors used by Problems panels that query this data source. Empty fields keep the plugin defaults. Panels that already have their own custom name or color for a severity keep it."
+        >
+          {DEFAULT_SEVERITY.map((defaults) => {
+            const override = options.jsonData.severityOverrides?.find((o) => o.priority === defaults.priority);
+            const hasColorOverride = !!override?.color;
+            return (
+              <Field
+                key={defaults.priority}
+                label={defaults.severity}
+                data-testid={`severity-override-${defaults.priority}`}
+              >
+                <Stack direction="row" gap={1} alignItems="center">
+                  <Input
+                    width={30}
+                    placeholder={defaults.severity}
+                    aria-label={`${defaults.severity} name override`}
+                    value={override?.name ?? ''}
+                    onChange={(event) =>
+                      severityOverrideChangeHandler(options, onOptionsChange)(defaults.priority, {
+                        name: event.currentTarget.value,
+                      })
+                    }
+                  />
+                  <ColorPicker
+                    color={override?.color || defaults.color}
+                    onChange={(color) =>
+                      severityOverrideChangeHandler(options, onOptionsChange)(defaults.priority, { color })
+                    }
+                  />
+                  {hasColorOverride && (
+                    <IconButton
+                      name="times"
+                      size="sm"
+                      tooltip={`Reset ${defaults.severity} color to default`}
+                      aria-label={`Reset ${defaults.severity} color to default`}
+                      onClick={() =>
+                        severityOverrideChangeHandler(options, onOptionsChange)(defaults.priority, { color: undefined })
+                      }
+                    />
+                  )}
+                </Stack>
+              </Field>
+            );
+          })}
         </ConfigSubSection>
 
         <ConfigSubSection title="Other">
@@ -641,6 +716,38 @@ const jsonDataSwitchHandler =
     });
   };
 
+/**
+ * Update one severity override. Empty names and colors are dropped, and entries without any
+ * override left are removed so the stored list only contains what is actually overridden.
+ */
+export const severityOverrideChangeHandler =
+  (value: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>, onChange: Props['onOptionsChange']) =>
+  (priority: number, patch: Partial<Pick<SeverityOverride, 'name' | 'color'>>) => {
+    const current = value.jsonData.severityOverrides ?? [];
+    const existing = current.find((o) => o.priority === priority) ?? { priority };
+    const updated: SeverityOverride = { ...existing, ...patch };
+    if (!updated.name) {
+      delete updated.name;
+    }
+    if (!updated.color) {
+      delete updated.color;
+    }
+
+    const next = current.filter((o) => o.priority !== priority);
+    if (updated.name !== undefined || updated.color !== undefined) {
+      next.push(updated);
+    }
+    next.sort((a, b) => a.priority - b.priority);
+
+    onChange({
+      ...value,
+      jsonData: {
+        ...value.jsonData,
+        severityOverrides: next.length > 0 ? next : undefined,
+      },
+    });
+  };
+
 const secureJsonDataChangeHandler =
   (
     key: keyof ZabbixSecureJSONData,
@@ -674,9 +781,12 @@ const resetSecureJsonField =
   };
 
 const directDBDatasourceChangeHandler =
-  (options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>, onChange: Props['onOptionsChange']) =>
+  (
+    options: DataSourceSettings<ZabbixDSOptions, ZabbixSecureJSONData>,
+    onChange: Props['onOptionsChange'],
+    dsList: DirectDBDatasource[]
+  ) =>
   (value: ComboboxOption<string>) => {
-    const dsList = getDirectDBDatasources();
     const ds = value.value ? dsList.find((d) => d.uid === value.value) : undefined;
     onChange({
       ...options,
@@ -689,16 +799,11 @@ const directDBDatasourceChangeHandler =
     });
   };
 
-const getDirectDBDatasources = () => {
-  const dsFilters: GetDataSourceListFilters = {
-    type: SUPPORTED_SQL_DS,
-  };
-  const dsList = getDataSourceSrv().getList(dsFilters);
-  return dsList;
+const getDirectDBDatasources = (): Promise<DirectDBDatasource[]> => {
+  return getDataSourceInstanceList({ type: SUPPORTED_SQL_DS });
 };
 
-const getDirectDBDSOptions = () => {
-  const dsList: Array<DataSourceInstanceSettings<DataSourceJsonData>> = getDirectDBDatasources();
+const getDirectDBDSOptions = (dsList: DirectDBDatasource[]) => {
   const dsOpts: Array<ComboboxOption<string>> = dsList.map((ds) => ({
     label: ds.name,
     value: ds.uid,

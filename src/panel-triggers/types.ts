@@ -48,10 +48,19 @@ export interface ProblemsPanelOptions {
   okEventColor: TriggerColor;
   ackEventColor: TriggerColor;
   markAckEvents?: boolean;
+  /** How the severity cell is drawn: a full-cell colour box (default) or a tinted pill */
+  severityStyle?: SeverityStyle;
   // Custom tag names to display as column
   customTagColumns?: string;
   // datalink
   dataLinks?: DataLink[];
+  // Sound alerts
+  soundAlerts?: boolean;
+  soundMinSeverity?: number;
+  soundTone?: 'beep' | 'alarm' | 'custom';
+  soundCustomUrl?: string;
+  soundVolume?: number;
+  soundRepeat?: boolean;
 }
 
 export const DEFAULT_SEVERITY: TriggerSeverity[] = [
@@ -105,6 +114,14 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   okEventColor: 'rgb(56, 189, 113)',
   ackEventColor: 'rgb(56, 219, 156)',
   markAckEvents: false,
+  severityStyle: 'box',
+  // Sound alerts
+  soundAlerts: false,
+  soundMinSeverity: 4,
+  soundTone: 'beep',
+  soundCustomUrl: '',
+  soundVolume: 80,
+  soundRepeat: false,
 };
 
 export interface ProblemsPanelTarget {
@@ -137,6 +154,8 @@ export interface TriggerSeverity {
 }
 
 export type TriggerColor = string;
+
+export type SeverityStyle = 'box' | 'pill';
 
 export interface RTResize {
   id: string;

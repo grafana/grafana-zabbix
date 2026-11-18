@@ -9,7 +9,7 @@ that run against a **real Zabbix backend** with deterministic fixture data.
 | --- | --- |
 | `*.spec.ts`, `*.test.ts` | The tests. |
 | `../fixtures/*.sql` | Deterministic dataset, loaded into the Zabbix DB on startup. |
-| `../../provisioning/datasources/` | Provisioned Zabbix data source (`uid: zabbix-e2e`). |
+| `../../provisioning/datasources/` | Provisioned data sources: the Zabbix data source (`uid: zabbix-e2e`), a PostgreSQL data source for the Zabbix DB (direct DB connection tests), a Zabbix data source with a global severity override, and a ClickHouse data source (`uid: clickhouse-e2e`, no live server) for the Direct DB Connection config editor test. |
 | `../../provisioning/dashboards/` | Provisioned dashboards used by tests, loaded via `readProvisionedDashboard`. |
 
 Provisioning lives at the repo root (`provisioning/`), the default `provisioningRootDir`
@@ -32,6 +32,22 @@ and `history_uint` rows across the window. The backdated problem is what makes t
 issue [#2427](https://github.com/grafana/grafana-zabbix/issues/2427) `history.get`
 window bound observable. It targets the current Zabbix schema and is idempotent.
 
+## Mutating tests must restore the fixture
+
+`problemActions.spec.ts` exercises the Problems panel user actions (acknowledge,
+unacknowledge, suppress, unsuppress) against the real backend, so it
+**mutates** the seeded problems. It runs serially and pairs every action with
+its inverse (ack → unack, suppress → unsuppress), leaving the fixture in its
+seeded state so reruns and the other read-only specs stay deterministic.
+Follow the same convention for any new mutating test.
+
+Two panel dashboards exist for it: `problems-disabled.json` (default panel
+options — suppressed problems are hidden) and `problems-suppressed.json`
+(same query with "Show hosts in maintenance" on, which makes suppressed
+problems visible so the Unsuppress action is reachable). Zabbix applies
+suppression changes asynchronously via its task manager, so state-flip
+assertions reload the dashboard until the new state appears.
+
 ## Running locally
 
 ```sh
@@ -50,7 +66,7 @@ ZABBIX_VERSION=7.0 docker compose up -d --wait && npm run e2e
 
 ## CI
 
-E2E tests run in CI via the shared Plugins-CI workflow ([`.github/workflows/push.yaml`](../../.github/workflows/push.yaml)),
+E2E tests run in CI via the shared Plugins-CI workflow ([`.github/workflows/push.yml`](../../.github/workflows/push.yml)),
 which brings up `docker-compose.yml` and runs `tests/e2e` against it. Coverage across
 multiple Zabbix versions is provided by the per-version `devenv/` stacks and the
 `compatibility-*` Go integration workflows.

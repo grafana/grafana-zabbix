@@ -1,0 +1,161 @@
+{
+  "uid": "e2e-problems-datasource-lookups",
+  "title": "E2E Problems Data Source Lookups",
+  "schemaVersion": 39,
+  "tags": ["e2e"],
+  "timezone": "browser",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "ds",
+        "label": "Data source",
+        "type": "datasource",
+        "query": "alexanderzobnin-zabbix-datasource",
+        "current": {
+          "text": "E2E Zabbix severity overrides",
+          "value": "e2e-zabbix-severity-overrides"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "alexanderzobnin-zabbix-triggers-panel",
+      "title": "Problems table via data source variable",
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "${ds}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "alexanderzobnin-zabbix-datasource",
+            "uid": "${ds}"
+          },
+          "refId": "A",
+          "queryType": "5",
+          "showProblems": "problems",
+          "resultFormat": "table",
+          "evaltype": "0",
+          "group": {
+            "filter": ""
+          },
+          "host": {
+            "filter": ""
+          },
+          "application": {
+            "filter": ""
+          },
+          "proxy": {
+            "filter": ""
+          },
+          "trigger": {
+            "filter": ""
+          },
+          "tags": {
+            "filter": ""
+          },
+          "item": {
+            "filter": ""
+          },
+          "itemTag": {
+            "filter": ""
+          },
+          "macro": {
+            "filter": ""
+          },
+          "options": {
+            "acknowledged": 2,
+            "minSeverity": 0,
+            "count": false,
+            "limit": 1001,
+            "useTimeRange": false,
+            "fetchHistoricalItemValue": true
+          }
+        }
+      ],
+      "options": {
+        "layout": "table",
+        "showDatasourceName": true
+      }
+    },
+    {
+      "id": 2,
+      "type": "alexanderzobnin-zabbix-triggers-panel",
+      "title": "Problems list",
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "e2e-zabbix-severity-overrides"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "alexanderzobnin-zabbix-datasource",
+            "uid": "e2e-zabbix-severity-overrides"
+          },
+          "refId": "A",
+          "queryType": "5",
+          "showProblems": "problems",
+          "resultFormat": "table",
+          "evaltype": "0",
+          "group": {
+            "filter": ""
+          },
+          "host": {
+            "filter": ""
+          },
+          "application": {
+            "filter": ""
+          },
+          "proxy": {
+            "filter": ""
+          },
+          "trigger": {
+            "filter": ""
+          },
+          "tags": {
+            "filter": ""
+          },
+          "item": {
+            "filter": ""
+          },
+          "itemTag": {
+            "filter": ""
+          },
+          "macro": {
+            "filter": ""
+          },
+          "options": {
+            "acknowledged": 2,
+            "minSeverity": 0,
+            "count": false,
+            "limit": 1001,
+            "useTimeRange": false,
+            "fetchHistoricalItemValue": true
+          }
+        }
+      ],
+      "options": {
+        "layout": "list",
+        "showDatasourceName": true
+      }
+    }
+  ]
+}
