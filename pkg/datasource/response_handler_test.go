@@ -5,7 +5,6 @@ import (
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -64,7 +63,7 @@ func TestSeriesToDataFrameItemTagScopedVars(t *testing.T) {
 	frame := seriesToDataFrame(series, nil)
 	require.NotNil(t, frame)
 
-	valueField, fieldIndex := frame.FieldByName(data.TimeSeriesValueFieldName)
+	valueField, fieldIndex := frame.FieldByName("CPU load")
 	require.NotEqual(t, -1, fieldIndex)
 	require.NotNil(t, valueField)
 
