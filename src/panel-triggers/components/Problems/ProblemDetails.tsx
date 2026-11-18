@@ -136,6 +136,7 @@ export const ProblemDetails = ({
                         size="sm"
                         variant="secondary"
                         icon="brackets-curly"
+                        aria-label="Execute script"
                         onClick={() => {
                           showModal(ExecScriptModal, {
                             getScripts: getScriptsInternal,
@@ -154,6 +155,7 @@ export const ProblemDetails = ({
                         size="sm"
                         variant="primary"
                         icon="comment-alt-message"
+                        aria-label="Acknowledge problem"
                         onClick={() => {
                           showModal(AckModal, {
                             canClose: problem.manual_close === '1',

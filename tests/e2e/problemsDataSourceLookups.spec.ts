@@ -60,7 +60,11 @@ test('expanding a problem loads its details through the data source', async ({
     { timeout: 20000 }
   );
   const panel = page.getByRole('region', { name: 'Problems table via data source variable' });
-  await panel.getByRole('row').filter({ hasText: PROBLEM }).locator('button:has(i.fa-info-circle)').click();
+  await panel
+    .getByRole('row')
+    .filter({ hasText: PROBLEM })
+    .getByRole('button', { name: 'Show problem details' })
+    .click();
 
   // The details fetch the problem's alerts from the data source instance
   const response = await (await alertGetRequest).response();
