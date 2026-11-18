@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ProblemDetails } from './ProblemDetails';
 import { ProblemDTO } from '../../../datasource/types';
 import { getDefaultTimeRange } from '@grafana/data';
@@ -161,5 +161,88 @@ describe('ProblemDetails', () => {
     expect(submittedProblem.eventid).toBe('10');
     // unacknowledge (16) + always-on add message (4)
     expect(ackData).toEqual({ message: '', action: 20 });
+  });
+  describe('description', () => {
+    const description = 'Line one of the description.\nLine two with more details.';
+    const descriptionProblem = () =>
+      createProblem({
+        name: 'Service is unavailable',
+        comments: description,
+        hosts: [{ hostid: '1', name: 'test-host-1' } as any],
+      });
+    const descriptionTrigger = () => screen.getByRole('button', { name: 'Open the full problem description' });
+
+    let writeText: jest.Mock;
+
+    beforeEach(() => {
+      writeText = jest.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    });
+
+    it('opens a modal with the full description when clicked', async () => {
+      await renderDetails(descriptionProblem());
+
+      await act(async () => {
+        fireEvent.click(descriptionTrigger());
+      });
+
+      const dialog = screen.getByRole('dialog');
+      expect(within(dialog).getByText('Problem description')).toBeInTheDocument();
+      expect(within(dialog).getByText('test-host-1')).toBeInTheDocument();
+      expect(screen.getByTestId('problem-description-modal-content')).toHaveTextContent('Line two with more details.');
+    });
+
+    it('opens the modal when the description text is clicked', async () => {
+      await renderDetails(descriptionProblem());
+
+      await act(async () => {
+        fireEvent.click(screen.getByText(/^Description:/));
+      });
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('opens the modal from the keyboard', async () => {
+      await renderDetails(descriptionProblem());
+
+      await act(async () => {
+        fireEvent.keyDown(descriptionTrigger(), { key: 'Enter' });
+      });
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('copies the description to the clipboard', async () => {
+      await renderDetails(descriptionProblem());
+
+      await act(async () => {
+        fireEvent.click(descriptionTrigger());
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /Copy to clipboard/ }));
+      });
+
+      await waitFor(() => expect(writeText).toHaveBeenCalledWith(description));
+    });
+
+    it('closes the modal', async () => {
+      await renderDetails(descriptionProblem());
+
+      await act(async () => {
+        fireEvent.click(descriptionTrigger());
+      });
+      await act(async () => {
+        fireEvent.click(within(screen.getByRole('dialog')).getByText('Close'));
+      });
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('does not render the description row when there is no description', async () => {
+      await renderDetails(createProblem({ comments: '' }));
+
+      expect(screen.queryByRole('button', { name: 'Open the full problem description' })).not.toBeInTheDocument();
+    });
   });
 });
