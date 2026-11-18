@@ -30,7 +30,8 @@ export interface ProblemsPanelOptions {
   limit?: number;
   // View options
   fontSize: string;
-  pageSize?: number;
+  /** Rows per page; 'auto' fits as many rows as the panel height allows */
+  pageSize?: number | 'auto';
   showSearchFilter?: boolean;
   problemTimeline?: boolean;
   highlightBackground?: boolean;
@@ -39,12 +40,16 @@ export interface ProblemsPanelOptions {
   customLastChangeFormat?: boolean;
   lastChangeFormat?: string;
   resizedColumns?: RTResized;
+  /** Column ids in display order; empty or missing keeps the definition order */
+  columnOrder?: string[];
   allowDangerousHTML: boolean;
   // Triggers severity and colors
   triggerSeverity: TriggerSeverity[];
   okEventColor: TriggerColor;
   ackEventColor: TriggerColor;
   markAckEvents?: boolean;
+  /** How the severity cell is drawn: a full-cell colour box (default) or a tinted pill */
+  severityStyle?: SeverityStyle;
   // Custom tag names to display as column
   customTagColumns?: string;
   // datalink
@@ -93,7 +98,7 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   // View options
   layout: 'table',
   fontSize: '100%',
-  pageSize: 10,
+  pageSize: 'auto',
   showSearchFilter: false,
   problemTimeline: true,
   highlightBackground: false,
@@ -102,12 +107,14 @@ export const defaultPanelOptions: Partial<ProblemsPanelOptions> = {
   customLastChangeFormat: false,
   lastChangeFormat: '',
   resizedColumns: [],
+  columnOrder: [],
   allowDangerousHTML: false,
   // Triggers severity and colors
   triggerSeverity: getDefaultSeverity(),
   okEventColor: 'rgb(56, 189, 113)',
   ackEventColor: 'rgb(56, 219, 156)',
   markAckEvents: false,
+  severityStyle: 'box',
   // Sound alerts
   soundAlerts: false,
   soundMinSeverity: 4,
@@ -147,6 +154,8 @@ export interface TriggerSeverity {
 }
 
 export type TriggerColor = string;
+
+export type SeverityStyle = 'box' | 'pill';
 
 export interface RTResize {
   id: string;
