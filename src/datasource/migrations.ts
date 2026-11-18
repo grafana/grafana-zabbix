@@ -3,7 +3,7 @@ import _ from 'lodash';
 import * as c from './constants';
 import { ZabbixDSOptions } from './types/config';
 import { ZabbixMetricsQuery } from './types/query';
-import { parseLegacyProblemTags } from './utils';
+import { parseLegacyProblemTags, variableRegex } from './utils';
 
 export const DS_QUERY_SCHEMA = 13;
 export const DS_CONFIG_SCHEMA = 4;
@@ -77,13 +77,52 @@ function migrateProblemSort(target) {
   }
 }
 
+const REGEX_FILTER = /^\/(.*)\/([gmi]*)$/;
+// Regex bodies that match every application name, once any ^ and $ anchors are removed.
+const MATCH_ALL_PATTERNS = ['', '.*', '.+'];
+
+/**
+ * Converts an application filter to the equivalent item tag filter. Zabbix turns each
+ * application into an `Application: <name>` item tag when upgrading to 5.4.
+ * A regex filter becomes a regex over the whole `Application: <name>` tag string; a
+ * leading `^` keeps anchoring the application name.
+ *
+ * Returns an empty string, meaning no filter, when carrying the filter over would hide
+ * items that are shown today:
+ *  - a regex that matches every name (dot-star) would keep only items that still carry an
+ *    `Application` tag, dropping items created since the upgrade to 5.4;
+ *  - a filter with a template variable would depend on a variable that can no longer
+ *    be populated with application names.
+ */
+export function applicationFilterToItemTagFilter(appFilter: string): string {
+  if (new RegExp(variableRegex.source).test(appFilter)) {
+    return '';
+  }
+  const regex = appFilter.match(REGEX_FILTER);
+  if (!regex) {
+    return `Application: ${appFilter}`;
+  }
+  const [, pattern, flags] = regex;
+  if (MATCH_ALL_PATTERNS.includes(pattern.replace(/^\^/, '').replace(/\$$/, ''))) {
+    return '';
+  }
+  const name = pattern.startsWith('^') ? `(?:${pattern.slice(1)})` : `.*(?:${pattern})`;
+  return `/^Application: ${name}/${flags}`;
+}
+
+// Applications were removed in Zabbix 5.4 and the plugin no longer filters by them.
+// Carry a saved application filter over to the item tag filter, unless one is already
+// set or the filter is one that is dropped (see applicationFilterToItemTagFilter), and
+// remove the application so this runs once per query.
 function migrateApplications(target) {
   if (!target.itemTag) {
     target.itemTag = { filter: '' };
-    if (target.application?.filter) {
-      target.itemTag.filter = `Application: ${target.application?.filter}`;
-    }
   }
+  const appFilter = target.application?.filter;
+  if (appFilter && !target.itemTag.filter) {
+    target.itemTag = { ...target.itemTag, filter: applicationFilterToItemTagFilter(appFilter) };
+  }
+  delete target.application;
 }
 
 function migrateSLAProperty(target) {

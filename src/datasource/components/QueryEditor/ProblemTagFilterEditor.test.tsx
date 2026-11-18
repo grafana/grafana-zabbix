@@ -35,7 +35,6 @@ jest.mock('@grafana/ui', () => ({
 const defaultProps = {
   tagFilters: [] as ProblemTagFilter[],
   version: '7.0.0',
-  supportsExtendedOperators: true,
   evalType: ZabbixTagEvalType.AndOr,
   onChange: jest.fn(),
   onEvalTypeChange: jest.fn(),
@@ -68,22 +67,6 @@ describe('ProblemTagFilterEditor', () => {
       { value: TagOperatorValue.DoesNotExist, label: 'Does not exist' },
       { value: TagOperatorValue.DoesNotEqual, label: 'Does not equal' },
       { value: TagOperatorValue.DoesNotContain, label: 'Does not contain' },
-    ]);
-  });
-
-  it('only offers Equals and Contains on Zabbix < 5.4', () => {
-    render(
-      <ProblemTagFilterEditor
-        {...defaultProps}
-        version="5.0.0"
-        supportsExtendedOperators={false}
-        tagFilters={[tagFilter()]}
-      />
-    );
-
-    expect(findOperatorCombobox().options).toEqual([
-      { value: TagOperatorValue.Equals, label: 'Equals' },
-      { value: TagOperatorValue.Contains, label: 'Contains' },
     ]);
   });
 

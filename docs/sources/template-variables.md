@@ -21,7 +21,7 @@ review_date: 2026-09-08
 
 # Zabbix template variables
 
-Template variables let you create dynamic, reusable dashboards that switch between host groups, hosts, applications, and items without editing the dashboard. You can populate variable drop-downs with values from Zabbix and reference those variables in queries, panel titles, and text panels.
+Template variables let you create dynamic, reusable dashboards that switch between host groups, hosts, item tags, and items without editing the dashboard. You can populate variable drop-downs with values from Zabbix and reference those variables in queries, panel titles, and text panels.
 
 ## Before you begin
 
@@ -32,7 +32,7 @@ Template variables let you create dynamic, reusable dashboards that switch betwe
 
 | Variable type | Supported | Description |
 |---------------|-----------|-------------|
-| Query | Yes | Fetch values from Zabbix (host groups, hosts, applications, items, etc.). |
+| Query | Yes | Fetch values from Zabbix (host groups, hosts, item tags, items, etc.). |
 | Custom | Yes | Define a custom list of values. |
 | Data source | Yes | Switch between multiple Zabbix data source instances. |
 
@@ -56,16 +56,13 @@ The variable query editor uses a structured form with a **Query Type** drop-down
 |------------|---------|---------------|
 | **Group** | Host group names | Group |
 | **Host** | Host names | Group, Host tag, Host |
-| **Application** | Application names | Group, Host tag, Host, Application. Not available on Zabbix 5.4+ where applications have been removed. Use **Item tag** instead. |
-| **Item tag** | Item tag values | Group, Host tag, Host, Item Tag. Available on Zabbix 5.4+. |
-| **Item** | Item names | Group, Host tag, Host, Application or Item Tag, Item |
-| **Item values** | Current item values | Group, Host tag, Host, Application or Item Tag, Item |
+| **Item tag** | Item tag values | Group, Host tag, Host, Item Tag |
+| **Item** | Item names | Group, Host tag, Host, Item Tag, Item |
+| **Item values** | Current item values | Group, Host tag, Host, Item Tag, Item |
 
 All filter fields support regex patterns (for example, `/.*/` to match all values) and references to other template variables (for example, `$group`).
 
-The **Host tag** field (Zabbix 5.4+) narrows the hosts by host tag before the **Host** filter is applied. It uses the same operators and **AND/OR** / **OR** evaluation as the Host tag filter in the query editor, and tags inherited from linked templates are matched too. Leave **Host** empty to return every host that matches the tags. Tag names and values support template variables; a multi-value variable in a tag value matches any of the selected values, and a variable with **All** selected places no constraint on that tag.
-
-For the **Item** and **Item values** query types, the editor shows either **Application** (Zabbix < 5.4) or **Item Tag** (Zabbix 5.4+) depending on your Zabbix server version. Only one field is visible at a time.
+The **Host tag** field narrows the hosts by host tag before the **Host** filter is applied. It uses the same operators and **AND/OR** / **OR** evaluation as the Host tag filter in the query editor, and tags inherited from linked templates are matched too. Leave **Host** empty to return every host that matches the tags. Tag names and values support template variables; a multi-value variable in a tag value matches any of the selected values, and a variable with **All** selected places no constraint on that tag.
 
 When the **Item** query type is selected, you can also toggle **Show disabled items** to include disabled items in the results.
 
@@ -79,15 +76,15 @@ The legacy format uses four parts wrapped in braces:
 {host group}{host}{application}{item name}
 ```
 
-Each part can be a specific name or `*` (all values). The number of parts determines what the variable returns:
+Each part can be a specific name or `*` (all values). The number of parts determines what the variable returns. Zabbix removed applications in version 5.4, so the application part is ignored and a three-part query returns no values. Use the **Item tag** query type instead.
 
 | Query | Returns |
 |-------|---------|
 | `{*}` | All host groups |
 | `{*}{*}` | All hosts |
 | `{Network}{*}` | All hosts in the "Network" group |
-| `{Linux servers}{*}{*}` | All applications from hosts in "Linux servers" |
-| `{Linux servers}{backend01}{CPU}{*}` | All items from backend01 in the CPU application |
+| `{Linux servers}{*}{*}` | Nothing (applications are no longer supported) |
+| `{Linux servers}{backend01}{*}{*}` | All items from backend01 |
 
 ## Use variables in queries
 
@@ -95,7 +92,7 @@ Reference variables in the query editor by prefixing the variable name with `$`.
 
 Variables work in most query editor fields, including:
 
-- **Group**, **Host**, **Application** / **Item tag**, **Item**
+- **Group**, **Host**, **Item tag**, **Item**
 - **Service**, **SLA**
 - **Proxy**, **Problem**, **Item Ids**, **Macros**
 - Panel and row titles

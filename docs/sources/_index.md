@@ -30,8 +30,22 @@ The Zabbix data source connects Grafana to your Zabbix monitoring infrastructure
 
 - Grafana 11.6.0 or later.
 - The Zabbix plugin installed and enabled in your Grafana instance. Zabbix is an app plugin, so after you install it you must also enable it on the plugin page before the data source becomes available. Refer to [Install the plugin](#install-the-plugin) for installation and upgrade instructions, or to [Install and enable the Zabbix plugin](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#install-and-enable-the-zabbix-plugin) for step-by-step instructions.
-- A running Zabbix server with API access enabled.
-- A Zabbix user account with read permissions for the host groups and hosts you want to query.
+- A running Zabbix server of a [supported version](#supported-zabbix-versions) with API access enabled.
+- A Zabbix user account with read permissions for the host groups and hosts you want to query. The user's role must be allowed to use the Zabbix API. On new Zabbix 8.0 installations, API access is disabled by default for every role except **Super admin role**; enable it under **Users** > **User roles** in Zabbix.
+
+## Supported Zabbix versions
+
+The plugin supports the three most recent Zabbix LTS releases, and the latest standard release for as long as Zabbix supports it.
+
+| Zabbix version | Type | Status |
+|----------------|------|--------|
+| 8.0 | LTS | Supported |
+| 7.4 | Standard | Supported until Zabbix ends support for it |
+| 7.0 | LTS | Supported |
+| 6.0 | LTS | Supported |
+| 5.0 and earlier | LTS | Not supported |
+
+Each supported version is covered by the plugin's integration tests. When Zabbix releases a new LTS version, the oldest of the three leaves the list. Older Zabbix versions may still work, but they aren't tested and fixes for them aren't accepted.
 
 ## Install the plugin
 

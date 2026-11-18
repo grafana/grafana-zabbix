@@ -55,11 +55,8 @@ const buildDatasource = (overrides: Partial<any> = {}) => {
   const zabbix = {
     getAllGroups: jest.fn().mockResolvedValue([]),
     getAllHosts: jest.fn().mockResolvedValue([]),
-    getAllApps: jest.fn().mockResolvedValue([]),
     getProxies: jest.fn().mockResolvedValue([]),
-    supportsApplications: jest.fn(() => true),
     supportsCauseSymptomProblems: jest.fn(() => true),
-    supportsProblemTagOperators: jest.fn(() => true),
     version: '7.0.0',
     ...overrides,
   };
@@ -93,12 +90,10 @@ describe('ProblemsQueryEditor', () => {
       expect(problemTagFilterEditorSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           tagFilters: problemTags,
-          supportsExtendedOperators: true,
           version: '7.0.0',
           evalType: ZabbixTagEvalType.AndOr,
         })
       );
-      expect(datasource.zabbix.supportsProblemTagOperators).toHaveBeenCalled();
     });
 
     it('defaults to no tag filters when the query has none', () => {
@@ -107,18 +102,6 @@ describe('ProblemsQueryEditor', () => {
       render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={jest.fn()} />);
 
       expect(problemTagFilterEditorSpy).toHaveBeenCalledWith(expect.objectContaining({ tagFilters: [] }));
-    });
-
-    it('reports extended operators as unsupported for Zabbix < 5.4', () => {
-      const datasource = buildDatasource({
-        supportsProblemTagOperators: jest.fn(() => false),
-      });
-
-      render(<ProblemsQueryEditor query={baseQuery} datasource={datasource as any} onChange={jest.fn()} />);
-
-      expect(problemTagFilterEditorSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ supportsExtendedOperators: false })
-      );
     });
 
     it('writes tag filter changes to query.problemTags', () => {
@@ -229,7 +212,6 @@ describe('ProblemsQueryEditor', () => {
     const datasource = buildDatasource({
       getAllGroups: jest.fn().mockResolvedValue([{ name: 'group-a' }, { name: '' }, {}]),
       getAllHosts: jest.fn().mockResolvedValue([{ name: 'host-a' }, { name: '' }, {}]),
-      getAllApps: jest.fn().mockResolvedValue([{ name: 'app-a' }, { name: '' }, {}]),
       getProxies: jest.fn().mockResolvedValue([{ name: '' }, { host: '' }, { name: 'proxy-a' }]),
     });
 
@@ -242,9 +224,6 @@ describe('ProblemsQueryEditor', () => {
       const hostCall = metricPickerSpy.mock.calls
         .map((call) => call[0])
         .find((props) => props?.placeholder === 'Host name' && props?.options);
-      const appCall = metricPickerSpy.mock.calls
-        .map((call) => call[0])
-        .find((props) => props?.placeholder === 'Application name' && props?.options);
       const proxyCall = metricPickerSpy.mock.calls
         .map((call) => call[0])
         .find((props) => props?.placeholder === 'Proxy name' && props?.options);
@@ -256,7 +235,6 @@ describe('ProblemsQueryEditor', () => {
 
       expect(hasValidValues(groupCall.options)).toBe(true);
       expect(hasValidValues(hostCall.options)).toBe(true);
-      expect(hasValidValues(appCall.options)).toBe(true);
       expect(hasValidValues(proxyCall.options)).toBe(true);
     });
   });

@@ -9,13 +9,12 @@ import (
 )
 
 var cachedMethods = map[string]bool{
-	"hostgroup.get":   true,
-	"host.get":        true,
-	"application.get": true,
-	"item.get":        true,
-	"usermacro.get":   true,
-	"proxy.get":       true,
-	"valuemap.get":    true,
+	"hostgroup.get": true,
+	"host.get":      true,
+	"item.get":      true,
+	"usermacro.get": true,
+	"proxy.get":     true,
+	"valuemap.get":  true,
 }
 
 func IsCachedRequest(method string) bool {

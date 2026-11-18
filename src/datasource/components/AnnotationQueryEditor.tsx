@@ -62,25 +62,8 @@ export const AnnotationQueryEditor = ({ annotation: annotationProp, onAnnotation
     return options;
   }, [interpolatedQuery.group.filter]);
 
-  const loadAppOptions = async (group: string, host: string) => {
-    const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
-      value: app.name,
-      label: app.name,
-    }));
-    options = _.uniqBy(options, (o) => o.value);
-    options.unshift(...getVariableOptions());
-    return options;
-  };
-
-  const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
-    const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
-    return options;
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
-
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
-  const hostFilter = interpolatedQuery.host?.filter;
 
   useEffect(() => {
     fetchGroups();
@@ -89,10 +72,6 @@ export const AnnotationQueryEditor = ({ annotation: annotationProp, onAnnotation
   useEffect(() => {
     fetchHosts();
   }, [groupFilter]);
-
-  useEffect(() => {
-    fetchApps();
-  }, [groupFilter, hostFilter]);
 
   const onChange = (query: any) => {
     onAnnotationChange({
@@ -153,16 +132,6 @@ export const AnnotationQueryEditor = ({ annotation: annotationProp, onAnnotation
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
-        <InlineField label="Application" labelWidth={12}>
-          <MetricPicker
-            width={24}
-            value={query.application?.filter}
-            options={appOptions}
-            isLoading={appsLoading}
-            onChange={onFilterChange('application')}
-            placeholder="Application name"
-          />
-        </InlineField>
         <InlineField label="Problem" labelWidth={12}>
           <Input
             width={24}

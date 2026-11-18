@@ -3,7 +3,9 @@ package datasource
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
@@ -49,11 +51,10 @@ type QueryModel struct {
 	Mode      int64  `json:"mode"`
 	QueryType string `json:"-"`
 
-	Group       QueryFilter `json:"group"`
-	Host        QueryFilter `json:"host"`
-	Application QueryFilter `json:"application"`
-	ItemTag     QueryFilter `json:"itemTag"`
-	Item        QueryFilter `json:"item"`
+	Group   QueryFilter `json:"group"`
+	Host    QueryFilter `json:"host"`
+	ItemTag QueryFilter `json:"itemTag"`
+	Item    QueryFilter `json:"item"`
 
 	// Item ID mode
 	ItemIDs string `json:"itemids,omitempty"`
@@ -123,6 +124,8 @@ func ReadQuery(query backend.DataQuery) (QueryModel, error) {
 		return model, backend.DownstreamError(fmt.Errorf("could not read query: %w", err))
 	}
 
+	migrateApplicationFilter(query.JSON, &model)
+
 	if model.QueryType == "" {
 		queryJSON, err := simplejson.NewJson(query.JSON)
 		if err != nil {
@@ -140,4 +143,57 @@ func ReadQuery(query backend.DataQuery) (QueryModel, error) {
 	}
 
 	return model, nil
+}
+
+var regexFilterPattern = regexp.MustCompile(`^/(.*)/([a-z]*)$`)
+
+// templateVariablePattern matches Grafana template variables: $name, ${name...} and [[name]].
+var templateVariablePattern = regexp.MustCompile(`\$\w+|\$\{\w+|\[\[.+?\]\]`)
+
+// matchAllPatterns are regex bodies that match every application name, once any ^ and $
+// anchors are removed.
+var matchAllPatterns = map[string]bool{"": true, ".*": true, ".+": true}
+
+// applicationFilterToItemTagFilter converts an application filter to the equivalent item
+// tag filter. Zabbix turns each application into an "Application: <name>" item tag when
+// upgrading to 5.4. A regex filter becomes a regex over the whole tag string; a leading
+// "^" keeps anchoring the application name. Mirrors the frontend query migration.
+//
+// It returns an empty string, meaning no filter, when carrying the filter over would hide
+// items that are returned today: a match-all regex such as /.*/ would keep only items that
+// still carry an Application tag, and a filter with a template variable would depend on a
+// variable that can no longer be populated with application names.
+func applicationFilterToItemTagFilter(appFilter string) string {
+	if templateVariablePattern.MatchString(appFilter) {
+		return ""
+	}
+	matches := regexFilterPattern.FindStringSubmatch(appFilter)
+	if matches == nil {
+		return "Application: " + appFilter
+	}
+	pattern, flags := matches[1], matches[2]
+	if matchAllPatterns[strings.TrimSuffix(strings.TrimPrefix(pattern, "^"), "$")] {
+		return ""
+	}
+	name := ".*(?:" + pattern + ")"
+	if strings.HasPrefix(pattern, "^") {
+		name = "(?:" + pattern[1:] + ")"
+	}
+	return "/^Application: " + name + "/" + flags
+}
+
+// migrateApplicationFilter carries a saved application filter over to the item tag filter
+// when the query has none. Queries evaluated without going through the query editor (alert
+// rules, for example) still hold the application filter they were saved with.
+func migrateApplicationFilter(queryJSON []byte, model *QueryModel) {
+	if model.ItemTag.Filter != "" {
+		return
+	}
+	var legacy struct {
+		Application QueryFilter `json:"application"`
+	}
+	if err := json.Unmarshal(queryJSON, &legacy); err != nil || legacy.Application.Filter == "" {
+		return
+	}
+	model.ItemTag.Filter = applicationFilterToItemTagFilter(legacy.Application.Filter)
 }

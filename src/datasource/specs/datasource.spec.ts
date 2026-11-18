@@ -284,7 +284,7 @@ describe('ZabbixDatasource', () => {
 
       await ctx.ds.queryProblems(target, [100, 200], {});
 
-      expect(ctx.ds.zabbix.getProblems).toHaveBeenCalledWith('', '', '', '', expect.objectContaining({ symptom }));
+      expect(ctx.ds.zabbix.getProblems).toHaveBeenCalledWith('', '', '', expect.objectContaining({ symptom }));
     });
 
     it.each([undefined, null])('omits symptom from problems options when it is %s', async (symptom) => {
@@ -292,7 +292,7 @@ describe('ZabbixDatasource', () => {
 
       await ctx.ds.queryProblems(target, [100, 200], {});
 
-      const [, , , , problemsOptions] = ctx.ds.zabbix.getProblems.mock.calls.at(-1);
+      const [, , , problemsOptions] = ctx.ds.zabbix.getProblems.mock.calls.at(-1);
       expect('symptom' in problemsOptions).toBe(false);
     });
 
@@ -302,7 +302,6 @@ describe('ZabbixDatasource', () => {
       await ctx.ds.queryProblems(target, [100, 200], {});
 
       expect(ctx.ds.zabbix.getProblemsHistory).toHaveBeenCalledWith(
-        '',
         '',
         '',
         '',
@@ -317,7 +316,7 @@ describe('ZabbixDatasource', () => {
       ctx.ds.zabbix.getItemTags = jest.fn().mockResolvedValue([]);
       ctx.ds.zabbix.zabbixAPI.getItems = jest.fn();
 
-      const result = await ctx.ds.zabbix.getAllItems('GroupFilter', 'HostFilter', 'AppFilter', '/^NonExistentTag/', {
+      const result = await ctx.ds.zabbix.getAllItems('GroupFilter', 'HostFilter', '/^NonExistentTag/', {
         itemtype: 'num',
       });
 
@@ -338,7 +337,6 @@ describe('ZabbixDatasource', () => {
       ctx.ds.zabbix = {
         getGroups: jest.fn().mockReturnValue(Promise.resolve([])),
         getHosts: jest.fn().mockReturnValue(Promise.resolve([])),
-        getApps: jest.fn().mockReturnValue(Promise.resolve([])),
         getItems: jest.fn().mockReturnValue(Promise.resolve([])),
       };
     });
@@ -405,35 +403,20 @@ describe('ZabbixDatasource', () => {
       done();
     });
 
-    it('should return applications', (done) => {
+    it('should return nothing for legacy application queries', async () => {
+      // Applications were removed in Zabbix 5.4; `group.host.app` variables resolve to an empty list.
       jest.spyOn(utils, 'parseLegacyVariableQuery').mockImplementation((query: string) => {
-        let splits = query.split('.');
+        const splits = query.split('.');
         return {
           queryType: VariableQueryTypes.Application,
-          group: splits[0] === '*' ? '/.*/' : splits[0],
-          host: splits[1] === '*' ? '/.*/' : splits[1],
-          application: splits[2] === '*' ? '/.*/' : splits[2],
+          group: splits[0],
+          host: splits[1],
+          application: splits[2],
         };
       });
-      const tests = [
-        { query: '*.*.*', expect: ['/.*/', '/.*/', '/.*/'] },
-        { query: '.*.', expect: ['', '/.*/', ''] },
-        { query: 'Backend.backend01.*', expect: ['Backend', 'backend01', '/.*/'] },
-        { query: 'Back*.*.', expect: ['Back*', '/.*/', ''] },
-      ];
-
-      for (const test of tests) {
-        ctx.ds.metricFindQuery(test.query);
-        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith(
-          test.expect[0],
-          test.expect[1],
-          test.expect[2],
-          undefined,
-          undefined
-        );
-        ctx.ds.zabbix.getApps.mockClear();
-      }
-      done();
+      const result = await ctx.ds.metricFindQuery('Backend.backend01.*');
+      expect(result).toEqual([]);
+      expect(ctx.ds.zabbix.getHosts).not.toHaveBeenCalled();
     });
 
     it('should return items', (done) => {
@@ -453,7 +436,6 @@ describe('ZabbixDatasource', () => {
           expect: [
             '/.*/',
             '/.*/',
-            '',
             undefined,
             '/.*/',
             { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false },
@@ -464,7 +446,6 @@ describe('ZabbixDatasource', () => {
           expect: [
             '',
             '/.*/',
-            '',
             undefined,
             '/.*/',
             { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false },
@@ -475,18 +456,17 @@ describe('ZabbixDatasource', () => {
           expect: [
             'Backend',
             'backend01',
-            '',
             undefined,
             '/.*/',
             { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false },
           ],
         },
         {
+          // The application part of a legacy query is ignored.
           query: 'Back*.*.cpu.*',
           expect: [
             'Back*',
             '/.*/',
-            'cpu',
             undefined,
             '/.*/',
             { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false },
@@ -501,8 +481,7 @@ describe('ZabbixDatasource', () => {
           test.expect[1],
           test.expect[2],
           test.expect[3],
-          test.expect[4],
-          test.expect[5]
+          test.expect[4]
         );
         ctx.ds.zabbix.getItems.mockClear();
       }
@@ -530,7 +509,6 @@ describe('ZabbixDatasource', () => {
         ctx.ds.zabbix = {
           getGroups: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Group1' }, { name: 'Group2' }])),
           getHosts: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Host1' }, { name: 'Host2' }])),
-          getApps: jest.fn().mockReturnValue(Promise.resolve([{ name: 'App1' }, { name: 'App2' }])),
           getItems: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Item1' }, { name: 'Item2' }])),
           getItemTags: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Tag1' }, { name: 'Tag2' }])),
           getItemValues: jest.fn().mockReturnValue(Promise.resolve([{ name: 'Value1' }, { name: 'Value2' }])),
@@ -580,25 +558,6 @@ describe('ZabbixDatasource', () => {
 
         await ctx.ds.metricFindQuery(
           {
-            queryType: VariableQueryTypes.Application,
-            group: 'GroupFilter',
-            host: 'HostFilter',
-            application: 'AppFilter',
-            hostTags,
-            evaltype: '2' as any,
-          },
-          {}
-        );
-        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith(
-          'GroupFilter',
-          'HostFilter',
-          'AppFilter',
-          [{ tag: 'class', value: 'database', operator: '1' }],
-          '2'
-        );
-
-        await ctx.ds.metricFindQuery(
-          {
             queryType: VariableQueryTypes.ItemTag,
             group: 'GroupFilter',
             host: 'HostFilter',
@@ -621,7 +580,6 @@ describe('ZabbixDatasource', () => {
             queryType: VariableQueryTypes.Item,
             group: 'GroupFilter',
             host: 'HostFilter',
-            application: 'AppFilter',
             itemTag: 'TagFilter',
             item: 'ItemFilter',
             hostTags,
@@ -632,7 +590,6 @@ describe('ZabbixDatasource', () => {
         expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
           'GroupFilter',
           'HostFilter',
-          'AppFilter',
           'TagFilter',
           'ItemFilter',
           expect.objectContaining({
@@ -656,7 +613,6 @@ describe('ZabbixDatasource', () => {
         expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
           'GroupFilter',
           '/.*/',
-          undefined,
           undefined,
           'ItemFilter',
           expect.objectContaining({ hostTags: [{ tag: 'class', value: 'database', operator: '1' }] })
@@ -1034,7 +990,7 @@ describe('ZabbixDatasource', () => {
         expect(ctx.ds.zabbix.getHosts).toHaveBeenCalledWith('GroupFilter', 'HostFilter', [], undefined);
       });
 
-      it('should return applications when queryType is Application', async () => {
+      it('should return nothing when queryType is Application (removed in Zabbix 5.4)', async () => {
         const query = {
           queryType: VariableQueryTypes.Application,
           group: 'GroupFilter',
@@ -1042,17 +998,7 @@ describe('ZabbixDatasource', () => {
           application: 'AppFilter',
         };
         const result = await ctx.ds.metricFindQuery(query, {});
-        expect(ctx.ds.zabbix.getApps).toHaveBeenCalledWith(
-          'GroupFilter',
-          'HostFilter',
-          'AppFilter',
-          undefined,
-          undefined
-        );
-        expect(result).toEqual([
-          { text: 'App1', expandable: false },
-          { text: 'App2', expandable: false },
-        ]);
+        expect(result).toEqual([]);
       });
 
       it('should return items when queryType is Item', async () => {
@@ -1065,14 +1011,11 @@ describe('ZabbixDatasource', () => {
           item: 'ItemFilter',
         };
         const result = await ctx.ds.metricFindQuery(query, {});
-        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
-          'GroupFilter',
-          'HostFilter',
-          'AppFilter',
-          'TagFilter',
-          'ItemFilter',
-          { showDisabledItems: undefined, pushDownItemFilter: true, selectTags: false }
-        );
+        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'TagFilter', 'ItemFilter', {
+          showDisabledItems: undefined,
+          pushDownItemFilter: true,
+          selectTags: false,
+        });
         expect(result).toEqual([
           { text: 'Item1', expandable: false },
           { text: 'Item2', expandable: false },
@@ -1090,14 +1033,11 @@ describe('ZabbixDatasource', () => {
           showDisabledItems: true,
         };
         const result = await ctx.ds.metricFindQuery(query, {});
-        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith(
-          'GroupFilter',
-          'HostFilter',
-          'AppFilter',
-          'TagFilter',
-          'ItemFilter',
-          { showDisabledItems: true, pushDownItemFilter: true, selectTags: false }
-        );
+        expect(ctx.ds.zabbix.getItems).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'TagFilter', 'ItemFilter', {
+          showDisabledItems: true,
+          pushDownItemFilter: true,
+          selectTags: false,
+        });
         expect(result).toEqual([
           { text: 'Item1', expandable: false },
           { text: 'Item2', expandable: false },
@@ -1135,17 +1075,11 @@ describe('ZabbixDatasource', () => {
         };
         const options = { range: { from: 'now-1h', to: 'now' } };
         const result = await ctx.ds.metricFindQuery(query, options);
-        expect(ctx.ds.zabbix.getItemValues).toHaveBeenCalledWith(
-          'GroupFilter',
-          'HostFilter',
-          'AppFilter',
-          'ItemFilter',
-          {
-            range: options.range,
-            pushDownItemFilter: true,
-            selectTags: false,
-          }
-        );
+        expect(ctx.ds.zabbix.getItemValues).toHaveBeenCalledWith('GroupFilter', 'HostFilter', 'ItemFilter', {
+          range: options.range,
+          pushDownItemFilter: true,
+          selectTags: false,
+        });
         expect(result).toEqual([
           { text: 'Value1', expandable: false },
           { text: 'Value2', expandable: false },

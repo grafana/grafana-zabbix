@@ -30,7 +30,6 @@ const openInExplore = (problem: ProblemDTO, panelId: number, range: TimeRange) =
     query = {
       queryType: MODE_METRICS,
       group: { filter: '/.*/' },
-      application: { filter: '' },
       host: { filter: host.name },
       item: { filter: itemName },
     };

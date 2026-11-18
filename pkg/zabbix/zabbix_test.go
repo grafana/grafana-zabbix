@@ -185,7 +185,6 @@ func TestItemTagCache(t *testing.T) {
 	items, err := zabbixClient.GetAllItems(
 		context.Background(),
 		nil,
-		nil,
 		"num",
 		false,
 		"Application: test, interface: test",
@@ -207,7 +206,6 @@ func TestItemTagCache(t *testing.T) {
 	zabbixClient.api.SetAuth("test")
 	items, err = zabbixClient.GetAllItems(
 		context.Background(),
-		nil,
 		nil,
 		"num",
 		false,

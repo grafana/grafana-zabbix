@@ -76,29 +76,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
 
-  const loadAppOptions = async (group: string, host: string) => {
-    const apps = await datasource.zabbix.getAllApps(group, host);
-    let options: Array<ComboboxOption<string>> = apps?.map((app) => ({
-      value: app.name,
-      label: app.name,
-    }));
-    options = uniqBy(options, (o) => o.value);
-    options.unshift(...getVariableOptions());
-    return options;
-  };
-
-  const [{ loading: appsLoading, value: appOptions }, fetchApps] = useAsyncFn(async () => {
-    const options = await loadAppOptions(interpolatedQuery.group.filter, interpolatedQuery.host.filter);
-    return options;
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
-
   const loadTagOptions = async (group: string, host: string) => {
-    const tagsAvailable = await datasource.zabbix.isZabbix54OrHigher();
-    if (!tagsAvailable) {
-      return [];
-    }
-
-    const items = await datasource.zabbix.getAllItems(group, host, null, null, {});
+    const items = await datasource.zabbix.getAllItems(group, host, null, {});
     const tags: ZBXItemTag[] = flatten(items.map((item: ZBXItem) => item.tags || []));
     // const tags: ZBXItemTag[] = await datasource.zabbix.getItemTags(groupFilter, hostFilter, null);
 
@@ -117,12 +96,12 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
-  const loadItemOptions = async (group: string, host: string, app: string, itemTag: string, itemFilter: string) => {
+  const loadItemOptions = async (group: string, host: string, itemTag: string, itemFilter: string) => {
     const options = {
       itemtype: 'num',
       showDisabledItems: query.options.showDisabledItems,
     };
-    const items = await datasource.zabbix.getAllItems(group, host, app, itemTag, options);
+    const items = await datasource.zabbix.getAllItems(group, host, itemTag, options);
 
     // Count items that match the current item filter for the warning
     let matchingItemCount = items?.length || 0;
@@ -154,7 +133,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     const options = await loadItemOptions(
       interpolatedQuery.group.filter,
       interpolatedQuery.host.filter,
-      interpolatedQuery.application.filter,
       interpolatedQuery.itemTag.filter,
       interpolatedQuery.item.filter
     );
@@ -162,7 +140,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
   }, [
     interpolatedQuery.group.filter,
     interpolatedQuery.host.filter,
-    interpolatedQuery.application.filter,
     interpolatedQuery.itemTag.filter,
     interpolatedQuery.item.filter,
   ]);
@@ -172,7 +149,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
   const hostTagFilters = interpolatedQuery.hostTags;
   const evalType = interpolatedQuery.evaltype;
   const hostFilter = interpolatedQuery.host?.filter;
-  const appFilter = interpolatedQuery.application?.filter;
   const tagFilter = interpolatedQuery.itemTag?.filter;
   const itemFilter = interpolatedQuery.item?.filter;
 
@@ -189,16 +165,12 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
   }, [groupFilter, hostTagFilters, evalType]);
 
   useEffect(() => {
-    fetchApps();
-  }, [groupFilter, hostFilter]);
-
-  useEffect(() => {
     fetchTags();
   }, [groupFilter, hostFilter]);
 
   useEffect(() => {
     fetchItems();
-  }, [groupFilter, hostFilter, appFilter, tagFilter, itemFilter]);
+  }, [groupFilter, hostFilter, tagFilter, itemFilter]);
 
   const onFilterChange = (prop: string) => {
     return (value: string) => {
@@ -221,8 +193,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     },
     [onChange, query]
   );
-
-  const supportsApplications = datasource.zabbix.supportsApplications();
 
   return (
     <>
@@ -263,32 +233,17 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
         </InlineField>
       </QueryEditorRow>
       <QueryEditorRow>
-        {supportsApplications && (
-          <InlineField label="Application" labelWidth={12}>
-            <MetricPicker
-              width={24}
-              value={query.application.filter}
-              options={appOptions}
-              isLoading={appsLoading}
-              onChange={onFilterChange('application')}
-              createCustomValue={true}
-              placeholder="Application name"
-            />
-          </InlineField>
-        )}
-        {!supportsApplications && (
-          <InlineField label="Item tag" labelWidth={12}>
-            <MetricPicker
-              width={24}
-              value={query.itemTag.filter}
-              options={tagOptions}
-              isLoading={tagsLoading}
-              onChange={onFilterChange('itemTag')}
-              createCustomValue={true}
-              placeholder="Item tag name"
-            />
-          </InlineField>
-        )}
+        <InlineField label="Item tag" labelWidth={12}>
+          <MetricPicker
+            width={24}
+            value={query.itemTag.filter}
+            options={tagOptions}
+            isLoading={tagsLoading}
+            onChange={onFilterChange('itemTag')}
+            createCustomValue={true}
+            placeholder="Item tag name"
+          />
+        </InlineField>
         <InlineField label="Item" labelWidth={12}>
           <MetricPicker
             width={24}

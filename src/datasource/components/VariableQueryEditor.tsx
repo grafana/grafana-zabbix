@@ -14,7 +14,6 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   queryTypes: Array<ComboboxOption<VariableQueryTypes>> = [
     { value: VariableQueryTypes.Group, label: 'Group' },
     { value: VariableQueryTypes.Host, label: 'Host' },
-    { value: VariableQueryTypes.Application, label: 'Application' },
     { value: VariableQueryTypes.ItemTag, label: 'Item tag' },
     { value: VariableQueryTypes.Item, label: 'Item' },
     { value: VariableQueryTypes.ItemValues, label: 'Item values' },
@@ -25,7 +24,6 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
     queryType: VariableQueryTypes.Group,
     group: '/.*/',
     host: '',
-    application: '',
     itemTag: '',
     item: '',
     showDisabledItems: false,
@@ -79,12 +77,11 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   };
 
   buildQueryModel(overrides: Partial<VariableQuery> = {}): VariableQuery {
-    const { queryType, group, host, application, itemTag, item, showDisabledItems, hostTags, evaltype } = this.state;
+    const { queryType, group, host, itemTag, item, showDisabledItems, hostTags, evaltype } = this.state;
     return {
       queryType,
       group,
       host,
-      application,
       itemTag,
       item,
       showDisabledItems,
@@ -144,20 +141,9 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
   };
 
   render() {
-    const {
-      selectedQueryType,
-      legacyQuery,
-      group,
-      host,
-      application,
-      itemTag,
-      item,
-      showDisabledItems,
-      hostTags,
-      evaltype,
-    } = this.state;
+    const { selectedQueryType, legacyQuery, group, host, itemTag, item, showDisabledItems, hostTags, evaltype } =
+      this.state;
     const { datasource } = this.props;
-    const supportsItemTags = datasource?.zabbix?.isZabbix54OrHigherSync() || false;
 
     return (
       <>
@@ -211,36 +197,20 @@ export class ZabbixVariableQueryEditor extends PureComponent<VariableQueryProps,
           </InlineFieldRow>
         )}
 
-        {(selectedQueryType.value === VariableQueryTypes.Application ||
-          selectedQueryType.value === VariableQueryTypes.ItemTag ||
+        {(selectedQueryType.value === VariableQueryTypes.ItemTag ||
           selectedQueryType.value === VariableQueryTypes.Item ||
           selectedQueryType.value === VariableQueryTypes.ItemValues) && (
           <>
-            {supportsItemTags && (
-              <InlineFieldRow>
-                <InlineField label="Item Tag" labelWidth={18}>
-                  <ZabbixInput
-                    width={30}
-                    value={itemTag}
-                    onChange={(evt) => this.handleQueryUpdate(evt, 'itemTag')}
-                    onBlur={this.handleQueryChange}
-                  />
-                </InlineField>
-              </InlineFieldRow>
-            )}
-
-            {!supportsItemTags && (
-              <InlineFieldRow>
-                <InlineField label="Application" labelWidth={18}>
-                  <ZabbixInput
-                    width={30}
-                    value={application}
-                    onChange={(evt) => this.handleQueryUpdate(evt, 'application')}
-                    onBlur={this.handleQueryChange}
-                  />
-                </InlineField>
-              </InlineFieldRow>
-            )}
+            <InlineFieldRow>
+              <InlineField label="Item Tag" labelWidth={18}>
+                <ZabbixInput
+                  width={30}
+                  value={itemTag}
+                  onChange={(evt) => this.handleQueryUpdate(evt, 'itemTag')}
+                  onBlur={this.handleQueryChange}
+                />
+              </InlineField>
+            </InlineFieldRow>
 
             {(selectedQueryType.value === VariableQueryTypes.Item ||
               selectedQueryType.value === VariableQueryTypes.ItemValues) && (

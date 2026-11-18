@@ -84,7 +84,7 @@ Use a Zabbix user account to authenticate with the API.
 
 ### API token
 
-Use a Zabbix API token to authenticate. API tokens are available in Zabbix 5.4 and later.
+Use a Zabbix API token to authenticate.
 
 | Setting | Description |
 |---------|-------------|

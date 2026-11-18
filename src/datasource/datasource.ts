@@ -463,7 +463,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       return this.queryTriggersPCData(target, timeRange, request);
     }
 
-    const [hosts, apps] = await this.zabbix.getHostsApsFromTarget(target);
+    const hosts = await this.zabbix.getHostsFromTarget(target);
     if (!hosts.length) {
       return Promise.resolve([]);
     }
@@ -472,7 +472,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const groups = await this.zabbix.getGroups(groupFilter);
 
     const hostids = hosts?.map((h) => h.hostid);
-    const appids = apps?.map((a) => a.applicationid);
     const options = utils.getTriggersOptions(target, timeRange);
 
     // variable interpolation builds regex-like string, so we should trim it.
@@ -486,7 +485,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       options.tags = tags;
     }
 
-    const alerts = await this.zabbix.getHostAlerts(hostids, appids, options);
+    const alerts = await this.zabbix.getHostAlerts(hostids, options);
     return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
@@ -495,7 +494,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       itemtype: 'num',
       showDisabledItems: target.options.showDisabledItems,
     };
-    const [hosts, apps, items] = await this.zabbix.getHostsFromICTarget(target, getItemOptions);
+    const [hosts, items] = await this.zabbix.getHostsFromICTarget(target, getItemOptions);
     if (!hosts.length) {
       return Promise.resolve([]);
     }
@@ -504,14 +503,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const groups = await this.zabbix.getGroups(groupFilter);
 
     const hostids = hosts?.map((h) => h.hostid);
-    const appids = apps?.map((a) => a.applicationid);
     const itemids = items?.map((i) => i.itemid);
     if (!itemids.length) {
       return Promise.resolve([]);
     }
 
     const options = utils.getTriggersOptions(target, timeRange);
-    const alerts = await this.zabbix.getHostICAlerts(hostids, appids, itemids, options);
+    const alerts = await this.zabbix.getHostICAlerts(hostids, itemids, options);
     return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
@@ -551,7 +549,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       problemsOptions.timeTo = timeTo;
     }
 
-    const [hosts, apps, triggers] = await this.zabbix.getHostsFromPCTarget(target, problemsOptions);
+    const [hosts, triggers] = await this.zabbix.getHostsFromPCTarget(target, problemsOptions);
     if (!hosts.length) {
       return Promise.resolve([]);
     }
@@ -560,7 +558,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const groups = await this.zabbix.getGroups(groupFilter);
 
     const hostids = hosts?.map((h) => h.hostid);
-    const appids = apps?.map((a) => a.applicationid);
     const triggerids = triggers.map((t) => t.triggerid);
     const options: any = {
       minSeverity: target.options?.minSeverity,
@@ -572,7 +569,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       options.timeTo = timeTo;
     }
 
-    const alerts = await this.zabbix.getHostPCAlerts(hostids, appids, triggerids, options);
+    const alerts = await this.zabbix.getHostPCAlerts(hostids, triggerids, options);
     return responseHandler.handleTriggersResponse(alerts, groups, timeRange, target);
   }
 
@@ -648,7 +645,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       getProblemsPromise = this.zabbix.getProblemsHistory(
         target.group.filter,
         target.host.filter,
-        target.application.filter,
         target.proxy.filter,
         problemsOptions
       );
@@ -656,7 +652,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       getProblemsPromise = this.zabbix.getProblems(
         target.group.filter,
         target.host.filter,
-        target.application.filter,
         target.proxy.filter,
         problemsOptions
       );
@@ -775,12 +770,12 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       queryModel = utils.parseLegacyVariableQuery(query);
     }
 
-    for (const prop of ['group', 'host', 'application', 'itemTag', 'item']) {
+    for (const prop of ['group', 'host', 'itemTag', 'item']) {
       queryModel[prop] = utils.replaceTemplateVars(this.templateSrv, queryModel[prop], options?.scopedVars ?? {});
     }
 
     queryModel = queryModel as VariableQuery;
-    const { group, application, item } = queryModel;
+    const { group, item } = queryModel;
 
     const evaltype = queryModel.evaltype;
     const scopedVars = options?.scopedVars ?? {};
@@ -806,13 +801,14 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         resultPromise = this.zabbix.getHosts(group, host, hostTags, evaltype);
         break;
       case VariableQueryTypes.Application:
-        resultPromise = this.zabbix.getApps(group, host, application, hostTags, evaltype);
+        // Applications were removed in Zabbix 5.4; saved variables of this type resolve to nothing.
+        resultPromise = Promise.resolve([]);
         break;
       case VariableQueryTypes.ItemTag:
         resultPromise = this.zabbix.getItemTags(group, host, queryModel.itemTag, hostTags, evaltype);
         break;
       case VariableQueryTypes.Item:
-        resultPromise = this.zabbix.getItems(group, host, application, queryModel.itemTag, item, {
+        resultPromise = this.zabbix.getItems(group, host, queryModel.itemTag, item, {
           showDisabledItems: queryModel.showDisabledItems,
           hostTags,
           evaltype,
@@ -823,7 +819,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         break;
       case VariableQueryTypes.ItemValues:
         const range = options?.range;
-        resultPromise = this.zabbix.getItemValues(group, host, application, item, {
+        resultPromise = this.zabbix.getItemValues(group, host, item, {
           range,
           hostTags,
           evaltype,
@@ -846,7 +842,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return (
       templateSrv.variableExists(target.group?.filter) ||
       templateSrv.variableExists(target.host?.filter) ||
-      templateSrv.variableExists(target.application?.filter) ||
       templateSrv.variableExists(target.itemTag?.filter) ||
       templateSrv.variableExists(target.item?.filter) ||
       templateSrv.variableExists(target.macro?.filter) ||
@@ -894,43 +889,40 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
     const groupFilter = annotation.group.filter;
     const hostFilter = annotation.host.filter;
-    const appFilter = annotation.application.filter;
     const proxyFilter = undefined;
 
-    return this.zabbix
-      .getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter, problemsOptions)
-      .then((problems) => {
-        // Filter by problem name — matched on `name`, the same field the server-side
-        // `search` narrowing filters on (see problemsHandler.filterTriggersPre).
-        const problemName = annotation.trigger.filter;
-        if (problemName) {
-          problems = _.filter(problems, (p) => utils.matchesProblemName(p.name ?? '', problemName));
-        }
+    return this.zabbix.getProblemsHistory(groupFilter, hostFilter, proxyFilter, problemsOptions).then((problems) => {
+      // Filter by problem name — matched on `name`, the same field the server-side
+      // `search` narrowing filters on (see problemsHandler.filterTriggersPre).
+      const problemName = annotation.trigger.filter;
+      if (problemName) {
+        problems = _.filter(problems, (p) => utils.matchesProblemName(p.name ?? '', problemName));
+      }
 
-        // Hide acknowledged events if option enabled
-        if (annotation.hideAcknowledged) {
-          problems = _.filter(problems, (p) => {
-            return !p.acknowledges?.length;
-          });
-        }
-
-        return _.map(problems, (p) => {
-          const formattedAcknowledges = utils.formatAcknowledges(p.acknowledges);
-
-          let annotationTags: string[] = [];
-          if (annotation.showHostname) {
-            annotationTags = _.map(p.hosts, 'name');
-          }
-
-          return {
-            title: p.value === '1' ? 'Problem' : 'OK',
-            time: p.timestamp * 1000,
-            annotation: annotation,
-            text: p.name + formattedAcknowledges,
-            tags: annotationTags,
-          };
+      // Hide acknowledged events if option enabled
+      if (annotation.hideAcknowledged) {
+        problems = _.filter(problems, (p) => {
+          return !p.acknowledges?.length;
         });
+      }
+
+      return _.map(problems, (p) => {
+        const formattedAcknowledges = utils.formatAcknowledges(p.acknowledges);
+
+        let annotationTags: string[] = [];
+        if (annotation.showHostname) {
+          annotationTags = _.map(p.hosts, 'name');
+        }
+
+        return {
+          title: p.value === '1' ? 'Problem' : 'OK',
+          time: p.timestamp * 1000,
+          annotation: annotation,
+          text: p.name + formattedAcknowledges,
+          tags: annotationTags,
+        };
       });
+    });
   }
 
   isUseTrends(timeRange, target: ZabbixMetricsQuery) {
@@ -1103,10 +1095,6 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         host: {
           ...query.host,
           filter: utils.replaceTemplateVars(this.templateSrv, query.host?.filter, scopedVars),
-        },
-        application: {
-          ...query.application,
-          filter: utils.replaceTemplateVars(this.templateSrv, query.application?.filter, scopedVars),
         },
         proxy: {
           ...query.proxy,

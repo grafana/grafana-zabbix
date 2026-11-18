@@ -80,7 +80,6 @@ describe('ZabbixVariableQueryEditor', () => {
         getAllHosts: jest
           .fn()
           .mockResolvedValue([{ hostid: '1', name: 'db-1', tags: [{ tag: 'class', value: 'db' }] }]),
-        isZabbix54OrHigherSync: () => true,
       },
     };
 

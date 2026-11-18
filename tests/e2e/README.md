@@ -69,7 +69,7 @@ ZABBIX_VERSION=7.0 docker compose up -d --wait && npm run e2e
 E2E tests run in CI via the shared Plugins-CI workflow ([`.github/workflows/push.yml`](../../.github/workflows/push.yml)),
 which brings up `docker-compose.yml` and runs `tests/e2e` against it. Coverage across
 multiple Zabbix versions is provided by the per-version `devenv/` stacks and the
-`compatibility-*` Go integration workflows.
+Go `integration` workflow.
 
 ## Fixtures must not contain real secrets
 
