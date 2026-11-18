@@ -3,7 +3,7 @@ import { cx } from '@emotion/css';
 import _ from 'lodash';
 // eslint-disable-next-line
 import moment from 'moment';
-import { isNewProblem, formatLastChange } from '../../utils';
+import { isNewProblem, formatLastChange, getAckModalActionProps } from '../../utils';
 import { ProblemsPanelOptions, TriggerSeverity } from '../../types';
 import { AckProblemData, AckModal } from '../AckModal';
 import { EventTag } from '../EventTag';
@@ -208,7 +208,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
                     problem={problem}
                     onClick={() => {
                       showModal(AckModal, {
-                        canClose: problem.manual_close === '1',
+                        ...getAckModalActionProps(problem),
                         severity: problemSeverity,
                         onSubmit: this.ackProblem,
                         onDismiss: hideModal,

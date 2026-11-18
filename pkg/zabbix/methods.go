@@ -89,9 +89,11 @@ func (ds *Zabbix) GetItems(
 	itemFilter string,
 	itemType string,
 	showDisabled bool,
+	hostTagFilters []HostTagFilter,
+	evalType string,
 ) ([]*Item, error) {
 	var allItems []*Item
-	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
+	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter, hostTagFilters, evalType)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +108,7 @@ func (ds *Zabbix) GetItems(
 
 	if isRegex(itemTagFilter) {
 		ds.logger.Debug("Processing regex item tag filter", "filterPattern", itemTagFilter, "hostCount", len(hostids))
-		tags, err := ds.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter)
+		tags, err := ds.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter, hostTagFilters, evalType)
 		if err != nil {
 			return nil, err
 		}
@@ -157,10 +159,13 @@ func filterItemsByQuery(items []*Item, filter string) ([]*Item, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilter string, tagFilter string) ([]Tag, error) {
-	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter)
+func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilter string, tagFilter string, hostTagFilters []HostTagFilter, evalType string) ([]Tag, error) {
+	hosts, err := ds.GetHosts(ctx, groupFilter, hostFilter, hostTagFilters, evalType)
 	if err != nil {
 		return nil, err
+	}
+	if len(hosts) == 0 {
+		return []Tag{}, nil
 	}
 	hostids := make([]string, 0)
 	for _, host := range hosts {
@@ -217,7 +222,7 @@ func filterTags(items []Tag, filter string) ([]Tag, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetHosts(ctx context.Context, groupFilter string, hostFilter string) ([]Host, error) {
+func (ds *Zabbix) GetHosts(ctx context.Context, groupFilter string, hostFilter string, hostTagFilters []HostTagFilter, evalType string) ([]Host, error) {
 	groups, err := ds.GetGroups(ctx, groupFilter)
 	if err != nil {
 		return nil, err
@@ -226,7 +231,7 @@ func (ds *Zabbix) GetHosts(ctx context.Context, groupFilter string, hostFilter s
 	for _, group := range groups {
 		groupids = append(groupids, group.ID)
 	}
-	allHosts, err := ds.GetAllHosts(ctx, groupids)
+	allHosts, err := ds.GetAllHosts(ctx, groupids, hostTagFilters, evalType)
 	if err != nil {
 		return nil, err
 	}
@@ -380,11 +385,38 @@ func (ds *Zabbix) GetItemsByIDs(ctx context.Context, itemids []string) ([]*Item,
 	return items, err
 }
 
-func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string) ([]Host, error) {
+func (ds *Zabbix) GetAllHosts(ctx context.Context, groupids []string, hostTagFilters []HostTagFilter, evalType string) ([]Host, error) {
 	params := ZabbixAPIParams{
 		"output":    []string{"hostid", "name", "host"},
 		"sortfield": "name",
 		"groupids":  groupids,
+	}
+
+	activeFilters := make([]map[string]interface{}, 0)
+	for _, f := range hostTagFilters {
+		if f.Tag != "" {
+			activeFilters = append(activeFilters, map[string]interface{}{
+				"tag":      f.Tag,
+				"value":    f.Value,
+				"operator": f.Operator.Int(),
+			})
+		}
+	}
+
+	if len(activeFilters) > 0 {
+		eval := 0
+		if evalType == "2" {
+			eval = 2
+		}
+		params["evaltype"] = eval
+		params["tags"] = activeFilters
+
+		version, err := ds.GetVersion(ctx)
+		if err != nil {
+			ds.logger.Warn("Failed to detect Zabbix version for inheritedTags", "error", err)
+		} else if version >= 50 {
+			params["inheritedTags"] = true
+		}
 	}
 
 	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "host.get", Params: params})

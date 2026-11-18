@@ -51,9 +51,12 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	itemFilter := query.Item.Filter
 	showDisabled := query.Options.ShowDisabledItems
 
-	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, itemTagFilter, itemFilter, "num", showDisabled)
+	items, err := ds.zabbix.GetItems(ctx, groupFilter, hostFilter, itemTagFilter, itemFilter, "num", showDisabled, query.HostTags, string(query.EvalType))
 	if err != nil {
 		return nil, err
+	}
+	if len(items) == 0 {
+		return []*data.Frame{}, nil
 	}
 
 	frames, err := ds.queryNumericDataForItems(ctx, query, items)

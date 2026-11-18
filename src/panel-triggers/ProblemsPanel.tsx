@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import _ from 'lodash';
-import { dateMath, PanelProps, OrgRole } from '@grafana/data';
+import { dateMath, LoadingState, PanelProps, OrgRole } from '@grafana/data';
 import { DataSourceRef } from '@grafana/schema';
 import { config } from '@grafana/runtime';
 import { getDataSourceInstance, getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
@@ -19,6 +19,7 @@ import { APIExecuteScriptResponse } from '../datasource/zabbix/connectors/zabbix
 import { ProblemList } from './components/Problems/Problems';
 import { AckProblemData } from './components/AckModal';
 import AlertList from './components/AlertList/AlertList';
+import { useSoundAlerts } from './hooks/useSoundAlerts';
 
 const PROBLEM_EVENTS_LIMIT = 100;
 const NO_SEVERITY_OVERRIDES: CollectedSeverityOverrides = { overrides: [], datasourceNames: [] };
@@ -272,7 +273,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
-    const { message, action, severity } = data;
+    const { message, action, severity, suppress_until } = data;
     const eventid = problem.eventid;
     const grafana_user = config.bootData.user.name;
     const ack_message = grafana_user + ' (Grafana): ' + message;
@@ -285,7 +286,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       return { message: 'You have no permissions to acknowledge events.' };
     }
     if (eventid) {
-      return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity);
+      return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity, suppress_until);
     } else {
       return { message: 'Trigger has no events. Nothing to acknowledge.' };
     }
@@ -308,7 +309,6 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const renderList = () => {
-    const problems = prepareProblems();
     const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
     const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
@@ -325,7 +325,6 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const renderTable = () => {
-    const problems = prepareProblems();
     const fontSize = parseInt(options.fontSize.slice(0, options.fontSize.length - 1), 10);
     const fontSizeProp = fontSize && fontSize !== 100 ? fontSize : undefined;
 
@@ -347,6 +346,16 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       />
     );
   };
+
+  // Keyed on the data and the options that shape the list, so the array
+  // identity is stable across unrelated re-renders (resize, column changes)
+  // and the sound alerts effect fires only when the problems can have changed.
+  const problems = useMemo(
+    () => prepareProblems(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prepareProblems reads only these inputs
+    [data, showTriggers, sortProblems, triggerSeverity, options.allowDangerousHTML]
+  );
+  useSoundAlerts(problems, options, data.state === LoadingState.Done);
 
   return (
     <>

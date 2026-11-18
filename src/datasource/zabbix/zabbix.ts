@@ -16,6 +16,7 @@ import { ProblemDTO, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 import { ZabbixDSOptions } from '../types/config';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import * as utils from '../utils';
+import { MODE_METRICS } from '../constants';
 import { getUIDFromID } from '../migrations';
 import { CLICKHOUSE_DS_ID, ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
@@ -137,7 +138,13 @@ export class Zabbix implements ZabbixConnector {
   getHostPCAlerts: (hostids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
-  acknowledgeEvent: (eventid, message) => Promise<any>;
+  acknowledgeEvent: (
+    eventid: string,
+    message: string,
+    action?: number,
+    severity?: number,
+    suppress_until?: number
+  ) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
@@ -290,10 +297,27 @@ export class Zabbix implements ZabbixConnector {
     return version ? semver.gte(version, '6.4.0') : false;
   }
 
-  getItemsFromTarget(target, options) {
+  // Unacknowledge action was introduced in Zabbix 5.0
+  supportsUnacknowledge() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '5.0.0') : false;
+  }
+
+  // Manual problem suppression was introduced in Zabbix 6.2
+  supportsProblemSuppression() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '6.2.0') : false;
+  }
+
+  getItemsFromTarget(target, options: any = {}) {
     const parts = ['group', 'host', 'itemTag', 'item'];
-    const filters = _.map(parts, (p) => target[p].filter);
-    return this.getItems(...filters, options);
+    const filters = _.map(parts, (p) => target[p]?.filter);
+    const isMetrics = isMetricsQuery(target);
+    return this.getItems(...filters, {
+      ...options,
+      hostTags: options.hostTags ?? (isMetrics ? target.hostTags : undefined),
+      evaltype: options.evaltype ?? (isMetrics ? target.evaltype : undefined),
+    });
   }
 
   getMacrosFromTarget(target) {
@@ -303,14 +327,25 @@ export class Zabbix implements ZabbixConnector {
   }
 
   getHostsFromTarget(target): Promise<ZBXHost[]> {
-    return this.getHosts(target.group.filter, target.host.filter);
+    const isMetrics = isMetricsQuery(target);
+    return this.getHosts(
+      target.group?.filter,
+      target.host?.filter,
+      isMetrics ? target.hostTags : undefined,
+      isMetrics ? target.evaltype : undefined
+    );
   }
 
-  async getHostsFromICTarget(target, options): Promise<[ZBXHost[], ZBXItem[]]> {
+  async getHostsFromICTarget(target, options: any = {}): Promise<[ZBXHost[], ZBXItem[]]> {
     const parts = ['group', 'host', 'itemTag', 'item'];
-    const filters = parts.map((p) => target[p].filter);
+    const filters = parts.map((p) => target[p]?.filter);
     const hosts = await this.getHostsFromTarget(target);
-    const items = await this.getItems(...filters, options);
+    const isMetrics = isMetricsQuery(target);
+    const items = await this.getItems(...filters, {
+      ...options,
+      hostTags: options.hostTags ?? (isMetrics ? target.hostTags : undefined),
+      evaltype: options.evaltype ?? (isMetrics ? target.evaltype : undefined),
+    });
     return [hosts, items];
   }
 
@@ -394,6 +429,9 @@ export class Zabbix implements ZabbixConnector {
 
   async getAllItems(groupFilter: string, hostFilter: string, itemTagFilter: string, options: any = {}): Promise<any[]> {
     const hosts = await this.getHosts(groupFilter, hostFilter, options.hostTags, options.evaltype);
+    if (!hosts || hosts.length === 0) {
+      return [];
+    }
     const hostids = _.map(hosts, 'hostid');
 
     // Support regexp in tags
@@ -773,6 +811,10 @@ export class Zabbix implements ZabbixConnector {
  * @param  name visible name
  * @return      array with finded element or empty array
  */
+function isMetricsQuery(target: any): boolean {
+  return !target?.queryType || target.queryType === MODE_METRICS;
+}
+
 // Picks the zabbixAPI.getItems() options, leaving out unset ones so the request cache key stays stable
 function getItemsAPIOptions(options: any = {}): GetItemsOptions {
   return _.pickBy(

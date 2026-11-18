@@ -58,7 +58,7 @@ npm run e2e
 
 End-to-end tests live in [`tests/e2e`](./tests/e2e) and run against the real Zabbix
 backend with the seeded SQL fixtures. CI runs them via the shared Plugins-CI workflow
-(`.github/workflows/push.yaml`), which brings up `docker-compose.yml` and runs the
+(`.github/workflows/push.yml`), which brings up `docker-compose.yml` and runs the
 suite against it. Coverage across Zabbix versions is provided by the Go
 `integration` workflow. See [`tests/e2e/README.md`](./tests/e2e/README.md) for details.
 
@@ -90,10 +90,29 @@ DEVELOPMENT=true docker compose up --build -d
    - Set breakpoints in your Go code
    - The debugger will connect to delve running in the Docker container
 
-## Submitting PR
+## Release
 
-If you are creating a PR, ensure to run `npx changeset` from your branch. Provide the details accordingly. It will create `*.md` file inside `./.changeset` folder. Later during the release, based on these changesets, package version will be bumped and changelog will be generated.
+Releases are automated with [release-please](https://github.com/googleapis/release-please). The version number and the changelog both come from commit messages, so there is nothing to edit by hand.
 
-## Releasing & Bumping version
+### What you do
 
-To create a new release, execute `npx changeset version`. This will update the Changelog and bump the version in `package.json` file. Commit those changes. Run the `Plugins - CD` GitHub Action to publish the new release.
+Title your pull request as a [Conventional Commit](https://www.conventionalcommits.org/). The `PR Title` check enforces this, and because the repository squash-merges, the PR title becomes the commit subject that release-please reads.
+
+| Prefix                                                             | Effect on the next release               |
+| ------------------------------------------------------------------ | ---------------------------------------- |
+| `fix:`                                                             | patch version                            |
+| `feat:`                                                            | minor version                            |
+| `feat!:`, or a `BREAKING CHANGE:` footer                           | major version                            |
+| `chore:`                                                           | no release, hidden from the changelog    |
+| `docs:`, `test:`, `build:`, `ci:`, `refactor:`, `perf:`, `revert:` | no version bump, listed in the changelog |
+
+### What happens next
+
+1. release-please opens a `chore(main): release X.Y.Z` pull request and keeps it up to date as more commits land.
+2. Merging that pull request creates the tag and the GitHub release, and publishes the plugin to the prod catalog.
+
+### Do not
+
+Do not edit the version in `package.json`, and do not write `CHANGELOG.md` entries by hand. release-please owns both files, and a manual edit puts `package.json` out of step with `.release-please-manifest.json`, which makes the next release pick a wrong version.
+
+To release a specific version, add a `Release-As: X.Y.Z` footer to a commit rather than editing the version.
