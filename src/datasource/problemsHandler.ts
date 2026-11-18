@@ -77,6 +77,7 @@ export function joinTriggersWithEvents(
         acknowledges: e.acknowledges,
         tags: e.tags,
         suppressed: e.suppressed,
+        suppression_data: e.suppression_data,
         description: t.description,
         comments: t.comments,
         groups: t.groups,

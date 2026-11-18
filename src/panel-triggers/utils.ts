@@ -34,17 +34,25 @@ export const getNextRefIdChar = (queries: DataQuery[]): string => {
   return nextLetter || 'A';
 };
 
+/**
+ * Whether a user suppressed the problem manually. `suppressed` alone can't tell:
+ * it is also '1' when a maintenance suppresses the problem, which unsuppress can't end.
+ */
+export function isManuallySuppressed(problem: ProblemDTO): boolean {
+  return (problem.suppression_data || []).some((s) => !!s.userid && s.userid !== '0');
+}
+
 /** Compute AckModal action visibility from the problem state and the server's action capabilities. */
 export function getAckModalActionProps(problem: ProblemDTO) {
   const capabilities = problem.actionCapabilities || {};
   const isAcknowledged = problem.acknowledged === '1';
-  const isSuppressed = problem.suppressed === '1';
+  const manuallySuppressed = isManuallySuppressed(problem);
 
   return {
     canAck: !isAcknowledged,
     canClose: problem.manual_close === '1',
     canUnack: !!capabilities.unacknowledge && isAcknowledged,
-    canSuppress: !!capabilities.suppress && !isSuppressed,
-    canUnsuppress: !!capabilities.suppress && isSuppressed,
+    canSuppress: !!capabilities.suppress && !manuallySuppressed,
+    canUnsuppress: !!capabilities.suppress && manuallySuppressed,
   };
 }

@@ -107,11 +107,25 @@ describe('ProblemDetails', () => {
     expect(screen.queryByRole('checkbox', { name: 'Unsuppress' })).not.toBeInTheDocument();
   });
 
-  it('offers unsuppress but not suppress for a suppressed problem', async () => {
-    await renderDetails(createProblem({ suppressed: '1' }));
+  it('offers unsuppress but not suppress for a manually suppressed problem', async () => {
+    await renderDetails(
+      createProblem({ suppressed: '1', suppression_data: [{ maintenanceid: '0', userid: '1', suppress_until: '0' }] })
+    );
     await openAckModal();
     expect(screen.getByRole('checkbox', { name: 'Unsuppress' })).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Suppress' })).not.toBeInTheDocument();
+  });
+
+  it('offers suppress but not unsuppress for a problem suppressed only by maintenance', async () => {
+    await renderDetails(
+      createProblem({
+        suppressed: '1',
+        suppression_data: [{ maintenanceid: '5', userid: '0', suppress_until: '1800000000' }],
+      })
+    );
+    await openAckModal();
+    expect(screen.getByRole('checkbox', { name: 'Suppress' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Unsuppress' })).not.toBeInTheDocument();
   });
 
   it('hides version-gated actions when the server does not support them', async () => {

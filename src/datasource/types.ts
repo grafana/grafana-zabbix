@@ -133,7 +133,7 @@ export interface ProblemDTO {
   correlation_mode?: string;
   correlation_tag?: string;
   suppressed?: string;
-  suppression_data?: any[];
+  suppression_data?: ZBXSuppressionData[];
   state?: string;
   maintenance?: boolean;
   manual_close?: string;
@@ -174,7 +174,7 @@ export interface ZBXProblem {
   showAckButton?: boolean;
   source?: string;
   suppressed?: string;
-  suppression_data?: any[];
+  suppression_data?: ZBXSuppressionData[];
   tags?: ZBXTag[];
   userid?: string;
 }
@@ -279,6 +279,17 @@ export interface ZBXEvent {
   acknowledges?: ZBXAcknowledge[];
   tags?: ZBXTag[];
   suppressed?: string;
+  suppression_data?: ZBXSuppressionData[];
+}
+
+/**
+ * One suppression of a problem: by a maintenance (maintenanceid set, userid '0')
+ * or manually by a user (userid set, Zabbix 6.2+).
+ */
+export interface ZBXSuppressionData {
+  maintenanceid?: string;
+  userid?: string;
+  suppress_until?: string;
 }
 
 export interface ZBXTag {

@@ -339,6 +339,28 @@ describe('Zabbix API connector', () => {
   });
 
   describe('getEventsHistory', () => {
+    it('selects the suppressing userid when version is 6.2 or greater', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.2.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.selectSuppressionData).toEqual(['maintenanceid', 'userid', 'suppress_until']);
+    });
+
+    it('does not select userid before 6.2, where suppression data has no such field', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '6.0.0';
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve([]));
+
+      await zabbixAPIConnector.getEventsHistory(['21'], ['31'], ['41'], {});
+
+      const [, params] = (zabbixAPIConnector.request as jest.Mock).mock.calls.at(-1)!;
+      expect(params.selectSuppressionData).toEqual(['maintenanceid', 'suppress_until']);
+    });
+
     it('sends symptom when version is 6.4 or greater', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
       zabbixAPIConnector.version = '6.4.0';

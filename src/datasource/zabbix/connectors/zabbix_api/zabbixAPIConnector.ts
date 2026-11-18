@@ -838,7 +838,10 @@ export class ZabbixAPIConnector {
       sortorder: 'DESC',
       selectTags: 'extend',
       [getParamsKeyByVersion('selectAcknowledges', this.version, 'event.get')]: 'extend',
-      selectSuppressionData: ['maintenanceid', 'suppress_until'],
+      // userid (who suppressed the problem manually) exists since Zabbix 6.2
+      selectSuppressionData: this.supportsProblemSuppression()
+        ? ['maintenanceid', 'userid', 'suppress_until']
+        : ['maintenanceid', 'suppress_until'],
       groupids,
       hostids,
       applicationids,
