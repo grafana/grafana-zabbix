@@ -163,6 +163,12 @@ Zabbix 8.0 and later can use ClickHouse as the history storage backend. To query
 
 Zabbix stores only history data in ClickHouse -- trends are not calculated or stored. The plugin therefore serves all queries, including those over wide time ranges that would normally use trends, from the history tables. ClickHouse aggregates this data efficiently, but make sure the ClickHouse tables' TTL retains data long enough to cover the time ranges you want to query.
 
+With a ClickHouse Direct DB Connection, [Traces queries](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/#traces) also read from ClickHouse: the plugin queries the `otel_traces` table that the Zabbix APM collector writes to. The table must be in the default database of the ClickHouse data source.
+
+{{< admonition type="caution" >}}
+Traces read directly from ClickHouse are not restricted by the APM filters of Zabbix user groups. Every user who can query the Zabbix data source sees all traces that the ClickHouse data source user can read.
+{{< /admonition >}}
+
 ### Database security
 
 The plugin needs only read access to the `history`, `history_uint`, `trends`, and `trends_uint` tables. To minimize data exposure, grant read access to only those tables. All queries run from the Grafana server, so you can also restrict connections to the Grafana host.

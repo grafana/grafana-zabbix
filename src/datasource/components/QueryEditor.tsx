@@ -10,6 +10,7 @@ import { MetricsQueryEditor } from './QueryEditor/MetricsQueryEditor';
 import { QueryFunctionsEditor } from './QueryEditor/QueryFunctionsEditor';
 import { QueryOptionsEditor } from './QueryEditor/QueryOptionsEditor';
 import { TextMetricsQueryEditor } from './QueryEditor/TextMetricsQueryEditor';
+import { TracesQueryEditor } from './QueryEditor/TracesQueryEditor';
 import { ProblemsQueryEditor } from './QueryEditor/ProblemsQueryEditor';
 import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
@@ -29,6 +30,11 @@ const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
     value: c.MODE_TEXT,
     label: 'Text',
     description: 'Query text data',
+  },
+  {
+    value: c.MODE_TRACES,
+    label: 'Traces',
+    description: 'Query APM traces (Zabbix 8.0+)',
   },
   {
     value: c.MODE_ITSERVICE,
@@ -95,6 +101,16 @@ function getSLAQueryDefaults(): Partial<ZabbixMetricsQuery> {
   };
 }
 
+function getTracesQueryDefaults(): Partial<ZabbixMetricsQuery> {
+  return {
+    tracesQueryMode: c.TRACES_MODE_SEARCH,
+    traceFilter: {},
+    options: {
+      limit: c.DEFAULT_ZABBIX_TRACES_LIMIT,
+    },
+  };
+}
+
 function getProblemsQueryDefaults(): Partial<ZabbixMetricsQuery> {
   return {
     showProblems: ShowProblemTypes.Problems,
@@ -137,6 +153,12 @@ export const QueryEditor = ({
   }
   if (queryType === c.MODE_ITSERVICE) {
     query = { ...getSLAQueryDefaults(), ...query };
+  }
+  if (queryType === c.MODE_TRACES) {
+    const defaults = getTracesQueryDefaults();
+    query = { ...defaults, ...query };
+    query.options = { ...defaults.options, ...query.options };
+    query.options.limit = query.options.limit ?? c.DEFAULT_ZABBIX_TRACES_LIMIT;
   }
 
   // Migrate query on load
@@ -193,6 +215,10 @@ export const QueryEditor = ({
     );
   };
 
+  const renderTracesEditor = () => {
+    return <TracesQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />;
+  };
+
   const renderITServicesEditor = () => {
     return (
       <>
@@ -231,6 +257,7 @@ export const QueryEditor = ({
       {queryType === c.MODE_METRICS && renderMetricsEditor()}
       {queryType === c.MODE_ITEMID && renderItemIdsEditor()}
       {queryType === c.MODE_TEXT && renderTextMetricsEditor()}
+      {queryType === c.MODE_TRACES && renderTracesEditor()}
       {queryType === c.MODE_ITSERVICE && renderITServicesEditor()}
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}

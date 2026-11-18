@@ -443,6 +443,173 @@ function handleText(history, items, target, addHostName = true) {
   return convertHistory(history, items, addHostName, convertTextCallback);
 }
 
+// The Zabbix PHP API serializes empty attribute maps as [] instead of {}
+function normalizeApmAttributes(attributes: any): Record<string, string> {
+  if (!attributes || Array.isArray(attributes)) {
+    return {};
+  }
+  return attributes;
+}
+
+function apmTraceLink(linkDatasource: { uid: string; name: string }) {
+  return {
+    title: 'View trace',
+    url: '',
+    internal: {
+      datasourceUid: linkDatasource.uid,
+      datasourceName: linkDatasource.name,
+      query: {
+        queryType: c.MODE_TRACES,
+        tracesQueryMode: c.TRACES_MODE_TRACE_ID,
+        traceFilter: { traceId: '${__value.raw}' },
+      },
+    },
+  };
+}
+
+function apmAttributesToKeyValues(attributes: any): Array<{ key: string; value: any }> {
+  return Object.entries(normalizeApmAttributes(attributes)).map(([key, value]) => ({ key, value }));
+}
+
+// OTEL status code as stored by Zabbix ("Unset" / "Ok" / "Error") to the OTLP enum Grafana expects
+function apmStatusCode(status: string): number {
+  switch ((status || '').replace(/^STATUS_CODE_/i, '').toLowerCase()) {
+    case 'ok':
+      return 1;
+    case 'error':
+      return 2;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Convert Zabbix 8.0 APM traces (apmtrace.get) to a table frame, one row per
+ * trace. The trace ID links to a Trace ID query on the same data source, so the
+ * trace opens in the Explore trace view.
+ */
+export function handleAPMTraceSearch(
+  traces: any[],
+  target: ZabbixMetricsQuery,
+  linkDatasource?: { uid: string; name: string }
+): DataFrame {
+  const rows = traces || [];
+
+  const traceIdField: any = {
+    name: 'Trace ID',
+    type: FieldType.string,
+    values: rows.map((t) => t.traceid),
+    // Wide enough for a full 32-character trace ID
+    config: { custom: { width: 300 } },
+  };
+  if (linkDatasource?.uid) {
+    traceIdField.config.links = [apmTraceLink(linkDatasource)];
+  }
+
+  const frame = createDataFrame({
+    refId: target.refId,
+    name: 'Traces',
+    fields: [
+      traceIdField,
+      // Nanosecond timestamps are only safe at millisecond precision in JS numbers
+      {
+        name: 'Start time',
+        type: FieldType.time,
+        values: rows.map((t) => Math.floor(Number(t.timestamp) / 1000000)),
+        config: { custom: { width: 220 } },
+      },
+      { name: 'Service', type: FieldType.string, values: rows.map((t) => t.service_name ?? '') },
+      {
+        name: 'Name',
+        type: FieldType.string,
+        // Without a root span Zabbix reports the earliest span of the trace instead
+        values: rows.map((t) =>
+          Number(t.has_root_span) === 0 ? `<root span not yet received> ${t.span_name ?? ''}` : (t.span_name ?? '')
+        ),
+      },
+      { name: 'Duration', type: FieldType.number, values: rows.map((t) => Number(t.duration)), config: { unit: 'ns' } },
+      { name: 'Spans', type: FieldType.number, values: rows.map((t) => Number(t.span_count)) },
+      { name: 'Errors', type: FieldType.number, values: rows.map((t) => Number(t.error_count)) },
+    ],
+  });
+
+  frame.meta = {
+    preferredVisualisationType: 'table',
+    custom: { zabbixTraces: true, limit: target.options?.limit },
+  };
+
+  return frame;
+}
+
+/**
+ * Convert the spans of a Zabbix 8.0 APM trace (apmspan.get) to a Grafana trace
+ * frame (see TraceSpanRow in @grafana/data). Zabbix reports timestamps and
+ * durations in nanoseconds, Grafana expects milliseconds.
+ */
+export function handleAPMTraceSpans(spans: any[], target: ZabbixMetricsQuery): DataFrame {
+  const rows = _.sortBy(spans || [], (s) => Number(s.timestamp));
+  const nsToMs = (ns: any) => Number(ns) / 1000000;
+
+  const frame = createDataFrame({
+    refId: target.refId,
+    name: 'Trace',
+    fields: [
+      { name: 'traceID', type: FieldType.string, values: rows.map((s) => s.traceid) },
+      { name: 'spanID', type: FieldType.string, values: rows.map((s) => s.spanid) },
+      { name: 'parentSpanID', type: FieldType.string, values: rows.map((s) => s.parent_spanid || undefined) },
+      { name: 'operationName', type: FieldType.string, values: rows.map((s) => s.span_name ?? '') },
+      { name: 'serviceName', type: FieldType.string, values: rows.map((s) => s.service_name ?? '') },
+      {
+        name: 'kind',
+        type: FieldType.string,
+        values: rows.map((s) => (s.span_kind || '').replace(/^SPAN_KIND_/i, '').toLowerCase()),
+      },
+      { name: 'statusCode', type: FieldType.number, values: rows.map((s) => apmStatusCode(s.status_code)) },
+      { name: 'statusMessage', type: FieldType.string, values: rows.map((s) => s.status_message ?? '') },
+      { name: 'instrumentationLibraryName', type: FieldType.string, values: rows.map((s) => s.scope_name ?? '') },
+      { name: 'instrumentationLibraryVersion', type: FieldType.string, values: rows.map((s) => s.scope_version ?? '') },
+      { name: 'traceState', type: FieldType.string, values: rows.map((s) => s.trace_state ?? '') },
+      {
+        name: 'serviceTags',
+        type: FieldType.other,
+        values: rows.map((s) => apmAttributesToKeyValues(s.resource_attributes)),
+      },
+      { name: 'startTime', type: FieldType.number, values: rows.map((s) => nsToMs(s.timestamp)) },
+      { name: 'duration', type: FieldType.number, values: rows.map((s) => nsToMs(s.duration)) },
+      {
+        name: 'logs',
+        type: FieldType.other,
+        values: rows.map((s) =>
+          (s.events || []).map((e) => ({
+            timestamp: nsToMs(e.timestamp),
+            name: e.name,
+            fields: apmAttributesToKeyValues(e.attributes),
+          }))
+        ),
+      },
+      {
+        name: 'references',
+        type: FieldType.other,
+        values: rows.map((s) =>
+          (s.links || []).map((l) => ({
+            traceID: l.traceid,
+            spanID: l.spanid,
+            tags: apmAttributesToKeyValues(l.attributes),
+          }))
+        ),
+      },
+      { name: 'tags', type: FieldType.other, values: rows.map((s) => apmAttributesToKeyValues(s.span_attributes)) },
+    ],
+  });
+
+  frame.meta = {
+    preferredVisualisationType: 'trace',
+    custom: { zabbixTraces: true },
+  };
+
+  return frame;
+}
+
 function handleHistoryAsTable(history, items, target) {
   const hosts: string[] = [];
   const itemNames: string[] = [];
@@ -797,6 +964,8 @@ export default {
   convertHistory,
   handleTrends,
   handleText,
+  handleAPMTraceSearch,
+  handleAPMTraceSpans,
   handleMacro,
   handleHistoryAsTable,
   handleSLAResponse,
