@@ -7,6 +7,7 @@ import (
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/settings"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var emptyParams = map[string]interface{}{}
@@ -224,4 +225,34 @@ func TestItemTagCache(t *testing.T) {
 		assert.Equal(t, "1", item.ID)
 		assert.Equal(t, "test1", item.Name)
 	}
+}
+
+func TestGetItemsWithLastValue_WithHostTags(t *testing.T) {
+	var hostGetParams map[string]interface{}
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		switch payload.Method {
+		case "apiinfo.version":
+			return `{"result":"7.0.0"}`
+		case "hostgroup.get":
+			return `{"result":[{"groupid":"1","name":"Servers"}]}`
+		case "host.get":
+			hostGetParams = payload.Params
+			return `{"result":[{"hostid":"10","name":"web01"}]}`
+		case "item.get":
+			return `{"result":[{"itemid":"100","name":"CPU utilization","lastvalue":"5","lastclock":"1700000000"}]}`
+		}
+		return `{"result":null}`
+	})
+
+	hostTags := []HostTagFilter{{Tag: "env", Value: "prod", Operator: "1"}}
+	items, err := client.GetItemsWithLastValue(context.Background(), "Servers", "/.*/", "", "", "/CPU/", "num", hostTags, "2")
+	require.NoError(t, err)
+	require.Len(t, items, 1)
+
+	require.NotNil(t, hostGetParams, "host.get must be called")
+	assert.EqualValues(t, 2, hostGetParams["evaltype"])
+	tags, ok := hostGetParams["tags"].([]interface{})
+	require.True(t, ok, "host tag filters must be sent to host.get")
+	require.Len(t, tags, 1)
+	assert.Equal(t, "env", tags[0].(map[string]interface{})["tag"])
 }

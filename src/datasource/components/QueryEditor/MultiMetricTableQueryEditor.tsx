@@ -159,10 +159,15 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       interpolatedQuery.host.filter,
       null,
       null,
-      { itemtype: 'num' }
+      { itemtype: 'num', hostTags: interpolatedQuery.hostTags, evaltype: interpolatedQuery.evaltype }
     );
     return fetched || [];
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
+  ]);
 
   // Text/character/log items are fetched separately (different Zabbix value types) and only when
   // some metric column actually targets text values.
@@ -175,10 +180,16 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       interpolatedQuery.host.filter,
       null,
       null,
-      { itemtype: 'text' }
+      { itemtype: 'text', hostTags: interpolatedQuery.hostTags, evaltype: interpolatedQuery.evaltype }
     );
     return fetched || [];
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter, hasTextMetrics]);
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
+    hasTextMetrics,
+  ]);
 
   const buildItemOptions = (list: ZBXItem[] | undefined, prop: 'name' | 'key_') => {
     const opts: Array<ComboboxOption<string>> = (list ?? []).map((item) => ({
@@ -253,11 +264,22 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
 
   useEffect(() => {
     fetchItems();
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
+  ]);
 
   useEffect(() => {
     fetchTextItems();
-  }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter, hasTextMetrics]);
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
+    hasTextMetrics,
+  ]);
 
   const onGroupChange = (value: string) => {
     onChange({
