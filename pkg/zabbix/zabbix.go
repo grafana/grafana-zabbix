@@ -215,10 +215,11 @@ func (ds *Zabbix) requestUncached(ctx context.Context, apiReq *ZabbixAPIRequest)
 	return ds.request(ctx, apiReq.Method, apiReq.Params)
 }
 
-// GetItemsWithLastValue fetches items of the given type ("num" or "text") with their lastvalue populated.
-func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, itemType string) ([]*Item, error) {
+// GetItemsWithLastValue fetches items of the given type ("num" or "text") with their lastvalue populated,
+// on the hosts matching the group/host filters and the optional host tag filters.
+func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFilter, appFilter, itemTagFilter, itemFilter, itemType string, hostTagFilters []HostTagFilter, evalType string) ([]*Item, error) {
 	var allItems []*Item
-	hosts, err := z.GetHosts(ctx, groupFilter, hostFilter)
+	hosts, err := z.GetHosts(ctx, groupFilter, hostFilter, hostTagFilters, evalType)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +233,7 @@ func (z *Zabbix) GetItemsWithLastValue(ctx context.Context, groupFilter, hostFil
 	}
 
 	if isRegex(itemTagFilter) {
-		tags, err := z.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter)
+		tags, err := z.GetItemTags(ctx, groupFilter, hostFilter, itemTagFilter, hostTagFilters, evalType)
 		if err != nil {
 			return nil, err
 		}

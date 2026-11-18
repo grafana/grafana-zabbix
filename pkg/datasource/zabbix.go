@@ -64,13 +64,16 @@ func (ds *ZabbixDatasourceInstance) queryNumericItems(ctx context.Context, query
 	}
 
 	if zabbixVersion >= 54 {
-		items, err = ds.zabbix.GetItems(ctx, groupFilter, hostFilter, itemTagFilter, itemFilter, "num", showDisabled)
+		items, err = ds.zabbix.GetItems(ctx, groupFilter, hostFilter, itemTagFilter, itemFilter, "num", showDisabled, query.HostTags, string(query.EvalType))
 	} else {
-		items, err = ds.zabbix.GetItemsBefore54(ctx, groupFilter, hostFilter, appFilter, itemFilter, "num", showDisabled)
+		items, err = ds.zabbix.GetItemsBefore54(ctx, groupFilter, hostFilter, appFilter, itemFilter, "num", showDisabled, query.HostTags, string(query.EvalType))
 	}
 
 	if err != nil {
 		return nil, err
+	}
+	if len(items) == 0 {
+		return []*data.Frame{}, nil
 	}
 
 	frames, err := ds.queryNumericDataForItems(ctx, query, items)
@@ -281,7 +284,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		if entityPattern.SearchType != "itemName" {
 			entityFetchPattern = "/.*/"
 		}
-		entityItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", entityFetchPattern, "num")
+		entityItems, err := ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", entityFetchPattern, "num", query.HostTags, string(query.EvalType))
 		if err != nil {
 			ds.logger.Error("Error fetching entity items", "error", err)
 			return nil, err
@@ -349,7 +352,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		} else if len(metrics) == 1 && metrics[0].SearchType == "itemName" {
 			pattern = metrics[0].Pattern
 		}
-		return ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", pattern, itemType)
+		return ds.zabbix.GetItemsWithLastValue(ctx, query.Group.Filter, query.Host.Filter, query.Application.Filter, "", pattern, itemType, query.HostTags, string(query.EvalType))
 	}
 
 	numMetrics := []MetricColumnConfig{}
