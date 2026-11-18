@@ -72,6 +72,8 @@ Expand the **Options** section to access additional settings:
 | **Use Zabbix value mapping** | Apply Zabbix value mappings to the returned data. |
 | **Disable data alignment** | Disable automatic alignment of data points to collection intervals. |
 
+Expand the **Problem annotations** section to show, on the panel, the problems of the triggers that use the items the query returns. Refer to [Annotate a panel with its items' problems](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/annotations/#annotate-a-panel-with-its-items-problems).
+
 ### Text
 
 Use Text queries to retrieve text and log data from Zabbix items with text value types (character, log, text).
@@ -102,7 +104,7 @@ Use Services queries to retrieve IT service SLA data from Zabbix.
 | **Property** | The SLA property to return: Status, SLI, Uptime, Downtime, or Error budget. |
 | **Interval** | The reporting interval: No interval, Auto, 1 hour, 12 hours, 24 hours, 1 week, or 1 month. |
 
-This query type shares the same **Options** as Metrics (Trends, Show disabled items, Use Zabbix value mapping, Disable data alignment).
+This query type shares the same **Options** and **Problem annotations** as Metrics.
 
 ### Item ID
 

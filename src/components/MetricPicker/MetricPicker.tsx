@@ -10,10 +10,21 @@ export interface Props {
   options: Array<ComboboxOption<string>>;
   width?: number;
   createCustomValue?: boolean;
+  /** Shows a clear button; clearing reports an empty value. */
+  isClearable?: boolean;
   onChange: (value: string) => void;
 }
 
-export const MetricPicker = ({ value, placeholder, options, isLoading, width, onChange, createCustomValue }: Props) => {
+export const MetricPicker = ({
+  value,
+  placeholder,
+  options,
+  isLoading,
+  width,
+  onChange,
+  createCustomValue,
+  isClearable,
+}: Props) => {
   const ref = useRef<HTMLDivElement>(null);
 
   const onMenuOptionSelect = (option: SelectableValue<string>) => {
@@ -23,15 +34,28 @@ export const MetricPicker = ({ value, placeholder, options, isLoading, width, on
 
   return (
     <div data-testid="role-picker" style={{ position: 'relative' }} ref={ref}>
-      <Combobox<string>
-        createCustomValue={createCustomValue ?? false}
-        width={width}
-        value={value}
-        options={options ?? []}
-        onChange={onMenuOptionSelect}
-        loading={isLoading}
-        placeholder={placeholder}
-      />
+      {isClearable ? (
+        <Combobox<string>
+          createCustomValue={createCustomValue ?? false}
+          width={width}
+          value={value || null}
+          options={options ?? []}
+          onChange={onMenuOptionSelect}
+          loading={isLoading}
+          placeholder={placeholder}
+          isClearable
+        />
+      ) : (
+        <Combobox<string>
+          createCustomValue={createCustomValue ?? false}
+          width={width}
+          value={value}
+          options={options ?? []}
+          onChange={onMenuOptionSelect}
+          loading={isLoading}
+          placeholder={placeholder}
+        />
+      )}
     </div>
   );
 };
