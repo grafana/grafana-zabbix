@@ -273,7 +273,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
   };
 
   const onProblemAck = async (problem: ProblemDTO, data: AckProblemData) => {
-    const { message, action, severity, suppress_until } = data;
+    const { message, action, severity, suppress_until, cause_eventid } = data;
     const eventid = problem.eventid;
     const grafana_user = config.bootData.user.name;
     const ack_message = grafana_user + ' (Grafana): ' + message;
@@ -286,7 +286,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
       return { message: 'You have no permissions to acknowledge events.' };
     }
     if (eventid) {
-      return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity, suppress_until);
+      return ds.zabbix.acknowledgeEvent(eventid, ack_message, action, severity, suppress_until, cause_eventid);
     } else {
       return { message: 'Trigger has no events. Nothing to acknowledge.' };
     }

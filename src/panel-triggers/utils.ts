@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { dateMath } from '@grafana/data';
+import { dateMath, SelectableValue } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 import * as utils from '../datasource/utils';
 import { ProblemDTO } from 'datasource/types';
@@ -42,11 +42,33 @@ export function isManuallySuppressed(problem: ProblemDTO): boolean {
   return (problem.suppression_data || []).some((s) => !!s.userid && s.userid !== '0');
 }
 
+/** A problem is a symptom when it points to a cause event (Zabbix 6.4+). '0' means the problem is a cause. */
+export function isSymptomEvent(problem: ProblemDTO): boolean {
+  return !!problem.cause_eventid && problem.cause_eventid !== '0';
+}
+
+/**
+ * Problems from the panel which can be selected as the cause event when ranking
+ * a problem as symptom: any other problem which is itself a cause.
+ */
+export function getCauseEventOptions(
+  panelProblems: ProblemDTO[] | undefined,
+  problem: ProblemDTO
+): Array<SelectableValue<string>> {
+  return (panelProblems || [])
+    .filter((p) => p.eventid && p.eventid !== problem.eventid && !isSymptomEvent(p))
+    .map((p) => ({
+      value: p.eventid,
+      label: p.host ? `${p.host}: ${p.name || p.description}` : p.name || p.description,
+    }));
+}
+
 /** Compute AckModal action visibility from the problem state and the server's action capabilities. */
-export function getAckModalActionProps(problem: ProblemDTO) {
+export function getAckModalActionProps(problem: ProblemDTO, panelProblems?: ProblemDTO[]) {
   const capabilities = problem.actionCapabilities || {};
   const isAcknowledged = problem.acknowledged === '1';
   const manuallySuppressed = isManuallySuppressed(problem);
+  const isSymptom = isSymptomEvent(problem);
 
   return {
     canAck: !isAcknowledged,
@@ -54,5 +76,8 @@ export function getAckModalActionProps(problem: ProblemDTO) {
     canUnack: !!capabilities.unacknowledge && isAcknowledged,
     canSuppress: !!capabilities.suppress && !manuallySuppressed,
     canUnsuppress: !!capabilities.suppress && manuallySuppressed,
+    canRankAsCause: !!capabilities.rank && isSymptom,
+    canRankAsSymptom: !!capabilities.rank && !isSymptom,
+    causeEvents: getCauseEventOptions(panelProblems, problem),
   };
 }

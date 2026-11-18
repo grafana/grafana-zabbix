@@ -150,7 +150,8 @@ export class Zabbix implements ZabbixConnector {
     message: string,
     action?: number,
     severity?: number,
-    suppress_until?: number
+    suppress_until?: number,
+    cause_eventid?: string
   ) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;

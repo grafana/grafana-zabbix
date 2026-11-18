@@ -1,12 +1,15 @@
 import React from 'react';
 import moment from 'moment/moment';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AckModal, AckProblemData, parseSuppressDuration, SUPPRESS_DATE_FORMAT } from './AckModal';
 import {
   ZBX_ACK_ACTION_ACK,
   ZBX_ACK_ACTION_ADD_MESSAGE,
   ZBX_ACK_ACTION_CHANGE_SEVERITY,
   ZBX_ACK_ACTION_CLOSE,
+  ZBX_ACK_ACTION_RANK_CAUSE,
+  ZBX_ACK_ACTION_RANK_SYMPTOM,
   ZBX_ACK_ACTION_SUPPRESS,
   ZBX_ACK_ACTION_UNACK,
   ZBX_ACK_ACTION_UNSUPPRESS,
@@ -15,6 +18,11 @@ import {
 describe('AckModal', () => {
   const mockOnSubmit = jest.fn<Promise<any>, [AckProblemData]>();
   const mockOnDismiss = jest.fn();
+
+  const causeEvents = [
+    { value: '100', label: 'Host A: Cause problem' },
+    { value: '200', label: 'Host B: Another cause' },
+  ];
 
   const renderModal = (props: any = {}) => {
     return render(<AckModal onSubmit={mockOnSubmit} onDismiss={mockOnDismiss} {...props} />);
@@ -43,6 +51,8 @@ describe('AckModal', () => {
       expect(screen.queryByRole('checkbox', { name: 'Unacknowledge' })).not.toBeInTheDocument();
       expect(screen.queryByRole('checkbox', { name: 'Suppress' })).not.toBeInTheDocument();
       expect(screen.queryByRole('checkbox', { name: 'Unsuppress' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('checkbox', { name: 'Rank as cause' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('checkbox', { name: 'Rank as symptom' })).not.toBeInTheDocument();
       expect(screen.queryByRole('checkbox', { name: 'Close problem' })).not.toBeInTheDocument();
     });
 
@@ -64,6 +74,18 @@ describe('AckModal', () => {
       expect(screen.queryByRole('checkbox', { name: 'Suppress' })).not.toBeInTheDocument();
     });
 
+    it('shows rank actions independently', () => {
+      renderModal({ canRankAsSymptom: true });
+      expect(screen.getByRole('checkbox', { name: 'Rank as symptom' })).toBeInTheDocument();
+      expect(screen.queryByRole('checkbox', { name: 'Rank as cause' })).not.toBeInTheDocument();
+    });
+
+    it('shows rank as cause only for symptom problems', () => {
+      renderModal({ canRankAsCause: true });
+      expect(screen.getByRole('checkbox', { name: 'Rank as cause' })).toBeInTheDocument();
+      expect(screen.queryByRole('checkbox', { name: 'Rank as symptom' })).not.toBeInTheDocument();
+    });
+
     it('shows close problem when problem allows manual close', () => {
       renderModal({ canClose: true });
       expect(screen.getByRole('checkbox', { name: 'Close problem' })).toBeInTheDocument();
@@ -77,6 +99,13 @@ describe('AckModal', () => {
       expect(screen.getByLabelText('For duration')).toBeInTheDocument();
       expect(screen.getByLabelText('Until date')).toBeInTheDocument();
     });
+
+    it('shows the cause event dropdown only when rank as symptom is selected', () => {
+      renderModal({ canRankAsSymptom: true, causeEvents });
+      expect(screen.queryByLabelText('Cause event')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Rank as symptom' }));
+      expect(screen.getByLabelText('Cause event')).toBeInTheDocument();
+    });
   });
 
   describe('validation', () => {
@@ -84,6 +113,14 @@ describe('AckModal', () => {
       renderModal();
       clickUpdate();
       expect(screen.getByText('Enter message text or select an action')).toBeInTheDocument();
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+
+    it('shows an error when ranking as symptom without a cause event selected', () => {
+      renderModal({ canRankAsSymptom: true, causeEvents });
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Rank as symptom' }));
+      clickUpdate();
+      expect(screen.getByText('Select the cause event to rank this problem as symptom')).toBeInTheDocument();
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
@@ -239,6 +276,28 @@ describe('AckModal', () => {
       expect(submittedData()).toEqual({ message: '', action: ZBX_ACK_ACTION_ADD_MESSAGE + ZBX_ACK_ACTION_UNSUPPRESS });
     });
 
+    it('submits rank as cause action', () => {
+      renderModal({ canRankAsCause: true });
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Rank as cause' }));
+      clickUpdate();
+      expect(submittedData()).toEqual({ message: '', action: ZBX_ACK_ACTION_ADD_MESSAGE + ZBX_ACK_ACTION_RANK_CAUSE });
+    });
+
+    it('submits rank as symptom with the cause event selected from the dropdown', async () => {
+      renderModal({ canRankAsSymptom: true, causeEvents });
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Rank as symptom' }));
+
+      await userEvent.click(screen.getByLabelText('Cause event'));
+      await userEvent.click(await screen.findByText('Host B: Another cause'));
+
+      clickUpdate();
+      expect(submittedData()).toEqual({
+        message: '',
+        action: ZBX_ACK_ACTION_ADD_MESSAGE + ZBX_ACK_ACTION_RANK_SYMPTOM,
+        cause_eventid: '200',
+      });
+    });
+
     it('submits combined actions as a single bitmask', () => {
       renderModal({ canClose: true });
       typeMessage('closing');
@@ -294,6 +353,17 @@ describe('AckModal', () => {
       fireEvent.click(screen.getByRole('checkbox', { name: 'Unsuppress' }));
       expect(screen.getByRole('checkbox', { name: 'Unsuppress' })).toBeChecked();
       expect(screen.getByRole('checkbox', { name: 'Suppress' })).not.toBeChecked();
+    });
+
+    it('unchecks rank as cause when rank as symptom is selected and vice versa', () => {
+      renderModal({ canRankAsCause: true, canRankAsSymptom: true, causeEvents });
+      const cause = screen.getByRole('checkbox', { name: 'Rank as cause' });
+      const symptom = screen.getByRole('checkbox', { name: 'Rank as symptom' });
+      fireEvent.click(cause);
+      expect(cause).toBeChecked();
+      fireEvent.click(symptom);
+      expect(symptom).toBeChecked();
+      expect(cause).not.toBeChecked();
     });
   });
 });
