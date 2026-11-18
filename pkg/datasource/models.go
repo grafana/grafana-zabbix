@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/alexanderzobnin/grafana-zabbix/pkg/timeseries"
+	"github.com/alexanderzobnin/grafana-zabbix/pkg/zabbix"
 
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -57,8 +58,10 @@ type QueryModel struct {
 	// Item ID mode
 	ItemIDs string `json:"itemids,omitempty"`
 
-	Functions []QueryFunction `json:"functions,omitempty"`
-	Options   QueryOptions    `json:"options"`
+	Functions []QueryFunction        `json:"functions,omitempty"`
+	Options   QueryOptions           `json:"options"`
+	HostTags  []zabbix.HostTagFilter `json:"hostTags,omitempty"`
+	EvalType  zabbix.StringInt       `json:"evaltype,omitempty"`
 
 	// Direct from the gRPC interfaces
 	RefID         string            `json:"-"`
