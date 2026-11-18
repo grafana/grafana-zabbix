@@ -25,7 +25,7 @@ import {
   ButtonGroup,
 } from '@grafana/ui';
 import { FAIcon } from '../../components';
-import { GrafanaTheme, rangeUtil } from '@grafana/data';
+import { GrafanaTheme } from '@grafana/data';
 
 const KEYBOARD_ENTER_KEY = 13;
 const KEYBOARD_ESCAPE_KEY = 27;
@@ -222,11 +222,11 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
     }
 
     if (suppressUntilMode === 'duration') {
-      const error = validateSuppressDuration(suppressDuration);
-      if (error) {
-        return { error };
+      const seconds = parseSuppressDuration(suppressDuration);
+      if (seconds === undefined) {
+        return { error: validateSuppressDuration(suppressDuration) };
       }
-      return Math.floor(Date.now() / 1000) + rangeUtil.intervalToSeconds(suppressDuration.trim());
+      return Math.floor(Date.now() / 1000) + seconds;
     }
 
     const error = validateSuppressDate(suppressDate);
@@ -309,7 +309,7 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
           <Input
             type="text"
             name="suppressDuration"
-            placeholder="1h, 30m, 2d"
+            placeholder="30m, 1h, 2d, 1w"
             aria-label="Suppress duration"
             invalid={!!suppressInputError}
             value={suppressDuration}
@@ -441,13 +441,24 @@ export class AckModalUnthemed extends PureComponent<Props, State> {
   }
 }
 
-export function validateSuppressDuration(duration: string): string {
-  try {
-    rangeUtil.intervalToSeconds(duration.trim());
-    return '';
-  } catch (e) {
-    return 'Invalid suppress duration. Use values like 30m, 1h or 2d.';
+// A single positive whole number and unit, matched against the whole value:
+// compound (1h30m), negative, fractional or unknown units (1month) are rejected.
+const SUPPRESS_DURATION_PATTERN = /^([1-9]\d*)([mhdw])$/;
+const SUPPRESS_DURATION_UNIT_SECONDS: Record<string, number> = { m: 60, h: 3600, d: 86400, w: 604800 };
+
+/** Suppress duration in seconds, or undefined when the value is not a valid duration. */
+export function parseSuppressDuration(duration: string): number | undefined {
+  const match = SUPPRESS_DURATION_PATTERN.exec(duration.trim());
+  if (!match) {
+    return undefined;
   }
+  return Number(match[1]) * SUPPRESS_DURATION_UNIT_SECONDS[match[2]];
+}
+
+export function validateSuppressDuration(duration: string): string {
+  return parseSuppressDuration(duration) === undefined
+    ? 'Invalid suppress duration. Use values like 30m, 1h or 2d.'
+    : '';
 }
 
 export function validateSuppressDate(date: string): string {

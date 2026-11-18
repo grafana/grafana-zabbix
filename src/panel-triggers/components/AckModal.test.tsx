@@ -1,7 +1,7 @@
 import React from 'react';
 import moment from 'moment/moment';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { AckModal, AckProblemData, SUPPRESS_DATE_FORMAT } from './AckModal';
+import { AckModal, AckProblemData, parseSuppressDuration, SUPPRESS_DATE_FORMAT } from './AckModal';
 import {
   ZBX_ACK_ACTION_ACK,
   ZBX_ACK_ACTION_ADD_MESSAGE,
@@ -93,6 +93,16 @@ describe('AckModal', () => {
       fireEvent.click(screen.getByLabelText('For duration'));
       fireEvent.change(screen.getByLabelText('Suppress duration'), { target: { value: 'not-a-duration' } });
       // The error appears while typing, before any submit attempt
+      expect(screen.getByText('Invalid suppress duration. Use values like 30m, 1h or 2d.')).toBeInTheDocument();
+      clickUpdate();
+      expect(mockOnSubmit).not.toHaveBeenCalled();
+    });
+
+    it.each(['1h30m', '1month', '-1h'])('rejects the prefix-valid duration %p instead of truncating it', (value) => {
+      renderModal({ canSuppress: true });
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Suppress' }));
+      fireEvent.click(screen.getByLabelText('For duration'));
+      fireEvent.change(screen.getByLabelText('Suppress duration'), { target: { value } });
       expect(screen.getByText('Invalid suppress duration. Use values like 30m, 1h or 2d.')).toBeInTheDocument();
       clickUpdate();
       expect(mockOnSubmit).not.toHaveBeenCalled();
@@ -285,5 +295,35 @@ describe('AckModal', () => {
       expect(screen.getByRole('checkbox', { name: 'Unsuppress' })).toBeChecked();
       expect(screen.getByRole('checkbox', { name: 'Suppress' })).not.toBeChecked();
     });
+  });
+});
+
+describe('parseSuppressDuration', () => {
+  it.each([
+    ['30m', 1800],
+    ['1h', 3600],
+    ['2d', 172800],
+    ['1w', 604800],
+    [' 12h ', 43200],
+  ])('parses %p as %p seconds', (input, expected) => {
+    expect(parseSuppressDuration(input)).toBe(expected);
+  });
+
+  it.each([
+    // Compound and unknown units used to match only their prefix (1h30m -> 1h, 1month -> 1m)
+    '1h30m',
+    '1month',
+    // Negative, zero, fractional and leading-zero values
+    '-1h',
+    '0h',
+    '1.5h',
+    '01h',
+    // Seconds, missing number or unit, empty
+    '30s',
+    'h',
+    '10',
+    '',
+  ])('rejects %p', (input) => {
+    expect(parseSuppressDuration(input)).toBeUndefined();
   });
 });
