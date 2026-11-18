@@ -1,0 +1,44 @@
+name: Plugins - CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  # A main run can be cutting a release, so it is never cancelled.
+  group: plugins-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  ci:
+    name: CI
+    # Called directly, because through datasource-cicd.yml the checks report as "CI/CD / CI / <job>"
+    # and the rulesets require "CI / <job>".
+    if: github.event_name == 'pull_request'
+    uses: grafana/plugin-ci-workflows/.github/workflows/ci.yml@ci-cd-workflows/v12.1.1
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      golangci-lint-version: '2.15.0'
+      plugin-version-suffix: ${{ github.event.pull_request.head.sha }}
+      # Runs Playwright e2e (tests/e2e) against the repo's docker-compose.yml,
+      # which brings up a real Zabbix backend + seeded fixtures.
+      run-playwright: true
+
+  cicd:
+    name: CI/CD
+    if: github.ref == 'refs/heads/main'
+    uses: grafana/data-sources-ci-workflows/.github/workflows/datasource-cicd.yml@main # zizmor: ignore[unpinned-uses]
+    # A ceiling for the called workflow. Each job there declares its own permissions.
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      pull-requests: read
+    secrets: inherit
+    with:
+      golangci-lint-version: '2.15.0'

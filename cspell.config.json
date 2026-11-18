@@ -36,6 +36,7 @@
   "ignoreRegExpList": ["import\\s*\\((.|[\r\n])*?\\)", "import\\s*.*\".*?\"", "\\[@.+\\]"],
   "words": [
     "alexanderzobnin",
+    "amannn",
     "applicationids",
     "clickhouse",
     "datapoint",
@@ -62,6 +63,7 @@
     "lastchange",
     "lastvalue",
     "lookback",
+    "globalspec",
     "mydomain",
     "noexec",
     "opdata",

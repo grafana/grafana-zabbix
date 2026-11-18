@@ -876,4 +876,141 @@ describe('Zabbix', () => {
       expect(getAPMMetrics).not.toHaveBeenCalled();
     });
   });
+
+  describe('getItemsFromTarget', () => {
+    it('forwards hostTags and evaltype from target into getItems options', async () => {
+      zabbix.getItems = jest.fn().mockResolvedValue([{ itemid: '1' }]);
+      const hostTags = [{ tag: 'product', value: 'A', operator: '1' as any }];
+      const target = {
+        group: { filter: 'Servers' },
+        host: { filter: '.*' },
+        application: { filter: '' },
+        itemTag: { filter: '' },
+        item: { filter: 'CPU' },
+        hostTags,
+        evaltype: '2' as any,
+      };
+
+      const result = await zabbix.getItemsFromTarget(target, { itemtype: 'num', showDisabledItems: false });
+      expect(zabbix.getItems).toHaveBeenCalledWith('Servers', '.*', '', '', 'CPU', {
+        itemtype: 'num',
+        showDisabledItems: false,
+        hostTags,
+        evaltype: '2',
+      });
+      expect(result).toEqual([{ itemid: '1' }]);
+    });
+
+    it('does not forward hostTags and evaltype when queryType is non-Metrics (e.g. Text)', async () => {
+      zabbix.getItems = jest.fn().mockResolvedValue([{ itemid: '1' }]);
+      const hostTags = [{ tag: 'product', value: 'A', operator: '1' as any }];
+      const target = {
+        queryType: '2',
+        group: { filter: 'Servers' },
+        host: { filter: '.*' },
+        application: { filter: '' },
+        itemTag: { filter: '' },
+        item: { filter: 'Logs' },
+        hostTags,
+        evaltype: '2' as any,
+      };
+
+      await zabbix.getItemsFromTarget(target, { itemtype: 'text' });
+      expect(zabbix.getItems).toHaveBeenCalledWith('Servers', '.*', '', '', 'Logs', {
+        itemtype: 'text',
+        hostTags: undefined,
+        evaltype: undefined,
+      });
+    });
+  });
+
+  describe('getHostsFromICTarget and getHostsApsFromTarget', () => {
+    it('forwards hostTags and evaltype to getHosts, getApps, and getItems', async () => {
+      zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10', name: 'host01' }]);
+      zabbix.getApps = jest.fn().mockResolvedValue([{ applicationid: '100', name: 'App' }]);
+      zabbix.getItems = jest.fn().mockResolvedValue([{ itemid: '1', name: 'CPU' }]);
+
+      const hostTags = [{ tag: 'env', value: 'prod', operator: '1' as any }];
+      const target = {
+        group: { filter: 'Servers' },
+        host: { filter: 'host01' },
+        application: { filter: 'App' },
+        itemTag: { filter: '' },
+        item: { filter: 'CPU' },
+        hostTags,
+        evaltype: '0' as any,
+      };
+
+      const [hosts, apps, items] = await zabbix.getHostsFromICTarget(target, { itemtype: 'num' });
+
+      expect(zabbix.getHosts).toHaveBeenCalledWith('Servers', 'host01', hostTags, '0');
+      expect(zabbix.getApps).toHaveBeenCalledWith('Servers', 'host01', 'App', hostTags, '0');
+      expect(zabbix.getItems).toHaveBeenCalledWith('Servers', 'host01', 'App', '', 'CPU', {
+        itemtype: 'num',
+        hostTags,
+        evaltype: '0',
+      });
+      expect(hosts).toEqual([{ hostid: '10', name: 'host01' }]);
+      expect(apps).toEqual([{ applicationid: '100', name: 'App' }]);
+      expect(items).toEqual([{ itemid: '1', name: 'CPU' }]);
+    });
+
+    it('does not forward hostTags and evaltype when queryType is non-Metrics (e.g. Triggers)', async () => {
+      zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '10', name: 'host01' }]);
+      zabbix.getApps = jest.fn().mockResolvedValue([{ applicationid: '100', name: 'App' }]);
+      zabbix.getItems = jest.fn().mockResolvedValue([{ itemid: '1', name: 'CPU' }]);
+
+      const hostTags = [{ tag: 'env', value: 'prod', operator: '1' as any }];
+      const target = {
+        queryType: '4',
+        group: { filter: 'Servers' },
+        host: { filter: 'host01' },
+        application: { filter: 'App' },
+        itemTag: { filter: '' },
+        item: { filter: 'CPU' },
+        hostTags,
+        evaltype: '0' as any,
+      };
+
+      await zabbix.getHostsFromICTarget(target, { itemtype: 'num' });
+
+      expect(zabbix.getHosts).toHaveBeenCalledWith('Servers', 'host01', undefined, undefined);
+      expect(zabbix.getApps).toHaveBeenCalledWith('Servers', 'host01', 'App', undefined, undefined);
+      expect(zabbix.getItems).toHaveBeenCalledWith('Servers', 'host01', 'App', '', 'CPU', {
+        itemtype: 'num',
+        hostTags: undefined,
+        evaltype: undefined,
+      });
+    });
+  });
+
+  describe('getAllItems host tag handling', () => {
+    it('returns empty array when getHosts returns empty array (e.g. tag filter matches 0 hosts)', async () => {
+      zabbix.version = '6.4.0';
+      zabbix.getHosts = jest.fn().mockResolvedValue([]);
+      zabbix.zabbixAPI.getItems = jest.fn();
+
+      const hostTags = [{ tag: 'product', value: 'nonexistent', operator: '1' as any }];
+      const items = await zabbix.getAllItems('Servers', '.*', '', '', { hostTags, evaltype: '0' });
+
+      expect(zabbix.getHosts).toHaveBeenCalledWith('Servers', '.*', hostTags, '0');
+      expect(zabbix.zabbixAPI.getItems).not.toHaveBeenCalled();
+      expect(items).toEqual([]);
+    });
+
+    it('returns empty array in getAllItemsBefore54 when getApps returns empty hostids', async () => {
+      zabbix.version = '5.0.0';
+      const emptyApps: any = [];
+      emptyApps.hostids = [];
+      emptyApps.appFilterEmpty = true;
+      zabbix.getApps = jest.fn().mockResolvedValue(emptyApps);
+      zabbix.zabbixAPI.getItems = jest.fn();
+
+      const hostTags = [{ tag: 'product', value: 'nonexistent', operator: '1' as any }];
+      const items = await zabbix.getAllItemsBefore54('Servers', '.*', '', '', { hostTags, evaltype: '0' });
+
+      expect(zabbix.zabbixAPI.getItems).not.toHaveBeenCalled();
+      expect(items).toEqual([]);
+    });
+  });
 });

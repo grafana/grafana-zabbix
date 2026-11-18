@@ -70,8 +70,10 @@ type QueryModel struct {
 	MetricsSource string              `json:"metricsSource,omitempty"`
 	APMMetric     APMMetricQueryModel `json:"apmMetric"`
 
-	Functions []QueryFunction `json:"functions,omitempty"`
-	Options   QueryOptions    `json:"options"`
+	Functions []QueryFunction        `json:"functions,omitempty"`
+	Options   QueryOptions           `json:"options"`
+	HostTags  []zabbix.HostTagFilter `json:"hostTags,omitempty"`
+	EvalType  zabbix.StringInt       `json:"evaltype,omitempty"`
 
 	// Direct from the gRPC interfaces
 	RefID         string            `json:"-"`

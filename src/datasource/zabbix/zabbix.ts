@@ -17,6 +17,7 @@ import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '..
 import { ZabbixDSOptions } from '../types/config';
 import { ApmMetricQuery, HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType } from '../types/query';
 import * as utils from '../utils';
+import { MODE_METRICS } from '../constants';
 import { getUIDFromID } from '../migrations';
 import { CLICKHOUSE_DS_ID, ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector';
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
@@ -200,7 +201,7 @@ export class Zabbix implements ZabbixConnector {
   getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
-  acknowledgeEvent: (eventid, message) => Promise<any>;
+  acknowledgeEvent: (eventid: string, message: string, action?: number, severity?: number) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
@@ -496,10 +497,15 @@ export class Zabbix implements ZabbixConnector {
     return this.version ? semver.gte(this.version, '5.4.0') : false;
   }
 
-  getItemsFromTarget(target, options) {
+  getItemsFromTarget(target, options: any = {}) {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    const filters = _.map(parts, (p) => target[p].filter);
-    return this.getItems(...filters, options);
+    const filters = _.map(parts, (p) => target[p]?.filter);
+    const isMetrics = isMetricsQuery(target);
+    return this.getItems(...filters, {
+      ...options,
+      hostTags: options.hostTags ?? (isMetrics ? target.hostTags : undefined),
+      evaltype: options.evaltype ?? (isMetrics ? target.evaltype : undefined),
+    });
   }
 
   getMacrosFromTarget(target) {
@@ -510,8 +516,14 @@ export class Zabbix implements ZabbixConnector {
 
   async getHostsApsFromTarget(target): Promise<[ZBXHost[], ZBXApp[]]> {
     const parts = ['group', 'host', 'application'];
-    const filters = parts.map((p) => target[p].filter);
-    const results = await Promise.all([this.getHosts(...filters), this.getApps(...filters)]);
+    const filters = parts.map((p) => target[p]?.filter);
+    const isMetrics = isMetricsQuery(target);
+    const hostTags = isMetrics ? target.hostTags : undefined;
+    const evaltype = isMetrics ? target.evaltype : undefined;
+    const results = await Promise.all([
+      this.getHosts(filters[0], filters[1], hostTags, evaltype),
+      this.getApps(...filters, hostTags, evaltype),
+    ]);
     const hosts = results[0];
     let apps: AppsResponse = results[1];
     if (apps.appFilterEmpty) {
@@ -520,11 +532,16 @@ export class Zabbix implements ZabbixConnector {
     return [hosts, apps];
   }
 
-  async getHostsFromICTarget(target, options): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
+  async getHostsFromICTarget(target, options: any = {}): Promise<[ZBXHost[], ZBXApp[], ZBXItem[]]> {
     const parts = ['group', 'host', 'application', 'itemTag', 'item'];
-    const filters = parts.map((p) => target[p].filter);
+    const filters = parts.map((p) => target[p]?.filter);
     const [hosts, apps] = await this.getHostsApsFromTarget(target);
-    const items = await this.getItems(...filters, options);
+    const isMetrics = isMetricsQuery(target);
+    const items = await this.getItems(...filters, {
+      ...options,
+      hostTags: options.hostTags ?? (isMetrics ? target.hostTags : undefined),
+      evaltype: options.evaltype ?? (isMetrics ? target.evaltype : undefined),
+    });
     return [hosts, apps, items];
   }
 
@@ -661,6 +678,9 @@ export class Zabbix implements ZabbixConnector {
     }
 
     const hosts = await this.getHosts(groupFilter, hostFilter, options.hostTags, options.evaltype);
+    if (!hosts || hosts.length === 0) {
+      return [];
+    }
     const hostids = _.map(hosts, 'hostid');
 
     // Support regexp in tags
@@ -692,6 +712,9 @@ export class Zabbix implements ZabbixConnector {
     let items: any[];
 
     if (apps.appFilterEmpty) {
+      if (!apps.hostids || apps.hostids.length === 0) {
+        return [];
+      }
       items = await this.zabbixAPI.getItems(
         apps.hostids,
         undefined,
@@ -701,6 +724,9 @@ export class Zabbix implements ZabbixConnector {
       );
     } else {
       const appids = _.map(apps, 'applicationid');
+      if (appids.length === 0) {
+        return [];
+      }
       items = await this.zabbixAPI.getItems(
         undefined,
         appids,
@@ -1113,6 +1139,10 @@ export class Zabbix implements ZabbixConnector {
  * @param  name visible name
  * @return      array with finded element or empty array
  */
+function isMetricsQuery(target: any): boolean {
+  return !target?.queryType || target.queryType === MODE_METRICS;
+}
+
 // Picks the zabbixAPI.getItems() options, leaving out unset ones so the request cache key stays stable
 function getItemsAPIOptions(options: any = {}): GetItemsOptions {
   return _.pickBy(
