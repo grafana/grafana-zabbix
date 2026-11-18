@@ -663,6 +663,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
     const getUsersPromise = this.zabbix.getUsers();
 
+    // Which problem update actions the Zabbix server supports depends on its version
+    await this.zabbix.getVersion();
+    const actionCapabilities = {
+      unacknowledge: this.zabbix.supportsUnacknowledge(),
+      suppress: this.zabbix.supportsProblemSuppression(),
+    };
+
     let proxies;
     let zabbixUsers;
     const problemsPromises = Promise.all([getProblemsPromise, getProxiesPromise, getUsersPromise])
@@ -673,6 +680,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       })
       .then((problems) => problemsHandler.setMaintenanceStatus(problems))
       .then((problems) => problemsHandler.setAckButtonStatus(problems, showAckButton))
+      .then((problems) => problemsHandler.setActionCapabilities(problems, actionCapabilities))
       .then((problems) => problemsHandler.filterTriggersPre(problems, target))
       .then((problems) => problemsHandler.sortProblems(problems, target))
       .then((problems) => problemsHandler.addTriggerDataSource(problems, target))
@@ -1063,8 +1071,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       const isOldVersion: boolean = (query as any).itservice && !query.itServiceFilter;
       return {
         ...query,
-        // These only narrow the editor's host suggestions. When nothing can match, the raw filters
-        // are kept: their literal `$var` value matches no real host either.
+        // Host tag filters constrain both the editor's host suggestions and actual query execution.
+        // When nothing can match, the raw filters are kept: their literal `$var` value matches no real
+        // host either.
         hostTags: this.interpolateHostTagFilters(query.hostTags, query.evaltype, scopedVars) ?? query.hostTags,
         itServiceFilter: isOldVersion
           ? '/.*/'
