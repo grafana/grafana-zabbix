@@ -905,7 +905,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         }
 
         // Hide acknowledged events if option enabled
-        if (annotation.hideAcknowledged) {
+        if (annotation.options.hideAcknowledged) {
           problems = _.filter(problems, (p) => {
             return !p.acknowledges?.length;
           });
@@ -915,7 +915,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           const formattedAcknowledges = utils.formatAcknowledges(p.acknowledges);
 
           let annotationTags: string[] = [];
-          if (annotation.showHostname) {
+          if (annotation.options.showHostname) {
             annotationTags = _.map(p.hosts, 'name');
           }
 
