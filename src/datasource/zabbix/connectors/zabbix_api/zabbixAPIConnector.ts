@@ -256,14 +256,14 @@ export class ZabbixAPIConnector {
       params.evaltype = evalType === ZabbixTagEvalType.Or || evalType === ZabbixTagEvalType.AndOr ? +evalType : 0;
       // convert operator to number since that is the expected type in Zabbix.
       params.tags = activeFilters.map((tagFilter) => ({ ...tagFilter, operator: +tagFilter.operator }));
-      if (supportsInheritedTags) {
-        // Apply the `tags` filter to template-inherited tags as well as direct host tags. Matching
-        // (operators, And/Or grouping, negation, case folding) stays on the server this way.
-        params.inheritedTags = true;
-      }
     }
 
-    const hosts: any[] = await this.request('host.get', params);
+    let hosts: any[];
+    if (activeFilters.length > 0 && supportsInheritedTags) {
+      hosts = await this.getHostsMatchingInheritedTags(params);
+    } else {
+      hosts = await this.request('host.get', params);
+    }
     if (!params.selectInheritedTags || !Array.isArray(hosts)) {
       return hosts;
     }
@@ -284,6 +284,34 @@ export class ZabbixAPIConnector {
       const { inheritedTags: _omit, ...rest } = h;
       return { ...rest, tags: combined };
     });
+  }
+
+  /**
+   * Runs a tag-filtered host.get that matches tags on the host itself or on its linked templates.
+   *
+   * `inheritedTags: true` does that on Zabbix 5.0–7.x. Zabbix 8.0 evaluates it correctly only for
+   * hosts that have at least one linked template: hosts without templates are dropped by positive
+   * filters (Equals, Contains, Exists) and wrongly kept by negative ones (Not exists, Not equal).
+   * From 8.0 on, hosts with templates are therefore taken from an `inheritedTags` query and hosts
+   * without templates from a plain one, where their own tags are all the tags they have.
+   */
+  private async getHostsMatchingInheritedTags(params: any): Promise<any[]> {
+    if (semver.lt(this.version, '8.0.0')) {
+      return this.request('host.get', { ...params, inheritedTags: true });
+    }
+
+    const selectParentTemplates = ['templateid'];
+    const [withInherited, ownOnly] = await Promise.all([
+      this.request('host.get', { ...params, inheritedTags: true, selectParentTemplates }),
+      this.request('host.get', { ...params, selectParentTemplates }),
+    ]);
+    const hasTemplates = (h: any) => Array.isArray(h?.parentTemplates) && h.parentTemplates.length > 0;
+    const hosts = [
+      ...(withInherited ?? []).filter((h: any) => hasTemplates(h)),
+      ...(ownOnly ?? []).filter((h: any) => !hasTemplates(h)),
+    ];
+    hosts.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+    return hosts.map(({ parentTemplates: _omit, ...rest }) => rest);
   }
 
   /**
