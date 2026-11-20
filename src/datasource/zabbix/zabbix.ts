@@ -22,7 +22,7 @@ import { CLICKHOUSE_DS_ID, ClickHouseConnector } from './connectors/clickhouse/c
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
-import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
+import { ResourceClient, ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { GetItemsOptions } from './connectors/zabbix_api/types';
 import { CachingProxy } from './proxy/cachingProxy';
 import { Host, ZabbixConnector } from './types';
@@ -113,8 +113,9 @@ const REQUESTS_TO_BIND = [
   'getHostInterfaces',
 ];
 
-type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAuth' | 'withCredentials' | 'uid'> &
-  Pick<
+type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAuth' | 'withCredentials'> & {
+  resourceClient: ResourceClient;
+} & Pick<
     ZabbixDSOptions,
     | 'cacheTTL'
     | 'dbConnectionEnable'
@@ -172,7 +173,7 @@ export class Zabbix implements ZabbixConnector {
       dbConnectionDatasourceId,
       dbConnectionDatasourceName,
       dbConnectionRetentionPolicy,
-      uid,
+      resourceClient,
     } = options;
 
     this.enableDirectDBConnection = dbConnectionEnable;
@@ -184,7 +185,7 @@ export class Zabbix implements ZabbixConnector {
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, uid);
+    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, resourceClient);
 
     this.proxifyRequests();
     this.cacheRequests();
