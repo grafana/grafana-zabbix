@@ -198,6 +198,51 @@ describe('ZabbixDatasource', () => {
       });
     });
 
+    describe('with Zabbix value mapping', () => {
+      const valueMappings = [
+        { valuemapid: '7', mappings: [{ type: '0', value: 'Linux last', newvalue: 'Mapped last' }] },
+      ];
+
+      beforeEach(() => {
+        ctx.ds.zabbix.getValueMappings = jest.fn().mockResolvedValue(valueMappings);
+        ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockResolvedValue([
+          {
+            hosts: [{ hostid: '10001', name: 'Zabbix server' }],
+            itemid: '10100',
+            name: 'System information',
+            key_: 'system.uname',
+            hostid: '10001',
+            valuemapid: '7',
+          },
+        ]);
+        ctx.options.targets[0].textFilter = '';
+        ctx.options.targets[0].options = { skipEmptyValues: false, useZabbixValueMapping: true };
+      });
+
+      it('should map the last value in table format', async () => {
+        const result = (await ctx.ds.frontendQuery(ctx.options)) as DataQueryResponse;
+        const lastValue = result.data[0].fields.find((f) => f.name === 'Last value');
+        expect(lastValue?.values[0]).toEqual('Mapped last');
+      });
+
+      it('should attach the mappings to the value field in time series format', async () => {
+        ctx.options.targets[0].resultFormat = 'time_series';
+        const result = (await ctx.ds.frontendQuery(ctx.options)) as DataQueryResponse;
+        const valueField = result.data[0].fields.find((f) => f.name !== 'Time');
+        expect(valueField?.config.mappings).toEqual([
+          { type: 'value', options: { value: 'Linux last', text: 'Mapped last' } },
+        ]);
+      });
+
+      it('should not fetch or apply mappings when the option is off', async () => {
+        ctx.options.targets[0].options.useZabbixValueMapping = false;
+        const result = (await ctx.ds.frontendQuery(ctx.options)) as DataQueryResponse;
+        const lastValue = result.data[0].fields.find((f) => f.name === 'Last value');
+        expect(lastValue?.values[0]).toEqual('Linux last');
+        expect(ctx.ds.zabbix.getValueMappings).not.toHaveBeenCalled();
+      });
+    });
+
     it('should skip item when last value is empty', () => {
       ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockReturnValue(
         Promise.resolve([
