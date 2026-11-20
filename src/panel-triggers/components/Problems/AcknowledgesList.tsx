@@ -1,18 +1,21 @@
 import React from 'react';
+import { TimeZone } from '@grafana/schema';
 import { ZBXAcknowledge } from '../../../datasource/types';
+import { ACK_TIME_FORMAT, formatUnixTime } from '../../utils';
 
 interface AcknowledgesListProps {
   acknowledges: ZBXAcknowledge[];
+  timeZone?: TimeZone;
 }
 
 export default function AcknowledgesList(props: AcknowledgesListProps) {
-  const { acknowledges } = props;
+  const { acknowledges, timeZone } = props;
   return (
     <div className="problem-ack-list">
       <div className="problem-ack-col problem-ack-time">
         {acknowledges.map((ack) => (
           <span key={ack.acknowledgeid} className="problem-ack-time">
-            {ack.time}
+            {formatUnixTime(ack.clock, ACK_TIME_FORMAT, timeZone)}
           </span>
         ))}
       </div>

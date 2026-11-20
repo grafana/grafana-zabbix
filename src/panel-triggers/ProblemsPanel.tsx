@@ -27,7 +27,7 @@ const NO_SEVERITY_OVERRIDES: CollectedSeverityOverrides = { overrides: [], datas
 interface ProblemsPanelProps extends PanelProps<ProblemsPanelOptions> {}
 
 export const ProblemsPanel = (props: ProblemsPanelProps) => {
-  const { data, options, timeRange, onOptionsChange } = props;
+  const { data, options, timeRange, timeZone, onOptionsChange } = props;
   const { layout, showTriggers, sortProblems } = options;
   const panelContext = usePanelContext();
 
@@ -318,6 +318,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
         panelOptions={effectiveOptions}
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
+        timeZone={timeZone}
         onProblemAck={onProblemAck}
         onTagClick={onTagClick}
       />
@@ -335,6 +336,7 @@ export const ProblemsPanel = (props: ProblemsPanelProps) => {
         pageSize={options.pageSize}
         fontSize={fontSizeProp}
         timeRange={timeRange}
+        timeZone={timeZone}
         getProblemEvents={getProblemEvents}
         getProblemAlerts={getProblemAlerts}
         getScripts={getScripts}

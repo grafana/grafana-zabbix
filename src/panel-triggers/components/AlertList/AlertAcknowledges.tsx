@@ -1,8 +1,11 @@
 import React, { PureComponent } from 'react';
+import { TimeZone } from '@grafana/schema';
 import { ProblemDTO } from '../../../datasource/types';
+import { ACK_TIME_FORMAT, formatUnixTime } from '../../utils';
 
 interface AlertAcknowledgesProps {
   problem: ProblemDTO;
+  timeZone?: TimeZone;
   onClick: (event?) => void;
 }
 
@@ -12,13 +15,13 @@ export default class AlertAcknowledges extends PureComponent<AlertAcknowledgesPr
   };
 
   render() {
-    const { problem } = this.props;
+    const { problem, timeZone } = this.props;
     const ackRows =
       problem.acknowledges &&
       problem.acknowledges.map((ack) => {
         return (
           <tr key={ack.acknowledgeid}>
-            <td>{ack.time}</td>
+            <td>{formatUnixTime(ack.clock, ACK_TIME_FORMAT, timeZone)}</td>
             <td>{ack.user}</td>
             <td>{ack.message}</td>
           </tr>

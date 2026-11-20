@@ -545,4 +545,18 @@ describe('ProblemList', () => {
       expect(getHostColumn()).toHaveLength(3);
     });
   });
+
+  describe('Time zone', () => {
+    it('should format Last change in the dashboard time zone', () => {
+      const props = {
+        ...defaultProps,
+        timeZone: 'America/Bogota',
+        problems: [createMockProblem('1', 1609459200)], // 2021-01-01 00:00:00 UTC
+      };
+
+      render(<ProblemList {...props} />);
+
+      expect(screen.getByText('31 Dec 2020 19:00:00')).toBeInTheDocument();
+    });
+  });
 });

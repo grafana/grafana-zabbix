@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { css } from '@emotion/css';
 import moment from 'moment/moment';
 import { GrafanaTheme2, TimeRange } from '@grafana/data';
-import { DataSourceRef } from '@grafana/schema';
+import { DataSourceRef, TimeZone } from '@grafana/schema';
 import { Tooltip, useStyles2 } from '@grafana/ui';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
@@ -24,6 +24,7 @@ interface Props {
   datasourceName: string;
   rootWidth: number;
   timeRange: TimeRange;
+  timeZone?: TimeZone;
   showTimeline?: boolean;
   panelId?: number;
   allowDangerousHTML?: boolean;
@@ -40,6 +41,7 @@ export const ProblemDetails = ({
   datasourceName,
   rootWidth,
   timeRange,
+  timeZone,
   showTimeline,
   panelId,
   allowDangerousHTML,
@@ -194,13 +196,15 @@ export const ProblemDetails = ({
                 ))}
             </div>
           )}
-          {showTimeline && events.length > 0 && <ProblemTimeline events={events} timeRange={timeRange} />}
+          {showTimeline && events.length > 0 && (
+            <ProblemTimeline events={events} timeRange={timeRange} timeZone={timeZone} />
+          )}
           {showAcknowledges && !wideLayout && (
             <div className="problem-ack-container">
               <h6>
                 <FAIcon icon="reply-all" /> Acknowledges
               </h6>
-              <AcknowledgesList acknowledges={problem.acknowledges} />
+              <AcknowledgesList acknowledges={problem.acknowledges} timeZone={timeZone} />
             </div>
           )}
         </div>
@@ -210,7 +214,7 @@ export const ProblemDetails = ({
               <h6>
                 <FAIcon icon="reply-all" /> Acknowledges
               </h6>
-              <AcknowledgesList acknowledges={problem.acknowledges} />
+              <AcknowledgesList acknowledges={problem.acknowledges} timeZone={timeZone} />
             </div>
           </div>
         )}

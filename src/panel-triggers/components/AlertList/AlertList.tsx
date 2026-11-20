@@ -4,7 +4,7 @@ import { ProblemsPanelOptions } from '../../types';
 import { AckProblemData } from '../AckModal';
 import AlertCard from './AlertCard';
 import { ProblemDTO, ZBXTag } from '../../../datasource/types';
-import { DataSourceRef } from '@grafana/schema';
+import { DataSourceRef, TimeZone } from '@grafana/schema';
 
 export interface AlertListProps {
   problems: ProblemDTO[];
@@ -12,6 +12,7 @@ export interface AlertListProps {
   loading?: boolean;
   pageSize?: number;
   fontSize?: number;
+  timeZone?: TimeZone;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => void;
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef, ctrlKey?: boolean, shiftKey?: boolean) => void;
 }
@@ -73,6 +74,7 @@ export default class AlertList extends PureComponent<AlertListProps, AlertListSt
                 }-${index}`}
                 problem={problem}
                 panelOptions={panelOptions}
+                timeZone={this.props.timeZone}
                 onTagClick={this.handleTagClick}
                 onProblemAck={this.handleProblemAck}
               />

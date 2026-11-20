@@ -6,7 +6,7 @@ import { ProblemsPanelOptions, RTResized } from '../../types';
 import { ProblemDTO, ZBXAlert, ZBXEvent, ZBXGroup, ZBXTag } from '../../../datasource/types';
 import { APIExecuteScriptResponse, ZBXScript } from '../../../datasource/zabbix/connectors/zabbix_api/types';
 import { TimeRange } from '@grafana/data';
-import { DataSourceRef } from '@grafana/schema';
+import { DataSourceRef, TimeZone } from '@grafana/schema';
 import { HostCell } from './Cells/HostCell';
 import { SeverityCell } from './Cells/SeverityCell';
 import { StatusIconCellV8 } from './Cells/StatusIconCell';
@@ -39,6 +39,7 @@ export interface ProblemListProps {
   panelOptions: ProblemsPanelOptions;
   loading?: boolean;
   timeRange?: TimeRange;
+  timeZone?: TimeZone;
   range?: TimeRange;
   pageSize?: number;
   fontSize?: number;
@@ -112,6 +113,7 @@ export const ProblemList = (props: ProblemListProps) => {
     onTagClick,
     loading,
     timeRange,
+    timeZone,
     panelId,
     getProblemEvents,
     getProblemAlerts,
@@ -276,6 +278,7 @@ export const ProblemList = (props: ProblemListProps) => {
           <LastChangeCell
             original={cell.row.original}
             customFormat={panelOptions.customLastChangeFormat && panelOptions.lastChangeFormat}
+            timeZone={timeZone}
           />
         ),
       }),
@@ -308,7 +311,7 @@ export const ProblemList = (props: ProblemListProps) => {
         },
       }),
     ];
-  }, [panelOptions, datasourceNames]);
+  }, [panelOptions, datasourceNames, timeZone]);
 
   // Convert resizedColumns from old format to column sizing state
   const getColumnSizingFromResized = (resized?: RTResized): Record<string, number> => {
@@ -577,6 +580,7 @@ export const ProblemList = (props: ProblemListProps) => {
                           datasourceName={getDataSourceName(row.original.datasource, datasourceNames)}
                           rootWidth={rootRef?.current?.clientWidth || 0}
                           timeRange={timeRange}
+                          timeZone={timeZone}
                           showTimeline={panelOptions.problemTimeline}
                           allowDangerousHTML={panelOptions.allowDangerousHTML}
                           panelId={panelId}
