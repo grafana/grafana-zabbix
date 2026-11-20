@@ -30,24 +30,20 @@
     ],
     "screenshots": [
       {
-        "name": "Showcase",
-        "path": "img/screenshot-showcase.png"
+        "name": "Infrastructure overview",
+        "path": "img/screenshot-infrastructure-overview.png"
       },
       {
-        "name": "Dashboard",
-        "path": "img/screenshot-dashboard01.png"
+        "name": "Problems panel",
+        "path": "img/screenshot-problems-panel.png"
       },
       {
-        "name": "Annotations",
-        "path": "img/screenshot-annotations.png"
+        "name": "Metric processing functions",
+        "path": "img/screenshot-functions-dashboard.png"
       },
       {
-        "name": "Metric Editor",
-        "path": "img/screenshot-metric_editor.png"
-      },
-      {
-        "name": "Triggers",
-        "path": "img/screenshot-triggers.png"
+        "name": "Query editor",
+        "path": "img/screenshot-query-editor.png"
       }
     ],
     "version": "%VERSION%",

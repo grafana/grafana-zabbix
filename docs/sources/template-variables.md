@@ -48,6 +48,8 @@ To create a variable that fetches values from Zabbix:
 1. Select a **Query Type** and fill in the filter fields.
 1. Click **Apply**.
 
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-host-variable-query.png" alt="Variable query options with the Zabbix data source, Query Type set to Host, Group set to $group, and Host set to the /.*/ regex" width="720" height="296" max-width="500px" >}}
+
 ## Query types
 
 The variable query editor uses a structured form with a **Query Type** drop-down. Select the type of Zabbix entity you want to populate the variable with.
@@ -148,6 +150,8 @@ Let viewers switch the dashboard between hosts without editing panels.
 
 1. Create a variable named `host` with **Query Type** set to **Host** and **Group** set to the group you want (or `/.*/` for all hosts).
 1. In each Metrics query, set the **Host** field to `$host`.
+
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-dashboard-template-variables.png" alt="Dashboard with Group and Host drop-downs set to Database servers and db-01, and four panels for CPU time, load average, network traffic, and memory and disk usage on the selected host" width="1600" height="680" >}}
 
 ### Filter a query with a multi-value variable
 

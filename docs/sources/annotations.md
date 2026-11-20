@@ -38,6 +38,8 @@ To add Zabbix annotations to a dashboard:
 1. Configure the annotation query fields described in the following sections.
 1. Click **Apply**.
 
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-annotation-query.png" alt="Zabbix annotation query with Group and Host set to /.*/, Min severity set to Average, and Show OK events and Show hostname enabled" width="960" height="320" max-width="700px" >}}
+
 ## Annotation query fields
 
 Use the following fields to filter which Zabbix problems appear as annotations.
@@ -67,6 +69,30 @@ Each annotation is rendered from the matching Zabbix problem:
 - **Title**: `Problem` when the event is active or `OK` when it's a recovery event.
 - **Text**: the problem (trigger) name, followed by acknowledgment details when the problem has been acknowledged.
 - **Tags**: the host names of the affected hosts when **Show hostname** is enabled.
+
+## Show item problems on a panel
+
+Metrics and Item ID queries can annotate their own panel with the problems of the triggers that use the queried items. Unlike a dashboard annotation query, you don't need to repeat the group and host filters: the panel shows exactly the problems that belong to the items it graphs. Each problem appears as a region from the time it started until it recovered, or until the end of the time range if it's still open.
+
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-problem-annotations-panel.png" alt="Two time series panels with problem regions: CPU utilization on db-01 with a resolved and an open High CPU utilization problem, and load average on web-03 with a resolved and an open high load problem, each region matching a spike in the data" width="1600" height="700" >}}
+
+To show item problems on a panel:
+
+1. Edit the panel and open a Metrics or Item ID query.
+1. Expand the **Problem annotations** section below **Functions**.
+1. Turn on **Show problems**.
+1. Optionally, narrow the problems with the following settings.
+
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-problem-annotations-query-options.png" alt="Metrics query for CPU utilization on db-01 with the Problem annotations section expanded: Show problems enabled, Triggers set to all triggers of these items with a count of 1 of 1 triggers, Min severity, and Hide acknowledged" width="1254" height="480" >}}
+
+| Setting | Description |
+|---------|-------------|
+| **Show problems** | Annotate the panel with the problems of the queried items' triggers. |
+| **Triggers** | Leave empty to use every trigger of the queried items. Select one trigger name, or enter a regular expression such as `/CPU\|load/` for several triggers or `/^(?!.*memory).*$/i` to exclude some. Template variables are supported. The count next to the field shows how many triggers the filter matches. |
+| **Min severity** | Show only problems at or above this severity. |
+| **Hide acknowledged** | Exclude problems that have been acknowledged in Zabbix. |
+
+To turn problem annotations on for every Metrics and Item ID query of a data source, enable **Show problem annotations on metric panels** in the data source settings. Each query can still turn it off in its **Problem annotations** section.
 
 ## Examples
 
