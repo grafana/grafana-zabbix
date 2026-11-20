@@ -1192,6 +1192,18 @@ describe('ZabbixDatasource', () => {
       ]);
     });
 
+    it('should interpolate the text filter without wrapping it as /^...$/', () => {
+      ctx.ds.templateSrv.replace = jest
+        .fn()
+        .mockImplementation((str: string, _scoped: any, format?: Function) =>
+          str?.replace('$client', format ? format('E5:D9:EA') : 'E5:D9:EA')
+        );
+
+      const [result] = ctx.ds.interpolateVariablesInQueries([{ refId: 'A', textFilter: '.*$client.*' } as any], {});
+
+      expect(result.textFilter).toBe('.*E5:D9:EA.*');
+    });
+
     it('should leave queries without host tag filters untouched', () => {
       const [result] = ctx.ds.interpolateVariablesInQueries([{ refId: 'A' } as any], {});
       expect(result.hostTags).toBeUndefined();
