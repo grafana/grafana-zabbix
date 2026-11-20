@@ -143,6 +143,10 @@ describe('expandItemMacros', () => {
       expect(expandItemMacros('{ITEM2.VALUE}', [item('4', '7'), item('9', '7')])).toBe('9');
     });
 
+    it('expands the Zabbix numbered form {ITEM.VALUE2} and {ITEM.LASTVALUE2}', () => {
+      expect(expandItemMacros('{ITEM.VALUE2}/{ITEM.LASTVALUE2}', [item('4', '3'), item('9', '7')])).toBe('9/7');
+    });
+
     it('expands {ITEM2.LASTVALUE} for second item', () => {
       expect(expandItemMacros('{ITEM2.LASTVALUE}', [item('4', '3'), item('9', '7')])).toBe('7');
     });
@@ -183,6 +187,12 @@ describe('hasUserMacro', () => {
   it('returns false for empty or undefined text', () => {
     expect(hasUserMacro('')).toBe(false);
     expect(hasUserMacro(undefined as any)).toBe(false);
+  });
+
+  it('returns true for macros with context', () => {
+    expect(hasUserMacro('{$PORT:"ssh"}')).toBe(true);
+    expect(hasUserMacro('{$PORT:ssh}')).toBe(true);
+    expect(hasUserMacro('{$PATH:regex:"^/var"}')).toBe(true);
   });
 
   it('returns false for {ITEM.VALUE}-style macros', () => {
@@ -250,6 +260,59 @@ describe('expandUserMacros', () => {
 
   it('returns the text unchanged when it contains no macros', () => {
     expect(expandUserMacros('no macros here', [], [], [])).toBe('no macros here');
+  });
+
+  it('masks secret and vault macros like Zabbix, without falling back to a global macro', () => {
+    const result = expandUserMacros(
+      '{$TOKEN}/{$VAULT}',
+      [
+        { macro: '{$TOKEN}', type: '1', hostid: '10' },
+        { macro: '{$VAULT}', value: 'secret/path:key', type: '2', hostid: '10' },
+      ],
+      [globalMacro('{$TOKEN}', 'global')],
+      ['10']
+    );
+    expect(result).toBe('******/******');
+  });
+
+  describe('with context', () => {
+    it('matches quoted and unquoted context equally', () => {
+      const macros = [hostMacro('{$PORT:"ssh"}', '22', '10'), hostMacro('{$PORT:http}', '80', '10')];
+      expect(expandUserMacros('{$PORT:ssh}/{$PORT:"http"}', macros, [], ['10'])).toBe('22/80');
+    });
+
+    it('prefers an exact context over a regex context, and a global context macro over the plain host macro', () => {
+      const result = expandUserMacros(
+        '{$LIMIT:"/var"} {$LIMIT:"/tmp"} {$LIMIT:"/home"}',
+        [
+          hostMacro('{$LIMIT:regex:"^/(var|tmp)"}', 'regex', '10'),
+          hostMacro('{$LIMIT:"/var"}', 'exact', '10'),
+          hostMacro('{$LIMIT}', 'plain', '10'),
+        ],
+        [globalMacro('{$LIMIT:"/home"}', 'global-ctx')],
+        ['10']
+      );
+      expect(result).toBe('exact regex global-ctx');
+    });
+
+    it('falls back to the macro without context when no context matches', () => {
+      const result = expandUserMacros('{$LIMIT:"/opt"}', [hostMacro('{$LIMIT}', 'plain', '10')], [], ['10']);
+      expect(result).toBe('plain');
+    });
+
+    it('does not use a context macro for a plain macro', () => {
+      expect(expandUserMacros('{$LIMIT}', [hostMacro('{$LIMIT:"/var"}', 'x', '10')], [], ['10'])).toBe('{$LIMIT}');
+    });
+
+    it('ignores an invalid regex context', () => {
+      const result = expandUserMacros(
+        '{$LIMIT:"/var"}',
+        [hostMacro('{$LIMIT:regex:"("}', 'bad', '10'), hostMacro('{$LIMIT}', 'plain', '10')],
+        [],
+        ['10']
+      );
+      expect(result).toBe('plain');
+    });
   });
 
   it('returns empty/undefined text unchanged', () => {

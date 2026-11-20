@@ -269,50 +269,22 @@ export function expandItemMacros(text: string, items: ItemResolution[]): string 
   result = result.replace(/\{ITEM\.LASTVALUE\}/g, first.originalLastvalue ?? '');
   items.forEach(({ historicalValue, originalLastvalue }, index) => {
     const n = index + 1;
-    result = result.replace(new RegExp(`\\{ITEM${n}\\.VALUE\\}`, 'g'), historicalValue ?? originalLastvalue ?? '');
-    result = result.replace(new RegExp(`\\{ITEM${n}\\.LASTVALUE\\}`, 'g'), originalLastvalue ?? '');
+    // Zabbix numbers these as {ITEM.VALUE2}; {ITEM2.VALUE} is kept for existing dashboards.
+    result = result.replace(
+      new RegExp(`\\{ITEM(?:\\.VALUE${n}|${n}\\.VALUE)\\}`, 'g'),
+      historicalValue ?? originalLastvalue ?? ''
+    );
+    result = result.replace(
+      new RegExp(`\\{ITEM(?:\\.LASTVALUE${n}|${n}\\.LASTVALUE)\\}`, 'g'),
+      originalLastvalue ?? ''
+    );
   });
   return result;
 }
 
-export interface UserMacro {
-  macro: string;
-  value?: string;
-  hostid?: string;
-}
-
-const USER_MACRO_PATTERN = /\{\$[A-Z0-9_.]+\}/g;
-
-export function hasUserMacro(text: string): boolean {
-  if (!text) {
-    return false;
-  }
-  return /\{\$[A-Z0-9_.]+\}/.test(text);
-}
-
-export function expandUserMacros(
-  text: string,
-  hostMacros: UserMacro[],
-  globalMacros: UserMacro[],
-  hostids: string[]
-): string {
-  if (!text) {
-    return text;
-  }
-  return text.replace(USER_MACRO_PATTERN, (macroName) => {
-    const hostMacro = hostMacros.find(
-      (m) => m.macro === macroName && m.hostid !== undefined && hostids.includes(m.hostid)
-    );
-    if (hostMacro && hostMacro.value != null) {
-      return hostMacro.value;
-    }
-    const globalMacro = globalMacros.find((m) => m.macro === macroName);
-    if (globalMacro && globalMacro.value != null) {
-      return globalMacro.value;
-    }
-    return macroName;
-  });
-}
+export { expandUserMacros, hasUserMacro } from './macros/userMacros';
+export type { UserMacro } from './macros/userMacros';
+export { expandTriggerUrl } from './macros/triggerUrl';
 
 const problemsHandler = {
   addTriggerDataSource,

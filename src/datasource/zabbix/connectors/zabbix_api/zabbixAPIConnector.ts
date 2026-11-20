@@ -394,6 +394,58 @@ export class ZabbixAPIConnector {
     return this.request('usermacro.get', params);
   }
 
+  /**
+   * Hosts or templates with their parent templates and interfaces, used to resolve
+   * user macros through template inheritance and {HOST.IP}-like macros.
+   */
+  getHostsForMacros(hostids: string[]): Promise<any[]> {
+    const params = {
+      output: ['hostid', 'host', 'name'],
+      hostids,
+      templated_hosts: true,
+      selectParentTemplates: ['templateid'],
+      selectInterfaces: ['type', 'main', 'useip', 'ip', 'dns', 'port'],
+    };
+    return this.request('host.get', params);
+  }
+
+  /**
+   * Raw trigger expressions with their functions and items, to resolve {HOST.HOST2}-like and
+   * {ITEM.VALUE} macros. trigger.get is not cached by the backend, so latest values stay current.
+   */
+  getTriggerFunctions(triggerids: string[]): Promise<any[]> {
+    return this.request('trigger.get', {
+      output: ['triggerid', 'expression'],
+      triggerids,
+      selectFunctions: ['functionid', 'itemid'],
+      selectItems: ['itemid', 'hostid', 'value_type', 'units', 'lastvalue', 'lastclock', 'valuemapid'],
+    });
+  }
+
+  getValueMaps(valuemapids: string[]): Promise<any[]> {
+    return this.request('valuemap.get', {
+      output: ['valuemapid'],
+      valuemapids,
+      selectMappings: ['type', 'value', 'newvalue'],
+    });
+  }
+
+  /**
+   * Latest record of a log item, for {ITEM.LOG.*} macros. Bounded to the item's last clock and
+   * one row, so it never scans history.
+   */
+  getLastLogRecord(itemid: string, lastclock: string): Promise<any> {
+    return this.request('history.get', {
+      output: ['timestamp', 'source', 'severity', 'logeventid'],
+      history: 2,
+      itemids: [itemid],
+      time_from: lastclock,
+      sortfield: 'clock',
+      sortorder: 'DESC',
+      limit: 1,
+    }).then((records) => records?.[0]);
+  }
+
   getUserMacros(hostmacroids) {
     const params = {
       output: 'extend',
@@ -731,7 +783,7 @@ export class ZabbixAPIConnector {
       skipDependent: true,
       [getParamsKeyByVersion('selectHostGroups', this.version, 'trigger.get')]: ['name', 'groupid'],
       selectHosts: ['hostid', 'name', 'host', 'maintenance_status', 'description'],
-      selectItems: ['itemid', 'name', 'key_', 'lastvalue', 'value_type'],
+      selectItems: ['itemid', 'hostid', 'name', 'key_', 'lastvalue', 'value_type'],
       // selectLastEvent: 'extend',
       // selectTags: 'extend',
       preservekeys: '1',
