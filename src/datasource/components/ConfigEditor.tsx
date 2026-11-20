@@ -41,6 +41,7 @@ import {
   AdvancedHttpSettings,
 } from '@grafana/plugin-ui';
 import { Divider } from './Divider';
+import { DeprecatedVersionWarning } from './DeprecatedVersionWarning';
 import { css } from '@emotion/css';
 import { CLICKHOUSE_DS_ID } from '../zabbix/connectors/clickhouse/clickhouseConnector';
 
@@ -187,6 +188,8 @@ export const ConfigEditor = (props: Props) => {
 
   return (
     <>
+      <DeprecatedVersionWarning datasourceUid={options.uid} />
+
       <DataSourceDescription
         dataSourceName="Zabbix"
         docsLink="https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/"
