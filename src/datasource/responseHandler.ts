@@ -100,6 +100,47 @@ function handleMacro(macros, target): MutableDataFrame {
   return frame;
 }
 
+// Inventory stores coordinates as free text; Geomap needs numbers named latitude/longitude.
+const INVENTORY_COORD_FIELDS = {
+  location_lat: { name: 'latitude', limit: 90 },
+  location_lon: { name: 'longitude', limit: 180 },
+};
+
+export function parseCoordinate(value: unknown, limit: number): number | null {
+  const str = String(value ?? '')
+    .trim()
+    .replace(',', '.');
+  const n = str === '' ? NaN : Number(str);
+  return Number.isFinite(n) && Math.abs(n) <= limit ? n : null;
+}
+
+function handleInventory(hosts: any[], fields: string[], target): MutableDataFrame {
+  const frame = new MutableDataFrame({
+    refId: target.refId,
+    name: 'inventory',
+    fields: [
+      { name: 'Host', type: FieldType.string },
+      ...fields.map((f) =>
+        INVENTORY_COORD_FIELDS[f]
+          ? { name: INVENTORY_COORD_FIELDS[f].name, type: FieldType.number }
+          : { name: f, type: FieldType.string }
+      ),
+    ],
+  });
+
+  for (const host of hosts) {
+    // Hosts with inventory disabled return `inventory: []`
+    const inventory = host.inventory || {};
+    const row: any = { Host: host.name };
+    for (const f of fields) {
+      const coord = INVENTORY_COORD_FIELDS[f];
+      row[coord ? coord.name : f] = coord ? parseCoordinate(inventory[f], coord.limit) : (inventory[f] ?? '');
+    }
+    frame.add(row);
+  }
+  return frame;
+}
+
 export function seriesToDataFrame(
   timeseries,
   target: ZabbixMetricsQuery,
@@ -798,6 +839,7 @@ export default {
   handleTrends,
   handleText,
   handleMacro,
+  handleInventory,
   handleHistoryAsTable,
   handleSLAResponse,
   handleTriggersResponse,
