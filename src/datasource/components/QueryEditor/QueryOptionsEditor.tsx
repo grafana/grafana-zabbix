@@ -1,17 +1,8 @@
 import { css } from '@emotion/css';
 import React, { useState, FormEvent, ReactNode } from 'react';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import {
-  Combobox,
-  ComboboxOption,
-  Icon,
-  InlineField,
-  InlineFieldRow,
-  InlineSwitch,
-  Input,
-  Stack,
-  useStyles2,
-} from '@grafana/ui';
+import { ComboboxOption, Icon, InlineField, InlineFieldRow, InlineSwitch, Input, Stack, useStyles2 } from '@grafana/ui';
+import { Combobox } from '../../../components/Combobox/Combobox';
 import * as c from '../../constants';
 import { ZabbixQueryOptions } from '../../types/query';
 

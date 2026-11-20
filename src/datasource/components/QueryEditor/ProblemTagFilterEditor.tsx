@@ -1,5 +1,6 @@
 import React, { FormEvent, useCallback, useState } from 'react';
-import { Button, Combobox, ComboboxOption, Input, RadioButtonGroup, Stack, Tooltip } from '@grafana/ui';
+import { Button, ComboboxOption, Input, RadioButtonGroup, Stack, Tooltip } from '@grafana/ui';
+import { Combobox } from '../../../components/Combobox/Combobox';
 import { ProblemTagFilter, ZabbixTagEvalType } from 'datasource/types/query';
 import { TagOperatorLabel, TagOperatorValue } from './types';
 import { getHostTagOptionLabel } from './utils';

@@ -2,7 +2,8 @@ import _ from 'lodash';
 import React, { useEffect } from 'react';
 import { useAsyncFn } from '../../hooks/useAsyncFn';
 
-import { Combobox, ComboboxOption, InlineField } from '@grafana/ui';
+import { ComboboxOption, InlineField } from '@grafana/ui';
+import { Combobox } from '../../../components/Combobox/Combobox';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
