@@ -1,30 +1,39 @@
 import React from 'react';
 import { css } from '@emotion/css';
-import { ZBXAcknowledge } from '../../../../datasource/types';
-import { FAIcon } from '../../../../components';
-import { useTheme2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
+import { Icon, Tooltip, useStyles2 } from '@grafana/ui';
+import { ZBXAcknowledge } from '../../../../datasource/types';
 
-const getStyles = (theme: GrafanaTheme2) => {
-  return {
-    countLabel: css`
-      font-size: ${theme.typography.fontSize};
-    `,
-  };
-};
+const getStyles = (theme: GrafanaTheme2) => ({
+  cell: css({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }),
+  check: css({
+    display: 'inline-flex',
+    color: theme.colors.success.text,
+  }),
+});
 
 export const AckCell = (props: { acknowledges?: ZBXAcknowledge[] }) => {
-  const acknowledges = props.acknowledges || [];
-  const styles = getStyles(useTheme2());
+  const styles = useStyles2(getStyles);
+  const count = props.acknowledges?.length ?? 0;
+
+  // Unacknowledged problems show nothing rather than "No"
+  if (count === 0) {
+    return null;
+  }
+
+  const label = count === 1 ? 'Acknowledged (1 entry)' : `Acknowledged (${count} entries)`;
 
   return (
-    <div>
-      {acknowledges?.length > 0 && (
-        <>
-          <FAIcon icon="comments" />
-          <span className={styles.countLabel}> ({acknowledges?.length})</span>
-        </>
-      )}
-    </div>
+    <span className={styles.cell}>
+      <Tooltip content={label} placement="top">
+        <span className={styles.check} role="img" aria-label={label}>
+          <Icon name="check" />
+        </span>
+      </Tooltip>
+    </span>
   );
 };
