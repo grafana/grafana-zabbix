@@ -536,6 +536,77 @@ func TestGetAllHosts_WithHostTags(t *testing.T) {
 	assert.EqualValues(t, 1, tagMap["operator"])
 }
 
+func TestGetAllHosts_WithHostTagsOnZabbix80(t *testing.T) {
+	var hostGetCalls []map[string]interface{}
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"8.0.0"}`
+		}
+		if payload.Method == "host.get" {
+			hostGetCalls = append(hostGetCalls, payload.Params)
+			if payload.Params["inheritedTags"] == true {
+				// Zabbix 8.0 wrongly keeps the template-less host-c here and drops template-less host-a.
+				return `{"result":[
+					{"hostid":"2","name":"host-b","parentTemplates":[{"templateid":"100"}]},
+					{"hostid":"3","name":"host-c","parentTemplates":[]}
+				]}`
+			}
+			return `{"result":[
+				{"hostid":"1","name":"host-a","parentTemplates":[]},
+				{"hostid":"4","name":"host-d","parentTemplates":[{"templateid":"100"}]}
+			]}`
+		}
+		return `{"result":null}`
+	})
+
+	hostTags := []HostTagFilter{{Tag: "env", Value: "prod", Operator: "1"}}
+	hosts, err := client.GetAllHosts(context.Background(), []string{"1"}, hostTags, "0")
+	require.NoError(t, err)
+
+	require.Len(t, hosts, 2)
+	assert.Equal(t, "1", hosts[0].ID)
+	assert.Equal(t, "host-a", hosts[0].Name)
+	assert.Equal(t, "2", hosts[1].ID)
+	assert.Equal(t, "host-b", hosts[1].Name)
+
+	require.Len(t, hostGetCalls, 2)
+	inheritedCount := 0
+	for _, params := range hostGetCalls {
+		assert.Equal(t, []interface{}{"templateid"}, params["selectParentTemplates"])
+		assert.EqualValues(t, 0, params["evaltype"])
+		assert.NotNil(t, params["tags"])
+		if params["inheritedTags"] == true {
+			inheritedCount++
+		} else {
+			assert.NotContains(t, params, "inheritedTags")
+		}
+	}
+	assert.Equal(t, 1, inheritedCount)
+}
+
+func TestGetAllHosts_WithoutHostTagsOnZabbix80(t *testing.T) {
+	var hostGetCalls []map[string]interface{}
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"8.0.0"}`
+		}
+		if payload.Method == "host.get" {
+			hostGetCalls = append(hostGetCalls, payload.Params)
+			return `{"result":[{"hostid":"1","name":"host-a"}]}`
+		}
+		return `{"result":null}`
+	})
+
+	hosts, err := client.GetAllHosts(context.Background(), []string{"1"}, []HostTagFilter{{Tag: ""}}, "0")
+	require.NoError(t, err)
+	assert.Len(t, hosts, 1)
+
+	require.Len(t, hostGetCalls, 1)
+	assert.NotContains(t, hostGetCalls[0], "inheritedTags")
+	assert.NotContains(t, hostGetCalls[0], "selectParentTemplates")
+	assert.NotContains(t, hostGetCalls[0], "tags")
+}
+
 func TestGetItems_WithHostTags(t *testing.T) {
 	var hostGetParams map[string]interface{}
 	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {

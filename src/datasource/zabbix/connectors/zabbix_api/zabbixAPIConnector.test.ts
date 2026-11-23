@@ -496,6 +496,97 @@ describe('Zabbix API connector', () => {
       });
     });
 
+    it('on Zabbix 8.0 takes templated hosts from an inheritedTags query and the rest from a plain one', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '8.0.0';
+      zabbixAPIConnector.request = jest.fn().mockImplementation(async (_method: string, params: any) => {
+        if (params.inheritedTags) {
+          // Zabbix 8.0 wrongly keeps the template-less host-c here and drops template-less host-a.
+          return [
+            { hostid: '2', name: 'host-b', parentTemplates: [{ templateid: '100' }] },
+            { hostid: '3', name: 'host-c', parentTemplates: [] },
+          ];
+        }
+        return [
+          { hostid: '1', name: 'host-a', parentTemplates: [] },
+          { hostid: '4', name: 'host-d', parentTemplates: [{ templateid: '100' }] },
+        ];
+      });
+
+      const result = await zabbixAPIConnector.getHosts(
+        ['1'],
+        false,
+        [{ tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals }],
+        ZabbixTagEvalType.AndOr
+      );
+
+      const baseParams = {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        groupids: ['1'],
+        evaltype: 0,
+        tags: [{ tag: 'role', value: 'api', operator: 1 }],
+        selectParentTemplates: ['templateid'],
+      };
+      expect(zabbixAPIConnector.request).toHaveBeenCalledTimes(2);
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', { ...baseParams, inheritedTags: true });
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', baseParams);
+      expect(result).toEqual([
+        { hostid: '1', name: 'host-a' },
+        { hostid: '2', name: 'host-b' },
+      ]);
+    });
+
+    it('on Zabbix 8.0 still merges inherited tags into tags when they are requested', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '8.0.0';
+      zabbixAPIConnector.request = jest.fn().mockImplementation(async (_method: string, params: any) =>
+        params.inheritedTags
+          ? [
+              {
+                hostid: '2',
+                name: 'host-b',
+                tags: [],
+                inheritedTags: [{ tag: 'role', value: 'api' }],
+                parentTemplates: [{ templateid: '100' }],
+              },
+            ]
+          : [
+              {
+                hostid: '1',
+                name: 'host-a',
+                tags: [{ tag: 'role', value: 'api' }],
+                inheritedTags: [],
+                parentTemplates: [],
+              },
+            ]
+      );
+
+      const result = await zabbixAPIConnector.getHosts(undefined, true, [
+        { tag: 'role', value: 'api', operator: HostTagOperatorValue.Equals },
+      ]);
+
+      expect(result).toEqual([
+        { hostid: '1', name: 'host-a', tags: [{ tag: 'role', value: 'api' }] },
+        { hostid: '2', name: 'host-b', tags: [{ tag: 'role', value: 'api' }] },
+      ]);
+    });
+
+    it('on Zabbix 8.0 sends a single plain host.get when there are no tag filters', async () => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, datasourceUID);
+      zabbixAPIConnector.version = '8.0.0';
+      zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
+
+      await zabbixAPIConnector.getHosts(['1'], false, [{ tag: '', value: '', operator: HostTagOperatorValue.Equals }]);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledTimes(1);
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('host.get', {
+        output: ['hostid', 'name', 'host'],
+        sortfield: 'name',
+        groupids: ['1'],
+      });
+    });
+
     it('defaults evaltype to And/Or when using an unsupported evalType', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, resourceClient);
       zabbixAPIConnector.request = jest.fn().mockResolvedValue([]);
