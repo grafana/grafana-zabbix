@@ -138,6 +138,12 @@ export interface EntityPatternConfig {
     name: string;
     groupIndex: number;
   }>;
+  // Metadata columns built from item tags. Like extracted columns they identify the row (host plus
+  // every metadata value), so the tag should exist on all items matched by the pattern.
+  tagColumns?: Array<{
+    name: string;
+    tag: string;
+  }>;
 }
 
 export interface MultiMetricTableConfig {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAsyncFn } from 'react-use';
+import { useAsync, useAsyncFn } from 'react-use';
 import { uniqBy } from 'lodash';
 import {
   Button,
@@ -228,6 +228,16 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     [textItems, rowsFromHost, tableConfig.entityPattern.pattern, tableConfig.entityPattern.searchType]
   );
 
+  // Item tags exist on Zabbix 5.4+ only.
+  const { value: itemTagsSupported } = useAsync(() => datasource.zabbix.isZabbix54OrHigher(), [datasource]);
+
+  // Tag name suggestions come from the items matching the Table Rows pattern.
+  const tagNameOptions = useMemo<Array<ComboboxOption<string>>>(() => {
+    const names = new Set<string>();
+    scopedItems.forEach((item) => (item.tags ?? []).forEach((t) => names.add(t.tag)));
+    return [...names].sort().map((name) => ({ value: name, label: name }));
+  }, [scopedItems]);
+
   const metricItemNameOptions = useMemo(() => buildItemOptions(scopedItems, 'name'), [scopedItems]);
   const metricItemKeyOptions = useMemo(() => buildItemOptions(scopedItems, 'key_'), [scopedItems]);
   const metricTextItemNameOptions = useMemo(() => buildItemOptions(scopedTextItems, 'name'), [scopedTextItems]);
@@ -373,6 +383,38 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     });
   };
 
+  const onTagColumnsChange = (tagColumns: Array<{ name: string; tag: string }>) => {
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          tagColumns,
+        },
+      },
+    });
+  };
+
+  const onTagColumnAdd = () => {
+    onTagColumnsChange([...(tableConfig.entityPattern.tagColumns || []), { name: '', tag: '' }]);
+  };
+
+  const onTagColumnChange = (index: number, field: 'name' | 'tag', value: string) => {
+    const tagColumns = [...(tableConfig.entityPattern.tagColumns || [])];
+    const column = { ...tagColumns[index], [field]: value };
+    // Picking a tag names the column after it until the user sets a name.
+    if (field === 'tag' && !tagColumns[index].name) {
+      column.name = value;
+    }
+    tagColumns[index] = column;
+    onTagColumnsChange(tagColumns);
+  };
+
+  const onTagColumnRemove = (index: number) => {
+    onTagColumnsChange((tableConfig.entityPattern.tagColumns || []).filter((_, i) => i !== index));
+  };
+
   const onExtractedColumnRemove = (index: number) => {
     const extractedColumns = (tableConfig.entityPattern.extractedColumns || []).filter((_, i) => i !== index);
 
@@ -448,6 +490,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   };
 
   const extractedColumns = tableConfig.entityPattern.extractedColumns || [];
+  const tagColumns = tableConfig.entityPattern.tagColumns || [];
 
   return (
     <Stack direction="column" gap={2}>
@@ -659,6 +702,57 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
               </Stack>
             </div>
           )}
+
+          {/* Tag Columns Section */}
+          {!rowsFromHost && itemTagsSupported && (
+            <div style={{ marginTop: '8px', marginLeft: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                <h6 style={{ margin: 0, fontSize: '12px' }}>
+                  <Icon name="arrow-right" /> Columns from item tags
+                </h6>
+              </div>
+              <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#8e8e8e' }}>
+                Tag columns identify rows together with the host and any extracted columns. The tag should exist on all
+                items matched by the Table Rows pattern; items without it are grouped into a row with an empty value.
+              </p>
+              <Stack direction="column" gap={1}>
+                {tagColumns.map((col, index) => (
+                  <InlineFieldRow key={index}>
+                    <InlineField label="Column name" labelWidth={16}>
+                      <Input
+                        id={`multimetric-tag-column-name-${index}`}
+                        width={30}
+                        value={col.name}
+                        placeholder="Defaults to the tag name"
+                        onChange={(e) => onTagColumnChange(index, 'name', e.currentTarget.value)}
+                      />
+                    </InlineField>
+                    <InlineField label="Tag" labelWidth={16}>
+                      <MetricPicker
+                        width={30}
+                        value={col.tag}
+                        options={tagNameOptions}
+                        isLoading={itemsLoading}
+                        placeholder="Item tag name"
+                        createCustomValue={true}
+                        onChange={(value) => onTagColumnChange(index, 'tag', value || '')}
+                      />
+                    </InlineField>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      icon="trash-alt"
+                      aria-label="Remove tag column"
+                      onClick={() => onTagColumnRemove(index)}
+                    />
+                  </InlineFieldRow>
+                ))}
+                <Button size="sm" icon="plus" variant="secondary" onClick={onTagColumnAdd}>
+                  Add tag column
+                </Button>
+              </Stack>
+            </div>
+          )}
         </Stack>
       </div>
 
@@ -777,9 +871,9 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(50, 116, 217, 0.1)', borderRadius: '4px' }}>
         <p style={{ margin: 0, fontSize: '12px' }}>
           <strong>How it works:</strong> Select Group/Host, choose what rows represent, then add metric columns. With
-          rows from <em>Item pattern</em>, define the entity pattern (optionally extracting columns from regex capture
-          groups). With rows from <em>Hosts</em>, each host is a row; use this for host-level (non-LLD) items such as
-          CPU or memory utilization.
+          rows from <em>Item pattern</em>, define the entity pattern and optionally build columns from regex capture
+          groups or item tags. With rows from <em>Hosts</em>, each host is a row; use this for host-level (non-LLD)
+          items such as CPU or memory utilization.
         </p>
         <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
           <strong>Patterns:</strong> a value wrapped in slashes (/.../) is a regex; anything else must match the item

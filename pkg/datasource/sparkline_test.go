@@ -90,3 +90,33 @@ func TestBuildSparklineFramesHostRows(t *testing.T) {
 	labels := frames[0].Fields[1].Labels
 	assert.Equal(t, data.Labels{"Host": "vm-a"}, labels, "host rows must carry only the Host label")
 }
+
+// Tag columns identify entity rows, so sparkline series must carry them as labels for the Trend
+// tables to join onto the scalar table; the Entity label is dropped like for extracted columns.
+func TestBuildSparklineFramesTagColumns(t *testing.T) {
+	ds := MockZabbixDataSource("", 200)
+
+	items := []*zabbix.Item{{
+		ID:        "10001",
+		Name:      "Interface eth0: Bits received",
+		Key:       "net.if.in[eth0]",
+		Delay:     "60s",
+		ValueType: 3,
+		Hosts:     []zabbix.ItemHost{{ID: "1", Name: "router-a"}},
+		Tags:      []zabbix.Tag{{Tag: "interface", Value: "eth0"}, {Tag: "component", Value: "network"}},
+	}}
+	history := zabbix.History{
+		{ItemID: "10001", Clock: 60, Value: 10},
+		{ItemID: "10001", Clock: 120, Value: 20},
+	}
+	pattern := EntityPatternConfig{
+		SearchType: "itemName",
+		Pattern:    "/^Interface /",
+		TagColumns: []TagColumnConfig{{Name: "Interface", Tag: "interface"}, {Name: "Component", Tag: "component"}},
+	}
+	metric := MetricColumnConfig{ColumnName: "Bits in", SearchType: "itemName", Pattern: "/Bits received$/"}
+
+	frames := ds.buildSparklineFrames(metric, items, history, pattern, false)
+	require.Len(t, frames, 1)
+	assert.Equal(t, data.Labels{"Host": "router-a", "Interface": "eth0", "Component": "network"}, frames[0].Fields[1].Labels)
+}

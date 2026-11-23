@@ -268,6 +268,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 		Host            string
 		Entity          string
 		ExtractedValues []string
+		TagValues       []string
 		CompositeKey    string
 	}
 
@@ -314,13 +315,8 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 				hostName = item.Hosts[0].Name
 			}
 
-			var compositeKey string
-			if len(extractedValues) > 0 {
-				extractedKey := strings.Join(extractedValues, "|")
-				compositeKey = hostName + "|" + extractedKey
-			} else {
-				compositeKey = hostName + "|" + entityLabel
-			}
+			tagValues := entityTagValues(item, entityPattern)
+			compositeKey := entityRowKey(hostName, entityLabel, extractedValues, tagValues)
 
 			if _, exists := entityMap[compositeKey]; !exists {
 				entityMap[compositeKey] = &EntityInfo{
@@ -329,6 +325,7 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 					Host:            hostName,
 					Entity:          entityLabel,
 					ExtractedValues: extractedValues,
+					TagValues:       tagValues,
 					CompositeKey:    compositeKey,
 				}
 				entityOrder = append(entityOrder, compositeKey)
@@ -483,8 +480,17 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 			frame.Fields = append(frame.Fields, data.NewField(extractedCol.Name, nil, colValues))
 		}
 
-		// Add Entity column only if no extracted columns defined
-		if len(entityPattern.ExtractedColumns) == 0 {
+		// Add tag columns from item tags
+		for colIndex, tagCol := range entityPattern.TagColumns {
+			colValues := make([]string, len(entityOrder))
+			for i, key := range entityOrder {
+				colValues[i] = entityMap[key].TagValues[colIndex]
+			}
+			frame.Fields = append(frame.Fields, data.NewField(tagCol.ColumnName(), nil, colValues))
+		}
+
+		// Add Entity column only if no metadata columns (extracted or tag) are defined
+		if len(entityPattern.ExtractedColumns) == 0 && len(entityPattern.TagColumns) == 0 {
 			entityValues := make([]string, len(entityOrder))
 			for i, key := range entityOrder {
 				entityValues[i] = entityMap[key].Entity
@@ -558,18 +564,48 @@ func (ds *ZabbixDatasourceInstance) queryMultiMetricTable(ctx context.Context, q
 	return frames, nil
 }
 
-// entityCompositeKey builds the same row key used to align metric values with entity rows:
-// "<host>|<joined extracted capture groups>" or "<host>|<entity label>" when no groups are extracted.
+// entityCompositeKey builds the same row key used to align metric values with entity rows.
 func (ds *ZabbixDatasourceInstance) entityCompositeKey(item *zabbix.Item, pattern EntityPatternConfig) string {
 	entityLabel, extractedValues := ds.extractEntityLabelWithGroups(item, pattern)
 	hostName := ""
 	if len(item.Hosts) > 0 {
 		hostName = item.Hosts[0].Name
 	}
+	return entityRowKey(hostName, entityLabel, extractedValues, entityTagValues(item, pattern))
+}
+
+// entityRowKey identifies an entity row: the host plus every metadata value (extracted capture
+// groups, then tag column values). Without any metadata the entity label (item name or key)
+// identifies the row instead.
+func entityRowKey(hostName, entityLabel string, extractedValues, tagValues []string) string {
+	parts := []string{hostName}
 	if len(extractedValues) > 0 {
-		return hostName + "|" + strings.Join(extractedValues, "|")
+		parts = append(parts, extractedValues...)
+	} else if len(tagValues) == 0 {
+		parts = append(parts, entityLabel)
 	}
-	return hostName + "|" + entityLabel
+	parts = append(parts, tagValues...)
+	return strings.Join(parts, "|")
+}
+
+// entityTagValues returns the item's value for every configured tag column, in column order.
+func entityTagValues(item *zabbix.Item, pattern EntityPatternConfig) []string {
+	values := make([]string, len(pattern.TagColumns))
+	for i, col := range pattern.TagColumns {
+		values[i] = itemTagValue(item, col.Tag)
+	}
+	return values
+}
+
+// itemTagValue returns the value of the item's tag with the given name. It is "" when the item
+// does not carry the tag, and also for a tag without a value.
+func itemTagValue(item *zabbix.Item, tag string) string {
+	for _, t := range item.Tags {
+		if t.Tag == tag {
+			return t.Value
+		}
+	}
+	return ""
 }
 
 // sparklineInterval returns the interval used to align a sparkline series: the item's configured
@@ -589,7 +625,7 @@ func sparklineInterval(item *zabbix.Item, ts timeseries.TimeSeries) time.Duratio
 // The transformation groups frames by RefID and emits exactly one "Trend #<refId>" column per RefID,
 // so every sparkline metric is given its OWN RefID (the column name). This yields one sparkline column
 // per metric ("wide" layout) instead of a single Trend column with a "metric" dimension column.
-// Labels carry only the row-identifying dimensions (Host / extracted columns / Entity, or just Host
+// Labels carry only the row-identifying dimensions (Host / extracted and tag columns / Entity, or just Host
 // when rows represent hosts) so the per-metric Trend tables can be joined or merged onto each other
 // (and onto the scalar table) on those columns.
 func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConfig, items []*zabbix.Item, history zabbix.History, pattern EntityPatternConfig, rowsFromHost bool) []*data.Frame {
@@ -630,8 +666,8 @@ func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConf
 		if hostName != "" {
 			labels["Host"] = hostName
 		}
-		// Host rows join on the Host label alone; entity-pattern rows also carry the
-		// extracted columns (or the entity label) as join dimensions.
+		// Host rows join on the Host label alone; entity-pattern rows also carry their metadata
+		// (extracted and tag columns, or the entity label without any) as join dimensions.
 		if !rowsFromHost {
 			entityLabel, extractedValues := ds.extractEntityLabelWithGroups(item, pattern)
 			if len(extractedValues) > 0 {
@@ -640,8 +676,11 @@ func (ds *ZabbixDatasourceInstance) buildSparklineFrames(metric MetricColumnConf
 						labels[col.Name] = extractedValues[col.GroupIndex-1]
 					}
 				}
-			} else {
+			} else if len(pattern.TagColumns) == 0 {
 				labels["Entity"] = entityLabel
+			}
+			for i, value := range entityTagValues(item, pattern) {
+				labels[pattern.TagColumns[i].ColumnName()] = value
 			}
 		}
 

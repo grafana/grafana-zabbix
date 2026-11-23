@@ -201,6 +201,61 @@ test.describe('Multi-metric Table: rows from Item pattern (LLD entities)', () =>
   });
 });
 
+test.describe('Multi-metric Table: columns from item tags', () => {
+  test('item tag columns identify rows without a capture regex', async ({
+    page,
+    gotoDashboardPage,
+    readProvisionedDashboard,
+  }) => {
+    const { dashboardPage, frames } = await openPanel({ page, gotoDashboardPage, readProvisionedDashboard }, 11);
+    const table = tableFrame(frames);
+
+    // Rows are keyed by host + the interface and component tags: no regex, no Entity column.
+    expect(fieldNames(table)).toEqual(['Host', 'Interface', 'Component', 'Bits in', 'Bits out', 'Description']);
+    expect(rows(table)).toHaveLength(5);
+
+    // All items of an interface (Bits received, Bits sent, Description) land in the same row.
+    expect(row(table, { Host: ROUTER_A, Interface: 'eth0' })).toMatchObject({
+      Component: 'network',
+      'Bits in': '5000000',
+      'Bits out': '2000000',
+      Description: 'Uplink to ISP',
+    });
+    expect(row(table, { Host: ROUTER_B, Interface: 'eth1' })).toMatchObject({
+      'Bits in': '900000',
+      Description: 'Office LAN',
+    });
+
+    const panel = dashboardPage.getPanelByTitle('11. LLD rows from item tags: no capture regex, multi-host');
+    await expect(panel.fieldNames).toContainText(['Host', 'Interface', 'Component', 'Bits in', 'Bits out']);
+    await expect(panel.data).toContainText([ROUTER_A, 'eth0', 'network', '5000000']);
+  });
+
+  test('item tag columns label the sparkline series for the join', async ({
+    page,
+    gotoDashboardPage,
+    readProvisionedDashboard,
+  }) => {
+    const { dashboardPage, frames } = await openPanel({ page, gotoDashboardPage, readProvisionedDashboard }, 12);
+
+    expect(fieldNames(tableFrame(frames))).toEqual(['Interface', 'Status']);
+    const series = seriesFor(frames, 'Bits in');
+    expect(series).toHaveLength(3);
+    expect(
+      series.map((s) => s.schema.fields[1].labels).sort((a, b) => a!.Interface.localeCompare(b!.Interface))
+    ).toEqual([
+      { Host: ROUTER_A, Interface: 'eth0' },
+      { Host: ROUTER_A, Interface: 'eth1' },
+      { Host: ROUTER_A, Interface: 'eth2' },
+    ]);
+
+    const panel = dashboardPage.getPanelByTitle('12. Tag column sparklines: single host, joined on Interface');
+    await expect(panel.fieldNames).toContainText(['Interface', 'Trend #Bits in']);
+    await expect(panel.data).toContainText(['eth0']);
+    await expect(panel.getErrorIcon()).toHaveCount(0);
+  });
+});
+
 test.describe('Multi-metric Table: rows from Hosts', () => {
   test('exact-match patterns, text columns and never-collected items', async ({
     page,
@@ -397,6 +452,7 @@ test.describe('Multi-metric Table: query editor', () => {
     await expect(page.getByText('Extract pattern', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('checkbox', { name: 'Show Host column' })).toHaveCount(0);
     await expect(page.getByRole('checkbox', { name: 'Show Group column' })).toBeVisible();
+    await expect(page.getByText('Columns from item tags')).toHaveCount(0);
   });
 
   test('Item pattern mode shows the entity pattern fields', async ({ page }) => {
@@ -411,6 +467,11 @@ test.describe('Multi-metric Table: query editor', () => {
     await expect(page.getByRole('radio', { name: 'Item pattern' })).toBeChecked();
     await expect(page.getByText('Extract pattern', { exact: true })).toBeVisible();
     await expect(page.getByRole('checkbox', { name: 'Show Host column' })).toBeVisible();
+
+    // Item tag columns are offered in Item pattern mode (the e2e Zabbix is 7.0, so item tags exist).
+    await expect(page.getByText('Columns from item tags')).toBeVisible();
+    await page.getByRole('button', { name: 'Add tag column' }).click();
+    await expect(page.locator('#multimetric-tag-column-name-0')).toBeVisible();
   });
 
   test('text columns lock the aggregation to Last and have no sparkline toggle', async ({ page }) => {

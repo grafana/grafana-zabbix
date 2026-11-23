@@ -136,6 +136,23 @@ type EntityPatternConfig struct {
 	Pattern          string                  `json:"pattern"`
 	ExtractPattern   string                  `json:"extractPattern"`
 	ExtractedColumns []ExtractedColumnConfig `json:"extractedColumns"`
+	// TagColumns build metadata columns from item tags. Like extracted columns they identify the
+	// row: items are grouped by host plus every metadata value, so the tag should exist on all
+	// items matched by the entity pattern.
+	TagColumns []TagColumnConfig `json:"tagColumns"`
+}
+
+type TagColumnConfig struct {
+	Name string `json:"name"`
+	Tag  string `json:"tag"`
+}
+
+// ColumnName is the column header, falling back to the tag name when no name is set.
+func (c TagColumnConfig) ColumnName() string {
+	if c.Name == "" {
+		return c.Tag
+	}
+	return c.Name
 }
 
 type ExtractedColumnConfig struct {

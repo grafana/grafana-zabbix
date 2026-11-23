@@ -1186,6 +1186,255 @@
           }
         }
       ]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "11. LLD rows from item tags: no capture regex, multi-host",
+      "description": "Rows are keyed by the host plus the interface and component item tags instead of a regex. Expect 5 rows (router-a eth0/eth1/eth2, router-b eth0/eth1) with Host (multiple hosts), Interface and Component from item tags and no Entity column. Values match panel 1.",
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "zabbix-e2e"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 82
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "alexanderzobnin-zabbix-datasource",
+            "uid": "zabbix-e2e"
+          },
+          "refId": "A",
+          "queryType": "7",
+          "schema": 13,
+          "group": {
+            "filter": "E2E Multi-metric"
+          },
+          "host": {
+            "filter": "/.*/"
+          },
+          "application": {
+            "filter": ""
+          },
+          "itemTag": {
+            "filter": ""
+          },
+          "item": {
+            "filter": ""
+          },
+          "hostTags": [],
+          "evaltype": "0",
+          "functions": [],
+          "options": {
+            "showDisabledItems": false,
+            "disableDataAlignment": false,
+            "useZabbixValueMapping": false,
+            "useTrends": "default"
+          },
+          "tableConfig": {
+            "rowSource": "entityPattern",
+            "entityPattern": {
+              "searchType": "itemName",
+              "pattern": "/^Interface .*/",
+              "tagColumns": [
+                {
+                  "name": "Interface",
+                  "tag": "interface"
+                },
+                {
+                  "name": "Component",
+                  "tag": "component"
+                }
+              ]
+            },
+            "showGroupColumn": false,
+            "showHostColumn": false,
+            "metrics": [
+              {
+                "columnName": "Bits in",
+                "searchType": "itemName",
+                "pattern": "/: Bits received$/",
+                "aggregation": "last",
+                "valueType": "num",
+                "showSparkline": false
+              },
+              {
+                "columnName": "Bits out",
+                "searchType": "itemName",
+                "pattern": "/: Bits sent$/",
+                "aggregation": "last",
+                "valueType": "num",
+                "showSparkline": false
+              },
+              {
+                "columnName": "Description",
+                "searchType": "itemName",
+                "pattern": "/: Description$/",
+                "aggregation": "last",
+                "valueType": "text",
+                "showSparkline": false
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "12. Tag column sparklines: single host, joined on Interface",
+      "description": "Bits in is a sparkline whose series are labeled by Host and the Interface tag column, so the Trend table joins onto the table on Interface. Status stays a scalar column. Expect 3 rows with a sparkline each.",
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "zabbix-e2e"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 90
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^Trend.*"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "sparkline"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "alexanderzobnin-zabbix-datasource",
+            "uid": "zabbix-e2e"
+          },
+          "refId": "A",
+          "queryType": "7",
+          "schema": 13,
+          "group": {
+            "filter": "E2E Multi-metric"
+          },
+          "host": {
+            "filter": "e2e-mm-router-a"
+          },
+          "application": {
+            "filter": ""
+          },
+          "itemTag": {
+            "filter": ""
+          },
+          "item": {
+            "filter": ""
+          },
+          "hostTags": [],
+          "evaltype": "0",
+          "functions": [],
+          "options": {
+            "showDisabledItems": false,
+            "disableDataAlignment": false,
+            "useZabbixValueMapping": false,
+            "useTrends": "default"
+          },
+          "tableConfig": {
+            "rowSource": "entityPattern",
+            "entityPattern": {
+              "searchType": "itemName",
+              "pattern": "/^Interface .*/",
+              "tagColumns": [
+                {
+                  "name": "Interface",
+                  "tag": "interface"
+                }
+              ]
+            },
+            "showGroupColumn": false,
+            "showHostColumn": false,
+            "metrics": [
+              {
+                "columnName": "Bits in",
+                "searchType": "itemName",
+                "pattern": "/: Bits received$/",
+                "aggregation": "last",
+                "valueType": "num",
+                "showSparkline": true
+              },
+              {
+                "columnName": "Status",
+                "searchType": "itemName",
+                "pattern": "/: Operational status$/",
+                "aggregation": "last",
+                "valueType": "num",
+                "showSparkline": false
+              }
+            ]
+          }
+        }
+      ],
+      "transformations": [
+        {
+          "id": "timeSeriesTable",
+          "options": {}
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "Interface",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Host": true
+            },
+            "renameByName": {
+              "Status A": "Status"
+            }
+          }
+        }
+      ]
     }
   ]
 }
