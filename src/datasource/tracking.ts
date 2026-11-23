@@ -8,6 +8,7 @@ import {
   MODE_METRICS,
   MODE_PROBLEMS,
   MODE_TEXT,
+  MODE_TRACES,
   MODE_TRIGGERS,
 } from './constants';
 
@@ -42,6 +43,9 @@ export const trackRequest = (request: DataQueryRequest<ZabbixMetricsQuery>): voi
         break;
       case MODE_MACROS:
         properties.queryType = 'Macros';
+        break;
+      case MODE_TRACES:
+        properties.queryType = 'Traces';
         break;
     }
 
