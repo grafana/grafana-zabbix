@@ -1,5 +1,5 @@
-import React, { FormEvent, useCallback, useState } from 'react';
-import { Button, Combobox, ComboboxOption, Input, RadioButtonGroup, Stack, Tooltip } from '@grafana/ui';
+import React, { useCallback } from 'react';
+import { Button, Combobox, ComboboxOption, RadioButtonGroup, Stack, Tooltip } from '@grafana/ui';
 import { ProblemTagFilter, ZabbixTagEvalType } from 'datasource/types/query';
 import { TagOperatorLabel, TagOperatorValue } from './types';
 import { getHostTagOptionLabel } from './utils';
@@ -8,6 +8,8 @@ interface Props {
   tagFilters: ProblemTagFilter[];
   // Tag name suggestions (template variables and tags of the problems the panel fetched)
   tagOptions?: Array<ComboboxOption<string>>;
+  // Tag value suggestions keyed by tag name (template variables are included per tag)
+  tagValueOptions?: Record<string, Array<ComboboxOption<string>>>;
   version: string;
   // Zabbix >= 5.4 (problem.get/event.get accept operators other than Contains/Equals)
   supportsExtendedOperators: boolean;
@@ -24,14 +26,13 @@ const evalTypeOptions = [
 export const ProblemTagFilterEditor = ({
   tagFilters,
   tagOptions,
+  tagValueOptions,
   version,
   supportsExtendedOperators,
   evalType,
   onChange,
   onEvalTypeChange,
 }: Props) => {
-  const [valueDrafts, setValueDrafts] = useState<Record<number, string>>({});
-
   const operatorOptions: Array<ComboboxOption<TagOperatorValue>> = [
     ...(supportsExtendedOperators
       ? [{ value: TagOperatorValue.Exists, label: TagOperatorLabel.Exists as string }]
@@ -63,18 +64,6 @@ export const ProblemTagFilterEditor = ({
   const onRemoveTagFilter = useCallback(
     (index: number) => {
       onChange(tagFilters.filter((_, i) => i !== index));
-      setValueDrafts((prevDrafts) => {
-        const nextDrafts: Record<number, string> = {};
-        Object.entries(prevDrafts).forEach(([key, draft]) => {
-          const i = Number(key);
-          if (i < index) {
-            nextDrafts[i] = draft;
-          } else if (i > index) {
-            nextDrafts[i - 1] = draft;
-          }
-        });
-        return nextDrafts;
-      });
     },
     [tagFilters, onChange]
   );
@@ -121,16 +110,13 @@ export const ProblemTagFilterEditor = ({
                 width={19}
               />
               {filter.operator !== TagOperatorValue.Exists && filter.operator !== TagOperatorValue.DoesNotExist && (
-                <Input
-                  value={valueDrafts[index] ?? filter.value}
-                  onChange={(evt: FormEvent<HTMLInputElement>) => {
-                    const value = evt?.currentTarget?.value ?? '';
-                    setValueDrafts((prevDrafts) => ({ ...prevDrafts, [index]: value }));
-                  }}
-                  onBlur={(evt: FormEvent<HTMLInputElement>) =>
-                    setTagFilterProp(index, { value: evt?.currentTarget?.value ?? '' })
-                  }
+                <Combobox
+                  value={filter.value ?? ''}
+                  onChange={(option: ComboboxOption | null) => setTagFilterProp(index, { value: option?.value ?? '' })}
+                  options={tagValueOptions?.[filter.tag] ?? []}
                   width={19}
+                  createCustomValue={true}
+                  isClearable={true}
                   placeholder="Tag value"
                 />
               )}

@@ -91,10 +91,10 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
     return options;
   }, [interpolatedQuery.group.filter, interpolatedQuery.host.filter]);
 
-  // Tag name suggestions built from the problems the panel already fetched
-  // (problem.get selects tags) — no extra API call.
-  const problemTagOptions = useMemo(() => {
-    const tagNames: string[] = [];
+  // Tag name and per-tag value suggestions built from the problems the panel
+  // already fetched (problem.get selects tags) — no extra API call.
+  const { problemTagOptions, problemTagValueOptions } = useMemo(() => {
+    const valuesByTag = new Map<string, Set<string>>();
     for (const frame of data?.series ?? []) {
       const field = frame.fields?.[0];
       if (field?.config?.custom?.type !== 'problems') {
@@ -102,17 +102,29 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
       }
       for (const problem of field.values ?? []) {
         for (const tag of problem?.tags ?? []) {
-          if (tag?.tag) {
-            tagNames.push(tag.tag);
+          if (!tag?.tag) {
+            continue;
           }
+          const values = valuesByTag.get(tag.tag) ?? new Set<string>();
+          if (tag.value) {
+            values.add(tag.value);
+          }
+          valuesByTag.set(tag.tag, values);
         }
       }
     }
-    const options: Array<ComboboxOption<string>> = _.uniq(tagNames)
-      .sort()
-      .map((tag) => ({ value: tag, label: tag }));
-    options.unshift(...getVariableOptions());
-    return options;
+    const variableOptions = getVariableOptions();
+    const toOptions = (values: Iterable<string>): Array<ComboboxOption<string>> =>
+      [...values].sort().map((value) => ({ value, label: value }));
+
+    const tagValueOptions: Record<string, Array<ComboboxOption<string>>> = {};
+    valuesByTag.forEach((values, tag) => {
+      tagValueOptions[tag] = [...variableOptions, ...toOptions(values)];
+    });
+    return {
+      problemTagOptions: [...variableOptions, ...toOptions(valuesByTag.keys())],
+      problemTagValueOptions: tagValueOptions,
+    };
   }, [data]);
 
   const loadProxyOptions = async () => {
@@ -247,6 +259,7 @@ export const ProblemsQueryEditor = ({ query, datasource, onChange, data }: Props
           <ProblemTagFilterEditor
             tagFilters={query.problemTags ?? []}
             tagOptions={problemTagOptions}
+            tagValueOptions={problemTagValueOptions}
             version={datasource.zabbix.version}
             supportsExtendedOperators={datasource.zabbix.supportsProblemTagOperators()}
             evalType={query.evaltype}

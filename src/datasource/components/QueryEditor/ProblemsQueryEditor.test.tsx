@@ -167,6 +167,13 @@ describe('ProblemsQueryEditor', () => {
             { value: 'environment', label: 'environment' },
             { value: 'service', label: 'service' },
           ],
+          tagValueOptions: {
+            environment: [{ value: 'production', label: 'production' }],
+            service: [
+              { value: 'db', label: 'db' },
+              { value: 'web', label: 'web' },
+            ],
+          },
         })
       );
     });

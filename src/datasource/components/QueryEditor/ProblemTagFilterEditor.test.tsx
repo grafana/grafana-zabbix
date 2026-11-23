@@ -6,7 +6,6 @@ import { TagOperatorValue } from './types';
 
 const comboboxSpy = jest.fn();
 const radioButtonGroupSpy = jest.fn();
-const inputSpy = jest.fn();
 
 jest.mock('@grafana/runtime', () => ({
   getTemplateSrv: jest.fn(() => ({
@@ -18,10 +17,6 @@ jest.mock('@grafana/ui', () => ({
   Combobox: (props: any) => {
     comboboxSpy(props);
     return <div />;
-  },
-  Input: (props: any) => {
-    inputSpy(props);
-    return <input data-testid="tag-value-input" defaultValue={props.value} onBlur={props.onBlur} />;
   },
   Button: (props: any) => <button aria-label={props['aria-label']} onClick={props.onClick} />,
   Tooltip: ({ children }: any) => <>{children}</>,
@@ -47,6 +42,9 @@ const tagFilter = (overrides: Partial<ProblemTagFilter> = {}): ProblemTagFilter 
   operator: TagOperatorValue.Contains,
   ...overrides,
 });
+
+const findValueCombobox = () =>
+  comboboxSpy.mock.calls.map((call) => call[0]).find((props) => props?.placeholder === 'Tag value');
 
 const findOperatorCombobox = () =>
   comboboxSpy.mock.calls
@@ -141,21 +139,54 @@ describe('ProblemTagFilterEditor', () => {
     expect(onChange).toHaveBeenCalledWith([tagFilter({ tag: 'application' })]);
   });
 
-  it('commits the tag value on blur', () => {
+  it('suggests the known values of the selected tag', () => {
+    const tagValueOptions = {
+      environment: [
+        { value: 'production', label: 'production' },
+        { value: 'staging', label: 'staging' },
+      ],
+      service: [{ value: 'api', label: 'api' }],
+    };
+    render(<ProblemTagFilterEditor {...defaultProps} tagFilters={[tagFilter()]} tagValueOptions={tagValueOptions} />);
+
+    const valueCombobox = findValueCombobox();
+    expect(valueCombobox.options).toEqual(tagValueOptions.environment);
+    expect(valueCombobox.value).toBe('production');
+    expect(valueCombobox.createCustomValue).toBe(true);
+  });
+
+  it('offers no value suggestions for a tag without known values', () => {
+    render(
+      <ProblemTagFilterEditor {...defaultProps} tagFilters={[tagFilter({ tag: 'unknown' })]} tagValueOptions={{}} />
+    );
+
+    expect(findValueCombobox().options).toEqual([]);
+  });
+
+  it('updates the tag value of the edited filter', () => {
     const onChange = jest.fn();
     render(<ProblemTagFilterEditor {...defaultProps} tagFilters={[tagFilter()]} onChange={onChange} />);
 
-    fireEvent.blur(screen.getByTestId('tag-value-input'), { target: { value: 'staging' } });
+    findValueCombobox().onChange({ value: 'staging' });
 
     expect(onChange).toHaveBeenCalledWith([tagFilter({ value: 'staging' })]);
   });
 
+  it('clears the tag value', () => {
+    const onChange = jest.fn();
+    render(<ProblemTagFilterEditor {...defaultProps} tagFilters={[tagFilter()]} onChange={onChange} />);
+
+    findValueCombobox().onChange(null);
+
+    expect(onChange).toHaveBeenCalledWith([tagFilter({ value: '' })]);
+  });
+
   it.each([TagOperatorValue.Exists, TagOperatorValue.DoesNotExist])(
-    'hides the value input for the %s operator',
+    'hides the value field for the %s operator',
     (operator) => {
       render(<ProblemTagFilterEditor {...defaultProps} tagFilters={[tagFilter({ operator })]} />);
 
-      expect(inputSpy).not.toHaveBeenCalled();
+      expect(findValueCombobox()).toBeUndefined();
     }
   );
 
