@@ -118,7 +118,8 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
         <div className="alert-rule-item__body">
           <div className="alert-rule-item__header">
             <div className="alert-rule-item__name">
-              <span className="zabbix-trigger-name">{problem.description}</span>
+              {/* Like the table layout, prefer the event name: its macros ({ITEM.VALUE}) are resolved at event time. */}
+              <span className="zabbix-trigger-name">{problem.name || problem.description}</span>
               {(panelOptions.hostField || panelOptions.hostTechNameField) && (
                 <AlertHost problem={problem} panelOptions={panelOptions} />
               )}
