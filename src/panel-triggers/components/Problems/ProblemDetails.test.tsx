@@ -75,6 +75,36 @@ describe('ProblemDetails', () => {
     mockGetProblemEvents.mockResolvedValue([]);
   });
 
+  it('fetches events and alerts once when the parent re-renders with new callbacks', async () => {
+    const problem = createProblem();
+    const timeRange = getDefaultTimeRange();
+    const props = (overrides = {}) => ({
+      original: { ...problem },
+      rootWidth: 1000,
+      timeRange,
+      panelId: 1,
+      showTimeline: true,
+      datasourceName: 'zabbix-ds',
+      getProblemEvents: (p: ProblemDTO) => mockGetProblemEvents(p),
+      getProblemAlerts: (p: ProblemDTO) => mockGetProblemAlerts(p),
+      getScripts: mockGetScripts,
+      onExecuteScript: mockOnExecuteScript,
+      onProblemAck: mockOnProblemAck,
+      ...overrides,
+    });
+    const { rerender } = render(<ProblemDetails {...props()} />);
+    await waitFor(() => expect(mockGetProblemAlerts).toHaveBeenCalledTimes(1));
+
+    rerender(<ProblemDetails {...props()} />);
+    rerender(<ProblemDetails {...props()} />);
+    await waitFor(() => expect(mockGetProblemAlerts).toHaveBeenCalledTimes(1));
+    expect(mockGetProblemEvents).toHaveBeenCalledTimes(1);
+
+    rerender(<ProblemDetails {...props({ original: { ...problem, eventid: '11' } })} />);
+    await waitFor(() => expect(mockGetProblemAlerts).toHaveBeenCalledTimes(2));
+    expect(mockGetProblemAlerts).toHaveBeenLastCalledWith(expect.objectContaining({ eventid: '11' }));
+  });
+
   it('renders the acknowledge action button when showAckButton is set', async () => {
     await renderDetails(createProblem());
     expect(screen.getByRole('button', { name: 'Acknowledge problem' })).toBeInTheDocument();
