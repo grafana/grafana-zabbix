@@ -110,9 +110,10 @@ export const TriggersQueryEditor = ({ query, datasource, onChange }: Props) => {
 
   const loadProxyOptions = async () => {
     const proxies = await datasource.zabbix.getProxies();
+    // Zabbix 7.0+ returns proxies with `name` instead of `host`.
     const options = proxies?.map((proxy) => ({
-      value: proxy.host,
-      label: proxy.host,
+      value: (!!proxy.host ? proxy.host : proxy.name) ?? '',
+      label: (!!proxy.host ? proxy.host : proxy.name) ?? '',
     }));
     options.unshift(...getVariableOptions());
     return options;

@@ -222,6 +222,17 @@ describe('Zabbix', () => {
         done();
       });
     });
+
+    it('should match proxies by name on Zabbix 7.0 and later, where host is not returned', async () => {
+      zabbix.zabbixAPI.getProxies = jest.fn().mockResolvedValue([
+        { name: 'proxy-foo', proxyid: '10101' },
+        { name: 'proxy-bar', proxyid: '10102' },
+      ]);
+
+      const proxies = await zabbix.getFilteredProxies('proxy-bar');
+
+      expect(proxies).toMatchObject([{ name: 'proxy-bar', proxyid: '10102' }]);
+    });
   });
 
   describe('When filtering triggers by proxy', () => {

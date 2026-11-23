@@ -884,7 +884,8 @@ export class Zabbix implements ZabbixConnector {
 
   getFilteredProxies(proxyFilter) {
     return this.zabbixAPI.getProxies().then((proxies) => {
-      proxies.forEach((proxy) => (proxy.name = proxy.host));
+      // Before Zabbix 7.0 the proxy name is in `host`; from 7.0 it is already in `name`.
+      proxies.forEach((proxy) => (proxy.name = proxy.host || proxy.name));
       return findByFilter(proxies, proxyFilter);
     });
   }
