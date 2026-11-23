@@ -98,13 +98,13 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 Title your pull request as a [Conventional Commit](https://www.conventionalcommits.org/). The `PR Title` check enforces this, and because the repository squash-merges, the PR title becomes the commit subject that release-please reads.
 
-| Prefix                                                             | Effect on the next release               |
-| ------------------------------------------------------------------ | ---------------------------------------- |
-| `fix:`                                                             | patch version                            |
-| `feat:`                                                            | minor version                            |
-| `feat!:`, or a `BREAKING CHANGE:` footer                           | major version                            |
-| `chore:`                                                           | no release, hidden from the changelog    |
-| `docs:`, `test:`, `build:`, `ci:`, `refactor:`, `perf:`, `revert:` | no version bump, listed in the changelog |
+| Prefix                                                             | Effect on the next release             |
+| ------------------------------------------------------------------ | -------------------------------------- |
+| `fix:`                                                             | patch version                          |
+| `feat:`                                                            | minor version                          |
+| `feat!:`, or a `BREAKING CHANGE:` footer                           | major version                          |
+| `chore:`                                                           | no release, hidden from the changelog  |
+| `docs:`, `test:`, `build:`, `ci:`, `refactor:`, `perf:`, `revert:` | patch version, listed in the changelog |
 
 ### What happens next
 
