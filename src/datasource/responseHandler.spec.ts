@@ -1,31 +1,63 @@
-import { FieldType, MutableDataFrame, TIME_SERIES_TIME_FIELD_NAME } from '@grafana/data';
-import { convertToWide } from './responseHandler';
+import { DataFrameType, FieldType, MutableDataFrame } from '@grafana/data';
+import responseHandler, { alignFrames, handleSLIResponse } from './responseHandler';
+import { ZabbixMetricsQuery } from './types/query';
 
-describe('convertToWide', () => {
-  it('merge multiple SLI frames correctly', () => {
-    let frames = convertToWide([
+describe('data plane type declarations', () => {
+  it('declares SLI frames as timeseries-wide with a value field per service', () => {
+    const frame = handleSLIResponse(
+      {
+        periods: [{ period_from: 1 }, { period_from: 2 }],
+        sli: [
+          [{ sli: 99.9 }, { sli: 98 }],
+          [{ sli: 99.8 }, { sli: 97 }],
+        ],
+        serviceids: ['1', '2'],
+      },
+      [
+        { serviceid: '1', name: 'Service A' },
+        { serviceid: '2', name: 'Service B' },
+      ],
+      { refId: 'A', slaProperty: 'sli' } as ZabbixMetricsQuery
+    );
+
+    expect(frame.meta?.type).toStrictEqual(DataFrameType.TimeSeriesWide);
+    expect(frame.meta?.typeVersion).toStrictEqual([0, 1]);
+    expect(frame.fields.map((f) => f.name)).toStrictEqual(['Time', 'Service A', 'Service B']);
+    expect(frame.fields[1].values.toArray()).toStrictEqual([99.9, 99.8]);
+  });
+
+  it('declares the trigger count frame as timeseries-multi and names the value field', () => {
+    const frame = responseHandler.handleTriggersResponse(5 as any, [], [0, 1700000000], { refId: 'A' });
+
+    expect(frame.meta?.type).toStrictEqual(DataFrameType.TimeSeriesMulti);
+    expect(frame.meta?.typeVersion).toStrictEqual([0, 1]);
+    expect(frame.fields.map((f) => f.name)).toStrictEqual(['Time', 'Count A']);
+    // Keeps the name that the frame name used to resolve to.
+    expect(frame.fields[1].config.displayNameFromDS).toStrictEqual('Count A');
+  });
+});
+
+describe('alignFrames', () => {
+  it('pads every field of a shifted frame so field lengths stay equal', () => {
+    const frames = alignFrames([
       new MutableDataFrame({
-        name: 'SLI',
-        refId: 'A',
         fields: [
-          { name: TIME_SERIES_TIME_FIELD_NAME, values: [1], type: FieldType.time },
-          { name: TIME_SERIES_TIME_FIELD_NAME, values: [1.1], type: FieldType.number },
+          { name: 'Time', type: FieldType.time, values: [1000, 2000, 3000] },
+          { name: 'Service A', type: FieldType.number, values: [1, 2, 3] },
         ],
       }),
       new MutableDataFrame({
-        name: 'SLI',
-        refId: 'B',
         fields: [
-          { name: TIME_SERIES_TIME_FIELD_NAME, values: [1], type: FieldType.time },
-          { name: TIME_SERIES_TIME_FIELD_NAME, values: [1.2], type: FieldType.number },
+          { name: 'Time', type: FieldType.time, config: { custom: { itemInterval: 1000 } }, values: [3000] },
+          { name: 'Service B', type: FieldType.number, values: [30] },
+          { name: 'Service C', type: FieldType.number, values: [300] },
         ],
       }),
     ]);
-    expect(frames.length).toStrictEqual(1);
-    expect(frames[0].fields.length).toStrictEqual(3);
-    expect(frames[0].fields[0].values.at(0)).toStrictEqual(1);
-    expect(frames[0].fields[1].values.at(0)).toStrictEqual(1.1);
-    expect(frames[0].fields[2].values.at(0)).toStrictEqual(1.2);
-    expect(frames[0].refId).toStrictEqual('A');
+
+    expect(frames[1].fields[0].values.toArray()).toStrictEqual([1000, 2000, 3000]);
+    expect(frames[1].fields[1].values.toArray()).toStrictEqual([null, null, 30]);
+    expect(frames[1].fields[2].values.toArray()).toStrictEqual([null, null, 300]);
+    expect(frames[1].length).toStrictEqual(3);
   });
 });
