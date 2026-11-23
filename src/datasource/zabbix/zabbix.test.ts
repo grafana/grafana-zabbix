@@ -15,6 +15,7 @@ jest.mock('../responseHandler', () => ({
   __esModule: true,
   default: {
     handleSLAResponse: jest.fn(),
+    handleAPMLogs: jest.fn().mockReturnValue({ fields: [] }),
   },
   handleServiceResponse: jest.fn(),
   handleMultiSLIResponse: jest.fn(),
@@ -184,6 +185,46 @@ describe('Zabbix', () => {
       });
 
       await expect(testResult).resolves.toMatchObject({ dsType: 'influxdb', dsName: 'InfluxDB DS' });
+    });
+  });
+
+  describe('getApmLogs', () => {
+    const target: any = { refId: 'A', apmFilter: { service: 'checkout' }, options: { limit: 500 } };
+
+    it('reads otel_logs through the connector when Direct DB Connection uses ClickHouse', async () => {
+      zabbix.enableDirectDBConnection = true;
+      zabbix.dbConnectorReady = Promise.resolve();
+      const chConnector = Object.create(ClickHouseConnector.prototype);
+      chConnector.getAPMLogs = jest.fn().mockResolvedValue([{ body: 'log line' }]);
+      zabbix.dbConnector = chConnector;
+      zabbix.zabbixAPI.getAPMLogs = jest.fn();
+
+      const result = await zabbix.getApmLogs(target, [15000, 15100]);
+
+      expect(chConnector.getAPMLogs).toHaveBeenCalledWith(target, 15000, 15100);
+      expect(zabbix.zabbixAPI.getAPMLogs).not.toHaveBeenCalled();
+      expect(responseHandler.handleAPMLogs).toHaveBeenCalledWith([{ body: 'log line' }], target);
+      expect(result).toHaveLength(1);
+    });
+
+    it('falls back to apmlog.get when the Direct DB Connection data source is not ClickHouse', async () => {
+      zabbix.enableDirectDBConnection = true;
+      zabbix.dbConnectorReady = Promise.resolve();
+      zabbix.dbConnector = { getHistory: jest.fn() } as any;
+      zabbix.zabbixAPI.getAPMLogs = jest.fn().mockResolvedValue([]);
+
+      await zabbix.getApmLogs(target, [15000, 15100]);
+
+      expect(zabbix.zabbixAPI.getAPMLogs).toHaveBeenCalled();
+    });
+
+    it('uses apmlog.get when Direct DB Connection is disabled', async () => {
+      zabbix.enableDirectDBConnection = false;
+      zabbix.zabbixAPI.getAPMLogs = jest.fn().mockResolvedValue([]);
+
+      await zabbix.getApmLogs(target, [15000, 15100]);
+
+      expect(zabbix.zabbixAPI.getAPMLogs).toHaveBeenCalled();
     });
   });
 
