@@ -38,6 +38,9 @@ export const ZBX_ACK_ACTION_UNACK = 16;
 // Suppress/unsuppress require Zabbix 6.2+
 export const ZBX_ACK_ACTION_SUPPRESS = 32;
 export const ZBX_ACK_ACTION_UNSUPPRESS = 64;
+// Rank as cause/symptom require Zabbix 6.4+
+export const ZBX_ACK_ACTION_RANK_CAUSE = 128;
+export const ZBX_ACK_ACTION_RANK_SYMPTOM = 256;
 
 export const TRIGGER_SEVERITY = [
   { val: 0, text: 'Not classified' },

@@ -665,6 +665,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     const actionCapabilities = {
       unacknowledge: this.zabbix.supportsUnacknowledge(),
       suppress: this.zabbix.supportsProblemSuppression(),
+      rank: this.zabbix.supportsCauseSymptomProblems(),
     };
 
     let proxies;

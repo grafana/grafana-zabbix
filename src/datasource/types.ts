@@ -142,6 +142,9 @@ export interface ProblemDTO {
   showAckButton?: boolean;
   type?: string;
 
+  /** Cause event id, '0' if the problem is a cause itself (Zabbix 6.4+). */
+  cause_eventid?: string;
+
   /** Action capabilities of the connected Zabbix server, see problemsHandler.setActionCapabilities(). */
   actionCapabilities?: ProblemActionCapabilities;
 }
@@ -152,11 +155,14 @@ export interface ProblemActionCapabilities {
   unacknowledge?: boolean;
   /** Manual suppress/unsuppress, Zabbix 6.2+ */
   suppress?: boolean;
+  /** Rank as cause/symptom, Zabbix 6.4+ */
+  rank?: boolean;
 }
 
 export interface ZBXProblem {
   acknowledged?: '1' | '0';
   acknowledges?: ZBXAcknowledge[];
+  cause_eventid?: string;
   clock: string;
   ns: string;
   correlationid?: string;
@@ -280,6 +286,7 @@ export interface ZBXEvent {
   tags?: ZBXTag[];
   suppressed?: string;
   suppression_data?: ZBXSuppressionData[];
+  cause_eventid?: string;
 }
 
 /**

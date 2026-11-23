@@ -580,6 +580,7 @@ export const ProblemList = (props: ProblemListProps) => {
                           showTimeline={panelOptions.problemTimeline}
                           allowDangerousHTML={panelOptions.allowDangerousHTML}
                           panelId={panelId}
+                          panelProblems={problems}
                           getProblemEvents={getProblemEvents}
                           getProblemAlerts={getProblemAlerts}
                           getScripts={getScripts}

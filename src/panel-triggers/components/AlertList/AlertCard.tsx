@@ -18,6 +18,8 @@ import { DataSourceNames, getDataSourceName, getDataSourceNames } from '../../da
 interface AlertCardProps {
   problem: ProblemDTO;
   panelOptions: ProblemsPanelOptions;
+  /** All problems currently shown in the panel, used as candidates for the cause event selection. */
+  panelProblems?: ProblemDTO[];
   onTagClick?: (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => void;
   onProblemAck?: (problem: ProblemDTO, data: AckProblemData) => Promise<any> | any;
 }
@@ -208,7 +210,7 @@ export default class AlertCard extends PureComponent<AlertCardProps, AlertCardSt
                     problem={problem}
                     onClick={() => {
                       showModal(AckModal, {
-                        ...getAckModalActionProps(problem),
+                        ...getAckModalActionProps(problem, this.props.panelProblems),
                         severity: problemSeverity,
                         onSubmit: this.ackProblem,
                         onDismiss: hideModal,
