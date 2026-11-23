@@ -443,7 +443,7 @@ function handleText(history, items, target, addHostName = true) {
   return convertHistory(history, items, addHostName, convertTextCallback);
 }
 
-function handleHistoryAsTable(history, items, target) {
+function handleHistoryAsTable(history, items, target, valueMappings?: any[]) {
   const hosts: string[] = [];
   const itemNames: string[] = [];
   const keys: string[] = [];
@@ -462,6 +462,11 @@ function handleHistoryAsTable(history, items, target) {
     // Regex-based extractor
     if (target.textFilter) {
       lastValue = extractText(lastValue, target.textFilter, target.useCaptureGroups);
+    }
+
+    // Table rows come from different items, so a single field mapping can't be used: map the text here
+    if (target.options?.useZabbixValueMapping) {
+      lastValue = utils.mapValueWithZabbixMapping(item, valueMappings, lastValue);
     }
 
     let host: any = _.first(item.hosts);
