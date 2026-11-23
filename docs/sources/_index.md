@@ -7,6 +7,10 @@ aliases:
   - installation/
   - installation/upgrade/
   - installation/building-from-sources/
+  - /docs/plugins/alexanderzobnin-zabbix-app/latest/features/
+  - /docs/plugins/alexanderzobnin-zabbix-app/latest/installation/
+  - /docs/plugins/alexanderzobnin-zabbix-app/latest/installation/upgrade/
+  - /docs/plugins/alexanderzobnin-zabbix-app/latest/installation/building-from-sources/
 keywords:
   - grafana
   - zabbix
