@@ -1,5 +1,24 @@
 # Change Log
 
+## [6.12.0](https://github.com/grafana/grafana-zabbix/compare/v6.11.0...v6.12.0) (2026-11-20)
+
+
+### 🎉 Features
+
+* **problems:** add unacknowledge and suppress/unsuppress problem actions ([#2507](https://github.com/grafana/grafana-zabbix/issues/2507)) ([0bef2ec](https://github.com/grafana/grafana-zabbix/commit/0bef2ecbe24d6cf1e433fefc8ca1eeda79eda9f7))
+* **triggers:** add sound alerts for new problems by severity ([#2530](https://github.com/grafana/grafana-zabbix/issues/2530)) ([e3cb037](https://github.com/grafana/grafana-zabbix/commit/e3cb0373191ff6d85cf9f3417555f7580172dd89))
+
+
+### 🐛 Bug Fixes
+
+* **problems:** keep ack modal mounted across panel re-renders and fix action button accessibility ([#2644](https://github.com/grafana/grafana-zabbix/issues/2644)) ([1c43ab3](https://github.com/grafana/grafana-zabbix/commit/1c43ab382fce435a6fbe0da22b79f5f4bc8dce57))
+* route resource calls through DataSourceWithBackend.postResource ([#2665](https://github.com/grafana/grafana-zabbix/issues/2665)) ([fec4a69](https://github.com/grafana/grafana-zabbix/commit/fec4a69cfd10f9681ff0901b0bfe83be848ab005))
+
+
+### 🤖 Continuous Integration
+
+* enrol in release-please and conventional commits ([#2650](https://github.com/grafana/grafana-zabbix/issues/2650)) ([873641a](https://github.com/grafana/grafana-zabbix/commit/873641a9248d150c14e61ae4bc104050caaaa5ab))
+
 ## 6.11.0
 
 ### Minor Changes
