@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/css';
 import moment from 'moment/moment';
 import { GrafanaTheme2, TimeRange } from '@grafana/data';
@@ -54,15 +54,31 @@ export const ProblemDetails = ({
   const [alerts, setAletrs] = useState([]);
   const [show, setShow] = useState(false);
 
+  // The parent recreates the problem object and the fetch callbacks on every render, so the
+  // fetch effect keys on the problem's identity and reads the latest values from refs.
+  // Depending on the callbacks themselves re-ran event.get/alert.get on every re-render (#2468).
+  const latest = useRef({ original, getProblemEvents, getProblemAlerts });
   useEffect(() => {
+    latest.current = { original, getProblemEvents, getProblemAlerts };
+  });
+  const datasourceKey = typeof original.datasource === 'string' ? original.datasource : original.datasource?.uid;
+  const timeFrom = timeRange?.from?.valueOf();
+  const timeTo = timeRange?.to?.valueOf();
+
+  useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
-      const problem = original;
+      const { original: problem, getProblemEvents, getProblemAlerts } = latest.current;
       if (showTimeline) {
         const eventsData = await getProblemEvents(problem);
-        setEvents(eventsData);
+        if (!cancelled) {
+          setEvents(eventsData);
+        }
       }
       const alertsData = await getProblemAlerts(problem);
-      setAletrs(alertsData);
+      if (!cancelled) {
+        setAletrs(alertsData);
+      }
     };
 
     fetchData();
@@ -70,7 +86,10 @@ export const ProblemDetails = ({
     requestAnimationFrame(() => {
       setShow(true);
     });
-  }, [original, showTimeline, getProblemEvents, getProblemAlerts]);
+    return () => {
+      cancelled = true;
+    };
+  }, [original.eventid, original.triggerid, datasourceKey, showTimeline, timeFrom, timeTo]);
 
   const handleTagClick = (tag: ZBXTag, datasource: DataSourceRef | string, ctrlKey?: boolean, shiftKey?: boolean) => {
     if (onTagClick) {
