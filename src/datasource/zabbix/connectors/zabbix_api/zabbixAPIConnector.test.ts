@@ -773,6 +773,21 @@ describe('Zabbix API connector', () => {
       });
     });
 
+    it.each([undefined, ''])('defaults to auto when slaInterval is %p', async (slaInterval) => {
+      const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, resourceClient);
+      zabbixAPIConnector.request = jest.fn(() => Promise.resolve({}));
+
+      await zabbixAPIConnector.getSLI('10', ['1'], [0, 7200], { intervalMs: 1000 }, slaInterval as any);
+
+      expect(zabbixAPIConnector.request).toHaveBeenCalledWith('sla.getsli', {
+        slaid: '10',
+        serviceids: ['1'],
+        period_from: 0,
+        period_to: 7200,
+        periods: 2,
+      });
+    });
+
     it('uses provided slaInterval when not empty', async () => {
       const zabbixAPIConnector = new ZabbixAPIConnector('admin', true, resourceClient);
       zabbixAPIConnector.request = jest.fn(() => Promise.resolve({}));
