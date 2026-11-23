@@ -69,6 +69,8 @@ After you enable the plugin, add the data source:
 
 The Zabbix data source supports two authentication methods. Select the method in the **Auth type** drop-down under the **Zabbix Connection** section.
 
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-config-connection.png" alt="Zabbix Connection section of the data source settings with Auth type set to User and password, a username, and a configured password" width="1000" height="266" max-width="700px" >}}
+
 {{< admonition type="note" >}}
 For Zabbix 7.0 and later, the plugin sends the authentication token (both session tokens and API tokens) in the `Authorization` HTTP header, as Zabbix requires. If you run Zabbix 7.0 behind a reverse proxy that uses HTTP basic authentication, the plugin keeps the token in the request body instead. Zabbix 7.2 and later don't support HTTP basic authentication for API requests. Keep the plugin up to date so it uses the correct method for your Zabbix version.
 {{< /admonition >}}
@@ -142,6 +144,8 @@ Find these settings under **Additional settings** > **Direct DB Connection**.
 | **Enable Direct DB Connection** | Toggle to enable direct database queries for history data. |
 | **Data Source** | Select an existing MySQL, PostgreSQL, InfluxDB, or ClickHouse data source configured in Grafana that points to your Zabbix database. |
 | **Retention Policy** | (InfluxDB only) The retention policy name for fetching long-term stored data. Leave blank if you use only the default retention policy. |
+
+{{< figure src="https://raw.githubusercontent.com/grafana/grafana-zabbix/main/docs/images/screenshot-zabbix-config-direct-database-connection.png" alt="Trends and Direct DB Connection settings with trends enabled after 7d with a 4d range, and Direct DB Connection enabled using the Zabbix DB data source" width="1000" height="390" max-width="700px" >}}
 
 ### Set up a database data source
 

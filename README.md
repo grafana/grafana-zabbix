@@ -4,47 +4,58 @@
 [![Change Log](https://img.shields.io/badge/change-log-blue.svg?style=flat)](https://github.com/grafana/grafana-zabbix/blob/main/CHANGELOG.md)
 [![Docs](https://img.shields.io/badge/docs-latest-red.svg?style=flat)](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
 
-![Dashboard](https://user-images.githubusercontent.com/4932851/53799185-e1cdc700-3f4a-11e9-9cb4-8330f501b32e.png)
+Visualize and alert on your Zabbix monitoring data in Grafana. Query metrics, follow active problems, annotate graphs with Zabbix events, and build reusable dashboards with template variables. For wide time ranges, the plugin can also read history directly from the Zabbix database.
+
+![Grafana dashboard with Zabbix data: stat panels, a gauge, the Problems panel listing active problems by severity, and time series of CPU utilization, network traffic, load average, and memory utilization per host](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/src/img/screenshot-infrastructure-overview.png)
 
 ## Features
 
-- Select multiple metrics [by using Regex](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/#multiple-items-on-one-graph)
-- Create interactive and reusable dashboards with [template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating/)
-- Show events on graphs with [Annotations](http://docs.grafana.org/reference/annotations/)
-- Display active problems with Triggers panel
-- Transform and shape your data with [metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/) (Avg, Median, Min, Max, Multiply, Summarize, Time shift, Alias)
-- Find problems faster with [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/) feature
-- Mix metrics from multiple data sources in the same dashboard or even graph
-- Per user authentication using Bearer tokens, so that Grafana respects the RBAC on Zabbix
-- Discover and share [dashboards](https://grafana.com/dashboards) in the official library
+- Select multiple items across hosts and groups [with regular expressions and tag filters](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/)
+- Build interactive, reusable dashboards with [template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/)
+- Monitor active problems and triggers with the Problems panel
+- Show Zabbix events on graphs with [annotations](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/annotations/)
+- Transform and aggregate data with [metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/) such as `groupBy`, `scale`, `rate`, `movingAverage`, `percentile`, and `setAlias`
+- Create [Grafana alert rules](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/) from Zabbix data
+- Query history from MySQL, PostgreSQL, InfluxDB, or ClickHouse with [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection) for faster queries over long time ranges
+- Respect Zabbix permissions with per-user authentication, so each Grafana user sees only what their Zabbix role allows
+- Mix Zabbix with other data sources in the same dashboard or panel
 
-See all features overview and dashboards examples at Grafana-Zabbix [Live demo](http://play.grafana-zabbix.org) site.
-Visit [plugins page](https://grafana.com/plugins) at [grafana.com](http://grafana.com) and check out available Grafana data sources, panels and [dashboards](https://grafana.com/dashboards?dataSource=alexanderzobnin-zabbix-datasource).
+## Requirements
+
+- Grafana 11.6.0 or later
+- A Zabbix server with API access, and a Zabbix user with read permissions for the host groups you want to query
 
 ## Installation
 
-Install or upgrade by using `grafana cli` (on older Grafana versions that ship the standalone binary, use `grafana-cli` instead):
+Install the plugin from **Administration** > **Plugins and data** > **Plugins** in Grafana, or with the Grafana CLI. On older Grafana versions that ship the standalone binary, use `grafana-cli` instead:
 
 ```sh
 grafana cli plugins install alexanderzobnin-zabbix-app
 ```
 
-Or see more installation and upgrade options in the [docs](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/#install-the-plugin).
+Zabbix is an app plugin: after installing it, enable it on its plugin page so the Zabbix data source becomes available. For other installation and upgrade options, refer to [Install the plugin](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/#install-the-plugin).
 
 ## Getting started
 
-First, [configure](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configuration/) Zabbix data source. Then you can create your first dashboard with step-by-step [Getting started guide](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/).
+1. [Configure the Zabbix data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/) with your Zabbix API URL and credentials.
+1. Build your first panel with the [query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/).
+1. Make it reusable with [template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/), or import one of the pre-built dashboards from the data source's **Dashboards** tab.
+
+![Grafana panel editor showing a stacked CPU time graph and a Zabbix Metrics query that uses the $group and $host variables, an item tag filter, an item regex, and the setAliasByRegex function](https://raw.githubusercontent.com/grafana/grafana-zabbix/main/src/img/screenshot-query-editor.png)
 
 ## Documentation
 
-- [About](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
-- [Installation](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/#install-the-plugin)
-- [Getting Started](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides)
-- [Templating](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/guides/templating)
-- [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/alerting/)
-- [Metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/reference/functions/)
+- [Overview and installation](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/)
+- [Configure the data source](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/)
+- [Query editor](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/query-editor/)
+- [Metric processing functions](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/functions/)
+- [Template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/)
+- [Annotations](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/annotations/)
+- [Alerting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/alerting/)
+- [Troubleshooting](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/troubleshooting/)
 
-## Community Resources, Feedback, and Support
+## Community resources, feedback, and support
 
-- Found a bug? Want a new feature? Feel free to open an [issue](https://github.com/grafana/grafana-zabbix/issues/new).
-- Have a question? You also can open issue, but for questions, it would be better to use [Grafana Community](https://community.grafana.com/) portal.
+- Found a bug or want a new feature? [Open an issue](https://github.com/grafana/grafana-zabbix/issues/new).
+- Have a question? Ask on the [Grafana Community](https://community.grafana.com/) forum.
+- Find more dashboards for Zabbix in the [Grafana dashboards library](https://grafana.com/grafana/dashboards/?dataSource=alexanderzobnin-zabbix-datasource).
