@@ -724,6 +724,159 @@ describe('Zabbix', () => {
     });
   });
 
+  describe('APM metrics lookups', () => {
+    it('supportsApmMetricsSync() requires Zabbix 8.0', () => {
+      zabbix.version = '7.4.2';
+      expect(zabbix.supportsApmMetricsSync()).toBe(false);
+      zabbix.version = '8.0.0';
+      expect(zabbix.supportsApmMetricsSync()).toBe(true);
+    });
+
+    it('getApmMetricCatalog() lists the services and metrics seen in the sampled data points', async () => {
+      const getAPMMetrics = jest.fn().mockResolvedValue([
+        { service_name: 'payments', metric_name: 'http.requests', metric_unit: '{request}', type: 1 },
+        { service_name: 'checkout', metric_name: 'http.requests', metric_unit: '{request}', type: 1 },
+        { service_name: 'checkout', metric_name: 'http.duration', metric_unit: 's', type: 2 },
+      ]);
+      zabbix.zabbixAPI.getAPMMetrics = getAPMMetrics;
+
+      const catalog = await zabbix.getApmMetricCatalog([1000, 2000], 'checkout|payments');
+
+      expect(catalog.services).toEqual(['checkout', 'payments']);
+      expect(catalog.metrics).toEqual([
+        { name: 'http.duration', type: 2, unit: 's' },
+        { name: 'http.requests', type: 1, unit: '{request}' },
+      ]);
+      expect(getAPMMetrics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          output: ['service_name', 'metric_name', 'metric_unit', 'type'],
+          time_from: 1000,
+          time_till: 2001,
+          sortorder: 'DESC',
+          filter: { service_name: ['checkout', 'payments'] },
+        })
+      );
+      expect(getAPMMetrics.mock.calls[0][0].limit).toBeGreaterThan(0);
+    });
+
+    it('getApmMetricAttributes() collects attribute keys and values per scope', async () => {
+      const getAPMMetrics = jest.fn().mockResolvedValue([
+        { attributes: { 'http.route': '/pay', status: '200' }, resource_attributes: { 'host.name': 'web-1' } },
+        { attributes: { 'http.route': '/cart', status: '200' }, resource_attributes: { 'host.name': 'web-1' } },
+        // Zabbix serializes an empty attribute set as []
+        { attributes: [], resource_attributes: [] },
+      ]);
+      zabbix.zabbixAPI.getAPMMetrics = getAPMMetrics;
+
+      const attributes = await zabbix.getApmMetricAttributes([1000, 2000], 'http.requests', 'checkout');
+
+      expect(attributes).toEqual({
+        metric: { 'http.route': ['/pay', '/cart'], status: ['200'] },
+        resource: { 'host.name': ['web-1'] },
+      });
+      expect(getAPMMetrics).toHaveBeenCalledWith(
+        expect.objectContaining({ filter: { metric_name: ['http.requests'], service_name: ['checkout'] } })
+      );
+    });
+
+    it('getApmMetricAttributes() does not query without a metric', async () => {
+      const getAPMMetrics = jest.fn();
+      zabbix.zabbixAPI.getAPMMetrics = getAPMMetrics;
+
+      expect(await zabbix.getApmMetricAttributes([1000, 2000], '')).toEqual({ metric: {}, resource: {} });
+      expect(getAPMMetrics).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('APM metrics through Direct DB Connection', () => {
+    const clickHouseConnector = (overrides: Record<string, any>) =>
+      Object.assign(Object.create(ClickHouseConnector.prototype), overrides);
+
+    it('detectApmMetricsDirectDB() enables it for a ClickHouse database with the telemetry tables', async () => {
+      zabbix.dbConnector = clickHouseConnector({ hasApmMetricTables: jest.fn().mockResolvedValue(true) });
+      await zabbix.detectApmMetricsDirectDB();
+      expect(zabbix.apmMetricsDirectDB).toBe(true);
+
+      // Telemetry kept in another database: APM metrics stay on the API
+      zabbix.dbConnector = clickHouseConnector({ hasApmMetricTables: jest.fn().mockResolvedValue(false) });
+      await zabbix.detectApmMetricsDirectDB();
+      expect(zabbix.apmMetricsDirectDB).toBe(false);
+    });
+
+    it('detectApmMetricsDirectDB() stays off for other databases and when the check fails', async () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      zabbix.dbConnector = { hasApmMetricTables: jest.fn().mockResolvedValue(true) } as any;
+      await zabbix.detectApmMetricsDirectDB();
+      expect(zabbix.apmMetricsDirectDB).toBe(false);
+
+      zabbix.dbConnector = clickHouseConnector({ hasApmMetricTables: jest.fn().mockRejectedValue(new Error('down')) });
+      await zabbix.detectApmMetricsDirectDB();
+      expect(zabbix.apmMetricsDirectDB).toBe(false);
+
+      warnSpy.mockRestore();
+    });
+
+    it('reads the editor lookups and the data points from ClickHouse instead of the API', async () => {
+      const getAPMMetrics = jest.fn();
+      zabbix.zabbixAPI.getAPMMetrics = getAPMMetrics;
+      const connector = clickHouseConnector({
+        getApmMetricCatalogRows: jest
+          .fn()
+          .mockResolvedValue([{ type: 2, service_name: 'checkout', metric_name: 'http.duration', metric_unit: 's' }]),
+        getApmMetricAttributeRows: jest
+          .fn()
+          .mockResolvedValue([{ attributes: { 'http.route': '/pay' }, resource_attributes: { 'host.name': 'web-1' } }]),
+        getApmMetricPoints: jest.fn().mockResolvedValue(['{"type":0}']),
+      });
+      zabbix.dbConnector = connector;
+      zabbix.apmMetricsDirectDB = true;
+
+      expect(await zabbix.getApmMetricCatalog([1000, 2000], 'checkout|payments')).toEqual({
+        services: ['checkout'],
+        metrics: [{ name: 'http.duration', type: 2, unit: 's' }],
+      });
+      expect(connector.getApmMetricCatalogRows).toHaveBeenCalledWith(
+        1000,
+        2000,
+        ['checkout', 'payments'],
+        expect.any(Number)
+      );
+
+      expect(await zabbix.getApmMetricAttributes([1000, 2000], 'http.duration')).toEqual({
+        metric: { 'http.route': ['/pay'] },
+        resource: { 'host.name': ['web-1'] },
+      });
+      expect(connector.getApmMetricAttributeRows).toHaveBeenCalledWith(
+        1000,
+        2000,
+        ['http.duration'],
+        [],
+        expect.any(Number)
+      );
+
+      const attributes = [{ scope: 'metric', key: 'http.route', value: '/pay', operator: 1 }];
+      const points = await zabbix.getApmMetricPointsDB(
+        { service: 'checkout', metric: 'a|b', attributes } as any,
+        [1000, 2000],
+        60,
+        501
+      );
+      expect(points).toEqual(['{"type":0}']);
+      expect(connector.getApmMetricPoints).toHaveBeenCalledWith({
+        services: ['checkout'],
+        metrics: ['a', 'b'],
+        attributes,
+        timeFrom: 1000,
+        timeTill: 2000,
+        intervalSec: 60,
+        limit: 501,
+      });
+
+      expect(getAPMMetrics).not.toHaveBeenCalled();
+    });
+  });
+
   describe('getItemsFromTarget', () => {
     it('forwards hostTags and evaltype from target into getItems options', async () => {
       zabbix.getItems = jest.fn().mockResolvedValue([{ itemid: '1' }]);

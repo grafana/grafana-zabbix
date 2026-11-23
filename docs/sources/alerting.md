@@ -31,7 +31,7 @@ You can create Grafana alert rules that evaluate Zabbix metrics and trigger noti
 
 The following query types can be used in alert rules:
 
-- **Metrics**: query numeric time series data by group, host, and item.
+- **Metrics**: query numeric time series data by group, host, and item. On Zabbix 8.0 and later, this includes Metrics queries with the **APM metrics** source (OpenTelemetry metrics).
 - **Item ID**: query numeric data by specific Zabbix item IDs.
 
 Other query types (Problems, Triggers, Services, Text, User macros) are not supported and return an error when used in alert rules.

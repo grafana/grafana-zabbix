@@ -27,6 +27,14 @@ type DBConnectionPostProcessingRequest struct {
 	Query     QueryModel                     `json:"query"`
 	TimeRange TimeRangePostProcessingRequest `json:"timeRange"`
 	Series    []*timeseries.TimeSeriesData   `json:"series"`
+
+	// APM metrics read from the telemetry database (Metrics query with metricsSource "apm")
+	APMPoints []zabbix.APMMetricPoint `json:"apmPoints,omitempty"`
+	// True when the database held more points than the query's point limit
+	APMTruncated bool `json:"apmTruncated,omitempty"`
+	// Query interval and max data points: the query model does not carry them
+	IntervalMs    int64 `json:"intervalMs,omitempty"`
+	MaxDataPoints int64 `json:"maxDataPoints,omitempty"`
 }
 
 type TimeRangePostProcessingRequest struct {
@@ -57,6 +65,10 @@ type QueryModel struct {
 
 	// Item ID mode
 	ItemIDs string `json:"itemids,omitempty"`
+
+	// Metrics mode data source: "item" (default) or "apm" (OpenTelemetry metrics, Zabbix 8.0+)
+	MetricsSource string              `json:"metricsSource,omitempty"`
+	APMMetric     APMMetricQueryModel `json:"apmMetric"`
 
 	Functions []QueryFunction        `json:"functions,omitempty"`
 	Options   QueryOptions           `json:"options"`
