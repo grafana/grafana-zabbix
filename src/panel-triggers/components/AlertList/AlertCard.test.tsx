@@ -58,6 +58,27 @@ describe('AlertCard', () => {
     comments: '',
   });
 
+  it('shows the event name, with macro values from event time, like the table layout', () => {
+    const problem = {
+      ...createMockProblem(),
+      name: 'Fans airflow speed high: 4200',
+      description: 'Fans airflow speed high: 3900',
+    };
+
+    render(<AlertCard problem={problem} panelOptions={defaultPanelOptions} />);
+
+    expect(screen.getByText('Fans airflow speed high: 4200')).toBeInTheDocument();
+    expect(screen.queryByText('Fans airflow speed high: 3900')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the trigger description when the problem has no name', () => {
+    const problem = { ...createMockProblem(), name: undefined, description: 'Trigger description' };
+
+    render(<AlertCard problem={problem} panelOptions={defaultPanelOptions} />);
+
+    expect(screen.getByText('Trigger description')).toBeInTheDocument();
+  });
+
   it('should not render the host IP by default', () => {
     const problem = { ...createMockProblem(), hostIp: '192.168.1.10' };
 
