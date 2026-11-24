@@ -679,6 +679,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       .then((problems) => problemsHandler.setAckButtonStatus(problems, showAckButton))
       .then((problems) => problemsHandler.setActionCapabilities(problems, actionCapabilities))
       .then((problems) => problemsHandler.filterTriggersPre(problems, target))
+      .then((problems) => this.zabbix.expandProblemUrls(problems))
       .then((problems) => problemsHandler.sortProblems(problems, target))
       .then((problems) => problemsHandler.addTriggerDataSource(problems, target))
       .then((problems) => problemsHandler.formatAcknowledges(problems, zabbixUsers))

@@ -241,18 +241,12 @@ export interface ZBXHostInterface {
   dns?: string;
   /** '1' - connect via IP, '0' - connect via DNS */
   useip?: '0' | '1';
-  port?: string;
-  /** '1' - agent, '2' - SNMP, '3' - IPMI, '4' - JMX */
-  type?: string;
-  /** '1' - default interface of its type */
-  main?: string;
 }
 
 export interface ZBXItem {
   itemid: string;
   name: string;
   key_: string;
-  hostid?: string;
   lastvalue?: string;
   value_type?: string;
   tags?: ZBXItemTag[];

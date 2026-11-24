@@ -269,22 +269,81 @@ export function expandItemMacros(text: string, items: ItemResolution[]): string 
   result = result.replace(/\{ITEM\.LASTVALUE\}/g, first.originalLastvalue ?? '');
   items.forEach(({ historicalValue, originalLastvalue }, index) => {
     const n = index + 1;
-    // Zabbix numbers these as {ITEM.VALUE2}; {ITEM2.VALUE} is kept for existing dashboards.
-    result = result.replace(
-      new RegExp(`\\{ITEM(?:\\.VALUE${n}|${n}\\.VALUE)\\}`, 'g'),
-      historicalValue ?? originalLastvalue ?? ''
-    );
-    result = result.replace(
-      new RegExp(`\\{ITEM(?:\\.LASTVALUE${n}|${n}\\.LASTVALUE)\\}`, 'g'),
-      originalLastvalue ?? ''
-    );
+    result = result.replace(new RegExp(`\\{ITEM${n}\\.VALUE\\}`, 'g'), historicalValue ?? originalLastvalue ?? '');
+    result = result.replace(new RegExp(`\\{ITEM${n}\\.LASTVALUE\\}`, 'g'), originalLastvalue ?? '');
   });
   return result;
 }
 
-export { expandUserMacros, hasUserMacro } from './macros/userMacros';
-export type { UserMacro } from './macros/userMacros';
-export { expandTriggerUrl } from './macros/triggerUrl';
+export interface UserMacro {
+  macro: string;
+  value?: string;
+  hostid?: string;
+}
+
+const USER_MACRO_PATTERN = /\{\$[A-Z0-9_.]+\}/g;
+
+export function hasUserMacro(text: string): boolean {
+  if (!text) {
+    return false;
+  }
+  return /\{\$[A-Z0-9_.]+\}/.test(text);
+}
+
+export function expandUserMacros(
+  text: string,
+  hostMacros: UserMacro[],
+  globalMacros: UserMacro[],
+  hostids: string[]
+): string {
+  if (!text) {
+    return text;
+  }
+  return text.replace(USER_MACRO_PATTERN, (macroName) => {
+    // hostids are in priority order (hosts, then their templates nearest first): the first definition wins.
+    const hostMacro = hostids
+      .map((hostid) => hostMacros.find((m) => m.macro === macroName && m.hostid === hostid))
+      .find(Boolean);
+    if (hostMacro && hostMacro.value != null) {
+      return hostMacro.value;
+    }
+    const globalMacro = globalMacros.find((m) => m.macro === macroName);
+    if (globalMacro && globalMacro.value != null) {
+      return globalMacro.value;
+    }
+    return macroName;
+  });
+}
+
+const TRIGGER_URL_MACRO_PATTERN = /\{(?:TRIGGER\.ID|EVENT\.ID|HOST\.ID|HOST\.HOST|HOST\.NAME|\$[A-Z0-9_.]+)\}/g;
+
+/**
+ * Expands the macros of a trigger URL that the problem data and user macros can resolve.
+ * macroHostids lists the trigger hosts, then their templates nearest first.
+ */
+export function expandTriggerUrl(
+  problem: ProblemDTO,
+  hostMacros: UserMacro[],
+  globalMacros: UserMacro[],
+  macroHostids: string[]
+): string {
+  // shortcut: {HOST.*} use the first trigger host, which is right for single-host triggers;
+  // numbered macros ({HOST.HOST2}) and multi-host ordering need the trigger expression.
+  const host = problem.hosts?.[0];
+  const builtins: Record<string, string | undefined> = {
+    '{TRIGGER.ID}': problem.triggerid,
+    '{EVENT.ID}': problem.eventid,
+    '{HOST.ID}': host?.hostid,
+    '{HOST.HOST}': host?.host,
+    '{HOST.NAME}': host?.name,
+  };
+  // One pass, so a resolved value is never expanded again.
+  return problem.url!.replace(TRIGGER_URL_MACRO_PATTERN, (macro) =>
+    macro.startsWith('{$')
+      ? expandUserMacros(macro, hostMacros, globalMacros, macroHostids)
+      : (builtins[macro] ?? macro)
+  );
+}
 
 const problemsHandler = {
   addTriggerDataSource,

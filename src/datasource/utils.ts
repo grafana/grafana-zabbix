@@ -93,12 +93,31 @@ export function containsMacro(itemName) {
   return MACRO_PATTERN.test(itemName);
 }
 
-export function replaceMacro(item, macros) {
-  let itemName = item.name;
+export function replaceMacro(item, macros, isTriggerItem?) {
+  let itemName = isTriggerItem ? item.url : item.name;
   const item_macros = itemName.match(MACRO_PATTERN);
   _.forEach(item_macros, (macro) => {
-    // Host macros of the item's host plus global macros (no hostid)
-    const host_macros = _.filter(macros, (m) => !m.hostid || m.hostid === item.hostid);
+    const host_macros = _.filter(macros, (m) => {
+      if (m.hostid) {
+        if (isTriggerItem) {
+          // Trigger item can have multiple hosts
+          // Check all trigger host ids against macro host id
+          let hostIdFound = false;
+          _.forEach(item.hosts, (h) => {
+            if (h.hostid === m.hostid) {
+              hostIdFound = true;
+            }
+          });
+          return hostIdFound;
+        } else {
+          // Check app host id against macro host id
+          return m.hostid === item.hostid;
+        }
+      } else {
+        // Add global macros
+        return true;
+      }
+    });
 
     const macro_def = _.find(host_macros, { macro: macro });
     if (macro_def && macro_def.value) {

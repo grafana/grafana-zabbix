@@ -590,7 +590,6 @@ describe('Zabbix', () => {
         }),
       ];
       zabbix.zabbixAPI.getHistory = jest.fn();
-      zabbix.zabbixAPI.getHostsForMacros = jest.fn().mockResolvedValue([{ hostid: '10', parentTemplates: [] }]);
       zabbix.zabbixAPI.getMacros = jest.fn().mockResolvedValue([
         { macro: '{$CONTACT}', value: 'Pepe', hostid: '10' },
         { macro: '{$VERSION}', value: '6.4.1', hostid: '10' },
@@ -634,217 +633,12 @@ describe('Zabbix', () => {
         }),
       ];
       zabbix.zabbixAPI.getHistory = jest.fn();
-      zabbix.zabbixAPI.getHostsForMacros = jest.fn().mockResolvedValue([{ hostid: '10', parentTemplates: [] }]);
       zabbix.zabbixAPI.getMacros = jest.fn().mockResolvedValue([]);
       zabbix.zabbixAPI.getGlobalMacros = jest.fn().mockResolvedValue([{ macro: '{$REGION}', value: 'eu-west' }]);
 
       const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
 
       expect(result[0].description).toBe('Region: eu-west');
-    });
-
-    it('expands user macros inherited from templates', async () => {
-      const problems: any[] = [
-        makeProblem(1000, { description: 'Team: {$TEAM}', comments: '', hosts: [{ hostid: '10' }], items: [] }),
-      ];
-      zabbix.zabbixAPI.getHistory = jest.fn();
-      zabbix.zabbixAPI.getHostsForMacros = jest
-        .fn()
-        .mockResolvedValueOnce([{ hostid: '10', parentTemplates: [{ templateid: '20' }] }])
-        .mockResolvedValueOnce([{ hostid: '20', parentTemplates: [] }]);
-      zabbix.zabbixAPI.getMacros = jest.fn().mockResolvedValue([{ macro: '{$TEAM}', value: 'noc', hostid: '20' }]);
-      zabbix.zabbixAPI.getGlobalMacros = jest.fn().mockResolvedValue([]);
-
-      const result = await (zabbix as any).enrichProblemsWithItemHistory(problems);
-
-      expect(result[0].description).toBe('Team: noc');
-    });
-  });
-
-  describe('getMacroScope', () => {
-    beforeEach(() => {
-      zabbix = new Zabbix(ctx);
-      zabbix.zabbixAPI.getGlobalMacros = jest.fn().mockResolvedValue([{ macro: '{$G}', value: 'global' }]);
-    });
-
-    it('loads every template level and the macros of hosts and templates', async () => {
-      // host 10 -> templates 30, 20; template 20 -> template 40
-      zabbix.zabbixAPI.getHostsForMacros = jest
-        .fn()
-        .mockResolvedValueOnce([
-          { hostid: '10', parentTemplates: [{ templateid: '30' }, { templateid: '20' }], interfaces: [] },
-        ])
-        .mockResolvedValueOnce([
-          { hostid: '30', parentTemplates: [] },
-          { hostid: '20', parentTemplates: [{ templateid: '40' }] },
-        ])
-        .mockResolvedValueOnce([{ hostid: '40', parentTemplates: [] }]);
-      const macros = [
-        { macro: '{$M}', value: 'from-40', hostid: '40' },
-        { macro: '{$M}', value: 'from-host', hostid: '10' },
-      ];
-      zabbix.zabbixAPI.getMacros = jest.fn().mockResolvedValue(macros);
-
-      const scope = await (zabbix as any).getMacroScope(['10']);
-
-      expect(zabbix.zabbixAPI.getHostsForMacros).toHaveBeenNthCalledWith(2, ['30', '20']);
-      expect(zabbix.zabbixAPI.getHostsForMacros).toHaveBeenNthCalledWith(3, ['40']);
-      expect((zabbix.zabbixAPI.getMacros as jest.Mock).mock.calls[0][0].sort()).toEqual(['10', '20', '30', '40']);
-      expect(scope.hostMacros).toEqual(macros);
-      expect(scope.globalMacros).toEqual([{ macro: '{$G}', value: 'global' }]);
-      expect(Object.keys(scope.hostsById).sort()).toEqual(['10', '20', '30', '40']);
-    });
-
-    it('only loads the hosts themselves when user macros are not needed', async () => {
-      zabbix.zabbixAPI.getHostsForMacros = jest
-        .fn()
-        .mockResolvedValue([{ hostid: '10', parentTemplates: [{ templateid: '20' }] }]);
-      zabbix.zabbixAPI.getMacros = jest.fn();
-
-      const scope = await (zabbix as any).getMacroScope(['10'], false);
-
-      expect(zabbix.zabbixAPI.getHostsForMacros).toHaveBeenCalledTimes(1);
-      expect(zabbix.zabbixAPI.getMacros).not.toHaveBeenCalled();
-      expect(zabbix.zabbixAPI.getGlobalMacros).not.toHaveBeenCalled();
-      expect(Object.keys(scope.hostsById)).toEqual(['10']);
-    });
-
-    it('only fetches global macros when there are no hosts', async () => {
-      zabbix.zabbixAPI.getHostsForMacros = jest.fn();
-      zabbix.zabbixAPI.getMacros = jest.fn();
-
-      const scope = await (zabbix as any).getMacroScope([]);
-
-      expect(zabbix.zabbixAPI.getHostsForMacros).not.toHaveBeenCalled();
-      expect(zabbix.zabbixAPI.getMacros).not.toHaveBeenCalled();
-      expect(scope.hostMacros).toEqual([]);
-    });
-  });
-
-  describe('expandProblemUrls', () => {
-    beforeEach(() => {
-      zabbix = new Zabbix(ctx);
-      zabbix.version = '7.0.0';
-      zabbix.zabbixAPI.getHostsForMacros = jest.fn().mockResolvedValue([
-        {
-          hostid: '10',
-          host: 'web01',
-          name: 'Web 01',
-          parentTemplates: [],
-          interfaces: [{ type: '1', main: '1', useip: '1', ip: '192.0.2.10', dns: '', port: '10050' }],
-        },
-      ]);
-      zabbix.zabbixAPI.getMacros = jest
-        .fn()
-        .mockResolvedValue([{ macro: '{$WIKI}', value: 'wiki.example', hostid: '10' }]);
-      zabbix.zabbixAPI.getGlobalMacros = jest.fn().mockResolvedValue([]);
-      triggerWithItem({
-        itemid: '601',
-        hostid: '10',
-        value_type: '3',
-        units: 'B',
-        lastvalue: '2048',
-        lastclock: '1700000000',
-        valuemapid: '0',
-      });
-      zabbix.zabbixAPI.getValueMaps = jest.fn().mockResolvedValue([]);
-      zabbix.zabbixAPI.getLastLogRecord = jest.fn();
-    });
-
-    const triggerWithItem = (item: object) => {
-      zabbix.zabbixAPI.getTriggerFunctions = jest.fn().mockResolvedValue([
-        {
-          triggerid: '501',
-          expression: '{7001}>0',
-          functions: [{ functionid: '7001', itemid: '601' }],
-          items: [item],
-        },
-      ]);
-    };
-
-    const problem = (url: string) => ({
-      triggerid: '501',
-      eventid: '900',
-      timestamp: 0,
-      url,
-      hosts: [{ hostid: '10', host: 'web01', name: 'Web 01' }],
-      items: [{ itemid: '601', hostid: '10', name: 'i', key_: 'k', lastvalue: '42' }],
-    });
-
-    it('expands built-in and user macros in the trigger URL', async () => {
-      const [result] = await (zabbix as any).expandProblemUrls([
-        problem(
-          'https://{$WIKI}/{HOST.HOST}?ip={HOST.IP}&t={TRIGGER.ID}&e={EVENT.ID}&v={ITEM.VALUE}&r={{ITEM.VALUE}.fmtnum(0)}'
-        ),
-      ]);
-
-      expect(result.url).toBe('https://wiki.example/web01?ip=192.0.2.10&t=501&e=900&v=2 KB&r=2048');
-      expect(zabbix.zabbixAPI.getTriggerFunctions).toHaveBeenCalledWith(['501']);
-      expect(zabbix.zabbixAPI.getValueMaps).not.toHaveBeenCalled();
-      expect(zabbix.zabbixAPI.getLastLogRecord).not.toHaveBeenCalled();
-    });
-
-    it('applies the value map of the item', async () => {
-      triggerWithItem({
-        itemid: '601',
-        hostid: '10',
-        value_type: '3',
-        lastvalue: '1',
-        lastclock: '1700000000',
-        valuemapid: '55',
-      });
-      zabbix.zabbixAPI.getValueMaps = jest
-        .fn()
-        .mockResolvedValue([{ valuemapid: '55', mappings: [{ type: '0', value: '1', newvalue: 'Up' }] }]);
-
-      const [result] = await (zabbix as any).expandProblemUrls([problem('/{ITEM.VALUE}')]);
-
-      expect(result.url).toBe('/Up (1)');
-      expect(zabbix.zabbixAPI.getValueMaps).toHaveBeenCalledWith(['55']);
-    });
-
-    it('does not call the API when the URL only uses trigger and event IDs', async () => {
-      const [result] = await (zabbix as any).expandProblemUrls([problem('https://x/{TRIGGER.ID}/{EVENT.ID}')]);
-
-      expect(result.url).toBe('https://x/501/900');
-      expect(zabbix.zabbixAPI.getTriggerFunctions).not.toHaveBeenCalled();
-      expect(zabbix.zabbixAPI.getHostsForMacros).not.toHaveBeenCalled();
-      expect(zabbix.zabbixAPI.getGlobalMacros).not.toHaveBeenCalled();
-    });
-
-    it('loads the latest log record only for log items used by {ITEM.LOG.*}', async () => {
-      triggerWithItem({ itemid: '601', hostid: '10', value_type: '2', lastvalue: 'x', lastclock: '1700000000' });
-      zabbix.zabbixAPI.getLastLogRecord = jest
-        .fn()
-        .mockResolvedValue({ timestamp: '1700000000', source: 'app', severity: '4', logeventid: '77' });
-
-      const [result] = await (zabbix as any).expandProblemUrls([
-        problem('/{ITEM.LOG.SOURCE}/{ITEM.LOG.SEVERITY}/{ITEM.LOG.EVENTID}/{ITEM.LOG.DATE}'),
-      ]);
-
-      expect(result.url).toBe('/app/Error/77/2023.11.14');
-      expect(zabbix.zabbixAPI.getLastLogRecord).toHaveBeenCalledWith('601', '1700000000');
-    });
-
-    it('returns problems untouched when no URL has macros', async () => {
-      const problems = [problem('https://x/static'), { ...problem(''), url: undefined }];
-
-      expect(await (zabbix as any).expandProblemUrls(problems)).toBe(problems);
-      expect(zabbix.zabbixAPI.getGlobalMacros).not.toHaveBeenCalled();
-    });
-
-    it('runs for problems history even with fetchHistoricalItemValue off', async () => {
-      zabbix.getGroups = jest.fn().mockResolvedValue([]);
-      zabbix.getHosts = jest.fn().mockResolvedValue([]);
-      zabbix.getApps = jest.fn().mockResolvedValue([]);
-      zabbix.zabbixAPI.getEventsHistory = jest.fn().mockResolvedValue([{ objectid: '501' }]);
-      zabbix.zabbixAPI.getTriggersByIds = jest.fn().mockResolvedValue([]);
-      (joinTriggersWithEvents as jest.Mock).mockReturnValue([problem('https://{$WIKI}/')]);
-      zabbix.filterTriggersByProxy = jest.fn().mockImplementation((p) => Promise.resolve(p));
-
-      const [result] = await zabbix.getProblemsHistory('', '', '', undefined, {});
-
-      expect(result.url).toBe('https://wiki.example/');
     });
   });
 
@@ -1064,6 +858,76 @@ describe('Zabbix', () => {
 
       expect(zabbix.zabbixAPI.getItems).not.toHaveBeenCalled();
       expect(items).toEqual([]);
+    });
+  });
+
+  describe('expandProblemUrls', () => {
+    beforeEach(() => {
+      zabbix = new Zabbix(ctx);
+      // Host 10 links template 20, which links template 30. Host 11 links template 21.
+      const links: Record<string, string[]> = { '10': ['20'], '11': ['21'], '20': ['30'], '21': [], '30': [] };
+      zabbix.zabbixAPI.getParentTemplates = jest.fn(async (ids: string[]) =>
+        ids.map((id) => ({ hostid: id, parentTemplates: links[id].map((templateid) => ({ templateid })) }))
+      );
+      zabbix.zabbixAPI.getMacros = jest.fn().mockResolvedValue([
+        { macro: '{$WIKI}', value: 'https://wiki.from-template-30', hostid: '30' },
+        { macro: '{$WIKI}', value: 'https://wiki.from-template-21', hostid: '21' },
+        { macro: '{$PAGE}', value: 'template-page', hostid: '20' },
+        { macro: '{$PAGE}', value: 'host-page', hostid: '10' },
+      ]);
+      zabbix.zabbixAPI.getGlobalMacros = jest.fn().mockResolvedValue([{ macro: '{$GLOBAL}', value: 'g' }]);
+      zabbix.zabbixAPI.getHistory = jest.fn();
+    });
+
+    const problem = (url: string, hostid = '10', overrides = {}): any => ({
+      triggerid: '500',
+      eventid: '900',
+      url,
+      hosts: [{ hostid, host: `host-${hostid}`, name: `Host ${hostid}` }],
+      ...overrides,
+    });
+
+    it('resolves a URL that is only a user macro defined on a nested template (#1608)', async () => {
+      const [result] = await zabbix.expandProblemUrls([problem('{$WIKI}')]);
+      expect(result.url).toBe('https://wiki.from-template-30');
+    });
+
+    it('resolves each problem with its own templates and prefers the nearest definition', async () => {
+      const result = await zabbix.expandProblemUrls([
+        problem('{$WIKI}/{$PAGE}?t={TRIGGER.ID}&e={EVENT.ID}&h={HOST.HOST}&n={HOST.NAME}&i={HOST.ID}'),
+        problem('{$WIKI}/{$GLOBAL}/{$MISSING}', '11'),
+      ]);
+      expect(result.map((p) => p.url)).toEqual([
+        'https://wiki.from-template-30/host-page?t=500&e=900&h=host-10&n=Host 10&i=10',
+        'https://wiki.from-template-21/g/{$MISSING}',
+      ]);
+      expect(zabbix.zabbixAPI.getMacros).toHaveBeenCalledWith(['10', '11', '20', '21', '30']);
+    });
+
+    it('makes no API calls when URLs have no user macros, and never fetches history', async () => {
+      const plain = problem('https://example.com/static');
+      const result = await zabbix.expandProblemUrls([plain, problem('https://x/{HOST.HOST}'), problem('')]);
+      expect(result.map((p) => p.url)).toEqual(['https://example.com/static', 'https://x/host-10', '']);
+      expect(result[0]).toBe(plain);
+      expect(zabbix.zabbixAPI.getParentTemplates).not.toHaveBeenCalled();
+      expect(zabbix.zabbixAPI.getMacros).not.toHaveBeenCalled();
+      expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
+    });
+
+    it('keeps every row when the user macro lookup fails', async () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      zabbix.zabbixAPI.getMacros = jest.fn().mockRejectedValue(new Error('Permission denied'));
+      const result = await zabbix.expandProblemUrls([problem('{$WIKI}?t={TRIGGER.ID}'), problem('https://plain')]);
+      expect(result.map((p) => p.url)).toEqual(['{$WIKI}?t=500', 'https://plain']);
+      warn.mockRestore();
+    });
+
+    it('stops walking templates after a bounded number of levels', async () => {
+      zabbix.zabbixAPI.getParentTemplates = jest.fn(async (ids: string[]) =>
+        ids.map((id) => ({ hostid: id, parentTemplates: [{ templateid: String(Number(id) + 1) }] }))
+      );
+      await zabbix.expandProblemUrls([problem('{$WIKI}')]);
+      expect(zabbix.zabbixAPI.getParentTemplates).toHaveBeenCalledTimes(10);
     });
   });
 });

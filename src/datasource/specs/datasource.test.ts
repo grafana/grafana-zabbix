@@ -125,6 +125,7 @@ describe('ZabbixDatasource', () => {
       getVersion: jest.fn().mockResolvedValue('7.0.0'),
       supportsUnacknowledge: jest.fn().mockReturnValue(true),
       supportsProblemSuppression: jest.fn().mockReturnValue(true),
+      expandProblemUrls: jest.fn(async (problems: any[]) => problems),
       getHostInterfaces: jest.fn().mockResolvedValue([
         {
           hostid: '10001',
@@ -171,6 +172,18 @@ describe('ZabbixDatasource', () => {
       await ds.queryProblems(buildProblemsTarget({ hostIp: true }), [0, 100], {});
 
       expect(zabbixMock.getHostInterfaces).not.toHaveBeenCalled();
+    });
+
+    it('expands trigger URLs only for the rows left after filtering', async () => {
+      const ds = new ZabbixDatasource(instanceSettings);
+      const shown = { ...problemWithHost(), url: '{$WIKI}' };
+      const suppressed = { ...problemWithHost(), name: 'Suppressed', suppressed: '1', url: '{$OTHER}' };
+      const zabbixMock = buildZabbixMock([shown, suppressed]);
+      ds.zabbix = zabbixMock as any;
+
+      await ds.queryProblems(buildProblemsTarget(), [0, 100], {});
+
+      expect(zabbixMock.expandProblemUrls).toHaveBeenCalledWith([expect.objectContaining({ url: '{$WIKI}' })]);
     });
   });
 

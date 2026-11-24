@@ -6,13 +6,12 @@ import moment from 'moment';
 import semver from 'semver';
 import {
   expandItemMacros,
+  expandTriggerUrl,
   expandUserMacros,
   hasUserMacro,
   joinTriggersWithEvents,
   joinTriggersWithProblems,
-  UserMacro,
 } from '../problemsHandler';
-import { expandTriggerUrl, functionIdsOf, MacroHost, MacroItem, TriggerUrlContext } from '../macros/triggerUrl';
 import responseHandler, { handleMultiSLIResponse, handleServiceResponse, handleSLIResponse } from '../responseHandler';
 import { ProblemDTO, ZBXApp, ZBXHost, ZBXItem, ZBXItemTag, ZBXTrigger } from '../types';
 import { ZabbixDSOptions } from '../types/config';
@@ -35,13 +34,7 @@ import { Host, ZabbixConnector } from './types';
 const HISTORY_LOOKBACK_SECONDS = 3600; // per-problem lookback (covers typical polling intervals)
 const MAX_HISTORY_WINDOW_SECONDS = 4 * 3600; // cap the total span regardless of oldest open problem
 const HISTORY_FETCH_LIMIT = 50000; // hard cap on rows returned by history.get
-
-interface MacroScope {
-  hostsById: Record<string, MacroHost>;
-  hostMacros: UserMacro[];
-  globalMacros: UserMacro[];
-}
-const EMPTY_MACRO_SCOPE: MacroScope = { hostsById: {}, hostMacros: [], globalMacros: [] };
+const MAX_TEMPLATE_DEPTH = 10; // template levels walked for trigger URL user macros, one host.get each
 
 interface AppsResponse extends Array<any> {
   appFilterEmpty?: boolean;
@@ -555,7 +548,7 @@ export class Zabbix implements ZabbixConnector {
       items = _.filter(items, { status: '0' });
     }
 
-    return await this.expandUserMacro(items);
+    return await this.expandUserMacro(items, false);
   }
 
   async getAllItemsBefore54(groupFilter, hostFilter, appFilter, itemTagFilter, options: any = {}) {
@@ -591,15 +584,19 @@ export class Zabbix implements ZabbixConnector {
       items = _.filter(items, { status: '0' });
     }
 
-    return await this.expandUserMacro(items);
+    return await this.expandUserMacro(items, false);
   }
 
-  expandUserMacro(items) {
+  expandUserMacro(items, isTriggerItem) {
     const hostids = getHostIds(items);
     return this.getMacros(hostids).then((macros) => {
       _.forEach(items, (item) => {
-        if (utils.containsMacro(item.name)) {
-          item.name = utils.replaceMacro(item, macros);
+        if (utils.containsMacro(isTriggerItem ? item.url : item.name)) {
+          if (isTriggerItem) {
+            item.url = utils.replaceMacro(item, macros, isTriggerItem);
+          } else {
+            item.name = utils.replaceMacro(item, macros);
+          }
         }
       });
       return items;
@@ -684,11 +681,12 @@ export class Zabbix implements ZabbixConnector {
       ? _.uniq(problems.flatMap((p) => (p.hosts || []).map((h: ZBXHost) => h.hostid)).filter(Boolean))
       : [];
 
-    const [history, { hostMacros, globalMacros, hostsById }] = await Promise.all([
+    const [history, hostMacros, globalMacros] = await Promise.all([
       itemsWithType.length
         ? this.zabbixAPI.getHistory(itemsWithType, timeFrom, timeTill, HISTORY_FETCH_LIMIT)
         : Promise.resolve([]),
-      needsUserMacros ? this.getMacroScope(macroHostids) : Promise.resolve(EMPTY_MACRO_SCOPE),
+      macroHostids.length ? this.zabbixAPI.getMacros(macroHostids) : Promise.resolve([]),
+      needsUserMacros ? this.zabbixAPI.getGlobalMacros() : Promise.resolve([]),
     ]);
 
     const historyByItem = _.groupBy(history, 'itemid');
@@ -717,7 +715,7 @@ export class Zabbix implements ZabbixConnector {
           result = result.replace(/\{HOST\.HOST\}/g, host.host || '');
         }
         result = expandItemMacros(result, itemResolutions);
-        result = expandUserMacros(result, hostMacros, globalMacros, problemHostids, hostsById);
+        result = expandUserMacros(result, hostMacros, globalMacros, problemHostids);
         return result;
       };
 
@@ -732,82 +730,55 @@ export class Zabbix implements ZabbixConnector {
   }
 
   /**
-   * The given hosts with their interfaces, every template they inherit from (to resolve
-   * user macros as Zabbix does), and the user macros defined on all of them plus global ones.
+   * Expands the macros of the problems' trigger URLs. Pass only the rows that will be shown:
+   * user macros cost at most MAX_TEMPLATE_DEPTH sequential host.get calls plus two usermacro.get.
+   * If those lookups fail, the rows are kept and their user macros stay as written.
    */
-  private async getMacroScope(hostids: string[], withUserMacros = true): Promise<MacroScope> {
-    const hosts = hostids.length ? await this.zabbixAPI.getHostsForMacros(hostids) : [];
-    const nodes: Record<string, any> = _.keyBy(hosts, 'hostid');
-    const parentsOf = (id: string): string[] => (nodes[id]?.parentTemplates || []).map((t) => t.templateid);
-
-    let missing = _.uniq(hosts.flatMap((h) => parentsOf(h.hostid))).filter((id) => !nodes[id]);
-    while (withUserMacros && missing.length) {
-      const templates = await this.zabbixAPI.getHostsForMacros(missing);
-      templates.forEach((t) => (nodes[t.hostid] = t));
-      missing = _.uniq(templates.flatMap((t) => parentsOf(t.hostid))).filter((id) => !nodes[id]);
-    }
-    if (!withUserMacros) {
-      return { ...EMPTY_MACRO_SCOPE, hostsById: nodes };
-    }
-
-    const [hostMacros, globalMacros] = await Promise.all([
-      hosts.length ? this.zabbixAPI.getMacros(Object.keys(nodes)) : Promise.resolve([]),
-      this.zabbixAPI.getGlobalMacros(),
-    ]);
-    return { hostsById: nodes, hostMacros, globalMacros };
-  }
-
-  /** Loads only the Zabbix data the macros used in these trigger URLs need. */
-  private async getTriggerUrlContext(problems: ProblemDTO[]): Promise<TriggerUrlContext> {
-    const urls = problems.map((p) => p.url);
-    const usesItems = urls.some((u) => /\{\{?(HOST|ITEM)\./.test(u));
-    const usesInterfaces = urls.some((u) => /\{\{?HOST\.(IP|DNS|CONN|PORT)/.test(u));
-    const usesLog = urls.some((u) => /\{\{?ITEM\.LOG\./.test(u));
-    const usesUserMacros = urls.some((u) => hasUserMacro(u));
-    const ctx: TriggerUrlContext = { version: this.version || this.zabbixAPI.version, now: Date.now() / 1000 };
-
-    let itemHostids: string[] = [];
-    if (usesItems) {
-      const triggerids = _.uniq(problems.map((p) => p.triggerid).filter(Boolean));
-      const triggers = await this.zabbixAPI.getTriggerFunctions(triggerids);
-      ctx.functionItemIds = {};
-      for (const trigger of triggers) {
-        const itemOf = _.keyBy(trigger.functions || [], 'functionid');
-        ctx.functionItemIds[trigger.triggerid] = functionIdsOf(trigger.expression).map((id) => itemOf[id]?.itemid);
-      }
-      const items: MacroItem[] = _.uniqBy(
-        triggers.flatMap((t) => t.items || []),
-        'itemid'
-      );
-      const valuemapids = _.uniq(items.map((i: any) => i.valuemapid).filter((id) => id && id !== '0'));
-      const valuemaps = _.keyBy(valuemapids.length ? await this.zabbixAPI.getValueMaps(valuemapids) : [], 'valuemapid');
-      items.forEach((item: any) => (item.valuemap = valuemaps[item.valuemapid] ?? []));
-      if (usesLog) {
-        const logItems = items.filter((i) => i.value_type === '2' && Number(i.lastclock) > 0);
-        const records = await Promise.all(logItems.map((i) => this.zabbixAPI.getLastLogRecord(i.itemid, i.lastclock!)));
-        logItems.forEach((item, index) => (item.lastLog = records[index]));
-      }
-      ctx.itemsById = _.keyBy(items, 'itemid');
-      itemHostids = items.map((i) => i.hostid);
-    }
-
-    if (usesInterfaces || usesUserMacros) {
-      const hostids = _.uniq([
-        ...problems.flatMap((p) => (p.hosts || []).map((h: ZBXHost) => h.hostid)),
-        ...itemHostids,
-      ]).filter(Boolean);
-      Object.assign(ctx, await this.getMacroScope(hostids, usesUserMacros));
-    }
-    return ctx;
-  }
-
-  private async expandProblemUrls(problems: ProblemDTO[]): Promise<ProblemDTO[]> {
-    const withMacros = problems.filter((p) => p.url?.includes('{'));
+  async expandProblemUrls(problems: ProblemDTO[]): Promise<ProblemDTO[]> {
+    const hasMacros = (p: ProblemDTO) => !!p.url?.includes('{');
+    const withMacros = problems.filter(hasMacros);
     if (!withMacros.length) {
       return problems;
     }
-    const ctx = await this.getTriggerUrlContext(withMacros);
-    return problems.map((p) => (p.url?.includes('{') ? { ...p, url: expandTriggerUrl(p, ctx) } : p));
+    const hostidsOf = (p: ProblemDTO) => (p.hosts || []).map((h: ZBXHost) => h.hostid).filter(Boolean);
+
+    let hostMacros = [];
+    let globalMacros = [];
+    const parents: Record<string, string[]> = {};
+    if (withMacros.some((p) => hasUserMacro(p.url!))) {
+      try {
+        let level = _.uniq(withMacros.flatMap(hostidsOf));
+        const hostids = [...level];
+        for (let depth = 0; level.length && depth < MAX_TEMPLATE_DEPTH; depth++) {
+          const nodes = await this.zabbixAPI.getParentTemplates(level);
+          nodes.forEach((n) => (parents[n.hostid] = (n.parentTemplates || []).map((t) => t.templateid)));
+          level = _.uniq(nodes.flatMap((n) => parents[n.hostid])).filter((id) => !(id in parents));
+          hostids.push(...level);
+        }
+        [hostMacros, globalMacros] = await Promise.all([
+          this.zabbixAPI.getMacros(_.uniq(hostids)),
+          this.zabbixAPI.getGlobalMacros(),
+        ]);
+      } catch (err) {
+        console.warn('Zabbix: could not load user macros for trigger URLs.', err);
+      }
+    }
+
+    // A problem's hosts, then their templates level by level, lowest ID first as Zabbix does.
+    const macroHostidsOf = (p: ProblemDTO) => {
+      const ordered: string[] = [];
+      for (let level = hostidsOf(p); level.length;) {
+        ordered.push(...level);
+        level = _.uniq(level.flatMap((id) => parents[id] || []))
+          .filter((id) => !ordered.includes(id))
+          .sort((a, b) => Number(a) - Number(b));
+      }
+      return ordered;
+    };
+
+    return problems.map((p) =>
+      hasMacros(p) ? { ...p, url: expandTriggerUrl(p, hostMacros, globalMacros, macroHostidsOf(p)) } : p
+    );
   }
 
   getProblems(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {
@@ -853,9 +824,9 @@ export class Zabbix implements ZabbixConnector {
         ]);
       })
       .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
-      .then((problems) => this.expandProblemUrls(problems))
       .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
+    // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
   getProblemsHistory(groupFilter, hostFilter, appFilter, proxyFilter?, options?): Promise<ProblemDTO[]> {
@@ -895,9 +866,9 @@ export class Zabbix implements ZabbixConnector {
         ]);
       })
       .then(([problems, triggers]) => joinTriggersWithEvents(problems, triggers, { valueFromEvent }))
-      .then((problems) => this.expandProblemUrls(problems))
       .then((problems) => (options?.fetchHistoricalItemValue ? this.enrichProblemsWithItemHistory(problems) : problems))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
+    // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
   getCProblems(groupFilter?, hostFilter?, appFilter?, proxyFilter?, triggerFilter?, options?): Promise<ProblemDTO[]> {
@@ -942,6 +913,7 @@ export class Zabbix implements ZabbixConnector {
       .then(([problems, triggers]) => joinTriggersWithProblems(problems, triggers))
       .then((triggers) => this.filterTriggersByProxy(triggers, proxyFilter));
     //.then(triggers => findByFilter(triggers, triggerFilter));
+    // .then(triggers => this.expandUserMacro.bind(this)(triggers, true));
   }
 
   filterTriggersByProxy(triggers, proxyFilter) {
