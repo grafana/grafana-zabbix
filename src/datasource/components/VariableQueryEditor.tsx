@@ -6,7 +6,8 @@ import { VariableQuery, VariableQueryData, VariableQueryProps, VariableQueryType
 import { HostTagFilter, ZabbixTagEvalType } from '../types/query';
 import { ZabbixDatasource } from '../datasource';
 import { ZabbixInput } from './ZabbixInput';
-import { Combobox, ComboboxOption, InlineField, InlineFieldRow, InlineFormLabel, Input, Switch } from '@grafana/ui';
+import { ComboboxOption, InlineField, InlineFieldRow, InlineFormLabel, Input, Switch } from '@grafana/ui';
+import { Combobox } from '../../components/Combobox/Combobox';
 import { HostTagQueryEditor } from './QueryEditor/HostTagQueryEditor';
 import { buildHostTagOptions, HostTagAutocompleteOptions, hostTagFiltersEqual } from './QueryEditor/utils';
 

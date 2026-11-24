@@ -1,6 +1,7 @@
 import { css } from '@emotion/css';
 import React, { useRef } from 'react';
-import { Combobox, ComboboxOption } from '@grafana/ui';
+import { ComboboxOption } from '@grafana/ui';
+import { Combobox } from '../Combobox/Combobox';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
 
 export interface Props {

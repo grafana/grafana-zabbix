@@ -3,7 +3,8 @@ import React, { useEffect, FormEvent } from 'react';
 import { useAsyncFn } from '../../hooks/useAsyncFn';
 
 import { SelectableValue } from '@grafana/data';
-import { Combobox, ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
+import { ComboboxOption, InlineField, InlineSwitch, Input } from '@grafana/ui';
+import { Combobox } from '../../../components/Combobox/Combobox';
 import { QueryEditorRow } from './QueryEditorRow';
 import { MetricPicker } from '../../../components';
 import { getVariableOptions } from './utils';
