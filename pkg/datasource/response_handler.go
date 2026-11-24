@@ -89,6 +89,12 @@ func seriesToDataFrame(series *timeseries.TimeSeriesData, valuemaps []zabbix.Val
 		"__zbx_item_key":      {Value: item.Key},
 		"__zbx_item_interval": {Value: item.Delay},
 	}
+	// Lets the frontend find the triggers of the items it shows (problem annotations)
+	// without resolving the query's filters again. Unset for series that functions
+	// built from several items.
+	if item.ID != "" {
+		scopedVars["__zbx_item_id"] = ScopedVar{Value: item.ID}
+	}
 
 	valueField.Labels = data.Labels{
 		"item":     item.Name,

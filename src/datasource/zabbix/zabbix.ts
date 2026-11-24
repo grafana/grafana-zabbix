@@ -65,6 +65,8 @@ const REQUESTS_TO_PROXYFY = [
   'getProblems',
   'getEventsHistory',
   'getTriggersByIds',
+  'getItemTriggers',
+  'getTriggerEvents',
   'getScripts',
   'getValueMappings',
   'getSLAList',
@@ -73,6 +75,8 @@ const REQUESTS_TO_PROXYFY = [
 ];
 
 const REQUESTS_TO_CACHE = [
+  // Triggers of items change about as rarely as the items themselves
+  'getItemTriggers',
   'getGroups',
   'getHosts',
   'getApps',
@@ -105,6 +109,8 @@ const REQUESTS_TO_BIND = [
   'getProxies',
   'getEventAlerts',
   'getExtendedEventData',
+  'getItemTriggers',
+  'getTriggerEvents',
   'getScripts',
   'executeScript',
   'getValueMappings',
@@ -155,6 +161,8 @@ export class Zabbix implements ZabbixConnector {
   ) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
+  getItemTriggers: (itemids: string[]) => Promise<any[]>;
+  getTriggerEvents: (triggerids: string[], timeFrom: number, timeTo: number, limit?: number) => Promise<any[]>;
   getExtendedEventData: (eventids) => Promise<any>;
   getMacros: (hostids: any[]) => Promise<any>;
   getUserMacros: (hostmacroids) => Promise<any>;

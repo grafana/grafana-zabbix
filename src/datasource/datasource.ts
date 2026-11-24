@@ -10,7 +10,19 @@ import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnecto
 import { LegacyVariableQuery, ProblemDTO, VariableQuery, VariableQueryTypes } from './types';
 import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType, ShowProblemTypes } from './types/query';
 import { HostTagOperatorValue } from './components/QueryEditor/types';
-import { ZabbixDSOptions } from './types/config';
+import { SeverityOverride, ZabbixDSOptions } from './types/config';
+import {
+  buildProblemAnnotationsFrame,
+  collectItemIdsByRefId,
+  isProblemAnnotationsTarget,
+  PROBLEM_ANNOTATIONS_LIMIT,
+  ProblemAnnotationEvent,
+  ProblemAnnotationTrigger,
+  recoveryClocksFrom,
+  selectProblemEvents,
+  selectTriggers,
+  triggersOfItems,
+} from './problemAnnotations';
 import {
   BackendSrvRequest,
   config,
@@ -45,6 +57,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
   disableDataAlignment: boolean;
   enableDirectDBConnection: boolean;
   enableDebugLog: boolean;
+  problemAnnotationsByDefault: boolean;
+  severityOverrides?: SeverityOverride[];
   instanceSettings: DataSourceInstanceSettings<ZabbixDSOptions>;
   zabbix: Zabbix;
 
@@ -75,6 +89,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     // Other options
     this.disableReadOnlyUsersAck = jsonData.disableReadOnlyUsersAck;
     this.disableDataAlignment = jsonData.disableDataAlignment;
+    this.problemAnnotationsByDefault = jsonData.problemAnnotationsByDefault ?? false;
+    this.severityOverrides = jsonData.severityOverrides;
 
     // Direct DB Connection options
     this.enableDirectDBConnection = jsonData.dbConnectionEnable || false;
@@ -138,15 +154,35 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         ...request,
         targets: interpolatedTargets.filter(this.isBackendTarget),
       });
+    // Item ids of the series each query returned, for problem annotations. Read before
+    // the wide conversion, which merges several queries' series into one frame.
+    let backendItemIds = new Map<string, Set<string>>();
 
     return backendResponse.pipe(
       map(applyFEFuncs),
       map(responseHandler.convertZabbixUnits),
+      map((queryResponse) => {
+        backendItemIds = collectItemIdsByRefId(queryResponse.data);
+        return queryResponse;
+      }),
       map(this.convertToWide),
       switchMap((queryResponse) =>
-        from(Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResponsePromise])).pipe(
-          map(([dbConnectionRes, frontendRes, annotationRes]) =>
-            this.mergeQueries(queryResponse, dbConnectionRes, frontendRes, annotationRes)
+        from(
+          Promise.all([dbConnectionResponsePromise, frontendResponsePromise, annotationResponsePromise]).then(
+            async ([dbConnectionRes, frontendRes, annotationRes]) => {
+              const itemIdsByRefId = new Map([...backendItemIds, ...collectItemIdsByRefId(dbConnectionRes?.data)]);
+              const problemAnnotationsRes = await this.queryProblemAnnotations(
+                { ...request, targets: interpolatedTargets },
+                itemIdsByRefId
+              );
+              return this.mergeQueries(
+                queryResponse,
+                dbConnectionRes,
+                frontendRes,
+                annotationRes,
+                problemAnnotationsRes
+              );
+            }
           )
         )
       )
@@ -905,7 +941,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
         }
 
         // Hide acknowledged events if option enabled
-        if (annotation.hideAcknowledged) {
+        // Editor stores these under `options`; older targets may carry them top-level.
+        if (annotation.options?.hideAcknowledged ?? annotation.hideAcknowledged) {
           problems = _.filter(problems, (p) => {
             return !p.acknowledges?.length;
           });
@@ -915,7 +952,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           const formattedAcknowledges = utils.formatAcknowledges(p.acknowledges);
 
           let annotationTags: string[] = [];
-          if (annotation.showHostname) {
+          if (annotation.options?.showHostname ?? annotation.showHostname) {
             annotationTags = _.map(p.hosts, 'name');
           }
 
@@ -928,6 +965,99 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           };
         });
       });
+  }
+
+  /**
+   * Panel annotations for the problems of the triggers that reference the items the
+   * request's Metrics / Item ID queries returned. Runs in the frontend for both the
+   * API and the Direct DB paths, so alert rule evaluation never sees it.
+   *
+   * At most two Zabbix calls per panel, whatever the number of queries: one cached
+   * trigger.get for all items and one event.get for problems and recoveries. Item ids
+   * come from the returned series; a query is resolved again only when its series
+   * carry none (no data, or series built by aggregation functions).
+   * A failure here must not fail the panel's data, so it only logs.
+   */
+  async queryProblemAnnotations(
+    request: DataQueryRequest<ZabbixMetricsQuery>,
+    itemIdsByRefId: Map<string, Set<string>> = new Map()
+  ): Promise<DataQueryResponse> {
+    const targets = request.targets.filter((t) => isProblemAnnotationsTarget(t, this.problemAnnotationsByDefault));
+    if (!targets.length) {
+      return { data: [] };
+    }
+
+    try {
+      const timeFrom = Math.ceil(dateMath.toDateTime(request.range.from, {})?.unix() ?? 0);
+      const timeTo = Math.ceil(dateMath.toDateTime(request.range.to, {})?.unix() ?? 0);
+
+      const targetItemIds = await Promise.all(
+        targets.map(async (target) => {
+          const fromSeries = itemIdsByRefId.get(target.refId);
+          return fromSeries?.size ? [...fromSeries] : this.getProblemAnnotationItemIds(target);
+        })
+      );
+      const allItemIds = _.uniq(targetItemIds.flat()).sort();
+      if (!allItemIds.length) {
+        return { data: [] };
+      }
+
+      const itemTriggers: ProblemAnnotationTrigger[] = await this.zabbix.getItemTriggers(allItemIds);
+      const targetTriggerIds = targets.map(
+        (target, i) =>
+          new Set(
+            selectTriggers(triggersOfItems(itemTriggers, targetItemIds[i]), target.problemAnnotations).map(
+              (t) => t.triggerid
+            )
+          )
+      );
+      const triggerids = _.uniq(targetTriggerIds.flatMap((ids) => [...ids])).sort();
+      if (!triggerids.length) {
+        return { data: [] };
+      }
+
+      const events: ProblemAnnotationEvent[] = await this.zabbix.getTriggerEvents(
+        triggerids,
+        timeFrom,
+        timeTo,
+        PROBLEM_ANNOTATIONS_LIMIT
+      );
+      const problems = _.uniqBy(
+        targets.flatMap((target, i) => selectProblemEvents(events, targetTriggerIds[i], target.problemAnnotations)),
+        'eventid'
+      );
+      if (!problems.length) {
+        return { data: [] };
+      }
+
+      const frame = buildProblemAnnotationsFrame({
+        events: problems,
+        triggers: itemTriggers,
+        recoveryClocks: recoveryClocksFrom(events),
+        rangeEndMs: timeTo * 1000,
+        severityOverrides: this.severityOverrides,
+      });
+      return { data: [frame] };
+    } catch (error) {
+      console.warn('Zabbix: could not load problem annotations', error);
+      return { data: [] };
+    }
+  }
+
+  async getProblemAnnotationItemIds(target: ZabbixMetricsQuery): Promise<string[]> {
+    if (target.queryType === c.MODE_ITEMID) {
+      // Already interpolated by interpolateVariablesInQueries
+      return _.compact(
+        String(target.itemids)
+          .split(',')
+          .map((id) => id.trim())
+      );
+    }
+    const items = await this.zabbix.getItemsFromTarget(target, {
+      itemtype: 'num',
+      showDisabledItems: target.options?.showDisabledItems,
+    });
+    return _.map(items, 'itemid');
   }
 
   isUseTrends(timeRange, target: ZabbixMetricsQuery) {
@@ -959,7 +1089,8 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     queryResponse: DataQueryResponse,
     dbConnectionResponse?: DataQueryResponse,
     frontendResponse?: DataQueryResponse,
-    annotationResponse?: DataQueryResponse
+    annotationResponse?: DataQueryResponse,
+    problemAnnotationsResponse?: DataQueryResponse
   ): DataQueryResponse {
     const mergedResponse: DataQueryResponse = {
       ...queryResponse,
@@ -974,6 +1105,9 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
     if (annotationResponse?.data) {
       mergedResponse.data = mergedResponse.data.concat(annotationResponse.data);
+    }
+    if (problemAnnotationsResponse?.data) {
+      mergedResponse.data = mergedResponse.data.concat(problemAnnotationsResponse.data);
     }
 
     return mergedResponse;
@@ -1083,6 +1217,18 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           utils.zabbixItemIdsTemplateFormat
         ),
         textFilter: utils.replaceTemplateVars(this.templateSrv, query.textFilter, scopedVars),
+        ...(query.problemAnnotations?.triggerFilter
+          ? {
+              problemAnnotations: {
+                ...query.problemAnnotations,
+                triggerFilter: utils.replaceTemplateVars(
+                  this.templateSrv,
+                  query.problemAnnotations.triggerFilter,
+                  scopedVars
+                ),
+              },
+            }
+          : {}),
         functions: utils.replaceVariablesInFuncParams(this.templateSrv, query.functions, scopedVars),
         tags: {
           ...query.tags,

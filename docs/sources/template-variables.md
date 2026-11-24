@@ -118,6 +118,7 @@ In addition to the template variables you define, the plugin automatically popul
 | `$__zbx_item_name` | Item name. Same value as `$__zbx_item`. |
 | `$__zbx_item_key` | Item key, for example `system.cpu.load`. |
 | `$__zbx_item_interval` | Item update interval. |
+| `$__zbx_item_id` | Item ID. Not set on series that functions such as `sumSeries()` build from several items. |
 | `$__zbx_item_tag_<tag>` | Value of the item tag named `<tag>`. Non-alphanumeric characters in the tag name are replaced with underscores, so a tag named `App Name` becomes `$__zbx_item_tag_App_Name`. When an item has multiple values for the same tag, they're joined with commas. |
 
 For example, to rename each series to `<visible host name> - <item name>`, add the following function to a Metrics query:

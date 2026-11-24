@@ -15,6 +15,7 @@ import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
+import { ProblemAnnotationsEditor } from './QueryEditor/ProblemAnnotationsEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 import { ItemCountWarning } from './ItemCountWarning';
 import { TimeRangeWarning } from './TimeRangeWarning';
@@ -172,6 +173,7 @@ export const QueryEditor = ({
           onItemCountChange={setItemCount}
         />
         <QueryFunctionsEditor query={query} onChange={onChangeInternal} />
+        <ProblemAnnotationsEditor query={query} datasource={datasource} onChange={onChangeInternal} />
       </>
     );
   };
@@ -181,6 +183,7 @@ export const QueryEditor = ({
       <>
         <ItemIdQueryEditor query={query} onChange={onChangeInternal} />
         <QueryFunctionsEditor query={query} onChange={onChangeInternal} />
+        <ProblemAnnotationsEditor query={query} datasource={datasource} onChange={onChangeInternal} />
       </>
     );
   };

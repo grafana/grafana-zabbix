@@ -907,6 +907,43 @@ export class ZabbixAPIConnector {
     return this.request('event.get', params);
   }
 
+  /** Triggers whose expression references any of the given items, with those items. */
+  getItemTriggers(itemids: string[]) {
+    const params = {
+      output: ['triggerid', 'description', 'priority'],
+      itemids,
+      expandDescription: true,
+      selectHosts: ['name'],
+      selectItems: ['itemid'],
+    };
+
+    return this.request('trigger.get', params).then(utils.mustArray);
+  }
+
+  /**
+   * Problem and recovery events of the given triggers inside the time range, newest
+   * first, in one call: recoveries give the end of each problem's region.
+   */
+  getTriggerEvents(triggerids: string[], timeFrom: number, timeTo: number, limit?: number) {
+    const params: any = {
+      output: ['eventid', 'objectid', 'clock', 'value', 'name', 'severity', 'r_eventid', 'acknowledged'],
+      source: '0',
+      object: '0',
+      value: ['0', '1'],
+      objectids: triggerids,
+      time_from: timeFrom,
+      time_till: timeTo,
+      selectTags: 'extend',
+      sortfield: ['clock', 'eventid'],
+      sortorder: 'DESC',
+    };
+    if (limit) {
+      params.limit = limit;
+    }
+
+    return this.request('event.get', params).then(utils.mustArray);
+  }
+
   getEventAlerts(eventids) {
     const params = {
       eventids: eventids,

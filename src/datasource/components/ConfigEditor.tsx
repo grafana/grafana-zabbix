@@ -555,6 +555,17 @@ export const ConfigEditor = (props: Props) => {
           </Field>
 
           <Field
+            label="Show problem annotations on metric panels"
+            description="Annotate panels with the problems of the triggers that use the items they query. Each query can still turn this on or off in its Problem annotations section."
+          >
+            <Switch
+              value={!!options.jsonData.problemAnnotationsByDefault}
+              onChange={jsonDataSwitchHandler('problemAnnotationsByDefault', options, onOptionsChange)}
+              data-testid="problem-annotations-by-default"
+            />
+          </Field>
+
+          <Field
             label={
               <Label>
                 <EditorStack gap={0.5}>
