@@ -168,7 +168,11 @@ export const QueryOptionsEditor = ({ queryType, queryOptions, onChange }: Props)
             onChange={() => onChange({ ...queryOptions, useTimeRange: !queryOptions.useTimeRange })}
           />
         </InlineField>
-        <InlineField label="Hosts in maintenance" labelWidth={24}>
+        <InlineField
+          label="Suppressed problems"
+          labelWidth={24}
+          tooltip="Include problems suppressed in Zabbix, either by a maintenance period or manually (Zabbix 6.2+). Disabled by default."
+        >
           <InlineSwitch
             value={queryOptions.hostsInMaintenance}
             onChange={() => onChange({ ...queryOptions, hostsInMaintenance: !queryOptions.hostsInMaintenance })}
