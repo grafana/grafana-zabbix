@@ -1,0 +1,45 @@
+name: Plugins - Publish plugin
+run-name: Publish ${{ inputs.branch }} to ${{ inputs.environment }} by @${{ github.actor }}
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to publish from. Can be used to deploy PRs to dev
+        default: main
+      environment:
+        description: Environment to publish to
+        required: true
+        type: choice
+        options:
+          - 'dev'
+          - 'ops'
+          - 'prod'
+      docs-only:
+        description: Only publish docs, do not publish the plugin
+        default: false
+        type: boolean
+
+permissions: {}
+
+jobs:
+  publish:
+    name: Publish
+    uses: grafana/data-sources-ci-workflows/.github/workflows/datasource-publish.yml@main # zizmor: ignore[unpinned-uses]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      pull-requests: read
+    with:
+      golangci-lint-version: '2.15.0'
+      # On a release event the dispatch inputs are empty, and the shared docs job reads github.event.release.
+      branch: ${{ github.event.inputs.branch }}
+      environment: ${{ github.event.inputs.environment }}
+      # Keeps the cd.yml default. datasource-publish.yml defaults to grafana_cloud.
+      scopes: universal
+      # fromJSON('') fails on a release event, where the input is empty.
+      docs-only: ${{ github.event.inputs.docs-only == 'true' }}
+    secrets: inherit

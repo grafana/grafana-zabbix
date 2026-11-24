@@ -4,6 +4,8 @@ import {
   expandUserMacros,
   filterTriggersPre,
   hasUserMacro,
+  joinTriggersWithEvents,
+  setActionCapabilities,
 } from './problemsHandler';
 import { ZBXHost } from './types';
 
@@ -364,5 +366,34 @@ describe('filterTriggersPre', () => {
 
     expect(filterTriggersPre(problems, target('High CPU load')).length).toBe(1);
     expect(filterTriggersPre(problems, target('')).length).toBe(2);
+  });
+});
+
+describe('setActionCapabilities', () => {
+  it('stamps the action capabilities on every problem', () => {
+    const problems: any[] = [{ eventid: '1' }, { eventid: '2' }];
+    const capabilities = { unacknowledge: true, suppress: true };
+
+    const result = setActionCapabilities(problems, capabilities);
+
+    expect(result).toHaveLength(2);
+    result.forEach((problem) => {
+      expect(problem.actionCapabilities).toEqual({ unacknowledge: true, suppress: true });
+    });
+  });
+});
+
+describe('joinTriggersWithEvents', () => {
+  it('carries suppression data so manual suppression can be told apart from maintenance', () => {
+    const suppressionData = [{ maintenanceid: '0', userid: '1', suppress_until: '0' }];
+    const events: any[] = [
+      { eventid: '10', objectid: '1', clock: '1700000000', suppressed: '1', suppression_data: suppressionData },
+    ];
+    const triggers: any = { 1: { description: 'High CPU load' } };
+
+    const result = joinTriggersWithEvents(events, triggers, {});
+
+    expect(result).toHaveLength(1);
+    expect(result[0].suppression_data).toEqual(suppressionData);
   });
 });

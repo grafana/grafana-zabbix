@@ -1,4 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>grafana/grafana-renovate-config//presets/data-sources/base"]
+  "extends": ["github>grafana/grafana-renovate-config//presets/data-sources/base"],
+  "packageRules": [
+    {
+      "description": "Use chore(deps) for all updates so release-please keeps dependency bumps out of the changelog",
+      "matchPackageNames": ["*"],
+      "semanticCommitType": "chore"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "description": "Carve security updates out of the blanket chore(deps) rule: fix(deps) is changelog-visible and bumps the patch version, so CVE fixes produce a release PR",
+    "semanticCommitType": "fix"
+  }
 }

@@ -52,7 +52,7 @@ jest.mock('@grafana/plugin-compat/datasources', () => ({
 describe('Zabbix', () => {
   let consoleSpy: jest.SpyInstance;
   const ctx = {
-    uid: 'test-ds-uid',
+    resourceClient: { postResource: jest.fn().mockResolvedValue({ result: '' }) },
     cacheTTL: '1h',
     dbConnectionEnable: true,
     dbConnectionDatasourceUID: 'test-ds-uid',
@@ -358,7 +358,7 @@ describe('Zabbix', () => {
 
   describe('getProblemsHistory', () => {
     const ctx = {
-      uid: 'test-ds-uid',
+      resourceClient: { postResource: jest.fn().mockResolvedValue({ result: '' }) },
       cacheTTL: '1h',
       dbConnectionEnable: true,
       dbConnectionDatasourceUID: 'test-ds-uid',
