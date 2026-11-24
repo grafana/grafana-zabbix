@@ -14,6 +14,8 @@ jest.mock(
     // Provide a custom query implementation that resolves backend + frontend + db + annotations
     // so tests relying on merged results receive expected data.
     if (actual && actual.DataSourceWithBackend && actual.DataSourceWithBackend.prototype) {
+      // Resource calls (zabbix-api, db-connection-post) go through postResource
+      actual.DataSourceWithBackend.prototype.postResource = jest.fn().mockResolvedValue({ result: '' });
       // @ts-ignore
       actual.DataSourceWithBackend.prototype.query = function (request: any) {
         const that: any = this;
@@ -228,6 +230,34 @@ describe('ZabbixDatasource', () => {
         const tableData = result.data[0];
         expect(tableData.length).toBe(1);
         expect(tableData.fields.find((f) => f.name === 'Last value')?.values[0]).toEqual('Linux last');
+      });
+    });
+  });
+
+  describe('When querying numeric data', () => {
+    it('passes target with hostTags and evaltype to getItemsFromTarget', async () => {
+      const hostTags = [{ tag: 'product', value: 'A', operator: '1' as any }];
+      const target = {
+        group: { filter: 'Servers' },
+        host: { filter: '.*' },
+        application: { filter: '' },
+        itemTag: { filter: '' },
+        item: { filter: 'CPU' },
+        hostTags,
+        evaltype: '0' as any,
+        options: { showDisabledItems: false },
+        functions: [],
+      };
+
+      ctx.ds.zabbix.getItemsFromTarget = jest.fn().mockResolvedValue([]);
+      ctx.ds.queryNumericDataForItems = jest.fn().mockResolvedValue([]);
+      ctx.ds.handleBackendPostProcessingResponse = jest.fn().mockResolvedValue([]);
+
+      await ctx.ds.queryNumericData(target, [100, 200], false, {});
+
+      expect(ctx.ds.zabbix.getItemsFromTarget).toHaveBeenCalledWith(target, {
+        itemtype: 'num',
+        showDisabledItems: false,
       });
     });
   });
