@@ -2,6 +2,7 @@ import { CoreApp, DataQueryRequest } from '@grafana/data';
 import { reportInteraction } from '@grafana/runtime';
 import { ZabbixMetricsQuery } from './types/query';
 import {
+  MODE_INVENTORY,
   MODE_ITEMID,
   MODE_ITSERVICE,
   MODE_MACROS,
@@ -42,6 +43,9 @@ export const trackRequest = (request: DataQueryRequest<ZabbixMetricsQuery>): voi
         break;
       case MODE_MACROS:
         properties.queryType = 'Macros';
+        break;
+      case MODE_INVENTORY:
+        properties.queryType = 'Inventory';
         break;
     }
 

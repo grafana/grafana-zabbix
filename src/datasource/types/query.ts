@@ -9,7 +9,8 @@ export type QueryType =
   | typeof c.MODE_ITEMID
   | typeof c.MODE_TRIGGERS
   | typeof c.MODE_PROBLEMS
-  | typeof c.MODE_MACROS;
+  | typeof c.MODE_MACROS
+  | typeof c.MODE_INVENTORY;
 
 type BaseQuery = { queryType: QueryType; datasourceUid?: string } & DataQuery;
 
@@ -21,6 +22,7 @@ export type ZabbixMetricsQuery = {
   itemTag: { filter: string; name?: string };
   item: { filter: string; name?: string };
   macro: { filter: string; macro?: string };
+  inventoryFields?: string[];
   textFilter: string;
   mode: number;
   itemids: string;

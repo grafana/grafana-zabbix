@@ -179,6 +179,18 @@ Use User macros queries to retrieve Zabbix user macro values.
 | **Host** | The host to query. Supports regex and template variables. |
 | **Macros** | The macro to query. Supports regex and template variables. |
 
+### Inventory
+
+Use Inventory queries to retrieve [host inventory](https://www.zabbix.com/documentation/current/en/manual/config/hosts/inventory) fields. The result is a table with one row per host and one column per selected field.
+
+| Field | Description |
+|-------|-------------|
+| **Group** | The host group to query. Supports regex and template variables. |
+| **Host** | The host to query. Supports regex and template variables. |
+| **Fields** | The inventory fields to return. Default: `location_lat`, `location_lon`. |
+
+The `location_lat` and `location_lon` fields are returned as numeric `latitude` and `longitude` columns, so the Geomap panel places hosts automatically. Values written with a decimal comma (`40,4168`) are accepted. Empty, invalid, or out-of-range coordinates are returned as empty values. Hosts with inventory disabled are listed with empty fields.
+
 ## Use regex in queries
 
 You can use JavaScript regular expressions in the **Group**, **Host**, **Application**, **Item tag**, and **Item** fields to match multiple values. Wrap regex patterns in forward slashes (`/pattern/`).
@@ -271,6 +283,16 @@ Show the number of current problems in a host group on a stat panel.
 - **Group:** `Production`
 - **Min severity:** High
 - Enable **Count** in the query fields.
+
+### Show hosts on a map
+
+Place hosts on a Geomap panel using the coordinates stored in their inventory.
+
+- **Query type:** Inventory
+- **Group:** `Production`
+- **Host:** `/.*/`
+- **Fields:** leave empty to return `location_lat` and `location_lon`, or add fields such as `site_city` to show them in tooltips.
+- In the Geomap panel, keep the layer **Location mode** set to **Auto**.
 
 ### Report an SLA value
 

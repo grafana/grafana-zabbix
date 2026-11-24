@@ -15,6 +15,7 @@ import { ItemIdQueryEditor } from './QueryEditor/ItemIdQueryEditor';
 import { ServicesQueryEditor } from './QueryEditor/ServicesQueryEditor';
 import { TriggersQueryEditor } from './QueryEditor/TriggersQueryEditor';
 import { UserMacrosQueryEditor } from './QueryEditor/UserMacrosQueryEditor';
+import { InventoryQueryEditor } from './QueryEditor/InventoryQueryEditor';
 import { QueryEditorRow } from './QueryEditor/QueryEditorRow';
 import { ItemCountWarning } from './ItemCountWarning';
 import { TimeRangeWarning } from './TimeRangeWarning';
@@ -54,6 +55,11 @@ const zabbixQueryTypeOptions: Array<ComboboxOption<QueryType>> = [
     value: c.MODE_MACROS,
     label: 'User macros',
     description: 'User Macros',
+  },
+  {
+    value: c.MODE_INVENTORY,
+    label: 'Inventory',
+    description: 'Query host inventory fields',
   },
 ];
 
@@ -235,6 +241,9 @@ export const QueryEditor = ({
       {queryType === c.MODE_PROBLEMS && renderProblemsEditor()}
       {queryType === c.MODE_TRIGGERS && renderTriggersEditor()}
       {queryType === c.MODE_MACROS && renderUserMacrosEditor()}
+      {queryType === c.MODE_INVENTORY && (
+        <InventoryQueryEditor query={query} datasource={datasource} onChange={onChangeInternal} />
+      )}
       <QueryOptionsEditor queryType={queryType} queryOptions={query.options} onChange={onOptionsChange} />
     </Stack>
   );

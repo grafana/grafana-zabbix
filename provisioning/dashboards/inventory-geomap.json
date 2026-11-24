@@ -1,0 +1,154 @@
+{
+  "uid": "e2e-inventory-geomap",
+  "title": "E2E Inventory Geomap",
+  "schemaVersion": 39,
+  "tags": ["e2e"],
+  "timezone": "browser",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "geomap",
+      "title": "Hosts by inventory location",
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "zabbix-e2e"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 14,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "alexanderzobnin-zabbix-datasource",
+            "uid": "zabbix-e2e"
+          },
+          "refId": "A",
+          "queryType": "9",
+          "group": {
+            "filter": "E2E Inventory"
+          },
+          "host": {
+            "filter": "/.*/"
+          },
+          "application": {
+            "filter": ""
+          },
+          "item": {
+            "filter": ""
+          },
+          "itemTag": {
+            "filter": ""
+          },
+          "macro": {
+            "filter": ""
+          },
+          "inventoryFields": ["location_lat", "location_lon", "site_city"],
+          "options": {},
+          "schema": 13
+        }
+      ],
+      "options": {
+        "view": {
+          "id": "zero",
+          "lat": 0,
+          "lon": 0,
+          "zoom": 1
+        },
+        "controls": {
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "type": "markers",
+            "name": "Hosts",
+            "config": {
+              "showLegend": false,
+              "style": {
+                "size": {
+                  "fixed": 8
+                },
+                "color": {
+                  "fixed": "red"
+                },
+                "text": {
+                  "mode": "field",
+                  "field": "Host"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetY": -12
+                }
+              }
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "tooltip": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Host inventory",
+      "datasource": {
+        "type": "alexanderzobnin-zabbix-datasource",
+        "uid": "zabbix-e2e"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 10,
+        "x": 14,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "alexanderzobnin-zabbix-datasource",
+            "uid": "zabbix-e2e"
+          },
+          "refId": "A",
+          "queryType": "9",
+          "group": {
+            "filter": "E2E Inventory"
+          },
+          "host": {
+            "filter": "/.*/"
+          },
+          "application": {
+            "filter": ""
+          },
+          "item": {
+            "filter": ""
+          },
+          "itemTag": {
+            "filter": ""
+          },
+          "macro": {
+            "filter": ""
+          },
+          "inventoryFields": ["location_lat", "location_lon", "os", "site_city"],
+          "options": {},
+          "schema": 13
+        }
+      ],
+      "options": {},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    }
+  ]
+}
