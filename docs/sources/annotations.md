@@ -15,7 +15,7 @@ labels:
     - enterprise
     - cloud
 weight: 450
-review_date: 2026-09-08
+review_date: 2026-11-17
 ---
 
 # Zabbix annotations
@@ -44,9 +44,9 @@ Use the following fields to filter which Zabbix problems appear as annotations.
 
 | Field | Description |
 |-------|-------------|
-| **Group** | Filter by host group. Select from the drop-down or type a custom value. Supports regex and template variables. |
-| **Host** | Filter by host. Select from the drop-down or type a custom value. Supports regex and template variables. |
-| **Application** | Filter by application. Select from the drop-down or type a custom value. Supports regex and template variables. |
+| **Group** | Filter by host group. Select from the drop-down or type a custom value. A plain value must match the group name exactly; use a regex wrapped in forward slashes (for example, `/^Linux/`) for partial matches. `*` wildcards aren't supported in this field. Supports template variables. Leave empty to include all groups. |
+| **Host** | Filter by host. Select from the drop-down or type a custom value. A plain value must match the host name exactly; use a regex (for example, `/^web0[12]$/`) for partial matches. `*` wildcards aren't supported in this field. Supports template variables. Leave empty to include all hosts. |
+| **Application** | Filter by application. Applies to Zabbix versions earlier than 5.4 only; later versions ignore this field. Supports regex and template variables. |
 | **Problem** | Filter by problem name, matched against the trigger name. A plain value must match the name exactly. To match partially, use a regex wrapped in forward slashes (for example, `/CPU/`) or a `*` wildcard (for example, `High CPU*`). Leave empty to include all problems. |
 | **Min severity** | Show only events at or above this severity level: Not classified, Information, Warning, Average, High, or Disaster. |
 
@@ -88,11 +88,23 @@ Overlay all problems from one host onto its dashboard.
 1. Set **Host** to the exact host name (for example, `web01`).
 1. Leave **Problem** and **Min severity** at their defaults to include every problem.
 
+### Follow the dashboard variables
+
+Make the annotations follow the host group and hosts selected in the dashboard's [template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/), so that changing a variable also changes which problems appear on the graphs.
+
+1. Create a `group` variable and a `host` variable that use the Zabbix data source, as described in [Template variables](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/template-variables/).
+1. Set **Group** to `$group`.
+1. Set **Host** to `$host`.
+
+The plugin matches a variable's value as an exact name, so `$host` with `web01` selected shows only the problems of `web01`. When a multi-value variable has several values selected, problems from any of them are shown, and **All** includes every value of the variable.
+
+To ignore one of the filters, leave it empty instead of using a variable. For example, set **Group** to `$group` and leave **Host** empty to show the problems of every host in the selected groups.
+
 ### Filter by problem name
 
 Show only problems whose trigger name mentions CPU, regardless of severity.
 
-1. Set **Group** to `/.*/` and **Host** to `/.*/` to search all hosts.
+1. Leave **Group** and **Host** empty to search all hosts.
 1. Set **Problem** to `/CPU/` to match any trigger name containing `CPU`.
 
 Because a plain value matches the trigger name exactly, use the regex form (`/CPU/`) or a wildcard (`CPU*`) for partial matches.
