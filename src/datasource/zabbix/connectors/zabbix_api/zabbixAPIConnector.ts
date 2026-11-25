@@ -5,12 +5,21 @@ import { MIN_SLA_INTERVAL, ZBX_ACK_ACTION_ADD_MESSAGE, ZBX_ACK_ACTION_NONE } fro
 import { HostTagFilter, ShowProblemTypes, ZabbixTagEvalType } from '../../../types/query';
 import { ZBXProblem, ZBXTrigger } from '../../../types';
 import { APIExecuteScriptResponse, GetItemsOptions, JSONRPCError, ZBXScript } from './types';
-import { BackendSrvRequest, getBackendSrv } from '@grafana/runtime';
+import { BackendSrvRequest } from '@grafana/runtime';
 import { rangeUtil } from '@grafana/data';
 import { parseItemTag } from '../../../utils';
 import { zabbixMethodName } from 'datasource/zabbix/types';
 
 const DEFAULT_ZABBIX_VERSION = '3.0.0';
+
+/**
+ * Minimal subset of `DataSourceWithBackend` used by the connector. Resource calls
+ * go through the datasource so that Grafana can pick the right resource URL
+ * (legacy `/api/datasources/uid/...` or the `/apis/...` app-platform endpoint).
+ */
+export interface ResourceClient {
+  postResource<T = any>(path: string, body?: any, options?: Partial<BackendSrvRequest>): Promise<T>;
+}
 
 // Transient upstream errors: the Zabbix web frontend (nginx/apache + php-fpm)
 // is momentarily overloaded/unreachable. Worth a couple of quick retries.
@@ -30,16 +39,14 @@ function delay(ms: number): Promise<void> {
  * Wraps API calls and provides high-level methods.
  */
 export class ZabbixAPIConnector {
-  backendAPIUrl: string;
   requestOptions: { basicAuth: string; withCredentials: boolean };
   getTrend: (items: any, timeFrom: any, timeTill: any) => Promise<any[]>;
   version: string;
   getVersionPromise: Promise<string>;
-  datasourceUID: string;
+  resourceClient: ResourceClient;
 
-  constructor(basicAuth: string, withCredentials: boolean, datasourceUID: string) {
-    this.datasourceUID = datasourceUID;
-    this.backendAPIUrl = `/api/datasources/uid/${this.datasourceUID}/resources/zabbix-api`;
+  constructor(basicAuth: string, withCredentials: boolean, resourceClient: ResourceClient) {
+    this.resourceClient = resourceClient;
 
     this.requestOptions = {
       basicAuth: basicAuth,
@@ -65,17 +72,11 @@ export class ZabbixAPIConnector {
   }
 
   async backendAPIRequest(method: zabbixMethodName, params: any = {}) {
-    const requestOptions: BackendSrvRequest = {
-      url: this.backendAPIUrl,
-      method: 'POST',
+    const requestOptions: Partial<BackendSrvRequest> = {
       headers: {
         'Content-Type': 'application/json',
       },
       hideFromInspector: false,
-      data: {
-        method,
-        params,
-      },
     };
 
     // Set request options for basic auth
@@ -83,11 +84,12 @@ export class ZabbixAPIConnector {
       requestOptions.withCredentials = true;
     }
     if (this.requestOptions.basicAuth) {
-      requestOptions.headers.Authorization = this.requestOptions.basicAuth;
+      requestOptions.headers!.Authorization = this.requestOptions.basicAuth;
     }
 
-    const response = await this.fetchWithRetry(requestOptions, method);
-    return response?.data?.result;
+    // postResource resolves with the response body ({ result }), not the full fetch response
+    const body = await this.fetchWithRetry({ method, params }, requestOptions);
+    return body?.result;
   }
 
   /**
@@ -98,9 +100,14 @@ export class ZabbixAPIConnector {
    * problems, text metrics, user macros, IT services), so it's the one
    * place worth softening against a momentarily overloaded Zabbix.
    */
-  private async fetchWithRetry(requestOptions: BackendSrvRequest, method: zabbixMethodName, attempt = 0): Promise<any> {
+  private async fetchWithRetry(
+    payload: { method: zabbixMethodName; params: any },
+    requestOptions: Partial<BackendSrvRequest>,
+    attempt = 0
+  ): Promise<any> {
+    const { method } = payload;
     try {
-      return await getBackendSrv().fetch<any>(requestOptions).toPromise();
+      return await this.resourceClient.postResource<any>('zabbix-api', payload, requestOptions);
     } catch (error: any) {
       const status = error?.status;
       const isTransient = RETRYABLE_HTTP_STATUSES.includes(status);
@@ -111,7 +118,7 @@ export class ZabbixAPIConnector {
           `Zabbix API request "${method}" failed with ${status}, retrying in ${backoffMs}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})`
         );
         await delay(backoffMs);
-        return this.fetchWithRetry(requestOptions, method, attempt + 1);
+        return this.fetchWithRetry(payload, requestOptions, attempt + 1);
       }
 
       if (isTransient) {
@@ -164,11 +171,21 @@ export class ZabbixAPIConnector {
     return this.version ? semver.gte(this.version, '6.4.0') : false;
   }
 
+  // Unacknowledge action was introduced in Zabbix 5.0
+  supportsUnacknowledge() {
+    return this.version ? semver.gte(this.version, '5.0.0') : false;
+  }
+
+  // Manual problem suppression was introduced in Zabbix 6.2
+  supportsProblemSuppression() {
+    return this.version ? semver.gte(this.version, '6.2.0') : false;
+  }
+
   ////////////////////////////////
   // Zabbix API method wrappers //
   ////////////////////////////////
 
-  acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number) {
+  acknowledgeEvent(eventid: string, message: string, action?: number, severity?: number, suppress_until?: number) {
     if (!action) {
       action = semver.gte(this.version, '4.0.0') ? ZBX_ACK_ACTION_ADD_MESSAGE : ZBX_ACK_ACTION_NONE;
     }
@@ -181,6 +198,11 @@ export class ZabbixAPIConnector {
 
     if (severity !== undefined) {
       params.severity = severity;
+    }
+
+    // Required when action contains the "suppress event" flag; 0 means suppress indefinitely
+    if (suppress_until !== undefined) {
+      params.suppress_until = suppress_until;
     }
 
     return this.request('event.acknowledge', params);
@@ -823,7 +845,10 @@ export class ZabbixAPIConnector {
       sortorder: 'DESC',
       selectTags: 'extend',
       [getParamsKeyByVersion('selectAcknowledges', this.version, 'event.get')]: 'extend',
-      selectSuppressionData: ['maintenanceid', 'suppress_until'],
+      // userid (who suppressed the problem manually) exists since Zabbix 6.2
+      selectSuppressionData: this.supportsProblemSuppression()
+        ? ['maintenanceid', 'userid', 'suppress_until']
+        : ['maintenanceid', 'suppress_until'],
       groupids,
       hostids,
       applicationids,
