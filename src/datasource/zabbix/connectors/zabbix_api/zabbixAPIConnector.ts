@@ -394,6 +394,18 @@ export class ZabbixAPIConnector {
     return this.request('usermacro.get', params);
   }
 
+  /** Hosts or templates with the templates linked to them, to resolve user macros through inheritance. */
+  getParentTemplates(
+    hostids: string[]
+  ): Promise<Array<{ hostid: string; parentTemplates?: Array<{ templateid: string }> }>> {
+    return this.request('host.get', {
+      output: ['hostid'],
+      hostids,
+      templated_hosts: true,
+      selectParentTemplates: ['templateid'],
+    });
+  }
+
   getUserMacros(hostmacroids) {
     const params = {
       output: 'extend',

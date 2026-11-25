@@ -300,9 +300,10 @@ export function expandUserMacros(
     return text;
   }
   return text.replace(USER_MACRO_PATTERN, (macroName) => {
-    const hostMacro = hostMacros.find(
-      (m) => m.macro === macroName && m.hostid !== undefined && hostids.includes(m.hostid)
-    );
+    // hostids are in priority order (hosts, then their templates nearest first): the first definition wins.
+    const hostMacro = hostids
+      .map((hostid) => hostMacros.find((m) => m.macro === macroName && m.hostid === hostid))
+      .find(Boolean);
     if (hostMacro && hostMacro.value != null) {
       return hostMacro.value;
     }
@@ -312,6 +313,36 @@ export function expandUserMacros(
     }
     return macroName;
   });
+}
+
+const TRIGGER_URL_MACRO_PATTERN = /\{(?:TRIGGER\.ID|EVENT\.ID|HOST\.ID|HOST\.HOST|HOST\.NAME|\$[A-Z0-9_.]+)\}/g;
+
+/**
+ * Expands the macros of a trigger URL that the problem data and user macros can resolve.
+ * macroHostids lists the trigger hosts, then their templates nearest first.
+ */
+export function expandTriggerUrl(
+  problem: ProblemDTO,
+  hostMacros: UserMacro[],
+  globalMacros: UserMacro[],
+  macroHostids: string[]
+): string {
+  // shortcut: {HOST.*} use the first trigger host, which is right for single-host triggers;
+  // numbered macros ({HOST.HOST2}) and multi-host ordering need the trigger expression.
+  const host = problem.hosts?.[0];
+  const builtins: Record<string, string | undefined> = {
+    '{TRIGGER.ID}': problem.triggerid,
+    '{EVENT.ID}': problem.eventid,
+    '{HOST.ID}': host?.hostid,
+    '{HOST.HOST}': host?.host,
+    '{HOST.NAME}': host?.name,
+  };
+  // One pass, so a resolved value is never expanded again.
+  return problem.url!.replace(TRIGGER_URL_MACRO_PATTERN, (macro) =>
+    macro.startsWith('{$')
+      ? expandUserMacros(macro, hostMacros, globalMacros, macroHostids)
+      : (builtins[macro] ?? macro)
+  );
 }
 
 const problemsHandler = {

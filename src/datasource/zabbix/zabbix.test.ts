@@ -860,4 +860,74 @@ describe('Zabbix', () => {
       expect(items).toEqual([]);
     });
   });
+
+  describe('expandProblemUrls', () => {
+    beforeEach(() => {
+      zabbix = new Zabbix(ctx);
+      // Host 10 links template 20, which links template 30. Host 11 links template 21.
+      const links: Record<string, string[]> = { '10': ['20'], '11': ['21'], '20': ['30'], '21': [], '30': [] };
+      zabbix.zabbixAPI.getParentTemplates = jest.fn(async (ids: string[]) =>
+        ids.map((id) => ({ hostid: id, parentTemplates: links[id].map((templateid) => ({ templateid })) }))
+      );
+      zabbix.zabbixAPI.getMacros = jest.fn().mockResolvedValue([
+        { macro: '{$WIKI}', value: 'https://wiki.from-template-30', hostid: '30' },
+        { macro: '{$WIKI}', value: 'https://wiki.from-template-21', hostid: '21' },
+        { macro: '{$PAGE}', value: 'template-page', hostid: '20' },
+        { macro: '{$PAGE}', value: 'host-page', hostid: '10' },
+      ]);
+      zabbix.zabbixAPI.getGlobalMacros = jest.fn().mockResolvedValue([{ macro: '{$GLOBAL}', value: 'g' }]);
+      zabbix.zabbixAPI.getHistory = jest.fn();
+    });
+
+    const problem = (url: string, hostid = '10', overrides = {}): any => ({
+      triggerid: '500',
+      eventid: '900',
+      url,
+      hosts: [{ hostid, host: `host-${hostid}`, name: `Host ${hostid}` }],
+      ...overrides,
+    });
+
+    it('resolves a URL that is only a user macro defined on a nested template (#1608)', async () => {
+      const [result] = await zabbix.expandProblemUrls([problem('{$WIKI}')]);
+      expect(result.url).toBe('https://wiki.from-template-30');
+    });
+
+    it('resolves each problem with its own templates and prefers the nearest definition', async () => {
+      const result = await zabbix.expandProblemUrls([
+        problem('{$WIKI}/{$PAGE}?t={TRIGGER.ID}&e={EVENT.ID}&h={HOST.HOST}&n={HOST.NAME}&i={HOST.ID}'),
+        problem('{$WIKI}/{$GLOBAL}/{$MISSING}', '11'),
+      ]);
+      expect(result.map((p) => p.url)).toEqual([
+        'https://wiki.from-template-30/host-page?t=500&e=900&h=host-10&n=Host 10&i=10',
+        'https://wiki.from-template-21/g/{$MISSING}',
+      ]);
+      expect(zabbix.zabbixAPI.getMacros).toHaveBeenCalledWith(['10', '11', '20', '21', '30']);
+    });
+
+    it('makes no API calls when URLs have no user macros, and never fetches history', async () => {
+      const plain = problem('https://example.com/static');
+      const result = await zabbix.expandProblemUrls([plain, problem('https://x/{HOST.HOST}'), problem('')]);
+      expect(result.map((p) => p.url)).toEqual(['https://example.com/static', 'https://x/host-10', '']);
+      expect(result[0]).toBe(plain);
+      expect(zabbix.zabbixAPI.getParentTemplates).not.toHaveBeenCalled();
+      expect(zabbix.zabbixAPI.getMacros).not.toHaveBeenCalled();
+      expect(zabbix.zabbixAPI.getHistory).not.toHaveBeenCalled();
+    });
+
+    it('keeps every row when the user macro lookup fails', async () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      zabbix.zabbixAPI.getMacros = jest.fn().mockRejectedValue(new Error('Permission denied'));
+      const result = await zabbix.expandProblemUrls([problem('{$WIKI}?t={TRIGGER.ID}'), problem('https://plain')]);
+      expect(result.map((p) => p.url)).toEqual(['{$WIKI}?t=500', 'https://plain']);
+      warn.mockRestore();
+    });
+
+    it('stops walking templates after a bounded number of levels', async () => {
+      zabbix.zabbixAPI.getParentTemplates = jest.fn(async (ids: string[]) =>
+        ids.map((id) => ({ hostid: id, parentTemplates: [{ templateid: String(Number(id) + 1) }] }))
+      );
+      await zabbix.expandProblemUrls([problem('{$WIKI}')]);
+      expect(zabbix.zabbixAPI.getParentTemplates).toHaveBeenCalledTimes(10);
+    });
+  });
 });
