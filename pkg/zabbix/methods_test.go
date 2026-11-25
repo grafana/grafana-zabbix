@@ -120,7 +120,7 @@ func TestGetItems(t *testing.T) {
 		"apiinfo.version": `{"result":"6.4.0"}`,
 	})
 
-	items, err := client.GetItems(context.Background(), "Servers", "web01", "", "/CPU/", "num", false, nil, "")
+	items, err := client.GetItems(context.Background(), "Servers", "web01", "", "", "/CPU/", "num", false, nil, "")
 	require.NoError(t, err)
 	if assert.Len(t, items, 1) {
 		assert.Equal(t, "100", items[0].ID)
@@ -177,7 +177,7 @@ func TestGetItemsWithRegexItemTagFilterNoMatch(t *testing.T) {
 
 	// Use a regex itemTagFilter that won't match any tags
 	// Use itemFilter "/.*/" which matches all items, so we can detect if bug returns all items
-	items, err := client.GetItems(context.Background(), "Servers", "web01", "/^NonExistentTag/", "/.*/", "num", false, nil, "")
+	items, err := client.GetItems(context.Background(), "Servers", "web01", "/^NonExistentTag/", "", "/.*/", "num", false, nil, "")
 	require.NoError(t, err)
 	
 	// With fix: Should return empty list (0 items) because no tags matched
@@ -403,6 +403,7 @@ func TestGetAllItemsBuildsParams(t *testing.T) {
 		"num",
 		false,
 		"Env: prod, Application: api",
+		"",
 	)
 	require.NoError(t, err)
 	if assert.Len(t, items, 1) {
@@ -422,6 +423,49 @@ func TestGetAllItemsBuildsParams(t *testing.T) {
 		assert.Equal(t, "Application", first["tag"])
 		assert.Equal(t, "Env", second["tag"])
 	}
+	assert.Equal(t, float64(2), params["evaltype"])
+}
+
+func TestGetAllItemsItemTagEvalType(t *testing.T) {
+	var lastRequest ApiRequestPayload
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		if payload.Method == "item.get" {
+			lastRequest = payload
+			return `{"result":[]}`
+		}
+		if payload.Method == "apiinfo.version" {
+			return `{"result":"6.4.0"}`
+		}
+		return `{"result":null}`
+	})
+
+	for evalType, want := range map[string]float64{"": 2, "2": 2, "0": 0} {
+		_, err := client.GetAllItems(context.Background(), []string{"10"}, nil, "num", false, "Env: prod, Application: api", evalType)
+		require.NoError(t, err)
+		assert.Equal(t, want, lastRequest.Params["evaltype"], "itemTagEvalType=%q", evalType)
+	}
+}
+
+func TestGetItemsRegexItemTagFilterIgnoresAndEvalType(t *testing.T) {
+	var lastRequest ApiRequestPayload
+	client := NewZabbixClientWithHandler(t, func(payload ApiRequestPayload) string {
+		switch payload.Method {
+		case "item.get":
+			lastRequest = payload
+			return `{"result":[{"itemid":"1","name":"CPU","tags":[{"tag":"Env","value":"prod"},{"tag":"Env","value":"dev"}]}]}`
+		case "hostgroup.get":
+			return `{"result":[{"groupid":"1","name":"Servers"}]}`
+		case "host.get":
+			return `{"result":[{"hostid":"10","name":"web01"}]}`
+		case "apiinfo.version":
+			return `{"result":"6.4.0"}`
+		}
+		return `{"result":null}`
+	})
+
+	_, err := client.GetItems(context.Background(), "Servers", "web01", "/^Env/", "0", "/.*/", "num", false, nil, "")
+	require.NoError(t, err)
+	assert.Equal(t, float64(2), lastRequest.Params["evaltype"])
 }
 
 func TestGetItemsByIDs(t *testing.T) {
@@ -558,7 +602,7 @@ func TestGetItems_WithHostTags(t *testing.T) {
 	hostTags := []HostTagFilter{
 		{Tag: "env", Value: "prod", Operator: "1"},
 	}
-	items, err := client.GetItems(context.Background(), "Servers", "web01", "", "/CPU/", "num", false, hostTags, "2")
+	items, err := client.GetItems(context.Background(), "Servers", "web01", "", "", "/CPU/", "num", false, hostTags, "2")
 	require.NoError(t, err)
 	assert.Len(t, items, 1)
 	assert.Equal(t, "100", items[0].ID)

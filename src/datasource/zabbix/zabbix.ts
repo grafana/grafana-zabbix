@@ -347,6 +347,7 @@ export class Zabbix implements ZabbixConnector {
       ...options,
       hostTags: options.hostTags ?? (isMetrics ? target.hostTags : undefined),
       evaltype: options.evaltype ?? (isMetrics ? target.evaltype : undefined),
+      itemTagEvalType: target.itemTagEvalType,
     });
   }
 
@@ -383,6 +384,7 @@ export class Zabbix implements ZabbixConnector {
       ...options,
       hostTags: options.hostTags ?? (isMetrics ? target.hostTags : undefined),
       evaltype: options.evaltype ?? (isMetrics ? target.evaltype : undefined),
+      itemTagEvalType: target.itemTagEvalType,
     });
     return [hosts, apps, items];
   }
@@ -532,6 +534,8 @@ export class Zabbix implements ZabbixConnector {
         return [];
       }
       itemTagFilter = tags.map((t) => t.name).join(',');
+      // A regex expands to every matching tag; requiring all of them would match almost nothing
+      options = { ...options, itemTagEvalType: ZabbixTagEvalType.Or };
     }
 
     let items = await this.zabbixAPI.getItems(
@@ -988,7 +992,7 @@ function isMetricsQuery(target: any): boolean {
 // Picks the zabbixAPI.getItems() options, leaving out unset ones so the request cache key stays stable
 function getItemsAPIOptions(options: any = {}): GetItemsOptions {
   return _.pickBy(
-    { nameSearch: options.nameSearch, selectTags: options.selectTags },
+    { nameSearch: options.nameSearch, selectTags: options.selectTags, itemTagEvalType: options.itemTagEvalType },
     (value) => value !== undefined
   ) as GetItemsOptions;
 }

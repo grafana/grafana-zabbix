@@ -86,6 +86,7 @@ func (ds *Zabbix) GetItems(
 	groupFilter string,
 	hostFilter string,
 	itemTagFilter string,
+	itemTagEvalType string,
 	itemFilter string,
 	itemType string,
 	showDisabled bool,
@@ -123,9 +124,11 @@ func (ds *Zabbix) GetItems(
 			tagStrs = append(tagStrs, itemTagToString(t))
 		}
 		itemTagFilter = strings.Join(tagStrs, ",")
+		// A regex expands to every matching tag; requiring all of them would match almost nothing
+		itemTagEvalType = ""
 	}
 	ds.logger.Debug("Fetching items with filters", "hostCount", len(hostids), "itemType", itemType, "showDisabled", showDisabled, "hasItemTagFilter", len(itemTagFilter) > 0)
-	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter)
+	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, itemTagFilter, itemTagEvalType)
 	if err != nil {
 		return nil, err
 	}
@@ -168,9 +171,9 @@ func (ds *Zabbix) GetItemsBefore54(
 
 	var allItems []*Item
 	if len(appids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "")
+		allItems, err = ds.GetAllItems(ctx, nil, appids, itemType, showDisabled, "", "")
 	} else if appFilter == "" && len(hostids) > 0 {
-		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+		allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "", "")
 	}
 	if err != nil {
 		return nil, err
@@ -268,7 +271,7 @@ func (ds *Zabbix) GetItemTags(ctx context.Context, groupFilter string, hostFilte
 	itemType := "num"
 	showDisabled := false
 
-	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "")
+	allItems, err = ds.GetAllItems(ctx, hostids, nil, itemType, showDisabled, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +395,7 @@ func filterGroupsByQuery(items []Group, filter string) ([]Group, error) {
 	return filteredItems, nil
 }
 
-func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool, itemTagFilter string) ([]*Item, error) {
+func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []string, itemtype string, showDisabled bool, itemTagFilter string, itemTagEvalType string) ([]*Item, error) {
 	params := ZabbixAPIParams{
 		"output":         []string{"itemid", "name", "key_", "value_type", "hostid", "status", "state", "units", "valuemapid", "delay"},
 		"sortfield":      "name",
@@ -433,7 +436,11 @@ func (ds *Zabbix) GetAllItems(ctx context.Context, hostids []string, appids []st
 				return tagsParams[i]["value"] < tagsParams[j]["value"]
 			})
 			params["tags"] = tagsParams
+			// OR by default; AND/OR requires every distinct tag name to match
 			params["evaltype"] = 2
+			if itemTagEvalType == "0" {
+				params["evaltype"] = 0
+			}
 		}
 	}
 

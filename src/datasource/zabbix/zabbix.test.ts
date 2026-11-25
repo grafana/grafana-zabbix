@@ -4,6 +4,7 @@ import { ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { Zabbix } from './zabbix';
+import { ZabbixTagEvalType } from '../types/query';
 
 jest.mock('../problemsHandler', () => ({
   ...jest.requireActual('../problemsHandler'),
@@ -297,6 +298,35 @@ describe('Zabbix', () => {
     it('sends no name search when the filter has no safe literal', async () => {
       await zabbix.getItems('/.*/', 'host', undefined, undefined, '/.*/', { pushDownItemFilter: true });
       expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, undefined, {});
+    });
+
+    it('passes the item tag eval type from the target', async () => {
+      const target = {
+        group: { filter: '/.*/' },
+        host: { filter: 'host' },
+        application: { filter: '' },
+        itemTag: { filter: 'component: cpu, env: prod' },
+        item: { filter: '/.*/' },
+        itemTagEvalType: ZabbixTagEvalType.AndOr,
+      };
+      await zabbix.getItemsFromTarget(target, {});
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(
+        ['10'],
+        undefined,
+        undefined,
+        'component: cpu, env: prod',
+        {
+          itemTagEvalType: ZabbixTagEvalType.AndOr,
+        }
+      );
+    });
+
+    it('falls back to OR when the item tag filter is a regex', async () => {
+      zabbix.getItemTags = jest.fn().mockResolvedValue([{ name: 'env: prod' }, { name: 'env: dev' }]);
+      await zabbix.getItems('/.*/', 'host', undefined, '/^env/', '/.*/', { itemTagEvalType: ZabbixTagEvalType.AndOr });
+      expect(zabbix.zabbixAPI.getItems).toHaveBeenCalledWith(['10'], undefined, undefined, 'env: prod,env: dev', {
+        itemTagEvalType: ZabbixTagEvalType.Or,
+      });
     });
 
     describe('before Zabbix 5.4', () => {

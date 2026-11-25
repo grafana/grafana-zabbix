@@ -103,6 +103,18 @@ describe('Zabbix API connector', () => {
       expect(params.selectTags).toBeUndefined();
       expect(params.tags).toEqual([{ tag: 'component', value: 'cpu', operator: '1' }]);
     });
+
+    it.each([
+      [undefined, 2],
+      [ZabbixTagEvalType.Or, 2],
+      [ZabbixTagEvalType.AndOr, 0],
+    ])('should send evaltype for item tags with itemTagEvalType=%s', async (itemTagEvalType, expected) => {
+      const zabbixAPIConnector = createConnector();
+
+      await zabbixAPIConnector.getItems(['1'], undefined, undefined, 'component: cpu, env: prod', { itemTagEvalType });
+      const params = (zabbixAPIConnector.request as jest.Mock).mock.calls[0][1];
+      expect(params.evaltype).toBe(expected);
+    });
   });
 
   describe('getHostAlerts function', () => {
