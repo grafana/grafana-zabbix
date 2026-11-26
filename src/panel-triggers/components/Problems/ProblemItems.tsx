@@ -1,8 +1,7 @@
 import React from 'react';
 import { css } from '@emotion/css';
-import { Tooltip, useStyles2 } from '@grafana/ui';
+import { Icon, Tooltip, useStyles2 } from '@grafana/ui';
 import { GrafanaTheme2 } from '@grafana/data';
-import { FAIcon } from '../../../components';
 import { expandItemName } from '../../../datasource/utils';
 import { ZBXItem } from '../../../datasource/types';
 
@@ -13,7 +12,7 @@ interface ProblemItemsProps {
 export const ProblemItems = ({ items }: ProblemItemsProps) => {
   const styles = useStyles2(getStyles);
   return (
-    <div className={styles.itemsRow}>
+    <div className={styles.items}>
       {items.length > 1 ? (
         items.map((item) => <ProblemItem item={item} key={item.itemid} showName={true} />)
       ) : (
@@ -40,24 +39,41 @@ const ProblemItem = ({ item, showName }: ProblemItemProps) => {
   );
 
   return (
-    <div className={styles.itemContainer}>
-      <FAIcon icon="thermometer-three-quarters" />
+    <div className={styles.item}>
+      <Icon name="chart-line" size="sm" className={styles.icon} />
       {showName && <span className={styles.itemName}>{item.name}:&nbsp;</span>}
       <Tooltip placement="top-start" content={tooltipContent}>
-        <span>{item.lastvalue}</span>
+        <span className={styles.value}>{item.lastvalue}</span>
       </Tooltip>
     </div>
   );
 };
 
 const getStyles = (theme: GrafanaTheme2) => ({
-  itemContainer: css`
-    display: flex;
-  `,
-  itemName: css`
-    color: ${theme.colors.text.secondary};
-  `,
-  itemsRow: css`
-    overflow: hidden;
-  `,
+  items: css({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(0.25),
+    minWidth: 0,
+  }),
+  item: css({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(0.5),
+    minWidth: 0,
+  }),
+  icon: css({
+    color: theme.colors.text.disabled,
+    flexShrink: 0,
+  }),
+  itemName: css({
+    color: theme.colors.text.secondary,
+    whiteSpace: 'nowrap',
+  }),
+  value: css({
+    fontWeight: theme.typography.fontWeightMedium,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  }),
 });
