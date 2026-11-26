@@ -4,6 +4,8 @@ import { ClickHouseConnector } from './connectors/clickhouse/clickhouseConnector
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { Zabbix } from './zabbix';
+import { HostTagOperatorValue } from '../components/QueryEditor/types';
+import { HostTagFilter, ZabbixTagEvalType } from '../types/query';
 
 jest.mock('../problemsHandler', () => ({
   ...jest.requireActual('../problemsHandler'),
@@ -769,6 +771,27 @@ describe('Zabbix', () => {
         evaltype: undefined,
       });
     });
+
+    it('passes explicit options to getItems for non-Metrics queries', async () => {
+      zabbix.getItems = jest.fn().mockResolvedValue([]);
+      const target = {
+        queryType: '2',
+        group: { filter: 'group.*' },
+        host: { filter: 'host.*' },
+        application: { filter: '' },
+        itemTag: { filter: '' },
+        item: { filter: '' },
+      };
+      const options = {
+        itemtype: 'text',
+        hostTags: [{ tag: 'env', value: 'prod', operator: HostTagOperatorValue.Contains }],
+        evaltype: ZabbixTagEvalType.AndOr,
+      };
+
+      await zabbix.getItemsFromTarget(target, options);
+
+      expect(zabbix.getItems).toHaveBeenCalledWith('group.*', 'host.*', '', '', '', options);
+    });
   });
 
   describe('getHostsFromICTarget and getHostsApsFromTarget', () => {
@@ -858,6 +881,50 @@ describe('Zabbix', () => {
 
       expect(zabbix.zabbixAPI.getItems).not.toHaveBeenCalled();
       expect(items).toEqual([]);
+    });
+
+    it('forwards options.hostTags and options.evaltype to getHosts', async () => {
+      zabbix.version = '6.4.0';
+      zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '1', name: 'host1' }]);
+      zabbix.zabbixAPI.getItems = jest.fn().mockResolvedValue([]);
+
+      const hostTags: HostTagFilter[] = [{ tag: 'env', value: 'prod', operator: HostTagOperatorValue.Contains }];
+      const evaltype = ZabbixTagEvalType.AndOr;
+
+      await zabbix.getAllItems('group.*', 'host.*', '', '', { hostTags, evaltype });
+
+      expect(zabbix.getHosts).toHaveBeenCalledWith('group.*', 'host.*', hostTags, evaltype);
+    });
+
+    it('works when options has no hostTags and evaltype', async () => {
+      zabbix.version = '6.4.0';
+      zabbix.getHosts = jest.fn().mockResolvedValue([{ hostid: '1', name: 'host1' }]);
+      zabbix.zabbixAPI.getItems = jest.fn().mockResolvedValue([]);
+
+      await zabbix.getAllItems('group.*', 'host.*', '', '');
+
+      expect(zabbix.getHosts).toHaveBeenCalledWith('group.*', 'host.*', undefined, undefined);
+    });
+  });
+
+  describe('getHosts', () => {
+    beforeEach(() => {
+      zabbix.getAllHosts = jest.fn().mockResolvedValue([{ hostid: '1', name: 'host1' }]);
+    });
+
+    it('forwards hostTagFilters and evalType to getAllHosts', async () => {
+      const hostTagFilters: HostTagFilter[] = [{ tag: 'env', value: 'prod', operator: HostTagOperatorValue.Contains }];
+      const evalType = ZabbixTagEvalType.AndOr;
+
+      await zabbix.getHosts('group.*', 'host.*', hostTagFilters, evalType);
+
+      expect(zabbix.getAllHosts).toHaveBeenCalledWith('group.*', false, hostTagFilters, evalType);
+    });
+
+    it('works without hostTagFilters and evalType', async () => {
+      await zabbix.getHosts('group.*', 'host.*');
+
+      expect(zabbix.getAllHosts).toHaveBeenCalledWith('group.*', false, undefined, undefined);
     });
   });
 });

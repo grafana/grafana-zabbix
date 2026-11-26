@@ -22,6 +22,7 @@ export interface Props {
 
 export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountChange }: Props) => {
   const interpolatedQuery = useInterpolatedQuery(datasource, query);
+  const hostTagsKey = JSON.stringify(interpolatedQuery.hostTags ?? []);
 
   const loadGroupOptions = async () => {
     const groups = await datasource.zabbix.getAllGroups();
@@ -61,8 +62,8 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
   };
 
   const [{ loading: hostTagsLoading, value: hostTagsData }, fetchHostTags] = useAsyncFn(async () => {
-    return await loadHostTagOptions(query.group.filter);
-  }, [query.group.filter]);
+    return await loadHostTagOptions(interpolatedQuery.group?.filter);
+  }, [interpolatedQuery.group?.filter]);
   const hostTagsOptions = hostTagsData?.tagOptions;
   const hostTagValueOptions = hostTagsData?.valueOptions;
 
@@ -74,7 +75,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
     );
 
     return options;
-  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
+  }, [interpolatedQuery.group.filter, hostTagsKey, interpolatedQuery.evaltype]);
 
   const loadAppOptions = async (group: string, host: string) => {
     const apps = await datasource.zabbix.getAllApps(group, host);
@@ -169,7 +170,6 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
 
   // Update suggestions on every metric change
   const groupFilter = interpolatedQuery.group?.filter;
-  const hostTagFilters = interpolatedQuery.hostTags;
   const evalType = interpolatedQuery.evaltype;
   const hostFilter = interpolatedQuery.host?.filter;
   const appFilter = interpolatedQuery.application?.filter;
@@ -186,7 +186,7 @@ export const MetricsQueryEditor = ({ query, datasource, onChange, onItemCountCha
 
   useEffect(() => {
     fetchHosts();
-  }, [groupFilter, hostTagFilters, evalType]);
+  }, [groupFilter, hostTagsKey, evalType]);
 
   useEffect(() => {
     fetchApps();
