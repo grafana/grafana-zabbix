@@ -17,6 +17,6 @@ jobs:
         uses: grafana/shared-workflows/actions/create-github-app-token@5bbb526b1728ca57fbe1750c4c27ab6ab06171c2 # create-github-app-token/v1.0
         with:
           github_app: grafana-oss-big-tent
-      - uses: grafana/plugin-actions/create-plugin-update@244c3bc9c6eb94bc1dd6458ade2462499bbf0f5b #create-plugin-update/v2.0.1
+      - uses: grafana/plugin-actions/create-plugin-update@bdc3fc5420eca6f498629a8f5d1f43abf0b8ec26 # create-plugin-update/v2.1.1
         with:
           token: ${{ steps.get-github-token.outputs.token }}
