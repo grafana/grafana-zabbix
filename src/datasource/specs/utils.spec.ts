@@ -260,7 +260,12 @@ describe('Utils', () => {
 
     it('should join multiple values into an alternation group', () => {
       const result = replaceTextFilterVars(buildTemplateSrv(['a', 'b']), 'x $client', {});
-      expect(result).toBe('x (a|b)');
+      expect(result).toBe('x (?:a|b)');
+    });
+
+    it('should keep the filter capture group numbering for a multi-value variable', () => {
+      const pattern = replaceTextFilterVars(buildTemplateSrv(['up', 'down']), '$client (\\d+)', {});
+      expect(new RegExp(pattern).exec('down 42')?.[1]).toBe('42');
     });
 
     it('should leave a filter without variables unchanged', () => {

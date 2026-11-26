@@ -916,6 +916,18 @@ export function zabbixTemplateFormat(value) {
   return '(' + escapedValues.join('|') + ')';
 }
 
+/**
+ * Like zabbixTemplateFormat, but a multi-value variable becomes a non-capturing group (?:a|b), so it does
+ * not consume a capture group number in a pattern that extracts part of the text.
+ */
+export function zabbixTextFilterFormat(value) {
+  if (typeof value === 'string') {
+    return escapeRegex(value);
+  }
+
+  return '(?:' + _.map(value, escapeRegex).join('|') + ')';
+}
+
 export function zabbixItemIdsTemplateFormat(value) {
   if (typeof value === 'string') {
     return value;
@@ -948,10 +960,11 @@ export function replaceTemplateVars(
  * Interpolate template variables in a Text query filter. The filter is applied to the item value
  * as a regular expression pattern (not a /.../ literal), so the result must not be wrapped in
  * '/^...$/' the way replaceTemplateVars() does for the Zabbix API filters. Variable values are
- * regex-escaped, and a multi-value variable becomes a (a|b|c) group.
+ * regex-escaped, and a multi-value variable becomes a non-capturing (?:a|b|c) group so the filter's own
+ * capture group numbering is preserved.
  */
 export function replaceTextFilterVars(templateSrv: TemplateSrv, target: string, scopedVars: ScopedVars) {
-  return templateSrv.replace(target, scopedVars, zabbixTemplateFormat);
+  return templateSrv.replace(target, scopedVars, zabbixTextFilterFormat);
 }
 
 /**
