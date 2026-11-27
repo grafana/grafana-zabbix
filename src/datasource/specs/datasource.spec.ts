@@ -1196,5 +1196,140 @@ describe('ZabbixDatasource', () => {
       const [result] = ctx.ds.interpolateVariablesInQueries([{ refId: 'A' } as any], {});
       expect(result.hostTags).toBeUndefined();
     });
+
+    describe('problem tag filters', () => {
+      // Mimics Grafana: a multi-value variable is passed to the formatter as an array.
+      const mockTemplateSrv = (vars: Record<string, string | string[]>, allVars: string[] = []) => {
+        ctx.ds.templateSrv.getVariables = jest
+          .fn()
+          .mockReturnValue(allVars.map((name) => ({ name, current: { value: ['$__all'] } })));
+        ctx.ds.templateSrv.replace = jest.fn().mockImplementation((str: string, _scoped: any, format?: Function) =>
+          str.replace(/\$(\w+)/g, (_m, name: string) => {
+            const value = vars[name];
+            if (format) {
+              return format(value, { name });
+            }
+            return Array.isArray(value) ? `{${value.join(',')}}` : value;
+          })
+        );
+      };
+      const interpolate = (problemTags: any[]) =>
+        ctx.ds.interpolateVariablesInQueries([{ refId: 'A', problemTags } as any], {})[0].problemTags;
+
+      it('should keep regexp characters in tag names and values as plain text', () => {
+        mockTemplateSrv({ name: 'a.b[0]', val: 'app[1].v2 (a|b) $x^y*+?{}\\' });
+        expect(interpolate([{ tag: '$name', value: '$val', operator: '1' }])).toEqual([
+          { tag: 'a.b[0]', value: 'app[1].v2 (a|b) $x^y*+?{}\\', operator: '1' },
+        ]);
+      });
+
+      it('should send plain values to Zabbix without regexp escaping or anchors', () => {
+        mockTemplateSrv({ val: 'app[1].v2' });
+        const filters = interpolate([{ tag: 'env', value: '$val', operator: '1' }]);
+        expect(utils.problemTagsToQueryParam(filters as any)).toEqual([
+          { tag: 'env', value: 'app[1].v2', operator: 1 },
+        ]);
+      });
+
+      it('should expand a multi-value variable into one filter per selected value', () => {
+        mockTemplateSrv({ val: ['a.b', 'c[d]'] });
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '1' }])).toEqual([
+          { tag: 'env', value: 'a.b', operator: '1' },
+          { tag: 'env', value: 'c[d]', operator: '1' },
+        ]);
+      });
+
+      it('should drop filters that reference the All value', () => {
+        mockTemplateSrv({ val: ['a', 'b'] }, ['val']);
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '1' }])).toEqual([]);
+      });
+
+      it('should keep the raw filter when a multi-value variable has nothing selected', () => {
+        mockTemplateSrv({ val: [] });
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '1' }])).toEqual([
+          { tag: 'env', value: '$val', operator: '1' },
+        ]);
+      });
+
+      it('should not expand multi-value tag names, which would AND the names together, and join them with commas', () => {
+        mockTemplateSrv({ name: ['a.b', 'c'] });
+        expect(interpolate([{ tag: '$name', value: 'v', operator: '1' }])).toEqual([
+          { tag: 'a.b,c', value: 'v', operator: '1' },
+        ]);
+      });
+
+      it('should not expand multi-value variables for negative operators, which Zabbix would OR', () => {
+        mockTemplateSrv({ val: ['a.b', 'c'] });
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '3' }])).toEqual([
+          { tag: 'env', value: 'a.b,c', operator: '3' },
+        ]);
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '2' }])).toEqual([
+          { tag: 'env', value: 'a.b,c', operator: '2' },
+        ]);
+      });
+
+      it('should keep a single selected value as plain text for negative operators', () => {
+        mockTemplateSrv({ val: 'app[1].v2' });
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '3' }])).toEqual([
+          { tag: 'env', value: 'app[1].v2', operator: '3' },
+        ]);
+      });
+
+      it('should drop a negative filter when its variable has nothing selected', () => {
+        mockTemplateSrv({ val: [] });
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '3' }])).toEqual([]);
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '2' }])).toEqual([]);
+      });
+
+      it('should interpolate a variable tag name when the value has nothing selected', () => {
+        mockTemplateSrv({ name: 'team.a', val: [] });
+        expect(interpolate([{ tag: '$name', value: '$val', operator: '1' }])).toEqual([
+          { tag: 'team.a', value: '$val', operator: '1' },
+        ]);
+      });
+
+      it('should expand a multi-value variable with surrounding text', () => {
+        mockTemplateSrv({ val: ['a.b', 'c'] });
+        expect(interpolate([{ tag: 'env', value: 'pre-$val-post', operator: '1' }])).toEqual([
+          { tag: 'env', value: 'pre-a.b-post', operator: '1' },
+          { tag: 'env', value: 'pre-c-post', operator: '1' },
+        ]);
+      });
+
+      it('should expand a multi-value variable for the Contains operator', () => {
+        mockTemplateSrv({ val: ['a.b', 'c'] });
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '0' }])).toEqual([
+          { tag: 'env', value: 'a.b', operator: '0' },
+          { tag: 'env', value: 'c', operator: '0' },
+        ]);
+      });
+
+      it('should not send the value of Exists and Does not exist filters to Zabbix', () => {
+        mockTemplateSrv({ val: ['a', 'b'] });
+        const filters = interpolate([
+          { tag: 'env', value: '$val', operator: '4' },
+          { tag: 'team', value: '$val', operator: '5' },
+        ]);
+        expect(utils.problemTagsToQueryParam(filters as any)).toEqual([
+          { tag: 'env', operator: 4 },
+          { tag: 'team', operator: 5 },
+        ]);
+      });
+
+      it('should not expand the value for Exists and Does not exist operators', () => {
+        mockTemplateSrv({ val: ['a', 'b'] });
+        expect(interpolate([{ tag: 'env', value: '$val', operator: '4' }])).toEqual([
+          { tag: 'env', value: '$val', operator: '4' },
+        ]);
+      });
+
+      it('should leave filters without variables and queries without problem tags untouched', () => {
+        mockTemplateSrv({});
+        expect(interpolate([{ tag: 'env', value: 'prod', operator: '0' }])).toEqual([
+          { tag: 'env', value: 'prod', operator: '0' },
+        ]);
+        expect(interpolate(undefined as any)).toBeUndefined();
+      });
+    });
   });
 });
