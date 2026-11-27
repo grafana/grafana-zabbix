@@ -230,6 +230,67 @@ describe('Utils', () => {
     });
   });
 
+  describe('problemTags interpolation with a plain (non-escaping) format', () => {
+    const makeTemplateSrv = (varValue: unknown) => ({
+      replace: jest.fn((_target: string, _scoped: unknown, format?: Function) => {
+        if (typeof format === 'function') {
+          return format(varValue);
+        }
+        return varValue as string;
+      }),
+      getVariables: jest.fn(),
+      containsTemplate: jest.fn(),
+      updateTimeRange: jest.fn(),
+    });
+
+    it('does not escape brackets in the tag value', () => {
+      const interpolated = replaceTemplateVars(
+        makeTemplateSrv('zone:core[7] alpha,beta_node'),
+        '$tag1',
+        {},
+        utils.zabbixItemIdsTemplateFormat
+      );
+
+      expect(interpolated).toBe('/^zone:core[7] alpha,beta_node$/');
+
+      expect(
+        utils.problemTagsToQueryParam([{ tag: interpolated, value: '', operator: '1' as any }])
+      ).toEqual([
+        { tag: 'zone', value: 'core[7] alpha', operator: 1 },
+        { tag: 'beta_node', value: '', operator: 1 },
+      ]);
+    });
+
+    it('does not escape a dot in the tag value', () => {
+      const interpolated = replaceTemplateVars(
+        makeTemplateSrv('area:North.East region,area:South.West wing'),
+        '$tag1',
+        {},
+        utils.zabbixItemIdsTemplateFormat
+      );
+
+      expect(interpolated).toBe('/^area:North.East region,area:South.West wing$/');
+
+      expect(
+        utils.problemTagsToQueryParam([{ tag: interpolated, value: '', operator: '1' as any }])
+      ).toEqual([
+        { tag: 'area', value: 'North.East region', operator: 1 },
+        { tag: 'area', value: 'South.West wing', operator: 1 },
+      ]);
+    });
+
+    it('default zabbixTemplateFormat escapes the same metacharacters (regression guard)', () => {
+      const escaped = replaceTemplateVars(
+        makeTemplateSrv('zone:core[7] alpha'),
+        '$tag1',
+        {},
+        zabbixTemplateFormat
+      );
+
+      expect(escaped).toBe('/^zone:core\\[7\\] alpha$/');
+    });
+  });
+
   describe('expandMultiValueTemplateVar()', () => {
     const makeTemplateSrv = (values: Record<string, string | string[]>) =>
       ({
