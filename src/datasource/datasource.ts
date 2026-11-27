@@ -1134,6 +1134,17 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           ...query.item,
           filter: utils.replaceTemplateVars(this.templateSrv, query.item?.filter, scopedVars),
         },
+        tableConfig: query.tableConfig && {
+          ...query.tableConfig,
+          entityPattern: {
+            ...query.tableConfig.entityPattern,
+            pattern: utils.replaceTemplateVars(this.templateSrv, query.tableConfig.entityPattern?.pattern, scopedVars),
+          },
+          metrics: query.tableConfig.metrics?.map((metric) => ({
+            ...metric,
+            pattern: utils.replaceTemplateVars(this.templateSrv, metric.pattern, scopedVars),
+          })),
+        },
       };
     });
   }

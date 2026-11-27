@@ -213,6 +213,38 @@ describe('ZabbixDatasource', () => {
     expect(request.targets[0].datasource).toEqual(variableRef);
   });
 
+  it('interpolates template variables in the Multi-metric Table patterns', () => {
+    // Earlier tests replace this method on the prototype; this one needs the real implementation.
+    jest.spyOn(ZabbixDatasource.prototype, 'interpolateVariablesInQueries').mockRestore();
+    const ds = new ZabbixDatasource(instanceSettings);
+    (ds as any).templateSrv = {
+      replace: (value: string, _scopedVars: unknown, format?: (v: string) => string) =>
+        value?.replace('$iface', format ? format('eth0') : 'eth0'),
+      variableExists: () => false,
+    };
+    const target = {
+      refId: 'A',
+      queryType: c.MODE_MULTIMETRIC_TABLE,
+      tableConfig: {
+        entityPattern: {
+          searchType: 'itemName',
+          pattern: '/^Interface $iface:/',
+          extractPattern: 'Interface (.*): .*',
+        },
+        metrics: [
+          { columnName: 'In', searchType: 'itemName', pattern: 'Interface $iface: Bits received', aggregation: 'last' },
+        ],
+      },
+    } as any;
+
+    const [interpolated] = ds.interpolateVariablesInQueries([target], {});
+
+    expect(interpolated.tableConfig!.entityPattern.pattern).toBe('/^Interface eth0:/');
+    expect(interpolated.tableConfig!.entityPattern.extractPattern).toBe('Interface (.*): .*');
+    expect(interpolated.tableConfig!.metrics[0].pattern).toBe('/^Interface eth0: Bits received$/');
+    expect(target.tableConfig.metrics[0].pattern).toBe('Interface $iface: Bits received');
+  });
+
   it('mergeQueries combines data without mutating the original response', () => {
     const baseResponse = { data: [{ refId: 'A' }] } as any;
     const merged = ds.mergeQueries(

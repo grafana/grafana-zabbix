@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAsync, useAsyncFn } from 'react-use';
 import { uniqBy } from 'lodash';
+import { css } from '@emotion/css';
+import { GrafanaTheme2 } from '@grafana/data';
 import {
   Button,
   Checkbox,
@@ -12,6 +14,7 @@ import {
   Stack,
   Icon,
   ComboboxOption,
+  useStyles2,
 } from '@grafana/ui';
 import {
   ZabbixMetricsQuery,
@@ -60,6 +63,7 @@ const aggregationOptions = [
 
 export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Props) => {
   const interpolatedQuery = useInterpolatedQuery(datasource, query);
+  const styles = useStyles2(getStyles);
 
   // Ensure defaults
   const safeQuery: ZabbixMetricsQuery = {
@@ -259,10 +263,14 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     setLocalExtractPattern(committedExtractPattern);
   }
 
-  const [syncedMetricCount, setSyncedMetricCount] = useState(tableConfig.metrics.length);
-  if (tableConfig.metrics.length !== syncedMetricCount) {
-    setSyncedMetricCount(tableConfig.metrics.length);
-    setLocalMetricNames(tableConfig.metrics.map((m) => m.columnName));
+  const committedMetricNames = tableConfig.metrics.map((m) => m.columnName);
+  const [syncedMetricNames, setSyncedMetricNames] = useState(committedMetricNames);
+  if (
+    committedMetricNames.length !== syncedMetricNames.length ||
+    committedMetricNames.some((name, i) => name !== syncedMetricNames[i])
+  ) {
+    setSyncedMetricNames(committedMetricNames);
+    setLocalMetricNames(committedMetricNames);
   }
 
   // Fetch options on mount and when dependencies change
@@ -567,8 +575,8 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       </InlineFieldRow>
 
       {/* Table Rows Section */}
-      <div style={{ borderTop: '1px solid #444', paddingTop: '16px', marginTop: '16px' }}>
-        <h6 style={{ marginBottom: '8px' }}>Table Rows</h6>
+      <div className={styles.section}>
+        <h6 className={styles.sectionTitle}>Table Rows</h6>
         <Stack direction="column" gap={1}>
           <InlineFieldRow>
             <InlineField
@@ -592,7 +600,7 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
             </InlineField>
           </InlineFieldRow>
           {rowsFromHost && (
-            <p style={{ margin: 0, fontSize: '12px', color: '#8e8e8e' }}>
+            <p className={styles.hint}>
               One row per host. Rows are the hosts with at least one item matching the metric columns below; each metric
               value is matched to its row by host.
             </p>
@@ -659,9 +667,9 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
 
           {/* Extracted Columns Section */}
           {!rowsFromHost && localExtractPattern && (
-            <div style={{ marginTop: '8px', marginLeft: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                <h6 style={{ margin: 0, fontSize: '12px' }}>
+            <div className={styles.subsection}>
+              <div className={styles.subsectionHeader}>
+                <h6 className={styles.subsectionTitle}>
                   <Icon name="arrow-right" /> Extracted Columns (from capture groups)
                 </h6>
               </div>
@@ -705,13 +713,13 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
 
           {/* Tag Columns Section */}
           {!rowsFromHost && itemTagsSupported && (
-            <div style={{ marginTop: '8px', marginLeft: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                <h6 style={{ margin: 0, fontSize: '12px' }}>
+            <div className={styles.subsection}>
+              <div className={styles.subsectionHeader}>
+                <h6 className={styles.subsectionTitle}>
                   <Icon name="arrow-right" /> Columns from item tags
                 </h6>
               </div>
-              <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#8e8e8e' }}>
+              <p className={styles.subsectionHint}>
                 Tag columns identify rows together with the host and any extracted columns. The tag should exist on all
                 items matched by the Table Rows pattern; items without it are grouped into a row with an empty value.
               </p>
@@ -757,8 +765,8 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       </div>
 
       {/* Metrics Section */}
-      <div style={{ borderTop: '1px solid #444', paddingTop: '16px', marginTop: '16px' }}>
-        <h6 style={{ marginBottom: '8px' }}>Metric Columns</h6>
+      <div className={styles.section}>
+        <h6 className={styles.sectionTitle}>Metric Columns</h6>
         <Stack direction="column" gap={1}>
           {tableConfig.metrics.map((metric, index) => (
             <InlineFieldRow key={index}>
@@ -868,23 +876,23 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
       </div>
 
       {/* Help text */}
-      <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(50, 116, 217, 0.1)', borderRadius: '4px' }}>
-        <p style={{ margin: 0, fontSize: '12px' }}>
+      <div className={styles.help}>
+        <p className={styles.helpText}>
           <strong>How it works:</strong> Select Group/Host, choose what rows represent, then add metric columns. With
           rows from <em>Item pattern</em>, define the entity pattern and optionally build columns from regex capture
           groups or item tags. With rows from <em>Hosts</em>, each host is a row; use this for host-level (non-LLD)
           items such as CPU or memory utilization.
         </p>
-        <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
+        <p className={styles.helpText}>
           <strong>Patterns:</strong> a value wrapped in slashes (/.../) is a regex; anything else must match the item
           name or key exactly. With rows from <em>Item pattern</em>, metric columns select within the items matching the
           Table Rows pattern.
         </p>
-        <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
+        <p className={styles.helpText}>
           <strong>Example:</strong> Pattern: &quot;/Interface.*/&quot;, Extract: &quot;Interface (.*)\[(.*)\]&quot; -
           Group 1: &quot;Interface name&quot;, Group 2: &quot;Description&quot;
         </p>
-        <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
+        <p className={styles.helpText}>
           <strong>Sparkline:</strong> Each enabled column is returned as its own time-series frame (full history)
           instead of a scalar. Add the Grafana <em>Time series to table</em> transformation to get one Trend column per
           metric, then <em>Join by field</em> / <em>Merge</em> on the Host/Entity (or extracted) columns. The first
@@ -894,3 +902,50 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     </Stack>
   );
 };
+
+const getStyles = (theme: GrafanaTheme2) => ({
+  section: css({
+    borderTop: `1px solid ${theme.colors.border.weak}`,
+    paddingTop: theme.spacing(2),
+    marginTop: theme.spacing(2),
+  }),
+  sectionTitle: css({
+    marginBottom: theme.spacing(1),
+  }),
+  hint: css({
+    margin: 0,
+    fontSize: theme.typography.bodySmall.fontSize,
+    color: theme.colors.text.secondary,
+  }),
+  subsection: css({
+    marginTop: theme.spacing(1),
+    marginLeft: theme.spacing(2),
+  }),
+  subsectionHeader: css({
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: theme.spacing(1),
+  }),
+  subsectionTitle: css({
+    margin: 0,
+    fontSize: theme.typography.bodySmall.fontSize,
+  }),
+  subsectionHint: css({
+    margin: theme.spacing(0, 0, 1, 0),
+    fontSize: theme.typography.bodySmall.fontSize,
+    color: theme.colors.text.secondary,
+  }),
+  help: css({
+    marginTop: theme.spacing(2),
+    padding: theme.spacing(1.5),
+    background: theme.colors.info.transparent,
+    borderRadius: theme.shape.radius.default,
+  }),
+  helpText: css({
+    margin: 0,
+    fontSize: theme.typography.bodySmall.fontSize,
+    '& + &': {
+      marginTop: theme.spacing(1),
+    },
+  }),
+});

@@ -575,6 +575,49 @@ func (ds *Zabbix) GetAllGroups(ctx context.Context) ([]Group, error) {
 	return groups, err
 }
 
+// GetHostGroupNames returns, per host ID, the names of the groups matching groupFilter that the
+// host belongs to, sorted by name.
+func (ds *Zabbix) GetHostGroupNames(ctx context.Context, groupFilter string) (map[string][]string, error) {
+	groups, err := ds.GetGroups(ctx, groupFilter)
+	if err != nil {
+		return nil, err
+	}
+	names := make(map[string][]string)
+	if len(groups) == 0 {
+		return names, nil
+	}
+	groupids := make([]string, 0, len(groups))
+	for _, group := range groups {
+		groupids = append(groupids, group.ID)
+	}
+
+	result, err := ds.Request(ctx, &ZabbixAPIRequest{Method: "hostgroup.get", Params: ZabbixAPIParams{
+		"output":      []string{"name", "groupid"},
+		"groupids":    groupids,
+		"selectHosts": []string{"hostid"},
+		"sortfield":   "name",
+	}})
+	if err != nil {
+		return nil, err
+	}
+
+	var groupsWithHosts []struct {
+		Name  string `json:"name"`
+		Hosts []struct {
+			ID string `json:"hostid"`
+		} `json:"hosts"`
+	}
+	if err := convertTo(result, &groupsWithHosts); err != nil {
+		return nil, err
+	}
+	for _, group := range groupsWithHosts {
+		for _, host := range group.Hosts {
+			names[host.ID] = append(names[host.ID], group.Name)
+		}
+	}
+	return names, nil
+}
+
 func (ds *Zabbix) GetValueMappings(ctx context.Context) ([]ValueMap, error) {
 	params := ZabbixAPIParams{
 		"output":         "extend",

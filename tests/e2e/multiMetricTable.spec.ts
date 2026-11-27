@@ -471,7 +471,8 @@ test.describe('Multi-metric Table: query editor', () => {
     // Item tag columns are offered in Item pattern mode (the e2e Zabbix is 7.0, so item tags exist).
     await expect(page.getByText('Columns from item tags')).toBeVisible();
     await page.getByRole('button', { name: 'Add tag column' }).click();
-    await expect(page.locator('#multimetric-tag-column-name-0')).toBeVisible();
+    // The extract pattern is empty, so the extracted columns section (with its own "Column name") is hidden.
+    await expect(page.getByRole('textbox', { name: 'Column name', exact: true })).toBeVisible();
   });
 
   test('text columns lock the aggregation to Last and have no sparkline toggle', async ({ page }) => {

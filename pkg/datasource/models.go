@@ -168,7 +168,7 @@ type MetricColumnConfig struct {
 	// empty) or "text" (character/log/text). Text columns always use the "last" aggregation and
 	// never emit sparkline frames.
 	ValueType   string `json:"valueType"`
-	Aggregation string `json:"aggregation"` // "last", "avg", "min", "max"
+	Aggregation string `json:"aggregation"` // "last", "avg", "min", "max", "sum", "median" or "p95"
 	// ShowSparkline, when true, makes the backend fetch full history for this column's
 	// items over the query time range and return it as an additional time-series frame.
 	ShowSparkline bool `json:"showSparkline"`

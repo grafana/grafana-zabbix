@@ -316,6 +316,10 @@ export function isConvertibleToWide(data: DataFrame[]): boolean {
 
   for (let i = 1; i < data.length; i++) {
     const timeField = data[i].fields.find((f) => f.type === FieldType.time);
+    // A frame without a time field, such as a Multi-metric Table, can't join a wide time series.
+    if (!timeField) {
+      return false;
+    }
 
     for (let j = 0; j < Math.min(data.length, 2); j++) {
       if (timeField.values.get(j) !== first.values.get(j)) {

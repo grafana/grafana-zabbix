@@ -164,7 +164,7 @@ export interface MetricColumnConfig {
   // Item value type this column matches: numeric (unsigned/float, default) or text (character/log/text).
   // Text columns always use the "last" aggregation and cannot render sparklines.
   valueType?: 'num' | 'text';
-  aggregation: 'last' | 'avg' | 'min' | 'max';
+  aggregation: 'last' | 'avg' | 'min' | 'max' | 'sum' | 'median' | 'p95';
   // When true, the backend fetches the full history for this column's items over the
   // panel time range and returns it as an additional time-series frame, so the column
   // can be rendered as a sparkline via Grafana's "Time series to table" transformation.
