@@ -8,8 +8,14 @@ import problemsHandler from './problemsHandler';
 import { Zabbix } from './zabbix/zabbix';
 import { ZabbixAPIError } from './zabbix/connectors/zabbix_api/zabbixAPIConnector';
 import { LegacyVariableQuery, ProblemDTO, VariableQuery, VariableQueryTypes } from './types';
-import { HostTagFilter, ZabbixMetricsQuery, ZabbixTagEvalType, ShowProblemTypes } from './types/query';
-import { HostTagOperatorValue } from './components/QueryEditor/types';
+import {
+  HostTagFilter,
+  ProblemTagFilter,
+  ZabbixMetricsQuery,
+  ZabbixTagEvalType,
+  ShowProblemTypes,
+} from './types/query';
+import { HostTagOperatorValue, TagOperatorValue } from './components/QueryEditor/types';
 import { ZabbixDSOptions } from './types/config';
 import {
   BackendSrvRequest,
@@ -1059,6 +1065,70 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     return result;
   }
 
+  /**
+   * Interpolates problem tag filters as plain text, because Zabbix compares tag names and values
+   * literally: `app[1].v2` must reach Zabbix as is, not as the regexp-escaped `app\[1\]\.v2`.
+   *
+   * - A multi-value variable in the value of an Equals or Contains filter expands into one filter per
+   *   selected value. Zabbix ORs filters that share a tag name (And/Or and Or evaluation).
+   * - Does not equal and Does not contain cannot be expanded the same way, because the ORed filters
+   *   would read "not a OR not b" and match almost everything, and Zabbix has no AND for one tag name.
+   *   A multi-value variable is sent there as one comma-separated text, which in practice excludes
+   *   nothing. A variable with nothing selected drops the filter, which also excludes nothing.
+   * - Tag names are never expanded: filters with different names are ANDed, which would turn a
+   *   multi-value name into "a AND b". A multi-value name is sent as one comma-separated text.
+   * - A filter that references "All" is dropped. For Equals and Contains with nothing selected the
+   *   value keeps its literal `$var` text, which matches nothing.
+   */
+  interpolateProblemTagFilters(
+    filters: ProblemTagFilter[] | undefined,
+    scopedVars: ScopedVars
+  ): ProblemTagFilter[] | undefined {
+    if (!filters) {
+      return undefined;
+    }
+
+    const joinValues = (value: string | string[]) => (Array.isArray(value) ? value.join(',') : value);
+
+    const result: ProblemTagFilter[] = [];
+    for (const filter of filters) {
+      const operator = String(filter.operator);
+      const hasValue = operator !== TagOperatorValue.Exists && operator !== TagOperatorValue.DoesNotExist;
+      if (
+        utils.referencesAllValue(this.templateSrv, filter.tag, scopedVars) ||
+        (hasValue && utils.referencesAllValue(this.templateSrv, filter.value, scopedVars))
+      ) {
+        continue;
+      }
+      const tag = this.templateSrv.replace(filter.tag ?? '', scopedVars, joinValues);
+      if (!hasValue) {
+        result.push({ ...filter, tag });
+        continue;
+      }
+      const negative = operator === TagOperatorValue.DoesNotEqual || operator === TagOperatorValue.DoesNotContain;
+      if (negative) {
+        const value = this.templateSrv.replace(filter.value ?? '', scopedVars, joinValues);
+        if (filter.value && !value) {
+          // The variable has nothing selected: excluding nothing means no filter.
+          continue;
+        }
+        result.push({ ...filter, tag, value });
+        continue;
+      }
+      const values = filter.value
+        ? utils.expandMultiValueTemplateVar(this.templateSrv, filter.value, scopedVars)
+        : [''];
+      if (values.length === 0) {
+        result.push({ ...filter, tag });
+        continue;
+      }
+      for (const value of values) {
+        result.push({ ...filter, tag, value });
+      }
+    }
+    return result;
+  }
+
   interpolateVariablesInQueries(queries: ZabbixMetricsQuery[], scopedVars: ScopedVars): ZabbixMetricsQuery[] {
     if (!queries || queries.length === 0) {
       return [];
@@ -1088,11 +1158,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
           ...query.tags,
           filter: utils.replaceTemplateVars(this.templateSrv, query.tags?.filter, scopedVars),
         },
-        problemTags: query.problemTags?.map((tagFilter) => ({
-          ...tagFilter,
-          tag: utils.replaceTemplateVars(this.templateSrv, tagFilter.tag, scopedVars),
-          value: utils.replaceTemplateVars(this.templateSrv, tagFilter.value, scopedVars),
-        })),
+        problemTags: this.interpolateProblemTagFilters(query.problemTags, scopedVars),
         group: {
           ...query.group,
           filter: utils.replaceTemplateVars(this.templateSrv, query.group?.filter, scopedVars),
