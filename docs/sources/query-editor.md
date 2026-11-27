@@ -24,7 +24,7 @@ review_date: 2026-09-08
 
 # Zabbix query editor
 
-The Zabbix query editor lets you build queries to visualize monitoring data from Zabbix. You can query numeric metrics, text data, problems, triggers, IT services, and user macros. Each query type has its own set of fields and options.
+The Zabbix query editor lets you build queries to visualize monitoring data from Zabbix. You can query numeric metrics, text data, problems, triggers, IT services, and user macros, and build wide tables with one column per metric. Each query type has its own set of fields and options.
 
 ## Before you begin
 
@@ -179,6 +179,48 @@ Use User macros queries to retrieve Zabbix user macro values.
 | **Host** | The host to query. Supports regex and template variables. |
 | **Macros** | The macro to query. Supports regex and template variables. |
 
+### Multi-metric Table
+
+Use Multi-metric Table queries to build a flat, wide table with one row per entity or per host and one column per metric. An entity is the object a group of items describes, such as a network interface, disk, or file system discovered by low-level discovery (LLD). The query returns the table ready for a table panel, so you don't need several Metrics queries combined with transformations such as **Reduce**, **Labels to fields**, or **Join by field**.
+
+The following fields select the hosts and add optional identifying columns:
+
+| Field | Description |
+|-------|-------------|
+| **Group** | The host group to query. Supports regex and template variables. |
+| **Host tag** | Filter hosts by tag (Zabbix 5.4+). Works the same way as in [Metrics](#metrics) queries. |
+| **Host** | The host to query. Supports regex and template variables. |
+| **Show Group column** | Add a Group column with the groups of the row's host that match the **Group** field. |
+| **Show Host column** | Add a Host column. The column is added automatically when the rows come from more than one host. |
+
+The **Table Rows** section defines the rows:
+
+| Field | Description |
+|-------|-------------|
+| **Rows from** | **Item pattern** creates one row per entity found in the items matching **Pattern**, for example one row per network interface. **Hosts** creates one row per host for host-level items such as CPU or memory utilization. The rows are the hosts that have at least one item matching a metric column, and the table always has a Host column. The remaining fields in this section are visible only for **Item pattern**. |
+| **Search by** | Match **Pattern** against the item name (**Item Name**) or the item key (**Item Key**). |
+| **Pattern** | The items the rows are built from: an exact item name or key, or a regex wrapped in forward slashes, such as `/Interface .*/`. Supports regex and template variables. Metric columns select their items within this set. |
+| **Extract pattern** | Optional regex with capture groups, written without slashes, such as `Interface (.*): .*`. The captured values identify the entity, so items on the same host with the same captured values share a row. Without an extract pattern or a tag column, each matching item becomes its own row. |
+| **Extracted Columns (from capture groups)** | Click **Add extracted column** to turn a capture group into a column. Set a **Column name** and the **Capture group** number. Visible when **Extract pattern** is set. |
+| **Columns from item tags** | Click **Add tag column** to turn the value of an item tag into a column (Zabbix 5.4+). Set the **Tag** and, optionally, a **Column name**, which defaults to the tag name. Tag values identify the entity together with the host and any captured values, so the tag should exist on every item matched by **Pattern**. |
+
+The **Metric Columns** section defines the value columns. Click **Add metric column** to add one:
+
+| Field | Description |
+|-------|-------------|
+| **Column** | The column header. |
+| **Search by** | Match **Pattern** against the item name or the item key. |
+| **Value type** | **Numeric** matches numeric (unsigned and float) items. **Text** matches character, log, and text items. Text columns always show the last value and can't show a sparkline. |
+| **Pattern** | An exact item name or key, or a regex wrapped in forward slashes, such as `/Bits received/`. Supports regex and template variables. With **Item pattern** rows, the matched items must also match the **Table Rows** pattern. The pattern should match one item per row, for example one item per host with **Hosts** rows. If it matches more, each cell shows the first matching item that has a value and the panel shows a warning. |
+| **Aggregation** | How the cell value is calculated: Last, Average, Minimum, Maximum, Sum, Median, or 95th Percentile. **Last** is the most recent value the item collected; the cell is empty if the item never collected a value. The other aggregations are calculated from the item history in the panel time range. |
+| **Sparkline** | Return the history of the column in the panel time range as a time series instead of a single value. Refer to [Add sparkline columns to a multi-metric table](#add-sparkline-columns-to-a-multi-metric-table). |
+
+Keep the following in mind when you build a Multi-metric Table query:
+
+- Template variables are supported in **Group**, **Host**, **Host tag**, and both **Pattern** fields. The other fields are used as entered.
+- **Pattern** fields follow the same regex rules as the other fields, including flags such as `/i`. **Extract pattern** uses Go regular expression syntax (RE2), which doesn't support lookahead assertions such as `(?!idle)`. An invalid regex in any of these fields fails the query with an error.
+- Aggregations other than **Last** and sparklines read item history, not trends, so the trends settings don't apply. Wide time ranges over many items increase the load on the Zabbix API.
+
 ## Use regex in queries
 
 You can use JavaScript regular expressions in the **Group**, **Host**, **Application**, **Item tag**, and **Item** fields to match multiple values. Wrap regex patterns in forward slashes (`/pattern/`).
@@ -282,6 +324,39 @@ Show the service level indicator for an IT service on a stat or gauge panel.
 - **Property:** SLI
 - **Interval:** Auto
 
+### Build a wide table of network interfaces
+
+Show inbound and outbound traffic for every network interface in a host group on a table panel, with one row per interface. The item names match the Zabbix 7.0 Linux by Zabbix agent template.
+
+- **Query type:** Multi-metric Table
+- **Group:** `Linux servers`
+- **Host:** `/.*/`
+- **Rows from:** Item pattern
+- **Pattern:** `/Interface .*: Bits (received|sent)/`
+- **Extract pattern:** `Interface (.*): .*`, with an extracted column named `Interface` for capture group `1`
+- **Metric column:** **Column** `In`, **Pattern** `/Bits received/`, **Aggregation** Average
+- **Metric column:** **Column** `Out`, **Pattern** `/Bits sent/`, **Aggregation** Average
+
+The table has the columns Host, Interface, In, and Out. On Zabbix 5.4+, if the items carry a tag with the interface name, such as the `interface` tag in the Zabbix 7.0 Linux templates, you can leave **Extract pattern** empty and add a tag column for that tag instead.
+
+### Show host-level metrics in one table
+
+Show CPU and memory utilization for every host in a group on a table panel, with one row per host.
+
+- **Query type:** Multi-metric Table
+- **Group:** `Linux servers`
+- **Host:** `/.*/`
+- **Rows from:** Hosts
+- **Metric column:** **Column** `CPU`, **Pattern** `CPU utilization`, **Aggregation** Last
+- **Metric column:** **Column** `Memory`, **Pattern** `Memory utilization`, **Aggregation** Last
+
+### Add sparkline columns to a multi-metric table
+
+Show the trend of a metric next to the other columns of a Multi-metric Table query. Enable **Sparkline** on the metric column. The query then returns the column as separate time series, so add the following transformations to the panel:
+
+1. **Time series to table**, which creates one trend column for each sparkline metric column.
+1. **Join by field** on the column that identifies a row, such as Host or Interface. When a row is identified by more than one column, such as Host and Interface, use **Merge** instead.
+
 ## Direct DB Connection behavior
 
 When [Direct DB Connection](https://grafana.com/docs/plugins/alexanderzobnin-zabbix-app/latest/configure/#configure-direct-db-connection) is enabled, the plugin retrieves history and trend data directly from the Zabbix database instead of the Zabbix API. This is transparent to the query editor, so you build queries the same way. The key difference is that the database performs server-side aggregation, which reduces data transfer and improves performance on wide time ranges.
@@ -295,6 +370,8 @@ consolidateBy(max) | groupBy(1h, max)
 Without `consolidateBy`, the database aggregates using the default `AVG` function, which may produce unexpected results when combined with `groupBy(interval, max)`.
 
 When the Direct DB Connection data source is ClickHouse (Zabbix 8.0 history storage), all queries are served from the history tables because Zabbix doesn't store trends in ClickHouse. The trends settings of the Zabbix data source have no effect on the returned data in this case.
+
+Multi-metric Table queries always use the Zabbix API, even when Direct DB Connection is enabled.
 
 ## Next steps
 
