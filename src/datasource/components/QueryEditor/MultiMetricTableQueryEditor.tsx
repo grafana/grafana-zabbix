@@ -1,0 +1,951 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useAsync, useAsyncFn } from 'react-use';
+import { uniqBy } from 'lodash';
+import { css } from '@emotion/css';
+import { GrafanaTheme2 } from '@grafana/data';
+import {
+  Button,
+  Checkbox,
+  InlineField,
+  InlineFieldRow,
+  Input,
+  RadioButtonGroup,
+  Select,
+  Stack,
+  Icon,
+  ComboboxOption,
+  useStyles2,
+} from '@grafana/ui';
+import {
+  ZabbixMetricsQuery,
+  MetricColumnConfig,
+  MultiMetricTableConfig,
+  HostTagFilter,
+  ZabbixTagEvalType,
+} from '../../types/query';
+import { ZabbixDatasource } from '../../datasource';
+import { MetricPicker } from '../../../components/MetricPicker/MetricPicker';
+import { HostTagQueryEditor } from './HostTagQueryEditor';
+import { getVariableOptions, matchesItemPattern, processHostTags } from './utils';
+import { useInterpolatedQuery } from '../../hooks/useInterpolatedQuery';
+import { ZBXItem } from '../../types';
+
+interface Props {
+  query: ZabbixMetricsQuery;
+  datasource: ZabbixDatasource;
+  onChange: (query: ZabbixMetricsQuery) => void;
+}
+
+const searchTypeOptions = [
+  { label: 'Item Name', value: 'itemName' },
+  { label: 'Item Key', value: 'itemKey' },
+];
+
+const valueTypeOptions = [
+  { label: 'Numeric', value: 'num' },
+  { label: 'Text', value: 'text' },
+];
+
+const rowSourceOptions = [
+  { label: 'Item pattern', value: 'entityPattern' },
+  { label: 'Hosts', value: 'host' },
+];
+
+const aggregationOptions = [
+  { label: 'Last', value: 'last' },
+  { label: 'Average', value: 'avg' },
+  { label: 'Minimum', value: 'min' },
+  { label: 'Maximum', value: 'max' },
+  { label: 'Sum', value: 'sum' },
+  { label: 'Median', value: 'median' },
+  { label: '95th Percentile', value: 'p95' },
+];
+
+export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Props) => {
+  const interpolatedQuery = useInterpolatedQuery(datasource, query);
+  const styles = useStyles2(getStyles);
+
+  // Ensure defaults
+  const safeQuery: ZabbixMetricsQuery = {
+    ...query,
+    group: query.group || { filter: '' },
+    host: query.host || { filter: '' },
+    hostTags: query.hostTags || [],
+    application: query.application || { filter: '' },
+    itemTag: query.itemTag || { filter: '' },
+    tableConfig: query.tableConfig || {
+      entityPattern: {
+        searchType: 'itemName',
+        pattern: '',
+        extractPattern: '',
+        extractedColumns: [],
+      },
+      metrics: [],
+      showGroupColumn: false,
+      showHostColumn: false,
+    },
+  };
+
+  const tableConfig = safeQuery.tableConfig!;
+  const rowsFromHost = (tableConfig.rowSource || 'entityPattern') === 'host';
+
+  // Local state for the extract pattern (regex), committed on blur to avoid invalid intermediate values.
+  const [localExtractPattern, setLocalExtractPattern] = useState(tableConfig.entityPattern.extractPattern || '');
+
+  // Local state for the metric column name, committed on blur.
+  const [localMetricNames, setLocalMetricNames] = useState(tableConfig.metrics.map((m) => m.columnName));
+
+  // Load group options
+  const loadGroupOptions = async () => {
+    const groups = await datasource.zabbix.getAllGroups();
+    const options = groups?.map((group) => ({
+      value: group.name,
+      label: group.name,
+    }));
+    if (options.length > 0) {
+      options.unshift({ value: '/.*/' });
+    }
+    options.unshift(...getVariableOptions());
+    return options;
+  };
+
+  const [{ loading: groupsLoading, value: groupsOptions }, fetchGroups] = useAsyncFn(async () => {
+    const options = await loadGroupOptions();
+    return options;
+  }, []);
+
+  // Load host tag options
+  const loadHostTagOptions = async (group: string) => {
+    const hostsWithTags = await datasource.zabbix.getAllHosts(group, true);
+    const hostTags = processHostTags(hostsWithTags ?? []);
+    let options: Array<ComboboxOption<string>> = hostTags?.map((tag) => ({
+      value: tag.tag,
+      label: tag.tag,
+    }));
+    return options;
+  };
+
+  const [{ loading: hostTagsLoading, value: hostTagsOptions }, fetchHostTags] = useAsyncFn(async () => {
+    const options = await loadHostTagOptions(query.group.filter);
+    return options;
+  }, [query.group.filter]);
+
+  // Load host options
+  const loadHostOptions = async (group: string, hostTags?: HostTagFilter[], evalType?: ZabbixTagEvalType) => {
+    const hosts = await datasource.zabbix.getAllHosts(group, false, hostTags, evalType);
+    let options: Array<ComboboxOption<string>> = hosts?.map((host) => ({
+      value: host.name,
+      label: host.name,
+    }));
+    options = uniqBy(options, (o) => o.value);
+    if (options.length > 0) {
+      options.unshift({ value: '/.*/' });
+    }
+    options.unshift(...getVariableOptions());
+    return options;
+  };
+
+  const [{ loading: hostsLoading, value: hostOptions }, fetchHosts] = useAsyncFn(async () => {
+    const options = await loadHostOptions(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.hostTags,
+      interpolatedQuery.evaltype
+    );
+    return options;
+  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
+
+  const hasTextMetrics = tableConfig.metrics.some((m) => m.valueType === 'text');
+
+  // Fetch items (raw list) once per group/host change; we derive name/key option arrays in-memo below.
+  const [{ loading: itemsLoading, value: items }, fetchItems] = useAsyncFn(async () => {
+    const fetched: ZBXItem[] = await datasource.zabbix.getAllItems(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.host.filter,
+      null,
+      null,
+      { itemtype: 'num', hostTags: interpolatedQuery.hostTags, evaltype: interpolatedQuery.evaltype }
+    );
+    return fetched || [];
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
+  ]);
+
+  // Text/character/log items are fetched separately (different Zabbix value types) and only when
+  // some metric column actually targets text values.
+  const [{ loading: textItemsLoading, value: textItems }, fetchTextItems] = useAsyncFn(async () => {
+    if (!hasTextMetrics) {
+      return [];
+    }
+    const fetched: ZBXItem[] = await datasource.zabbix.getAllItems(
+      interpolatedQuery.group.filter,
+      interpolatedQuery.host.filter,
+      null,
+      null,
+      { itemtype: 'text', hostTags: interpolatedQuery.hostTags, evaltype: interpolatedQuery.evaltype }
+    );
+    return fetched || [];
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
+    hasTextMetrics,
+  ]);
+
+  const buildItemOptions = (list: ZBXItem[] | undefined, prop: 'name' | 'key_') => {
+    const opts: Array<ComboboxOption<string>> = (list ?? []).map((item) => ({
+      value: item[prop],
+      label: item[prop],
+    }));
+    const unique = uniqBy(opts, (o) => o.value);
+    unique.unshift(...getVariableOptions());
+    return unique;
+  };
+
+  const itemNameOptions = useMemo(() => buildItemOptions(items, 'name'), [items]);
+  const itemKeyOptions = useMemo(() => buildItemOptions(items, 'key_'), [items]);
+
+  // Used by the Table Rows pattern picker (unscoped, since it defines the scope).
+  const optionsForSearchType = (searchType: 'itemName' | 'itemKey') =>
+    searchType === 'itemKey' ? itemKeyOptions : itemNameOptions;
+
+  // With entity-pattern rows, metric columns select WITHIN the items matching the Table Rows
+  // pattern, so their suggestion dropdowns are scoped to that subset.
+  const scopeToEntityPattern = (list: ZBXItem[] | undefined) => {
+    const entityPattern = tableConfig.entityPattern;
+    if (rowsFromHost || !entityPattern.pattern) {
+      return list ?? [];
+    }
+    const byKey = entityPattern.searchType === 'itemKey';
+    return (list ?? []).filter((item) => matchesItemPattern(byKey ? item.key_ : item.name, entityPattern.pattern));
+  };
+
+  const scopedItems = useMemo(
+    () => scopeToEntityPattern(items),
+    [items, rowsFromHost, tableConfig.entityPattern.pattern, tableConfig.entityPattern.searchType]
+  );
+  const scopedTextItems = useMemo(
+    () => scopeToEntityPattern(textItems),
+    [textItems, rowsFromHost, tableConfig.entityPattern.pattern, tableConfig.entityPattern.searchType]
+  );
+
+  // Item tags exist on Zabbix 5.4+ only.
+  const { value: itemTagsSupported } = useAsync(() => datasource.zabbix.isZabbix54OrHigher(), [datasource]);
+
+  // Tag name suggestions come from the items matching the Table Rows pattern.
+  const tagNameOptions = useMemo<Array<ComboboxOption<string>>>(() => {
+    const names = new Set<string>();
+    scopedItems.forEach((item) => (item.tags ?? []).forEach((t) => names.add(t.tag)));
+    return [...names].sort().map((name) => ({ value: name, label: name }));
+  }, [scopedItems]);
+
+  const metricItemNameOptions = useMemo(() => buildItemOptions(scopedItems, 'name'), [scopedItems]);
+  const metricItemKeyOptions = useMemo(() => buildItemOptions(scopedItems, 'key_'), [scopedItems]);
+  const metricTextItemNameOptions = useMemo(() => buildItemOptions(scopedTextItems, 'name'), [scopedTextItems]);
+  const metricTextItemKeyOptions = useMemo(() => buildItemOptions(scopedTextItems, 'key_'), [scopedTextItems]);
+
+  const metricOptionsForSearchType = (searchType: 'itemName' | 'itemKey', valueType?: 'num' | 'text') => {
+    if (valueType === 'text') {
+      return searchType === 'itemKey' ? metricTextItemKeyOptions : metricTextItemNameOptions;
+    }
+    return searchType === 'itemKey' ? metricItemKeyOptions : metricItemNameOptions;
+  };
+
+  // Sync deferred local state when the query changes externally (e.g., variable resolution, panel switch).
+  // Adjusted during render rather than in an effect, as React recommends for state derived from props.
+  const committedExtractPattern = tableConfig.entityPattern.extractPattern || '';
+  const [syncedExtractPattern, setSyncedExtractPattern] = useState(committedExtractPattern);
+  if (committedExtractPattern !== syncedExtractPattern) {
+    setSyncedExtractPattern(committedExtractPattern);
+    setLocalExtractPattern(committedExtractPattern);
+  }
+
+  const committedMetricNames = tableConfig.metrics.map((m) => m.columnName);
+  const [syncedMetricNames, setSyncedMetricNames] = useState(committedMetricNames);
+  if (
+    committedMetricNames.length !== syncedMetricNames.length ||
+    committedMetricNames.some((name, i) => name !== syncedMetricNames[i])
+  ) {
+    setSyncedMetricNames(committedMetricNames);
+    setLocalMetricNames(committedMetricNames);
+  }
+
+  // Fetch options on mount and when dependencies change
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  useEffect(() => {
+    fetchHostTags();
+  }, [query.group.filter]);
+
+  useEffect(() => {
+    fetchHosts();
+  }, [interpolatedQuery.group.filter, interpolatedQuery.hostTags, interpolatedQuery.evaltype]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
+  ]);
+
+  useEffect(() => {
+    fetchTextItems();
+  }, [
+    interpolatedQuery.group.filter,
+    interpolatedQuery.host.filter,
+    interpolatedQuery.hostTags,
+    interpolatedQuery.evaltype,
+    hasTextMetrics,
+  ]);
+
+  const onGroupChange = (value: string) => {
+    onChange({
+      ...safeQuery,
+      group: { filter: value || '' },
+      host: { filter: '' },
+    });
+  };
+
+  const onHostTagFilterChange = (hostTags: HostTagFilter[]) => {
+    onChange({ ...safeQuery, hostTags: hostTags });
+  };
+
+  const onHostTagEvalTypeChange = (evalType: ZabbixTagEvalType) => {
+    onChange({ ...safeQuery, evaltype: evalType });
+  };
+
+  const onHostChange = (value: string) => {
+    onChange({
+      ...safeQuery,
+      host: { filter: value || '' },
+    });
+  };
+
+  const onEntityPatternChange = (value: string) => {
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          pattern: value || '',
+        },
+      },
+    });
+  };
+
+  const onExtractPatternBlur = () => {
+    if (localExtractPattern !== (tableConfig.entityPattern.extractPattern || '')) {
+      onChange({
+        ...safeQuery,
+        tableConfig: {
+          ...tableConfig,
+          entityPattern: {
+            ...tableConfig.entityPattern,
+            extractPattern: localExtractPattern,
+          },
+        },
+      });
+    }
+  };
+
+  const onExtractedColumnAdd = () => {
+    const extractedColumns = tableConfig.entityPattern.extractedColumns || [];
+    const newColumn = {
+      name: 'Captured Field',
+      groupIndex: extractedColumns.length + 1,
+    };
+
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          extractedColumns: [...extractedColumns, newColumn],
+        },
+      },
+    });
+  };
+
+  const onExtractedColumnChange = (index: number, field: 'name' | 'groupIndex', value: string | number) => {
+    const extractedColumns = [...(tableConfig.entityPattern.extractedColumns || [])];
+    extractedColumns[index] = { ...extractedColumns[index], [field]: value };
+
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          extractedColumns,
+        },
+      },
+    });
+  };
+
+  const onTagColumnsChange = (tagColumns: Array<{ name: string; tag: string }>) => {
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          tagColumns,
+        },
+      },
+    });
+  };
+
+  const onTagColumnAdd = () => {
+    onTagColumnsChange([...(tableConfig.entityPattern.tagColumns || []), { name: '', tag: '' }]);
+  };
+
+  const onTagColumnChange = (index: number, field: 'name' | 'tag', value: string) => {
+    const tagColumns = [...(tableConfig.entityPattern.tagColumns || [])];
+    const column = { ...tagColumns[index], [field]: value };
+    // Picking a tag names the column after it until the user sets a name.
+    if (field === 'tag' && !tagColumns[index].name) {
+      column.name = value;
+    }
+    tagColumns[index] = column;
+    onTagColumnsChange(tagColumns);
+  };
+
+  const onTagColumnRemove = (index: number) => {
+    onTagColumnsChange((tableConfig.entityPattern.tagColumns || []).filter((_, i) => i !== index));
+  };
+
+  const onExtractedColumnRemove = (index: number) => {
+    const extractedColumns = (tableConfig.entityPattern.extractedColumns || []).filter((_, i) => i !== index);
+
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        entityPattern: {
+          ...tableConfig.entityPattern,
+          extractedColumns,
+        },
+      },
+    });
+  };
+
+  const commitMetric = (index: number, patch: Partial<MetricColumnConfig>) => {
+    const newMetrics = [...tableConfig.metrics];
+    newMetrics[index] = { ...newMetrics[index], ...patch };
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        metrics: newMetrics,
+      },
+    });
+  };
+
+  const onMetricColumnNameBlur = (index: number) => {
+    const local = localMetricNames[index];
+    if (local !== undefined && local !== tableConfig.metrics[index]?.columnName) {
+      commitMetric(index, { columnName: local });
+    }
+  };
+
+  const onMetricValueTypeChange = (index: number, valueType: NonNullable<MetricColumnConfig['valueType']>) => {
+    if (valueType === 'text') {
+      // Text columns always resolve via the last value and cannot render sparklines.
+      commitMetric(index, { valueType, aggregation: 'last', showSparkline: false });
+    } else {
+      commitMetric(index, { valueType });
+    }
+  };
+
+  const onMetricAdd = () => {
+    const newMetric: MetricColumnConfig = {
+      columnName: 'New Column',
+      searchType: 'itemName',
+      pattern: '',
+      aggregation: 'last',
+    };
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        metrics: [...tableConfig.metrics, newMetric],
+      },
+    });
+
+    setLocalMetricNames([...localMetricNames, newMetric.columnName]);
+  };
+
+  const onMetricRemove = (index: number) => {
+    const newMetrics = tableConfig.metrics.filter((_, i) => i !== index);
+    onChange({
+      ...safeQuery,
+      tableConfig: {
+        ...tableConfig,
+        metrics: newMetrics,
+      },
+    });
+
+    setLocalMetricNames(localMetricNames.filter((_, i) => i !== index));
+  };
+
+  const extractedColumns = tableConfig.entityPattern.extractedColumns || [];
+  const tagColumns = tableConfig.entityPattern.tagColumns || [];
+
+  return (
+    <Stack direction="column" gap={2}>
+      {/* First row: Group, Host tag, Host - matching MetricsQueryEditor */}
+      <InlineFieldRow>
+        <InlineField label="Group" labelWidth={12}>
+          <MetricPicker
+            width={24}
+            value={safeQuery.group.filter}
+            options={groupsOptions}
+            isLoading={groupsLoading}
+            placeholder="Group name"
+            createCustomValue={true}
+            onChange={onGroupChange}
+          />
+        </InlineField>
+        <InlineField label="Host tag" labelWidth={12}>
+          <HostTagQueryEditor
+            hostTagOptions={hostTagsOptions}
+            evalTypeValue={safeQuery.evaltype}
+            hostTagOptionsLoading={hostTagsLoading}
+            onHostTagFilterChange={onHostTagFilterChange}
+            onHostTagEvalTypeChange={onHostTagEvalTypeChange}
+            version={datasource.zabbix.version}
+          />
+        </InlineField>
+        <InlineField label="Host" labelWidth={12}>
+          <MetricPicker
+            width={24}
+            value={safeQuery.host.filter}
+            options={hostOptions}
+            isLoading={hostsLoading}
+            placeholder="Host name"
+            createCustomValue={true}
+            onChange={onHostChange}
+          />
+        </InlineField>
+      </InlineFieldRow>
+
+      {/* Second row: Checkboxes */}
+      <InlineFieldRow>
+        <InlineField label="Show Group column" labelWidth={20}>
+          <Checkbox
+            id="multimetric-show-group-column"
+            value={tableConfig.showGroupColumn || false}
+            onChange={(e) => {
+              onChange({
+                ...safeQuery,
+                tableConfig: {
+                  ...tableConfig,
+                  showGroupColumn: e.currentTarget.checked,
+                },
+              });
+            }}
+          />
+        </InlineField>
+        {!rowsFromHost && (
+          <InlineField label="Show Host column" labelWidth={20}>
+            <Checkbox
+              id="multimetric-show-host-column"
+              value={tableConfig.showHostColumn || false}
+              onChange={(e) => {
+                onChange({
+                  ...safeQuery,
+                  tableConfig: {
+                    ...tableConfig,
+                    showHostColumn: e.currentTarget.checked,
+                  },
+                });
+              }}
+            />
+          </InlineField>
+        )}
+      </InlineFieldRow>
+
+      {/* Table Rows Section */}
+      <div className={styles.section}>
+        <h6 className={styles.sectionTitle}>Table Rows</h6>
+        <Stack direction="column" gap={1}>
+          <InlineFieldRow>
+            <InlineField
+              label="Rows from"
+              labelWidth={16}
+              tooltip="Item pattern discovers one row per matching item/entity (LLD-style, e.g. interfaces or disks). Hosts produces one row per host, for host-level items like CPU or memory utilization, where metric columns are matched to rows by host alone."
+            >
+              <RadioButtonGroup
+                value={tableConfig.rowSource || 'entityPattern'}
+                options={rowSourceOptions}
+                onChange={(value) =>
+                  onChange({
+                    ...safeQuery,
+                    tableConfig: {
+                      ...tableConfig,
+                      rowSource: value as MultiMetricTableConfig['rowSource'],
+                    },
+                  })
+                }
+              />
+            </InlineField>
+          </InlineFieldRow>
+          {rowsFromHost && (
+            <p className={styles.hint}>
+              One row per host. Rows are the hosts with at least one item matching the metric columns below; each metric
+              value is matched to its row by host.
+            </p>
+          )}
+          {!rowsFromHost && (
+            <InlineFieldRow>
+              <InlineField label="Search by" labelWidth={16}>
+                <RadioButtonGroup
+                  value={tableConfig.entityPattern.searchType}
+                  options={searchTypeOptions}
+                  onChange={(value) =>
+                    onChange({
+                      ...safeQuery,
+                      tableConfig: {
+                        ...tableConfig,
+                        entityPattern: {
+                          ...tableConfig.entityPattern,
+                          searchType: value as 'itemName' | 'itemKey',
+                        },
+                      },
+                    })
+                  }
+                />
+              </InlineField>
+            </InlineFieldRow>
+          )}
+          {!rowsFromHost && (
+            <InlineFieldRow>
+              <InlineField
+                label="Pattern"
+                labelWidth={16}
+                grow
+                tooltip="Exact item name/key, or /regex/. Defines the set of items rows are built from; metric columns select within this set."
+              >
+                <MetricPicker
+                  width={40}
+                  value={tableConfig.entityPattern.pattern}
+                  options={optionsForSearchType(tableConfig.entityPattern.searchType)}
+                  isLoading={itemsLoading}
+                  placeholder="e.g., /Interface.*/ or /.*: Disk .*/ or /FS .*: .*/"
+                  createCustomValue={true}
+                  onChange={onEntityPatternChange}
+                />
+              </InlineField>
+            </InlineFieldRow>
+          )}
+          {!rowsFromHost && (
+            <InlineFieldRow>
+              <InlineField
+                label="Extract pattern"
+                labelWidth={16}
+                grow
+                tooltip="Optional: Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
+              >
+                <Input
+                  value={localExtractPattern}
+                  placeholder="Regex with capture groups, e.g., 'Interface (.*)\[(.*)\]: .*'"
+                  onChange={(e) => setLocalExtractPattern(e.currentTarget.value)}
+                  onBlur={onExtractPatternBlur}
+                />
+              </InlineField>
+            </InlineFieldRow>
+          )}
+
+          {/* Extracted Columns Section */}
+          {!rowsFromHost && localExtractPattern && (
+            <div className={styles.subsection}>
+              <div className={styles.subsectionHeader}>
+                <h6 className={styles.subsectionTitle}>
+                  <Icon name="arrow-right" /> Extracted Columns (from capture groups)
+                </h6>
+              </div>
+              <Stack direction="column" gap={1}>
+                {extractedColumns.map((col, index) => (
+                  <InlineFieldRow key={index}>
+                    <InlineField label="Column name" labelWidth={16}>
+                      <Input
+                        width={30}
+                        value={col.name}
+                        placeholder="Column name"
+                        onChange={(e) => onExtractedColumnChange(index, 'name', e.currentTarget.value)}
+                      />
+                    </InlineField>
+                    <InlineField label="Capture group" labelWidth={16}>
+                      <Input
+                        width={10}
+                        type="number"
+                        min={1}
+                        value={col.groupIndex}
+                        onChange={(e) =>
+                          onExtractedColumnChange(index, 'groupIndex', parseInt(e.currentTarget.value, 10))
+                        }
+                      />
+                    </InlineField>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      icon="trash-alt"
+                      aria-label="Remove extracted column"
+                      onClick={() => onExtractedColumnRemove(index)}
+                    />
+                  </InlineFieldRow>
+                ))}
+                <Button size="sm" icon="plus" variant="secondary" onClick={onExtractedColumnAdd}>
+                  Add extracted column
+                </Button>
+              </Stack>
+            </div>
+          )}
+
+          {/* Tag Columns Section */}
+          {!rowsFromHost && itemTagsSupported && (
+            <div className={styles.subsection}>
+              <div className={styles.subsectionHeader}>
+                <h6 className={styles.subsectionTitle}>
+                  <Icon name="arrow-right" /> Columns from item tags
+                </h6>
+              </div>
+              <p className={styles.subsectionHint}>
+                Tag columns identify rows together with the host and any extracted columns. The tag should exist on all
+                items matched by the Table Rows pattern; items without it are grouped into a row with an empty value.
+              </p>
+              <Stack direction="column" gap={1}>
+                {tagColumns.map((col, index) => (
+                  <InlineFieldRow key={index}>
+                    <InlineField label="Column name" labelWidth={16}>
+                      <Input
+                        id={`multimetric-tag-column-name-${index}`}
+                        width={30}
+                        value={col.name}
+                        placeholder="Defaults to the tag name"
+                        onChange={(e) => onTagColumnChange(index, 'name', e.currentTarget.value)}
+                      />
+                    </InlineField>
+                    <InlineField label="Tag" labelWidth={16}>
+                      <MetricPicker
+                        width={30}
+                        value={col.tag}
+                        options={tagNameOptions}
+                        isLoading={itemsLoading}
+                        placeholder="Item tag name"
+                        createCustomValue={true}
+                        onChange={(value) => onTagColumnChange(index, 'tag', value || '')}
+                      />
+                    </InlineField>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      icon="trash-alt"
+                      aria-label="Remove tag column"
+                      onClick={() => onTagColumnRemove(index)}
+                    />
+                  </InlineFieldRow>
+                ))}
+                <Button size="sm" icon="plus" variant="secondary" onClick={onTagColumnAdd}>
+                  Add tag column
+                </Button>
+              </Stack>
+            </div>
+          )}
+        </Stack>
+      </div>
+
+      {/* Metrics Section */}
+      <div className={styles.section}>
+        <h6 className={styles.sectionTitle}>Metric Columns</h6>
+        <Stack direction="column" gap={1}>
+          {tableConfig.metrics.map((metric, index) => (
+            <InlineFieldRow key={index}>
+              <InlineField label="Column" labelWidth={16}>
+                <Input
+                  id={`multimetric-column-name-${index}`}
+                  width={20}
+                  value={localMetricNames[index] ?? metric.columnName}
+                  placeholder="Column name"
+                  onChange={(e) => {
+                    const next = [...localMetricNames];
+                    next[index] = e.currentTarget.value;
+                    setLocalMetricNames(next);
+                  }}
+                  onBlur={() => onMetricColumnNameBlur(index)}
+                />
+              </InlineField>
+              <InlineField label="Search by" labelWidth={16}>
+                <RadioButtonGroup
+                  value={metric.searchType}
+                  options={searchTypeOptions}
+                  onChange={(value) => commitMetric(index, { searchType: value as 'itemName' | 'itemKey' })}
+                />
+              </InlineField>
+              <InlineField
+                label="Value type"
+                labelWidth={16}
+                tooltip="Numeric matches unsigned/float items. Text matches character/log/text items; those always show the last value and cannot render sparklines."
+              >
+                <RadioButtonGroup
+                  value={metric.valueType || 'num'}
+                  options={valueTypeOptions}
+                  onChange={(value) =>
+                    onMetricValueTypeChange(index, value as NonNullable<MetricColumnConfig['valueType']>)
+                  }
+                />
+              </InlineField>
+              <InlineField
+                label="Pattern"
+                labelWidth={16}
+                grow
+                tooltip={
+                  rowsFromHost
+                    ? 'Exact item name/key, or /regex/.'
+                    : 'Exact item name/key, or /regex/. Selects within the items matching the Table Rows pattern.'
+                }
+              >
+                <MetricPicker
+                  width={40}
+                  value={metric.pattern}
+                  options={metricOptionsForSearchType(metric.searchType, metric.valueType)}
+                  isLoading={metric.valueType === 'text' ? textItemsLoading : itemsLoading}
+                  placeholder="Exact name or /regex/, e.g., /.*Bits received/"
+                  createCustomValue={true}
+                  onChange={(value) => commitMetric(index, { pattern: value || '' })}
+                />
+              </InlineField>
+              <InlineField
+                label="Aggregation"
+                labelWidth={16}
+                disabled={metric.showSparkline || metric.valueType === 'text'}
+                tooltip={
+                  metric.valueType === 'text'
+                    ? 'Text columns always show the last value.'
+                    : metric.showSparkline
+                      ? 'Not used for sparkline columns since the full series is returned.'
+                      : undefined
+                }
+              >
+                <Select
+                  width={15}
+                  inputId={`multimetric-aggregation-${index}`}
+                  value={metric.valueType === 'text' ? 'last' : metric.aggregation}
+                  options={aggregationOptions}
+                  disabled={metric.showSparkline || metric.valueType === 'text'}
+                  onChange={(option) =>
+                    commitMetric(index, { aggregation: option.value as MetricColumnConfig['aggregation'] })
+                  }
+                />
+              </InlineField>
+              {metric.valueType !== 'text' && (
+                <InlineField
+                  label="Sparkline"
+                  labelWidth={12}
+                  tooltip="Return this column as its own time-series frame (full history over the panel time range) instead of a scalar value. Render it as a sparkline by adding Grafana's 'Time series to table' transformation; one Trend column is produced per sparkline metric."
+                >
+                  <Checkbox
+                    id={`multimetric-sparkline-${index}`}
+                    value={metric.showSparkline || false}
+                    onChange={(e) => commitMetric(index, { showSparkline: e.currentTarget.checked })}
+                  />
+                </InlineField>
+              )}
+              <Button
+                size="sm"
+                variant="destructive"
+                icon="trash-alt"
+                aria-label="Remove metric"
+                onClick={() => onMetricRemove(index)}
+              />
+            </InlineFieldRow>
+          ))}
+          <Button size="sm" icon="plus" onClick={onMetricAdd}>
+            Add metric column
+          </Button>
+        </Stack>
+      </div>
+
+      {/* Help text */}
+      <div className={styles.help}>
+        <p className={styles.helpText}>
+          <strong>How it works:</strong> Select Group/Host, choose what rows represent, then add metric columns. With
+          rows from <em>Item pattern</em>, define the entity pattern and optionally build columns from regex capture
+          groups or item tags. With rows from <em>Hosts</em>, each host is a row; use this for host-level (non-LLD)
+          items such as CPU or memory utilization.
+        </p>
+        <p className={styles.helpText}>
+          <strong>Patterns:</strong> a value wrapped in slashes (/.../) is a regex; anything else must match the item
+          name or key exactly. With rows from <em>Item pattern</em>, metric columns select within the items matching the
+          Table Rows pattern.
+        </p>
+        <p className={styles.helpText}>
+          <strong>Example:</strong> Pattern: &quot;/Interface.*/&quot;, Extract: &quot;Interface (.*)\[(.*)\]&quot; -
+          Group 1: &quot;Interface name&quot;, Group 2: &quot;Description&quot;
+        </p>
+        <p className={styles.helpText}>
+          <strong>Sparkline:</strong> Each enabled column is returned as its own time-series frame (full history)
+          instead of a scalar. Add the Grafana <em>Time series to table</em> transformation to get one Trend column per
+          metric, then <em>Join by field</em> / <em>Merge</em> on the Host/Entity (or extracted) columns. The first
+          (table) frame carries the row dimensions and is the join base.
+        </p>
+      </div>
+    </Stack>
+  );
+};
+
+const getStyles = (theme: GrafanaTheme2) => ({
+  section: css({
+    borderTop: `1px solid ${theme.colors.border.weak}`,
+    paddingTop: theme.spacing(2),
+    marginTop: theme.spacing(2),
+  }),
+  sectionTitle: css({
+    marginBottom: theme.spacing(1),
+  }),
+  hint: css({
+    margin: 0,
+    fontSize: theme.typography.bodySmall.fontSize,
+    color: theme.colors.text.secondary,
+  }),
+  subsection: css({
+    marginTop: theme.spacing(1),
+    marginLeft: theme.spacing(2),
+  }),
+  subsectionHeader: css({
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: theme.spacing(1),
+  }),
+  subsectionTitle: css({
+    margin: 0,
+    fontSize: theme.typography.bodySmall.fontSize,
+  }),
+  subsectionHint: css({
+    margin: theme.spacing(0, 0, 1, 0),
+    fontSize: theme.typography.bodySmall.fontSize,
+    color: theme.colors.text.secondary,
+  }),
+  help: css({
+    marginTop: theme.spacing(2),
+    padding: theme.spacing(1.5),
+    background: theme.colors.info.transparent,
+    borderRadius: theme.shape.radius.default,
+  }),
+  helpText: css({
+    margin: 0,
+    fontSize: theme.typography.bodySmall.fontSize,
+    '& + &': {
+      marginTop: theme.spacing(1),
+    },
+  }),
+});

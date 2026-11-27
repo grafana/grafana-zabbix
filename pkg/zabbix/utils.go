@@ -93,6 +93,12 @@ func safeRegexpCompile(pattern string) (*regexp2.Regexp, error) {
 	}
 }
 
+// ParseFilter parses a "/regex/flags" filter the way every group, host and item filter of the
+// plugin is parsed. It returns nil and no error for a plain filter, which must match exactly.
+func ParseFilter(filter string) (*regexp2.Regexp, error) {
+	return parseFilter(filter)
+}
+
 func parseFilter(filter string) (*regexp2.Regexp, error) {
 	vaildREModifiers := "imncsxrde"
 	regex := regexp.MustCompile(`^/(.+)/([imncsxrde]*)$`)
