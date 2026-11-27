@@ -17,6 +17,7 @@ import { ProblemItems } from './ProblemItems';
 import { ProblemHosts, ProblemHostsDescription } from './ProblemHosts';
 import { ProblemGroups } from './ProblemGroups';
 import { ProblemExpression } from './ProblemExpression';
+import { getAckModalActionProps } from '../../utils';
 
 interface Props {
   original: ProblemDTO;
@@ -137,7 +138,7 @@ export const ProblemDetails = ({
                       className="problem-action-button"
                       onClick={() => {
                         showModal(AckModal, {
-                          canClose: problem.manual_close === '1',
+                          ...getAckModalActionProps(problem),
                           severity: problemSeverity,
                           onSubmit: ackProblem,
                           onDismiss: hideModal,

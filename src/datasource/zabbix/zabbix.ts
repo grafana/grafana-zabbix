@@ -22,7 +22,7 @@ import { CLICKHOUSE_DS_ID, ClickHouseConnector } from './connectors/clickhouse/c
 import { InfluxDBConnector } from './connectors/influxdb/influxdbConnector';
 import { SQLConnector } from './connectors/sql/sqlConnector';
 import { InfluxDBConnectorOptions } from './connectors/types';
-import { ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
+import { ResourceClient, ZabbixAPIConnector } from './connectors/zabbix_api/zabbixAPIConnector';
 import { GetItemsOptions } from './connectors/zabbix_api/types';
 import { CachingProxy } from './proxy/cachingProxy';
 import { Host, ZabbixConnector } from './types';
@@ -113,8 +113,9 @@ const REQUESTS_TO_BIND = [
   'getHostInterfaces',
 ];
 
-type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAuth' | 'withCredentials' | 'uid'> &
-  Pick<
+type ZabbixOptions = Pick<DataSourceInstanceSettings<ZabbixDSOptions>, 'basicAuth' | 'withCredentials'> & {
+  resourceClient: ResourceClient;
+} & Pick<
     ZabbixDSOptions,
     | 'cacheTTL'
     | 'dbConnectionEnable'
@@ -145,7 +146,13 @@ export class Zabbix implements ZabbixConnector {
   getHostPCAlerts: (hostids, applicationids, triggerids, options?) => Promise<any>;
   getAcknowledges: (eventids) => Promise<any>;
   getITService: (serviceids?) => Promise<any>;
-  acknowledgeEvent: (eventid: string, message: string, action?: number, severity?: number) => Promise<any>;
+  acknowledgeEvent: (
+    eventid: string,
+    message: string,
+    action?: number,
+    severity?: number,
+    suppress_until?: number
+  ) => Promise<any>;
   getProxies: () => Promise<any>;
   getEventAlerts: (eventids) => Promise<any>;
   getExtendedEventData: (eventids) => Promise<any>;
@@ -166,7 +173,7 @@ export class Zabbix implements ZabbixConnector {
       dbConnectionDatasourceId,
       dbConnectionDatasourceName,
       dbConnectionRetentionPolicy,
-      uid,
+      resourceClient,
     } = options;
 
     this.enableDirectDBConnection = dbConnectionEnable;
@@ -178,7 +185,7 @@ export class Zabbix implements ZabbixConnector {
     };
     this.cachingProxy = new CachingProxy(cacheOptions);
 
-    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, uid);
+    this.zabbixAPI = new ZabbixAPIConnector(basicAuth, withCredentials, resourceClient);
 
     this.proxifyRequests();
     this.cacheRequests();
@@ -309,6 +316,18 @@ export class Zabbix implements ZabbixConnector {
   supportsCauseSymptomProblems() {
     const version = this.version || this.zabbixAPI.version;
     return version ? semver.gte(version, '6.4.0') : false;
+  }
+
+  // Unacknowledge action was introduced in Zabbix 5.0
+  supportsUnacknowledge() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '5.0.0') : false;
+  }
+
+  // Manual problem suppression was introduced in Zabbix 6.2
+  supportsProblemSuppression() {
+    const version = this.version || this.zabbixAPI.version;
+    return version ? semver.gte(version, '6.2.0') : false;
   }
 
   async isZabbix54OrHigher() {

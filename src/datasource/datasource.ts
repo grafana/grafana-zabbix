@@ -14,7 +14,6 @@ import { ZabbixDSOptions } from './types/config';
 import {
   BackendSrvRequest,
   config,
-  getBackendSrv,
   getTemplateSrv,
   HealthCheckError,
   DataSourceWithBackend,
@@ -35,7 +34,7 @@ import {
 } from '@grafana/data';
 import { AnnotationQueryEditor } from './components/AnnotationQueryEditor';
 import { trackRequest } from './tracking';
-import { from, lastValueFrom, map, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { getDataSourceInstanceSettings } from '@grafana/plugin-compat/datasources';
 
 export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, ZabbixDSOptions> {
@@ -89,7 +88,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       dbConnectionDatasourceId: jsonData.dbConnectionDatasourceId,
       dbConnectionDatasourceName: jsonData.dbConnectionDatasourceName,
       dbConnectionRetentionPolicy: jsonData.dbConnectionRetentionPolicy,
-      uid: instanceSettings.uid,
+      resourceClient: this,
     });
   }
 
@@ -311,22 +310,20 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
 
   async invokeDataProcessingQuery(timeSeriesData, query, timeRange) {
     // Request backend for data processing
-    const requestOptions: BackendSrvRequest = {
-      url: `/api/datasources/uid/${this.instanceSettings.uid}/resources/db-connection-post`,
-      method: 'POST',
+    const body = {
+      series: timeSeriesData,
+      query,
+      timeRange,
+    };
+    const requestOptions: Partial<BackendSrvRequest> = {
       headers: {
         'Content-Type': 'application/json',
       },
       hideFromInspector: false,
-      data: {
-        series: timeSeriesData,
-        query,
-        timeRange,
-      },
     };
 
-    const response: any = await lastValueFrom(getBackendSrv().fetch<any>(requestOptions));
-    return response.data;
+    // postResource resolves with the response body, same as the former `response.data`
+    return await this.postResource('db-connection-post', body, requestOptions);
   }
 
   handleBackendPostProcessingResponse(response, request, target) {
@@ -671,6 +668,13 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
     }
     const getUsersPromise = this.zabbix.getUsers();
 
+    // Which problem update actions the Zabbix server supports depends on its version
+    await this.zabbix.getVersion();
+    const actionCapabilities = {
+      unacknowledge: this.zabbix.supportsUnacknowledge(),
+      suppress: this.zabbix.supportsProblemSuppression(),
+    };
+
     let proxies;
     let zabbixUsers;
     const problemsPromises = Promise.all([getProblemsPromise, getProxiesPromise, getUsersPromise])
@@ -681,6 +685,7 @@ export class ZabbixDatasource extends DataSourceWithBackend<ZabbixMetricsQuery, 
       })
       .then((problems) => problemsHandler.setMaintenanceStatus(problems))
       .then((problems) => problemsHandler.setAckButtonStatus(problems, showAckButton))
+      .then((problems) => problemsHandler.setActionCapabilities(problems, actionCapabilities))
       .then((problems) => problemsHandler.filterTriggersPre(problems, target))
       .then((problems) => problemsHandler.sortProblems(problems, target))
       .then((problems) => problemsHandler.addTriggerDataSource(problems, target))

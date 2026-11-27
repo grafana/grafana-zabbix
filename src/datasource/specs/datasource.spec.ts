@@ -14,6 +14,8 @@ jest.mock(
     // Provide a custom query implementation that resolves backend + frontend + db + annotations
     // so tests relying on merged results receive expected data.
     if (actual && actual.DataSourceWithBackend && actual.DataSourceWithBackend.prototype) {
+      // Resource calls (zabbix-api, db-connection-post) go through postResource
+      actual.DataSourceWithBackend.prototype.postResource = jest.fn().mockResolvedValue({ result: '' });
       // @ts-ignore
       actual.DataSourceWithBackend.prototype.query = function (request: any) {
         const that: any = this;
