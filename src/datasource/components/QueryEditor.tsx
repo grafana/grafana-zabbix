@@ -87,7 +87,7 @@ const getDefaultQuery: () => Partial<ZabbixMetricsQuery> = () => ({
     useTrends: 'default',
     count: false,
   },
-   tableConfig: { 
+  tableConfig: {
     entityPattern: { searchType: 'itemName', pattern: '', extractNameRegex: '' },
     metrics: [],
   },

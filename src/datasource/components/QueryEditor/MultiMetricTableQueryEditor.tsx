@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAsync, useAsyncFn } from 'react-use';
 import { uniqBy } from 'lodash';
 import {
@@ -251,13 +251,19 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
   };
 
   // Sync deferred local state when the query changes externally (e.g., variable resolution, panel switch).
-  useEffect(() => {
-    setLocalExtractPattern(tableConfig.entityPattern.extractPattern || '');
-  }, [tableConfig.entityPattern.extractPattern]);
+  // Adjusted during render rather than in an effect, as React recommends for state derived from props.
+  const committedExtractPattern = tableConfig.entityPattern.extractPattern || '';
+  const [syncedExtractPattern, setSyncedExtractPattern] = useState(committedExtractPattern);
+  if (committedExtractPattern !== syncedExtractPattern) {
+    setSyncedExtractPattern(committedExtractPattern);
+    setLocalExtractPattern(committedExtractPattern);
+  }
 
-  useEffect(() => {
+  const [syncedMetricCount, setSyncedMetricCount] = useState(tableConfig.metrics.length);
+  if (tableConfig.metrics.length !== syncedMetricCount) {
+    setSyncedMetricCount(tableConfig.metrics.length);
     setLocalMetricNames(tableConfig.metrics.map((m) => m.columnName));
-  }, [tableConfig.metrics.length]);
+  }
 
   // Fetch options on mount and when dependencies change
   useEffect(() => {
@@ -299,19 +305,13 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
     });
   };
 
-  const onHostTagFilterChange = useCallback(
-    (hostTags: HostTagFilter[]) => {
-      onChange({ ...safeQuery, hostTags: hostTags });
-    },
-    [onChange, safeQuery]
-  );
+  const onHostTagFilterChange = (hostTags: HostTagFilter[]) => {
+    onChange({ ...safeQuery, hostTags: hostTags });
+  };
 
-  const onHostTagEvalTypeChange = useCallback(
-    (evalType: ZabbixTagEvalType) => {
-      onChange({ ...safeQuery, evaltype: evalType });
-    },
-    [onChange, safeQuery]
-  );
+  const onHostTagEvalTypeChange = (evalType: ZabbixTagEvalType) => {
+    onChange({ ...safeQuery, evaltype: evalType });
+  };
 
   const onHostChange = (value: string) => {
     onChange({
@@ -881,8 +881,8 @@ export const MultiMetricTableQueryEditor = ({ query, datasource, onChange }: Pro
           Table Rows pattern.
         </p>
         <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
-          <strong>Example:</strong> Pattern: "/Interface.*/", Extract: "Interface (.*)\[(.*)\]" - Group 1: "Interface
-          name", Group 2: "Description"
+          <strong>Example:</strong> Pattern: &quot;/Interface.*/&quot;, Extract: &quot;Interface (.*)\[(.*)\]&quot; -
+          Group 1: &quot;Interface name&quot;, Group 2: &quot;Description&quot;
         </p>
         <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>
           <strong>Sparkline:</strong> Each enabled column is returned as its own time-series frame (full history)
